@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../providers/app_providers.dart';
+import '../theme/app_theme.dart';
 
 class FoodDetailPage extends ConsumerWidget {
   const FoodDetailPage({super.key, required this.foodId});
@@ -26,6 +27,7 @@ class FoodDetailPage extends ConsumerWidget {
             body: const Center(child: Text('食材不存在')),
           );
         }
+        final theme = Theme.of(context);
         return Scaffold(
           appBar: AppBar(title: Text(food.name)),
           floatingActionButton: FloatingActionButton.extended(
@@ -37,18 +39,15 @@ class FoodDetailPage extends ConsumerWidget {
             label: const Text('记入今日'),
           ),
           body: ListView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(AppSpacing.formPage),
             children: [
-              Text(food.category, style: Theme.of(context).textTheme.labelLarge),
+              Text(food.category, style: theme.textTheme.fieldLabel),
               const SizedBox(height: 8),
-              Text(
-                '每 100 克营养',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 16),
+              Text('每 100 克', style: theme.textTheme.titleMedium),
+              const SizedBox(height: AppSpacing.section),
               _row(context, '热量', '${food.kcalPer100.round()} kcal'),
               _row(context, '蛋白质', '${food.proteinPer100.toStringAsFixed(1)} g'),
-              _row(context, '碳水化合物', '${food.carbPer100.toStringAsFixed(1)} g'),
+              _row(context, '碳水', '${food.carbPer100.toStringAsFixed(1)} g'),
               _row(context, '脂肪', '${food.fatPer100.toStringAsFixed(1)} g'),
             ],
           ),
@@ -58,13 +57,14 @@ class FoodDetailPage extends ConsumerWidget {
   }
 
   Widget _row(BuildContext context, String label, String value) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: Theme.of(context).textTheme.bodyLarge),
-          Text(value, style: Theme.of(context).textTheme.titleMedium),
+          Text(label, style: theme.textTheme.bodyLarge),
+          Text(value, style: theme.textTheme.titleMedium),
         ],
       ),
     );

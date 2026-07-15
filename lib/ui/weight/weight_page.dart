@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../data/db.dart';
 import '../../providers/app_providers.dart';
+import '../theme/app_theme.dart';
 import '../widgets/form_options.dart';
 
 class _WeightLogDraft {
@@ -57,8 +58,7 @@ class _WeightPageState extends ConsumerState<WeightPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '已记体重并重算：日摄入 ${updated.targets.calories} kcal · '
-            '蛋白 ${updated.targets.proteinG.toStringAsFixed(0)}g',
+            '已记体重，日摄入 ${updated.targets.calories} kcal',
           ),
         ),
       );
@@ -92,7 +92,12 @@ class _WeightPageState extends ConsumerState<WeightPage> {
         error: (e, _) => Center(child: Text('加载失败：$e')),
         data: (logs) {
           if (logs.isEmpty) {
-            return const Center(child: Text('还没有体重记录，点右下角添加'));
+            return Center(
+              child: Text(
+                '还没有记录，点右下角添加',
+                style: Theme.of(context).textTheme.meta,
+              ),
+            );
           }
 
           final weightSeries = [
@@ -114,7 +119,12 @@ class _WeightPageState extends ConsumerState<WeightPage> {
           ];
 
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.listPage,
+              8,
+              AppSpacing.listPage,
+              88,
+            ),
             children: [
               _SeriesChartCard(
                 title: '体重 (kg)',
@@ -122,28 +132,34 @@ class _WeightPageState extends ConsumerState<WeightPage> {
                 color: scheme.primary,
                 emptyHint: '暂无体重数据',
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.field),
               _SeriesChartCard(
                 title: '体脂率 (%)',
                 points: bodyFatSeries,
-                color: const Color(0xFFD62828),
-                emptyHint: '暂无体脂记录，添加时可选填写',
+                color: AppColors.protein,
+                emptyHint: '暂无体脂记录',
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.field),
               _SeriesChartCard(
-                title: '今日运动 (分钟)',
+                title: '运动 (分钟)',
                 points: exerciseSeries,
-                color: const Color(0xFF457B9D),
-                emptyHint: '暂无运动记录，添加时可选填写',
+                color: AppColors.carb,
+                emptyHint: '暂无运动记录',
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.section),
               Text('历史记录', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               ...logs.reversed.map(
                 (log) => ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: Text('${log.weightKg.toStringAsFixed(1)} kg'),
-                  subtitle: Text(_logSubtitle(log)),
+                  title: Text(
+                    '${log.weightKg.toStringAsFixed(1)} kg',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                  subtitle: Text(
+                    _logSubtitle(log),
+                    style: Theme.of(context).textTheme.meta,
+                  ),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete_outline),
                     onPressed: () =>
@@ -176,7 +192,7 @@ class _SeriesChartCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 12, 16, 12),
+        padding: const EdgeInsets.all(AppSpacing.card),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -188,7 +204,7 @@ class _SeriesChartCard extends StatelessWidget {
                   ? Center(
                       child: Text(
                         emptyHint,
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: Theme.of(context).textTheme.meta,
                       ),
                     )
                   : _buildChart(context),
@@ -243,7 +259,7 @@ class _SeriesChartCard extends StatelessWidget {
                 }
                 return Text(
                   DateFormat('M/d').format(points[i].date),
-                  style: const TextStyle(fontSize: 10),
+                  style: Theme.of(context).textTheme.labelSmall,
                 );
               },
             ),
@@ -329,7 +345,7 @@ class _WeightLogDialogState extends State<_WeightLogDialog> {
               value: _exerciseMinutes,
               items: FormOptions.exerciseMinutes,
               suffixText: '分钟',
-              helperText: '按当天累计运动时长',
+              helperText: '当天累计运动时长',
               onChanged: (v) => setState(() => _exerciseMinutes = v),
             ),
           ],

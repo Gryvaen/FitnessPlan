@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../data/db.dart';
 import '../../domain/models.dart';
 import '../../providers/app_providers.dart';
+import '../theme/app_theme.dart';
 import '../widgets/form_options.dart';
 
 class MealDetailPage extends ConsumerStatefulWidget {
@@ -127,7 +128,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('删除记录'),
-        content: const Text('确定删除这条饮食记录吗？'),
+        content: const Text('确定删除这条记录？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -198,27 +199,22 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.formPage),
         children: [
           Text(
             DateFormat('M月d日').format(entry.date),
-            style: theme.textTheme.labelLarge,
+            style: theme.textTheme.fieldLabel,
           ),
           if (readOnly) ...[
             const SizedBox(height: 4),
-            Text(
-              '仅查看（历史记录不可修改）',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
+            Text('历史记录，仅可查看', style: theme.textTheme.meta),
           ],
           const SizedBox(height: 4),
           Text(
             '${food.kcalPer100.round()} kcal / 100g',
-            style: theme.textTheme.bodySmall,
+            style: theme.textTheme.meta,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.section),
           IgnorePointer(
             ignoring: readOnly,
             child: Opacity(
@@ -232,7 +228,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
                     itemLabel: (e) => e.label,
                     onChanged: _onMealTypeChanged,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.field),
                   AppDropdown<double>(
                     label: '克数',
                     value:
@@ -248,7 +244,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
           ),
           const SizedBox(height: 28),
           Text('营养摄入', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.section),
           _MacroRow(
             label: '热量',
             value: '${preview.calories.round()} kcal',
@@ -257,17 +253,17 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
           _MacroRow(
             label: '蛋白质',
             value: '${preview.proteinG.toStringAsFixed(1)} g',
-            color: const Color(0xFFD62828),
+            color: AppColors.protein,
           ),
           _MacroRow(
-            label: '碳水化合物',
+            label: '碳水',
             value: '${preview.carbG.toStringAsFixed(1)} g',
-            color: const Color(0xFF457B9D),
+            color: AppColors.carb,
           ),
           _MacroRow(
             label: '脂肪',
             value: '${preview.fatG.toStringAsFixed(1)} g',
-            color: const Color(0xFFE9C46A),
+            color: AppColors.fat,
           ),
         ],
       ),
@@ -288,6 +284,7 @@ class _MacroRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
@@ -302,9 +299,9 @@ class _MacroRow extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(label, style: Theme.of(context).textTheme.bodyLarge),
+            child: Text(label, style: theme.textTheme.bodyLarge),
           ),
-          Text(value, style: Theme.of(context).textTheme.titleMedium),
+          Text(value, style: theme.textTheme.titleMedium),
         ],
       ),
     );

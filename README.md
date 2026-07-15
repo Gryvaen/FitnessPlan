@@ -1,6 +1,7 @@
 # 健身饮食 / Fitness Plan
 
 [English ↓](#english)
+[![Donate / 赞助](https://img.shields.io/badge/Donate-支付宝-1677FF?style=flat&logo=alipay&logoColor=white)](#赞助--donate)
 
 纯本地 Flutter 健身饮食助手：按身体数据计算每日热量与三大营养素，内置常见食材库，支持饮食记账与体重记录。
 
@@ -111,6 +112,16 @@ flutter build ipa --release
 # 产物：build/ios/ipa/*.ipa（需配置签名）
 ```
 
+## 赞助 / Donate
+
+如果这个项目对你有帮助，欢迎通过支付宝扫码支持：
+
+<p align="center">
+  <img src="docs/donate-alipay.jpg" width="280" alt="支付宝收款码" />
+</p>
+
+<p align="center">用支付宝扫一扫 → 打开收款码即可</p>
+
 ## 许可证
 
 本项目采用 [MIT License](LICENSE)。
@@ -122,6 +133,7 @@ flutter build ipa --release
 # English
 
 [← 中文](#健身饮食--fitness-plan)
+[![Donate](https://img.shields.io/badge/Donate-Alipay-1677FF?style=flat&logo=alipay&logoColor=white)](#donate)
 
 A fully offline Flutter fitness & nutrition app. It calculates daily calorie and macro targets from your body stats, ships with a built-in food database, and lets you log meals and weight — all stored on device.
 
@@ -224,6 +236,17 @@ flutter build ipa --release
 # output: build/ios/ipa/*.ipa (signing required)
 ```
 
+## Donate
+
+If this project helps you, you can support it via Alipay:
+
+<p align="center">
+  <img src="docs/donate-alipay.jpg" width="280" alt="Alipay QR code" />
+</p>
+
+<p align="center">Open Alipay → Scan → Pay</p>
+
 ## License
 
 Released under the [MIT License](LICENSE).
+

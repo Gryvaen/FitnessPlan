@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/db.dart';
 import '../../domain/models.dart';
 import '../../providers/app_providers.dart';
+import '../theme/app_theme.dart';
 import '../widgets/form_options.dart';
 
 class LogMealPage extends ConsumerStatefulWidget {
@@ -71,9 +72,9 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
   Future<void> _save() async {
     final food = _selected;
     if (food == null || _grams <= 0) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('请选择食材并选择克数')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请选择食材和克数')),
+      );
       return;
     }
     final day = ref.read(selectedDayProvider);
@@ -106,13 +107,14 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final preview = _preview;
     return Scaffold(
       appBar: AppBar(title: const Text('记一笔')),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.listPage),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -123,13 +125,14 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                   itemLabel: (e) => e.label,
                   onChanged: (v) => setState(() => _mealType = v),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.field),
                 if (_selected != null) ...[
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(_selected!.name),
+                    title: Text(_selected!.name, style: theme.textTheme.bodyLarge),
                     subtitle: Text(
                       '${_selected!.kcalPer100.round()} kcal / 100g',
+                      style: theme.textTheme.meta,
                     ),
                     trailing: TextButton(
                       onPressed: () => setState(() => _selected = null),
@@ -148,15 +151,16 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                     onChanged: (v) => setState(() => _grams = v),
                   ),
                   if (preview != null) ...[
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.field),
                     Text(
-                      '约 ${preview.calories.round()} kcal · '
-                      '蛋白 ${preview.proteinG.toStringAsFixed(1)}g · '
-                      '碳水 ${preview.carbG.toStringAsFixed(1)}g · '
-                      '脂肪 ${preview.fatG.toStringAsFixed(1)}g',
+                      '${preview.calories.round()} kcal · '
+                      'P ${preview.proteinG.toStringAsFixed(1)} · '
+                      'C ${preview.carbG.toStringAsFixed(1)} · '
+                      'F ${preview.fatG.toStringAsFixed(1)}',
+                      style: theme.textTheme.meta,
                     ),
                   ],
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.section),
                   FilledButton(
                     onPressed: _saving ? null : _save,
                     child: Text(_saving ? '保存中…' : '保存'),
@@ -164,9 +168,8 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                 ] else ...[
                   TextField(
                     decoration: const InputDecoration(
-                      hintText: '输入食材名称搜索',
+                      hintText: '搜索食材',
                       prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(),
                     ),
                     onChanged: _search,
                   ),
@@ -179,15 +182,24 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
               child: _loadingFoods
                   ? const Center(child: CircularProgressIndicator())
                   : _results.isEmpty
-                      ? const Center(child: Text('没有找到食材'))
+                      ? Center(
+                          child: Text(
+                            '没有找到食材',
+                            style: theme.textTheme.meta,
+                          ),
+                        )
                       : ListView.builder(
                           itemCount: _results.length,
                           itemBuilder: (context, i) {
                             final f = _results[i];
                             return ListTile(
-                              title: Text(f.name),
+                              title: Text(
+                                f.name,
+                                style: theme.textTheme.bodyLarge,
+                              ),
                               subtitle: Text(
                                 '${f.category} · ${f.kcalPer100.round()} kcal/100g',
+                                style: theme.textTheme.meta,
                               ),
                               onTap: () => setState(() => _selected = f),
                             );

@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 /// Shared discrete option lists for profile / weight / meal forms.
 class FormOptions {
   const FormOptions._();
@@ -185,20 +187,20 @@ class _CupertinoWheelSheetState<T> extends State<_CupertinoWheelSheet<T>> {
                     child: Text(
                       widget.title,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        decoration: TextDecoration.none,
-                        color: labelColor,
-                      ),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            decoration: TextDecoration.none,
+                            color: labelColor,
+                          ),
                     ),
                   ),
                   CupertinoButton(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     onPressed: () => Navigator.pop(context, _pending),
-                    child: const Text(
+                    child: Text(
                       '完成',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            decoration: TextDecoration.none,
+                          ),
                     ),
                   ),
                 ],
@@ -220,11 +222,10 @@ class _CupertinoWheelSheetState<T> extends State<_CupertinoWheelSheet<T>> {
                     Center(
                       child: Text(
                         widget.itemLabel(item),
-                        style: TextStyle(
-                          fontSize: 20,
-                          color: labelColor,
-                          decoration: TextDecoration.none,
-                        ),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              decoration: TextDecoration.none,
+                              color: labelColor,
+                            ),
                       ),
                     ),
                 ],
@@ -402,12 +403,7 @@ class _PickerField extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          label,
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
+                        Text(label, style: theme.textTheme.fieldLabel),
                         const SizedBox(height: 4),
                         Text(
                           displayText,
@@ -430,12 +426,7 @@ class _PickerField extends StatelessWidget {
           const SizedBox(height: 6),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Text(
-              helperText!,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
+            child: Text(helperText!, style: theme.textTheme.meta),
           ),
         ],
       ],

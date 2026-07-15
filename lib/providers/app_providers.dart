@@ -157,8 +157,3 @@ final weightLogsProvider = StreamProvider<List<WeightLog>>((ref) {
 final foodsSeedProvider = FutureProvider<void>((ref) async {
   await ref.watch(foodRepositoryProvider).syncSeedFromAsset();
 });
-
-final demoMealsSeedProvider = FutureProvider<void>((ref) async {
-  await ref.watch(foodsSeedProvider.future);
-  await ref.watch(mealRepositoryProvider).seedDemoHistoryIfNeeded();
-});

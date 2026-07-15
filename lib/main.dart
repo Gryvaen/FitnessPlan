@@ -24,8 +24,7 @@ class _Bootstrap extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Sync food catalog, then one-shot demo meal history for date browsing.
-    ref.watch(demoMealsSeedProvider);
+    ref.watch(foodsSeedProvider);
     return const FitnessApp();
   }
 }

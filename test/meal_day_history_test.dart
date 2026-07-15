@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fitness_plan/data/db.dart';
 import 'package:fitness_plan/data/repositories/meal_repository.dart';
-import 'package:fitness_plan/data/tables.dart';
 import 'package:fitness_plan/domain/models.dart';
 import 'package:fitness_plan/ui/today/deficit_date_picker.dart';
 
@@ -194,32 +193,6 @@ void main() {
     expect((await repo.forDay(dayA)).single.foodName, '测试米饭');
     expect(await repo.forDay(dayB), hasLength(1));
     expect((await repo.forDay(dayB)).single.foodName, '测试鸡胸');
-  });
-
-  test('seedDemoHistoryIfNeeded inserts three past days once', () async {
-    await repo.seedDemoHistoryIfNeeded();
-
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-
-    final d1 = await repo.forDay(today.subtract(const Duration(days: 1)));
-    final d2 = await repo.forDay(today.subtract(const Duration(days: 2)));
-    final d3 = await repo.forDay(today.subtract(const Duration(days: 3)));
-    expect(d1, isNotEmpty);
-    expect(d2, isNotEmpty);
-    expect(d3, isNotEmpty);
-
-    final intake1 = await repo.intakeForDay(
-      today.subtract(const Duration(days: 1)),
-    );
-    expect(intake1.calories, greaterThan(0));
-    expect(intake1.proteinG, greaterThan(0));
-    expect(intake1.carbG, greaterThan(0));
-
-    final countBefore = (await db.select(db.mealEntries).get()).length;
-    await repo.seedDemoHistoryIfNeeded();
-    final countAfter = (await db.select(db.mealEntries).get()).length;
-    expect(countAfter, countBefore);
   });
 
   test('calorieTotalsBetween groups by local day', () async {

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/db.dart';
 import '../../providers/app_providers.dart';
+import '../theme/app_theme.dart';
 
 final _categoryFoodsProvider = FutureProvider.autoDispose
     .family<List<FoodItem>, String>((ref, category) async {
@@ -18,6 +19,7 @@ class FoodCategoryPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final foodsAsync = ref.watch(_categoryFoodsProvider(category));
 
     return Scaffold(
@@ -27,7 +29,9 @@ class FoodCategoryPage extends ConsumerWidget {
         error: (e, _) => Center(child: Text('加载失败：$e')),
         data: (foods) {
           if (foods.isEmpty) {
-            return const Center(child: Text('该分类暂无食材'));
+            return Center(
+              child: Text('该分类暂无食材', style: theme.textTheme.meta),
+            );
           }
           return ListView.separated(
             itemCount: foods.length,
@@ -35,8 +39,11 @@ class FoodCategoryPage extends ConsumerWidget {
             itemBuilder: (context, i) {
               final f = foods[i];
               return ListTile(
-                title: Text(f.name),
-                subtitle: Text('${f.kcalPer100.round()} kcal / 100g'),
+                title: Text(f.name, style: theme.textTheme.bodyLarge),
+                subtitle: Text(
+                  '${f.kcalPer100.round()} kcal / 100g',
+                  style: theme.textTheme.meta,
+                ),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => context.push('/foods/${f.id}'),
               );

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/db.dart';
 import '../../data/repositories/food_repository.dart';
 import '../../providers/app_providers.dart';
+import '../theme/app_theme.dart';
 
 final _foodQueryProvider = NotifierProvider<_QueryNotifier, String>(
   _QueryNotifier.new,
@@ -43,12 +44,16 @@ class FoodsPage extends ConsumerWidget {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.listPage,
+              8,
+              AppSpacing.listPage,
+              8,
+            ),
             child: TextField(
               decoration: const InputDecoration(
-                hintText: '搜索食材，如 鸡胸、米饭',
+                hintText: '搜索食材',
                 prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
               ),
               onChanged: (v) => ref.read(_foodQueryProvider.notifier).set(v),
             ),
@@ -67,13 +72,14 @@ class _CategoryList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final async = ref.watch(_categoryCountsProvider);
     return async.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('加载失败：$e')),
       data: (categories) {
         if (categories.isEmpty) {
-          return const Center(child: Text('暂无食材分类'));
+          return Center(child: Text('暂无分类', style: theme.textTheme.meta));
         }
         return ListView.separated(
           itemCount: categories.length,
@@ -81,8 +87,8 @@ class _CategoryList extends ConsumerWidget {
           itemBuilder: (context, i) {
             final c = categories[i];
             return ListTile(
-              title: Text(c.category),
-              subtitle: Text('${c.count} 种'),
+              title: Text(c.category, style: theme.textTheme.bodyLarge),
+              subtitle: Text('${c.count} 种', style: theme.textTheme.meta),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push(
                 Uri(
@@ -103,13 +109,14 @@ class _FoodSearchList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final async = ref.watch(_foodSearchProvider);
     return async.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('加载失败：$e')),
       data: (foods) {
         if (foods.isEmpty) {
-          return const Center(child: Text('没有找到食材'));
+          return Center(child: Text('没有找到食材', style: theme.textTheme.meta));
         }
         return ListView.separated(
           itemCount: foods.length,
@@ -117,9 +124,10 @@ class _FoodSearchList extends ConsumerWidget {
           itemBuilder: (context, i) {
             final f = foods[i];
             return ListTile(
-              title: Text(f.name),
+              title: Text(f.name, style: theme.textTheme.bodyLarge),
               subtitle: Text(
-                '${f.category} · ${f.kcalPer100.round()} kcal / 100g',
+                '${f.category} · ${f.kcalPer100.round()} kcal/100g',
+                style: theme.textTheme.meta,
               ),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push('/foods/${f.id}'),

@@ -7,6 +7,7 @@ import '../../domain/calorie_calculator.dart';
 import '../../domain/models.dart';
 import '../../domain/plateau.dart';
 import '../../providers/app_providers.dart';
+import '../theme/app_theme.dart';
 import 'deficit_date_picker.dart';
 
 class TodayPage extends ConsumerWidget {
@@ -24,6 +25,8 @@ class TodayPage extends ConsumerWidget {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final targets = profile.targets;
     final plan = ref.read(profileRepositoryProvider).buildPlan(profile);
     final remainCal = targets.calories - intake.calories;
@@ -79,7 +82,7 @@ class TodayPage extends ConsumerWidget {
                 Icon(
                   Icons.calendar_today_outlined,
                   size: 18,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: scheme.onSurfaceVariant,
                 ),
               ],
             ),
@@ -121,27 +124,31 @@ class TodayPage extends ConsumerWidget {
             )
           : null,
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.listPage,
+          8,
+          AppSpacing.listPage,
+          88,
+        ),
         children: [
           if (profile.goal == FitnessGoal.cut && plan.missingCutInputs)
             Card(
-              color: Theme.of(context).colorScheme.errorContainer,
+              color: scheme.errorContainer,
               child: ListTile(
                 leading: Icon(
                   Icons.warning_amber_rounded,
-                  color: Theme.of(context).colorScheme.onErrorContainer,
+                  color: scheme.onErrorContainer,
                 ),
                 title: Text(
-                  '还未按减脂速度计算',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onErrorContainer,
-                    fontWeight: FontWeight.w600,
+                  '减脂计划未完成',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: scheme.onErrorContainer,
                   ),
                 ),
                 subtitle: Text(
-                  '当前仍是临时估算（TDEE×80%）。请到「我的」填写目标体重与每周降重后保存。',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onErrorContainer,
+                  '请到「我的」填写目标体重与每周降重。',
+                  style: theme.textTheme.meta?.copyWith(
+                    color: scheme.onErrorContainer,
                   ),
                 ),
                 trailing: TextButton(
@@ -150,34 +157,28 @@ class TodayPage extends ConsumerWidget {
                 ),
               ),
             ),
-          if (onPlateau)
+          if (onPlateau) ...[
             Card(
-              color: Theme.of(context).colorScheme.secondaryContainer,
+              color: scheme.secondaryContainer,
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.card),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       '可能进入平台期',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSecondaryContainer,
-                          ),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: scheme.onSecondaryContainer,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '近 ${Plateau.days} 天体重变化小于 ${Plateau.maxKgChange} kg。'
-                      '建议温和调整，而不是大幅减热量。',
-                      style: TextStyle(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSecondaryContainer,
+                      '近 ${Plateau.days} 天体重几乎没变。可小幅减热量，或先加活动量。',
+                      style: theme.textTheme.meta?.copyWith(
+                        color: scheme.onSecondaryContainer,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.field),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -195,30 +196,25 @@ class TodayPage extends ConsumerWidget {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                        '已减少 100 kcal：日摄入 '
-                                        '${updated.targets.calories} kcal'
-                                        '（累计调整 −${updated.calorieAdjustment}）',
+                                        '已减 100 kcal，日摄入 '
+                                        '${updated.targets.calories} kcal',
                                       ),
                                     ),
                                   );
                                 },
                           child: Text(
-                            canCutMore
-                                ? '减少 100 kcal'
-                                : '已达调整上限',
+                            canCutMore ? '减少 100 kcal' : '已达调整上限',
                           ),
                         ),
                         OutlinedButton(
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text(
-                                  '试试每天多走约 3000 步，先从活动量突破平台期。',
-                                ),
+                                content: Text('可先每天多走约 3000 步。'),
                               ),
                             );
                           },
-                          child: const Text('增加每天约 3000 步'),
+                          child: const Text('多走约 3000 步'),
                         ),
                       ],
                     ),
@@ -226,46 +222,63 @@ class TodayPage extends ConsumerWidget {
                 ),
               ),
             ),
+            const SizedBox(height: AppSpacing.section),
+          ],
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.card),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     '$sectionPrefix热量',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: theme.textTheme.titleMedium,
                   ),
                   if (profile.goal == FitnessGoal.cut &&
                       !plan.missingCutInputs &&
                       plan.kgToLose != null &&
                       plan.weeklyLossKg != null) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
-                      '需减 ${plan.kgToLose!.toStringAsFixed(1)} kg · '
-                      '实际约 ${plan.weeklyLossKg!.toStringAsFixed(2)} kg/周'
-                      '${plan.goalWeeks != null ? ' · 约 ${plan.goalWeeks} 周' : ''}：'
-                      '日缺口 ${plan.dailyDeficit.round()} kcal → 日摄入 '
-                      '${plan.targets.calories} kcal',
-                      style: Theme.of(context).textTheme.bodySmall,
+                      '缺口 ${plan.dailyDeficit.round()} kcal · '
+                      '摄入 ${plan.targets.calories} kcal'
+                      '${plan.goalWeeks != null ? ' · 约 ${plan.goalWeeks} 周' : ''}',
+                      style: theme.textTheme.meta,
                     ),
                   ],
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.field),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        '${intake.calories.round()}',
+                        style: theme.textTheme.statValue,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '/ ${targets.calories} kcal',
+                        style: theme.textTheme.statUnit?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '剩 ${remainCal.round()}',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: remainCal < 0 ? scheme.error : scheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
                   _MacroBar(
                     label: '热量',
                     current: intake.calories,
                     target: targets.calories.toDouble(),
                     unit: 'kcal',
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '剩余 ${remainCal.round()} kcal',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: remainCal < 0
-                              ? Theme.of(context).colorScheme.error
-                              : null,
-                        ),
+                    color: scheme.primary,
+                    hideNumbers: true,
                   ),
                   const Divider(height: 28),
                   _MacroBar(
@@ -273,49 +286,45 @@ class TodayPage extends ConsumerWidget {
                     current: intake.proteinG,
                     target: targets.proteinG,
                     unit: 'g',
-                    color: const Color(0xFFD62828),
+                    color: AppColors.protein,
+                    remainLabel: '剩 ${remainP.toStringAsFixed(0)} g',
                   ),
-                  Text('剩余 ${remainP.toStringAsFixed(0)} g',
-                      style: Theme.of(context).textTheme.bodySmall),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.field),
                   _MacroBar(
                     label: '碳水',
                     current: intake.carbG,
                     target: targets.carbG,
                     unit: 'g',
-                    color: const Color(0xFF457B9D),
+                    color: AppColors.carb,
+                    remainLabel: '剩 ${remainC.toStringAsFixed(0)} g',
                   ),
-                  Text('剩余 ${remainC.toStringAsFixed(0)} g',
-                      style: Theme.of(context).textTheme.bodySmall),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.field),
                   _MacroBar(
                     label: '脂肪',
                     current: intake.fatG,
                     target: targets.fatG,
                     unit: 'g',
-                    color: const Color(0xFFE9C46A),
+                    color: AppColors.fat,
+                    remainLabel: '剩 ${remainF.toStringAsFixed(0)} g',
                   ),
-                  Text('剩余 ${remainF.toStringAsFixed(0)} g',
-                      style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          Text('$sectionPrefix记录', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.section),
+          Text('$sectionPrefix记录', style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
           mealsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Text('加载失败：$e'),
+            error: (e, _) => Text('加载失败：$e', style: theme.textTheme.meta),
             data: (meals) {
               if (meals.isEmpty) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  padding: const EdgeInsets.symmetric(vertical: 28),
                   child: Center(
                     child: Text(
-                      isSelectedToday
-                          ? '还没有记录，点右下角记一笔'
-                          : '当日无记录',
+                      isSelectedToday ? '还没有记录，点右下角记一笔' : '当日无记录',
+                      style: theme.textTheme.meta,
                     ),
                   ),
                 );
@@ -325,16 +334,26 @@ class TodayPage extends ConsumerWidget {
                   final type = MealType.values.byName(m.mealType);
                   final tile = ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(m.foodName),
-                    subtitle: Text(
-                      '${type.label} · ${m.grams.toStringAsFixed(0)} g · '
-                      '蛋白 ${m.proteinG.toStringAsFixed(0)}g · '
-                      '碳水 ${m.carbG.toStringAsFixed(0)}g · '
-                      '脂肪 ${m.fatG.toStringAsFixed(0)}g',
+                    title: Text(m.foodName, style: theme.textTheme.bodyLarge),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${type.label} · ${m.grams.toStringAsFixed(0)} g',
+                          style: theme.textTheme.meta,
+                        ),
+                        Text(
+                          'P ${m.proteinG.toStringAsFixed(0)} · '
+                          'C ${m.carbG.toStringAsFixed(0)} · '
+                          'F ${m.fatG.toStringAsFixed(0)}',
+                          style: theme.textTheme.meta,
+                        ),
+                      ],
                     ),
+                    isThreeLine: true,
                     trailing: Text(
-                      '${m.calories.round()} kcal',
-                      style: Theme.of(context).textTheme.titleSmall,
+                      '${m.calories.round()}',
+                      style: theme.textTheme.titleSmall,
                     ),
                     onTap: () => context.push('/meal/${m.id}'),
                   );
@@ -345,7 +364,7 @@ class TodayPage extends ConsumerWidget {
                     background: Container(
                       alignment: Alignment.centerRight,
                       padding: const EdgeInsets.only(right: 16),
-                      color: Theme.of(context).colorScheme.error,
+                      color: scheme.error,
                       child: const Icon(Icons.delete, color: Colors.white),
                     ),
                     onDismissed: (_) {
@@ -370,6 +389,8 @@ class _MacroBar extends StatelessWidget {
     required this.target,
     required this.unit,
     required this.color,
+    this.remainLabel,
+    this.hideNumbers = false,
   });
 
   final String label;
@@ -377,9 +398,12 @@ class _MacroBar extends StatelessWidget {
   final double target;
   final String unit;
   final Color color;
+  final String? remainLabel;
+  final bool hideNumbers;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final progress = target <= 0 ? 0.0 : (current / target).clamp(0.0, 1.5);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -387,14 +411,15 @@ class _MacroBar extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label),
-            Text(
-              '${current.round()} / ${target.round()} $unit',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            Text(label, style: theme.textTheme.titleSmall),
+            if (!hideNumbers)
+              Text(
+                '${current.round()} / ${target.round()} $unit',
+                style: theme.textTheme.meta,
+              ),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         ClipRRect(
           borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
@@ -406,6 +431,10 @@ class _MacroBar extends StatelessWidget {
             backgroundColor: color.withValues(alpha: 0.15),
           ),
         ),
+        if (remainLabel != null) ...[
+          const SizedBox(height: 4),
+          Text(remainLabel!, style: theme.textTheme.meta),
+        ],
       ],
     );
   }

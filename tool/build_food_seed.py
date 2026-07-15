@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-"""Build assets/food_seed.json from China food composition CSV + Open Food Facts.
+"""Build assets/food_seed.json from China food composition + Open Food Facts.
 
 Sources:
   - tool/data2026.csv (cn-food-mcp / China food composition style, MIT)
+  - tool/sanotsu_json/*.json (Sanotsu OCR of 中国食物成分表第6版; optional enricher)
   - Open Food Facts (ODbL) — Chinese-language or China/HK/TW products with per-100g macros
 
 Usage:
-  python3 tool/build_food_seed.py              # refresh OFF cache then merge
-  python3 tool/build_food_seed.py --offline    # CSV + existing cache only
+  python3 tool/build_food_seed.py                 # download OFF dump, filter, merge
+  python3 tool/build_food_seed.py --offline       # CSV + sanotsu + existing OFF cache
+  python3 tool/build_food_seed.py --source api    # paginate OFF search API instead
 """
 
 from __future__ import annotations
@@ -46,7 +48,79 @@ CATEGORY_RULES: list[tuple[str, list[str]]] = [
 ]
 
 HAN_RE = re.compile(r"[\u4e00-\u9fff]")
-UA = "FitnessPlanFoodImporter/1.0 (local; github.com/FitnessPlan)"
+
+SANOTSU_MAJOR_TO_CAT = {
+    "谷类及其制品": "谷类",
+    "薯类淀粉及其制品": "薯类",
+    "干豆类及其制品": "豆类",
+    "蔬菜类及其制品": "蔬菜",
+    "菌藻类": "菌藻",
+    "水果类及其制品": "水果",
+    "坚果种子类": "坚果",
+    "畜肉类及其制品": "畜肉",
+    "禽肉类及其制品": "禽肉",
+    "乳类及其制品": "乳类",
+    "蛋类及其制品": "蛋类",
+    "鱼虾蟹贝类": "水产",
+    "婴幼儿食品": "其他",
+    "小吃甜饼": "小吃",
+    "速食食品": "小吃",
+    "饮料类": "饮料",
+    "含酒精饮料": "饮料",
+    "油脂类": "油脂",
+    "动物油脂类": "油脂",
+    "植物油": "油脂",
+    "调味品类": "调味品",
+    "糖蜜饯类": "糖蜜饯",
+    "其他类": "其他",
+}
+
+
+def load_sanotsu(json_dir: Path) -> dict[str, dict]:
+    """Load OCR JSON from Sanotsu china-food-composition-data (optional enricher)."""
+    by_name: dict[str, dict] = {}
+    if not json_dir.is_dir():
+        return by_name
+    for path in sorted(json_dir.glob("*.json")):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if not isinstance(data, list):
+            continue
+        stem = path.stem
+        for prefix in ("merged_", "merged-"):
+            if stem.startswith(prefix):
+                stem = stem[len(prefix) :]
+                break
+        major = stem.split("-")[0]
+        cat = SANOTSU_MAJOR_TO_CAT.get(major, "其他")
+        for raw in data:
+            if not isinstance(raw, dict):
+                continue
+            name = str(raw.get("foodName") or "").strip()
+            if not name:
+                continue
+            kcal = parse_num(raw.get("energyKCal"))
+            protein = parse_num(raw.get("protein"))
+            carb = parse_num(raw.get("CHO"))
+            fat = parse_num(raw.get("fat"))
+            if None in (kcal, protein, carb, fat):
+                continue
+            assert kcal is not None and protein is not None and carb is not None and fat is not None
+            item = {
+                "name": name,
+                "category": cat,
+                "kcal": round(kcal, 1),
+                "protein": round(protein, 1),
+                "carb": round(carb, 1),
+                "fat": round(fat, 1),
+                "_src": "sanotsu",
+            }
+            prev = by_name.get(name)
+            if prev is None or nutrient_score(item) > nutrient_score(prev):
+                by_name[name] = item
+    return by_name
 OFF_FIELDS = ",".join(
     [
         "code",
@@ -456,24 +530,29 @@ def off_to_items(products: list[dict]) -> dict[str, dict]:
     return by_name
 
 
-def merge(cfct: dict[str, dict], off: dict[str, dict]) -> list[dict]:
-    # CFCT wins on name conflict.
-    merged = dict(off)
-    merged.update(cfct)
-    foods: list[dict] = []
-    for item in merged.values():
-        foods.append(
-            {
-                "name": item["name"],
-                "category": item["category"],
-                "kcal": item["kcal"],
-                "protein": item["protein"],
-                "carb": item["carb"],
-                "fat": item["fat"],
-            }
-        )
+def merge_priority(*sources: dict[str, dict]) -> list[dict]:
+    """Later sources win on name conflict (caller passes OFF first, then Sanotsu, then CFCT)."""
+    merged: dict[str, dict] = {}
+    for src in sources:
+        merged.update(src)
+    foods = [
+        {
+            "name": item["name"],
+            "category": item["category"],
+            "kcal": item["kcal"],
+            "protein": item["protein"],
+            "carb": item["carb"],
+            "fat": item["fat"],
+        }
+        for item in merged.values()
+    ]
     foods.sort(key=lambda x: (x["category"], x["name"]))
     return foods
+
+
+def merge(cfct: dict[str, dict], off: dict[str, dict]) -> list[dict]:
+    # CFCT wins on name conflict.
+    return merge_priority(off, cfct)
 
 
 def main() -> None:
@@ -492,6 +571,12 @@ def main() -> None:
         choices=("dump", "api"),
         default="dump",
         help="How to refresh OFF cache (default: official CSV dump)",
+    )
+    parser.add_argument(
+        "--sanotsu",
+        type=Path,
+        default=ROOT / "tool" / "sanotsu_json",
+        help="Optional Sanotsu CFCT OCR JSON directory",
     )
     parser.add_argument(
         "--force-download",
@@ -513,14 +598,17 @@ def main() -> None:
         else:
             refresh_off_cache_via_api(args.cache)
     elif not args.cache.exists():
-        raise SystemExit(f"--offline but missing cache: {args.cache}")
+        print(f"WARN: no OFF cache at {args.cache}; building without OFF")
 
     cfct = load_cfct(args.csv)
     print(f"CFCT foods: {len(cfct)}")
-    off_raw = load_off_cache(args.cache)
+    sanotsu = load_sanotsu(args.sanotsu) if args.sanotsu else {}
+    print(f"Sanotsu foods: {len(sanotsu)}")
+    off_raw = load_off_cache(args.cache) if args.cache.exists() else []
     off = off_to_items(off_raw)
     print(f"OFF eligible (Chinese + macros): {len(off)}")
-    foods = merge(cfct, off)
+    # Priority: OFF < Sanotsu < CFCT CSV (CSV wins collisions)
+    foods = merge_priority(off, sanotsu, cfct)
     packaged = sum(1 for f in foods if f["category"] == "包装食品")
     print(f"merged unique: {len(foods)} (包装食品={packaged})")
 

@@ -7,7 +7,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fitness_plan/data/db.dart';
 import 'package:fitness_plan/data/repositories/food_repository.dart';
-import 'package:fitness_plan/data/tables.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

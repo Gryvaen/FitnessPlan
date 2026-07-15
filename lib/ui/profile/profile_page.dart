@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/calorie_calculator.dart';
 import '../../domain/models.dart';
 import '../../providers/app_providers.dart';
+import '../theme/app_theme.dart';
 import '../widgets/calorie_breakdown.dart';
 import '../widgets/form_options.dart';
 
@@ -150,50 +151,72 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               child: Center(
                 child: Text(
                   hint,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                  style: Theme.of(context).textTheme.meta,
                 ),
               ),
             ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.formPage),
         children: [
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.card),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('当前每日配额',
                       style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 8),
-                  Text('${profile.targets.calories} kcal'),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        '${profile.targets.calories}',
+                        style: Theme.of(context).textTheme.statValue,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'kcal',
+                        style: Theme.of(context).textTheme.statUnit?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
                   Text(
-                    '蛋白 ${profile.targets.proteinG.toStringAsFixed(0)}g · '
-                    '碳水 ${profile.targets.carbG.toStringAsFixed(0)}g · '
-                    '脂肪 ${profile.targets.fatG.toStringAsFixed(0)}g',
+                    'P ${profile.targets.proteinG.toStringAsFixed(0)} · '
+                    'C ${profile.targets.carbG.toStringAsFixed(0)} · '
+                    'F ${profile.targets.fatG.toStringAsFixed(0)}',
+                    style: Theme.of(context).textTheme.meta,
                   ),
                   if (profile.goal == FitnessGoal.cut &&
                       profile.dailyDeficit != null) ...[
                     const SizedBox(height: 4),
                     Text(
-                      '日缺口约 ${profile.dailyDeficit!.round()} kcal'
+                      '缺口 ${profile.dailyDeficit!.round()} kcal'
                       '${profile.weeklyLossKg != null ? ' · ${profile.weeklyLossKg!.toStringAsFixed(1)} kg/周' : ''}'
-                      '${profile.goalWeeks != null ? ' · 预计 ${profile.goalWeeks} 周' : ''}',
+                      '${profile.goalWeeks != null ? ' · 约 ${profile.goalWeeks} 周' : ''}',
+                      style: Theme.of(context).textTheme.meta,
                     ),
                   ],
                   if (profile.calorieAdjustment > 0) ...[
                     const SizedBox(height: 4),
-                    Text('平台期调整 −${profile.calorieAdjustment} kcal'),
+                    Text(
+                      '平台期 −${profile.calorieAdjustment} kcal',
+                      style: Theme.of(context).textTheme.meta,
+                    ),
                   ],
                   const SizedBox(height: 8),
                   ExpansionTile(
                     tilePadding: EdgeInsets.zero,
                     title: Text(
-                      '查看计算方法',
+                      '计算方法',
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                     children: [CalorieBreakdown(plan: plan, compact: true)],
@@ -202,8 +225,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               ),
             ),
           ),
-          const SizedBox(height: 20),
-          Text('性别', style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: AppSpacing.section),
+          Text('性别', style: Theme.of(context).textTheme.fieldLabel),
           const SizedBox(height: 8),
           SegmentedButton<Sex>(
             segments: const [
@@ -213,7 +236,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             selected: {_sex},
             onSelectionChanged: (s) => _update(() => _sex = s.first),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.section),
           AppDropdown<int>(
             label: '年龄',
             value: FormOptions.snapInt(FormOptions.ages(), _age),
@@ -221,7 +244,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             suffixText: '岁',
             onChanged: (v) => _update(() => _age = v),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.field),
           AppDropdown<int>(
             label: '身高',
             value: FormOptions.snapInt(FormOptions.heightsCm(), _heightCm),
@@ -229,7 +252,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             suffixText: 'cm',
             onChanged: (v) => _update(() => _heightCm = v),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.field),
           AppDropdown<double>(
             label: '当前体重',
             value: FormOptions.snapDouble(FormOptions.weightsKg(), _weightKg),
@@ -244,7 +267,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               }
             }),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.section),
           AppDropdown<ActivityLevel>(
             label: '日常活动等级',
             value: _activity,
@@ -252,7 +275,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             itemLabel: (e) => e.label,
             onChanged: (v) => _update(() => _activity = v),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.section),
           AppDropdown<FitnessGoal>(
             label: '目标',
             value: _goal,
@@ -261,7 +284,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             onChanged: (v) => _update(() => _goal = v),
           ),
           if (_goal == FitnessGoal.cut) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.section),
             AppDropdown<double>(
               label: '目标体重',
               value: targetValue,
@@ -270,7 +293,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               itemLabel: formatKg,
               onChanged: (v) => _update(() => _targetWeightKg = v),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.field),
             AppDropdown<double>(
               label: '每周目标降重',
               value: FormOptions.snapDouble(

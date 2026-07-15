@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../domain/calorie_calculator.dart';
 import '../../domain/models.dart';
 import '../../providers/app_providers.dart';
+import '../theme/app_theme.dart';
 import '../widgets/form_options.dart';
 
 class OnboardingPage extends ConsumerStatefulWidget {
@@ -67,10 +68,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           title: const Text('每日配额已算出'),
           content: Text(
             '${profile.targets.calories} kcal\n'
-            '蛋白 ${profile.targets.proteinG.toStringAsFixed(0)} g · '
-            '碳水 ${profile.targets.carbG.toStringAsFixed(0)} g · '
-            '脂肪 ${profile.targets.fatG.toStringAsFixed(0)} g\n\n'
-            '详细计算过程可在「我的」中查看。',
+            'P ${profile.targets.proteinG.toStringAsFixed(0)} · '
+            'C ${profile.targets.carbG.toStringAsFixed(0)} · '
+            'F ${profile.targets.fatG.toStringAsFixed(0)}\n\n'
+            '详情可在「我的」查看。',
           ),
           actions: [
             TextButton(
@@ -96,14 +97,14 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       appBar: AppBar(title: const Text('建立身体档案')),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(AppSpacing.formPage),
           children: [
             Text(
-              '按身体数据建立减脂能量模型：BMR → TDEE → 周降重 → 三大营养素',
+              '填写身体数据，生成每日热量与营养配额。',
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 24),
-            Text('性别', style: Theme.of(context).textTheme.titleSmall),
+            Text('性别', style: Theme.of(context).textTheme.fieldLabel),
             const SizedBox(height: 8),
             SegmentedButton<Sex>(
               segments: const [
@@ -113,7 +114,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               selected: {_sex},
               onSelectionChanged: (s) => setState(() => _sex = s.first),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.section),
             AppDropdown<int>(
               label: '年龄',
               value: FormOptions.snapInt(FormOptions.ages(), _age),
@@ -121,7 +122,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               suffixText: '岁',
               onChanged: (v) => setState(() => _age = v),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.field),
             AppDropdown<int>(
               label: '身高',
               value: FormOptions.snapInt(FormOptions.heightsCm(), _heightCm),
@@ -129,7 +130,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               suffixText: 'cm',
               onChanged: (v) => setState(() => _heightCm = v),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.field),
             AppDropdown<double>(
               label: '当前体重',
               value: FormOptions.snapDouble(FormOptions.weightsKg(), _weightKg),
@@ -144,7 +145,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 }
               }),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.section),
             AppDropdown<ActivityLevel>(
               label: '日常活动等级',
               value: _activity,
@@ -152,7 +153,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               itemLabel: (e) => e.label,
               onChanged: (v) => setState(() => _activity = v),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.section),
             AppDropdown<FitnessGoal>(
               label: '目标',
               value: _goal,
@@ -161,7 +162,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               onChanged: (v) => setState(() => _goal = v),
             ),
             if (_goal == FitnessGoal.cut) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.section),
               AppDropdown<double>(
                 label: '目标体重',
                 value: targetValue,
@@ -170,7 +171,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 itemLabel: formatKg,
                 onChanged: (v) => setState(() => _targetWeightKg = v),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.field),
               AppDropdown<double>(
                 label: '每周目标降重',
                 value: FormOptions.snapDouble(

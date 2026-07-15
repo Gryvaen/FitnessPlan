@@ -190,45 +190,41 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '实际日缺口 = 日缺口 ${widget.plannedDeficit.round()} + 剩余热量',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+              '实际缺口 = 计划 ${widget.plannedDeficit.round()} + 剩余热量',
+              style: theme.textTheme.labelSmall,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             _LegendSection(
               title: '颜色',
               children: [
-                _LegendDot(color: _okGreen, label: '过去 · 达标（≥日缺口）'),
-                _LegendDot(color: _badRed, label: '过去 · 未达标（<日缺口）'),
+                _LegendDot(color: _okGreen, label: '过去 · 达标'),
+                _LegendDot(color: _badRed, label: '过去 · 未达标'),
                 _LegendDot(
                   color: theme.colorScheme.onSurfaceVariant,
-                  label: '今天 · 进行中（不判绿红）',
+                  label: '今天 · 进行中',
                 ),
               ],
             ),
             if (widget.calorieStandardSince != null) ...[
               const SizedBox(height: 12),
               _LegendSection(
-                title: '热量标准变更',
+                title: '标准变更',
                 children: [
                   _LegendLine(
                     leading: Text(
                       '|',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: theme.textTheme.titleSmall,
                     ),
-                    label: '生效日左侧竖线',
+                    label: '竖线＝新标准生效日',
                   ),
                   const _LegendLine(
                     leading: Icon(Icons.circle_outlined, size: 10),
-                    label: '生效日之前：有记录只显示中性数字',
+                    label: '生效前：中性数字',
                   ),
                   const _LegendLine(
                     leading: Icon(Icons.circle_outlined, size: 10),
-                    label: '生效日及之后：过去绿/红，今天中性',
+                    label: '生效后：过去绿/红',
                   ),
                 ],
               ),
@@ -239,13 +235,7 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
                 for (final w in ['一', '二', '三', '四', '五', '六', '日'])
                   Expanded(
                     child: Center(
-                      child: Text(
-                        w,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      child: Text(w, style: theme.textTheme.labelSmall),
                     ),
                   ),
               ],
@@ -488,8 +478,7 @@ class _DayCell extends StatelessWidget {
               children: [
                 Text(
                   '${date.day}',
-                  style: TextStyle(
-                    fontSize: 13,
+                  style: theme.textTheme.labelMedium?.copyWith(
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     color: fg,
                   ),
@@ -498,11 +487,11 @@ class _DayCell extends StatelessWidget {
                   const SizedBox(height: 1),
                   Text(
                     '${actual.round()}',
-                    style: TextStyle(
-                      fontSize: 9,
+                    style: theme.textTheme.labelSmall?.copyWith(
                       height: 1.1,
                       fontWeight: FontWeight.w600,
                       color: fg,
+                      fontSize: 10,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.clip,
