@@ -26,24 +26,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   double _weeklyLossKg = CalorieCalculator.defaultWeeklyLoss;
   bool _saving = false;
 
-  String? _estimatedWeeksLabel() {
-    if (_goal != FitnessGoal.cut) return null;
-    if (_targetWeightKg >= _weightKg || _weeklyLossKg <= 0) return null;
-    final rate = CalorieCalculator.clampWeeklyLoss(_weeklyLossKg).$1;
-    final weeks = ((_weightKg - _targetWeightKg) / rate).ceil();
-    return '预计约 $weeks 周（按 ${rate.toStringAsFixed(1)} kg/周）';
-  }
-
-  List<double> get _targetOptions {
-    final opts = FormOptions.targetWeightsKg(_weightKg);
-    if (opts.isEmpty) return FormOptions.weightsKg(min: 30, max: 40);
-    return opts;
-  }
-
   Future<void> _showResultAndSave() async {
     setState(() => _saving = true);
     try {
-      final targetOptions = _targetOptions;
+      final targetOptions = FormOptions.cutTargetOptions(_weightKg);
       var target = FormOptions.snapDouble(targetOptions, _targetWeightKg);
       if (target >= _weightKg && targetOptions.isNotEmpty) {
         target = targetOptions.last;
@@ -82,6 +68,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         ),
       );
       if (mounted) context.go('/today');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('保存失败：$e')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -89,8 +81,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
-    final weeksHint = _estimatedWeeksLabel();
-    final targetOptions = _targetOptions;
+    final weeksHint = FormOptions.estimatedCutWeeksLabel(
+      goal: _goal,
+      weightKg: _weightKg,
+      targetWeightKg: _targetWeightKg,
+      weeklyLossKg: _weeklyLossKg,
+    );
+    final targetOptions = FormOptions.cutTargetOptions(_weightKg);
     final targetValue = FormOptions.snapDouble(targetOptions, _targetWeightKg);
 
     return Scaffold(

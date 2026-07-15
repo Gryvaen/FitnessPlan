@@ -36,31 +36,80 @@ class WeightPage extends ConsumerStatefulWidget {
 class _WeightPageState extends ConsumerState<WeightPage> {
   Future<void> _addWeight() async {
     final profile = ref.read(profileProvider);
+    final memory = ref.read(formMemoryRepositoryProvider);
+    final extras =
+        memory.hasWeightExtrasMemory ? memory.loadWeightExtras() : null;
     final draft = await showDialog<_WeightLogDraft>(
       context: context,
       builder: (ctx) => _WeightLogDialog(
         initialWeightKg: profile?.weightKg ?? 70,
+        initialBodyFatPct: extras?.bodyFatPct,
+        initialExerciseMinutes: extras?.exerciseMinutes,
+        onExtrasChanged: (bodyFatPct, exerciseMinutes) {
+          memory.saveWeightExtras(
+            bodyFatPct: bodyFatPct,
+            exerciseMinutes: exerciseMinutes,
+          );
+        },
       ),
     );
     if (draft == null || !mounted) return;
 
-    await ref.read(weightRepositoryProvider).add(
-          date: DateTime.now(),
-          weightKg: draft.weightKg,
-          bodyFatPct: draft.bodyFatPct,
-          exerciseMinutes: draft.exerciseMinutes,
-        );
-    final updated = await ref
-        .read(profileProvider.notifier)
-        .applyLatestWeight(draft.weightKg);
-    if (!mounted) return;
-    if (updated != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '已记体重，日摄入 ${updated.targets.calories} kcal',
+    try {
+      await ref.read(weightRepositoryProvider).add(
+            date: DateTime.now(),
+            weightKg: draft.weightKg,
+            bodyFatPct: draft.bodyFatPct,
+            exerciseMinutes: draft.exerciseMinutes,
+          );
+      final updated = await ref
+          .read(profileProvider.notifier)
+          .applyLatestWeight(draft.weightKg);
+      if (!mounted) return;
+      if (updated != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '已记体重，日摄入 ${updated.targets.calories} kcal',
+            ),
           ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('保存失败：$e')),
+      );
+    }
+  }
+
+  Future<void> _confirmDelete(WeightLog log) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('删除记录'),
+        content: Text(
+          '确定删除 ${DateFormat('yyyy-MM-dd').format(log.date)} 的体重记录？',
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await ref.read(weightRepositoryProvider).delete(log.id);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('删除失败：$e')),
       );
     }
   }
@@ -151,6 +200,7 @@ class _WeightPageState extends ConsumerState<WeightPage> {
               const SizedBox(height: 8),
               ...logs.reversed.map(
                 (log) => ListTile(
+                  key: ValueKey(log.id),
                   contentPadding: EdgeInsets.zero,
                   title: Text(
                     '${log.weightKg.toStringAsFixed(1)} kg',
@@ -162,8 +212,8 @@ class _WeightPageState extends ConsumerState<WeightPage> {
                   ),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete_outline),
-                    onPressed: () =>
-                        ref.read(weightRepositoryProvider).delete(log.id),
+                    tooltip: '删除',
+                    onPressed: () => _confirmDelete(log),
                   ),
                 ),
               ),
@@ -281,9 +331,17 @@ class _SeriesChartCard extends StatelessWidget {
 
 /// Owns dialog state; fields use dropdowns (no TextEditingController).
 class _WeightLogDialog extends StatefulWidget {
-  const _WeightLogDialog({required this.initialWeightKg});
+  const _WeightLogDialog({
+    required this.initialWeightKg,
+    this.initialBodyFatPct,
+    this.initialExerciseMinutes,
+    required this.onExtrasChanged,
+  });
 
   final double initialWeightKg;
+  final double? initialBodyFatPct;
+  final int? initialExerciseMinutes;
+  final void Function(double? bodyFatPct, int? exerciseMinutes) onExtrasChanged;
 
   @override
   State<_WeightLogDialog> createState() => _WeightLogDialogState();
@@ -301,6 +359,18 @@ class _WeightLogDialogState extends State<_WeightLogDialog> {
       FormOptions.weightsKg(),
       widget.initialWeightKg,
     );
+    final bodyFat = widget.initialBodyFatPct;
+    _bodyFatPct = bodyFat == null
+        ? null
+        : FormOptions.snapDouble(FormOptions.bodyFatPct(), bodyFat);
+    final minutes = widget.initialExerciseMinutes;
+    _exerciseMinutes = minutes == null
+        ? null
+        : FormOptions.snapInt(FormOptions.exerciseMinutes, minutes);
+  }
+
+  void _persistExtras() {
+    widget.onExtrasChanged(_bodyFatPct, _exerciseMinutes);
   }
 
   void _submit() {
@@ -337,7 +407,10 @@ class _WeightLogDialogState extends State<_WeightLogDialog> {
               items: FormOptions.bodyFatPct(),
               suffixText: '%',
               itemLabel: (v) => v.toStringAsFixed(1),
-              onChanged: (v) => setState(() => _bodyFatPct = v),
+              onChanged: (v) {
+                setState(() => _bodyFatPct = v);
+                _persistExtras();
+              },
             ),
             const SizedBox(height: 12),
             AppOptionalDropdown<int>(
@@ -346,7 +419,10 @@ class _WeightLogDialogState extends State<_WeightLogDialog> {
               items: FormOptions.exerciseMinutes,
               suffixText: '分钟',
               helperText: '当天累计运动时长',
-              onChanged: (v) => setState(() => _exerciseMinutes = v),
+              onChanged: (v) {
+                setState(() => _exerciseMinutes = v);
+                _persistExtras();
+              },
             ),
           ],
         ),

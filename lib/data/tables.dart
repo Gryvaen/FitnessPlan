@@ -15,6 +15,14 @@ class FoodItems extends Table {
       ];
 }
 
+class FavoriteFoods extends Table {
+  IntColumn get foodId => integer()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {foodId};
+}
+
 class WeightLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get date => dateTime()();

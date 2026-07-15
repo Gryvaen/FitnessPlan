@@ -468,6 +468,207 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
   }
 }
 
+class $FavoriteFoodsTable extends FavoriteFoods
+    with TableInfo<$FavoriteFoodsTable, FavoriteFood> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FavoriteFoodsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _foodIdMeta = const VerificationMeta('foodId');
+  @override
+  late final GeneratedColumn<int> foodId = GeneratedColumn<int>(
+    'food_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [foodId, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'favorite_foods';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FavoriteFood> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('food_id')) {
+      context.handle(
+        _foodIdMeta,
+        foodId.isAcceptableOrUnknown(data['food_id']!, _foodIdMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {foodId};
+  @override
+  FavoriteFood map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FavoriteFood(
+      foodId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}food_id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $FavoriteFoodsTable createAlias(String alias) {
+    return $FavoriteFoodsTable(attachedDatabase, alias);
+  }
+}
+
+class FavoriteFood extends DataClass implements Insertable<FavoriteFood> {
+  final int foodId;
+  final DateTime createdAt;
+  const FavoriteFood({required this.foodId, required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['food_id'] = Variable<int>(foodId);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  FavoriteFoodsCompanion toCompanion(bool nullToAbsent) {
+    return FavoriteFoodsCompanion(
+      foodId: Value(foodId),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory FavoriteFood.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FavoriteFood(
+      foodId: serializer.fromJson<int>(json['foodId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'foodId': serializer.toJson<int>(foodId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  FavoriteFood copyWith({int? foodId, DateTime? createdAt}) => FavoriteFood(
+    foodId: foodId ?? this.foodId,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  FavoriteFood copyWithCompanion(FavoriteFoodsCompanion data) {
+    return FavoriteFood(
+      foodId: data.foodId.present ? data.foodId.value : this.foodId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FavoriteFood(')
+          ..write('foodId: $foodId, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(foodId, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FavoriteFood &&
+          other.foodId == this.foodId &&
+          other.createdAt == this.createdAt);
+}
+
+class FavoriteFoodsCompanion extends UpdateCompanion<FavoriteFood> {
+  final Value<int> foodId;
+  final Value<DateTime> createdAt;
+  const FavoriteFoodsCompanion({
+    this.foodId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  FavoriteFoodsCompanion.insert({
+    this.foodId = const Value.absent(),
+    required DateTime createdAt,
+  }) : createdAt = Value(createdAt);
+  static Insertable<FavoriteFood> custom({
+    Expression<int>? foodId,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (foodId != null) 'food_id': foodId,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  FavoriteFoodsCompanion copyWith({
+    Value<int>? foodId,
+    Value<DateTime>? createdAt,
+  }) {
+    return FavoriteFoodsCompanion(
+      foodId: foodId ?? this.foodId,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (foodId.present) {
+      map['food_id'] = Variable<int>(foodId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FavoriteFoodsCompanion(')
+          ..write('foodId: $foodId, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $WeightLogsTable extends WeightLogs
     with TableInfo<$WeightLogsTable, WeightLog> {
   @override
@@ -1634,6 +1835,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $FoodItemsTable foodItems = $FoodItemsTable(this);
+  late final $FavoriteFoodsTable favoriteFoods = $FavoriteFoodsTable(this);
   late final $WeightLogsTable weightLogs = $WeightLogsTable(this);
   late final $MealEntriesTable mealEntries = $MealEntriesTable(this);
   late final $AppMetaTable appMeta = $AppMetaTable(this);
@@ -1643,6 +1845,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     foodItems,
+    favoriteFoods,
     weightLogs,
     mealEntries,
     appMeta,
@@ -1879,6 +2082,141 @@ typedef $$FoodItemsTableProcessedTableManager =
       $$FoodItemsTableUpdateCompanionBuilder,
       (FoodItem, BaseReferences<_$AppDatabase, $FoodItemsTable, FoodItem>),
       FoodItem,
+      PrefetchHooks Function()
+    >;
+typedef $$FavoriteFoodsTableCreateCompanionBuilder =
+    FavoriteFoodsCompanion Function({
+      Value<int> foodId,
+      required DateTime createdAt,
+    });
+typedef $$FavoriteFoodsTableUpdateCompanionBuilder =
+    FavoriteFoodsCompanion Function({
+      Value<int> foodId,
+      Value<DateTime> createdAt,
+    });
+
+class $$FavoriteFoodsTableFilterComposer
+    extends Composer<_$AppDatabase, $FavoriteFoodsTable> {
+  $$FavoriteFoodsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get foodId => $composableBuilder(
+    column: $table.foodId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$FavoriteFoodsTableOrderingComposer
+    extends Composer<_$AppDatabase, $FavoriteFoodsTable> {
+  $$FavoriteFoodsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get foodId => $composableBuilder(
+    column: $table.foodId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FavoriteFoodsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FavoriteFoodsTable> {
+  $$FavoriteFoodsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get foodId =>
+      $composableBuilder(column: $table.foodId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$FavoriteFoodsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FavoriteFoodsTable,
+          FavoriteFood,
+          $$FavoriteFoodsTableFilterComposer,
+          $$FavoriteFoodsTableOrderingComposer,
+          $$FavoriteFoodsTableAnnotationComposer,
+          $$FavoriteFoodsTableCreateCompanionBuilder,
+          $$FavoriteFoodsTableUpdateCompanionBuilder,
+          (
+            FavoriteFood,
+            BaseReferences<_$AppDatabase, $FavoriteFoodsTable, FavoriteFood>,
+          ),
+          FavoriteFood,
+          PrefetchHooks Function()
+        > {
+  $$FavoriteFoodsTableTableManager(_$AppDatabase db, $FavoriteFoodsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FavoriteFoodsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FavoriteFoodsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FavoriteFoodsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> foodId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) =>
+                  FavoriteFoodsCompanion(foodId: foodId, createdAt: createdAt),
+          createCompanionCallback:
+              ({
+                Value<int> foodId = const Value.absent(),
+                required DateTime createdAt,
+              }) => FavoriteFoodsCompanion.insert(
+                foodId: foodId,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$FavoriteFoodsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FavoriteFoodsTable,
+      FavoriteFood,
+      $$FavoriteFoodsTableFilterComposer,
+      $$FavoriteFoodsTableOrderingComposer,
+      $$FavoriteFoodsTableAnnotationComposer,
+      $$FavoriteFoodsTableCreateCompanionBuilder,
+      $$FavoriteFoodsTableUpdateCompanionBuilder,
+      (
+        FavoriteFood,
+        BaseReferences<_$AppDatabase, $FavoriteFoodsTable, FavoriteFood>,
+      ),
+      FavoriteFood,
       PrefetchHooks Function()
     >;
 typedef $$WeightLogsTableCreateCompanionBuilder =
@@ -2501,6 +2839,8 @@ class $AppDatabaseManager {
   $AppDatabaseManager(this._db);
   $$FoodItemsTableTableManager get foodItems =>
       $$FoodItemsTableTableManager(_db, _db.foodItems);
+  $$FavoriteFoodsTableTableManager get favoriteFoods =>
+      $$FavoriteFoodsTableTableManager(_db, _db.favoriteFoods);
   $$WeightLogsTableTableManager get weightLogs =>
       $$WeightLogsTableTableManager(_db, _db.weightLogs);
   $$MealEntriesTableTableManager get mealEntries =>

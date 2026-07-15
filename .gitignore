@@ -46,8 +46,11 @@ app.*.map.json
 
 # Local release artifacts (upload to GitHub Releases, do not commit)
 /dist/
+/dist/symbols/
 
 # Open Food Facts fetch cache / dump (regenerate via tool/build_food_seed.py)
 /tool/off_zh_cache.jsonl
 /tool/off_products.csv.gz
 /tool/off_products.csv.gz.part
+/tool/off_products.csv.gz.parts/
+/tool/off_products.csv.gz.assembling

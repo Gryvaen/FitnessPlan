@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Build assets/food_seed.json from China food composition + Open Food Facts.
 
+Final seed contains only entries whose display name includes Chinese (Han) characters.
+
 Sources:
   - tool/data2026.csv (cn-food-mcp / China food composition style, MIT)
   - tool/sanotsu_json/*.json (Sanotsu OCR of 中国食物成分表第6版; optional enricher)
-  - Open Food Facts (ODbL) — Chinese-language or China/HK/TW products with per-100g macros
+  - Open Food Facts (ODbL) — Chinese-named China/HK/TW products with per-100g macros
 
 Usage:
   python3 tool/build_food_seed.py                 # download OFF dump, filter, merge
@@ -26,7 +28,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-# Shared with convert_cn_food_csv.py — first match wins.
+# Category rules — first match wins.
 CATEGORY_RULES: list[tuple[str, list[str]]] = [
     ("禽肉", ["鸡", "鸭", "鹅", "鸽", "鹌鹑", "火鸡", "禽"]),
     ("畜肉", ["猪", "牛", "羊", "兔", "马", "驴", "鹿", "骆驼", "狗肉", "肉松", "火腿", "香肠", "腊肉", "培根", "蹄膀", "肘子", "排骨", "里脊", "五花", "瘦肉", "肥肉", "腱子", "腰花", "肝", "心", "肺", "肾", "肚", "肠", "血豆腐", "肉"]),
@@ -48,6 +50,7 @@ CATEGORY_RULES: list[tuple[str, list[str]]] = [
 ]
 
 HAN_RE = re.compile(r"[\u4e00-\u9fff]")
+UA = "FitnessPlanFoodImporter/1.0 (local; FitnessPlan)"
 
 SANOTSU_MAJOR_TO_CAT = {
     "谷类及其制品": "谷类",
@@ -229,6 +232,29 @@ OFF_DUMP_URL = (
 OFF_DUMP_PATH = ROOT / "tool" / "off_products.csv.gz"
 
 
+def _dump_ok(dump_path: Path) -> bool:
+    import gzip
+    import subprocess
+
+    if not dump_path.exists() or dump_path.stat().st_size < 100_000_000:
+        return False
+    try:
+        # Fast integrity check
+        r = subprocess.run(
+            ["gzip", "-t", str(dump_path)],
+            capture_output=True,
+            check=False,
+        )
+        return r.returncode == 0
+    except OSError:
+        try:
+            with gzip.open(dump_path, "rb") as f:
+                f.read(1024)
+            return True
+        except OSError:
+            return False
+
+
 def _download_file(url: str, dest: Path) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(dest.suffix + ".part")
@@ -290,11 +316,18 @@ def refresh_off_cache_from_dump(
     force_download: bool = False,
 ) -> int:
     import gzip
+    import sys
 
     if force_download or not dump_path.exists():
         _download_file(OFF_DUMP_URL, dump_path)
     else:
         print(f"using existing dump {dump_path}")
+
+    # OFF rows can embed huge ingredient/image fields.
+    try:
+        csv.field_size_limit(sys.maxsize)
+    except OverflowError:
+        csv.field_size_limit(10 * 1024 * 1024)
 
     by_code: dict[str, dict] = {}
     scanned = 0
@@ -302,18 +335,22 @@ def refresh_off_cache_from_dump(
     print("streaming dump for Chinese-related products …")
     with gzip.open(dump_path, "rt", encoding="utf-8", errors="replace") as f:
         reader = csv.DictReader(f, delimiter="\t")
-        for row in reader:
-            scanned += 1
-            if scanned % 200_000 == 0:
-                print(f"  scanned {scanned:,}, kept {kept:,}")
-            if not _csv_row_relevant(row):
-                continue
-            product = _csv_row_to_product(row)
-            code = product["code"]
-            if not code:
-                continue
-            by_code[code] = product
-            kept = len(by_code)
+        try:
+            for row in reader:
+                scanned += 1
+                if scanned % 200_000 == 0:
+                    print(f"  scanned {scanned:,}, kept {kept:,}")
+                if not _csv_row_relevant(row):
+                    continue
+                product = _csv_row_to_product(row)
+                code = product["code"]
+                if not code:
+                    continue
+                by_code[code] = product
+                kept = len(by_code)
+        except (EOFError, OSError, csv.Error) as e:
+            # Incomplete gzip (download interrupted) or oversized field mid-stream.
+            print(f"WARN: dump stream stopped early ({e}); keeping {kept:,} products so far")
 
     _write_cache(cache_path, by_code)
     print(f"dump filter done: scanned {scanned:,}, cache {len(by_code):,} → {cache_path}")
@@ -437,17 +474,37 @@ def load_off_cache(cache_path: Path) -> list[dict]:
     return items
 
 
-def pick_chinese_name(product: dict) -> str | None:
+def pick_product_name(product: dict) -> str | None:
+    """Prefer a Chinese name; otherwise any non-empty product name from OFF cache.
+
+    Cache rows are already filtered to zh-language / China-HK-TW markets, so
+    English packaging names are still useful without per-barcode API calls.
+    """
     candidates = [
         product.get("product_name_zh"),
         product.get("product_name"),
     ]
+    han: str | None = None
+    any_name: str | None = None
     for raw in candidates:
         if not raw or not isinstance(raw, str):
             continue
         name = " ".join(raw.split()).strip()
-        if name and HAN_RE.search(name):
-            return name
+        if not name:
+            continue
+        if any_name is None:
+            any_name = name
+        if HAN_RE.search(name):
+            han = name
+            break
+    return han or any_name
+
+
+def pick_chinese_name(product: dict) -> str | None:
+    """Backward-compatible alias used by enrich — Chinese (Han) only. """
+    name = pick_product_name(product)
+    if name and HAN_RE.search(name):
+        return name
     return None
 
 
@@ -493,6 +550,103 @@ def off_macros(product: dict) -> tuple[float, float, float, float] | None:
     return (round(kcal, 1), round(protein, 1), round(carb, 1), round(fat, 1))
 
 
+def enrich_off_cache_macros(cache_path: Path, *, max_fetch: int = 3000) -> int:
+    """Fill missing per-100g macros via OFF product API for Chinese-named rows."""
+    products = load_off_cache(cache_path)
+    by_code: dict[str, dict] = {}
+    for p in products:
+        code = str(p.get("code") or "").strip()
+        if code:
+            by_code[code] = p
+
+    todo: list[str] = []
+    for code, p in by_code.items():
+        if pick_chinese_name(p) is None:
+            continue
+        if off_macros(p) is not None:
+            continue
+        todo.append(code)
+        if len(todo) >= max_fetch:
+            break
+
+    if not todo:
+        print("OFF enrich: nothing to fetch")
+        return 0
+
+    print(f"OFF enrich: fetching macros for {len(todo)} Chinese-named products …")
+    updated = 0
+    for i, code in enumerate(todo, start=1):
+        url = (
+            "https://world.openfoodfacts.org/api/v2/product/"
+            f"{urllib.parse.quote(code)}.json?"
+            + urllib.parse.urlencode(
+                {
+                    "fields": ",".join(
+                        [
+                            "code",
+                            "product_name",
+                            "product_name_zh",
+                            "brands",
+                            "nutriments",
+                            "energy-kcal_100g",
+                            "energy_100g",
+                            "proteins_100g",
+                            "carbohydrates_100g",
+                            "fat_100g",
+                        ]
+                    )
+                }
+            )
+        )
+        try:
+            data = _http_get_json(url, retries=6)
+        except Exception as e:  # noqa: BLE001
+            if i % 50 == 0:
+                print(f"  {i}/{len(todo)} errors last={e!r}")
+            time.sleep(1.0)
+            continue
+        product = data.get("product") if isinstance(data, dict) else None
+        if not isinstance(product, dict):
+            time.sleep(0.35)
+            continue
+        merged = dict(by_code[code])
+        for k in (
+            "product_name",
+            "product_name_zh",
+            "brands",
+            "energy-kcal_100g",
+            "energy_100g",
+            "proteins_100g",
+            "carbohydrates_100g",
+            "fat_100g",
+        ):
+            if product.get(k) is not None:
+                merged[k] = product[k]
+        nutriments = product.get("nutriments")
+        if isinstance(nutriments, dict):
+            merged["nutriments"] = nutriments
+            for k in (
+                "energy-kcal_100g",
+                "energy_100g",
+                "proteins_100g",
+                "carbohydrates_100g",
+                "fat_100g",
+            ):
+                if merged.get(k) is None and nutriments.get(k) is not None:
+                    merged[k] = nutriments[k]
+        by_code[code] = merged
+        if off_macros(merged) is not None:
+            updated += 1
+        if i % 50 == 0:
+            _write_cache(cache_path, by_code)
+            print(f"  {i}/{len(todo)} enriched_ok={updated}")
+        time.sleep(0.45)
+
+    _write_cache(cache_path, by_code)
+    print(f"OFF enrich done: newly completable={updated}")
+    return updated
+
+
 def off_to_items(products: list[dict]) -> dict[str, dict]:
     by_name: dict[str, dict] = {}
     for p in products:
@@ -504,13 +658,13 @@ def off_to_items(products: list[dict]) -> dict[str, dict]:
             continue
         kcal, protein, carb, fat = macros
         brand = first_brand(p.get("brands"))
-        # Prefer branded display name when brand adds signal and isn't already in name.
+        # Only prepend Chinese brands (skip Latin brand prefixes on Han names).
         if brand and brand not in base and HAN_RE.search(brand):
             name = f"{brand} {base}"
         else:
             name = base
         name = name[:80].strip()
-        if not name:
+        if not name or not HAN_RE.search(name):
             continue
         cat = classify(name, default="包装食品")
         if cat == "其他":
@@ -531,7 +685,10 @@ def off_to_items(products: list[dict]) -> dict[str, dict]:
 
 
 def merge_priority(*sources: dict[str, dict]) -> list[dict]:
-    """Later sources win on name conflict (caller passes OFF first, then Sanotsu, then CFCT)."""
+    """Later sources win on name conflict (caller passes OFF first, then Sanotsu, then CFCT).
+
+    Drops any entry whose name has no Han characters.
+    """
     merged: dict[str, dict] = {}
     for src in sources:
         merged.update(src)
@@ -545,6 +702,7 @@ def merge_priority(*sources: dict[str, dict]) -> list[dict]:
             "fat": item["fat"],
         }
         for item in merged.values()
+        if HAN_RE.search(str(item.get("name") or ""))
     ]
     foods.sort(key=lambda x: (x["category"], x["name"]))
     return foods
@@ -583,6 +741,16 @@ def main() -> None:
         action="store_true",
         help="Re-download OFF CSV dump even if present",
     )
+    parser.add_argument(
+        "--enrich",
+        action="store_true",
+        help="Fetch missing macros via OFF product API for Chinese-named cache rows",
+    )
+    parser.add_argument(
+        "--no-enrich",
+        action="store_true",
+        help="Skip OFF product API enrichment",
+    )
     args = parser.parse_args()
 
     if not args.csv.exists():
@@ -590,15 +758,30 @@ def main() -> None:
 
     if not args.offline:
         if args.source == "dump":
+            # Ensure dump is complete; use multi-part downloader if corrupt/partial.
+            if args.force_download or not _dump_ok(args.dump):
+                import sys
+
+                sys.path.insert(0, str(Path(__file__).resolve().parent))
+                from download_resumable import download as multi_download
+
+                print("OFF dump missing/incomplete — multipath download …")
+                if args.force_download and args.dump.exists():
+                    args.dump.unlink()
+                multi_download(OFF_DUMP_URL, args.dump, connections=8)
             refresh_off_cache_from_dump(
                 args.cache,
                 args.dump,
-                force_download=args.force_download,
+                force_download=False,
             )
         else:
             refresh_off_cache_via_api(args.cache)
     elif not args.cache.exists():
         print(f"WARN: no OFF cache at {args.cache}; building without OFF")
+
+    do_enrich = bool(args.enrich) and not args.no_enrich
+    if do_enrich and args.cache.exists():
+        enrich_off_cache_macros(args.cache)
 
     cfct = load_cfct(args.csv)
     print(f"CFCT foods: {len(cfct)}")

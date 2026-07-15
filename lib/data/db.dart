@@ -9,14 +9,16 @@ import 'tables.dart';
 
 part 'db.g.dart';
 
-@DriftDatabase(tables: [FoodItems, WeightLogs, MealEntries, AppMeta])
+@DriftDatabase(
+  tables: [FoodItems, FavoriteFoods, WeightLogs, MealEntries, AppMeta],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -47,6 +49,9 @@ WHERE id NOT IN (
               'ON food_items (name)',
             );
             await m.createTable(appMeta);
+          }
+          if (from < 5) {
+            await m.createTable(favoriteFoods);
           }
         },
       );

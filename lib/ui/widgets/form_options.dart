@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../../domain/calorie_calculator.dart';
+import '../../domain/models.dart';
 import '../theme/app_theme.dart';
 
 /// Shared discrete option lists for profile / weight / meal forms.
@@ -30,6 +32,26 @@ class FormOptions {
     final max = _round1(((currentKg - 0.5) * 2).floor() / 2);
     if (max < 30) return const [];
     return weightsKg(min: 30, max: max.clamp(30, 150));
+  }
+
+  /// Options for cut target picker; never empty for the dropdown.
+  static List<double> cutTargetOptions(double currentKg) {
+    final opts = targetWeightsKg(currentKg);
+    if (opts.isEmpty) return weightsKg(min: 30, max: 40);
+    return opts;
+  }
+
+  static String? estimatedCutWeeksLabel({
+    required FitnessGoal goal,
+    required double weightKg,
+    required double targetWeightKg,
+    required double weeklyLossKg,
+  }) {
+    if (goal != FitnessGoal.cut) return null;
+    if (targetWeightKg >= weightKg || weeklyLossKg <= 0) return null;
+    final rate = CalorieCalculator.clampWeeklyLoss(weeklyLossKg).$1;
+    final weeks = ((weightKg - targetWeightKg) / rate).ceil();
+    return '预计约 $weeks 周（按 ${rate.toStringAsFixed(1)} kg/周）';
   }
 
   static const weeklyLossKg = <double>[0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
@@ -96,7 +118,7 @@ class FormOptions {
 String formatKg(double v) =>
     v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(1);
 
-Future<T?> showCupertinoWheelPicker<T>({
+Future<T?> _showCupertinoWheelPicker<T>({
   required BuildContext context,
   required String title,
   required List<T> items,
@@ -266,7 +288,7 @@ class AppDropdown<T> extends StatelessWidget {
 
   Future<void> _open(BuildContext context) async {
     final selected = items.contains(value) ? value : items.first;
-    final picked = await showCupertinoWheelPicker<T>(
+    final picked = await _showCupertinoWheelPicker<T>(
       context: context,
       title: label,
       items: items,
@@ -335,7 +357,7 @@ class AppOptionalDropdown<T extends Object> extends StatelessWidget {
         final current = value != null && items.contains(value)
             ? _OptionalEntry<T>.value(value as T)
             : _OptionalEntry<T>.none();
-        final picked = await showCupertinoWheelPicker<_OptionalEntry<T>>(
+        final picked = await _showCupertinoWheelPicker<_OptionalEntry<T>>(
           context: context,
           title: label,
           items: options,

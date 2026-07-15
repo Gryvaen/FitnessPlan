@@ -19,12 +19,55 @@ Future<void> main() async {
   );
 }
 
-class _Bootstrap extends ConsumerWidget {
+class _Bootstrap extends ConsumerStatefulWidget {
   const _Bootstrap();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(foodsSeedProvider);
-    return const FitnessApp();
+  ConsumerState<_Bootstrap> createState() => _BootstrapState();
+}
+
+class _BootstrapState extends ConsumerState<_Bootstrap> {
+  bool _enterAnyway = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_enterAnyway) return const FitnessApp();
+
+    final seed = ref.watch(foodsSeedProvider);
+    return seed.when(
+      data: (_) => const FitnessApp(),
+      loading: () => const MaterialApp(
+        home: Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
+      ),
+      error: (e, _) => MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('食材库加载失败', textAlign: TextAlign.center),
+                  const SizedBox(height: 8),
+                  Text('$e', textAlign: TextAlign.center),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: () => ref.invalidate(foodsSeedProvider),
+                    child: const Text('重试'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => setState(() => _enterAnyway = true),
+                    child: const Text('仍要进入'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -80,11 +80,6 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
     final food = _food;
     final entry = _entry;
     if (food == null || entry == null || _saving) return;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final entryDay =
-        DateTime(entry.date.year, entry.date.month, entry.date.day);
-    if (entryDay.isBefore(today)) return;
     setState(() => _saving = true);
     try {
       await ref.read(mealRepositoryProvider).update(
@@ -97,6 +92,12 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
           await ref.read(mealRepositoryProvider).byId(widget.entryId);
       if (mounted && updated != null) {
         setState(() => _entry = updated);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('保存失败：$e')),
+        );
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -118,11 +119,6 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
   Future<void> _delete() async {
     final entry = _entry;
     if (entry == null) return;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final entryDay =
-        DateTime(entry.date.year, entry.date.month, entry.date.day);
-    if (entryDay.isBefore(today)) return;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -143,12 +139,19 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
     );
     if (confirmed != true || !mounted) return;
 
-    await ref.read(mealRepositoryProvider).delete(widget.entryId);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('已删除')),
-    );
-    context.pop();
+    try {
+      await ref.read(mealRepositoryProvider).delete(widget.entryId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('已删除')),
+      );
+      context.pop();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('删除失败：$e')),
+      );
+    }
   }
 
   @override
@@ -169,11 +172,6 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
     final food = _food!;
     final preview = _preview;
     final theme = Theme.of(context);
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final entryDay =
-        DateTime(entry.date.year, entry.date.month, entry.date.day);
-    final readOnly = entryDay.isBefore(today);
 
     return Scaffold(
       appBar: AppBar(
@@ -190,12 +188,11 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
                 ),
               ),
             ),
-          if (!readOnly)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: '删除',
-              onPressed: _delete,
-            ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            tooltip: '删除',
+            onPressed: _delete,
+          ),
         ],
       ),
       body: ListView(
@@ -205,42 +202,27 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
             DateFormat('M月d日').format(entry.date),
             style: theme.textTheme.fieldLabel,
           ),
-          if (readOnly) ...[
-            const SizedBox(height: 4),
-            Text('历史记录，仅可查看', style: theme.textTheme.meta),
-          ],
           const SizedBox(height: 4),
           Text(
             '${food.kcalPer100.round()} kcal / 100g',
             style: theme.textTheme.meta,
           ),
           const SizedBox(height: AppSpacing.section),
-          IgnorePointer(
-            ignoring: readOnly,
-            child: Opacity(
-              opacity: readOnly ? 0.55 : 1,
-              child: Column(
-                children: [
-                  AppDropdown<MealType>(
-                    label: '餐次',
-                    value: _mealType,
-                    items: MealType.values,
-                    itemLabel: (e) => e.label,
-                    onChanged: _onMealTypeChanged,
-                  ),
-                  const SizedBox(height: AppSpacing.field),
-                  AppDropdown<double>(
-                    label: '克数',
-                    value:
-                        FormOptions.snapDouble(FormOptions.mealGrams, _grams),
-                    items: FormOptions.mealGrams,
-                    suffixText: 'g',
-                    itemLabel: formatKg,
-                    onChanged: _onGramsChanged,
-                  ),
-                ],
-              ),
-            ),
+          AppDropdown<MealType>(
+            label: '餐次',
+            value: _mealType,
+            items: MealType.values,
+            itemLabel: (e) => e.label,
+            onChanged: _onMealTypeChanged,
+          ),
+          const SizedBox(height: AppSpacing.field),
+          AppDropdown<double>(
+            label: '克数',
+            value: FormOptions.snapDouble(FormOptions.mealGrams, _grams),
+            items: FormOptions.mealGrams,
+            suffixText: 'g',
+            itemLabel: formatKg,
+            onChanged: _onGramsChanged,
           ),
           const SizedBox(height: 28),
           Text('营养摄入', style: theme.textTheme.titleMedium),

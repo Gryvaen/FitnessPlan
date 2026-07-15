@@ -1,7 +1,21 @@
 allprojects {
     repositories {
+        maven(url = "https://maven.aliyun.com/repository/google")
+        maven(url = "https://maven.aliyun.com/repository/public")
         google()
         mavenCentral()
+    }
+}
+
+// Flutter plugins (e.g. share_plus) resolve Kotlin via their own buildscript classpath.
+subprojects {
+    buildscript {
+        repositories {
+            maven(url = "https://maven.aliyun.com/repository/google")
+            maven(url = "https://maven.aliyun.com/repository/public")
+            google()
+            mavenCentral()
+        }
     }
 }
 

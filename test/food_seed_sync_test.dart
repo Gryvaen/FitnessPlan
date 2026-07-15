@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -25,7 +25,7 @@ void main() {
     await db.close();
   });
 
-  test('empty search returns all rows; keyword search works', () async {
+  test('empty search returns []; keyword search works', () async {
     for (final name in ['豆腐', '米饭', '鸡蛋']) {
       await db.into(db.foodItems).insert(
             FoodItemsCompanion.insert(
@@ -38,13 +38,23 @@ void main() {
             ),
           );
     }
-    expect(await repo.search(''), hasLength(3));
+    expect(await repo.search(''), isEmpty);
     final hits = await repo.search('豆腐');
     expect(hits, hasLength(1));
     expect(hits.first.name, '豆腐');
   });
 
-  test('search respects limit', () async {
+  test('search escapes LIKE wildcards and respects limit', () async {
+    await db.into(db.foodItems).insert(
+          FoodItemsCompanion.insert(
+            name: '100%纯牛奶',
+            category: '乳品',
+            kcalPer100: 60,
+            proteinPer100: 3,
+            carbPer100: 5,
+            fatPer100: 3,
+          ),
+        );
     for (var i = 0; i < 150; i++) {
       await db.into(db.foodItems).insert(
             FoodItemsCompanion.insert(
@@ -57,13 +67,55 @@ void main() {
             ),
           );
     }
+    expect(await repo.search('%'), hasLength(1));
     expect((await repo.search('鸡', limit: 100)).length, 100);
   });
 
-  test('syncSeedFromAsset upserts by name', () async {
+  test('escapeLikePattern escapes special chars', () {
+    expect(escapeLikePattern(r'a%b_c\d'), r'a\%b\_c\\d');
+  });
+
+  test('favorites and recent foods', () async {
+    final id = await db.into(db.foodItems).insert(
+          FoodItemsCompanion.insert(
+            name: '鸡胸肉',
+            category: '禽肉',
+            kcalPer100: 110,
+            proteinPer100: 23,
+            carbPer100: 0,
+            fatPer100: 2,
+          ),
+        );
+    await repo.toggleFavorite(id);
+    expect(await repo.isFavorite(id), isTrue);
+    expect(await repo.favorites(), hasLength(1));
+
+    await db.into(db.mealEntries).insert(
+          MealEntriesCompanion.insert(
+            date: DateTime(2026, 1, 1),
+            mealType: 'lunch',
+            foodId: id,
+            foodName: '鸡胸肉',
+            grams: 100,
+            calories: 110,
+            proteinG: 23,
+            carbG: 0,
+            fatG: 2,
+          ),
+        );
+    final recent = await repo.recentFoods();
+    expect(recent.map((e) => e.id), contains(id));
+  });
+
+  test('syncSeedFromAsset upserts by name and removes obsolete', () async {
     final raw = await File('assets/food_seed.json').readAsString();
     final list = jsonDecode(raw) as List<dynamic>;
     expect(list.length, greaterThan(3000));
+    final han = RegExp(r'[\u4e00-\u9fff]');
+    for (final item in list) {
+      final name = (item as Map<String, dynamic>)['name'] as String;
+      expect(han.hasMatch(name), isTrue, reason: 'non-Han name: $name');
+    }
 
     final first = list.first as Map<String, dynamic>;
     final firstName = first['name'] as String;
@@ -72,6 +124,16 @@ void main() {
           FoodItemsCompanion.insert(
             name: firstName,
             category: '旧分类',
+            kcalPer100: 1,
+            proteinPer100: 1,
+            carbPer100: 1,
+            fatPer100: 1,
+          ),
+        );
+    await db.into(db.foodItems).insert(
+          FoodItemsCompanion.insert(
+            name: '__obsolete_food__',
+            category: '幽灵',
             kcalPer100: 1,
             proteinPer100: 1,
             carbPer100: 1,
@@ -88,6 +150,11 @@ void main() {
         .getSingle();
     expect(row.category, isNot('旧分类'));
     expect(row.kcalPer100, (first['kcal'] as num).toDouble());
+
+    final ghost = await (db.select(db.foodItems)
+          ..where((t) => t.name.equals('__obsolete_food__')))
+        .getSingleOrNull();
+    expect(ghost, isNull);
 
     await repo.syncSeedFromAsset();
     expect(await foodCount(), list.length);

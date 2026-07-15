@@ -13,12 +13,6 @@ class WeightRepository {
     )..orderBy([(t) => OrderingTerm.asc(t.date)])).watch();
   }
 
-  Future<List<WeightLog>> all() {
-    return (_db.select(
-      _db.weightLogs,
-    )..orderBy([(t) => OrderingTerm.asc(t.date)])).get();
-  }
-
   /// A day has one effective weight. Re-recording it updates that value.
   Future<int> add({
     required DateTime date,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../data/db.dart';
 import '../../domain/models.dart';
@@ -23,8 +24,12 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
   double _grams = 100;
   bool _saving = false;
   List<FoodItem> _results = [];
+  List<FoodItem> _recent = [];
+  List<FoodItem> _favorites = [];
   bool _loadingFoods = true;
+  bool _searching = false;
   int _searchVersion = 0;
+  String _query = '';
 
   @override
   void initState() {
@@ -33,23 +38,60 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
   }
 
   Future<void> _bootstrap() async {
-    await ref.read(foodsSeedProvider.future);
-    if (widget.initialFoodId != null) {
-      final food = await ref
-          .read(foodRepositoryProvider)
-          .byId(widget.initialFoodId!);
-      if (mounted) setState(() => _selected = food);
+    final memory = ref.read(formMemoryRepositoryProvider).loadMealDefaults();
+    if (mounted) {
+      setState(() {
+        _mealType = memory.mealType;
+        _grams = FormOptions.snapDouble(FormOptions.mealGrams, memory.grams);
+      });
     }
-    await _search('');
+    try {
+      await ref.read(foodsSeedProvider.future);
+      final repo = ref.read(foodRepositoryProvider);
+      final recent = await repo.recentFoods();
+      final favorites = await repo.favorites();
+      if (widget.initialFoodId != null) {
+        final food = await repo.byId(widget.initialFoodId!);
+        if (mounted) setState(() => _selected = food);
+      }
+      if (!mounted) return;
+      setState(() {
+        _recent = recent;
+        _favorites = favorites;
+        _loadingFoods = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loadingFoods = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('加载食材失败：$e')),
+      );
+    }
+  }
+
+  Future<void> _persistMealDefaults() {
+    return ref.read(formMemoryRepositoryProvider).saveMealDefaults(
+          mealType: _mealType,
+          grams: _grams,
+        );
   }
 
   Future<void> _search(String q) async {
     final version = ++_searchVersion;
+    final trimmed = q.trim();
     if (!mounted) return;
     setState(() {
-      _loadingFoods = true;
+      _query = trimmed;
+      _searching = trimmed.isNotEmpty;
+      if (trimmed.isEmpty) {
+        _results = [];
+        _loadingFoods = false;
+      } else {
+        _loadingFoods = true;
+      }
     });
-    final list = await ref.read(foodRepositoryProvider).search(q);
+    if (trimmed.isEmpty) return;
+    final list = await ref.read(foodRepositoryProvider).search(trimmed);
     if (!mounted || version != _searchVersion) return;
     setState(() {
       _results = list;
@@ -80,9 +122,10 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     final day = ref.read(selectedDayProvider);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    if (day != today) {
+    final earliest = DateTime(today.year - 1, today.month, today.day);
+    if (day.isAfter(today) || day.isBefore(earliest)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('只能给今天记餐')),
+        const SnackBar(content: Text('只能记录一年内到今天的餐次')),
       );
       return;
     }
@@ -95,22 +138,87 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
             grams: _grams,
           );
       if (mounted) {
+        final label = day == today ? '今日' : DateFormat('M月d日').format(day);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('已记入今日')),
+          SnackBar(content: Text('已记入$label')),
         );
         context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('保存失败：$e')),
+        );
       }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
 
+  Widget _foodTile(FoodItem f, {String? badge}) {
+    final theme = Theme.of(context);
+    return ListTile(
+      key: ValueKey('food-${f.id}'),
+      title: Text(f.name, style: theme.textTheme.bodyLarge),
+      subtitle: Text(
+        [
+          ?badge,
+          f.category,
+          '${f.kcalPer100.round()} kcal/100g',
+        ].join(' · '),
+        style: theme.textTheme.meta,
+      ),
+      onTap: () => setState(() => _selected = f),
+    );
+  }
+
+  Widget _browseList() {
+    final theme = Theme.of(context);
+    final sections = <Widget>[];
+
+    if (_favorites.isNotEmpty) {
+      sections.add(
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          child: Text('收藏', style: theme.textTheme.titleSmall),
+        ),
+      );
+      for (final f in _favorites) {
+        sections.add(_foodTile(f, badge: '收藏'));
+      }
+    }
+    if (_recent.isNotEmpty) {
+      sections.add(
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Text('最近吃过', style: theme.textTheme.titleSmall),
+        ),
+      );
+      for (final f in _recent) {
+        sections.add(_foodTile(f, badge: '最近'));
+      }
+    }
+    if (sections.isEmpty) {
+      return Center(
+        child: Text('搜索食材开始记账', style: theme.textTheme.meta),
+      );
+    }
+    return ListView(children: sections);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final preview = _preview;
+    final day = ref.watch(selectedDayProvider);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dayLabel = day == today
+        ? '今天'
+        : DateFormat('M月d日').format(day);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('记一笔')),
+      appBar: AppBar(title: Text('记一笔 · $dayLabel')),
       body: Column(
         children: [
           Padding(
@@ -123,7 +231,10 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                   value: _mealType,
                   items: MealType.values,
                   itemLabel: (e) => e.label,
-                  onChanged: (v) => setState(() => _mealType = v),
+                  onChanged: (v) {
+                    setState(() => _mealType = v);
+                    _persistMealDefaults();
+                  },
                 ),
                 const SizedBox(height: AppSpacing.field),
                 if (_selected != null) ...[
@@ -148,7 +259,10 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                     items: FormOptions.mealGrams,
                     suffixText: 'g',
                     itemLabel: formatKg,
-                    onChanged: (v) => setState(() => _grams = v),
+                    onChanged: (v) {
+                      setState(() => _grams = v);
+                      _persistMealDefaults();
+                    },
                   ),
                   if (preview != null) ...[
                     const SizedBox(height: AppSpacing.field),
@@ -181,30 +295,22 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
             Expanded(
               child: _loadingFoods
                   ? const Center(child: CircularProgressIndicator())
-                  : _results.isEmpty
-                      ? Center(
-                          child: Text(
-                            '没有找到食材',
-                            style: theme.textTheme.meta,
-                          ),
-                        )
-                      : ListView.builder(
-                          itemCount: _results.length,
-                          itemBuilder: (context, i) {
-                            final f = _results[i];
-                            return ListTile(
-                              title: Text(
-                                f.name,
-                                style: theme.textTheme.bodyLarge,
-                              ),
-                              subtitle: Text(
-                                '${f.category} · ${f.kcalPer100.round()} kcal/100g',
+                  : _searching
+                      ? (_results.isEmpty
+                          ? Center(
+                              child: Text(
+                                _query.isEmpty ? '搜索食材' : '没有找到食材',
                                 style: theme.textTheme.meta,
                               ),
-                              onTap: () => setState(() => _selected = f),
-                            );
-                          },
-                        ),
+                            )
+                          : ListView.builder(
+                              itemCount: _results.length,
+                              itemBuilder: (context, i) {
+                                final f = _results[i];
+                                return _foodTile(f);
+                              },
+                            ))
+                      : _browseList(),
             ),
         ],
       ),

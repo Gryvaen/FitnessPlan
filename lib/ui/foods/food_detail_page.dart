@@ -12,6 +12,8 @@ class FoodDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final favAsync = ref.watch(foodFavoriteProvider(foodId));
+
     return FutureBuilder(
       future: ref.read(foodRepositoryProvider).byId(foodId),
       builder: (context, snap) {
@@ -28,15 +30,37 @@ class FoodDetailPage extends ConsumerWidget {
           );
         }
         final theme = Theme.of(context);
+        final isFav = favAsync.value ?? false;
         return Scaffold(
-          appBar: AppBar(title: Text(food.name)),
+          appBar: AppBar(
+            title: Text(food.name),
+            actions: [
+              IconButton(
+                tooltip: isFav ? '取消收藏' : '收藏',
+                icon: Icon(isFav ? Icons.star : Icons.star_border),
+                onPressed: () async {
+                  try {
+                    await ref
+                        .read(foodRepositoryProvider)
+                        .toggleFavorite(foodId);
+                    ref.invalidate(foodFavoriteProvider(foodId));
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('操作失败：$e')),
+                      );
+                    }
+                  }
+                },
+              ),
+            ],
+          ),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () {
-              ref.read(selectedDayProvider.notifier).goToToday();
               context.push('/log-meal?foodId=$foodId');
             },
             icon: const Icon(Icons.add),
-            label: const Text('记入今日'),
+            label: const Text('记一笔'),
           ),
           body: ListView(
             padding: const EdgeInsets.all(AppSpacing.formPage),
@@ -46,7 +70,11 @@ class FoodDetailPage extends ConsumerWidget {
               Text('每 100 克', style: theme.textTheme.titleMedium),
               const SizedBox(height: AppSpacing.section),
               _row(context, '热量', '${food.kcalPer100.round()} kcal'),
-              _row(context, '蛋白质', '${food.proteinPer100.toStringAsFixed(1)} g'),
+              _row(
+                context,
+                '蛋白质',
+                '${food.proteinPer100.toStringAsFixed(1)} g',
+              ),
               _row(context, '碳水', '${food.carbPer100.toStringAsFixed(1)} g'),
               _row(context, '脂肪', '${food.fatPer100.toStringAsFixed(1)} g'),
             ],

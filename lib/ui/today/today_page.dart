@@ -116,13 +116,11 @@ class TodayPage extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: isSelectedToday
-          ? FloatingActionButton.extended(
-              onPressed: () => context.push('/log-meal'),
-              icon: const Icon(Icons.add),
-              label: const Text('记一笔'),
-            )
-          : null,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/log-meal'),
+        icon: const Icon(Icons.add),
+        label: Text(isSelectedToday ? '记一笔' : '补记'),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.listPage,

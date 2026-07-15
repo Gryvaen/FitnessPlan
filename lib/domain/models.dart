@@ -13,12 +13,11 @@ enum ActivityLevel {
 }
 
 enum FitnessGoal {
-  cut(-0.20, '减脂'),
-  maintain(0.0, '维持'),
-  bulk(0.10, '增肌');
+  cut('减脂'),
+  maintain('维持'),
+  bulk('增肌');
 
-  const FitnessGoal(this.calorieAdjust, this.label);
-  final double calorieAdjust;
+  const FitnessGoal(this.label);
   final String label;
 }
 
@@ -77,7 +76,6 @@ class UserProfile {
     this.tdee,
     this.dailyDeficit,
     bool calorieFloorApplied = false,
-    this.adjustedWeeks,
     bool missingCutInputs = false,
     this.calorieStandardSince,
   })  : _calorieAdjustment = calorieAdjustment,
@@ -99,7 +97,6 @@ class UserProfile {
   final double? tdee;
   final double? dailyDeficit;
   final bool? _calorieFloorApplied;
-  final int? adjustedWeeks;
   final bool? _missingCutInputs;
   /// Local calendar day when calorie targets / deficit last changed.
   final DateTime? calorieStandardSince;
@@ -124,11 +121,8 @@ class UserProfile {
     double? tdee,
     double? dailyDeficit,
     bool? calorieFloorApplied,
-    int? adjustedWeeks,
     bool? missingCutInputs,
     DateTime? calorieStandardSince,
-    bool clearTargetWeightKg = false,
-    bool clearCalorieStandardSince = false,
   }) {
     return UserProfile(
       sex: sex ?? this.sex,
@@ -138,8 +132,7 @@ class UserProfile {
       activity: activity ?? this.activity,
       goal: goal ?? this.goal,
       targets: targets ?? this.targets,
-      targetWeightKg:
-          clearTargetWeightKg ? null : (targetWeightKg ?? this.targetWeightKg),
+      targetWeightKg: targetWeightKg ?? this.targetWeightKg,
       goalWeeks: goalWeeks ?? this.goalWeeks,
       weeklyLossKg: weeklyLossKg ?? this.weeklyLossKg,
       calorieAdjustment: calorieAdjustment ?? this.calorieAdjustment,
@@ -147,11 +140,8 @@ class UserProfile {
       tdee: tdee ?? this.tdee,
       dailyDeficit: dailyDeficit ?? this.dailyDeficit,
       calorieFloorApplied: calorieFloorApplied ?? this.calorieFloorApplied,
-      adjustedWeeks: adjustedWeeks ?? this.adjustedWeeks,
       missingCutInputs: missingCutInputs ?? this.missingCutInputs,
-      calorieStandardSince: clearCalorieStandardSince
-          ? null
-          : (calorieStandardSince ?? this.calorieStandardSince),
+      calorieStandardSince: calorieStandardSince ?? this.calorieStandardSince,
     );
   }
 
@@ -187,7 +177,7 @@ class UserProfile {
         tdee: (json['tdee'] as num?)?.toDouble(),
         dailyDeficit: (json['dailyDeficit'] as num?)?.toDouble(),
         calorieFloorApplied: json['calorieFloorApplied'] as bool? ?? false,
-        adjustedWeeks: json['adjustedWeeks'] as int?,
+        // Legacy backups may still carry adjustedWeeks; ignore it.
         missingCutInputs: json['missingCutInputs'] as bool? ?? false,
         calorieStandardSince: _dayFromJson(json['calorieStandardSince']),
       );
@@ -208,7 +198,6 @@ class UserProfile {
         'tdee': tdee,
         'dailyDeficit': dailyDeficit,
         'calorieFloorApplied': calorieFloorApplied,
-        'adjustedWeeks': adjustedWeeks,
         'missingCutInputs': missingCutInputs,
         'calorieStandardSince': _dayToJson(calorieStandardSince),
       };

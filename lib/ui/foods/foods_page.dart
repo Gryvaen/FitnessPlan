@@ -59,7 +59,7 @@ class FoodsPage extends ConsumerWidget {
             ),
           ),
           Expanded(
-            child: searching ? const _FoodSearchList() : const _CategoryList(),
+            child: searching ? const _FoodSearchList() : const _FoodBrowse(),
           ),
         ],
       ),
@@ -67,37 +67,77 @@ class FoodsPage extends ConsumerWidget {
   }
 }
 
-class _CategoryList extends ConsumerWidget {
-  const _CategoryList();
+class _FoodBrowse extends ConsumerWidget {
+  const _FoodBrowse();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final async = ref.watch(_categoryCountsProvider);
-    return async.when(
+    final favoritesAsync = ref.watch(favoriteFoodsProvider);
+    final categoriesAsync = ref.watch(_categoryCountsProvider);
+
+    return categoriesAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('加载失败：$e')),
+      error: (e, _) => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('加载失败：$e'),
+            const SizedBox(height: 8),
+            FilledButton(
+              onPressed: () => ref.invalidate(foodsSeedProvider),
+              child: const Text('重试'),
+            ),
+          ],
+        ),
+      ),
       data: (categories) {
-        if (categories.isEmpty) {
-          return Center(child: Text('暂无分类', style: theme.textTheme.meta));
-        }
-        return ListView.separated(
-          itemCount: categories.length,
-          separatorBuilder: (_, _) => const Divider(height: 1),
-          itemBuilder: (context, i) {
-            final c = categories[i];
-            return ListTile(
-              title: Text(c.category, style: theme.textTheme.bodyLarge),
-              subtitle: Text('${c.count} 种', style: theme.textTheme.meta),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push(
-                Uri(
-                  path: '/foods/category',
-                  queryParameters: {'name': c.category},
-                ).toString(),
+        final favorites = favoritesAsync.value ?? const <FoodItem>[];
+        return ListView(
+          children: [
+            if (favorites.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                child: Text('收藏', style: theme.textTheme.titleSmall),
               ),
-            );
-          },
+              for (final f in favorites)
+                ListTile(
+                  key: ValueKey('fav-${f.id}'),
+                  leading: const Icon(Icons.star),
+                  title: Text(f.name, style: theme.textTheme.bodyLarge),
+                  subtitle: Text(
+                    '${f.category} · ${f.kcalPer100.round()} kcal/100g',
+                    style: theme.textTheme.meta,
+                  ),
+                  onTap: () => context.push('/foods/${f.id}'),
+                ),
+              const Divider(height: 24),
+            ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+              child: Text('分类', style: theme.textTheme.titleSmall),
+            ),
+            if (categories.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Center(
+                  child: Text('暂无分类', style: theme.textTheme.meta),
+                ),
+              )
+            else
+              for (final c in categories)
+                ListTile(
+                  title: Text(c.category, style: theme.textTheme.bodyLarge),
+                  subtitle: Text('${c.count} 种', style: theme.textTheme.meta),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push(
+                    Uri(
+                      path: '/foods/category',
+                      queryParameters: {'name': c.category},
+                    ).toString(),
+                  ),
+                ),
+          ],
         );
       },
     );
@@ -118,18 +158,17 @@ class _FoodSearchList extends ConsumerWidget {
         if (foods.isEmpty) {
           return Center(child: Text('没有找到食材', style: theme.textTheme.meta));
         }
-        return ListView.separated(
+        return ListView.builder(
           itemCount: foods.length,
-          separatorBuilder: (_, _) => const Divider(height: 1),
           itemBuilder: (context, i) {
             final f = foods[i];
             return ListTile(
+              key: ValueKey(f.id),
               title: Text(f.name, style: theme.textTheme.bodyLarge),
               subtitle: Text(
                 '${f.category} · ${f.kcalPer100.round()} kcal/100g',
                 style: theme.textTheme.meta,
               ),
-              trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push('/foods/${f.id}'),
             );
           },

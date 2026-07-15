@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fitness_plan/data/db.dart';
 import 'package:fitness_plan/data/repositories/meal_repository.dart';
 import 'package:fitness_plan/domain/models.dart';
-import 'package:fitness_plan/ui/today/deficit_date_picker.dart';
+import 'package:fitness_plan/domain/deficit.dart';
 
 void main() {
   test('actualDailyDeficit = planned + remaining', () {
@@ -28,35 +28,38 @@ void main() {
     );
   });
 
-  test('meetsPlannedDeficit colors past days: under target green, over red', () {
+  test('actualDailyDeficit >= planned marks past days green', () {
     const planned = 500.0;
     const target = 1800.0;
 
     // 欠摄入 → 实际 ≥ 计划 → 绿
     expect(
-      meetsPlannedDeficit(
+      actualDailyDeficit(
         plannedDeficit: planned,
         targetCalories: target,
         intakeCalories: 1600,
-      ),
+      ) >=
+          planned,
       isTrue,
     );
     // 恰好达标（摄入=目标）→ 实际==计划 → 绿
     expect(
-      meetsPlannedDeficit(
+      actualDailyDeficit(
         plannedDeficit: planned,
         targetCalories: target,
         intakeCalories: 1800,
-      ),
+      ) >=
+          planned,
       isTrue,
     );
     // 超目标 → 实际 < 计划 → 红
     expect(
-      meetsPlannedDeficit(
+      actualDailyDeficit(
         plannedDeficit: planned,
         targetCalories: target,
         intakeCalories: 2000,
-      ),
+      ) >=
+          planned,
       isFalse,
     );
   });

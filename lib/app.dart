@@ -65,7 +65,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: ':id',
                     builder: (context, state) {
-                      final id = int.parse(state.pathParameters['id']!);
+                      final id = int.tryParse(state.pathParameters['id'] ?? '');
+                      if (id == null) {
+                        return const Scaffold(
+                          body: Center(child: Text('无效的食材')),
+                        );
+                      }
                       return FoodDetailPage(foodId: id);
                     },
                   ),
@@ -102,7 +107,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/meal/:id',
         builder: (context, state) {
-          final id = int.parse(state.pathParameters['id']!);
+          final id = int.tryParse(state.pathParameters['id'] ?? '');
+          if (id == null) {
+            return const Scaffold(
+              body: Center(child: Text('无效的记录')),
+            );
+          }
           return MealDetailPage(entryId: id);
         },
       ),

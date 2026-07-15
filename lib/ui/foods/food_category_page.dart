@@ -6,51 +6,134 @@ import '../../data/db.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 
-final _categoryFoodsProvider = FutureProvider.autoDispose
-    .family<List<FoodItem>, String>((ref, category) async {
-  await ref.watch(foodsSeedProvider.future);
-  return ref.watch(foodRepositoryProvider).byCategory(category);
-});
+const _pageSize = 80;
 
-class FoodCategoryPage extends ConsumerWidget {
+class FoodCategoryPage extends ConsumerStatefulWidget {
   const FoodCategoryPage({super.key, required this.category});
 
   final String category;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FoodCategoryPage> createState() => _FoodCategoryPageState();
+}
+
+class _FoodCategoryPageState extends ConsumerState<FoodCategoryPage> {
+  final _items = <FoodItem>[];
+  var _loading = true;
+  var _loadingMore = false;
+  var _hasMore = true;
+  Object? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load(reset: true);
+  }
+
+  Future<void> _load({required bool reset}) async {
+    if (reset) {
+      setState(() {
+        _loading = true;
+        _error = null;
+        _items.clear();
+        _hasMore = true;
+      });
+    } else {
+      if (!_hasMore || _loadingMore) return;
+      setState(() => _loadingMore = true);
+    }
+
+    try {
+      await ref.read(foodsSeedProvider.future);
+      final page = await ref.read(foodRepositoryProvider).byCategory(
+            widget.category,
+            limit: _pageSize,
+            offset: reset ? 0 : _items.length,
+          );
+      if (!mounted) return;
+      setState(() {
+        _items.addAll(page);
+        _hasMore = page.length >= _pageSize;
+        _loading = false;
+        _loadingMore = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e;
+        _loading = false;
+        _loadingMore = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final foodsAsync = ref.watch(_categoryFoodsProvider(category));
 
     return Scaffold(
-      appBar: AppBar(title: Text(category)),
-      body: foodsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('加载失败：$e')),
-        data: (foods) {
-          if (foods.isEmpty) {
-            return Center(
-              child: Text('该分类暂无食材', style: theme.textTheme.meta),
-            );
-          }
-          return ListView.separated(
-            itemCount: foods.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
-            itemBuilder: (context, i) {
-              final f = foods[i];
-              return ListTile(
-                title: Text(f.name, style: theme.textTheme.bodyLarge),
-                subtitle: Text(
-                  '${f.kcalPer100.round()} kcal / 100g',
-                  style: theme.textTheme.meta,
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push('/foods/${f.id}'),
-              );
-            },
-          );
-        },
-      ),
+      appBar: AppBar(title: Text(widget.category)),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('加载失败：$_error'),
+                      const SizedBox(height: 8),
+                      FilledButton(
+                        onPressed: () => _load(reset: true),
+                        child: const Text('重试'),
+                      ),
+                    ],
+                  ),
+                )
+              : _items.isEmpty
+                  ? Center(
+                      child: Text('该分类暂无食材', style: theme.textTheme.meta),
+                    )
+                  : NotificationListener<ScrollNotification>(
+                      onNotification: (n) {
+                        if (n.metrics.pixels >
+                            n.metrics.maxScrollExtent - 240) {
+                          _load(reset: false);
+                        }
+                        return false;
+                      },
+                      child: ListView.separated(
+                        itemCount: _items.length + (_hasMore ? 1 : 0),
+                        separatorBuilder: (_, _) => const Divider(height: 1),
+                        itemBuilder: (context, i) {
+                          if (i >= _items.length) {
+                            return const Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Center(
+                                child: SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                          final f = _items[i];
+                          return ListTile(
+                            key: ValueKey(f.id),
+                            title:
+                                Text(f.name, style: theme.textTheme.bodyLarge),
+                            subtitle: Text(
+                              '${f.kcalPer100.round()} kcal / 100g',
+                              style: theme.textTheme.meta,
+                            ),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => context.push('/foods/${f.id}'),
+                          );
+                        },
+                      ),
+                    ),
     );
   }
 }

@@ -2,27 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../data/repositories/meal_repository.dart';
-
-/// 实际日缺口 = 计划日缺口 + 剩余热量（目标摄入 − 实际摄入）
-double actualDailyDeficit({
-  required double plannedDeficit,
-  required double targetCalories,
-  required double intakeCalories,
-}) =>
-    plannedDeficit + (targetCalories - intakeCalories);
-
-/// 实际日缺口是否达到计划日缺口（用于收官着色）。
-bool meetsPlannedDeficit({
-  required double plannedDeficit,
-  required double targetCalories,
-  required double intakeCalories,
-}) =>
-    actualDailyDeficit(
-      plannedDeficit: plannedDeficit,
-      targetCalories: targetCalories,
-      intakeCalories: intakeCalories,
-    ) >=
-    plannedDeficit;
+import '../../domain/deficit.dart';
 
 /// 自定义月历：有饮食记录的日子才显示实际日缺口；过去日绿/红收官，今天中性色。
 Future<DateTime?> showDeficitDatePicker({

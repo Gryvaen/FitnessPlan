@@ -21,7 +21,6 @@ class CaloriePlan {
     this.requestedWeeklyLossKg,
     this.kgToLose,
     this.requestedDeficit,
-    this.adjustedWeeks,
     this.calorieAdjustment = 0,
     this.missingCutInputs = false,
     this.notes = const [],
@@ -45,7 +44,6 @@ class CaloriePlan {
   final double? requestedWeeklyLossKg;
   final double? kgToLose;
   final double? requestedDeficit;
-  final int? adjustedWeeks;
   final int calorieAdjustment;
   final bool missingCutInputs;
   final List<String> notes;
@@ -121,33 +119,6 @@ class CalorieCalculator {
     return (requested, false);
   }
 
-  /// Convenience: returns only macros (tests / legacy).
-  MacroTargets calculate({
-    required Sex sex,
-    required double weightKg,
-    required double heightCm,
-    required int age,
-    required ActivityLevel activity,
-    required FitnessGoal goal,
-    double? targetWeightKg,
-    double? weeklyLossKg,
-    int? goalWeeks,
-    int calorieAdjustment = 0,
-  }) {
-    return plan(
-      sex: sex,
-      weightKg: weightKg,
-      heightCm: heightCm,
-      age: age,
-      activity: activity,
-      goal: goal,
-      targetWeightKg: targetWeightKg,
-      weeklyLossKg: weeklyLossKg,
-      goalWeeks: goalWeeks,
-      calorieAdjustment: calorieAdjustment,
-    ).targets;
-  }
-
   CaloriePlan plan({
     required Sex sex,
     required double weightKg,
@@ -176,7 +147,6 @@ class CalorieCalculator {
     bool missingCutInputs = false;
     double? kgToLose;
     double? requestedDeficit;
-    int? adjustedWeeks;
     double? effectiveWeekly;
     double? requestedWeekly;
     double? effectiveTarget;
@@ -255,12 +225,11 @@ class CalorieCalculator {
               dailyDeficit > 0 &&
               (effectiveWeekly < intendedWeekly - 0.001);
           if (rateWasLimited) {
-            adjustedWeeks = estimatedWeeks;
             if (!notes.any((n) => n.contains('日缺口上限'))) {
               notes.add(
                 '已按日缺口上限调整：不超过 ${maxDailyDeficit.toInt()} kcal/日。'
                 '实际约 ${effectiveWeekly.toStringAsFixed(2)} kg/周，'
-                '大约需要 $adjustedWeeks 周。',
+                '大约需要 $estimatedWeeks 周。',
               );
             }
           } else if (!notes.any((n) => n.contains('不建议超过'))) {
@@ -307,7 +276,6 @@ class CalorieCalculator {
           goal == FitnessGoal.cut ? requestedWeekly : null,
       kgToLose: kgToLose,
       requestedDeficit: requestedDeficit,
-      adjustedWeeks: adjustedWeeks,
       calorieAdjustment: adj,
       missingCutInputs: missingCutInputs,
       notes: notes,

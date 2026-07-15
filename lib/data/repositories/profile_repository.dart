@@ -15,22 +15,27 @@ class ProfileRepository {
   UserProfile? load() {
     final raw = _prefs.getString(_key);
     if (raw == null) return null;
-    var profile =
-        UserProfile.fromJson(jsonDecode(raw) as Map<String, dynamic>);
-    profile = _migrateWeeklyLoss(profile);
+    try {
+      var profile =
+          UserProfile.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      profile = _migrateWeeklyLoss(profile);
 
-    final needsRebuild = profile.bmr == null ||
-        profile.tdee == null ||
-        (profile.weeklyLossKg == null && profile.goal == FitnessGoal.cut);
-    if (needsRebuild) {
-      return _profileFromPlan(
-        plan: buildPlan(profile),
-        activity: profile.activity,
-        calorieAdjustment: profile.calorieAdjustment,
-        calorieStandardSince: profile.calorieStandardSince,
-      );
+      final needsRebuild = profile.bmr == null ||
+          profile.tdee == null ||
+          (profile.weeklyLossKg == null && profile.goal == FitnessGoal.cut);
+      if (needsRebuild) {
+        return _profileFromPlan(
+          plan: buildPlan(profile),
+          activity: profile.activity,
+          calorieAdjustment: profile.calorieAdjustment,
+          calorieStandardSince: profile.calorieStandardSince,
+        );
+      }
+      return profile;
+    } catch (_) {
+      // Corrupted JSON: treat as no profile so onboarding can recover.
+      return null;
     }
-    return profile;
   }
 
   UserProfile _migrateWeeklyLoss(UserProfile profile) {
@@ -164,7 +169,6 @@ class ProfileRepository {
       tdee: plan.tdee,
       dailyDeficit: plan.dailyDeficit,
       calorieFloorApplied: plan.safetyApplied,
-      adjustedWeeks: plan.adjustedWeeks,
       missingCutInputs: plan.missingCutInputs,
       calorieStandardSince: calorieStandardSince,
     );
