@@ -92,4 +92,14 @@ class FormMemoryRepository {
       await _prefs.setInt(_exerciseMinutesKey, exerciseMinutes);
     }
   }
+
+  Future<void> clear() async {
+    await Future.wait([
+      _prefs.remove(_mealTypeKey),
+      _prefs.remove(_mealGramsKey),
+      _prefs.remove(_bodyFatKey),
+      _prefs.remove(_exerciseMinutesKey),
+      _prefs.remove(_weightExtrasTouchedKey),
+    ]);
+  }
 }

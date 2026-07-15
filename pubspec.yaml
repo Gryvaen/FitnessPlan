@@ -1,7 +1,7 @@
-name: fitness_plan
+name: Diet
 description: 纯本地健身饮食助手 — 热量配额、食材库与饮食记账
 publish_to: 'none'
-version: 1.0.2+2
+version: 1.0.3+3
 
 environment:
   sdk: ^3.12.2

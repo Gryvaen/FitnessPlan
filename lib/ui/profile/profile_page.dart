@@ -121,43 +121,34 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   Future<void> _clearData() async {
-    final choice = await showDialog<String>(
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('清空数据'),
-        content: const Text('可只清空饮食/体重/收藏，或连同身体档案一起清除。'),
+        content: const Text(
+          '将清除所有饮食、体重、收藏与身体档案，相当于重新使用本程序。确定继续？',
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () => Navigator.pop(ctx, false),
             child: const Text('取消'),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, 'logs'),
-            child: const Text('仅记录'),
-          ),
           FilledButton(
-            onPressed: () => Navigator.pop(ctx, 'all'),
-            child: const Text('全部清空'),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('清空'),
           ),
         ],
       ),
     );
-    if (choice == null || !mounted) return;
+    if (confirmed != true || !mounted) return;
     try {
       await Future.wait([
         ref.read(mealRepositoryProvider).clearAll(),
         ref.read(weightRepositoryProvider).clearAll(),
         ref.read(foodRepositoryProvider).clearFavorites(),
+        ref.read(formMemoryRepositoryProvider).clear(),
       ]);
-      if (choice == 'all') {
-        await ref.read(profileProvider.notifier).clear();
-      } else {
-        ref.read(profileProvider.notifier).reload();
-      }
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('已清空')),
-      );
+      await ref.read(profileProvider.notifier).clear();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -190,7 +181,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         actions: [
           if (hint != null)
             Padding(
-              padding: const EdgeInsets.only(right: 16),
+              padding: const EdgeInsets.only(right: 4),
               child: Center(
                 child: Text(
                   hint,
@@ -198,6 +189,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 ),
               ),
             ),
+          IconButton(
+            onPressed: _clearData,
+            tooltip: '清空数据',
+            icon: const Icon(Icons.delete_outline),
+          ),
         ],
       ),
       body: ListView(
@@ -350,12 +346,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               onChanged: (v) => _update(() => _weeklyLossKg = v),
             ),
           ],
-          const SizedBox(height: AppSpacing.section),
-          TextButton.icon(
-            onPressed: _clearData,
-            icon: const Icon(Icons.delete_outline),
-            label: const Text('清空数据'),
-          ),
         ],
       ),
     );

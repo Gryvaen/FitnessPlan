@@ -40,7 +40,16 @@ class FoodsPage extends ConsumerWidget {
     final searching = ref.watch(_foodQueryProvider).trim().isNotEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('食材库')),
+      appBar: AppBar(
+        title: const Text('食材库'),
+        actions: [
+          IconButton(
+            tooltip: '收藏',
+            icon: const Icon(Icons.star_outline),
+            onPressed: () => context.push('/foods/favorites'),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Padding(
@@ -73,7 +82,6 @@ class _FoodBrowse extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final favoritesAsync = ref.watch(favoriteFoodsProvider);
     final categoriesAsync = ref.watch(_categoryCountsProvider);
 
     return categoriesAsync.when(
@@ -92,29 +100,10 @@ class _FoodBrowse extends ConsumerWidget {
         ),
       ),
       data: (categories) {
-        final favorites = favoritesAsync.value ?? const <FoodItem>[];
         return ListView(
           children: [
-            if (favorites.isNotEmpty) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                child: Text('收藏', style: theme.textTheme.titleSmall),
-              ),
-              for (final f in favorites)
-                ListTile(
-                  key: ValueKey('fav-${f.id}'),
-                  leading: const Icon(Icons.star),
-                  title: Text(f.name, style: theme.textTheme.bodyLarge),
-                  subtitle: Text(
-                    '${f.category} · ${f.kcalPer100.round()} kcal/100g',
-                    style: theme.textTheme.meta,
-                  ),
-                  onTap: () => context.push('/foods/${f.id}'),
-                ),
-              const Divider(height: 24),
-            ],
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
               child: Text('分类', style: theme.textTheme.titleSmall),
             ),
             if (categories.isEmpty)
