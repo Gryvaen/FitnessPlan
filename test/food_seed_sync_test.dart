@@ -64,7 +64,7 @@ void main() {
   test('syncSeedFromAsset upserts by name', () async {
     final raw = await File('assets/food_seed.json').readAsString();
     final list = jsonDecode(raw) as List<dynamic>;
-    expect(list.length, greaterThan(1500));
+    expect(list.length, greaterThan(3000));
 
     final first = list.first as Map<String, dynamic>;
     final firstName = first['name'] as String;
