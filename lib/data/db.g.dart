@@ -168,6 +168,10 @@ class $FoodItemsTable extends FoodItems
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {name},
+  ];
+  @override
   FoodItem map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return FoodItem(
@@ -503,8 +507,36 @@ class $WeightLogsTable extends WeightLogs
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _bodyFatPctMeta = const VerificationMeta(
+    'bodyFatPct',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, date, weightKg];
+  late final GeneratedColumn<double> bodyFatPct = GeneratedColumn<double>(
+    'body_fat_pct',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _exerciseMinutesMeta = const VerificationMeta(
+    'exerciseMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> exerciseMinutes = GeneratedColumn<int>(
+    'exercise_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    date,
+    weightKg,
+    bodyFatPct,
+    exerciseMinutes,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -536,6 +568,24 @@ class $WeightLogsTable extends WeightLogs
     } else if (isInserting) {
       context.missing(_weightKgMeta);
     }
+    if (data.containsKey('body_fat_pct')) {
+      context.handle(
+        _bodyFatPctMeta,
+        bodyFatPct.isAcceptableOrUnknown(
+          data['body_fat_pct']!,
+          _bodyFatPctMeta,
+        ),
+      );
+    }
+    if (data.containsKey('exercise_minutes')) {
+      context.handle(
+        _exerciseMinutesMeta,
+        exerciseMinutes.isAcceptableOrUnknown(
+          data['exercise_minutes']!,
+          _exerciseMinutesMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -557,6 +607,14 @@ class $WeightLogsTable extends WeightLogs
         DriftSqlType.double,
         data['${effectivePrefix}weight_kg'],
       )!,
+      bodyFatPct: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}body_fat_pct'],
+      ),
+      exerciseMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}exercise_minutes'],
+      ),
     );
   }
 
@@ -570,10 +628,16 @@ class WeightLog extends DataClass implements Insertable<WeightLog> {
   final int id;
   final DateTime date;
   final double weightKg;
+  final double? bodyFatPct;
+
+  /// Daily exercise minutes for this log date (not per-session).
+  final int? exerciseMinutes;
   const WeightLog({
     required this.id,
     required this.date,
     required this.weightKg,
+    this.bodyFatPct,
+    this.exerciseMinutes,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -581,6 +645,12 @@ class WeightLog extends DataClass implements Insertable<WeightLog> {
     map['id'] = Variable<int>(id);
     map['date'] = Variable<DateTime>(date);
     map['weight_kg'] = Variable<double>(weightKg);
+    if (!nullToAbsent || bodyFatPct != null) {
+      map['body_fat_pct'] = Variable<double>(bodyFatPct);
+    }
+    if (!nullToAbsent || exerciseMinutes != null) {
+      map['exercise_minutes'] = Variable<int>(exerciseMinutes);
+    }
     return map;
   }
 
@@ -589,6 +659,12 @@ class WeightLog extends DataClass implements Insertable<WeightLog> {
       id: Value(id),
       date: Value(date),
       weightKg: Value(weightKg),
+      bodyFatPct: bodyFatPct == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bodyFatPct),
+      exerciseMinutes: exerciseMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(exerciseMinutes),
     );
   }
 
@@ -601,6 +677,8 @@ class WeightLog extends DataClass implements Insertable<WeightLog> {
       id: serializer.fromJson<int>(json['id']),
       date: serializer.fromJson<DateTime>(json['date']),
       weightKg: serializer.fromJson<double>(json['weightKg']),
+      bodyFatPct: serializer.fromJson<double?>(json['bodyFatPct']),
+      exerciseMinutes: serializer.fromJson<int?>(json['exerciseMinutes']),
     );
   }
   @override
@@ -610,19 +688,37 @@ class WeightLog extends DataClass implements Insertable<WeightLog> {
       'id': serializer.toJson<int>(id),
       'date': serializer.toJson<DateTime>(date),
       'weightKg': serializer.toJson<double>(weightKg),
+      'bodyFatPct': serializer.toJson<double?>(bodyFatPct),
+      'exerciseMinutes': serializer.toJson<int?>(exerciseMinutes),
     };
   }
 
-  WeightLog copyWith({int? id, DateTime? date, double? weightKg}) => WeightLog(
+  WeightLog copyWith({
+    int? id,
+    DateTime? date,
+    double? weightKg,
+    Value<double?> bodyFatPct = const Value.absent(),
+    Value<int?> exerciseMinutes = const Value.absent(),
+  }) => WeightLog(
     id: id ?? this.id,
     date: date ?? this.date,
     weightKg: weightKg ?? this.weightKg,
+    bodyFatPct: bodyFatPct.present ? bodyFatPct.value : this.bodyFatPct,
+    exerciseMinutes: exerciseMinutes.present
+        ? exerciseMinutes.value
+        : this.exerciseMinutes,
   );
   WeightLog copyWithCompanion(WeightLogsCompanion data) {
     return WeightLog(
       id: data.id.present ? data.id.value : this.id,
       date: data.date.present ? data.date.value : this.date,
       weightKg: data.weightKg.present ? data.weightKg.value : this.weightKg,
+      bodyFatPct: data.bodyFatPct.present
+          ? data.bodyFatPct.value
+          : this.bodyFatPct,
+      exerciseMinutes: data.exerciseMinutes.present
+          ? data.exerciseMinutes.value
+          : this.exerciseMinutes,
     );
   }
 
@@ -631,46 +727,61 @@ class WeightLog extends DataClass implements Insertable<WeightLog> {
     return (StringBuffer('WeightLog(')
           ..write('id: $id, ')
           ..write('date: $date, ')
-          ..write('weightKg: $weightKg')
+          ..write('weightKg: $weightKg, ')
+          ..write('bodyFatPct: $bodyFatPct, ')
+          ..write('exerciseMinutes: $exerciseMinutes')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, date, weightKg);
+  int get hashCode =>
+      Object.hash(id, date, weightKg, bodyFatPct, exerciseMinutes);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is WeightLog &&
           other.id == this.id &&
           other.date == this.date &&
-          other.weightKg == this.weightKg);
+          other.weightKg == this.weightKg &&
+          other.bodyFatPct == this.bodyFatPct &&
+          other.exerciseMinutes == this.exerciseMinutes);
 }
 
 class WeightLogsCompanion extends UpdateCompanion<WeightLog> {
   final Value<int> id;
   final Value<DateTime> date;
   final Value<double> weightKg;
+  final Value<double?> bodyFatPct;
+  final Value<int?> exerciseMinutes;
   const WeightLogsCompanion({
     this.id = const Value.absent(),
     this.date = const Value.absent(),
     this.weightKg = const Value.absent(),
+    this.bodyFatPct = const Value.absent(),
+    this.exerciseMinutes = const Value.absent(),
   });
   WeightLogsCompanion.insert({
     this.id = const Value.absent(),
     required DateTime date,
     required double weightKg,
+    this.bodyFatPct = const Value.absent(),
+    this.exerciseMinutes = const Value.absent(),
   }) : date = Value(date),
        weightKg = Value(weightKg);
   static Insertable<WeightLog> custom({
     Expression<int>? id,
     Expression<DateTime>? date,
     Expression<double>? weightKg,
+    Expression<double>? bodyFatPct,
+    Expression<int>? exerciseMinutes,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (date != null) 'date': date,
       if (weightKg != null) 'weight_kg': weightKg,
+      if (bodyFatPct != null) 'body_fat_pct': bodyFatPct,
+      if (exerciseMinutes != null) 'exercise_minutes': exerciseMinutes,
     });
   }
 
@@ -678,11 +789,15 @@ class WeightLogsCompanion extends UpdateCompanion<WeightLog> {
     Value<int>? id,
     Value<DateTime>? date,
     Value<double>? weightKg,
+    Value<double?>? bodyFatPct,
+    Value<int?>? exerciseMinutes,
   }) {
     return WeightLogsCompanion(
       id: id ?? this.id,
       date: date ?? this.date,
       weightKg: weightKg ?? this.weightKg,
+      bodyFatPct: bodyFatPct ?? this.bodyFatPct,
+      exerciseMinutes: exerciseMinutes ?? this.exerciseMinutes,
     );
   }
 
@@ -698,6 +813,12 @@ class WeightLogsCompanion extends UpdateCompanion<WeightLog> {
     if (weightKg.present) {
       map['weight_kg'] = Variable<double>(weightKg.value);
     }
+    if (bodyFatPct.present) {
+      map['body_fat_pct'] = Variable<double>(bodyFatPct.value);
+    }
+    if (exerciseMinutes.present) {
+      map['exercise_minutes'] = Variable<int>(exerciseMinutes.value);
+    }
     return map;
   }
 
@@ -706,7 +827,9 @@ class WeightLogsCompanion extends UpdateCompanion<WeightLog> {
     return (StringBuffer('WeightLogsCompanion(')
           ..write('id: $id, ')
           ..write('date: $date, ')
-          ..write('weightKg: $weightKg')
+          ..write('weightKg: $weightKg, ')
+          ..write('bodyFatPct: $bodyFatPct, ')
+          ..write('exerciseMinutes: $exerciseMinutes')
           ..write(')'))
         .toString();
   }
@@ -1300,12 +1423,220 @@ class MealEntriesCompanion extends UpdateCompanion<MealEntry> {
   }
 }
 
+class $AppMetaTable extends AppMeta with TableInfo<$AppMetaTable, AppMetaData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AppMetaTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+    'key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<String> value = GeneratedColumn<String>(
+    'value',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [key, value];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'app_meta';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AppMetaData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('key')) {
+      context.handle(
+        _keyMeta,
+        key.isAcceptableOrUnknown(data['key']!, _keyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_valueMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {key};
+  @override
+  AppMetaData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AppMetaData(
+      key: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key'],
+      )!,
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value'],
+      )!,
+    );
+  }
+
+  @override
+  $AppMetaTable createAlias(String alias) {
+    return $AppMetaTable(attachedDatabase, alias);
+  }
+}
+
+class AppMetaData extends DataClass implements Insertable<AppMetaData> {
+  final String key;
+  final String value;
+  const AppMetaData({required this.key, required this.value});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['key'] = Variable<String>(key);
+    map['value'] = Variable<String>(value);
+    return map;
+  }
+
+  AppMetaCompanion toCompanion(bool nullToAbsent) {
+    return AppMetaCompanion(key: Value(key), value: Value(value));
+  }
+
+  factory AppMetaData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AppMetaData(
+      key: serializer.fromJson<String>(json['key']),
+      value: serializer.fromJson<String>(json['value']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'key': serializer.toJson<String>(key),
+      'value': serializer.toJson<String>(value),
+    };
+  }
+
+  AppMetaData copyWith({String? key, String? value}) =>
+      AppMetaData(key: key ?? this.key, value: value ?? this.value);
+  AppMetaData copyWithCompanion(AppMetaCompanion data) {
+    return AppMetaData(
+      key: data.key.present ? data.key.value : this.key,
+      value: data.value.present ? data.value.value : this.value,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppMetaData(')
+          ..write('key: $key, ')
+          ..write('value: $value')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(key, value);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AppMetaData &&
+          other.key == this.key &&
+          other.value == this.value);
+}
+
+class AppMetaCompanion extends UpdateCompanion<AppMetaData> {
+  final Value<String> key;
+  final Value<String> value;
+  final Value<int> rowid;
+  const AppMetaCompanion({
+    this.key = const Value.absent(),
+    this.value = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AppMetaCompanion.insert({
+    required String key,
+    required String value,
+    this.rowid = const Value.absent(),
+  }) : key = Value(key),
+       value = Value(value);
+  static Insertable<AppMetaData> custom({
+    Expression<String>? key,
+    Expression<String>? value,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (key != null) 'key': key,
+      if (value != null) 'value': value,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AppMetaCompanion copyWith({
+    Value<String>? key,
+    Value<String>? value,
+    Value<int>? rowid,
+  }) {
+    return AppMetaCompanion(
+      key: key ?? this.key,
+      value: value ?? this.value,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<String>(value.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppMetaCompanion(')
+          ..write('key: $key, ')
+          ..write('value: $value, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $FoodItemsTable foodItems = $FoodItemsTable(this);
   late final $WeightLogsTable weightLogs = $WeightLogsTable(this);
   late final $MealEntriesTable mealEntries = $MealEntriesTable(this);
+  late final $AppMetaTable appMeta = $AppMetaTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1314,6 +1645,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     foodItems,
     weightLogs,
     mealEntries,
+    appMeta,
   ];
 }
 
@@ -1554,12 +1886,16 @@ typedef $$WeightLogsTableCreateCompanionBuilder =
       Value<int> id,
       required DateTime date,
       required double weightKg,
+      Value<double?> bodyFatPct,
+      Value<int?> exerciseMinutes,
     });
 typedef $$WeightLogsTableUpdateCompanionBuilder =
     WeightLogsCompanion Function({
       Value<int> id,
       Value<DateTime> date,
       Value<double> weightKg,
+      Value<double?> bodyFatPct,
+      Value<int?> exerciseMinutes,
     });
 
 class $$WeightLogsTableFilterComposer
@@ -1583,6 +1919,16 @@ class $$WeightLogsTableFilterComposer
 
   ColumnFilters<double> get weightKg => $composableBuilder(
     column: $table.weightKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bodyFatPct => $composableBuilder(
+    column: $table.bodyFatPct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get exerciseMinutes => $composableBuilder(
+    column: $table.exerciseMinutes,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1610,6 +1956,16 @@ class $$WeightLogsTableOrderingComposer
     column: $table.weightKg,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get bodyFatPct => $composableBuilder(
+    column: $table.bodyFatPct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get exerciseMinutes => $composableBuilder(
+    column: $table.exerciseMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$WeightLogsTableAnnotationComposer
@@ -1629,6 +1985,16 @@ class $$WeightLogsTableAnnotationComposer
 
   GeneratedColumn<double> get weightKg =>
       $composableBuilder(column: $table.weightKg, builder: (column) => column);
+
+  GeneratedColumn<double> get bodyFatPct => $composableBuilder(
+    column: $table.bodyFatPct,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get exerciseMinutes => $composableBuilder(
+    column: $table.exerciseMinutes,
+    builder: (column) => column,
+  );
 }
 
 class $$WeightLogsTableTableManager
@@ -1665,16 +2031,28 @@ class $$WeightLogsTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<DateTime> date = const Value.absent(),
                 Value<double> weightKg = const Value.absent(),
-              }) => WeightLogsCompanion(id: id, date: date, weightKg: weightKg),
+                Value<double?> bodyFatPct = const Value.absent(),
+                Value<int?> exerciseMinutes = const Value.absent(),
+              }) => WeightLogsCompanion(
+                id: id,
+                date: date,
+                weightKg: weightKg,
+                bodyFatPct: bodyFatPct,
+                exerciseMinutes: exerciseMinutes,
+              ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required DateTime date,
                 required double weightKg,
+                Value<double?> bodyFatPct = const Value.absent(),
+                Value<int?> exerciseMinutes = const Value.absent(),
               }) => WeightLogsCompanion.insert(
                 id: id,
                 date: date,
                 weightKg: weightKg,
+                bodyFatPct: bodyFatPct,
+                exerciseMinutes: exerciseMinutes,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -1984,6 +2362,139 @@ typedef $$MealEntriesTableProcessedTableManager =
       MealEntry,
       PrefetchHooks Function()
     >;
+typedef $$AppMetaTableCreateCompanionBuilder =
+    AppMetaCompanion Function({
+      required String key,
+      required String value,
+      Value<int> rowid,
+    });
+typedef $$AppMetaTableUpdateCompanionBuilder =
+    AppMetaCompanion Function({
+      Value<String> key,
+      Value<String> value,
+      Value<int> rowid,
+    });
+
+class $$AppMetaTableFilterComposer
+    extends Composer<_$AppDatabase, $AppMetaTable> {
+  $$AppMetaTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AppMetaTableOrderingComposer
+    extends Composer<_$AppDatabase, $AppMetaTable> {
+  $$AppMetaTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AppMetaTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AppMetaTable> {
+  $$AppMetaTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+}
+
+class $$AppMetaTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AppMetaTable,
+          AppMetaData,
+          $$AppMetaTableFilterComposer,
+          $$AppMetaTableOrderingComposer,
+          $$AppMetaTableAnnotationComposer,
+          $$AppMetaTableCreateCompanionBuilder,
+          $$AppMetaTableUpdateCompanionBuilder,
+          (
+            AppMetaData,
+            BaseReferences<_$AppDatabase, $AppMetaTable, AppMetaData>,
+          ),
+          AppMetaData,
+          PrefetchHooks Function()
+        > {
+  $$AppMetaTableTableManager(_$AppDatabase db, $AppMetaTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AppMetaTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AppMetaTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AppMetaTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> key = const Value.absent(),
+                Value<String> value = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AppMetaCompanion(key: key, value: value, rowid: rowid),
+          createCompanionCallback:
+              ({
+                required String key,
+                required String value,
+                Value<int> rowid = const Value.absent(),
+              }) =>
+                  AppMetaCompanion.insert(key: key, value: value, rowid: rowid),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AppMetaTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AppMetaTable,
+      AppMetaData,
+      $$AppMetaTableFilterComposer,
+      $$AppMetaTableOrderingComposer,
+      $$AppMetaTableAnnotationComposer,
+      $$AppMetaTableCreateCompanionBuilder,
+      $$AppMetaTableUpdateCompanionBuilder,
+      (AppMetaData, BaseReferences<_$AppDatabase, $AppMetaTable, AppMetaData>),
+      AppMetaData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -1994,4 +2505,6 @@ class $AppDatabaseManager {
       $$WeightLogsTableTableManager(_db, _db.weightLogs);
   $$MealEntriesTableTableManager get mealEntries =>
       $$MealEntriesTableTableManager(_db, _db.mealEntries);
+  $$AppMetaTableTableManager get appMeta =>
+      $$AppMetaTableTableManager(_db, _db.appMeta);
 }

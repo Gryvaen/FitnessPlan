@@ -3,13 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'providers/app_providers.dart';
+import 'ui/foods/food_category_page.dart';
 import 'ui/foods/food_detail_page.dart';
 import 'ui/foods/foods_page.dart';
 import 'ui/meals/log_meal_page.dart';
+import 'ui/meals/meal_detail_page.dart';
 import 'ui/onboarding/onboarding_page.dart';
 import 'ui/profile/profile_page.dart';
 import 'ui/shell/main_shell.dart';
 import 'ui/today/today_page.dart';
+import 'ui/theme/app_theme.dart';
 import 'ui/weight/weight_page.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -52,6 +55,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (context, state) => const FoodsPage(),
                 routes: [
                   GoRoute(
+                    path: 'category',
+                    builder: (context, state) {
+                      final category =
+                          state.uri.queryParameters['name'] ?? '';
+                      return FoodCategoryPage(category: category);
+                    },
+                  ),
+                  GoRoute(
                     path: ':id',
                     builder: (context, state) {
                       final id = int.parse(state.pathParameters['id']!);
@@ -88,27 +99,40 @@ final routerProvider = Provider<GoRouter>((ref) {
           return LogMealPage(initialFoodId: id);
         },
       ),
+      GoRoute(
+        path: '/meal/:id',
+        builder: (context, state) {
+          final id = int.parse(state.pathParameters['id']!);
+          return MealDetailPage(entryId: id);
+        },
+      ),
     ],
   );
 });
 
-class FitnessApp extends ConsumerWidget {
+class FitnessApp extends ConsumerStatefulWidget {
   const FitnessApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FitnessApp> createState() => _FitnessAppState();
+}
+
+class _FitnessAppState extends ConsumerState<FitnessApp> {
+  @override
+  void reassemble() {
+    super.reassemble();
+    // Hot reload can leave UserProfile instances with uninitialized new fields;
+    // rehydrate from SharedPreferences.
+    ref.read(profileProvider.notifier).reload();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
       title: '健身饮食',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2D6A4F),
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-        appBarTheme: const AppBarTheme(centerTitle: true),
-      ),
+      theme: AppTheme.light,
       routerConfig: router,
     );
   }

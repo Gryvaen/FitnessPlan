@@ -29,7 +29,10 @@ class FoodDetailPage extends ConsumerWidget {
         return Scaffold(
           appBar: AppBar(title: Text(food.name)),
           floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => context.push('/log-meal?foodId=$foodId'),
+            onPressed: () {
+              ref.read(selectedDayProvider.notifier).goToToday();
+              context.push('/log-meal?foodId=$foodId');
+            },
             icon: const Icon(Icons.add),
             label: const Text('记入今日'),
           ),

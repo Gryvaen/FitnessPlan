@@ -8,12 +8,20 @@ class FoodItems extends Table {
   RealColumn get proteinPer100 => real()();
   RealColumn get carbPer100 => real()();
   RealColumn get fatPer100 => real()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {name},
+      ];
 }
 
 class WeightLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get date => dateTime()();
   RealColumn get weightKg => real()();
+  RealColumn get bodyFatPct => real().nullable()();
+  /// Daily exercise minutes for this log date (not per-session).
+  IntColumn get exerciseMinutes => integer().nullable()();
 }
 
 class MealEntries extends Table {
@@ -27,4 +35,12 @@ class MealEntries extends Table {
   RealColumn get proteinG => real()();
   RealColumn get carbG => real()();
   RealColumn get fatG => real()();
+}
+
+class AppMeta extends Table {
+  TextColumn get key => text()();
+  TextColumn get value => text()();
+
+  @override
+  Set<Column> get primaryKey => {key};
 }

@@ -24,8 +24,8 @@ class _Bootstrap extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Seed food database once at startup.
-    ref.watch(foodsSeedProvider);
+    // Sync food catalog, then one-shot demo meal history for date browsing.
+    ref.watch(demoMealsSeedProvider);
     return const FitnessApp();
   }
 }

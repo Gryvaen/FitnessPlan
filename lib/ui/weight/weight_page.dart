@@ -3,7 +3,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../data/db.dart';
 import '../../providers/app_providers.dart';
+import '../widgets/form_options.dart';
+
+class _WeightLogDraft {
+  const _WeightLogDraft({
+    required this.weightKg,
+    this.bodyFatPct,
+    this.exerciseMinutes,
+  });
+
+  final double weightKg;
+  final double? bodyFatPct;
+  final int? exerciseMinutes;
+}
+
+class _SeriesPoint {
+  const _SeriesPoint({required this.date, required this.value});
+  final DateTime date;
+  final double value;
+}
 
 class WeightPage extends ConsumerStatefulWidget {
   const WeightPage({super.key});
@@ -15,52 +35,51 @@ class WeightPage extends ConsumerStatefulWidget {
 class _WeightPageState extends ConsumerState<WeightPage> {
   Future<void> _addWeight() async {
     final profile = ref.read(profileProvider);
-    final ctrl = TextEditingController(
-      text: profile?.weightKg.toStringAsFixed(1) ?? '70',
-    );
-    final ok = await showDialog<bool>(
+    final draft = await showDialog<_WeightLogDraft>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('记录体重'),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          decoration: const InputDecoration(
-            labelText: '体重 (kg)',
-            border: OutlineInputBorder(),
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('保存'),
-          ),
-        ],
+      builder: (ctx) => _WeightLogDialog(
+        initialWeightKg: profile?.weightKg ?? 70,
       ),
     );
-    if (ok != true) return;
-    final w = double.tryParse(ctrl.text);
-    if (w == null || w < 30 || w > 300) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请输入有效体重')),
-      );
-      return;
-    }
+    if (draft == null || !mounted) return;
+
     await ref.read(weightRepositoryProvider).add(
           date: DateTime.now(),
-          weightKg: w,
+          weightKg: draft.weightKg,
+          bodyFatPct: draft.bodyFatPct,
+          exerciseMinutes: draft.exerciseMinutes,
         );
+    final updated = await ref
+        .read(profileProvider.notifier)
+        .applyLatestWeight(draft.weightKg);
+    if (!mounted) return;
+    if (updated != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '已记体重并重算：日摄入 ${updated.targets.calories} kcal · '
+            '蛋白 ${updated.targets.proteinG.toStringAsFixed(0)}g',
+          ),
+        ),
+      );
+    }
+  }
+
+  String _logSubtitle(WeightLog log) {
+    final parts = <String>[DateFormat('yyyy-MM-dd').format(log.date)];
+    if (log.bodyFatPct != null) {
+      parts.add('体脂 ${log.bodyFatPct!.toStringAsFixed(1)}%');
+    }
+    if (log.exerciseMinutes != null) {
+      parts.add('运动 ${log.exerciseMinutes} 分钟');
+    }
+    return parts.join(' · ');
   }
 
   @override
   Widget build(BuildContext context) {
     final logsAsync = ref.watch(weightLogsProvider);
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(title: const Text('体重')),
@@ -75,78 +94,56 @@ class _WeightPageState extends ConsumerState<WeightPage> {
           if (logs.isEmpty) {
             return const Center(child: Text('还没有体重记录，点右下角添加'));
           }
-          final spots = <FlSpot>[];
-          for (var i = 0; i < logs.length; i++) {
-            spots.add(FlSpot(i.toDouble(), logs[i].weightKg));
-          }
-          final minY =
-              logs.map((e) => e.weightKg).reduce((a, b) => a < b ? a : b) - 2;
-          final maxY =
-              logs.map((e) => e.weightKg).reduce((a, b) => a > b ? a : b) + 2;
+
+          final weightSeries = [
+            for (final log in logs)
+              _SeriesPoint(date: log.date, value: log.weightKg),
+          ];
+          final bodyFatSeries = [
+            for (final log in logs)
+              if (log.bodyFatPct != null)
+                _SeriesPoint(date: log.date, value: log.bodyFatPct!),
+          ];
+          final exerciseSeries = [
+            for (final log in logs)
+              if (log.exerciseMinutes != null)
+                _SeriesPoint(
+                  date: log.date,
+                  value: log.exerciseMinutes!.toDouble(),
+                ),
+          ];
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
             children: [
-              SizedBox(
-                height: 220,
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 16, 16, 12),
-                    child: LineChart(
-                      LineChartData(
-                        minY: minY,
-                        maxY: maxY,
-                        gridData: const FlGridData(show: true),
-                        borderData: FlBorderData(show: false),
-                        titlesData: FlTitlesData(
-                          topTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          rightTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              reservedSize: 28,
-                              interval: logs.length > 6
-                                  ? (logs.length / 4).ceilToDouble()
-                                  : 1,
-                              getTitlesWidget: (value, meta) {
-                                final i = value.round();
-                                if (i < 0 || i >= logs.length) {
-                                  return const SizedBox.shrink();
-                                }
-                                return Text(
-                                  DateFormat('M/d').format(logs[i].date),
-                                  style: const TextStyle(fontSize: 10),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                        lineBarsData: [
-                          LineChartBarData(
-                            spots: spots,
-                            isCurved: true,
-                            barWidth: 3,
-                            color: Theme.of(context).colorScheme.primary,
-                            dotData: const FlDotData(show: true),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+              _SeriesChartCard(
+                title: '体重 (kg)',
+                points: weightSeries,
+                color: scheme.primary,
+                emptyHint: '暂无体重数据',
               ),
               const SizedBox(height: 12),
+              _SeriesChartCard(
+                title: '体脂率 (%)',
+                points: bodyFatSeries,
+                color: const Color(0xFFD62828),
+                emptyHint: '暂无体脂记录，添加时可选填写',
+              ),
+              const SizedBox(height: 12),
+              _SeriesChartCard(
+                title: '今日运动 (分钟)',
+                points: exerciseSeries,
+                color: const Color(0xFF457B9D),
+                emptyHint: '暂无运动记录，添加时可选填写',
+              ),
+              const SizedBox(height: 16),
               Text('历史记录', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               ...logs.reversed.map(
                 (log) => ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text('${log.weightKg.toStringAsFixed(1)} kg'),
-                  subtitle: Text(DateFormat('yyyy-MM-dd').format(log.date)),
+                  subtitle: Text(_logSubtitle(log)),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete_outline),
                     onPressed: () =>
@@ -158,6 +155,196 @@ class _WeightPageState extends ConsumerState<WeightPage> {
           );
         },
       ),
+    );
+  }
+}
+
+class _SeriesChartCard extends StatelessWidget {
+  const _SeriesChartCard({
+    required this.title,
+    required this.points,
+    required this.color,
+    required this.emptyHint,
+  });
+
+  final String title;
+  final List<_SeriesPoint> points;
+  final Color color;
+  final String emptyHint;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 12, 16, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 180,
+              child: points.isEmpty
+                  ? Center(
+                      child: Text(
+                        emptyHint,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    )
+                  : _buildChart(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChart(BuildContext context) {
+    final spots = <FlSpot>[
+      for (var i = 0; i < points.length; i++)
+        FlSpot(i.toDouble(), points[i].value),
+    ];
+
+    var minY = points.map((e) => e.value).reduce((a, b) => a < b ? a : b);
+    var maxY = points.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+    if (minY == maxY) {
+      minY -= 1;
+      maxY += 1;
+    } else {
+      final pad = (maxY - minY) * 0.1;
+      minY -= pad;
+      maxY += pad;
+    }
+
+    return LineChart(
+      LineChartData(
+        minY: minY,
+        maxY: maxY,
+        gridData: const FlGridData(show: true),
+        borderData: FlBorderData(show: false),
+        titlesData: FlTitlesData(
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 28,
+              interval: points.length > 6
+                  ? (points.length / 4).ceilToDouble()
+                  : 1,
+              getTitlesWidget: (value, meta) {
+                final i = value.round();
+                if (i < 0 || i >= points.length) {
+                  return const SizedBox.shrink();
+                }
+                return Text(
+                  DateFormat('M/d').format(points[i].date),
+                  style: const TextStyle(fontSize: 10),
+                );
+              },
+            ),
+          ),
+        ),
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: false,
+            barWidth: 3,
+            color: color,
+            dotData: const FlDotData(show: true),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Owns dialog state; fields use dropdowns (no TextEditingController).
+class _WeightLogDialog extends StatefulWidget {
+  const _WeightLogDialog({required this.initialWeightKg});
+
+  final double initialWeightKg;
+
+  @override
+  State<_WeightLogDialog> createState() => _WeightLogDialogState();
+}
+
+class _WeightLogDialogState extends State<_WeightLogDialog> {
+  late double _weightKg;
+  double? _bodyFatPct;
+  int? _exerciseMinutes;
+
+  @override
+  void initState() {
+    super.initState();
+    _weightKg = FormOptions.snapDouble(
+      FormOptions.weightsKg(),
+      widget.initialWeightKg,
+    );
+  }
+
+  void _submit() {
+    Navigator.pop(
+      context,
+      _WeightLogDraft(
+        weightKg: _weightKg,
+        bodyFatPct: _bodyFatPct,
+        exerciseMinutes: _exerciseMinutes,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('记录体重'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppDropdown<double>(
+              label: '体重',
+              value: _weightKg,
+              items: FormOptions.weightsKg(),
+              suffixText: 'kg',
+              itemLabel: formatKg,
+              onChanged: (v) => setState(() => _weightKg = v),
+            ),
+            const SizedBox(height: 12),
+            AppOptionalDropdown<double>(
+              label: '体脂率',
+              value: _bodyFatPct,
+              items: FormOptions.bodyFatPct(),
+              suffixText: '%',
+              itemLabel: (v) => v.toStringAsFixed(1),
+              onChanged: (v) => setState(() => _bodyFatPct = v),
+            ),
+            const SizedBox(height: 12),
+            AppOptionalDropdown<int>(
+              label: '今日运动时间',
+              value: _exerciseMinutes,
+              items: FormOptions.exerciseMinutes,
+              suffixText: '分钟',
+              helperText: '按当天累计运动时长',
+              onChanged: (v) => setState(() => _exerciseMinutes = v),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('取消'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text('保存'),
+        ),
+      ],
     );
   }
 }

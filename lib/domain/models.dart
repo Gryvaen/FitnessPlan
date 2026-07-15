@@ -4,7 +4,8 @@ enum ActivityLevel {
   sedentary(1.2, '久坐'),
   light(1.375, '轻度活动'),
   moderate(1.55, '中度活动'),
-  high(1.725, '较高活动');
+  high(1.725, '较高活动'),
+  athlete(1.9, '运动员级');
 
   const ActivityLevel(this.factor, this.label);
   final double factor;
@@ -12,14 +13,13 @@ enum ActivityLevel {
 }
 
 enum FitnessGoal {
-  cut(-0.20, '减脂', 2.0),
-  maintain(0.0, '维持', 2.0),
-  bulk(0.10, '增肌', 2.2);
+  cut(-0.20, '减脂'),
+  maintain(0.0, '维持'),
+  bulk(0.10, '增肌');
 
-  const FitnessGoal(this.calorieAdjust, this.label, this.proteinPerKg);
+  const FitnessGoal(this.calorieAdjust, this.label);
   final double calorieAdjust;
   final String label;
-  final double proteinPerKg;
 }
 
 enum MealType {
@@ -69,7 +69,20 @@ class UserProfile {
     required this.activity,
     required this.goal,
     required this.targets,
-  });
+    this.targetWeightKg,
+    this.goalWeeks,
+    this.weeklyLossKg,
+    int calorieAdjustment = 0,
+    this.bmr,
+    this.tdee,
+    this.dailyDeficit,
+    bool calorieFloorApplied = false,
+    this.adjustedWeeks,
+    bool missingCutInputs = false,
+    this.calorieStandardSince,
+  })  : _calorieAdjustment = calorieAdjustment,
+        _calorieFloorApplied = calorieFloorApplied,
+        _missingCutInputs = missingCutInputs;
 
   final Sex sex;
   final int age;
@@ -78,6 +91,22 @@ class UserProfile {
   final ActivityLevel activity;
   final FitnessGoal goal;
   final MacroTargets targets;
+  final double? targetWeightKg;
+  final int? goalWeeks;
+  final double? weeklyLossKg;
+  final int? _calorieAdjustment;
+  final double? bmr;
+  final double? tdee;
+  final double? dailyDeficit;
+  final bool? _calorieFloorApplied;
+  final int? adjustedWeeks;
+  final bool? _missingCutInputs;
+  /// Local calendar day when calorie targets / deficit last changed.
+  final DateTime? calorieStandardSince;
+
+  int get calorieAdjustment => _calorieAdjustment ?? 0;
+  bool get calorieFloorApplied => _calorieFloorApplied ?? false;
+  bool get missingCutInputs => _missingCutInputs ?? false;
 
   UserProfile copyWith({
     Sex? sex,
@@ -87,6 +116,19 @@ class UserProfile {
     ActivityLevel? activity,
     FitnessGoal? goal,
     MacroTargets? targets,
+    double? targetWeightKg,
+    int? goalWeeks,
+    double? weeklyLossKg,
+    int? calorieAdjustment,
+    double? bmr,
+    double? tdee,
+    double? dailyDeficit,
+    bool? calorieFloorApplied,
+    int? adjustedWeeks,
+    bool? missingCutInputs,
+    DateTime? calorieStandardSince,
+    bool clearTargetWeightKg = false,
+    bool clearCalorieStandardSince = false,
   }) {
     return UserProfile(
       sex: sex ?? this.sex,
@@ -96,7 +138,37 @@ class UserProfile {
       activity: activity ?? this.activity,
       goal: goal ?? this.goal,
       targets: targets ?? this.targets,
+      targetWeightKg:
+          clearTargetWeightKg ? null : (targetWeightKg ?? this.targetWeightKg),
+      goalWeeks: goalWeeks ?? this.goalWeeks,
+      weeklyLossKg: weeklyLossKg ?? this.weeklyLossKg,
+      calorieAdjustment: calorieAdjustment ?? this.calorieAdjustment,
+      bmr: bmr ?? this.bmr,
+      tdee: tdee ?? this.tdee,
+      dailyDeficit: dailyDeficit ?? this.dailyDeficit,
+      calorieFloorApplied: calorieFloorApplied ?? this.calorieFloorApplied,
+      adjustedWeeks: adjustedWeeks ?? this.adjustedWeeks,
+      missingCutInputs: missingCutInputs ?? this.missingCutInputs,
+      calorieStandardSince: clearCalorieStandardSince
+          ? null
+          : (calorieStandardSince ?? this.calorieStandardSince),
     );
+  }
+
+  static DateTime? _dayFromJson(Object? raw) {
+    if (raw == null) return null;
+    if (raw is! String || raw.isEmpty) return null;
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return null;
+    return DateTime(parsed.year, parsed.month, parsed.day);
+  }
+
+  static String? _dayToJson(DateTime? day) {
+    if (day == null) return null;
+    final d = DateTime(day.year, day.month, day.day);
+    final m = d.month.toString().padLeft(2, '0');
+    final dd = d.day.toString().padLeft(2, '0');
+    return '${d.year}-$m-$dd';
   }
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
@@ -107,6 +179,17 @@ class UserProfile {
         activity: ActivityLevel.values.byName(json['activity'] as String),
         goal: FitnessGoal.values.byName(json['goal'] as String),
         targets: MacroTargets.fromJson(json['targets'] as Map<String, dynamic>),
+        targetWeightKg: (json['targetWeightKg'] as num?)?.toDouble(),
+        goalWeeks: json['goalWeeks'] as int?,
+        weeklyLossKg: (json['weeklyLossKg'] as num?)?.toDouble(),
+        calorieAdjustment: json['calorieAdjustment'] as int? ?? 0,
+        bmr: (json['bmr'] as num?)?.toDouble(),
+        tdee: (json['tdee'] as num?)?.toDouble(),
+        dailyDeficit: (json['dailyDeficit'] as num?)?.toDouble(),
+        calorieFloorApplied: json['calorieFloorApplied'] as bool? ?? false,
+        adjustedWeeks: json['adjustedWeeks'] as int?,
+        missingCutInputs: json['missingCutInputs'] as bool? ?? false,
+        calorieStandardSince: _dayFromJson(json['calorieStandardSince']),
       );
 
   Map<String, dynamic> toJson() => {
@@ -117,6 +200,17 @@ class UserProfile {
         'activity': activity.name,
         'goal': goal.name,
         'targets': targets.toJson(),
+        'targetWeightKg': targetWeightKg,
+        'goalWeeks': goalWeeks,
+        'weeklyLossKg': weeklyLossKg,
+        'calorieAdjustment': calorieAdjustment,
+        'bmr': bmr,
+        'tdee': tdee,
+        'dailyDeficit': dailyDeficit,
+        'calorieFloorApplied': calorieFloorApplied,
+        'adjustedWeeks': adjustedWeeks,
+        'missingCutInputs': missingCutInputs,
+        'calorieStandardSince': _dayToJson(calorieStandardSince),
       };
 }
 
