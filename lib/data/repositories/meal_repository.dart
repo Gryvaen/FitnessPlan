@@ -127,4 +127,6 @@ class MealRepository {
     }
     return map;
   }
+
+  Future<void> clearAll() => _db.delete(_db.mealEntries).go();
 }

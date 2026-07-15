@@ -7,7 +7,7 @@ allprojects {
     }
 }
 
-// Flutter plugins (e.g. share_plus) resolve Kotlin via their own buildscript classpath.
+// Flutter plugins may resolve Kotlin via their own buildscript classpath.
 subprojects {
     buildscript {
         repositories {

@@ -46,4 +46,6 @@ class WeightRepository {
 
   Future<void> delete(int id) =>
       (_db.delete(_db.weightLogs)..where((t) => t.id.equals(id))).go();
+
+  Future<void> clearAll() => _db.delete(_db.weightLogs).go();
 }

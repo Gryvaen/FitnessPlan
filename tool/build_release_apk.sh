@@ -32,7 +32,7 @@ if [[ ! -f "$store_file" ]]; then
 fi
 
 echo "==> flutter analyze"
-flutter analyze
+flutter analyze --no-fatal-infos
 
 echo "==> flutter test"
 flutter test

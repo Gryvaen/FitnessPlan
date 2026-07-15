@@ -231,6 +231,8 @@ LIMIT ?
     final fav = await isFavorite(foodId);
     await _setFavorite(foodId, !fav);
   }
+
+  Future<void> clearFavorites() => _db.delete(_db.favoriteFoods).go();
 }
 
 class FoodCategoryCount {

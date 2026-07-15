@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/db.dart';
-import '../data/repositories/backup_repository.dart';
 import '../data/repositories/food_repository.dart';
 import '../data/repositories/form_memory_repository.dart';
 import '../data/repositories/meal_repository.dart';
@@ -37,11 +36,4 @@ final mealRepositoryProvider = Provider<MealRepository>((ref) {
 
 final weightRepositoryProvider = Provider<WeightRepository>((ref) {
   return WeightRepository(ref.watch(databaseProvider));
-});
-
-final backupRepositoryProvider = Provider<BackupRepository>((ref) {
-  return BackupRepository(
-    ref.watch(databaseProvider),
-    ref.watch(profileRepositoryProvider),
-  );
 });

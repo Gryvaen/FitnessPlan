@@ -177,7 +177,7 @@ class UserProfile {
         tdee: (json['tdee'] as num?)?.toDouble(),
         dailyDeficit: (json['dailyDeficit'] as num?)?.toDouble(),
         calorieFloorApplied: json['calorieFloorApplied'] as bool? ?? false,
-        // Legacy backups may still carry adjustedWeeks; ignore it.
+        // Legacy saved profiles may still carry adjustedWeeks; ignore it.
         missingCutInputs: json['missingCutInputs'] as bool? ?? false,
         calorieStandardSince: _dayFromJson(json['calorieStandardSince']),
       );

@@ -1,10 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../domain/calorie_calculator.dart';
 import '../../domain/models.dart';
@@ -123,69 +120,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     unawaited(_persist());
   }
 
-  Future<void> _exportBackup() async {
-    try {
-      final file = await ref.read(backupRepositoryProvider).exportToFile();
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(file.path)],
-          subject: 'FitnessPlan 备份',
-          text: '健身饮食本地备份',
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('导出失败：$e')),
-      );
-    }
-  }
-
-  Future<void> _importBackup() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('导入备份'),
-        content: const Text(
-          '导入会覆盖当前的饮食、体重与收藏数据，并尝试恢复档案。确定继续？',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('选择文件'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-
-    final file = await FilePicker.pickFile(
-      type: FileType.custom,
-      allowedExtensions: const ['json'],
-    );
-    final path = file?.path;
-    if (path == null) return;
-
-    try {
-      final raw = await File(path).readAsString();
-      await ref.read(backupRepositoryProvider).importFromJson(raw);
-      ref.read(profileProvider.notifier).reload();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('备份已导入')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('导入失败：$e')),
-      );
-    }
-  }
-
   Future<void> _clearData() async {
     final choice = await showDialog<String>(
       context: context,
@@ -210,9 +144,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
     if (choice == null || !mounted) return;
     try {
-      await ref.read(backupRepositoryProvider).clearUserData(
-            includeProfile: choice == 'all',
-          );
+      await Future.wait([
+        ref.read(mealRepositoryProvider).clearAll(),
+        ref.read(weightRepositoryProvider).clearAll(),
+        ref.read(foodRepositoryProvider).clearFavorites(),
+      ]);
       if (choice == 'all') {
         await ref.read(profileProvider.notifier).clear();
       } else {
@@ -415,25 +351,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
           ],
           const SizedBox(height: AppSpacing.section),
-          Text('数据备份', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Text(
-            '纯本地存储。建议定期导出 JSON 备份，换机时再导入。',
-            style: Theme.of(context).textTheme.meta,
-          ),
-          const SizedBox(height: AppSpacing.field),
-          OutlinedButton.icon(
-            onPressed: _exportBackup,
-            icon: const Icon(Icons.upload_outlined),
-            label: const Text('导出备份'),
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: _importBackup,
-            icon: const Icon(Icons.download_outlined),
-            label: const Text('导入备份'),
-          ),
-          const SizedBox(height: 8),
           TextButton.icon(
             onPressed: _clearData,
             icon: const Icon(Icons.delete_outline),

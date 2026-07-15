@@ -13,7 +13,7 @@
 - 记一笔饮食，自动扣减当日剩余配额
 - 按日查看历史饮食与配额（含缺口日历选择）；支持历史日补记
 - 体重记录与折线图；减脂平台期提示
-- 食材收藏与最近吃过；本地 JSON 备份导入/导出
+- 食材收藏与最近吃过
 - 全部数据本地保存，无需登录、无云端
 
 ## 技术栈
@@ -155,7 +155,7 @@ A fully offline Flutter fitness & nutrition app. It calculates daily calorie and
 - Log meals and automatically deduct from today’s remaining budget
 - Browse past days’ meals and budgets (with a deficit date picker); backfill past days
 - Weight logs with a line chart; plateau hints when cutting
-- Food favorites & recently eaten; local JSON backup export/import
+- Food favorites & recently eaten
 - Fully local storage — no accounts, no cloud
 
 ## Tech Stack
