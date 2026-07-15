@@ -43,3 +43,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local release artifacts (upload to GitHub Releases, do not commit)
+/dist/
+
+# Open Food Facts fetch cache / dump (regenerate via tool/build_food_seed.py)
+/tool/off_zh_cache.jsonl
+/tool/off_products.csv.gz
+/tool/off_products.csv.gz.part
