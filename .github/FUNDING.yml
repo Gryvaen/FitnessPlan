@@ -1,2 +1,4 @@
-# GitHub 侧栏会显示 Sponsor 按钮；点开后跳到 README 赞助区（支付宝收款码）
-custom: ["https://github.com/Gryvaen/FitnessPlan#赞助--donate"]
+# 仓库侧栏 Sponsor 按钮（需先在 GitHub 开通 Sponsors 并通过审核）
+github: Gryvaen
+# 支付宝收款码
+custom: ["https://github.com/Gryvaen/FitnessPlan/blob/main/docs/donate.md"]
