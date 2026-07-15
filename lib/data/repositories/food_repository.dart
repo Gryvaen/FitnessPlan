@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import '../db.dart';
 
 /// Bump when [assets/food_seed.json] content changes meaningfully.
-const kFoodSeedVersion = 2;
+const kFoodSeedVersion = 3;
 
 const _metaSeedVersionKey = 'food_seed_version';
 
