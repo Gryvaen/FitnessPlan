@@ -6,7 +6,7 @@
   <img src="donate-alipay.jpg" width="280" alt="支付宝收款码" />
 </p>
 
-<p align="center">用支付宝扫一扫 → 打开收款码即可</p>
+<p align="center">用支付宝扫一扫 → 付款即可</p>
 
 ---
 
