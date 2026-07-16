@@ -191,12 +191,12 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
               }
             },
           ),
+          IconButton(
+            tooltip: l10n.logMeal,
+            icon: const Icon(Icons.add),
+            onPressed: () => context.push('/log-meal?foodId=${widget.foodId}'),
+          ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/log-meal?foodId=${widget.foodId}'),
-        icon: const Icon(Icons.add),
-        label: Text(l10n.logMeal),
       ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.formPage),
