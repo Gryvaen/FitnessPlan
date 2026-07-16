@@ -19,6 +19,13 @@ Future<bool> showLogSetSheet({
   required int targetSets,
   required int perSetValue,
 }) async {
+  final l10n = context.l10n;
+  if (!AppDates.isLocalToday(day)) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.pastDayReadOnly)),
+    );
+    return false;
+  }
   final result = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
