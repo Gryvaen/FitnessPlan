@@ -25,7 +25,7 @@ class ToolsHubPage extends StatelessWidget {
           _ToolTile(
             icon: Icons.monitor_weight_outlined,
             title: '身体指标',
-            subtitle: 'BMI、理想体重、腰高比',
+            subtitle: 'BMI、理想体重、腰高比、FFMI',
             onTap: () => context.push('/profile/tools/body-metrics'),
           ),
           const SizedBox(height: AppSpacing.field),
@@ -41,6 +41,13 @@ class ToolsHubPage extends StatelessWidget {
             title: '休息计时器',
             subtitle: '组间倒计时，锁屏可提醒',
             onTap: () => context.push('/profile/tools/rest-timer'),
+          ),
+          const SizedBox(height: AppSpacing.field),
+          _ToolTile(
+            icon: Icons.calculate_outlined,
+            title: '计算器',
+            subtitle: '四则运算',
+            onTap: () => context.push('/profile/tools/calculator'),
           ),
           const SizedBox(height: AppSpacing.section),
           Text(
