@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'l10n/app_localizations_ext.dart';
 import 'providers/app_providers.dart';
 import 'ui/foods/custom_food_edit_page.dart';
 import 'ui/foods/food_category_page.dart';
@@ -100,8 +101,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                     builder: (context, state) {
                       final id = int.tryParse(state.pathParameters['id'] ?? '');
                       if (id == null) {
-                        return const Scaffold(
-                          body: Center(child: Text('无效的食材')),
+                        return Scaffold(
+                          body: Center(
+                            child: Text(context.l10n.invalidFood),
+                          ),
                         );
                       }
                       return FoodDetailPage(foodId: id);
@@ -203,8 +206,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final id = int.tryParse(state.pathParameters['id'] ?? '');
           if (id == null) {
-            return const Scaffold(
-              body: Center(child: Text('无效的记录')),
+            return Scaffold(
+              body: Center(
+                child: Text(context.l10n.invalidRecord),
+              ),
             );
           }
           return MealDetailPage(entryId: id);
@@ -234,10 +239,7 @@ class _FitnessAppState extends ConsumerState<FitnessApp> {
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
-      onGenerateTitle: (context) {
-        final code = Localizations.localeOf(context).languageCode;
-        return code == 'zh' ? '健身计划' : 'Plan';
-      },
+      onGenerateTitle: (context) => context.l10n.appTitle,
       localeResolutionCallback: (locale, supported) {
         // Follow system language; fall back to English when unsupported.
         if (locale == null) return const Locale('en');
@@ -247,14 +249,12 @@ class _FitnessAppState extends ConsumerState<FitnessApp> {
         return const Locale('en');
       },
       localizationsDelegates: const [
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('en'),
-        Locale('zh'),
-      ],
+      supportedLocales: AppLocalizations.supportedLocales,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       routerConfig: router,
