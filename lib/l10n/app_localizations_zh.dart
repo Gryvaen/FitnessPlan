@@ -444,6 +444,33 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noExercises => '暂无动作';
 
   @override
+  String get exerciseCategoryChest => '胸';
+
+  @override
+  String get exerciseCategoryBack => '背';
+
+  @override
+  String get exerciseCategoryLegs => '腿';
+
+  @override
+  String get exerciseCategoryCore => '核心';
+
+  @override
+  String get exerciseCategoryCoreTimed => '核心计时';
+
+  @override
+  String get exerciseCategoryCardio => '有氧';
+
+  @override
+  String get exerciseCategoryShouldersArms => '肩臂';
+
+  @override
+  String get exerciseCategoryCustom => '自定义';
+
+  @override
+  String get exerciseCategoryOther => '其他';
+
+  @override
   String get workoutPlans => '训练计划';
 
   @override
