@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:diet/data/db.dart';
 import 'package:diet/data/repositories/workout_repository.dart';
+import 'package:diet/domain/calendar_day.dart';
 import 'package:diet/domain/models.dart';
 
 void main() {
@@ -33,8 +34,7 @@ void main() {
   test('seedBuiltinExercises backfills category without duplicating', () async {
     final before = await repo.listExercises();
     final pushupBefore = before.firstWhere((e) => e.name == '俯卧撑');
-    await (db.update(db.exercises)
-          ..where((t) => t.id.equals(pushupBefore.id)))
+    await (db.update(db.exercises)..where((t) => t.id.equals(pushupBefore.id)))
         .write(const ExercisesCompanion(category: Value('other')));
 
     await db.seedBuiltinExercises();
@@ -61,7 +61,7 @@ void main() {
       ],
     );
 
-    final day = DateTime(2026, 7, 16);
+    final day = CalendarDay.todayLocal();
     await repo.applyPlanToDay(planId: planId, day: day);
 
     final snap = await repo.daySnapshot(day);
@@ -70,6 +70,29 @@ void main() {
     expect(snap.items.first.item.targetSets, 4);
     expect(snap.items.first.item.targetReps, 12);
     expect(snap.items.first.completedSets, 0);
+  });
+
+  test('applyPlanToDay rejects past days', () async {
+    final exercises = await repo.listExercises();
+    final pushup = exercises.firstWhere((e) => e.name == '俯卧撑');
+    final planId = await repo.createPlan(
+      name: '过去日拒写',
+      items: [
+        PlanDraftItem(
+          exerciseId: pushup.id,
+          exerciseName: pushup.name,
+          targetSets: 3,
+          targetReps: 10,
+        ),
+      ],
+    );
+    final yesterday = CalendarDay.todayLocal().subtract(
+      const Duration(days: 1),
+    );
+    await expectLater(
+      repo.applyPlanToDay(planId: planId, day: yesterday),
+      throwsA(isA<StateError>()),
+    );
   });
 
   test('logSet auto-marks done when target sets reached', () async {
@@ -88,7 +111,7 @@ void main() {
         ),
       ],
     );
-    final day = DateTime(2026, 7, 16);
+    final day = CalendarDay.todayLocal();
     await repo.applyPlanToDay(planId: planId, day: day);
     var snap = await repo.daySnapshot(day);
     final itemId = snap.items.first.item.id;
@@ -114,6 +137,55 @@ void main() {
     snap = await repo.daySnapshot(day);
     expect(snap.items.first.completedSets, 2);
     expect(snap.items.first.item.done, isTrue);
+  });
+
+  test('item writes reject a past item even when passed today', () async {
+    final exercises = await repo.listExercises();
+    final pushup = exercises.firstWhere((e) => e.name == '俯卧撑');
+    final planId = await repo.createPlan(
+      name: '日期归属校验',
+      items: [
+        PlanDraftItem(
+          exerciseId: pushup.id,
+          exerciseName: pushup.name,
+          targetSets: 3,
+          targetReps: 10,
+        ),
+      ],
+    );
+    final today = CalendarDay.todayLocal();
+    await repo.applyPlanToDay(planId: planId, day: today);
+    final snapshot = await repo.daySnapshot(today);
+    final itemId = snapshot.items.single.item.id;
+    final yesterday = today.subtract(const Duration(days: 1));
+    await (db.update(db.dayWorkouts)
+          ..where((t) => t.id.equals(snapshot.workout!.id)))
+        .write(DayWorkoutsCompanion(date: Value(yesterday)));
+
+    await expectLater(
+      repo.updateDayItemProgress(
+        dayWorkoutItemId: itemId,
+        day: today,
+        completedSets: 1,
+        perSetValue: 10,
+        unit: ExerciseUnit.reps,
+      ),
+      throwsA(isA<StateError>()),
+    );
+    await expectLater(
+      repo.logSet(
+        day: today,
+        exerciseId: pushup.id,
+        exerciseName: pushup.name,
+        dayWorkoutItemId: itemId,
+        reps: 10,
+      ),
+      throwsA(isA<StateError>()),
+    );
+
+    final past = await repo.daySnapshot(yesterday);
+    expect(past.items.single.completedSets, 0);
+    expect(past.items.single.item.done, isFalse);
   });
 
   test('addCustomExercise rejects duplicate names', () async {
@@ -166,7 +238,7 @@ void main() {
       ],
     );
 
-    final day = DateTime(2026, 7, 16);
+    final day = CalendarDay.todayLocal();
     final events = <DayWorkoutSnapshot>[];
     final sub = repo.watchDayWorkout(day).listen(events.add);
 
