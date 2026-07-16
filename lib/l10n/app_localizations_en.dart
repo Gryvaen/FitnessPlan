@@ -444,6 +444,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noExercises => 'No exercises';
 
   @override
+  String get exerciseCategoryChest => 'Chest';
+
+  @override
+  String get exerciseCategoryBack => 'Back';
+
+  @override
+  String get exerciseCategoryLegs => 'Legs';
+
+  @override
+  String get exerciseCategoryCore => 'Core';
+
+  @override
+  String get exerciseCategoryCoreTimed => 'Core (timed)';
+
+  @override
+  String get exerciseCategoryCardio => 'Cardio';
+
+  @override
+  String get exerciseCategoryShouldersArms => 'Shoulders & arms';
+
+  @override
+  String get exerciseCategoryCustom => 'Custom';
+
+  @override
+  String get exerciseCategoryOther => 'Other';
+
+  @override
   String get workoutPlans => 'Workout plans';
 
   @override
