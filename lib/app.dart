@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'providers/app_providers.dart';
+import 'ui/foods/custom_food_edit_page.dart';
 import 'ui/foods/food_category_page.dart';
 import 'ui/foods/food_detail_page.dart';
 import 'ui/foods/food_favorites_page.dart';
@@ -10,8 +11,10 @@ import 'ui/foods/foods_page.dart';
 import 'ui/meals/log_meal_page.dart';
 import 'ui/meals/meal_detail_page.dart';
 import 'ui/onboarding/onboarding_page.dart';
+import 'ui/profile/profile_edit_page.dart';
 import 'ui/profile/profile_page.dart';
 import 'ui/shell/main_shell.dart';
+import 'ui/shell/swipeable_branch_container.dart';
 import 'ui/today/today_page.dart';
 import 'ui/theme/app_theme.dart';
 import 'ui/weight/weight_page.dart';
@@ -36,9 +39,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/onboarding',
         builder: (context, state) => const OnboardingPage(),
       ),
-      StatefulShellRoute.indexedStack(
+      StatefulShellRoute(
         builder: (context, state, navigationShell) {
           return MainShell(navigationShell: navigationShell);
+        },
+        navigatorContainerBuilder: (context, navigationShell, children) {
+          return SwipeableBranchContainer(
+            currentIndex: navigationShell.currentIndex,
+            onIndexChanged: (index) => navigationShell.goBranch(index),
+            children: children,
+          );
         },
         branches: [
           StatefulShellBranch(
@@ -66,6 +76,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'favorites',
                     builder: (context, state) => const FoodFavoritesPage(),
+                  ),
+                  GoRoute(
+                    path: 'custom',
+                    builder: (context, state) {
+                      final idStr = state.uri.queryParameters['id'];
+                      final id = idStr == null ? null : int.tryParse(idStr);
+                      return CustomFoodEditPage(foodId: id);
+                    },
                   ),
                   GoRoute(
                     path: ':id',
@@ -96,6 +114,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/profile',
                 builder: (context, state) => const ProfilePage(),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    builder: (context, state) => const ProfileEditPage(),
+                  ),
+                ],
               ),
             ],
           ),
