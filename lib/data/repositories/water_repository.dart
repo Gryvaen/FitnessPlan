@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../domain/calendar_day.dart';
 import '../db.dart';
 
 const kDefaultWaterGoalMl = 2000;
@@ -12,7 +13,7 @@ class WaterRepository {
   final AppDatabase _db;
   final SharedPreferences _prefs;
 
-  DateTime _dayStart(DateTime d) => DateTime(d.year, d.month, d.day);
+  DateTime _dayStart(DateTime d) => CalendarDay.dayOnly(d);
 
   int getGoalMl() => _prefs.getInt(_waterGoalKey) ?? kDefaultWaterGoalMl;
 
@@ -47,6 +48,7 @@ class WaterRepository {
   }
 
   Future<void> setMlForDay(DateTime day, int ml) async {
+    CalendarDay.ensureEditableDay(day);
     final key = _dayStart(day);
     final value = ml < 0 ? 0 : ml;
     final existing = await (_db.select(_db.waterLogs)
@@ -63,6 +65,7 @@ class WaterRepository {
   }
 
   Future<int> addMl(DateTime day, int delta) async {
+    CalendarDay.ensureEditableDay(day);
     final current = await mlForDay(day);
     final next = (current + delta).clamp(0, 20000);
     await setMlForDay(day, next);
