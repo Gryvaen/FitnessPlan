@@ -22,6 +22,12 @@ class TodayWorkoutCard extends ConsumerWidget {
 
   Future<void> _pickPlan(BuildContext context, WidgetRef ref) async {
     final l10n = context.l10n;
+    if (!AppDates.isLocalToday(day)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.pastDayReadOnly)),
+      );
+      return;
+    }
     final plans = await ref.read(workoutRepositoryProvider).listPlanSummaries();
     if (!context.mounted) return;
     if (plans.isEmpty) {
@@ -135,6 +141,7 @@ class TodayWorkoutCard extends ConsumerWidget {
     final async = ref.watch(todayWorkoutProvider);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final editable = AppDates.isLocalToday(day);
 
     return async.when(
       loading: () => const SizedBox(
@@ -155,15 +162,16 @@ class TodayWorkoutCard extends ConsumerWidget {
                       style: theme.textTheme.titleMedium,
                     ),
                   ),
-                  IconButton(
-                    tooltip: l10n.addTodayWorkout,
-                    onPressed: () => _pickPlan(context, ref),
-                    icon: const Icon(Icons.add),
-                  ),
+                  if (editable)
+                    IconButton(
+                      tooltip: l10n.addTodayWorkout,
+                      onPressed: () => _pickPlan(context, ref),
+                      icon: const Icon(Icons.add),
+                    ),
                 ],
               ),
               Text(
-                l10n.noWorkoutTodo,
+                editable ? l10n.noWorkoutTodo : l10n.pastDayReadOnly,
                 style: theme.textTheme.meta,
               ),
             ],
@@ -194,35 +202,44 @@ class TodayWorkoutCard extends ConsumerWidget {
                     ],
                   ),
                 ),
-                IconButton(
-                  tooltip: l10n.addTodayWorkout,
-                  onPressed: () => _pickPlan(context, ref),
-                  icon: const Icon(Icons.add),
-                ),
+                if (editable)
+                  IconButton(
+                    tooltip: l10n.addTodayWorkout,
+                    onPressed: () => _pickPlan(context, ref),
+                    icon: const Icon(Icons.add),
+                  ),
               ],
             ),
             const SizedBox(height: 4),
             for (final progress in snapshot.items)
-              Dismissible(
-                key: ValueKey(progress.item.id),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 16),
-                  color: scheme.error,
-                  child: const Icon(Icons.delete, color: Colors.white),
-                ),
-                onDismissed: (_) {
-                  ref
-                      .read(workoutRepositoryProvider)
-                      .deleteDayWorkoutItem(progress.item.id);
-                  ref.invalidate(workoutHistoryProvider);
-                },
-                child: _WorkoutItemTile(
+              if (editable)
+                Dismissible(
+                  key: ValueKey(progress.item.id),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 16),
+                    color: scheme.error,
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ),
+                  onDismissed: (_) {
+                    ref
+                        .read(workoutRepositoryProvider)
+                        .deleteDayWorkoutItem(progress.item.id);
+                    ref.invalidate(workoutHistoryProvider);
+                  },
+                  child: _WorkoutItemTile(
+                    progress: progress,
+                    day: day,
+                    editable: true,
+                  ),
+                )
+              else
+                _WorkoutItemTile(
                   progress: progress,
                   day: day,
+                  editable: false,
                 ),
-              ),
             const SizedBox(height: 4),
             Text(
               l10n.workoutProgressHint(done, total),
@@ -239,10 +256,12 @@ class _WorkoutItemTile extends ConsumerWidget {
   const _WorkoutItemTile({
     required this.progress,
     required this.day,
+    required this.editable,
   });
 
   final DayWorkoutItemProgress progress;
   final DateTime day;
+  final bool editable;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -255,11 +274,13 @@ class _WorkoutItemTile extends ConsumerWidget {
       contentPadding: EdgeInsets.zero,
       leading: Checkbox(
         value: item.done,
-        onChanged: (v) {
-          ref
-              .read(workoutRepositoryProvider)
-              .setItemDone(item.id, v ?? false);
-        },
+        onChanged: editable
+            ? (v) {
+                ref
+                    .read(workoutRepositoryProvider)
+                    .setItemDone(item.id, v ?? false);
+              }
+            : null,
       ),
       title: Text(
         item.exerciseName,
@@ -281,20 +302,22 @@ class _WorkoutItemTile extends ConsumerWidget {
               ),
         style: theme.textTheme.meta,
       ),
-      onTap: () async {
-        await showLogSetSheet(
-          context: context,
-          ref: ref,
-          day: day,
-          exerciseName: item.exerciseName,
-          unit: progress.unit,
-          dayWorkoutItemId: item.id,
-          completedSets: progress.completedSets,
-          targetSets: item.targetSets,
-          perSetValue: item.targetReps,
-        );
-        ref.invalidate(workoutHistoryProvider);
-      },
+      onTap: !editable
+          ? null
+          : () async {
+              await showLogSetSheet(
+                context: context,
+                ref: ref,
+                day: day,
+                exerciseName: item.exerciseName,
+                unit: progress.unit,
+                dayWorkoutItemId: item.id,
+                completedSets: progress.completedSets,
+                targetSets: item.targetSets,
+                perSetValue: item.targetReps,
+              );
+              ref.invalidate(workoutHistoryProvider);
+            },
     );
   }
 }
