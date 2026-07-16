@@ -158,14 +158,14 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
             88,
           ),
           children: [
-            _SeriesChartCard(
+            _SeriesChart(
               title: l10n.chartWeightTitle,
               points: weightSeries,
               color: scheme.primary,
               emptyHint: l10n.chartWeightEmpty,
             ),
             const SizedBox(height: AppSpacing.field),
-            _SeriesChartCard(
+            _SeriesChart(
               title: l10n.chartBfTitle,
               points: bodyFatSeries,
               color: AppColors.protein,
@@ -200,8 +200,8 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
   }
 }
 
-class _SeriesChartCard extends StatelessWidget {
-  const _SeriesChartCard({
+class _SeriesChart extends StatelessWidget {
+  const _SeriesChart({
     required this.title,
     required this.points,
     required this.color,
@@ -215,28 +215,23 @@ class _SeriesChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.card),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 180,
-              child: points.isEmpty
-                  ? Center(
-                      child: Text(
-                        emptyHint,
-                        style: Theme.of(context).textTheme.meta,
-                      ),
-                    )
-                  : _buildChart(context),
-            ),
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 180,
+          child: points.isEmpty
+              ? Center(
+                  child: Text(
+                    emptyHint,
+                    style: Theme.of(context).textTheme.meta,
+                  ),
+                )
+              : _buildChart(context),
         ),
-      ),
+      ],
     );
   }
 
