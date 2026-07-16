@@ -2,13 +2,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/db.dart';
+import '../data/repositories/calculator_history_repository.dart';
 import '../data/repositories/food_repository.dart';
 import '../data/repositories/form_memory_repository.dart';
 import '../data/repositories/meal_preset_repository.dart';
 import '../data/repositories/meal_repository.dart';
+import '../data/repositories/note_repository.dart';
 import '../data/repositories/profile_repository.dart';
 import '../data/repositories/water_repository.dart';
 import '../data/repositories/weight_repository.dart';
+import '../data/repositories/workout_repository.dart';
 
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError('SharedPreferences must be overridden in main');
@@ -26,6 +29,11 @@ final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
 
 final formMemoryRepositoryProvider = Provider<FormMemoryRepository>((ref) {
   return FormMemoryRepository(ref.watch(sharedPreferencesProvider));
+});
+
+final calculatorHistoryRepositoryProvider =
+    Provider<CalculatorHistoryRepository>((ref) {
+  return CalculatorHistoryRepository(ref.watch(sharedPreferencesProvider));
 });
 
 final foodRepositoryProvider = Provider<FoodRepository>((ref) {
@@ -52,4 +60,12 @@ final waterRepositoryProvider = Provider<WaterRepository>((ref) {
 
 final weightRepositoryProvider = Provider<WeightRepository>((ref) {
   return WeightRepository(ref.watch(databaseProvider));
+});
+
+final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
+  return WorkoutRepository(ref.watch(databaseProvider));
+});
+
+final noteRepositoryProvider = Provider<NoteRepository>((ref) {
+  return NoteRepository(ref.watch(databaseProvider));
 });
