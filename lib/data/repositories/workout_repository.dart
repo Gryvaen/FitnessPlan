@@ -104,6 +104,7 @@ class WorkoutRepository {
   Future<int> addCustomExercise({
     required String name,
     required ExerciseUnit unit,
+    String category = 'custom',
   }) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) throw ArgumentError('动作名称不能为空');
@@ -116,6 +117,7 @@ class WorkoutRepository {
             name: trimmed,
             unit: unit.name,
             isCustom: const Value(true),
+            category: Value(category),
           ),
         );
   }
