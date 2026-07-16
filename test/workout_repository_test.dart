@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -21,10 +22,28 @@ void main() {
 
   test('seedBuiltinExercises inserts catalog once', () async {
     final first = await repo.listExercises();
-    expect(first, isNotEmpty);
+    expect(first.length, greaterThanOrEqualTo(25));
+    expect(first.any((e) => e.category == 'chest'), isTrue);
+    expect(first.any((e) => e.category == 'core_timed'), isTrue);
     await db.seedBuiltinExercises();
     final second = await repo.listExercises();
     expect(second.length, first.length);
+  });
+
+  test('seedBuiltinExercises backfills category without duplicating', () async {
+    final before = await repo.listExercises();
+    final pushupBefore = before.firstWhere((e) => e.name == '俯卧撑');
+    await (db.update(db.exercises)
+          ..where((t) => t.id.equals(pushupBefore.id)))
+        .write(const ExercisesCompanion(category: Value('other')));
+
+    await db.seedBuiltinExercises();
+
+    final all = await repo.listExercises();
+    expect(all.where((e) => e.name == '俯卧撑'), hasLength(1));
+    final pushup = all.firstWhere((e) => e.name == '俯卧撑');
+    expect(pushup.category, 'chest');
+    expect(all.length, before.length);
   });
 
   test('applyPlanToDay copies items into day snapshot', () async {
@@ -110,13 +129,26 @@ void main() {
     );
 
     final id = await repo.addCustomExercise(
-      name: '保加利亚分腿蹲',
+      name: '弹力带侧平举',
       unit: ExerciseUnit.reps,
     );
     expect(id, greaterThan(0));
     final created = await repo.exerciseById(id);
-    expect(created?.name, '保加利亚分腿蹲');
+    expect(created?.name, '弹力带侧平举');
     expect(created?.isCustom, isTrue);
+    expect(created?.category, 'custom');
+  });
+
+  test('addCustomExercise writes into given category', () async {
+    final id = await repo.addCustomExercise(
+      name: '弹力带划船',
+      unit: ExerciseUnit.reps,
+      category: 'back',
+    );
+    final created = await repo.exerciseById(id);
+    expect(created?.name, '弹力带划船');
+    expect(created?.isCustom, isTrue);
+    expect(created?.category, 'back');
   });
 
   test('watchDayWorkout emits non-empty snapshot after first add', () async {
