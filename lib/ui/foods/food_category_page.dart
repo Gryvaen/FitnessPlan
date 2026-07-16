@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/db.dart';
+import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 
@@ -70,9 +71,10 @@ class _FoodCategoryPageState extends ConsumerState<FoodCategoryPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.category)),
+      appBar: AppBar(title: Text(widget.category.localizedCategory(l10n))),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -80,18 +82,18 @@ class _FoodCategoryPageState extends ConsumerState<FoodCategoryPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('加载失败：$_error'),
+                      Text(l10n.loadFailed('$_error')),
                       const SizedBox(height: 8),
                       FilledButton(
                         onPressed: () => _load(reset: true),
-                        child: const Text('重试'),
+                        child: Text(l10n.retry),
                       ),
                     ],
                   ),
                 )
               : _items.isEmpty
                   ? Center(
-                      child: Text('该分类暂无食材', style: theme.textTheme.meta),
+                      child: Text(l10n.categoryEmpty, style: theme.textTheme.meta),
                     )
                   : NotificationListener<ScrollNotification>(
                       onNotification: (n) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 
@@ -11,21 +12,22 @@ class FoodFavoritesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final favoritesAsync = ref.watch(favoriteFoodsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('收藏')),
+      appBar: AppBar(title: Text(l10n.favorites)),
       body: favoritesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('加载失败：$e'),
+              Text(l10n.loadFailed('$e')),
               const SizedBox(height: 8),
               FilledButton(
                 onPressed: () => ref.invalidate(favoriteFoodsProvider),
-                child: const Text('重试'),
+                child: Text(l10n.retry),
               ),
             ],
           ),
@@ -33,7 +35,7 @@ class FoodFavoritesPage extends ConsumerWidget {
         data: (favorites) {
           if (favorites.isEmpty) {
             return Center(
-              child: Text('暂无收藏', style: theme.textTheme.meta),
+              child: Text(l10n.noFavorites, style: theme.textTheme.meta),
             );
           }
           return ListView.separated(
@@ -46,7 +48,7 @@ class FoodFavoritesPage extends ConsumerWidget {
                 leading: const Icon(Icons.star),
                 title: Text(f.name, style: theme.textTheme.bodyLarge),
                 subtitle: Text(
-                  '${f.category} · ${f.kcalPer100.round()} kcal/100g',
+                  '${f.category.localizedCategory(l10n)} · ${f.kcalPer100.round()} kcal/100g',
                   style: theme.textTheme.meta,
                 ),
                 trailing: const Icon(Icons.chevron_right),

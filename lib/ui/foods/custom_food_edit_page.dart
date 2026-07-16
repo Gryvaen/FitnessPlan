@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 
@@ -73,6 +74,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
 
   Future<void> _save() async {
     setState(() => _loading = true);
+    final l10n = context.l10n;
     try {
       final repo = ref.read(foodRepositoryProvider);
       if (_isEdit) {
@@ -87,7 +89,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('已保存')),
+            SnackBar(content: Text(l10n.saved)),
           );
           context.pop();
         }
@@ -102,7 +104,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('已添加自定义食材')),
+            SnackBar(content: Text(l10n.customFoodAdded)),
           );
           context.pushReplacement('/foods/$id');
         }
@@ -120,31 +122,34 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     if (!_ready) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? '编辑自定义食材' : '添加自定义食材')),
+      appBar: AppBar(
+        title: Text(_isEdit ? l10n.editCustomFood : l10n.addCustomFood),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.formPage),
         children: [
           TextField(
             controller: _name,
-            decoration: const InputDecoration(labelText: '名称'),
+            decoration: InputDecoration(labelText: l10n.name),
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: AppSpacing.field),
-          Text('每 100 克营养', style: Theme.of(context).textTheme.titleSmall),
+          Text(l10n.per100gNutrition, style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 8),
-          _numField(_kcal, '热量 (kcal)'),
-          _numField(_protein, '蛋白质 (g)'),
-          _numField(_carb, '碳水 (g)'),
-          _numField(_fat, '脂肪 (g)'),
-          _numField(_alcohol, '酒精 (g，可选)'),
+          _numField(_kcal, l10n.kcalField),
+          _numField(_protein, l10n.proteinG),
+          _numField(_carb, l10n.carbG),
+          _numField(_fat, l10n.fatG),
+          _numField(_alcohol, l10n.alcoholGOptional),
           const SizedBox(height: AppSpacing.section),
           FilledButton(
             onPressed: _loading ? null : _save,
-            child: Text(_loading ? '保存中…' : '保存'),
+            child: Text(_loading ? l10n.saving : l10n.save),
           ),
         ],
       ),

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../data/db.dart';
 import '../../domain/models.dart';
+import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/form_options.dart';
@@ -99,7 +99,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('保存失败：$e')),
+          SnackBar(content: Text(context.l10n.saveFailed('$e'))),
         );
       }
     } finally {
@@ -123,19 +123,20 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
     final entry = _entry;
     if (entry == null) return;
 
+    final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('删除记录'),
-        content: const Text('确定删除这条记录？'),
+        title: Text(l10n.deleteRecord),
+        content: Text(l10n.confirmDeleteMeal),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('删除'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -146,19 +147,20 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
       await ref.read(mealRepositoryProvider).delete(widget.entryId);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('已删除')),
+        SnackBar(content: Text(l10n.deleted)),
       );
       context.pop();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('删除失败：$e')),
+        SnackBar(content: Text(l10n.deleteFailed('$e'))),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     if (_loading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -167,7 +169,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
     if (_notFound || _entry == null || _food == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: const Center(child: Text('记录不存在')),
+        body: Center(child: Text(l10n.recordNotFound)),
       );
     }
 
@@ -175,6 +177,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
     final food = _food!;
     final preview = _preview;
     final theme = Theme.of(context);
+    final locale = Localizations.localeOf(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -193,7 +196,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
             ),
           IconButton(
             icon: const Icon(Icons.delete_outline),
-            tooltip: '删除',
+            tooltip: l10n.delete,
             onPressed: _delete,
           ),
         ],
@@ -202,7 +205,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
         padding: const EdgeInsets.all(AppSpacing.formPage),
         children: [
           Text(
-            DateFormat('M月d日').format(entry.date),
+            AppDates.md(entry.date, locale),
             style: theme.textTheme.fieldLabel,
           ),
           const SizedBox(height: 4),
@@ -212,15 +215,15 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
           ),
           const SizedBox(height: AppSpacing.section),
           AppDropdown<MealType>(
-            label: '餐次',
+            label: l10n.mealType,
             value: _mealType,
             items: MealType.values,
-            itemLabel: (e) => e.label,
+            itemLabel: (e) => e.label(l10n),
             onChanged: _onMealTypeChanged,
           ),
           const SizedBox(height: AppSpacing.field),
           AppDropdown<double>(
-            label: '克数',
+            label: l10n.grams,
             value: FormOptions.snapDouble(FormOptions.mealGrams, _grams),
             items: FormOptions.mealGrams,
             suffixText: 'g',
@@ -228,25 +231,25 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
             onChanged: _onGramsChanged,
           ),
           const SizedBox(height: 28),
-          Text('营养摄入', style: theme.textTheme.titleMedium),
+          Text(l10n.nutritionIntake, style: theme.textTheme.titleMedium),
           const SizedBox(height: AppSpacing.section),
           _MacroRow(
-            label: '热量',
+            label: l10n.calories,
             value: '${preview.calories.round()} kcal',
             color: theme.colorScheme.primary,
           ),
           _MacroRow(
-            label: '蛋白质',
+            label: l10n.protein,
             value: '${preview.proteinG.toStringAsFixed(1)} g',
             color: AppColors.protein,
           ),
           _MacroRow(
-            label: '碳水',
+            label: l10n.carbs,
             value: '${preview.carbG.toStringAsFixed(1)} g',
             color: AppColors.carb,
           ),
           _MacroRow(
-            label: '脂肪',
+            label: l10n.fat,
             value: '${preview.fatG.toStringAsFixed(1)} g',
             color: AppColors.fat,
           ),

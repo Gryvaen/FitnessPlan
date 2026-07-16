@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../data/db.dart';
 import '../../domain/models.dart';
+import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/form_options.dart';
@@ -65,7 +65,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
       if (!mounted) return;
       setState(() => _loadingFoods = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('加载食材失败：$e')),
+        SnackBar(content: Text(context.l10n.loadFoodsFailed('$e'))),
       );
     }
   }
@@ -125,6 +125,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
 
   Future<void> _applyPreset(MealPreset preset) async {
     final day = ref.read(selectedDayProvider);
+    final l10n = context.l10n;
     try {
       final result = await ref.read(mealPresetRepositoryProvider).applyPreset(
             presetId: preset.id,
@@ -132,25 +133,26 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
           );
       if (!mounted) return;
       final skip = result.skippedMissingFood > 0
-          ? '，跳过 ${result.skippedMissingFood} 项缺失食材'
+          ? l10n.skippedMissingFoods(result.skippedMissingFood)
           : '';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('已套用 ${result.copied} 项$skip')),
+        SnackBar(content: Text(l10n.appliedPresetItems(result.copied, skip))),
       );
       context.pop();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('套用失败：$e')),
+        SnackBar(content: Text(l10n.applyPresetFailed('$e'))),
       );
     }
   }
 
   Future<void> _save() async {
+    final l10n = context.l10n;
     final food = _selected;
     if (food == null || _grams <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请选择食材和克数')),
+        SnackBar(content: Text(l10n.selectFoodAndGrams)),
       );
       return;
     }
@@ -160,7 +162,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     final earliest = DateTime(today.year - 1, today.month, today.day);
     if (day.isAfter(today) || day.isBefore(earliest)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('只能记录一年内到今天的餐次')),
+        SnackBar(content: Text(l10n.mealDateRangeError)),
       );
       return;
     }
@@ -173,16 +175,18 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
             grams: _grams,
           );
       if (mounted) {
-        final label = day == today ? '今日' : DateFormat('M月d日').format(day);
+        final locale = Localizations.localeOf(context);
+        final label =
+            day == today ? l10n.today : AppDates.md(day, locale);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('已记入$label')),
+          SnackBar(content: Text(l10n.loggedInto(label))),
         );
         context.pop();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('保存失败：$e')),
+          SnackBar(content: Text(l10n.saveFailed('$e'))),
         );
       }
     } finally {
@@ -209,6 +213,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
 
   Widget _browseList() {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final presetsAsync = ref.watch(mealPresetsProvider);
     final sections = <Widget>[];
 
@@ -217,7 +222,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
       sections.add(
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-          child: Text('常用套餐', style: theme.textTheme.titleSmall),
+          child: Text(l10n.mealPresets, style: theme.textTheme.titleSmall),
         ),
       );
       for (final p in presets) {
@@ -242,27 +247,27 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
       sections.add(
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-          child: Text('收藏', style: theme.textTheme.titleSmall),
+          child: Text(l10n.favorites, style: theme.textTheme.titleSmall),
         ),
       );
       for (final f in _favorites) {
-        sections.add(_foodTile(f, badge: '收藏'));
+        sections.add(_foodTile(f, badge: l10n.badgeFavorite));
       }
     }
     if (_recent.isNotEmpty) {
       sections.add(
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-          child: Text('最近吃过', style: theme.textTheme.titleSmall),
+          child: Text(l10n.recentlyEaten, style: theme.textTheme.titleSmall),
         ),
       );
       for (final f in _recent) {
-        sections.add(_foodTile(f, badge: '最近'));
+        sections.add(_foodTile(f, badge: l10n.badgeRecent));
       }
     }
     if (sections.isEmpty) {
       return Center(
-        child: Text('搜索食材开始记账', style: theme.textTheme.meta),
+        child: Text(l10n.searchToLog, style: theme.textTheme.meta),
       );
     }
     return ListView(children: sections);
@@ -271,16 +276,16 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final locale = Localizations.localeOf(context);
     final preview = _preview;
     final day = ref.watch(selectedDayProvider);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final dayLabel = day == today
-        ? '今天'
-        : DateFormat('M月d日').format(day);
+    final dayLabel = day == today ? l10n.todayWord : AppDates.md(day, locale);
 
     return Scaffold(
-      appBar: AppBar(title: Text('记一笔 · $dayLabel')),
+      appBar: AppBar(title: Text(l10n.logMealTitle(dayLabel))),
       body: Column(
         children: [
           Padding(
@@ -289,10 +294,10 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 AppDropdown<MealType>(
-                  label: '餐次',
+                  label: l10n.mealType,
                   value: _mealType,
                   items: MealType.values,
-                  itemLabel: (e) => e.label,
+                  itemLabel: (e) => e.label(l10n),
                   onChanged: (v) {
                     setState(() => _mealType = v);
                     _persistMealDefaults();
@@ -312,11 +317,11 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                         _selected = null;
                         _servings = [];
                       }),
-                      child: const Text('更换'),
+                      child: Text(l10n.change),
                     ),
                   ),
                   if (_servings.isNotEmpty) ...[
-                    Text('常用份量', style: theme.textTheme.fieldLabel),
+                    Text(l10n.commonPortions, style: theme.textTheme.fieldLabel),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
@@ -335,7 +340,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                     const SizedBox(height: AppSpacing.field),
                   ],
                   AppDropdown<double>(
-                    label: '克数',
+                    label: l10n.grams,
                     value: FormOptions.snapDouble(
                       FormOptions.mealGrams,
                       _grams,
@@ -357,7 +362,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                         'C ${preview.carbG.toStringAsFixed(1)}',
                         'F ${preview.fatG.toStringAsFixed(1)}',
                         if (preview.alcoholG > 0)
-                          '酒精 ${preview.alcoholG.toStringAsFixed(1)}',
+                          '${l10n.alcohol} ${preview.alcoholG.toStringAsFixed(1)}',
                       ].join(' · '),
                       style: theme.textTheme.meta,
                     ),
@@ -365,13 +370,13 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                   const SizedBox(height: AppSpacing.section),
                   FilledButton(
                     onPressed: _saving ? null : _save,
-                    child: Text(_saving ? '保存中…' : '保存'),
+                    child: Text(_saving ? l10n.saving : l10n.save),
                   ),
                 ] else ...[
                   TextField(
-                    decoration: const InputDecoration(
-                      hintText: '搜索食材',
-                      prefixIcon: Icon(Icons.search),
+                    decoration: InputDecoration(
+                      hintText: l10n.searchFood,
+                      prefixIcon: const Icon(Icons.search),
                     ),
                     onChanged: _search,
                   ),
@@ -387,7 +392,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                       ? (_results.isEmpty
                           ? Center(
                               child: Text(
-                                _query.isEmpty ? '搜索食材' : '没有找到食材',
+                                _query.isEmpty ? l10n.searchFood : l10n.noFoodFound,
                                 style: theme.textTheme.meta,
                               ),
                             )

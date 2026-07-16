@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/db.dart';
+import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/form_options.dart';
@@ -41,27 +42,28 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
   }
 
   Future<void> _addServing() async {
+    final l10n = context.l10n;
     final labelCtrl = TextEditingController();
     double grams = 100;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('添加常用份量'),
+        title: Text(l10n.addCommonPortion),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: labelCtrl,
-              decoration: const InputDecoration(
-                labelText: '名称',
-                hintText: '如：一碗 / 瓶 500ml',
+              decoration: InputDecoration(
+                labelText: l10n.name,
+                hintText: l10n.portionNameHint,
               ),
             ),
             const SizedBox(height: 12),
             StatefulBuilder(
               builder: (context, setLocal) {
                 return AppDropdown<double>(
-                  label: '克数',
+                  label: l10n.grams,
                   value: FormOptions.snapDouble(FormOptions.mealGrams, grams),
                   items: FormOptions.mealGrams,
                   suffixText: 'g',
@@ -75,11 +77,11 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('添加'),
+            child: Text(l10n.add),
           ),
         ],
       ),
@@ -104,19 +106,20 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
   }
 
   Future<void> _deleteFood() async {
+    final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('删除自定义食材'),
-        content: const Text('确定删除？历史记账仍会保留名称。'),
+        title: Text(l10n.deleteCustomFood),
+        content: Text(l10n.deleteCustomFoodBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('删除'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -137,6 +140,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
   @override
   Widget build(BuildContext context) {
     final favAsync = ref.watch(foodFavoriteProvider(widget.foodId));
+    final l10n = context.l10n;
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -144,7 +148,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
     if (food == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: const Center(child: Text('食材不存在')),
+        body: Center(child: Text(l10n.foodNotFound)),
       );
     }
     final theme = Theme.of(context);
@@ -156,7 +160,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
         actions: [
           if (food.isCustom) ...[
             IconButton(
-              tooltip: '编辑',
+              tooltip: l10n.edit,
               icon: const Icon(Icons.edit_outlined),
               onPressed: () async {
                 await context.push('/foods/custom?id=${food.id}');
@@ -164,13 +168,13 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
               },
             ),
             IconButton(
-              tooltip: '删除',
+              tooltip: l10n.delete,
               icon: const Icon(Icons.delete_outline),
               onPressed: _deleteFood,
             ),
           ],
           IconButton(
-            tooltip: isFav ? '取消收藏' : '收藏',
+            tooltip: isFav ? l10n.unfavorite : l10n.favorites,
             icon: Icon(isFav ? Icons.star : Icons.star_border),
             onPressed: () async {
               try {
@@ -181,7 +185,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('操作失败：$e')),
+                    SnackBar(content: Text(l10n.operationFailed('$e'))),
                   );
                 }
               }
@@ -192,37 +196,40 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/log-meal?foodId=${widget.foodId}'),
         icon: const Icon(Icons.add),
-        label: const Text('记一笔'),
+        label: Text(l10n.logMeal),
       ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.formPage),
         children: [
-          Text(food.category, style: theme.textTheme.fieldLabel),
+          Text(
+            food.category.localizedCategory(l10n),
+            style: theme.textTheme.fieldLabel,
+          ),
           const SizedBox(height: 8),
-          Text('每 100 克', style: theme.textTheme.titleMedium),
+          Text(l10n.per100g, style: theme.textTheme.titleMedium),
           const SizedBox(height: AppSpacing.section),
-          _row(context, '热量', '${food.kcalPer100.round()} kcal'),
-          _row(context, '蛋白质', '${food.proteinPer100.toStringAsFixed(1)} g'),
-          _row(context, '碳水', '${food.carbPer100.toStringAsFixed(1)} g'),
-          _row(context, '脂肪', '${food.fatPer100.toStringAsFixed(1)} g'),
+          _row(context, l10n.calories, '${food.kcalPer100.round()} kcal'),
+          _row(context, l10n.protein, '${food.proteinPer100.toStringAsFixed(1)} g'),
+          _row(context, l10n.carbs, '${food.carbPer100.toStringAsFixed(1)} g'),
+          _row(context, l10n.fat, '${food.fatPer100.toStringAsFixed(1)} g'),
           if (food.alcoholPer100 > 0)
-            _row(context, '酒精', '${food.alcoholPer100.toStringAsFixed(1)} g'),
+            _row(context, l10n.alcohol, '${food.alcoholPer100.toStringAsFixed(1)} g'),
           const SizedBox(height: AppSpacing.section),
           Row(
             children: [
-              Text('常用份量', style: theme.textTheme.titleMedium),
+              Text(l10n.commonPortions, style: theme.textTheme.titleMedium),
               const Spacer(),
               TextButton.icon(
                 onPressed: _addServing,
                 icon: const Icon(Icons.add, size: 18),
-                label: const Text('添加'),
+                label: Text(l10n.add),
               ),
             ],
           ),
           if (_servings.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text('暂无，记账时可快速选用', style: theme.textTheme.meta),
+              child: Text(l10n.noPortionsHint, style: theme.textTheme.meta),
             )
           else
             for (final s in _servings)
