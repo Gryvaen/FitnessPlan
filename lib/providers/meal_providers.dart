@@ -53,6 +53,30 @@ final todayIntakeProvider = Provider<MacroIntake>((ref) {
           proteinG: e.proteinG,
           carbG: e.carbG,
           fatG: e.fatG,
+          alcoholG: e.alcoholG,
         ),
   );
+});
+
+final waterMlProvider = StreamProvider<int>((ref) {
+  final day = ref.watch(selectedDayProvider);
+  return ref.watch(waterRepositoryProvider).watchMlForDay(day);
+});
+
+final waterGoalProvider = NotifierProvider<WaterGoalNotifier, int>(
+  WaterGoalNotifier.new,
+);
+
+class WaterGoalNotifier extends Notifier<int> {
+  @override
+  int build() => ref.watch(waterRepositoryProvider).getGoalMl();
+
+  Future<void> setGoal(int ml) async {
+    await ref.read(waterRepositoryProvider).setGoalMl(ml);
+    state = ref.read(waterRepositoryProvider).getGoalMl();
+  }
+}
+
+final mealPresetsProvider = FutureProvider.autoDispose<List<MealPreset>>((ref) {
+  return ref.watch(mealPresetRepositoryProvider).listPresets();
 });

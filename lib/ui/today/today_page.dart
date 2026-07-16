@@ -33,6 +33,12 @@ class TodayPage extends ConsumerWidget {
     final remainP = targets.proteinG - intake.proteinG;
     final remainC = targets.carbG - intake.carbG;
     final remainF = targets.fatG - intake.fatG;
+    final waterMl = ref.watch(waterMlProvider).value ?? 0;
+    final waterGoal = ref.watch(waterGoalProvider);
+
+    String remainMacro(double remain) => remain < 0
+        ? '超 ${(-remain).toStringAsFixed(0)} g'
+        : '剩 ${remain.toStringAsFixed(0)} g';
 
     final onPlateau = profile.goal == FitnessGoal.cut &&
         Plateau.detect(
@@ -144,13 +150,13 @@ class TodayPage extends ConsumerWidget {
                   ),
                 ),
                 subtitle: Text(
-                  '请到「我的」填写目标体重与每周降重。',
+                  '请到「我的 → 我的档案」填写目标体重与每周降重。',
                   style: theme.textTheme.meta?.copyWith(
                     color: scheme.onErrorContainer,
                   ),
                 ),
                 trailing: TextButton(
-                  onPressed: () => context.go('/profile'),
+                  onPressed: () => context.go('/profile/edit'),
                   child: const Text('去填写'),
                 ),
               ),
@@ -285,7 +291,7 @@ class TodayPage extends ConsumerWidget {
                     target: targets.proteinG,
                     unit: 'g',
                     color: AppColors.protein,
-                    remainLabel: '剩 ${remainP.toStringAsFixed(0)} g',
+                    remainLabel: remainMacro(remainP),
                   ),
                   const SizedBox(height: AppSpacing.field),
                   _MacroBar(
@@ -294,7 +300,7 @@ class TodayPage extends ConsumerWidget {
                     target: targets.carbG,
                     unit: 'g',
                     color: AppColors.carb,
-                    remainLabel: '剩 ${remainC.toStringAsFixed(0)} g',
+                    remainLabel: remainMacro(remainC),
                   ),
                   const SizedBox(height: AppSpacing.field),
                   _MacroBar(
@@ -303,14 +309,194 @@ class TodayPage extends ConsumerWidget {
                     target: targets.fatG,
                     unit: 'g',
                     color: AppColors.fat,
-                    remainLabel: '剩 ${remainF.toStringAsFixed(0)} g',
+                    remainLabel: remainMacro(remainF),
+                  ),
+                  if (intake.alcoholG > 0) ...[
+                    const SizedBox(height: AppSpacing.field),
+                    Text(
+                      '酒精额外能量 ≈ ${intake.alcoholKcal.round()} kcal'
+                      '（${intake.alcoholG.toStringAsFixed(1)} g）',
+                      style: theme.textTheme.meta,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.section),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.card),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text('饮水', style: theme.textTheme.titleMedium),
+                      const Spacer(),
+                      Text(
+                        '$waterMl / $waterGoal ml',
+                        style: theme.textTheme.meta,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: waterGoal <= 0
+                          ? 0
+                          : (waterMl / waterGoal).clamp(0.0, 1.0),
+                      minHeight: 8,
+                      color: scheme.primary,
+                      backgroundColor: scheme.primary.withValues(alpha: 0.15),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      OutlinedButton(
+                        onPressed: () => ref
+                            .read(waterRepositoryProvider)
+                            .addMl(day, 250),
+                        child: const Text('+250'),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton(
+                        onPressed: () => ref
+                            .read(waterRepositoryProvider)
+                            .addMl(day, 500),
+                        child: const Text('+500'),
+                      ),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: waterMl <= 0
+                            ? null
+                            : () => ref
+                                .read(waterRepositoryProvider)
+                                .addMl(day, -250),
+                        child: const Text('−250'),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: AppSpacing.section),
-          Text('$sectionPrefix记录', style: theme.textTheme.titleMedium),
+          Row(
+            children: [
+              Text('$sectionPrefix记录', style: theme.textTheme.titleMedium),
+              const Spacer(),
+              PopupMenuButton<String>(
+                tooltip: '更多',
+                onSelected: (value) async {
+                  if (value == 'copy') {
+                    final from = day.subtract(const Duration(days: 1));
+                    final existing =
+                        await ref.read(mealRepositoryProvider).forDay(day);
+                    if (existing.isNotEmpty && context.mounted) {
+                      final ok = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('复制昨日'),
+                          content: const Text('当日已有记录，将追加昨日餐食，确定？'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: const Text('取消'),
+                            ),
+                            FilledButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              child: const Text('追加'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (ok != true) return;
+                    }
+                    final result = await ref
+                        .read(mealRepositoryProvider)
+                        .copyDay(from: from, to: day);
+                    if (!context.mounted) return;
+                    final skip = result.skippedMissingFood > 0
+                        ? '，跳过 ${result.skippedMissingFood} 项'
+                        : '';
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          result.copied == 0 && result.skippedMissingFood == 0
+                              ? '昨日无记录'
+                              : '已复制 ${result.copied} 项$skip',
+                        ),
+                      ),
+                    );
+                  } else if (value == 'preset') {
+                    final meals =
+                        await ref.read(mealRepositoryProvider).forDay(day);
+                    if (!context.mounted) return;
+                    if (meals.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('当日无记录可保存')),
+                      );
+                      return;
+                    }
+                    final nameCtrl = TextEditingController(
+                      text: isSelectedToday ? '常用套餐' : dayLabel,
+                    );
+                    final ok = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('存为套餐'),
+                        content: TextField(
+                          controller: nameCtrl,
+                          decoration: const InputDecoration(labelText: '名称'),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('取消'),
+                          ),
+                          FilledButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text('保存'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (ok != true) {
+                      nameCtrl.dispose();
+                      return;
+                    }
+                    try {
+                      await ref
+                          .read(mealPresetRepositoryProvider)
+                          .createFromEntries(
+                            name: nameCtrl.text,
+                            entries: meals,
+                          );
+                      ref.invalidate(mealPresetsProvider);
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('套餐已保存')),
+                      );
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('$e')),
+                      );
+                    } finally {
+                      nameCtrl.dispose();
+                    }
+                  }
+                },
+                itemBuilder: (context) => const [
+                  PopupMenuItem(value: 'copy', child: Text('复制昨日')),
+                  PopupMenuItem(value: 'preset', child: Text('存为套餐')),
+                ],
+              ),
+            ],
+          ),
           const SizedBox(height: 8),
           mealsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
