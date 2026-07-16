@@ -684,6 +684,23 @@ def off_to_items(products: list[dict]) -> dict[str, dict]:
     return by_name
 
 
+def estimate_alcohol_g(
+    *,
+    category: str,
+    kcal: float,
+    protein: float,
+    carb: float,
+    fat: float,
+) -> float:
+    """Estimate alcohol g/100g from unexplained beverage energy (≈7 kcal/g)."""
+    if category != "饮料":
+        return 0.0
+    residual = kcal - 4.0 * protein - 4.0 * carb - 9.0 * fat
+    if residual < 5.0:
+        return 0.0
+    return round(residual / 7.0, 1)
+
+
 def merge_priority(*sources: dict[str, dict]) -> list[dict]:
     """Later sources win on name conflict (caller passes OFF first, then Sanotsu, then CFCT).
 
@@ -692,18 +709,32 @@ def merge_priority(*sources: dict[str, dict]) -> list[dict]:
     merged: dict[str, dict] = {}
     for src in sources:
         merged.update(src)
-    foods = [
-        {
-            "name": item["name"],
-            "category": item["category"],
-            "kcal": item["kcal"],
-            "protein": item["protein"],
-            "carb": item["carb"],
-            "fat": item["fat"],
-        }
-        for item in merged.values()
-        if HAN_RE.search(str(item.get("name") or ""))
-    ]
+    foods = []
+    for item in merged.values():
+        if not HAN_RE.search(str(item.get("name") or "")):
+            continue
+        category = item["category"]
+        kcal = item["kcal"]
+        protein = item["protein"]
+        carb = item["carb"]
+        fat = item["fat"]
+        foods.append(
+            {
+                "name": item["name"],
+                "category": category,
+                "kcal": kcal,
+                "protein": protein,
+                "carb": carb,
+                "fat": fat,
+                "alcohol": estimate_alcohol_g(
+                    category=category,
+                    kcal=kcal,
+                    protein=protein,
+                    carb=carb,
+                    fat=fat,
+                ),
+            }
+        )
     foods.sort(key=lambda x: (x["category"], x["name"]))
     return foods
 
