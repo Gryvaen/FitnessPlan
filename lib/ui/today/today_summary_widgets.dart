@@ -178,7 +178,7 @@ class MacroMini extends StatelessWidget {
   }
 }
 
-/// Simple cup outline with liquid fill from bottom.
+/// Cup outline with liquid fill, drawn as a short tapered cylinder.
 class WaterCup extends StatelessWidget {
   const WaterCup({
     super.key,
@@ -218,47 +218,93 @@ class _WaterCupPainter extends CustomPainter {
   final Color liquidColor;
   final Color fullColor;
 
+  static const _pi = 3.14159265;
+
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
+
+    // Tapered cylinder: wider rim, narrower base (same style as the lid).
+    final topL = w * 0.14;
+    final topR = w * 0.86;
+    final botL = w * 0.26;
+    final botR = w * 0.74;
+    final topY = h * 0.08;
+    final botY = h * 0.90;
+    final topOvalH = h * 0.12;
+    final botOvalH = h * 0.09;
+
+    final topOval = Rect.fromLTRB(topL, topY, topR, topY + topOvalH);
+    final botOval = Rect.fromLTRB(botL, botY - botOvalH, botR, botY);
+    final midTop = topY + topOvalH / 2;
+    final midBot = botY - botOvalH / 2;
+
+    // Cup body silhouette for clipping liquid.
     final body = Path()
-      ..moveTo(w * 0.22, h * 0.08)
-      ..lineTo(w * 0.78, h * 0.08)
-      ..lineTo(w * 0.68, h * 0.92)
-      ..lineTo(w * 0.32, h * 0.92)
+      ..moveTo(topL, midTop)
+      ..lineTo(botL, midBot)
+      ..arcTo(botOval, _pi, -_pi, false)
+      ..lineTo(topR, midTop)
+      ..arcTo(topOval, 0, _pi, false)
       ..close();
 
-    final innerTop = h * 0.14;
-    final innerBottom = h * 0.86;
-    final innerHeight = innerBottom - innerTop;
-    final fillTop = innerBottom - innerHeight * progress;
-
-    canvas.save();
-    canvas.clipPath(body);
     if (progress > 0) {
-      final fill = Paint()
-        ..color = progress >= 1 ? fullColor : liquidColor;
-      canvas.drawRect(
-        Rect.fromLTRB(0, fillTop, w, innerBottom),
-        fill,
+      final liquidPaint = Paint()
+        ..color = progress >= 1 ? fullColor : liquidColor
+        ..style = PaintingStyle.fill;
+
+      // Interpolate rim→base for the liquid surface ellipse.
+      final t = 1.0 - progress;
+      final surfL = topL + (botL - topL) * t;
+      final surfR = topR + (botR - topR) * t;
+      final surfMidY = midTop + (midBot - midTop) * t;
+      final surfOvalH = topOvalH + (botOvalH - topOvalH) * t;
+      final surfOval = Rect.fromCenter(
+        center: Offset((surfL + surfR) / 2, surfMidY),
+        width: surfR - surfL,
+        height: surfOvalH,
+      );
+
+      canvas.save();
+      canvas.clipPath(body);
+      // Liquid column under the surface midline.
+      final liquidBody = Path()
+        ..moveTo(surfL, surfMidY)
+        ..lineTo(botL, midBot)
+        ..arcTo(botOval, _pi, -_pi, false)
+        ..lineTo(surfR, surfMidY)
+        ..close();
+      canvas.drawPath(liquidBody, liquidPaint);
+      canvas.drawOval(surfOval, liquidPaint);
+      canvas.restore();
+
+      // Liquid surface ellipse (visible on top of the fill).
+      canvas.drawOval(
+        surfOval,
+        Paint()
+          ..color = outlineColor.withValues(alpha: 0.35)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2,
       );
     }
-    canvas.restore();
 
     final outline = Paint()
       ..color = outlineColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2
-      ..strokeJoin = StrokeJoin.round;
-    canvas.drawPath(body, outline);
+      ..strokeJoin = StrokeJoin.round
+      ..strokeCap = StrokeCap.round;
 
-    // Rim
-    canvas.drawLine(
-      Offset(w * 0.2, h * 0.08),
-      Offset(w * 0.8, h * 0.08),
-      outline..strokeWidth = 2.5,
-    );
+    // Side walls.
+    canvas.drawLine(Offset(topL, midTop), Offset(botL, midBot), outline);
+    canvas.drawLine(Offset(topR, midTop), Offset(botR, midBot), outline);
+
+    // Base front edge.
+    canvas.drawArc(botOval, 0, _pi, false, outline);
+
+    // Rim ellipse (opening).
+    canvas.drawOval(topOval, outline);
   }
 
   @override
@@ -266,9 +312,9 @@ class _WaterCupPainter extends CustomPainter {
       oldDelegate.progress != progress;
 }
 
-/// Compact screw-cap silhouette, paired with [WaterCup] for −ml taps.
-class WaterBottleCap extends StatelessWidget {
-  const WaterBottleCap({
+/// Cylindrical cup-lid silhouette, paired with [WaterCup] for −ml taps.
+class WaterCupLid extends StatelessWidget {
+  const WaterCupLid({
     super.key,
     this.enabled = true,
   });
@@ -282,10 +328,10 @@ class WaterBottleCap extends StatelessWidget {
         ? scheme.outline
         : scheme.outline.withValues(alpha: 0.35);
     return SizedBox(
-      width: 28,
+      width: 36,
       height: 72,
       child: CustomPaint(
-        painter: _WaterBottleCapPainter(
+        painter: _WaterCupLidPainter(
           outlineColor: outline,
           fillColor: scheme.primary.withValues(alpha: enabled ? 0.12 : 0.04),
         ),
@@ -294,8 +340,8 @@ class WaterBottleCap extends StatelessWidget {
   }
 }
 
-class _WaterBottleCapPainter extends CustomPainter {
-  _WaterBottleCapPainter({
+class _WaterCupLidPainter extends CustomPainter {
+  _WaterCupLidPainter({
     required this.outlineColor,
     required this.fillColor,
   });
@@ -307,12 +353,12 @@ class _WaterBottleCapPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
-    // Sit against the cup: draw near the right edge, level with the cup rim.
-    final top = h * 0.08;
-    final bottom = h * 0.34;
+    // Short cylinder aligned with the cup rim, flush to the right.
+    final left = 3.0;
     final right = w - 1;
-    final left = right - 18;
-    final midX = (left + right) / 2;
+    final top = h * 0.06;
+    final bottom = h * 0.28;
+    final ovalH = (bottom - top) * 0.32;
 
     final fill = Paint()
       ..color = fillColor
@@ -324,53 +370,29 @@ class _WaterBottleCapPainter extends CustomPainter {
       ..strokeJoin = StrokeJoin.round
       ..strokeCap = StrokeCap.round;
 
-    // Flat top lip (slightly wider than body).
-    final lipH = (bottom - top) * 0.28;
-    final lip = RRect.fromRectAndRadius(
-      Rect.fromLTRB(left - 1.5, top, right + 0.5, top + lipH),
-      const Radius.circular(3),
-    );
-    canvas.drawRRect(lip, fill);
-    canvas.drawRRect(lip, outline);
+    final topOval = Rect.fromLTRB(left, top, right, top + ovalH);
+    final bottomOval = Rect.fromLTRB(left, bottom - ovalH, right, bottom);
+    final midTop = top + ovalH / 2;
+    final midBottom = bottom - ovalH / 2;
 
-    // Short cylindrical body under the lip.
-    final bodyTop = top + (bottom - top) * 0.22;
-    final body = RRect.fromRectAndRadius(
-      Rect.fromLTRB(left, bodyTop, right, bottom),
-      const Radius.circular(4),
-    );
-    canvas.drawRRect(body, fill);
-    canvas.drawRRect(body, outline);
+    // Solid cylinder: side wall + bottom/top caps.
+    canvas.drawRect(Rect.fromLTRB(left, midTop, right, midBottom), fill);
+    canvas.drawOval(bottomOval, fill);
+    canvas.drawOval(topOval, fill);
 
-    // Fine knurl ridges.
-    final ridge = Paint()
-      ..color = outlineColor.withValues(alpha: 0.65)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.1
-      ..strokeCap = StrokeCap.round;
-    final ridgeTop = bodyTop + 3;
-    final ridgeBottom = bottom - 3;
-    for (var i = 0; i < 4; i++) {
-      final t = (i + 1) / 5;
-      final x = left + (right - left) * t;
-      canvas.drawLine(Offset(x, ridgeTop), Offset(x, ridgeBottom), ridge);
-    }
+    // Side walls.
+    canvas.drawLine(Offset(left, midTop), Offset(left, midBottom), outline);
+    canvas.drawLine(Offset(right, midTop), Offset(right, midBottom), outline);
 
-    // Crown dash on the lip.
-    final crown = Paint()
-      ..color = outlineColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.4
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(
-      Offset(midX - 4, top + 2.5),
-      Offset(midX + 4, top + 2.5),
-      crown,
-    );
+    // Bottom front edge (lower half of bottom ellipse).
+    canvas.drawArc(bottomOval, 0, 3.14159265, false, outline);
+
+    // Top face ellipse.
+    canvas.drawOval(topOval, outline);
   }
 
   @override
-  bool shouldRepaint(covariant _WaterBottleCapPainter oldDelegate) =>
+  bool shouldRepaint(covariant _WaterCupLidPainter oldDelegate) =>
       oldDelegate.outlineColor != outlineColor ||
       oldDelegate.fillColor != fillColor;
 }
