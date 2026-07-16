@@ -1,7 +1,7 @@
 name: diet
 description: 纯本地健身饮食助手 — 热量配额、食材库与饮食记账
 publish_to: 'none'
-version: 1.1.0+5
+version: 1.1.1+6
 
 environment:
   sdk: ^3.12.2
@@ -23,6 +23,9 @@ dependencies:
   flutter_local_notifications: ^22.0.1
   timezone: ^0.11.1
   permission_handler: ^12.0.3
+  package_info_plus: ^9.0.0
+  http: ^1.5.0
+  open_filex: ^4.7.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -31,6 +34,7 @@ dev_dependencies:
   build_runner: ^2.15.1
 
 flutter:
+  generate: true
   uses-material-design: true
   assets:
     - assets/food_seed.json
