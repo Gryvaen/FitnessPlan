@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:open_filex/open_filex.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../data/repositories/app_update_repository.dart';
@@ -22,7 +21,6 @@ class ProfilePage extends ConsumerStatefulWidget {
 
 class _ProfilePageState extends ConsumerState<ProfilePage> {
   PackageInfo? _packageInfo;
-  bool _checkingUpdate = false;
 
   @override
   void initState() {
@@ -73,17 +71,19 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   Future<void> _checkForUpdate() async {
-    if (_checkingUpdate) return;
-    setState(() => _checkingUpdate = true);
+    final update = ref.read(appUpdateProvider);
+    if (update.isBusy) return;
+
     final messenger = ScaffoldMessenger.of(context);
     final l10n = context.l10n;
+    final local = _packageInfo?.version ?? '0.0.0';
+    final notifier = ref.read(appUpdateProvider.notifier);
+
     try {
-      final local = _packageInfo?.version ?? '0.0.0';
-      final repo = ref.read(appUpdateRepositoryProvider);
-      final latest = await repo.fetchLatest(localVersion: local);
+      final latest = await notifier.checkForUpdate(local);
       if (!mounted) return;
 
-      if (!AppUpdateLogic.isNewer(local, latest.version)) {
+      if (latest == null) {
         messenger.showSnackBar(
           SnackBar(content: Text(l10n.alreadyLatest(local))),
         );
@@ -123,70 +123,25 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       );
       if (go != true || !mounted) return;
 
-      final progress = ValueNotifier<double>(0);
-      showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) => PopScope(
-          canPop: false,
-          child: AlertDialog(
-            title: Text(l10n.downloading),
-            content: ValueListenableBuilder<double>(
-              valueListenable: progress,
-              builder: (context, value, _) {
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    LinearProgressIndicator(value: value > 0 ? value : null),
-                    const SizedBox(height: 12),
-                    Text(
-                      value > 0
-                          ? '${(value * 100).toStringAsFixed(0)}%'
-                          : l10n.connecting,
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-        ),
-      );
-
-      try {
-        final path = await repo.downloadApk(
-          asset.downloadUrl,
-          localVersion: local,
-          onProgress: (p) => progress.value = p,
+      messenger.showSnackBar(SnackBar(content: Text(l10n.downloading)));
+      // Fire-and-forget: progress lives on [appUpdateProvider] / AppBar icon.
+      notifier.downloadAndInstall(asset: asset, localVersion: local);
+    } on StateError catch (e) {
+      if (!mounted) return;
+      if (e.message == 'no_apk') {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.noInstallPackage)),
         );
-        if (!mounted) return;
-        Navigator.of(context, rootNavigator: true).pop();
-        final result = await OpenFilex.open(
-          path,
-          type: 'application/vnd.android.package-archive',
-        );
-        if (!mounted) return;
-        if (result.type != ResultType.done) {
-          messenger.showSnackBar(
-            SnackBar(content: Text(l10n.cannotOpenApk(result.message))),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          Navigator.of(context, rootNavigator: true).pop();
-        }
-        rethrow;
-      } finally {
-        progress.dispose();
+        return;
       }
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.checkUpdateFailed('$e'))),
+      );
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
         SnackBar(content: Text(l10n.checkUpdateFailed('$e'))),
       );
-    } finally {
-      if (mounted) setState(() => _checkingUpdate = false);
     }
   }
 
@@ -196,6 +151,24 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     if (profile == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
+
+    final update = ref.watch(appUpdateProvider);
+    ref.listen<AppUpdateStatus>(appUpdateProvider, (prev, next) {
+      final l10n = context.l10n;
+      final messenger = ScaffoldMessenger.of(context);
+      if (next.lastError != null && next.lastError != prev?.lastError) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.checkUpdateFailed(next.lastError!))),
+        );
+        ref.read(appUpdateProvider.notifier).clearFeedback();
+      } else if (next.lastOpenMessage != null &&
+          next.lastOpenMessage != prev?.lastOpenMessage) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.cannotOpenApk(next.lastOpenMessage!))),
+        );
+        ref.read(appUpdateProvider.notifier).clearFeedback();
+      }
+    });
 
     final plan = ref.read(profileRepositoryProvider).buildPlan(profile);
     final theme = Theme.of(context);
@@ -222,15 +195,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         actions: [
           if (isAndroid)
             IconButton(
-              onPressed: _checkingUpdate ? null : _checkForUpdate,
-              tooltip: l10n.checkUpdate,
-              icon: _checkingUpdate
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.download_outlined),
+              onPressed: update.isBusy ? null : _checkForUpdate,
+              tooltip: update.phase == AppUpdatePhase.downloading
+                  ? (update.progress > 0
+                      ? '${(update.progress * 100).toStringAsFixed(0)}%'
+                      : l10n.connecting)
+                  : l10n.checkUpdate,
+              icon: _UpdateDownloadIcon(status: update),
             ),
           IconButton(
             onPressed: _clearData,
@@ -340,6 +311,45 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push('/profile/tools'),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Download icon with an optional progress ring for background update downloads.
+class _UpdateDownloadIcon extends StatelessWidget {
+  const _UpdateDownloadIcon({required this.status});
+
+  final AppUpdateStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    if (status.phase == AppUpdatePhase.idle) {
+      return const Icon(Icons.download_outlined);
+    }
+
+    final scheme = Theme.of(context).colorScheme;
+    final determinate = status.phase == AppUpdatePhase.downloading &&
+        status.progress > 0;
+
+    return SizedBox(
+      width: 28,
+      height: 28,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CircularProgressIndicator(
+            value: determinate ? status.progress.clamp(0.0, 1.0) : null,
+            strokeWidth: 2.5,
+            color: scheme.primary,
+            backgroundColor: scheme.primary.withValues(alpha: 0.18),
+          ),
+          Icon(
+            Icons.download_outlined,
+            size: 16,
+            color: scheme.onSurface,
           ),
         ],
       ),
