@@ -85,9 +85,9 @@ class TodayWorkoutCard extends ConsumerWidget {
       return;
     }
     if (choice is WorkoutPlanSummary) {
-      final existing =
-          await ref.read(workoutRepositoryProvider).dayWorkoutFor(day);
-      if (existing != null && context.mounted) {
+      final snap =
+          await ref.read(workoutRepositoryProvider).daySnapshot(day);
+      if (!snap.isEmpty && context.mounted) {
         final ok = await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
@@ -107,10 +107,17 @@ class TodayWorkoutCard extends ConsumerWidget {
         );
         if (ok != true) return;
       }
-      await ref.read(workoutRepositoryProvider).applyPlanToDay(
-            planId: choice.plan.id,
-            day: day,
-          );
+      try {
+        await ref.read(workoutRepositoryProvider).applyPlanToDay(
+              planId: choice.plan.id,
+              day: day,
+            );
+      } catch (e) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.addFailed('$e'))),
+        );
+      }
     }
   }
 
@@ -121,102 +128,101 @@ class TodayWorkoutCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.card),
-        child: async.when(
-          loading: () => const SizedBox(
-            height: 48,
-            child: Center(child: CircularProgressIndicator()),
-          ),
-          error: (e, _) => Text(l10n.workoutLoadFailed('$e')),
-          data: (snapshot) {
-            if (snapshot.isEmpty) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return async.when(
+      loading: () => const SizedBox(
+        height: 48,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => Text(l10n.workoutLoadFailed('$e')),
+      data: (snapshot) {
+        if (snapshot.isEmpty) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Text(
-                    l10n.sectionWorkout(sectionPrefix),
-                    style: theme.textTheme.titleMedium,
+                  Expanded(
+                    child: Text(
+                      l10n.sectionWorkout(sectionPrefix),
+                      style: theme.textTheme.titleMedium,
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.noWorkoutTodo,
-                    style: theme.textTheme.meta,
-                  ),
-                  const SizedBox(height: AppSpacing.field),
-                  OutlinedButton.icon(
+                  IconButton(
+                    tooltip: l10n.addTodayWorkout,
                     onPressed: () => _pickPlan(context, ref),
-                    icon: const Icon(Icons.fitness_center),
-                    label: Text(l10n.addTodayWorkout),
+                    icon: const Icon(Icons.add),
                   ),
                 ],
-              );
-            }
+              ),
+              Text(
+                l10n.noWorkoutTodo,
+                style: theme.textTheme.meta,
+              ),
+            ],
+          );
+        }
 
-            final done = snapshot.doneCount;
-            final total = snapshot.items.length;
-            final planName = snapshot.workout?.planName;
+        final done = snapshot.doneCount;
+        final total = snapshot.items.length;
+        final planName = snapshot.workout?.planName;
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.sectionWorkout(sectionPrefix),
-                            style: theme.textTheme.titleMedium,
-                          ),
-                          if (planName != null && planName.isNotEmpty) ...[
-                            const SizedBox(height: 2),
-                            Text(planName, style: theme.textTheme.meta),
-                          ],
-                        ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.sectionWorkout(sectionPrefix),
+                        style: theme.textTheme.titleMedium,
                       ),
-                    ),
-                    IconButton(
-                      tooltip: l10n.add,
-                      onPressed: () => _pickPlan(context, ref),
-                      icon: const Icon(Icons.add),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                for (final progress in snapshot.items)
-                  Dismissible(
-                    key: ValueKey(progress.item.id),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 16),
-                      color: scheme.error,
-                      child: const Icon(Icons.delete, color: Colors.white),
-                    ),
-                    onDismissed: (_) {
-                      ref
-                          .read(workoutRepositoryProvider)
-                          .deleteDayWorkoutItem(progress.item.id);
-                      ref.invalidate(workoutHistoryProvider);
-                    },
-                    child: _WorkoutItemTile(
-                      progress: progress,
-                      day: day,
-                    ),
+                      if (planName != null && planName.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(planName, style: theme.textTheme.meta),
+                      ],
+                    ],
                   ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.workoutProgressHint(done, total),
-                  style: theme.textTheme.meta,
+                ),
+                IconButton(
+                  tooltip: l10n.addTodayWorkout,
+                  onPressed: () => _pickPlan(context, ref),
+                  icon: const Icon(Icons.add),
                 ),
               ],
-            );
-          },
-        ),
-      ),
+            ),
+            const SizedBox(height: 4),
+            for (final progress in snapshot.items)
+              Dismissible(
+                key: ValueKey(progress.item.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 16),
+                  color: scheme.error,
+                  child: const Icon(Icons.delete, color: Colors.white),
+                ),
+                onDismissed: (_) {
+                  ref
+                      .read(workoutRepositoryProvider)
+                      .deleteDayWorkoutItem(progress.item.id);
+                  ref.invalidate(workoutHistoryProvider);
+                },
+                child: _WorkoutItemTile(
+                  progress: progress,
+                  day: day,
+                ),
+              ),
+            const SizedBox(height: 4),
+            Text(
+              l10n.workoutProgressHint(done, total),
+              style: theme.textTheme.meta,
+            ),
+          ],
+        );
+      },
     );
   }
 }
