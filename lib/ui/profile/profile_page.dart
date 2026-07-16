@@ -240,7 +240,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.formPage),
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.formPage,
+          AppSpacing.formPage,
+          AppSpacing.formPage,
+          listBottomInset(context, hasFab: false),
+        ),
         children: [
           Card(
             child: Padding(
