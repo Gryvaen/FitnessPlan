@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../domain/calorie_calculator.dart';
 import '../../domain/models.dart';
+import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/form_options.dart';
@@ -48,21 +49,23 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           );
       if (!mounted) return;
 
+      final l10n = context.l10n;
       await showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('每日配额已算出'),
+          title: Text(l10n.quotaReadyTitle),
           content: Text(
-            '${profile.targets.calories} kcal\n'
-            'P ${profile.targets.proteinG.toStringAsFixed(0)} · '
-            'C ${profile.targets.carbG.toStringAsFixed(0)} · '
-            'F ${profile.targets.fatG.toStringAsFixed(0)}\n\n'
-            '详情可在「我的 → 我的档案」查看。',
+            l10n.quotaReadyBody(
+              '${profile.targets.calories}',
+              profile.targets.proteinG.toStringAsFixed(0),
+              profile.targets.carbG.toStringAsFixed(0),
+              profile.targets.fatG.toStringAsFixed(0),
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('开始使用'),
+              child: Text(l10n.startUsing),
             ),
           ],
         ),
@@ -71,7 +74,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('保存失败：$e')),
+          SnackBar(content: Text(context.l10n.saveFailed('$e'))),
         );
       }
     } finally {
@@ -81,7 +84,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final weeksHint = FormOptions.estimatedCutWeeksLabel(
+      l10n: l10n,
       goal: _goal,
       weightKg: _weightKg,
       targetWeightKg: _targetWeightKg,
@@ -91,37 +96,37 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     final targetValue = FormOptions.snapDouble(targetOptions, _targetWeightKg);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('建立身体档案')),
+      appBar: AppBar(title: Text(l10n.createProfileTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.formPage),
           children: [
             Text(
-              '填写身体数据，生成每日热量与营养配额。',
+              l10n.createProfileHint,
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 24),
-            Text('性别', style: Theme.of(context).textTheme.fieldLabel),
+            Text(l10n.sex, style: Theme.of(context).textTheme.fieldLabel),
             const SizedBox(height: 8),
             SegmentedButton<Sex>(
-              segments: const [
-                ButtonSegment(value: Sex.male, label: Text('男')),
-                ButtonSegment(value: Sex.female, label: Text('女')),
+              segments: [
+                ButtonSegment(value: Sex.male, label: Text(l10n.male)),
+                ButtonSegment(value: Sex.female, label: Text(l10n.female)),
               ],
               selected: {_sex},
               onSelectionChanged: (s) => setState(() => _sex = s.first),
             ),
             const SizedBox(height: AppSpacing.section),
             AppDropdown<int>(
-              label: '年龄',
+              label: l10n.age,
               value: FormOptions.snapInt(FormOptions.ages(), _age),
               items: FormOptions.ages(),
-              suffixText: '岁',
+              suffixText: l10n.ageUnit,
               onChanged: (v) => setState(() => _age = v),
             ),
             const SizedBox(height: AppSpacing.field),
             AppDropdown<int>(
-              label: '身高',
+              label: l10n.height,
               value: FormOptions.snapInt(FormOptions.heightsCm(), _heightCm),
               items: FormOptions.heightsCm(),
               suffixText: 'cm',
@@ -129,7 +134,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             ),
             const SizedBox(height: AppSpacing.field),
             AppDropdown<double>(
-              label: '当前体重',
+              label: l10n.currentWeight,
               value: FormOptions.snapDouble(FormOptions.weightsKg(), _weightKg),
               items: FormOptions.weightsKg(),
               suffixText: 'kg',
@@ -144,24 +149,24 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             ),
             const SizedBox(height: AppSpacing.section),
             AppDropdown<ActivityLevel>(
-              label: '日常活动等级',
+              label: l10n.activityLevel,
               value: _activity,
               items: ActivityLevel.values,
-              itemLabel: (e) => e.label,
+              itemLabel: (e) => e.label(l10n),
               onChanged: (v) => setState(() => _activity = v),
             ),
             const SizedBox(height: AppSpacing.section),
             AppDropdown<FitnessGoal>(
-              label: '目标',
+              label: l10n.goal,
               value: _goal,
               items: FitnessGoal.values,
-              itemLabel: (e) => e.label,
+              itemLabel: (e) => e.label(l10n),
               onChanged: (v) => setState(() => _goal = v),
             ),
             if (_goal == FitnessGoal.cut) ...[
               const SizedBox(height: AppSpacing.section),
               AppDropdown<double>(
-                label: '目标体重',
+                label: l10n.targetWeight,
                 value: targetValue,
                 items: targetOptions,
                 suffixText: 'kg',
@@ -170,14 +175,14 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               ),
               const SizedBox(height: AppSpacing.field),
               AppDropdown<double>(
-                label: '每周目标降重',
+                label: l10n.weeklyLossTarget,
                 value: FormOptions.snapDouble(
                   FormOptions.weeklyLossKg,
                   _weeklyLossKg,
                 ),
                 items: FormOptions.weeklyLossKg,
                 suffixText: 'kg',
-                helperText: weeksHint ?? '推荐 0.3–0.8 kg/周',
+                helperText: weeksHint ?? l10n.weeklyLossHint,
                 itemLabel: (v) => v.toStringAsFixed(1),
                 onChanged: (v) => setState(() => _weeklyLossKg = v),
               ),
@@ -187,7 +192,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               onPressed: _saving ? null : _showResultAndSave,
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(_saving ? '计算中…' : '计算并开始'),
+                child: Text(_saving ? l10n.calculating : l10n.calculateAndStart),
               ),
             ),
           ],
