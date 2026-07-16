@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../domain/calendar_day.dart';
 import '../db.dart';
 
 class WeightRepository {
@@ -20,7 +21,8 @@ class WeightRepository {
     double? bodyFatPct,
     int? exerciseMinutes,
   }) async {
-    final day = DateTime(date.year, date.month, date.day);
+    CalendarDay.ensureEditableDay(date);
+    final day = CalendarDay.dayOnly(date);
     final existing = await (_db.select(
       _db.weightLogs,
     )..where((t) => t.date.equals(day))).getSingleOrNull();
@@ -45,14 +47,20 @@ class WeightRepository {
   }
 
   Future<WeightLog?> getByDate(DateTime date) async {
-    final day = DateTime(date.year, date.month, date.day);
+    final day = CalendarDay.dayOnly(date);
     return (_db.select(_db.weightLogs)
           ..where((t) => t.date.equals(day)))
         .getSingleOrNull();
   }
 
+  Future<WeightLog?> byId(int id) {
+    return (_db.select(_db.weightLogs)..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+  }
+
   /// Updates [bodyFatPct] on an existing day log. Returns false if none.
   Future<bool> updateBodyFatForDate(DateTime date, double bodyFatPct) async {
+    CalendarDay.ensureEditableDay(date);
     final existing = await getByDate(date);
     if (existing == null) return false;
     await (_db.update(_db.weightLogs)..where((t) => t.id.equals(existing.id)))
@@ -60,8 +68,12 @@ class WeightRepository {
     return true;
   }
 
-  Future<void> delete(int id) =>
-      (_db.delete(_db.weightLogs)..where((t) => t.id.equals(id))).go();
+  Future<void> delete(int id) async {
+    final existing = await byId(id);
+    if (existing == null) return;
+    CalendarDay.ensureEditableDay(existing.date);
+    await (_db.delete(_db.weightLogs)..where((t) => t.id.equals(id))).go();
+  }
 
   Future<void> clearAll() => _db.delete(_db.weightLogs).go();
 }
