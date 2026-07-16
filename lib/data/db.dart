@@ -35,7 +35,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -99,32 +99,59 @@ WHERE id NOT IN (
           if (from < 10) {
             await m.createTable(dailyNotes);
           }
+          if (from < 11) {
+            await m.addColumn(exercises, exercises.category);
+            await seedBuiltinExercises();
+          }
         },
       );
 
-  /// Inserts built-in bodyweight exercises if the catalog is empty.
+  /// Upserts built-in exercises by name and backfills category for builtins.
   Future<void> seedBuiltinExercises() async {
-    final existing = await (select(exercises)..limit(1)).get();
-    if (existing.isNotEmpty) return;
-
-    const seeds = <(String, String)>[
-      ('俯卧撑', 'reps'),
-      ('引体向上', 'reps'),
-      ('深蹲', 'reps'),
-      ('平板支撑', 'seconds'),
-      ('开合跳', 'reps'),
-      ('卷腹', 'reps'),
-      ('跪姿俯卧撑', 'reps'),
-      ('臀桥', 'reps'),
+    const seeds = <(String name, String unit, String category)>[
+      ('俯卧撑', 'reps', 'chest'),
+      ('宽距俯卧撑', 'reps', 'chest'),
+      ('钻石俯卧撑', 'reps', 'chest'),
+      ('跪姿俯卧撑', 'reps', 'chest'),
+      ('引体向上', 'reps', 'back'),
+      ('反向划船', 'reps', 'back'),
+      ('超人式', 'reps', 'back'),
+      ('深蹲', 'reps', 'legs'),
+      ('弓步蹲', 'reps', 'legs'),
+      ('保加利亚分腿蹲', 'reps', 'legs'),
+      ('臀桥', 'reps', 'legs'),
+      ('提踵', 'reps', 'legs'),
+      ('卷腹', 'reps', 'core'),
+      ('俄罗斯转体', 'reps', 'core'),
+      ('登山跑', 'reps', 'core'),
+      ('死虫', 'reps', 'core'),
+      ('平板支撑', 'seconds', 'core_timed'),
+      ('侧平板', 'seconds', 'core_timed'),
+      ('开合跳', 'reps', 'cardio'),
+      ('高抬腿', 'reps', 'cardio'),
+      ('波比跳', 'reps', 'cardio'),
+      ('原地慢跑', 'reps', 'cardio'),
+      ('肩推（徒手）', 'reps', 'shoulders_arms'),
+      ('三头臂屈伸', 'reps', 'shoulders_arms'),
+      ('肱二头弯举（徒手）', 'reps', 'shoulders_arms'),
     ];
-    for (final (name, unit) in seeds) {
-      await into(exercises).insert(
-        ExercisesCompanion.insert(
-          name: name,
-          unit: unit,
-          isCustom: const Value(false),
-        ),
-      );
+    for (final (name, unit, category) in seeds) {
+      final existing = await (select(exercises)
+            ..where((t) => t.name.equals(name)))
+          .getSingleOrNull();
+      if (existing == null) {
+        await into(exercises).insert(
+          ExercisesCompanion.insert(
+            name: name,
+            unit: unit,
+            category: Value(category),
+            isCustom: const Value(false),
+          ),
+        );
+      } else if (!existing.isCustom && existing.category != category) {
+        await (update(exercises)..where((t) => t.id.equals(existing.id)))
+            .write(ExercisesCompanion(category: Value(category)));
+      }
     }
   }
 }
