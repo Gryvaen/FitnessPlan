@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../data/db.dart';
+import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/form_options.dart';
@@ -34,6 +35,7 @@ class BodyRecordsTab extends ConsumerStatefulWidget {
 
 class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
   Future<void> addWeight() async {
+    final l10n = context.l10n;
     final profile = ref.read(profileProvider);
     final memory = ref.read(formMemoryRepositoryProvider);
     final extras =
@@ -67,7 +69,7 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '已记体重，日摄入 ${updated.targets.calories} kcal',
+              l10n.weightLoggedSnack('${updated.targets.calories}'),
             ),
           ),
         );
@@ -75,27 +77,27 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('保存失败：$e')),
+        SnackBar(content: Text(l10n.saveFailed('$e'))),
       );
     }
   }
 
   Future<void> _confirmDelete(WeightLog log) async {
+    final l10n = context.l10n;
+    final dateStr = DateFormat('yyyy-MM-dd').format(log.date);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('删除记录'),
-        content: Text(
-          '确定删除 ${DateFormat('yyyy-MM-dd').format(log.date)} 的体重记录？',
-        ),
+        title: Text(l10n.deleteRecord),
+        content: Text(l10n.confirmDeleteWeight(dateStr)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('删除'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -106,32 +108,33 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('删除失败：$e')),
+        SnackBar(content: Text(l10n.deleteFailed('$e'))),
       );
     }
   }
 
-  String _logSubtitle(WeightLog log) {
+  String _logSubtitle(WeightLog log, AppLocalizations l10n) {
     final parts = <String>[DateFormat('yyyy-MM-dd').format(log.date)];
     if (log.bodyFatPct != null) {
-      parts.add('体脂 ${log.bodyFatPct!.toStringAsFixed(1)}%');
+      parts.add(l10n.bodyFatPctLine(log.bodyFatPct!.toStringAsFixed(1)));
     }
     return parts.join(' · ');
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final logsAsync = ref.watch(weightLogsProvider);
     final scheme = Theme.of(context).colorScheme;
 
     return logsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('加载失败：$e')),
+      error: (e, _) => Center(child: Text(l10n.loadFailed('$e'))),
       data: (logs) {
         if (logs.isEmpty) {
           return Center(
             child: Text(
-              '还没有记录，点右下角添加',
+              l10n.emptyWeightLogs,
               style: Theme.of(context).textTheme.meta,
             ),
           );
@@ -156,20 +159,20 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
           ),
           children: [
             _SeriesChartCard(
-              title: '体重 (kg)',
+              title: l10n.chartWeightTitle,
               points: weightSeries,
               color: scheme.primary,
-              emptyHint: '暂无体重数据',
+              emptyHint: l10n.chartWeightEmpty,
             ),
             const SizedBox(height: AppSpacing.field),
             _SeriesChartCard(
-              title: '体脂率 (%)',
+              title: l10n.chartBfTitle,
               points: bodyFatSeries,
               color: AppColors.protein,
-              emptyHint: '暂无体脂记录',
+              emptyHint: l10n.chartBfEmpty,
             ),
             const SizedBox(height: AppSpacing.section),
-            Text('历史记录', style: Theme.of(context).textTheme.titleMedium),
+            Text(l10n.history, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             ...logs.reversed.map(
               (log) => ListTile(
@@ -180,12 +183,12 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
                 subtitle: Text(
-                  _logSubtitle(log),
+                  _logSubtitle(log, l10n),
                   style: Theme.of(context).textTheme.meta,
                 ),
                 trailing: IconButton(
                   icon: const Icon(Icons.delete_outline),
-                  tooltip: '删除',
+                  tooltip: l10n.delete,
                   onPressed: () => _confirmDelete(log),
                 ),
               ),
@@ -349,14 +352,15 @@ class _WeightLogDialogState extends State<_WeightLogDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return AlertDialog(
-      title: const Text('记录体重'),
+      title: Text(l10n.logWeightTitle),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             AppDropdown<double>(
-              label: '体重',
+              label: l10n.weight,
               value: _weightKg,
               items: FormOptions.weightsKg(),
               suffixText: 'kg',
@@ -365,7 +369,7 @@ class _WeightLogDialogState extends State<_WeightLogDialog> {
             ),
             const SizedBox(height: 12),
             AppOptionalDropdown<double>(
-              label: '体脂率',
+              label: l10n.bodyFatPct,
               value: _bodyFatPct,
               items: FormOptions.bodyFatPct(),
               suffixText: '%',
@@ -381,11 +385,11 @@ class _WeightLogDialogState extends State<_WeightLogDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
+          child: Text(l10n.cancel),
         ),
         FilledButton(
           onPressed: _submit,
-          child: const Text('保存'),
+          child: Text(l10n.save),
         ),
       ],
     );

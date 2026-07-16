@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 
@@ -92,36 +93,28 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
       if (!mounted) return;
       setState(() => _status = _SaveStatus.dirty);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('保存失败：$e')),
+        SnackBar(content: Text(context.l10n.saveFailed('$e'))),
       );
     }
   }
 
-  String _titleForDay() {
+  String _titleForDay(AppLocalizations l10n, Locale locale) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
-    if (_day == today) return '今天';
-    if (_day == yesterday) return '昨天';
-    final weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-    final wd = weekdays[_day.weekday - 1];
-    if (_day.year == today.year) {
-      return '${DateFormat('M月d日').format(_day)} $wd';
-    }
-    return '${DateFormat('yyyy年M月d日').format(_day)} $wd';
+    return AppDates.relativeDayTitle(_day, today, l10n, locale);
   }
 
-  String _statusLabel() {
+  String _statusLabel(AppLocalizations l10n) {
     switch (_status) {
       case _SaveStatus.idle:
-        return '开始书写';
+        return l10n.startWriting;
       case _SaveStatus.dirty:
-        return '未保存';
+        return l10n.unsaved;
       case _SaveStatus.saving:
-        return '保存中…';
+        return l10n.saving;
       case _SaveStatus.saved:
-        if (_savedAt == null) return '已保存';
-        return '已保存 · ${DateFormat('HH:mm').format(_savedAt!)}';
+        if (_savedAt == null) return l10n.saved;
+        return l10n.savedAt(DateFormat('HH:mm').format(_savedAt!));
     }
   }
 
@@ -135,6 +128,8 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final locale = Localizations.localeOf(context);
     final theme = Theme.of(context);
     final bodyStyle = theme.textTheme.bodyLarge?.copyWith(height: 1.55);
 
@@ -144,9 +139,9 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(_titleForDay()),
+            Text(_titleForDay(l10n, locale)),
             Text(
-              _statusLabel(),
+              _statusLabel(l10n),
               style: theme.textTheme.meta?.copyWith(fontSize: 12),
             ),
           ],
@@ -156,7 +151,7 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
             onPressed: _loading || _status == _SaveStatus.saving
                 ? null
                 : _persist,
-            child: const Text('保存'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -178,7 +173,7 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
                 style: bodyStyle,
                 cursorColor: theme.colorScheme.primary,
                 decoration: InputDecoration(
-                  hintText: '记录今天的训练感受、睡眠或饮食偏差…',
+                  hintText: l10n.noteHint,
                   hintStyle: bodyStyle?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant
                         .withValues(alpha: 0.55),

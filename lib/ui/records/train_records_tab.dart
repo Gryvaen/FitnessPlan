@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../data/db.dart';
 import '../../domain/models.dart';
+import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/form_options.dart';
@@ -14,27 +14,29 @@ class TrainRecordsTab extends ConsumerWidget {
   const TrainRecordsTab({super.key});
 
   Future<void> _addExercise(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
     final nameCtrl = TextEditingController();
     var unit = ExerciseUnit.reps;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocal) => AlertDialog(
-          title: const Text('自定义动作'),
+          title: Text(l10n.customExercise),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameCtrl,
-                decoration: const InputDecoration(labelText: '动作名字'),
+                decoration: InputDecoration(labelText: l10n.exerciseName),
                 autofocus: true,
               ),
               const SizedBox(height: 12),
               AppDropdown<ExerciseUnit>(
-                label: '次数/秒',
+                label: l10n.repsOrSeconds,
                 value: unit,
                 items: ExerciseUnit.values,
-                itemLabel: (u) => u == ExerciseUnit.reps ? '次数' : '秒',
+                itemLabel: (u) =>
+                    u == ExerciseUnit.reps ? l10n.repsCount : l10n.seconds,
                 onChanged: (v) => setLocal(() => unit = v),
               ),
             ],
@@ -42,11 +44,11 @@ class TrainRecordsTab extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('取消'),
+              child: Text(l10n.cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('添加'),
+              child: Text(l10n.add),
             ),
           ],
         ),
@@ -61,7 +63,7 @@ class TrainRecordsTab extends ConsumerWidget {
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('添加失败：$e')),
+        SnackBar(content: Text(l10n.addFailed('$e'))),
       );
     } finally {
       nameCtrl.dispose();
@@ -70,6 +72,8 @@ class TrainRecordsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final locale = Localizations.localeOf(context);
     final exercisesAsync = ref.watch(exercisesProvider);
     final plansAsync = ref.watch(workoutPlansProvider);
     final historyAsync = ref.watch(workoutHistoryProvider);
@@ -85,22 +89,22 @@ class TrainRecordsTab extends ConsumerWidget {
       children: [
         Row(
           children: [
-            Text('动作库', style: theme.textTheme.titleMedium),
+            Text(l10n.exerciseLibrary, style: theme.textTheme.titleMedium),
             const Spacer(),
             TextButton.icon(
               onPressed: () => _addExercise(context, ref),
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('自定义'),
+              label: Text(l10n.custom),
             ),
           ],
         ),
         const SizedBox(height: 4),
         exercisesAsync.when(
           loading: () => const LinearProgressIndicator(),
-          error: (e, _) => Text('加载失败：$e'),
+          error: (e, _) => Text(l10n.loadFailed('$e')),
           data: (exercises) {
             if (exercises.isEmpty) {
-              return Text('暂无动作', style: theme.textTheme.meta);
+              return Text(l10n.noExercises, style: theme.textTheme.meta);
             }
             return Wrap(
               spacing: 8,
@@ -109,7 +113,7 @@ class TrainRecordsTab extends ConsumerWidget {
                 for (final ex in exercises)
                   InputChip(
                     label: Text(
-                      '${ex.name} · ${ExerciseUnit.fromStorage(ex.unit).label}',
+                      '${ex.name} · ${ExerciseUnit.fromStorage(ex.unit).label(l10n)}',
                     ),
                     onDeleted: ex.isCustom
                         ? () async {
@@ -131,15 +135,15 @@ class TrainRecordsTab extends ConsumerWidget {
           },
         ),
         const SizedBox(height: AppSpacing.section),
-        Text('训练计划', style: theme.textTheme.titleMedium),
+        Text(l10n.workoutPlans, style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
         plansAsync.when(
           loading: () => const LinearProgressIndicator(),
-          error: (e, _) => Text('加载失败：$e'),
+          error: (e, _) => Text(l10n.loadFailed('$e')),
           data: (plans) {
             if (plans.isEmpty) {
               return Text(
-                '还没有计划，点右下角新建',
+                l10n.emptyPlans,
                 style: theme.textTheme.meta,
               );
             }
@@ -159,16 +163,18 @@ class TrainRecordsTab extends ConsumerWidget {
                       return await showDialog<bool>(
                             context: context,
                             builder: (ctx) => AlertDialog(
-                              title: const Text('删除计划'),
-                              content: Text('确定删除「${summary.plan.name}」？'),
+                              title: Text(l10n.deletePlan),
+                              content: Text(
+                                l10n.confirmDeletePlan(summary.plan.name),
+                              ),
                               actions: [
                                 TextButton(
                                   onPressed: () => Navigator.pop(ctx, false),
-                                  child: const Text('取消'),
+                                  child: Text(l10n.cancel),
                                 ),
                                 FilledButton(
                                   onPressed: () => Navigator.pop(ctx, true),
-                                  child: const Text('删除'),
+                                  child: Text(l10n.delete),
                                 ),
                               ],
                             ),
@@ -185,7 +191,7 @@ class TrainRecordsTab extends ConsumerWidget {
                         title: Text(summary.plan.name),
                         subtitle: Text(
                           summary.items.isEmpty
-                              ? '无动作'
+                              ? l10n.noExercisesInPlan
                               : summary.items
                                   .map(
                                     (i) =>
@@ -207,23 +213,23 @@ class TrainRecordsTab extends ConsumerWidget {
           },
         ),
         const SizedBox(height: AppSpacing.section),
-        Text('训练历史', style: theme.textTheme.titleMedium),
+        Text(l10n.workoutHistory, style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
         historyAsync.when(
           loading: () => const LinearProgressIndicator(),
-          error: (e, _) => Text('加载失败：$e'),
+          error: (e, _) => Text(l10n.loadFailed('$e')),
           data: (days) {
             if (days.isEmpty) {
-              return Text('暂无组次记录', style: theme.textTheme.meta);
+              return Text(l10n.noSetLogs, style: theme.textTheme.meta);
             }
             return Column(
               children: [
                 for (final day in days)
                   Card(
                     child: ExpansionTile(
-                      title: Text(DateFormat('M月d日').format(day.date)),
+                      title: Text(AppDates.md(day.date, locale)),
                       subtitle: Text(
-                        '${day.sets.length} 组',
+                        l10n.nSets(day.sets.length),
                         style: theme.textTheme.meta,
                       ),
                       children: [
@@ -231,12 +237,12 @@ class TrainRecordsTab extends ConsumerWidget {
                           ListTile(
                             dense: true,
                             title: Text(
-                              '${set.exerciseName} · 第 ${set.setIndex} 组',
+                              l10n.setLine(set.exerciseName, set.setIndex),
                             ),
                             trailing: Text(
                               set.reps != null
-                                  ? '${set.reps} 次'
-                                  : '${set.durationSec ?? 0} 秒',
+                                  ? l10n.nReps(set.reps!)
+                                  : l10n.nSeconds(set.durationSec ?? 0),
                               style: theme.textTheme.meta,
                             ),
                           ),
@@ -258,11 +264,12 @@ Future<void> showQuickAddDayItemDialog({
   required WidgetRef ref,
   required DateTime day,
 }) async {
+  final l10n = context.l10n;
   final exercises = await ref.read(exercisesProvider.future);
   if (!context.mounted) return;
   if (exercises.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('请先在记录页添加动作')),
+      SnackBar(content: Text(l10n.addExercisesFirst)),
     );
     return;
   }
@@ -281,12 +288,12 @@ Future<void> showQuickAddDayItemDialog({
             ? FormOptions.targetSeconds
             : FormOptions.targetRepsOrSeconds;
         return AlertDialog(
-          title: const Text('添加今日动作'),
+          title: Text(l10n.addTodayExercise),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               AppDropdown<Exercise>(
-                label: '动作',
+                label: l10n.exercise,
                 value: selected!,
                 items: exercises,
                 itemLabel: (e) => e.name,
@@ -302,14 +309,14 @@ Future<void> showQuickAddDayItemDialog({
               ),
               const SizedBox(height: 12),
               AppDropdown<int>(
-                label: '目标组数',
+                label: l10n.targetSets,
                 value: FormOptions.snapInt(FormOptions.targetSets, sets),
                 items: FormOptions.targetSets,
                 onChanged: (v) => setLocal(() => sets = v),
               ),
               const SizedBox(height: 12),
               AppDropdown<int>(
-                label: isSeconds ? '目标秒数' : '目标次数',
+                label: isSeconds ? l10n.targetSeconds : l10n.targetReps,
                 value: FormOptions.snapInt(targetOptions, reps),
                 items: targetOptions,
                 onChanged: (v) => setLocal(() => reps = v),
@@ -319,11 +326,11 @@ Future<void> showQuickAddDayItemDialog({
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('取消'),
+              child: Text(l10n.cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('添加'),
+              child: Text(l10n.add),
             ),
           ],
         );
@@ -341,7 +348,7 @@ Future<void> showQuickAddDayItemDialog({
   } catch (e) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('添加失败：$e')),
+      SnackBar(content: Text(l10n.addFailed('$e'))),
     );
   }
 }

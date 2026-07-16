@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/db.dart';
 import '../../data/repositories/workout_repository.dart';
 import '../../domain/models.dart';
+import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/form_options.dart';
@@ -84,10 +85,11 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
 
   Future<void> _save() async {
     if (_saving) return;
+    final l10n = context.l10n;
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请填写计划名称')),
+        SnackBar(content: Text(l10n.planNameRequired)),
       );
       return;
     }
@@ -106,7 +108,7 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
     }
     if (items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('至少选择一个动作')),
+        SnackBar(content: Text(l10n.selectOneExercise)),
       );
       return;
     }
@@ -128,7 +130,7 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('保存失败：$e')),
+        SnackBar(content: Text(l10n.saveFailed('$e'))),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -137,16 +139,17 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final exercisesAsync = ref.watch(exercisesProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.planId == null ? '新建计划' : '编辑计划'),
+        title: Text(widget.planId == null ? l10n.newPlan : l10n.editPlan),
         actions: [
           TextButton(
             onPressed: _saving ? null : _save,
-            child: const Text('保存'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -154,24 +157,24 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
           ? const Center(child: CircularProgressIndicator())
           : exercisesAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('加载失败：$e')),
+              error: (e, _) => Center(child: Text(l10n.loadFailed('$e'))),
               data: (exercises) {
                 if (exercises.isEmpty) {
-                  return const Center(child: Text('请先添加动作'));
+                  return Center(child: Text(l10n.addExercisesFirstShort));
                 }
                 return ListView(
                   padding: const EdgeInsets.all(AppSpacing.formPage),
                   children: [
                     TextField(
                       controller: _nameCtrl,
-                      decoration: const InputDecoration(
-                        labelText: '计划名称',
-                        hintText: '例如：上肢自重',
+                      decoration: InputDecoration(
+                        labelText: l10n.planName,
+                        hintText: l10n.planNameHint,
                       ),
                       textInputAction: TextInputAction.next,
                     ),
                     const SizedBox(height: AppSpacing.section),
-                    Text('动作', style: theme.textTheme.titleMedium),
+                    Text(l10n.exercise, style: theme.textTheme.titleMedium),
                     const SizedBox(height: 8),
                     for (var i = 0; i < _rows.length; i++) ...[
                       _PlanRowCard(
@@ -188,7 +191,7 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
                         () => _rows.add(_PlanRow(exercise: exercises.first)),
                       ),
                       icon: const Icon(Icons.add),
-                      label: const Text('添加动作'),
+                      label: Text(l10n.addExercise),
                     ),
                   ],
                 );
@@ -225,13 +228,14 @@ class _PlanRowCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final selected = _selectedExercise();
     if (row.exercise == null || row.exercise!.id != selected.id) {
       row.exercise = selected;
     }
     final unit = ExerciseUnit.fromStorage(selected.unit);
     final isSeconds = unit == ExerciseUnit.seconds;
-    final targetLabel = isSeconds ? '目标秒数' : '目标次数';
+    final targetLabel = isSeconds ? l10n.targetSeconds : l10n.targetReps;
     final targetOptions =
         isSeconds ? FormOptions.targetSeconds : FormOptions.targetRepsOrSeconds;
 
@@ -244,7 +248,7 @@ class _PlanRowCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: AppDropdown<Exercise>(
-                    label: '动作',
+                    label: l10n.exercise,
                     value: selected,
                     items: exercises,
                     itemLabel: (e) => e.name,
@@ -256,7 +260,7 @@ class _PlanRowCard extends StatelessWidget {
                 ),
                 if (canRemove)
                   IconButton(
-                    tooltip: '移除',
+                    tooltip: l10n.remove,
                     onPressed: onRemove,
                     icon: const Icon(Icons.delete_outline),
                   ),
@@ -267,7 +271,7 @@ class _PlanRowCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: AppDropdown<int>(
-                    label: '目标组数',
+                    label: l10n.targetSets,
                     value: FormOptions.snapInt(
                       FormOptions.targetSets,
                       row.targetSets,

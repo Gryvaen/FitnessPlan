@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/models.dart';
+import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/form_options.dart';
@@ -99,7 +100,7 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('保存失败：$e')),
+          SnackBar(content: Text(context.l10n.saveFailed('$e'))),
         );
       }
     } finally {
@@ -109,8 +110,11 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
-    final valueLabel = widget.unit == ExerciseUnit.seconds ? '时长（秒）' : '次数';
+    final valueLabel = widget.unit == ExerciseUnit.seconds
+        ? l10n.durationSeconds
+        : l10n.repsCount;
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
 
     return Padding(
@@ -127,12 +131,12 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
           Text(widget.exerciseName, style: theme.textTheme.titleMedium),
           const SizedBox(height: 4),
           Text(
-            '目标 ${widget.targetSets} 组 · 分别修改组数与$valueLabel',
+            l10n.editSetsHint(widget.targetSets, valueLabel),
             style: theme.textTheme.meta,
           ),
           const SizedBox(height: AppSpacing.field),
           AppDropdown<int>(
-            label: '完成组数',
+            label: l10n.completedSets,
             value: FormOptions.snapInt(_setOptions, _completedSets),
             items: _setOptions,
             onChanged: (v) => setState(() => _completedSets = v),
@@ -147,7 +151,7 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
           const SizedBox(height: AppSpacing.section),
           FilledButton(
             onPressed: _saving ? null : _submit,
-            child: const Text('保存'),
+            child: Text(l10n.save),
           ),
         ],
       ),

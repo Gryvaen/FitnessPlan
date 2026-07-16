@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/app_localizations_ext.dart';
 import 'body_records_tab.dart';
 import 'notes_records_tab.dart';
 import 'train_records_tab.dart';
@@ -48,37 +49,38 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
     }
   }
 
-  String get _fabTooltip => switch (_segment) {
-        RecordsSegment.body => '记体重',
-        RecordsSegment.train => '新建计划',
-        RecordsSegment.notes => '写便签',
+  String _fabTooltip(AppLocalizations l10n) => switch (_segment) {
+        RecordsSegment.body => l10n.fabLogWeight,
+        RecordsSegment.train => l10n.fabNewPlan,
+        RecordsSegment.notes => l10n.fabWriteNote,
       };
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('记录'),
+        title: Text(l10n.records),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(52),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
             child: SegmentedButton<RecordsSegment>(
-              segments: const [
+              segments: [
                 ButtonSegment(
                   value: RecordsSegment.body,
-                  label: Text('身体'),
-                  icon: Icon(Icons.monitor_weight_outlined, size: 18),
+                  label: Text(l10n.segmentBody),
+                  icon: const Icon(Icons.monitor_weight_outlined, size: 18),
                 ),
                 ButtonSegment(
                   value: RecordsSegment.train,
-                  label: Text('训练'),
-                  icon: Icon(Icons.fitness_center, size: 18),
+                  label: Text(l10n.segmentTrain),
+                  icon: const Icon(Icons.fitness_center, size: 18),
                 ),
                 ButtonSegment(
                   value: RecordsSegment.notes,
-                  label: Text('便签'),
-                  icon: Icon(Icons.sticky_note_2_outlined, size: 18),
+                  label: Text(l10n.segmentNotes),
+                  icon: const Icon(Icons.sticky_note_2_outlined, size: 18),
                 ),
               ],
               selected: {_segment},
@@ -89,7 +91,7 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _onFab,
-        tooltip: _fabTooltip,
+        tooltip: _fabTooltip(l10n),
         child: const Icon(Icons.add),
       ),
       body: switch (_segment) {

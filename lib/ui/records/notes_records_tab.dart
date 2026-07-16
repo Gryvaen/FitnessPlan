@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../data/db.dart';
+import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 
@@ -13,19 +14,10 @@ String noteEditPath(DateTime day) {
   return '/records/notes/edit?date=$key';
 }
 
-String _noteTitle(DateTime day) {
+String _noteTitle(DateTime day, AppLocalizations l10n, Locale locale) {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
-  final yesterday = today.subtract(const Duration(days: 1));
-  final d = DateTime(day.year, day.month, day.day);
-  if (d == today) return '今天';
-  if (d == yesterday) return '昨天';
-  const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-  final wd = weekdays[d.weekday - 1];
-  if (d.year == today.year) {
-    return '${DateFormat('M月d日').format(d)} $wd';
-  }
-  return '${DateFormat('yyyy年M月d日').format(d)} $wd';
+  return AppDates.relativeDayTitle(day, today, l10n, locale);
 }
 
 String _notePreview(String content) {
@@ -39,7 +31,7 @@ String _notePreview(String content) {
   return lines.join('\n');
 }
 
-String _noteMeta(DailyNote note) {
+String _noteMeta(DailyNote note, AppLocalizations l10n) {
   final chars = note.content.trim().runes.length;
   final updated = note.updatedAt;
   final now = DateTime.now();
@@ -49,15 +41,17 @@ String _noteMeta(DailyNote note) {
   final time = sameDay
       ? DateFormat('HH:mm').format(updated)
       : DateFormat('M/d HH:mm').format(updated);
-  return '$chars 字 · 已更新 $time';
+  return l10n.charsUpdated(chars, time);
 }
 
-/// Daily journal notes list under Records → 便签.
+/// Daily journal notes list under Records → Notes.
 class NotesRecordsTab extends ConsumerWidget {
   const NotesRecordsTab({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final locale = Localizations.localeOf(context);
     final notesAsync = ref.watch(dailyNotesProvider);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
@@ -66,7 +60,7 @@ class NotesRecordsTab extends ConsumerWidget {
 
     return notesAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('加载失败：$e')),
+      error: (e, _) => Center(child: Text(l10n.loadFailed('$e'))),
       data: (notes) {
         if (notes.isEmpty) {
           return Padding(
@@ -76,13 +70,13 @@ class NotesRecordsTab extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    '记录今天的训练感受、睡眠或饮食偏差',
+                    l10n.notesEmptyHint,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyLarge,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '点右下角开始写',
+                    l10n.notesEmptyCta,
                     style: theme.textTheme.meta,
                   ),
                 ],
@@ -107,6 +101,7 @@ class NotesRecordsTab extends ConsumerWidget {
             final day = DateTime(note.date.year, note.date.month, note.date.day);
             final isToday = day == today;
             final preview = _notePreview(note.content);
+            final title = _noteTitle(note.date, l10n, locale);
 
             return Dismissible(
               key: ValueKey(note.id),
@@ -121,16 +116,16 @@ class NotesRecordsTab extends ConsumerWidget {
                 return await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        title: const Text('删除便签'),
-                        content: Text('确定删除 ${_noteTitle(note.date)} 的便签？'),
+                        title: Text(l10n.deleteNote),
+                        content: Text(l10n.confirmDeleteNote(title)),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('取消'),
+                            child: Text(l10n.cancel),
                           ),
                           FilledButton(
                             onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text('删除'),
+                            child: Text(l10n.delete),
                           ),
                         ],
                       ),
@@ -162,7 +157,7 @@ class NotesRecordsTab extends ConsumerWidget {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      _noteTitle(note.date),
+                                      title,
                                       style: theme.textTheme.titleSmall,
                                     ),
                                   ),
@@ -178,7 +173,7 @@ class NotesRecordsTab extends ConsumerWidget {
                                         borderRadius: BorderRadius.circular(999),
                                       ),
                                       child: Text(
-                                        '今天',
+                                        l10n.todayWord,
                                         style: theme.textTheme.labelSmall
                                             ?.copyWith(
                                           color: scheme.primary,
@@ -201,7 +196,7 @@ class NotesRecordsTab extends ConsumerWidget {
                               ],
                               const SizedBox(height: 6),
                               Text(
-                                _noteMeta(note),
+                                _noteMeta(note, l10n),
                                 style: theme.textTheme.meta,
                               ),
                             ],
