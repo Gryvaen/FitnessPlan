@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../domain/calendar_day.dart';
 import '../db.dart';
 
 class NoteRepository {
@@ -7,7 +8,7 @@ class NoteRepository {
 
   final AppDatabase _db;
 
-  DateTime _dayStart(DateTime d) => DateTime(d.year, d.month, d.day);
+  DateTime _dayStart(DateTime d) => CalendarDay.dayOnly(d);
 
   Stream<List<DailyNote>> watchAll() {
     return (_db.select(_db.dailyNotes)
@@ -21,10 +22,16 @@ class NoteRepository {
         .getSingleOrNull();
   }
 
+  Future<DailyNote?> byId(int id) {
+    return (_db.select(_db.dailyNotes)..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+  }
+
   Future<int> upsert({
     required DateTime date,
     required String content,
   }) async {
+    CalendarDay.ensureEditableDay(date);
     final trimmed = content.trim();
     if (trimmed.isEmpty) throw ArgumentError('便签内容不能为空');
 
@@ -50,10 +57,15 @@ class NoteRepository {
         );
   }
 
-  Future<void> delete(int id) =>
-      (_db.delete(_db.dailyNotes)..where((t) => t.id.equals(id))).go();
+  Future<void> delete(int id) async {
+    final existing = await byId(id);
+    if (existing == null) return;
+    CalendarDay.ensureEditableDay(existing.date);
+    await (_db.delete(_db.dailyNotes)..where((t) => t.id.equals(id))).go();
+  }
 
   Future<void> deleteByDate(DateTime day) async {
+    CalendarDay.ensureEditableDay(day);
     final start = _dayStart(day);
     await (_db.delete(_db.dailyNotes)..where((t) => t.date.equals(start))).go();
   }
@@ -63,6 +75,7 @@ class NoteRepository {
     required DateTime date,
     required String content,
   }) async {
+    CalendarDay.ensureEditableDay(date);
     final trimmed = content.trim();
     if (trimmed.isEmpty) {
       await deleteByDate(date);
