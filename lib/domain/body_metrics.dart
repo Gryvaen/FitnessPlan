@@ -87,5 +87,61 @@ abstract final class BodyMetrics {
     return pct.clamp(2.0, 60.0);
   }
 
+  /// Fat-free mass (kg). Returns null when [bodyFatPct] is not in (0, 100).
+  static double? fatFreeMassKg({
+    required double weightKg,
+    required double bodyFatPct,
+  }) {
+    if (weightKg <= 0 || bodyFatPct <= 0 || bodyFatPct >= 100) return null;
+    return weightKg * (1 - bodyFatPct / 100);
+  }
+
+  /// FFMI = FFM / height_m². Returns null when inputs are invalid.
+  static double? ffmi({
+    required double weightKg,
+    required double heightCm,
+    required double bodyFatPct,
+  }) {
+    final ffm = fatFreeMassKg(weightKg: weightKg, bodyFatPct: bodyFatPct);
+    final m = heightCm / 100;
+    if (ffm == null || m <= 0) return null;
+    return ffm / (m * m);
+  }
+
+  /// Height-normalized FFMI: FFMI + 6.1 × (1.8 − height_m).
+  static double? normalizedFfmi({
+    required double weightKg,
+    required double heightCm,
+    required double bodyFatPct,
+  }) {
+    final raw = ffmi(
+      weightKg: weightKg,
+      heightCm: heightCm,
+      bodyFatPct: bodyFatPct,
+    );
+    if (raw == null) return null;
+    final m = heightCm / 100;
+    return raw + 6.1 * (1.8 - m);
+  }
+
+  /// Rough adult-male bands; females are typically ~3–5 lower.
+  static FfmiBand ffmiBand(double ffmi) {
+    if (ffmi < 19) return FfmiBand.average;
+    if (ffmi < 22) return FfmiBand.trained;
+    if (ffmi < 24) return FfmiBand.advanced;
+    return FfmiBand.elite;
+  }
+
   static double _log10(double x) => math.log(x) / math.ln10;
+}
+
+/// Coarse FFMI reading bands (adult male reference).
+enum FfmiBand {
+  average('普通人附近'),
+  trained('经常训练'),
+  advanced('较高水平'),
+  elite('接近高水平参考（非硬标准）');
+
+  const FfmiBand(this.label);
+  final String label;
 }

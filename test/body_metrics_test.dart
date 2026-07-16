@@ -95,4 +95,62 @@ void main() {
       );
     });
   });
+
+  group('BodyMetrics.ffmi', () {
+    test('80kg / 180cm / 15% → FFM 68, FFMI ≈ 21.0', () {
+      final ffm = BodyMetrics.fatFreeMassKg(weightKg: 80, bodyFatPct: 15);
+      expect(ffm, closeTo(68, 1e-9));
+
+      final v = BodyMetrics.ffmi(
+        weightKg: 80,
+        heightCm: 180,
+        bodyFatPct: 15,
+      );
+      expect(v, closeTo(68 / (1.8 * 1.8), 0.01));
+      expect(v, closeTo(21.0, 0.05));
+
+      // height == 1.8m → normalized equals raw
+      final norm = BodyMetrics.normalizedFfmi(
+        weightKg: 80,
+        heightCm: 180,
+        bodyFatPct: 15,
+      );
+      expect(norm, closeTo(v!, 1e-9));
+      expect(BodyMetrics.ffmiBand(v), FfmiBand.trained);
+    });
+
+    test('normalized adjusts for height ≠ 1.8m', () {
+      final raw = BodyMetrics.ffmi(
+        weightKg: 80,
+        heightCm: 170,
+        bodyFatPct: 15,
+      )!;
+      final norm = BodyMetrics.normalizedFfmi(
+        weightKg: 80,
+        heightCm: 170,
+        bodyFatPct: 15,
+      )!;
+      expect(norm, closeTo(raw + 6.1 * (1.8 - 1.7), 0.01));
+    });
+
+    test('invalid body fat returns null', () {
+      expect(
+        BodyMetrics.ffmi(weightKg: 80, heightCm: 180, bodyFatPct: 0),
+        isNull,
+      );
+      expect(
+        BodyMetrics.ffmi(weightKg: 80, heightCm: 180, bodyFatPct: 100),
+        isNull,
+      );
+    });
+
+    test('band cut-offs', () {
+      expect(BodyMetrics.ffmiBand(18.9), FfmiBand.average);
+      expect(BodyMetrics.ffmiBand(19), FfmiBand.trained);
+      expect(BodyMetrics.ffmiBand(21.9), FfmiBand.trained);
+      expect(BodyMetrics.ffmiBand(22), FfmiBand.advanced);
+      expect(BodyMetrics.ffmiBand(23.9), FfmiBand.advanced);
+      expect(BodyMetrics.ffmiBand(24), FfmiBand.elite);
+    });
+  });
 }
