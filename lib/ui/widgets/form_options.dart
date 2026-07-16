@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../domain/calorie_calculator.dart';
 import '../../domain/models.dart';
+import '../../l10n/app_localizations_ext.dart';
 import '../theme/app_theme.dart';
 
 /// Shared discrete option lists for profile / weight / meal forms.
@@ -42,6 +43,7 @@ class FormOptions {
   }
 
   static String? estimatedCutWeeksLabel({
+    required AppLocalizations l10n,
     required FitnessGoal goal,
     required double weightKg,
     required double targetWeightKg,
@@ -51,7 +53,7 @@ class FormOptions {
     if (targetWeightKg >= weightKg || weeklyLossKg <= 0) return null;
     final rate = CalorieCalculator.clampWeeklyLoss(weeklyLossKg).$1;
     final weeks = ((weightKg - targetWeightKg) / rate).ceil();
-    return '预计约 $weeks 周（按 ${rate.toStringAsFixed(1)} kg/周）';
+    return l10n.estimatedWeeksAtRate(weeks, rate.toStringAsFixed(1));
   }
 
   static const weeklyLossKg = <double>[0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
@@ -254,6 +256,7 @@ class _CupertinoWheelSheetState<T> extends State<_CupertinoWheelSheet<T>> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final bg = CupertinoDynamicColor.resolve(
       CupertinoColors.systemBackground,
       context,
@@ -280,7 +283,7 @@ class _CupertinoWheelSheetState<T> extends State<_CupertinoWheelSheet<T>> {
                   CupertinoButton(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('取消'),
+                    child: Text(l10n.cancel),
                   ),
                   Expanded(
                     child: Text(
@@ -296,7 +299,7 @@ class _CupertinoWheelSheetState<T> extends State<_CupertinoWheelSheet<T>> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     onPressed: () => Navigator.pop(context, _pending),
                     child: Text(
-                      '完成',
+                      l10n.done,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             decoration: TextDecoration.none,
                           ),
@@ -387,7 +390,7 @@ class AppDropdown<T> extends StatelessWidget {
   }
 }
 
-/// Optional value picker: includes a leading "不填写" option.
+/// Optional value picker: includes a leading "leave blank" option.
 class AppOptionalDropdown<T extends Object> extends StatelessWidget {
   const AppOptionalDropdown({
     super.key,
@@ -398,7 +401,7 @@ class AppOptionalDropdown<T extends Object> extends StatelessWidget {
     this.suffixText,
     this.helperText,
     this.itemLabel,
-    this.noneLabel = '不填写',
+    this.noneLabel,
   });
 
   final String label;
@@ -408,23 +411,24 @@ class AppOptionalDropdown<T extends Object> extends StatelessWidget {
   final String? suffixText;
   final String? helperText;
   final String Function(T value)? itemLabel;
-  final String noneLabel;
+  final String? noneLabel;
 
   String _labelOfValue(T v) {
     final base = itemLabel?.call(v) ?? '$v';
     return suffixText == null ? base : '$base $suffixText';
   }
 
-  String _display() {
-    if (value == null || !items.contains(value)) return noneLabel;
-    return _labelOfValue(value as T);
-  }
-
   @override
   Widget build(BuildContext context) {
+    final none = noneLabel ?? context.l10n.leaveBlank;
+    String display() {
+      if (value == null || !items.contains(value)) return none;
+      return _labelOfValue(value as T);
+    }
+
     return _PickerField(
       label: label,
-      displayText: _display(),
+      displayText: display(),
       helperText: helperText,
       onTap: () async {
         final options = <_OptionalEntry<T>>[
@@ -439,7 +443,7 @@ class AppOptionalDropdown<T extends Object> extends StatelessWidget {
           title: label,
           items: options,
           selected: current,
-          itemLabel: (e) => e.isNone ? noneLabel : _labelOfValue(e.value as T),
+          itemLabel: (e) => e.isNone ? none : _labelOfValue(e.value as T),
         );
         if (picked == null) return; // cancelled
         onChanged(picked.isNone ? null : picked.value);

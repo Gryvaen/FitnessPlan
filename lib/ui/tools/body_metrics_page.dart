@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/body_metrics.dart';
 import '../../domain/models.dart';
+import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/form_options.dart';
@@ -55,6 +56,7 @@ class _BodyMetricsPageState extends ConsumerState<BodyMetricsPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final heights =
         FormOptions.heightsCm().map((e) => e.toDouble()).toList();
     final heightM = _heightCm / 100;
@@ -87,29 +89,29 @@ class _BodyMetricsPageState extends ConsumerState<BodyMetricsPage> {
     );
 
     final baseIdeal = _sex == Sex.male ? 50.0 : 45.5;
-    final sexLabel = _sex == Sex.male ? '男' : '女';
     final inchesOver5ft = (heightIn - 60).clamp(0.0, double.infinity);
+    final ref = BodyMetrics.whtrReference.toString();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('身体指标')),
+      appBar: AppBar(title: Text(l10n.toolBodyMetrics)),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.formPage),
         children: [
           Text(
-            '仅本地估算，不会改写档案。点击每项可展开查看计算公式。',
+            l10n.metricsLocalOnly,
             style: theme.textTheme.meta,
           ),
           const SizedBox(height: AppSpacing.section),
           AppDropdown<Sex>(
-            label: '性别',
+            label: l10n.sex,
             value: _sex,
             items: Sex.values,
-            itemLabel: (s) => s == Sex.male ? '男' : '女',
+            itemLabel: (s) => s.label(l10n),
             onChanged: (v) => setState(() => _sex = v),
           ),
           const SizedBox(height: AppSpacing.field),
           AppDropdown<double>(
-            label: '身高',
+            label: l10n.height,
             value: _heightCm,
             items: heights,
             suffixText: 'cm',
@@ -118,7 +120,7 @@ class _BodyMetricsPageState extends ConsumerState<BodyMetricsPage> {
           ),
           const SizedBox(height: AppSpacing.field),
           AppDropdown<double>(
-            label: '体重',
+            label: l10n.weight,
             value: _weightKg,
             items: FormOptions.weightsKg(),
             suffixText: 'kg',
@@ -127,7 +129,7 @@ class _BodyMetricsPageState extends ConsumerState<BodyMetricsPage> {
           ),
           const SizedBox(height: AppSpacing.field),
           AppDropdown<double>(
-            label: '体脂',
+            label: l10n.bodyFat,
             value: _bodyFatPct,
             items: _bodyFats,
             suffixText: '%',
@@ -136,7 +138,7 @@ class _BodyMetricsPageState extends ConsumerState<BodyMetricsPage> {
           ),
           const SizedBox(height: AppSpacing.field),
           AppDropdown<double>(
-            label: '腰围',
+            label: l10n.waist,
             value: _waistCm,
             items: _waists,
             suffixText: 'cm',
@@ -146,43 +148,41 @@ class _BodyMetricsPageState extends ConsumerState<BodyMetricsPage> {
           _ResultCard(
             title: 'BMI',
             value: bmi.toStringAsFixed(1),
-            unit: category.label,
-            formula: 'BMI = 体重(kg) ÷ 身高(m)²\n'
-                '= ${_weightKg.toStringAsFixed(1)} ÷ '
-                '${heightM.toStringAsFixed(2)}²\n'
-                '= ${bmi.toStringAsFixed(1)}\n\n'
-                '分级（WHO）：\n'
-                '偏瘦 < 18.5 · 正常 18.5–24.9\n'
-                '超重 25–29.9 · 肥胖 ≥ 30',
+            unit: category.label(l10n),
+            formula: l10n.bmiFormula(
+              _weightKg.toStringAsFixed(1),
+              heightM.toStringAsFixed(2),
+              bmi.toStringAsFixed(1),
+            ),
           ),
           const SizedBox(height: AppSpacing.field),
           _ResultCard(
-            title: '理想体重（Devine）',
+            title: l10n.idealWeightDevine,
             value: ideal.toStringAsFixed(1),
             unit: 'kg',
-            formula: 'Devine 公式（$sexLabel）\n'
-                '身高 = ${_heightCm.round()} cm '
-                '≈ ${heightIn.toStringAsFixed(1)} in\n'
-                '理想体重 = $baseIdeal + 2.3 × (身高英寸 − 60)\n'
-                '= $baseIdeal + 2.3 × ${inchesOver5ft.toStringAsFixed(1)}\n'
-                '= ${ideal.toStringAsFixed(1)} kg\n\n'
-                '身高不足 5 英尺（152.4 cm）时按基数 '
-                '$baseIdeal kg 计。',
+            formula: l10n.idealWeightFormula(
+              _sex.label(l10n),
+              '${_heightCm.round()}',
+              heightIn.toStringAsFixed(1),
+              '$baseIdeal',
+              inchesOver5ft.toStringAsFixed(1),
+              ideal.toStringAsFixed(1),
+            ),
           ),
           const SizedBox(height: AppSpacing.field),
           _ResultCard(
-            title: '腰高比',
+            title: l10n.whtr,
             value: whtr.toStringAsFixed(2),
             unit: whtrHigh
-                ? '高于参考线 ${BodyMetrics.whtrReference}'
-                : '参考线 ${BodyMetrics.whtrReference}',
-            formula: '腰高比 = 腰围(cm) ÷ 身高(cm)\n'
-                '= ${_waistCm.toStringAsFixed(1)} ÷ ${_heightCm.round()}\n'
-                '= ${whtr.toStringAsFixed(2)}\n\n'
-                '一般越低越好(合理范围内)\n'
-                '≤ ${BodyMetrics.whtrReference}：较健康参考线；'
-                '明显高于此值：腹部脂肪偏多风险往往更高。\n'
-                '${whtrHigh ? '\n\n当前高于参考线。' : ''}',
+                ? l10n.whtrAboveRef(ref)
+                : l10n.whtrRef(ref),
+            formula: l10n.whtrFormula(
+                  _waistCm.toStringAsFixed(1),
+                  '${_heightCm.round()}',
+                  whtr.toStringAsFixed(2),
+                  ref,
+                ) +
+                (whtrHigh ? l10n.whtrAboveNow : ''),
           ),
           const SizedBox(height: AppSpacing.field),
           if (ffm == null || ffmi == null || normFfmi == null)
@@ -190,45 +190,43 @@ class _BodyMetricsPageState extends ConsumerState<BodyMetricsPage> {
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.card),
                 child: Text(
-                  'FFMI：请填写有效体脂（0–100% 之间）。',
+                  l10n.ffmiNeedBf,
                   style: theme.textTheme.bodyMedium,
                 ),
               ),
             )
           else ...[
             _ResultCard(
-              title: '去脂体重',
+              title: l10n.leanMass,
               value: ffm.toStringAsFixed(1),
               unit: 'kg',
-              formula: '去脂体重 FFM = 体重 × (1 − 体脂%)\n'
-                  '= ${_weightKg.toStringAsFixed(1)} × '
-                  '(1 − ${_bodyFatPct.toStringAsFixed(1)}%)\n'
-                  '= ${ffm.toStringAsFixed(1)} kg',
+              formula: l10n.leanMassFormula(
+                _weightKg.toStringAsFixed(1),
+                _bodyFatPct.toStringAsFixed(1),
+                ffm.toStringAsFixed(1),
+              ),
             ),
             const SizedBox(height: AppSpacing.field),
             _ResultCard(
               title: 'FFMI',
               value: ffmi.toStringAsFixed(1),
-              unit: BodyMetrics.ffmiBand(ffmi).label,
-              formula: 'FFMI = 去脂体重(kg) ÷ 身高(m)²\n'
-                  '= ${ffm.toStringAsFixed(1)} ÷ '
-                  '${heightM.toStringAsFixed(2)}²\n'
-                  '= ${ffmi.toStringAsFixed(1)}\n\n'
-                  '成年男性粗读参考：\n'
-                  '<19 普通人附近 · 19–21 经常训练\n'
-                  '22–23 较高水平 · ≥24 高水平参考\n'
-                  '女性通常低约 3–5；非硬性标准。',
+              unit: BodyMetrics.ffmiBand(ffmi).label(l10n),
+              formula: l10n.ffmiFormula(
+                ffm.toStringAsFixed(1),
+                heightM.toStringAsFixed(2),
+                ffmi.toStringAsFixed(1),
+              ),
             ),
             const SizedBox(height: AppSpacing.field),
             _ResultCard(
-              title: '归一化 FFMI',
+              title: l10n.normalizedFfmi,
               value: normFfmi.toStringAsFixed(1),
-              unit: '按 1.8 m 校正',
-              formula: '归一化 FFMI = FFMI + 6.1 × (1.8 − 身高m)\n'
-                  '= ${ffmi.toStringAsFixed(1)} + 6.1 × '
-                  '(1.8 − ${heightM.toStringAsFixed(2)})\n'
-                  '= ${normFfmi.toStringAsFixed(1)}\n\n'
-                  '用于校正身高偏离 1.8 m 时的可比性。',
+              unit: l10n.normalizedFfmiUnit,
+              formula: l10n.normalizedFfmiFormula(
+                ffmi.toStringAsFixed(1),
+                heightM.toStringAsFixed(2),
+                normFfmi.toStringAsFixed(1),
+              ),
             ),
           ],
         ],

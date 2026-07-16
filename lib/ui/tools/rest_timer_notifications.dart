@@ -7,7 +7,9 @@ import 'package:timezone/timezone.dart' as tz;
 /// Thin wrapper around [FlutterLocalNotificationsPlugin] for rest-timer alerts.
 abstract final class RestTimerNotifications {
   static const _channelId = 'rest_timer';
-  static const _channelName = '休息计时器';
+  /// English channel name for system settings (not re-localized easily).
+  static const _channelName = 'Rest timer';
+  static const _channelDesc = 'Between-set rest alerts';
   static const notificationId = 71001;
 
   static final FlutterLocalNotificationsPlugin _plugin =
@@ -39,7 +41,7 @@ abstract final class RestTimerNotifications {
       const AndroidNotificationChannel(
         _channelId,
         _channelName,
-        description: '组间休息结束提醒',
+        description: _channelDesc,
         importance: Importance.high,
         playSound: true,
       ),
@@ -88,7 +90,12 @@ abstract final class RestTimerNotifications {
     return true;
   }
 
-  static Future<void> scheduleRestEnd(Duration remaining) async {
+  /// Schedules a rest-end alert. Pass localized [title]/[body] from the UI.
+  static Future<void> scheduleRestEnd(
+    Duration remaining, {
+    required String title,
+    required String body,
+  }) async {
     await ensureInitialized();
     if (remaining.inSeconds < 1) return;
 
@@ -99,7 +106,7 @@ abstract final class RestTimerNotifications {
       android: AndroidNotificationDetails(
         _channelId,
         _channelName,
-        channelDescription: '组间休息结束提醒',
+        channelDescription: _channelDesc,
         importance: Importance.high,
         priority: Priority.high,
         playSound: true,
@@ -119,8 +126,8 @@ abstract final class RestTimerNotifications {
     try {
       await _plugin.zonedSchedule(
         id: notificationId,
-        title: '休息结束',
-        body: '开始下一组',
+        title: title,
+        body: body,
         scheduledDate: when,
         notificationDetails: details,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
@@ -128,8 +135,8 @@ abstract final class RestTimerNotifications {
     } catch (_) {
       await _plugin.zonedSchedule(
         id: notificationId,
-        title: '休息结束',
-        body: '开始下一组',
+        title: title,
+        body: body,
         scheduledDate: when,
         notificationDetails: details,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,

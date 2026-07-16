@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/body_metrics.dart';
 import '../../domain/models.dart';
+import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/form_options.dart';
@@ -51,6 +52,7 @@ class _BodyFatPageState extends ConsumerState<BodyFatPage> {
   Future<void> _writeToTodayWeight() async {
     final pct = _pct;
     if (pct == null) return;
+    final l10n = context.l10n;
     setState(() => _saving = true);
     try {
       final now = DateTime.now();
@@ -62,8 +64,8 @@ class _BodyFatPageState extends ConsumerState<BodyFatPage> {
         SnackBar(
           content: Text(
             ok
-                ? '已写入今日体重记录的体脂 ${pct.toStringAsFixed(1)}%'
-                : '今日尚无体重记录，请先到「体重」页记一笔',
+                ? l10n.bfWrittenSnack(pct.toStringAsFixed(1))
+                : l10n.bfNoWeightLog,
           ),
         ),
       );
@@ -75,30 +77,31 @@ class _BodyFatPageState extends ConsumerState<BodyFatPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final pct = _pct;
     final heights =
         FormOptions.heightsCm().map((e) => e.toDouble()).toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('体脂估算')),
+      appBar: AppBar(title: Text(l10n.toolBodyFat)),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.formPage),
         children: [
           Text(
-            'US Navy 围度法，结果为估算值，非体脂秤/DEXA 测量。',
+            l10n.bfDisclaimer,
             style: theme.textTheme.meta,
           ),
           const SizedBox(height: AppSpacing.section),
           AppDropdown<Sex>(
-            label: '性别',
+            label: l10n.sex,
             value: _sex,
             items: Sex.values,
-            itemLabel: (s) => s == Sex.male ? '男' : '女',
+            itemLabel: (s) => s.label(l10n),
             onChanged: (v) => setState(() => _sex = v),
           ),
           const SizedBox(height: AppSpacing.field),
           AppDropdown<double>(
-            label: '身高',
+            label: l10n.height,
             value: _heightCm,
             items: heights,
             suffixText: 'cm',
@@ -107,7 +110,7 @@ class _BodyFatPageState extends ConsumerState<BodyFatPage> {
           ),
           const SizedBox(height: AppSpacing.field),
           AppDropdown<double>(
-            label: '颈围',
+            label: l10n.neck,
             value: _neckCm,
             items: _necks,
             suffixText: 'cm',
@@ -115,7 +118,7 @@ class _BodyFatPageState extends ConsumerState<BodyFatPage> {
           ),
           const SizedBox(height: AppSpacing.field),
           AppDropdown<double>(
-            label: _sex == Sex.male ? '腹围（腰围）' : '腰围',
+            label: _sex == Sex.male ? l10n.abdomenWaist : l10n.waist,
             value: _waistCm,
             items: _waists,
             suffixText: 'cm',
@@ -124,7 +127,7 @@ class _BodyFatPageState extends ConsumerState<BodyFatPage> {
           if (_sex == Sex.female) ...[
             const SizedBox(height: AppSpacing.field),
             AppDropdown<double>(
-              label: '臀围',
+              label: l10n.hip,
               value: _hipCm,
               items: _hips,
               suffixText: 'cm',
@@ -138,11 +141,11 @@ class _BodyFatPageState extends ConsumerState<BodyFatPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('估算体脂率', style: theme.textTheme.titleMedium),
+                  Text(l10n.estimatedBf, style: theme.textTheme.titleMedium),
                   const SizedBox(height: 8),
                   if (pct == null)
                     Text(
-                      '请检查围度：腰/腹围需大于颈围。',
+                      l10n.bfCircumferenceError,
                       style: theme.textTheme.bodyMedium,
                     )
                   else
@@ -165,7 +168,7 @@ class _BodyFatPageState extends ConsumerState<BodyFatPage> {
           const SizedBox(height: AppSpacing.section),
           FilledButton(
             onPressed: pct == null || _saving ? null : _writeToTodayWeight,
-            child: Text(_saving ? '写入中…' : '写入今日体重记录体脂'),
+            child: Text(_saving ? l10n.writing : l10n.writeBfToWeight),
           ),
         ],
       ),

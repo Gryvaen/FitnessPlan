@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/db.dart';
 import '../../domain/models.dart';
+import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/form_options.dart';
@@ -56,7 +57,7 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('操作失败：$e')),
+        SnackBar(content: Text(context.l10n.operationFailed('$e'))),
       );
     }
   }
@@ -97,6 +98,7 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final intake = _intake;
     final gramsOpts = FormOptions.mealGrams;
     final favorites =
@@ -106,15 +108,15 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
         : ref.watch(foodFavoriteProvider(_selected!.id)).value ?? false;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('食物换算')),
+      appBar: AppBar(title: Text(l10n.toolFoodConvert)),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.formPage),
         children: [
           TextField(
-            decoration: const InputDecoration(
-              labelText: '搜索食材',
-              prefixIcon: Icon(Icons.search),
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l10n.searchFood,
+              prefixIcon: const Icon(Icons.search),
+              border: const OutlineInputBorder(),
             ),
             onChanged: _search,
           ),
@@ -126,7 +128,7 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
           else if (_query.isNotEmpty && _selected == null) ...[
             const SizedBox(height: AppSpacing.field),
             if (_results.isEmpty)
-              Text('未找到食材', style: theme.textTheme.meta)
+              Text(l10n.foodNotFoundShort, style: theme.textTheme.meta)
             else
               ..._results.take(20).map((f) => _foodTile(f)),
           ],
@@ -146,12 +148,12 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      tooltip: isFav ? '取消收藏' : '收藏',
+                      tooltip: isFav ? l10n.unfavorite : l10n.favorites,
                       icon: Icon(isFav ? Icons.star : Icons.star_border),
                       onPressed: () => _toggleFavorite(_selected!.id),
                     ),
                     IconButton(
-                      tooltip: '清除',
+                      tooltip: l10n.clearSelection,
                       icon: const Icon(Icons.close),
                       onPressed: () => setState(() => _selected = null),
                     ),
@@ -161,7 +163,7 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
             ),
             const SizedBox(height: AppSpacing.field),
             AppDropdown<double>(
-              label: '分量',
+              label: l10n.portion,
               value: FormOptions.snapDouble(gramsOpts, _grams),
               items: gramsOpts,
               suffixText: 'g',
@@ -190,7 +192,7 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('换算结果', style: theme.textTheme.titleMedium),
+                      Text(l10n.convertResult, style: theme.textTheme.titleMedium),
                       const SizedBox(height: 8),
                       Text(
                         '${intake.calories.round()} kcal',
@@ -198,21 +200,23 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '蛋白质 ${intake.proteinG.toStringAsFixed(1)} g',
+                        '${l10n.protein} ${intake.proteinG.toStringAsFixed(1)} g',
                         style: theme.textTheme.bodyMedium,
                       ),
                       Text(
-                        '碳水 ${intake.carbG.toStringAsFixed(1)} g',
+                        '${l10n.carbs} ${intake.carbG.toStringAsFixed(1)} g',
                         style: theme.textTheme.bodyMedium,
                       ),
                       Text(
-                        '脂肪 ${intake.fatG.toStringAsFixed(1)} g',
+                        '${l10n.fat} ${intake.fatG.toStringAsFixed(1)} g',
                         style: theme.textTheme.bodyMedium,
                       ),
                       if (intake.alcoholG > 0.05)
                         Text(
-                          '酒精 ${intake.alcoholG.toStringAsFixed(1)} g'
-                          '（约 ${intake.alcoholKcal.round()} kcal）',
+                          l10n.alcoholWithKcal(
+                            intake.alcoholG.toStringAsFixed(1),
+                            '${intake.alcoholKcal.round()}',
+                          ),
                           style: theme.textTheme.bodyMedium,
                         ),
                     ],
@@ -223,13 +227,13 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
             const SizedBox(height: AppSpacing.section),
             if (favorites.isEmpty)
               Text(
-                '搜索并选择食材，或在食材库收藏常用项后在此快速选用。',
+                l10n.foodConvertHint,
                 style: theme.textTheme.meta,
               )
             else ...[
-              Text('收藏', style: theme.textTheme.titleSmall),
+              Text(l10n.favorites, style: theme.textTheme.titleSmall),
               const SizedBox(height: AppSpacing.field),
-              ...favorites.map((f) => _foodTile(f, badge: '收藏')),
+              ...favorites.map((f) => _foodTile(f, badge: l10n.badgeFavorite)),
             ],
           ],
         ],

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../domain/calculator_engine.dart';
+import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 
@@ -43,16 +44,18 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   }
 
   Future<void> _copy() async {
+    final l10n = context.l10n;
     final expr = _engine.expression.trim();
+    final display = _engine.error ? l10n.calcError : _engine.input;
     final text = expr.isEmpty
-        ? _engine.input
+        ? display
         : (expr.endsWith('=')
-            ? '$expr ${_engine.input}'
-            : '$expr\n${_engine.input}');
+            ? '$expr $display'
+            : '$expr\n$display');
     await Clipboard.setData(ClipboardData(text: text));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('已复制到剪贴板')),
+      SnackBar(content: Text(l10n.copiedClipboard)),
     );
   }
 
@@ -91,20 +94,22 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final scheme = theme.colorScheme;
     final eng = _engine;
+    final displayInput = eng.error ? l10n.calcError : eng.input;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('计算器'),
+        title: Text(l10n.toolCalculator),
         actions: [
           IconButton(
-            tooltip: '历史',
+            tooltip: l10n.history,
             onPressed: _openHistory,
             icon: const Icon(Icons.history),
           ),
           IconButton(
-            tooltip: '复制',
+            tooltip: l10n.copy,
             onPressed: _copy,
             icon: const Icon(Icons.copy_outlined),
           ),
@@ -157,7 +162,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                               fit: BoxFit.scaleDown,
                               alignment: Alignment.centerRight,
                               child: Text(
-                                eng.input,
+                                displayInput,
                                 maxLines: 1,
                                 textAlign: TextAlign.right,
                                 style: theme.textTheme.displayMedium?.copyWith(
@@ -331,6 +336,7 @@ class _HistorySheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final timeFmt = DateFormat('MM-dd HH:mm');
 
     return Column(
@@ -339,11 +345,11 @@ class _HistorySheet extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 0, 8, 8),
           child: Row(
             children: [
-              Text('计算历史', style: theme.textTheme.titleMedium),
+              Text(l10n.calcHistory, style: theme.textTheme.titleMedium),
               const Spacer(),
               TextButton(
                 onPressed: entries.isEmpty ? null : onClear,
-                child: const Text('清空'),
+                child: Text(l10n.clear),
               ),
             ],
           ),
@@ -351,7 +357,7 @@ class _HistorySheet extends StatelessWidget {
         Expanded(
           child: entries.isEmpty
               ? Center(
-                  child: Text('暂无记录', style: theme.textTheme.meta),
+                  child: Text(l10n.noHistory, style: theme.textTheme.meta),
                 )
               : ListView.separated(
                   controller: scrollController,

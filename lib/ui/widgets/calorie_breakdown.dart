@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../domain/calorie_calculator.dart';
 import '../../domain/models.dart';
+import '../../l10n/app_localizations_ext.dart';
 import '../theme/app_theme.dart';
 
 /// Shared transparent calorie formula breakdown.
@@ -18,22 +19,23 @@ class CalorieBreakdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final children = <Widget>[
-      _sectionTitle(theme, '1. 基础代谢 BMR'),
-      Text(plan.bmrFormulaLabel, style: theme.textTheme.bodyMedium),
+      _sectionTitle(theme, l10n.bmrSection),
+      Text(plan.bmrFormula(l10n), style: theme.textTheme.bodyMedium),
       const SizedBox(height: 4),
       Text(plan.bmrSubstituted, style: theme.textTheme.meta),
       const SizedBox(height: AppSpacing.field),
-      _sectionTitle(theme, '2. 每日总消耗 TDEE'),
+      _sectionTitle(theme, l10n.tdeeSection),
       Text(
         'BMR × ${plan.activityFactor} = ${plan.tdee.toStringAsFixed(0)} kcal',
         style: theme.textTheme.bodyMedium,
       ),
       const SizedBox(height: AppSpacing.field),
-      _sectionTitle(theme, '3. 目标摄入'),
-      ..._goalLines(theme),
+      _sectionTitle(theme, l10n.targetIntakeSection),
+      ..._goalLines(theme, l10n),
       const SizedBox(height: AppSpacing.field),
-      _sectionTitle(theme, '4. 三大营养素'),
+      _sectionTitle(theme, l10n.macrosSection),
       Text(
         '${plan.targets.calories} kcal · '
         'P ${plan.targets.proteinG.toStringAsFixed(0)} · '
@@ -42,13 +44,13 @@ class CalorieBreakdown extends StatelessWidget {
         style: theme.textTheme.bodyMedium,
       ),
       Text(
-        '蛋白 ${plan.proteinPerKg} g/kg · 脂肪 0.8 g/kg · 其余为碳水',
+        l10n.macroRule(plan.proteinPerKg.toString()),
         style: theme.textTheme.meta,
       ),
       if (plan.calorieAdjustment > 0) ...[
         const SizedBox(height: 4),
         Text(
-          '含平台期调整 −${plan.calorieAdjustment} kcal',
+          l10n.includesPlateauAdj('${plan.calorieAdjustment}'),
           style: theme.textTheme.meta,
         ),
       ],
@@ -56,13 +58,13 @@ class CalorieBreakdown extends StatelessWidget {
 
     if (plan.notes.isNotEmpty) {
       children.add(const SizedBox(height: AppSpacing.field));
-      children.add(_sectionTitle(theme, '说明'));
+      children.add(_sectionTitle(theme, l10n.notesSection));
       for (final note in plan.notes) {
         children.add(
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: Text(
-              note,
+              note.localize(l10n),
               style: theme.textTheme.meta?.copyWith(
                 color: plan.safetyApplied || plan.missingCutInputs
                     ? theme.colorScheme.error
@@ -80,25 +82,25 @@ class CalorieBreakdown extends StatelessWidget {
     );
   }
 
-  List<Widget> _goalLines(ThemeData theme) {
+  List<Widget> _goalLines(ThemeData theme, AppLocalizations l10n) {
     switch (plan.goal) {
       case FitnessGoal.maintain:
         return [
           Text(
-            '维持：≈ TDEE = ${plan.targets.calories} kcal',
+            l10n.maintainLine('${plan.targets.calories}'),
             style: theme.textTheme.bodyMedium,
           ),
         ];
       case FitnessGoal.bulk:
         return [
           Text(
-            '增肌：TDEE × 1.1 = ${plan.targets.calories} kcal',
+            l10n.bulkLine('${plan.targets.calories}'),
             style: theme.textTheme.bodyMedium,
           ),
         ];
       case FitnessGoal.cut:
         final lines = <Widget>[
-          Text('减脂', style: theme.textTheme.bodyMedium),
+          Text(plan.goal.label(l10n), style: theme.textTheme.bodyMedium),
         ];
         if (plan.kgToLose != null &&
             plan.targetWeightKg != null &&
@@ -107,21 +109,21 @@ class CalorieBreakdown extends StatelessWidget {
             Text(
               '${plan.weightKg.toStringAsFixed(1)} → '
               '${plan.targetWeightKg!.toStringAsFixed(1)} kg'
-              '（需减 ${plan.kgToLose!.toStringAsFixed(1)}）',
+              '${l10n.needLose(plan.kgToLose!.toStringAsFixed(1))}',
               style: theme.textTheme.meta,
             ),
             Text(
-              '${plan.weeklyLossKg!.toStringAsFixed(2)} kg/周'
-              '${plan.goalWeeks != null ? ' · 约 ${plan.goalWeeks} 周' : ''}',
+              '${l10n.weeklyLossLine(plan.weeklyLossKg!.toStringAsFixed(2)).replaceFirst(RegExp(r'^·\s*'), '')}'
+              '${plan.goalWeeks != null ? l10n.aboutNWeeks(plan.goalWeeks!) : ''}',
               style: theme.textTheme.meta,
             ),
             Text(
-              '日缺口 ${plan.dailyDeficit.round()} kcal'
-              '${plan.requestedDeficit != null && plan.safetyApplied && (plan.requestedDeficit! - plan.dailyDeficit).abs() > 1 ? '（已收窄）' : ''}',
+              '${l10n.dailyDeficitLine('${plan.dailyDeficit.round()}')}'
+              '${plan.requestedDeficit != null && plan.safetyApplied && (plan.requestedDeficit! - plan.dailyDeficit).abs() > 1 ? l10n.narrowed : ''}',
               style: theme.textTheme.meta,
             ),
             Text(
-              '应吃 ${plan.targets.calories} kcal',
+              l10n.shouldEat('${plan.targets.calories}'),
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -130,7 +132,7 @@ class CalorieBreakdown extends StatelessWidget {
         } else {
           lines.add(
             Text(
-              '临时估算：TDEE × 80% = ${plan.targets.calories} kcal',
+              l10n.tempEstimate80('${plan.targets.calories}'),
               style: theme.textTheme.bodyMedium,
             ),
           );

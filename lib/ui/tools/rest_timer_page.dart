@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../l10n/app_localizations_ext.dart';
 import '../theme/app_theme.dart';
 import 'rest_timer_notifications.dart';
 
@@ -36,8 +37,8 @@ class _RestTimerPageState extends State<RestTimerPage>
     if (!mounted || ok || _permissionHintShown) return;
     _permissionHintShown = true;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('未授予通知权限时，锁屏可能不会提醒；前台倒计时仍可用。'),
+      SnackBar(
+        content: Text(context.l10n.restNotifyPermissionHint),
       ),
     );
   }
@@ -71,13 +72,18 @@ class _RestTimerPageState extends State<RestTimerPage>
 
   Future<void> _start() async {
     if (_running) return;
+    final l10n = context.l10n;
     final secs = _selectedSeconds.clamp(30, 600);
     setState(() {
       _running = true;
       _remainingSeconds = secs;
       _endsAt = DateTime.now().add(Duration(seconds: secs));
     });
-    await RestTimerNotifications.scheduleRestEnd(Duration(seconds: secs));
+    await RestTimerNotifications.scheduleRestEnd(
+      Duration(seconds: secs),
+      title: l10n.restDoneTitle,
+      body: l10n.restDoneBody,
+    );
     _ticker?.cancel();
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       final ends = _endsAt;
@@ -104,7 +110,7 @@ class _RestTimerPageState extends State<RestTimerPage>
     if (!mounted) return;
     HapticFeedback.heavyImpact();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('休息结束，开始下一组')),
+      SnackBar(content: Text(context.l10n.restDoneSnack)),
     );
   }
 
@@ -128,17 +134,18 @@ class _RestTimerPageState extends State<RestTimerPage>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final display = _running ? _remainingSeconds : _selectedSeconds;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('休息计时器')),
+      appBar: AppBar(title: Text(l10n.toolRestTimer)),
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.formPage),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              '组间休息倒计时。授权通知后，锁屏或切到后台也会提醒。',
+              l10n.restTimerIntro,
               style: theme.textTheme.meta,
             ),
             const SizedBox(height: AppSpacing.section),
@@ -172,7 +179,7 @@ class _RestTimerPageState extends State<RestTimerPage>
             ),
             const SizedBox(height: AppSpacing.field),
             if (!_running) ...[
-              Text('自定义（0:30–10:00）', style: theme.textTheme.fieldLabel),
+              Text(l10n.customDuration, style: theme.textTheme.fieldLabel),
               Slider(
                 min: 30,
                 max: 600,
@@ -191,7 +198,7 @@ class _RestTimerPageState extends State<RestTimerPage>
                 Expanded(
                   child: OutlinedButton(
                     onPressed: _reset,
-                    child: const Text('重置'),
+                    child: Text(l10n.reset),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -199,7 +206,7 @@ class _RestTimerPageState extends State<RestTimerPage>
                   flex: 2,
                   child: FilledButton(
                     onPressed: _running ? null : _start,
-                    child: Text(_running ? '计时中…' : '开始'),
+                    child: Text(_running ? l10n.timing : l10n.start),
                   ),
                 ),
               ],
