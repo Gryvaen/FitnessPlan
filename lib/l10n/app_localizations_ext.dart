@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import 'app_localizations.dart';
 import '../domain/body_metrics.dart';
+import '../domain/calendar_day.dart';
 import '../domain/calorie_calculator.dart';
 import '../domain/models.dart';
 
@@ -108,6 +109,13 @@ extension CaloriePlanL10n on CaloriePlan {
 
 /// Locale-aware date formatting helpers.
 abstract final class AppDates {
+  static DateTime dayOnly(DateTime d) => CalendarDay.dayOnly(d);
+
+  static DateTime todayLocal([DateTime? now]) => CalendarDay.todayLocal(now);
+
+  static bool isLocalToday(DateTime d, [DateTime? now]) =>
+      CalendarDay.isLocalToday(d, now);
+
   static String md(DateTime d, Locale locale) {
     final code = locale.languageCode;
     if (code == 'zh') return DateFormat('M月d日', 'zh').format(d);
@@ -139,8 +147,8 @@ abstract final class AppDates {
   }
 
   static String relativeDayTitle(DateTime d, DateTime today, AppLocalizations l10n, Locale locale) {
-    final day = DateTime(d.year, d.month, d.day);
-    final t = DateTime(today.year, today.month, today.day);
+    final day = dayOnly(d);
+    final t = dayOnly(today);
     if (day == t) return l10n.todayWord;
     if (day == t.subtract(const Duration(days: 1))) return l10n.yesterday;
     if (day.year == t.year) return mdWithWeekday(day, locale);
