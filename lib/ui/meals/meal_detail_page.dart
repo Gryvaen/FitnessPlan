@@ -83,6 +83,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
     final food = _food;
     final entry = _entry;
     if (food == null || entry == null || _saving) return;
+    if (!AppDates.isLocalToday(entry.date)) return;
     setState(() => _saving = true);
     try {
       await ref.read(mealRepositoryProvider).update(
@@ -122,6 +123,13 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
   Future<void> _delete() async {
     final entry = _entry;
     if (entry == null) return;
+    if (!AppDates.isLocalToday(entry.date)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.pastDayReadOnly)),
+      );
+      return;
+    }
 
     final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
@@ -178,6 +186,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
     final preview = _preview;
     final theme = Theme.of(context);
     final locale = Localizations.localeOf(context);
+    final editable = AppDates.isLocalToday(entry.date);
 
     return Scaffold(
       appBar: AppBar(
@@ -194,11 +203,12 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
                 ),
               ),
             ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            tooltip: l10n.delete,
-            onPressed: _delete,
-          ),
+          if (editable)
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              tooltip: l10n.delete,
+              onPressed: _delete,
+            ),
         ],
       ),
       body: ListView(
@@ -208,27 +218,41 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
             AppDates.md(entry.date, locale),
             style: theme.textTheme.fieldLabel,
           ),
+          if (!editable) ...[
+            const SizedBox(height: 4),
+            Text(l10n.pastDayReadOnly, style: theme.textTheme.meta),
+          ],
           const SizedBox(height: 4),
           Text(
             '${food.kcalPer100.round()} kcal / 100g',
             style: theme.textTheme.meta,
           ),
           const SizedBox(height: AppSpacing.section),
-          AppDropdown<MealType>(
-            label: l10n.mealType,
-            value: _mealType,
-            items: MealType.values,
-            itemLabel: (e) => e.label(l10n),
-            onChanged: _onMealTypeChanged,
-          ),
-          const SizedBox(height: AppSpacing.field),
-          AppDropdown<double>(
-            label: l10n.grams,
-            value: FormOptions.snapDouble(FormOptions.mealGrams, _grams),
-            items: FormOptions.mealGrams,
-            suffixText: 'g',
-            itemLabel: formatKg,
-            onChanged: _onGramsChanged,
+          IgnorePointer(
+            ignoring: !editable,
+            child: Opacity(
+              opacity: editable ? 1 : 0.7,
+              child: Column(
+                children: [
+                  AppDropdown<MealType>(
+                    label: l10n.mealType,
+                    value: _mealType,
+                    items: MealType.values,
+                    itemLabel: (e) => e.label(l10n),
+                    onChanged: _onMealTypeChanged,
+                  ),
+                  const SizedBox(height: AppSpacing.field),
+                  AppDropdown<double>(
+                    label: l10n.grams,
+                    value: FormOptions.snapDouble(FormOptions.mealGrams, _grams),
+                    items: FormOptions.mealGrams,
+                    suffixText: 'g',
+                    itemLabel: formatKg,
+                    onChanged: _onGramsChanged,
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 28),
           Text(l10n.nutritionIntake, style: theme.textTheme.titleMedium),
