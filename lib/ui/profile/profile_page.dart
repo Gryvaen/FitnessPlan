@@ -22,7 +22,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       builder: (ctx) => AlertDialog(
         title: const Text('清空数据'),
         content: const Text(
-          '将清除所有饮食、体重、收藏与身体档案，相当于重新使用本程序。确定继续？',
+          '将清除所有饮食、体重、训练、便签、收藏与身体档案，相当于重新使用本程序。确定继续？',
         ),
         actions: [
           TextButton(
@@ -41,6 +41,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       await Future.wait([
         ref.read(mealRepositoryProvider).clearAll(),
         ref.read(weightRepositoryProvider).clearAll(),
+        ref.read(workoutRepositoryProvider).clearAll(),
+        ref.read(noteRepositoryProvider).clearAll(),
         ref.read(foodRepositoryProvider).clearFavorites(),
         ref.read(formMemoryRepositoryProvider).clear(),
         ref.read(mealPresetRepositoryProvider).clearAll(),
@@ -168,60 +170,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               ),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push('/profile/tools'),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.field),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.water_drop_outlined),
-              title: const Text('每日饮水目标'),
-              subtitle: Text(
-                '${ref.watch(waterGoalProvider)} ml',
-                style: theme.textTheme.meta,
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () async {
-                var goal = ref.read(waterGoalProvider);
-                final ok = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => StatefulBuilder(
-                    builder: (ctx, setLocal) => AlertDialog(
-                      title: const Text('饮水目标'),
-                      content: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          IconButton(
-                            onPressed: goal <= 500
-                                ? null
-                                : () => setLocal(() => goal -= 250),
-                            icon: const Icon(Icons.remove),
-                          ),
-                          Text('$goal ml', style: theme.textTheme.titleLarge),
-                          IconButton(
-                            onPressed: goal >= 5000
-                                ? null
-                                : () => setLocal(() => goal += 250),
-                            icon: const Icon(Icons.add),
-                          ),
-                        ],
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('取消'),
-                        ),
-                        FilledButton(
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text('保存'),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-                if (ok == true) {
-                  await ref.read(waterGoalProvider.notifier).setGoal(goal);
-                }
-              },
             ),
           ),
         ],

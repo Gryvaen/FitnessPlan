@@ -32,9 +32,9 @@ class MainShell extends StatelessWidget {
             label: '食材',
           ),
           NavigationDestination(
-            icon: Icon(Icons.monitor_weight_outlined),
-            selectedIcon: Icon(Icons.monitor_weight),
-            label: '体重',
+            icon: Icon(Icons.fitness_center),
+            selectedIcon: Icon(Icons.fitness_center),
+            label: '记录',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),

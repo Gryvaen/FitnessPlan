@@ -12,12 +12,10 @@ class _WeightLogDraft {
   const _WeightLogDraft({
     required this.weightKg,
     this.bodyFatPct,
-    this.exerciseMinutes,
   });
 
   final double weightKg;
   final double? bodyFatPct;
-  final int? exerciseMinutes;
 }
 
 class _SeriesPoint {
@@ -26,15 +24,16 @@ class _SeriesPoint {
   final double value;
 }
 
-class WeightPage extends ConsumerStatefulWidget {
-  const WeightPage({super.key});
+/// Body metrics tab: weight / body-fat charts and history.
+class BodyRecordsTab extends ConsumerStatefulWidget {
+  const BodyRecordsTab({super.key});
 
   @override
-  ConsumerState<WeightPage> createState() => _WeightPageState();
+  ConsumerState<BodyRecordsTab> createState() => BodyRecordsTabState();
 }
 
-class _WeightPageState extends ConsumerState<WeightPage> {
-  Future<void> _addWeight() async {
+class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
+  Future<void> addWeight() async {
     final profile = ref.read(profileProvider);
     final memory = ref.read(formMemoryRepositoryProvider);
     final extras =
@@ -44,11 +43,10 @@ class _WeightPageState extends ConsumerState<WeightPage> {
       builder: (ctx) => _WeightLogDialog(
         initialWeightKg: profile?.weightKg ?? 70,
         initialBodyFatPct: extras?.bodyFatPct,
-        initialExerciseMinutes: extras?.exerciseMinutes,
-        onExtrasChanged: (bodyFatPct, exerciseMinutes) {
+        onExtrasChanged: (bodyFatPct) {
           memory.saveWeightExtras(
             bodyFatPct: bodyFatPct,
-            exerciseMinutes: exerciseMinutes,
+            exerciseMinutes: extras?.exerciseMinutes,
           );
         },
       ),
@@ -60,7 +58,6 @@ class _WeightPageState extends ConsumerState<WeightPage> {
             date: DateTime.now(),
             weightKg: draft.weightKg,
             bodyFatPct: draft.bodyFatPct,
-            exerciseMinutes: draft.exerciseMinutes,
           );
       final updated = await ref
           .read(profileProvider.notifier)
@@ -119,9 +116,6 @@ class _WeightPageState extends ConsumerState<WeightPage> {
     if (log.bodyFatPct != null) {
       parts.add('体脂 ${log.bodyFatPct!.toStringAsFixed(1)}%');
     }
-    if (log.exerciseMinutes != null) {
-      parts.add('运动 ${log.exerciseMinutes} 分钟');
-    }
     return parts.join(' · ');
   }
 
@@ -130,97 +124,75 @@ class _WeightPageState extends ConsumerState<WeightPage> {
     final logsAsync = ref.watch(weightLogsProvider);
     final scheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('体重')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addWeight,
-        child: const Icon(Icons.add),
-      ),
-      body: logsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('加载失败：$e')),
-        data: (logs) {
-          if (logs.isEmpty) {
-            return Center(
-              child: Text(
-                '还没有记录，点右下角添加',
-                style: Theme.of(context).textTheme.meta,
-              ),
-            );
-          }
-
-          final weightSeries = [
-            for (final log in logs)
-              _SeriesPoint(date: log.date, value: log.weightKg),
-          ];
-          final bodyFatSeries = [
-            for (final log in logs)
-              if (log.bodyFatPct != null)
-                _SeriesPoint(date: log.date, value: log.bodyFatPct!),
-          ];
-          final exerciseSeries = [
-            for (final log in logs)
-              if (log.exerciseMinutes != null)
-                _SeriesPoint(
-                  date: log.date,
-                  value: log.exerciseMinutes!.toDouble(),
-                ),
-          ];
-
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.listPage,
-              8,
-              AppSpacing.listPage,
-              88,
+    return logsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('加载失败：$e')),
+      data: (logs) {
+        if (logs.isEmpty) {
+          return Center(
+            child: Text(
+              '还没有记录，点右下角添加',
+              style: Theme.of(context).textTheme.meta,
             ),
-            children: [
-              _SeriesChartCard(
-                title: '体重 (kg)',
-                points: weightSeries,
-                color: scheme.primary,
-                emptyHint: '暂无体重数据',
-              ),
-              const SizedBox(height: AppSpacing.field),
-              _SeriesChartCard(
-                title: '体脂率 (%)',
-                points: bodyFatSeries,
-                color: AppColors.protein,
-                emptyHint: '暂无体脂记录',
-              ),
-              const SizedBox(height: AppSpacing.field),
-              _SeriesChartCard(
-                title: '运动 (分钟)',
-                points: exerciseSeries,
-                color: AppColors.carb,
-                emptyHint: '暂无运动记录',
-              ),
-              const SizedBox(height: AppSpacing.section),
-              Text('历史记录', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              ...logs.reversed.map(
-                (log) => ListTile(
-                  key: ValueKey(log.id),
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    '${log.weightKg.toStringAsFixed(1)} kg',
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                  subtitle: Text(
-                    _logSubtitle(log),
-                    style: Theme.of(context).textTheme.meta,
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline),
-                    tooltip: '删除',
-                    onPressed: () => _confirmDelete(log),
-                  ),
+          );
+        }
+
+        final weightSeries = [
+          for (final log in logs)
+            _SeriesPoint(date: log.date, value: log.weightKg),
+        ];
+        final bodyFatSeries = [
+          for (final log in logs)
+            if (log.bodyFatPct != null)
+              _SeriesPoint(date: log.date, value: log.bodyFatPct!),
+        ];
+
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.listPage,
+            8,
+            AppSpacing.listPage,
+            88,
+          ),
+          children: [
+            _SeriesChartCard(
+              title: '体重 (kg)',
+              points: weightSeries,
+              color: scheme.primary,
+              emptyHint: '暂无体重数据',
+            ),
+            const SizedBox(height: AppSpacing.field),
+            _SeriesChartCard(
+              title: '体脂率 (%)',
+              points: bodyFatSeries,
+              color: AppColors.protein,
+              emptyHint: '暂无体脂记录',
+            ),
+            const SizedBox(height: AppSpacing.section),
+            Text('历史记录', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            ...logs.reversed.map(
+              (log) => ListTile(
+                key: ValueKey(log.id),
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  '${log.weightKg.toStringAsFixed(1)} kg',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                subtitle: Text(
+                  _logSubtitle(log),
+                  style: Theme.of(context).textTheme.meta,
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: '删除',
+                  onPressed: () => _confirmDelete(log),
                 ),
               ),
-            ],
-          );
-        },
-      ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -329,19 +301,16 @@ class _SeriesChartCard extends StatelessWidget {
   }
 }
 
-/// Owns dialog state; fields use dropdowns (no TextEditingController).
 class _WeightLogDialog extends StatefulWidget {
   const _WeightLogDialog({
     required this.initialWeightKg,
     this.initialBodyFatPct,
-    this.initialExerciseMinutes,
     required this.onExtrasChanged,
   });
 
   final double initialWeightKg;
   final double? initialBodyFatPct;
-  final int? initialExerciseMinutes;
-  final void Function(double? bodyFatPct, int? exerciseMinutes) onExtrasChanged;
+  final void Function(double? bodyFatPct) onExtrasChanged;
 
   @override
   State<_WeightLogDialog> createState() => _WeightLogDialogState();
@@ -350,7 +319,6 @@ class _WeightLogDialog extends StatefulWidget {
 class _WeightLogDialogState extends State<_WeightLogDialog> {
   late double _weightKg;
   double? _bodyFatPct;
-  int? _exerciseMinutes;
 
   @override
   void initState() {
@@ -363,14 +331,10 @@ class _WeightLogDialogState extends State<_WeightLogDialog> {
     _bodyFatPct = bodyFat == null
         ? null
         : FormOptions.snapDouble(FormOptions.bodyFatPct(), bodyFat);
-    final minutes = widget.initialExerciseMinutes;
-    _exerciseMinutes = minutes == null
-        ? null
-        : FormOptions.snapInt(FormOptions.exerciseMinutes, minutes);
   }
 
   void _persistExtras() {
-    widget.onExtrasChanged(_bodyFatPct, _exerciseMinutes);
+    widget.onExtrasChanged(_bodyFatPct);
   }
 
   void _submit() {
@@ -379,7 +343,6 @@ class _WeightLogDialogState extends State<_WeightLogDialog> {
       _WeightLogDraft(
         weightKg: _weightKg,
         bodyFatPct: _bodyFatPct,
-        exerciseMinutes: _exerciseMinutes,
       ),
     );
   }
@@ -409,18 +372,6 @@ class _WeightLogDialogState extends State<_WeightLogDialog> {
               itemLabel: (v) => v.toStringAsFixed(1),
               onChanged: (v) {
                 setState(() => _bodyFatPct = v);
-                _persistExtras();
-              },
-            ),
-            const SizedBox(height: 12),
-            AppOptionalDropdown<int>(
-              label: '今日运动时间',
-              value: _exerciseMinutes,
-              items: FormOptions.exerciseMinutes,
-              suffixText: '分钟',
-              helperText: '当天累计运动时长',
-              onChanged: (v) {
-                setState(() => _exerciseMinutes = v);
                 _persistExtras();
               },
             ),

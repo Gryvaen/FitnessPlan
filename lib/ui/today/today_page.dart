@@ -10,6 +10,7 @@ import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import 'deficit_date_picker.dart';
 import 'today_summary_widgets.dart';
+import 'today_workout_card.dart';
 
 class TodayPage extends ConsumerWidget {
   const TodayPage({super.key});
@@ -337,7 +338,7 @@ class TodayPage extends ConsumerWidget {
                                   .addMl(day, -250),
                           child: Padding(
                             padding: const EdgeInsets.fromLTRB(4, 6, 0, 6),
-                            child: WaterBottleCap(enabled: waterMl > 0),
+                            child: WaterCupLid(enabled: waterMl > 0),
                           ),
                         ),
                       ),
@@ -379,13 +380,15 @@ class TodayPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '点水杯 +250 · 点瓶盖 −250',
+                    '点水杯 +250 · 点杯盖 −250',
                     style: theme.textTheme.meta,
                   ),
                 ],
               ),
             ),
           ),
+          const SizedBox(height: AppSpacing.section),
+          TodayWorkoutCard(day: day, sectionPrefix: sectionPrefix),
           const SizedBox(height: AppSpacing.section),
           Row(
             children: [

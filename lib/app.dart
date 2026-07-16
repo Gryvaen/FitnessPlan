@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -13,16 +14,19 @@ import 'ui/meals/meal_detail_page.dart';
 import 'ui/onboarding/onboarding_page.dart';
 import 'ui/profile/profile_edit_page.dart';
 import 'ui/profile/profile_page.dart';
+import 'ui/records/note_edit_page.dart';
+import 'ui/records/plan_edit_page.dart';
+import 'ui/records/records_page.dart';
 import 'ui/shell/main_shell.dart';
 import 'ui/shell/swipeable_branch_container.dart';
 import 'ui/today/today_page.dart';
 import 'ui/theme/app_theme.dart';
 import 'ui/tools/body_fat_page.dart';
 import 'ui/tools/body_metrics_page.dart';
+import 'ui/tools/calculator_page.dart';
 import 'ui/tools/food_convert_page.dart';
 import 'ui/tools/rest_timer_page.dart';
 import 'ui/tools/tools_hub_page.dart';
-import 'ui/weight/weight_page.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
@@ -37,6 +41,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final onboarding = state.matchedLocation == '/onboarding';
       if (profile == null && !onboarding) return '/onboarding';
       if (profile != null && onboarding) return '/today';
+      if (state.matchedLocation == '/weight') return '/records';
       return null;
     },
     routes: [
@@ -109,8 +114,37 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/weight',
-                builder: (context, state) => const WeightPage(),
+                path: '/records',
+                builder: (context, state) {
+                  final tab = state.uri.queryParameters['tab'];
+                  final segment = switch (tab) {
+                    'train' => RecordsSegment.train,
+                    'notes' => RecordsSegment.notes,
+                    _ => RecordsSegment.body,
+                  };
+                  return RecordsPage(initialSegment: segment);
+                },
+                routes: [
+                  GoRoute(
+                    path: 'plan',
+                    builder: (context, state) {
+                      final idStr = state.uri.queryParameters['id'];
+                      final id = idStr == null ? null : int.tryParse(idStr);
+                      return PlanEditPage(planId: id);
+                    },
+                  ),
+                  GoRoute(
+                    path: 'notes/edit',
+                    builder: (context, state) {
+                      final raw = state.uri.queryParameters['date'];
+                      DateTime? day;
+                      if (raw != null && raw.isNotEmpty) {
+                        day = DateTime.tryParse(raw);
+                      }
+                      return NoteEditPage(date: day);
+                    },
+                  ),
+                ],
               ),
             ],
           ),
@@ -143,6 +177,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                       GoRoute(
                         path: 'rest-timer',
                         builder: (context, state) => const RestTimerPage(),
+                      ),
+                      GoRoute(
+                        path: 'calculator',
+                        builder: (context, state) => const CalculatorPage(),
                       ),
                     ],
                   ),
@@ -196,7 +234,27 @@ class _FitnessAppState extends ConsumerState<FitnessApp> {
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
-      title: '健身饮食',
+      onGenerateTitle: (context) {
+        final code = Localizations.localeOf(context).languageCode;
+        return code == 'zh' ? '健身计划' : 'Plan';
+      },
+      localeResolutionCallback: (locale, supported) {
+        // Follow system language; fall back to English when unsupported.
+        if (locale == null) return const Locale('en');
+        for (final s in supported) {
+          if (s.languageCode == locale.languageCode) return locale;
+        }
+        return const Locale('en');
+      },
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'),
+        Locale('zh'),
+      ],
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       routerConfig: router,
