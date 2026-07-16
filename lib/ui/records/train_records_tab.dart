@@ -13,15 +13,20 @@ import '../widgets/form_options.dart';
 class TrainRecordsTab extends ConsumerWidget {
   const TrainRecordsTab({super.key});
 
-  Future<void> _addExercise(BuildContext context, WidgetRef ref) async {
+  Future<void> _addExercise(
+    BuildContext context,
+    WidgetRef ref, {
+    String category = 'custom',
+  }) async {
     final l10n = context.l10n;
     final nameCtrl = TextEditingController();
     var unit = ExerciseUnit.reps;
+    var selectedCategory = category;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocal) => AlertDialog(
-          title: Text(l10n.customExercise),
+          title: Text(l10n.addExercise),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -29,6 +34,14 @@ class TrainRecordsTab extends ConsumerWidget {
                 controller: nameCtrl,
                 decoration: InputDecoration(labelText: l10n.exerciseName),
                 autofocus: true,
+              ),
+              const SizedBox(height: 12),
+              AppDropdown<String>(
+                label: l10n.categories,
+                value: selectedCategory,
+                items: kExerciseCategoryOrder,
+                itemLabel: (c) => c.localizedExerciseCategory(l10n),
+                onChanged: (v) => setLocal(() => selectedCategory = v),
               ),
               const SizedBox(height: 12),
               AppDropdown<ExerciseUnit>(
@@ -59,6 +72,7 @@ class TrainRecordsTab extends ConsumerWidget {
       await ref.read(workoutRepositoryProvider).addCustomExercise(
             name: nameCtrl.text,
             unit: unit,
+            category: selectedCategory,
           );
     } catch (e) {
       if (!context.mounted) return;
@@ -80,21 +94,25 @@ class TrainRecordsTab extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         AppSpacing.listPage,
         8,
         AppSpacing.listPage,
-        88,
+        listBottomInset(context, hasFab: false),
       ),
       children: [
         Row(
           children: [
-            Text(l10n.exerciseLibrary, style: theme.textTheme.titleMedium),
-            const Spacer(),
-            TextButton.icon(
+            Expanded(
+              child: Text(
+                l10n.exerciseLibrary,
+                style: theme.textTheme.titleMedium,
+              ),
+            ),
+            IconButton(
+              tooltip: l10n.addExercise,
               onPressed: () => _addExercise(context, ref),
-              icon: const Icon(Icons.add, size: 18),
-              label: Text(l10n.custom),
+              icon: const Icon(Icons.add),
             ),
           ],
         ),
@@ -106,36 +124,80 @@ class TrainRecordsTab extends ConsumerWidget {
             if (exercises.isEmpty) {
               return Text(l10n.noExercises, style: theme.textTheme.meta);
             }
-            return Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            final grouped = <String, List<Exercise>>{};
+            for (final ex in exercises) {
+              grouped.putIfAbsent(ex.category, () => []).add(ex);
+            }
+            final orderedKeys = [
+              for (final key in kExerciseCategoryOrder)
+                if (grouped.containsKey(key)) key,
+              for (final key in grouped.keys)
+                if (!kExerciseCategoryOrder.contains(key)) key,
+            ];
+            return Column(
               children: [
-                for (final ex in exercises)
-                  InputChip(
-                    label: Text(
-                      '${ex.name} · ${ExerciseUnit.fromStorage(ex.unit).label(l10n)}',
+                for (final key in orderedKeys)
+                  ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    childrenPadding: const EdgeInsets.only(bottom: 8),
+                    initiallyExpanded: false,
+                    title: Text(
+                      '${key.localizedExerciseCategory(l10n)} · ${grouped[key]!.length}',
+                      style: theme.textTheme.titleSmall,
                     ),
-                    onDeleted: ex.isCustom
-                        ? () async {
-                            try {
-                              await ref
-                                  .read(workoutRepositoryProvider)
-                                  .deleteCustomExercise(ex.id);
-                            } catch (e) {
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('$e')),
-                              );
-                            }
-                          }
-                        : null,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (final ex in grouped[key]!)
+                              InputChip(
+                                label: Text(
+                                  '${ex.name} · ${ExerciseUnit.fromStorage(ex.unit).label(l10n)}',
+                                ),
+                                onDeleted: ex.isCustom
+                                    ? () async {
+                                        try {
+                                          await ref
+                                              .read(workoutRepositoryProvider)
+                                              .deleteCustomExercise(ex.id);
+                                        } catch (e) {
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(content: Text('$e')),
+                                          );
+                                        }
+                                      }
+                                    : null,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
               ],
             );
           },
         ),
         const SizedBox(height: AppSpacing.section),
-        Text(l10n.workoutPlans, style: theme.textTheme.titleMedium),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                l10n.workoutPlans,
+                style: theme.textTheme.titleMedium,
+              ),
+            ),
+            IconButton(
+              tooltip: l10n.fabNewPlan,
+              onPressed: () => context.push('/records/plan'),
+              icon: const Icon(Icons.add),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
         plansAsync.when(
           loading: () => const LinearProgressIndicator(),
@@ -266,18 +328,28 @@ class TrainRecordsTab extends ConsumerWidget {
 }
 
 /// Quick-add a day workout item dialog (shared with today empty state).
+///
+/// Always presents on the root navigator so the dialog stays visible on the
+/// current shell tab (StatefulShellRoute keeps inactive branch navigators).
 Future<void> showQuickAddDayItemDialog({
   required BuildContext context,
   required WidgetRef ref,
   required DateTime day,
 }) async {
   final l10n = context.l10n;
-  final exercises = await ref.read(exercisesProvider.future);
+  final messenger = ScaffoldMessenger.maybeOf(context);
+
+  List<Exercise> exercises;
+  try {
+    exercises = await ref.read(workoutRepositoryProvider).listExercises();
+  } catch (e) {
+    if (!context.mounted) return;
+    messenger?.showSnackBar(SnackBar(content: Text(l10n.addFailed('$e'))));
+    return;
+  }
   if (!context.mounted) return;
   if (exercises.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.addExercisesFirst)),
-    );
+    messenger?.showSnackBar(SnackBar(content: Text(l10n.addExercisesFirst)));
     return;
   }
 
@@ -285,8 +357,14 @@ Future<void> showQuickAddDayItemDialog({
   var sets = 3;
   var reps = 12;
 
+  // Let any prior route (empty-plan dialog / bottom sheet) finish popping
+  // before pushing onto the root overlay.
+  await Future<void>.delayed(Duration.zero);
+  if (!context.mounted) return;
+
   final ok = await showDialog<bool>(
     context: context,
+    useRootNavigator: true,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setLocal) {
         final isSeconds = selected != null &&
@@ -296,39 +374,41 @@ Future<void> showQuickAddDayItemDialog({
             : FormOptions.targetRepsOrSeconds;
         return AlertDialog(
           title: Text(l10n.addTodayExercise),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppDropdown<Exercise>(
-                label: l10n.exercise,
-                value: selected!,
-                items: exercises,
-                itemLabel: (e) => e.name,
-                onChanged: (v) => setLocal(() {
-                  selected = v;
-                  reps = FormOptions.snapInt(
-                    ExerciseUnit.fromStorage(v.unit) == ExerciseUnit.seconds
-                        ? FormOptions.targetSeconds
-                        : FormOptions.targetRepsOrSeconds,
-                    reps,
-                  );
-                }),
-              ),
-              const SizedBox(height: 12),
-              AppDropdown<int>(
-                label: l10n.targetSets,
-                value: FormOptions.snapInt(FormOptions.targetSets, sets),
-                items: FormOptions.targetSets,
-                onChanged: (v) => setLocal(() => sets = v),
-              ),
-              const SizedBox(height: 12),
-              AppDropdown<int>(
-                label: isSeconds ? l10n.targetSeconds : l10n.targetReps,
-                value: FormOptions.snapInt(targetOptions, reps),
-                items: targetOptions,
-                onChanged: (v) => setLocal(() => reps = v),
-              ),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppDropdown<Exercise>(
+                  label: l10n.exercise,
+                  value: selected!,
+                  items: exercises,
+                  itemLabel: (e) => e.name,
+                  onChanged: (v) => setLocal(() {
+                    selected = v;
+                    reps = FormOptions.snapInt(
+                      ExerciseUnit.fromStorage(v.unit) == ExerciseUnit.seconds
+                          ? FormOptions.targetSeconds
+                          : FormOptions.targetRepsOrSeconds,
+                      reps,
+                    );
+                  }),
+                ),
+                const SizedBox(height: 12),
+                AppDropdown<int>(
+                  label: l10n.targetSets,
+                  value: FormOptions.snapInt(FormOptions.targetSets, sets),
+                  items: FormOptions.targetSets,
+                  onChanged: (v) => setLocal(() => sets = v),
+                ),
+                const SizedBox(height: 12),
+                AppDropdown<int>(
+                  label: isSeconds ? l10n.targetSeconds : l10n.targetReps,
+                  value: FormOptions.snapInt(targetOptions, reps),
+                  items: targetOptions,
+                  onChanged: (v) => setLocal(() => reps = v),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -354,8 +434,6 @@ Future<void> showQuickAddDayItemDialog({
         );
   } catch (e) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.addFailed('$e'))),
-    );
+    messenger?.showSnackBar(SnackBar(content: Text(l10n.addFailed('$e'))));
   }
 }
