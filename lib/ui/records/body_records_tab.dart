@@ -131,15 +131,6 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text(l10n.loadFailed('$e'))),
       data: (logs) {
-        if (logs.isEmpty) {
-          return Center(
-            child: Text(
-              l10n.emptyWeightLogs,
-              style: Theme.of(context).textTheme.meta,
-            ),
-          );
-        }
-
         final weightSeries = [
           for (final log in logs)
             _SeriesPoint(date: log.date, value: log.weightKg),
@@ -151,11 +142,11 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
         ];
 
         return ListView(
-          padding: const EdgeInsets.fromLTRB(
+          padding: EdgeInsets.fromLTRB(
             AppSpacing.listPage,
             8,
             AppSpacing.listPage,
-            88,
+            listBottomInset(context, hasFab: false),
           ),
           children: [
             _SeriesChart(
@@ -172,8 +163,31 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
               emptyHint: l10n.chartBfEmpty,
             ),
             const SizedBox(height: AppSpacing.section),
-            Text(l10n.history, style: Theme.of(context).textTheme.titleMedium),
+            Row(
+              children: [
+                Text(
+                  l10n.history,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const Spacer(),
+                IconButton(
+                  tooltip: l10n.fabLogWeight,
+                  onPressed: addWeight,
+                  icon: const Icon(Icons.add),
+                ),
+              ],
+            ),
             const SizedBox(height: 8),
+            if (logs.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Center(
+                  child: Text(
+                    l10n.emptyWeightLogs,
+                    style: Theme.of(context).textTheme.meta,
+                  ),
+                ),
+              ),
             ...logs.reversed.map(
               (log) => ListTile(
                 key: ValueKey(log.id),
