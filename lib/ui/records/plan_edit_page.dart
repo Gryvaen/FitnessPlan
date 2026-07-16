@@ -177,14 +177,15 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
                     Text(l10n.exercise, style: theme.textTheme.titleMedium),
                     const SizedBox(height: 8),
                     for (var i = 0; i < _rows.length; i++) ...[
-                      _PlanRowCard(
+                      _PlanRowSection(
                         row: _rows[i],
                         exercises: exercises,
                         canRemove: _rows.length > 1,
                         onChanged: () => setState(() {}),
                         onRemove: () => setState(() => _rows.removeAt(i)),
                       ),
-                      const SizedBox(height: AppSpacing.field),
+                      if (i < _rows.length - 1)
+                        const SizedBox(height: AppSpacing.field),
                     ],
                     OutlinedButton.icon(
                       onPressed: () => setState(
@@ -201,8 +202,8 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
   }
 }
 
-class _PlanRowCard extends StatelessWidget {
-  const _PlanRowCard({
+class _PlanRowSection extends StatelessWidget {
+  const _PlanRowSection({
     required this.row,
     required this.exercises,
     required this.canRemove,
@@ -239,67 +240,62 @@ class _PlanRowCard extends StatelessWidget {
     final targetOptions =
         isSeconds ? FormOptions.targetSeconds : FormOptions.targetRepsOrSeconds;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.card),
-        child: Column(
+    return Column(
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: AppDropdown<Exercise>(
-                    label: l10n.exercise,
-                    value: selected,
-                    items: exercises,
-                    itemLabel: (e) => e.name,
-                    onChanged: (v) {
-                      row.exercise = v;
-                      onChanged();
-                    },
-                  ),
-                ),
-                if (canRemove)
-                  IconButton(
-                    tooltip: l10n.remove,
-                    onPressed: onRemove,
-                    icon: const Icon(Icons.delete_outline),
-                  ),
-              ],
+            Expanded(
+              child: AppDropdown<Exercise>(
+                label: l10n.exercise,
+                value: selected,
+                items: exercises,
+                itemLabel: (e) => e.name,
+                onChanged: (v) {
+                  row.exercise = v;
+                  onChanged();
+                },
+              ),
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: AppDropdown<int>(
-                    label: l10n.targetSets,
-                    value: FormOptions.snapInt(
-                      FormOptions.targetSets,
-                      row.targetSets,
-                    ),
-                    items: FormOptions.targetSets,
-                    onChanged: (v) {
-                      row.targetSets = v;
-                      onChanged();
-                    },
-                  ),
+            if (canRemove)
+              IconButton(
+                tooltip: l10n.remove,
+                onPressed: onRemove,
+                icon: const Icon(Icons.delete_outline),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: AppDropdown<int>(
+                label: l10n.targetSets,
+                value: FormOptions.snapInt(
+                  FormOptions.targetSets,
+                  row.targetSets,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: AppDropdown<int>(
-                    label: targetLabel,
-                    value: FormOptions.snapInt(targetOptions, row.targetReps),
-                    items: targetOptions,
-                    onChanged: (v) {
-                      row.targetReps = v;
-                      onChanged();
-                    },
-                  ),
-                ),
-              ],
+                items: FormOptions.targetSets,
+                onChanged: (v) {
+                  row.targetSets = v;
+                  onChanged();
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: AppDropdown<int>(
+                label: targetLabel,
+                value: FormOptions.snapInt(targetOptions, row.targetReps),
+                items: targetOptions,
+                onChanged: (v) {
+                  row.targetReps = v;
+                  onChanged();
+                },
+              ),
             ),
           ],
         ),
-      ),
+      ],
     );
   }
 }
