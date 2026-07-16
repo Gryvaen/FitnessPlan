@@ -9,15 +9,13 @@ import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 
 String noteEditPath(DateTime day) {
-  final d = DateTime(day.year, day.month, day.day);
+  final d = AppDates.dayOnly(day);
   final key = DateFormat('yyyy-MM-dd').format(d);
   return '/records/notes/edit?date=$key';
 }
 
 String _noteTitle(DateTime day, AppLocalizations l10n, Locale locale) {
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
-  return AppDates.relativeDayTitle(day, today, l10n, locale);
+  return AppDates.relativeDayTitle(day, AppDates.todayLocal(), l10n, locale);
 }
 
 String _notePreview(String content) {
@@ -56,7 +54,6 @@ class NotesRecordsTab extends ConsumerWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
 
     final header = Padding(
       padding: const EdgeInsets.fromLTRB(AppSpacing.listPage, 8, 8, 0),
@@ -128,10 +125,83 @@ class NotesRecordsTab extends ConsumerWidget {
           ),
           itemBuilder: (context, index) {
             final note = notes[index];
-            final day = DateTime(note.date.year, note.date.month, note.date.day);
-            final isToday = day == today;
+            final day = AppDates.dayOnly(note.date);
+            final isToday = AppDates.isLocalToday(day, now);
             final preview = _notePreview(note.content);
             final title = _noteTitle(note.date, l10n, locale);
+
+            final tile = InkWell(
+              onTap: () => context.push(noteEditPath(note.date)),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      width: 3,
+                      color: isToday ? scheme.primary : Colors.transparent,
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    title,
+                                    style: theme.textTheme.titleSmall,
+                                  ),
+                                ),
+                                if (isToday)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: scheme.primary
+                                          .withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      l10n.todayWord,
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                        color: scheme.primary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            if (preview.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                preview,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 6),
+                            Text(
+                              _noteMeta(note, l10n),
+                              style: theme.textTheme.meta,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+
+            if (!isToday) return tile;
 
             return Dismissible(
               key: ValueKey(note.id),
@@ -165,78 +235,7 @@ class NotesRecordsTab extends ConsumerWidget {
               onDismissed: (_) {
                 ref.read(noteRepositoryProvider).delete(note.id);
               },
-              child: InkWell(
-                onTap: () => context.push(noteEditPath(note.date)),
-                child: IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Container(
-                        width: 3,
-                        color: isToday
-                            ? scheme.primary
-                            : Colors.transparent,
-                      ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      title,
-                                      style: theme.textTheme.titleSmall,
-                                    ),
-                                  ),
-                                  if (isToday)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: scheme.primary
-                                            .withValues(alpha: 0.12),
-                                        borderRadius: BorderRadius.circular(999),
-                                      ),
-                                      child: Text(
-                                        l10n.todayWord,
-                                        style: theme.textTheme.labelSmall
-                                            ?.copyWith(
-                                          color: scheme.primary,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              if (preview.isNotEmpty) ...[
-                                const SizedBox(height: 6),
-                                Text(
-                                  preview,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ],
-                              const SizedBox(height: 6),
-                              Text(
-                                _noteMeta(note, l10n),
-                                style: theme.textTheme.meta,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              child: tile,
             );
           },
               ),
