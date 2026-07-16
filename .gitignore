@@ -48,6 +48,9 @@ app.*.map.json
 /dist/
 /dist/symbols/
 
+# Prefetched sqlite3 native libs (populated by tool/build_release_apk.sh)
+/tool/sqlite3_mirror/
+
 # Open Food Facts fetch cache / dump (regenerate via tool/build_food_seed.py)
 /tool/off_zh_cache.jsonl
 /tool/off_products.csv.gz
