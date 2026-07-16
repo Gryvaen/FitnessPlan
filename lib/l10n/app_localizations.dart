@@ -863,7 +863,7 @@ abstract class AppLocalizations {
   /// No description provided for @emptyMealsThatDay.
   ///
   /// In en, this message translates to:
-  /// **'No logs that day'**
+  /// **'No logs that day (view only)'**
   String get emptyMealsThatDay;
 
   /// No description provided for @emptyWeightLogs.
@@ -871,6 +871,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No logs yet — tap + to add'**
   String get emptyWeightLogs;
+
+  /// No description provided for @pastDayReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Past days are view-only'**
+  String get pastDayReadOnly;
 
   /// No description provided for @chartWeightTitle.
   ///
