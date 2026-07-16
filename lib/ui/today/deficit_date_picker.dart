@@ -3,8 +3,10 @@ import 'package:intl/intl.dart';
 
 import '../../data/repositories/meal_repository.dart';
 import '../../domain/deficit.dart';
+import '../../l10n/app_localizations_ext.dart';
 
-/// 自定义月历：有饮食记录的日子才显示实际日缺口；过去日绿/红收官，今天中性色。
+/// Custom month calendar: actual daily deficit only on days with meal logs;
+/// past days green/red verdict, today neutral.
 Future<DateTime?> showDeficitDatePicker({
   required BuildContext context,
   required DateTime initialDate,
@@ -124,11 +126,22 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
     return !d.isBefore(widget.firstDate) && !d.isAfter(widget.lastDate);
   }
 
+  List<String> _weekdayHeaders(Locale locale) {
+    // 2024-01-01 was a Monday.
+    final monday = DateTime(2024, 1, 1);
+    return [
+      for (var i = 0; i < 7; i++)
+        DateFormat.E(locale.languageCode).format(monday.add(Duration(days: i))),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final locale = Localizations.localeOf(context);
     final theme = Theme.of(context);
     final today = _today;
-    final monthLabel = DateFormat('yyyy年M月').format(_visibleMonth);
+    final monthLabel = AppDates.ym(_visibleMonth, locale);
     final firstOfMonth =
         DateTime(_visibleMonth.year, _visibleMonth.month, 1);
     // Monday-based: weekday 1=Mon … 7=Sun → leading empty cells
@@ -141,6 +154,7 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
     final lastMonth = DateTime(widget.lastDate.year, widget.lastDate.month);
     final showPrev = _visibleMonth.isAfter(firstMonth);
     final showNext = _visibleMonth.isBefore(lastMonth);
+    final weekdayHeaders = _weekdayHeaders(locale);
 
     return AlertDialog(
       titlePadding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
@@ -170,41 +184,41 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '实际缺口 = 计划 ${widget.plannedDeficit.round()} + 剩余热量',
+              l10n.actualDeficitFormula('${widget.plannedDeficit.round()}'),
               style: theme.textTheme.labelSmall,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             _LegendSection(
-              title: '颜色',
+              title: l10n.legendColors,
               children: [
-                _LegendDot(color: _okGreen, label: '过去 · 达标'),
-                _LegendDot(color: _badRed, label: '过去 · 未达标'),
+                _LegendDot(color: _okGreen, label: l10n.legendPastOk),
+                _LegendDot(color: _badRed, label: l10n.legendPastBad),
                 _LegendDot(
                   color: theme.colorScheme.onSurfaceVariant,
-                  label: '今天 · 进行中',
+                  label: l10n.legendTodayOngoing,
                 ),
               ],
             ),
             if (widget.calorieStandardSince != null) ...[
               const SizedBox(height: 12),
               _LegendSection(
-                title: '标准变更',
+                title: l10n.legendStandardChange,
                 children: [
                   _LegendLine(
                     leading: Text(
                       '|',
                       style: theme.textTheme.titleSmall,
                     ),
-                    label: '竖线＝新标准生效日',
+                    label: l10n.legendNewStandardLine,
                   ),
-                  const _LegendLine(
-                    leading: Icon(Icons.circle_outlined, size: 10),
-                    label: '生效前：中性数字',
+                  _LegendLine(
+                    leading: const Icon(Icons.circle_outlined, size: 10),
+                    label: l10n.legendBeforeNeutral,
                   ),
-                  const _LegendLine(
-                    leading: Icon(Icons.circle_outlined, size: 10),
-                    label: '生效后：过去绿/红',
+                  _LegendLine(
+                    leading: const Icon(Icons.circle_outlined, size: 10),
+                    label: l10n.legendAfterGreenRed,
                   ),
                 ],
               ),
@@ -212,7 +226,7 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
             const SizedBox(height: 12),
             Row(
               children: [
-                for (final w in ['一', '二', '三', '四', '五', '六', '日'])
+                for (final w in weekdayHeaders)
                   Expanded(
                     child: Center(
                       child: Text(w, style: theme.textTheme.labelSmall),
@@ -268,13 +282,13 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
+          child: Text(l10n.cancel),
         ),
         FilledButton(
           onPressed: _isSelectable(_selected)
               ? () => Navigator.pop(context, _selected)
               : null,
-          child: const Text('确定'),
+          child: Text(l10n.confirm),
         ),
       ],
     );

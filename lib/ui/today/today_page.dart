@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../domain/calorie_calculator.dart';
 import '../../domain/models.dart';
 import '../../domain/plateau.dart';
+import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import 'deficit_date_picker.dart';
@@ -17,6 +17,8 @@ class TodayPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final locale = Localizations.localeOf(context);
     final profile = ref.watch(profileProvider);
     final intake = ref.watch(todayIntakeProvider);
     final mealsAsync = ref.watch(todayMealsProvider);
@@ -39,8 +41,8 @@ class TodayPage extends ConsumerWidget {
     final waterGoal = ref.watch(waterGoalProvider);
 
     String remainMacro(double remain) => remain < 0
-        ? '超 ${(-remain).toStringAsFixed(0)} g'
-        : '剩 ${remain.toStringAsFixed(0)} g';
+        ? l10n.macroOverG((-remain).toStringAsFixed(0))
+        : l10n.macroRemainG(remain.toStringAsFixed(0));
 
     final onPlateau = profile.goal == FitnessGoal.cut &&
         Plateau.detect(
@@ -58,9 +60,10 @@ class TodayPage extends ConsumerWidget {
     final canGoPrev = day.isAfter(earliest);
     final canGoNext = day.isBefore(today);
     final dayLabel = day.year == today.year
-        ? DateFormat('M月d日').format(day)
-        : DateFormat('yyyy年M月d日').format(day);
-    final sectionPrefix = isSelectedToday ? '今日' : '当日';
+        ? AppDates.md(day, locale)
+        : AppDates.ymd(day, locale);
+    final sectionPrefix =
+        isSelectedToday ? l10n.today : l10n.sectionThatDay;
 
     return Scaffold(
       appBar: AppBar(
@@ -98,7 +101,7 @@ class TodayPage extends ConsumerWidget {
         ),
         actions: [
           IconButton(
-            tooltip: '前一天',
+            tooltip: l10n.prevDay,
             onPressed: canGoPrev
                 ? () => ref
                     .read(selectedDayProvider.notifier)
@@ -107,14 +110,14 @@ class TodayPage extends ConsumerWidget {
             icon: const Icon(Icons.chevron_left),
           ),
           IconButton(
-            tooltip: '今天',
+            tooltip: l10n.todayWord,
             onPressed: isSelectedToday
                 ? null
                 : () => ref.read(selectedDayProvider.notifier).goToToday(),
             icon: const Icon(Icons.today),
           ),
           IconButton(
-            tooltip: '后一天',
+            tooltip: l10n.nextDay,
             onPressed: canGoNext
                 ? () => ref
                     .read(selectedDayProvider.notifier)
@@ -127,7 +130,7 @@ class TodayPage extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/log-meal'),
         icon: const Icon(Icons.add),
-        label: Text(isSelectedToday ? '记一笔' : '补记'),
+        label: Text(isSelectedToday ? l10n.logMeal : l10n.backfillMeal),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
@@ -146,20 +149,20 @@ class TodayPage extends ConsumerWidget {
                   color: scheme.onErrorContainer,
                 ),
                 title: Text(
-                  '减脂计划未完成',
+                  l10n.cutPlanIncomplete,
                   style: theme.textTheme.titleSmall?.copyWith(
                     color: scheme.onErrorContainer,
                   ),
                 ),
                 subtitle: Text(
-                  '请到「我的 → 我的档案」填写目标体重与每周降重。',
+                  l10n.cutPlanIncompleteHint,
                   style: theme.textTheme.meta?.copyWith(
                     color: scheme.onErrorContainer,
                   ),
                 ),
                 trailing: TextButton(
                   onPressed: () => context.go('/profile/edit'),
-                  child: const Text('去填写'),
+                  child: Text(l10n.goFillIn),
                 ),
               ),
             ),
@@ -172,14 +175,14 @@ class TodayPage extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '可能进入平台期',
+                      l10n.possiblePlateau,
                       style: theme.textTheme.titleSmall?.copyWith(
                         color: scheme.onSecondaryContainer,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '近 ${Plateau.days} 天体重几乎没变。可小幅减热量，或先加活动量。',
+                      l10n.plateauHint(Plateau.days),
                       style: theme.textTheme.meta?.copyWith(
                         color: scheme.onSecondaryContainer,
                       ),
@@ -202,25 +205,28 @@ class TodayPage extends ConsumerWidget {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                        '已减 100 kcal，日摄入 '
-                                        '${updated.targets.calories} kcal',
+                                        l10n.cut100Applied(
+                                          '${updated.targets.calories}',
+                                        ),
                                       ),
                                     ),
                                   );
                                 },
                           child: Text(
-                            canCutMore ? '减少 100 kcal' : '已达调整上限',
+                            canCutMore
+                                ? l10n.cut100Kcal
+                                : l10n.cutAdjCapReached,
                           ),
                         ),
                         OutlinedButton(
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('可先每天多走约 3000 步。'),
+                              SnackBar(
+                                content: Text(l10n.walk3000Snack),
                               ),
                             );
                           },
-                          child: const Text('多走约 3000 步'),
+                          child: Text(l10n.walk3000Btn),
                         ),
                       ],
                     ),
@@ -237,7 +243,7 @@ class TodayPage extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '$sectionPrefix热量',
+                    l10n.sectionCalories(sectionPrefix),
                     style: theme.textTheme.titleMedium,
                   ),
                   if (profile.goal == FitnessGoal.cut &&
@@ -246,9 +252,10 @@ class TodayPage extends ConsumerWidget {
                       plan.weeklyLossKg != null) ...[
                     const SizedBox(height: 6),
                     Text(
-                      '缺口 ${plan.dailyDeficit.round()} kcal · '
-                      '摄入 ${plan.targets.calories} kcal'
-                      '${plan.goalWeeks != null ? ' · 约 ${plan.goalWeeks} 周' : ''}',
+                      '${l10n.deficitIntakeLine(
+                        '${plan.dailyDeficit.round()}',
+                        '${plan.targets.calories}',
+                      )}${plan.goalWeeks != null ? l10n.aboutNWeeks(plan.goalWeeks!) : ''}',
                       style: theme.textTheme.meta,
                     ),
                   ],
@@ -267,21 +274,21 @@ class TodayPage extends ConsumerWidget {
                         child: Column(
                           children: [
                             MacroMini(
-                              label: '蛋白',
+                              label: l10n.proteinShort,
                               current: intake.proteinG,
                               target: targets.proteinG,
                               color: AppColors.protein,
                               remainLabel: remainMacro(remainP),
                             ),
                             MacroMini(
-                              label: '碳水',
+                              label: l10n.carbs,
                               current: intake.carbG,
                               target: targets.carbG,
                               color: AppColors.carb,
                               remainLabel: remainMacro(remainC),
                             ),
                             MacroMini(
-                              label: '脂肪',
+                              label: l10n.fat,
                               current: intake.fatG,
                               target: targets.fatG,
                               color: AppColors.fat,
@@ -295,8 +302,9 @@ class TodayPage extends ConsumerWidget {
                   if (intake.alcoholG > 0) ...[
                     const SizedBox(height: AppSpacing.field),
                     Text(
-                      '酒精额外能量 ≈ ${intake.alcoholKcal.round()} kcal'
-                      '（${intake.alcoholG.toStringAsFixed(1)} g）',
+                      l10n.alcoholExtraKcal(
+                        '${intake.alcoholKcal.round()}',
+                      ),
                       style: theme.textTheme.meta,
                     ),
                   ],
@@ -318,7 +326,7 @@ class TodayPage extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('饮水', style: theme.textTheme.titleMedium),
+                            Text(l10n.water, style: theme.textTheme.titleMedium),
                             const SizedBox(height: 4),
                             Text(
                               '$waterMl / $waterGoal ml',
@@ -380,7 +388,7 @@ class TodayPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '点水杯 +250 · 点杯盖 −250',
+                    l10n.waterTapHint,
                     style: theme.textTheme.meta,
                   ),
                 ],
@@ -392,10 +400,13 @@ class TodayPage extends ConsumerWidget {
           const SizedBox(height: AppSpacing.section),
           Row(
             children: [
-              Text('$sectionPrefix记录', style: theme.textTheme.titleMedium),
+              Text(
+                l10n.sectionLogs(sectionPrefix),
+                style: theme.textTheme.titleMedium,
+              ),
               const Spacer(),
               PopupMenuButton<String>(
-                tooltip: '更多',
+                tooltip: l10n.more,
                 onSelected: (value) async {
                   if (value == 'copy') {
                     final from = day.subtract(const Duration(days: 1));
@@ -405,16 +416,16 @@ class TodayPage extends ConsumerWidget {
                       final ok = await showDialog<bool>(
                         context: context,
                         builder: (ctx) => AlertDialog(
-                          title: const Text('复制昨日'),
-                          content: const Text('当日已有记录，将追加昨日餐食，确定？'),
+                          title: Text(l10n.copyYesterday),
+                          content: Text(l10n.copyYesterdayConfirm),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(ctx, false),
-                              child: const Text('取消'),
+                              child: Text(l10n.cancel),
                             ),
                             FilledButton(
                               onPressed: () => Navigator.pop(ctx, true),
-                              child: const Text('追加'),
+                              child: Text(l10n.append),
                             ),
                           ],
                         ),
@@ -426,14 +437,14 @@ class TodayPage extends ConsumerWidget {
                         .copyDay(from: from, to: day);
                     if (!context.mounted) return;
                     final skip = result.skippedMissingFood > 0
-                        ? '，跳过 ${result.skippedMissingFood} 项'
+                        ? l10n.skippedItems(result.skippedMissingFood)
                         : '';
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
                           result.copied == 0 && result.skippedMissingFood == 0
-                              ? '昨日无记录'
-                              : '已复制 ${result.copied} 项$skip',
+                              ? l10n.yesterdayNoLogs
+                              : l10n.copiedItems(result.copied, skip),
                         ),
                       ),
                     );
@@ -443,29 +454,29 @@ class TodayPage extends ConsumerWidget {
                     if (!context.mounted) return;
                     if (meals.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('当日无记录可保存')),
+                        SnackBar(content: Text(l10n.noLogsToSave)),
                       );
                       return;
                     }
                     final nameCtrl = TextEditingController(
-                      text: isSelectedToday ? '常用套餐' : dayLabel,
+                      text: isSelectedToday ? l10n.mealPresets : dayLabel,
                     );
                     final ok = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        title: const Text('存为套餐'),
+                        title: Text(l10n.saveAsPreset),
                         content: TextField(
                           controller: nameCtrl,
-                          decoration: const InputDecoration(labelText: '名称'),
+                          decoration: InputDecoration(labelText: l10n.name),
                         ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('取消'),
+                            child: Text(l10n.cancel),
                           ),
                           FilledButton(
                             onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text('保存'),
+                            child: Text(l10n.save),
                           ),
                         ],
                       ),
@@ -484,7 +495,7 @@ class TodayPage extends ConsumerWidget {
                       ref.invalidate(mealPresetsProvider);
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('套餐已保存')),
+                        SnackBar(content: Text(l10n.presetSaved)),
                       );
                     } catch (e) {
                       if (!context.mounted) return;
@@ -496,9 +507,15 @@ class TodayPage extends ConsumerWidget {
                     }
                   }
                 },
-                itemBuilder: (context) => const [
-                  PopupMenuItem(value: 'copy', child: Text('复制昨日')),
-                  PopupMenuItem(value: 'preset', child: Text('存为套餐')),
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'copy',
+                    child: Text(l10n.copyYesterday),
+                  ),
+                  PopupMenuItem(
+                    value: 'preset',
+                    child: Text(l10n.saveAsPreset),
+                  ),
                 ],
               ),
             ],
@@ -506,14 +523,19 @@ class TodayPage extends ConsumerWidget {
           const SizedBox(height: 8),
           mealsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Text('加载失败：$e', style: theme.textTheme.meta),
+            error: (e, _) => Text(
+              l10n.loadFailed('$e'),
+              style: theme.textTheme.meta,
+            ),
             data: (meals) {
               if (meals.isEmpty) {
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 28),
                   child: Center(
                     child: Text(
-                      isSelectedToday ? '还没有记录，点右下角记一笔' : '当日无记录',
+                      isSelectedToday
+                          ? l10n.emptyMealsToday
+                          : l10n.emptyMealsThatDay,
                       style: theme.textTheme.meta,
                     ),
                   ),
@@ -529,7 +551,7 @@ class TodayPage extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${type.label} · ${m.grams.toStringAsFixed(0)} g',
+                          '${type.label(l10n)} · ${m.grams.toStringAsFixed(0)} g',
                           style: theme.textTheme.meta,
                         ),
                         Text(

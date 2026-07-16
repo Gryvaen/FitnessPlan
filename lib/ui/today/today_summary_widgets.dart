@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations_ext.dart';
 import '../theme/app_theme.dart';
 
 /// Calorie intake ring with center remain/over label.
@@ -21,13 +22,14 @@ class CalorieRing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
     final progress = target <= 0 ? 0.0 : (eaten / target).clamp(0.0, 1.0);
     final ringColor = over ? scheme.error : scheme.primary;
     final centerLabel = over
-        ? '超 ${remainAbs.round()}'
-        : '剩 ${remainAbs.round()}';
+        ? l10n.kcalOver('${remainAbs.round()}')
+        : l10n.kcalRemain('${remainAbs.round()}');
 
     return SizedBox(
       width: 120,

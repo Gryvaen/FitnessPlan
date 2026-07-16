@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/repositories/workout_repository.dart';
-import '../../domain/models.dart';
+import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../records/log_set_sheet.dart';
 import '../records/train_records_tab.dart';
@@ -21,22 +21,23 @@ class TodayWorkoutCard extends ConsumerWidget {
   final String sectionPrefix;
 
   Future<void> _pickPlan(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
     final plans = await ref.read(workoutRepositoryProvider).listPlanSummaries();
     if (!context.mounted) return;
     if (plans.isEmpty) {
       final go = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('还没有训练计划'),
-          content: const Text('先去「记录 → 训练」新建计划，或直接添加一个动作。'),
+          title: Text(l10n.noWorkoutPlanTitle),
+          content: Text(l10n.noWorkoutPlanBody),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('添加动作'),
+              child: Text(l10n.addExercise),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('去记录'),
+              child: Text(l10n.goRecords),
             ),
           ],
         ),
@@ -58,7 +59,7 @@ class TodayWorkoutCard extends ConsumerWidget {
           children: [
             ListTile(
               leading: const Icon(Icons.add),
-              title: const Text('快速添加动作'),
+              title: Text(l10n.quickAddExercise),
               onTap: () => Navigator.pop(ctx, 'quick'),
             ),
             const Divider(height: 1),
@@ -90,16 +91,16 @@ class TodayWorkoutCard extends ConsumerWidget {
         final ok = await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text('替换今日训练'),
-            content: const Text('当天已有训练待办，将替换为该计划，确定？'),
+            title: Text(l10n.replaceTodayWorkout),
+            content: Text(l10n.replaceTodayWorkoutBody),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('取消'),
+                child: Text(l10n.cancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('替换'),
+                child: Text(l10n.replace),
               ),
             ],
           ),
@@ -115,6 +116,7 @@ class TodayWorkoutCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final async = ref.watch(todayWorkoutProvider);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
@@ -127,23 +129,26 @@ class TodayWorkoutCard extends ConsumerWidget {
             height: 48,
             child: Center(child: CircularProgressIndicator()),
           ),
-          error: (e, _) => Text('训练加载失败：$e'),
+          error: (e, _) => Text(l10n.workoutLoadFailed('$e')),
           data: (snapshot) {
             if (snapshot.isEmpty) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('$sectionPrefix训练', style: theme.textTheme.titleMedium),
+                  Text(
+                    l10n.sectionWorkout(sectionPrefix),
+                    style: theme.textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 8),
                   Text(
-                    '还没有训练待办',
+                    l10n.noWorkoutTodo,
                     style: theme.textTheme.meta,
                   ),
                   const SizedBox(height: AppSpacing.field),
                   OutlinedButton.icon(
                     onPressed: () => _pickPlan(context, ref),
                     icon: const Icon(Icons.fitness_center),
-                    label: const Text('添加今日训练'),
+                    label: Text(l10n.addTodayWorkout),
                   ),
                 ],
               );
@@ -163,7 +168,7 @@ class TodayWorkoutCard extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '$sectionPrefix训练',
+                            l10n.sectionWorkout(sectionPrefix),
                             style: theme.textTheme.titleMedium,
                           ),
                           if (planName != null && planName.isNotEmpty) ...[
@@ -174,7 +179,7 @@ class TodayWorkoutCard extends ConsumerWidget {
                       ),
                     ),
                     IconButton(
-                      tooltip: '添加',
+                      tooltip: l10n.add,
                       onPressed: () => _pickPlan(context, ref),
                       icon: const Icon(Icons.add),
                     ),
@@ -204,7 +209,7 @@ class TodayWorkoutCard extends ConsumerWidget {
                   ),
                 const SizedBox(height: 4),
                 Text(
-                  '进度 $done/$total · 点条目修改组数与次数/秒 · 左滑删除',
+                  l10n.workoutProgressHint(done, total),
                   style: theme.textTheme.meta,
                 ),
               ],
@@ -227,9 +232,9 @@ class _WorkoutItemTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final item = progress.item;
-    final unitLabel =
-        progress.unit == ExerciseUnit.seconds ? '秒' : '次';
+    final unitLabel = progress.unit.label(l10n);
     final theme = Theme.of(context);
 
     return ListTile(
@@ -253,8 +258,13 @@ class _WorkoutItemTile extends ConsumerWidget {
       ),
       subtitle: Text(
         item.done
-            ? '已完成'
-            : '${progress.completedSets}/${item.targetSets} 组 · 目标 ${item.targetReps} $unitLabel',
+            ? l10n.completed
+            : l10n.setsProgress(
+                progress.completedSets,
+                item.targetSets,
+                '${item.targetReps}',
+                unitLabel,
+              ),
         style: theme.textTheme.meta,
       ),
       onTap: () async {
