@@ -131,11 +131,15 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context);
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final bodyStyle = theme.textTheme.bodyLarge?.copyWith(height: 1.55);
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
+      backgroundColor: scheme.surfaceContainerLowest,
       appBar: AppBar(
+        backgroundColor: scheme.surfaceContainerLowest,
+        surfaceTintColor: Colors.transparent,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -157,31 +161,42 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.formPage,
-                8,
-                AppSpacing.formPage,
-                AppSpacing.formPage,
-              ),
-              child: TextField(
-                controller: _ctrl,
-                expands: true,
-                maxLines: null,
-                minLines: null,
-                textAlignVertical: TextAlignVertical.top,
-                style: bodyStyle,
-                cursorColor: theme.colorScheme.primary,
-                decoration: InputDecoration(
-                  hintText: l10n.noteHint,
-                  hintStyle: bodyStyle?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant
-                        .withValues(alpha: 0.55),
-                  ),
+          : Theme(
+              data: theme.copyWith(
+                inputDecorationTheme: const InputDecorationTheme(
+                  filled: false,
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
                   contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.formPage,
+                  8,
+                  AppSpacing.formPage,
+                  AppSpacing.formPage,
+                ),
+                child: TextField(
+                  controller: _ctrl,
+                  expands: true,
+                  maxLines: null,
+                  minLines: null,
+                  textAlignVertical: TextAlignVertical.top,
+                  style: bodyStyle,
+                  cursorColor: scheme.primary,
+                  decoration: InputDecoration(
+                    filled: false,
+                    hintText: l10n.noteHint,
+                    hintStyle: bodyStyle?.copyWith(
+                      color: scheme.onSurfaceVariant.withValues(alpha: 0.55),
+                    ),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                  ),
                 ),
               ),
             ),
