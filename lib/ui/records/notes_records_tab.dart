@@ -58,40 +58,70 @@ class NotesRecordsTab extends ConsumerWidget {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
+    final header = Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.listPage, 8, 8, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              l10n.segmentNotes,
+              style: theme.textTheme.titleMedium,
+            ),
+          ),
+          IconButton(
+            tooltip: l10n.fabWriteNote,
+            onPressed: () => context.push(noteEditPath(DateTime.now())),
+            icon: const Icon(Icons.add),
+          ),
+        ],
+      ),
+    );
+
     return notesAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text(l10n.loadFailed('$e'))),
       data: (notes) {
         if (notes.isEmpty) {
-          return Padding(
-            padding: const EdgeInsets.all(AppSpacing.formPage),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    l10n.notesEmptyHint,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyLarge,
+          return Column(
+            children: [
+              header,
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.formPage),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          l10n.notesEmptyHint,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodyLarge,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          l10n.notesEmptyCta,
+                          style: theme.textTheme.meta,
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.notesEmptyCta,
-                    style: theme.textTheme.meta,
-                  ),
-                ],
+                ),
               ),
-            ),
+            ],
           );
         }
-        return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.listPage,
-            8,
-            AppSpacing.listPage,
-            88,
-          ),
-          itemCount: notes.length,
+        return Column(
+          children: [
+            header,
+            Expanded(
+              child: ListView.separated(
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.listPage,
+                  8,
+                  AppSpacing.listPage,
+                  listBottomInset(context, hasFab: false),
+                ),
+                itemCount: notes.length,
           separatorBuilder: (_, _) => Divider(
             height: 1,
             color: scheme.outlineVariant.withValues(alpha: 0.6),
@@ -209,6 +239,9 @@ class NotesRecordsTab extends ConsumerWidget {
               ),
             );
           },
+              ),
+            ),
+          ],
         );
       },
     );
