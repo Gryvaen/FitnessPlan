@@ -83,6 +83,13 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
   }
 
   Future<void> _confirmDelete(WeightLog log) async {
+    if (!AppDates.isLocalToday(log.date)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.pastDayReadOnly)),
+      );
+      return;
+    }
     final l10n = context.l10n;
     final dateStr = DateFormat('yyyy-MM-dd').format(log.date);
     final confirmed = await showDialog<bool>(
@@ -200,11 +207,13 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
                   _logSubtitle(log, l10n),
                   style: Theme.of(context).textTheme.meta,
                 ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  tooltip: l10n.delete,
-                  onPressed: () => _confirmDelete(log),
-                ),
+                trailing: AppDates.isLocalToday(log.date)
+                    ? IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        tooltip: l10n.delete,
+                        onPressed: () => _confirmDelete(log),
+                      )
+                    : null,
               ),
             ),
           ],
