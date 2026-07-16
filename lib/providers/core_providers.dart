@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/db.dart';
+import '../data/repositories/app_update_repository.dart';
 import '../data/repositories/calculator_history_repository.dart';
 import '../data/repositories/food_repository.dart';
 import '../data/repositories/form_memory_repository.dart';
@@ -68,4 +69,8 @@ final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
 
 final noteRepositoryProvider = Provider<NoteRepository>((ref) {
   return NoteRepository(ref.watch(databaseProvider));
+});
+
+final appUpdateRepositoryProvider = Provider<AppUpdateRepository>((ref) {
+  return AppUpdateRepository();
 });
