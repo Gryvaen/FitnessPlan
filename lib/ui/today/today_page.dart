@@ -127,17 +127,12 @@ class TodayPage extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/log-meal'),
-        icon: const Icon(Icons.add),
-        label: Text(isSelectedToday ? l10n.logMeal : l10n.backfillMeal),
-      ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(
+        padding: EdgeInsets.fromLTRB(
           AppSpacing.listPage,
           8,
           AppSpacing.listPage,
-          88,
+          listBottomInset(context, hasFab: false),
         ),
         children: [
           if (profile.goal == FitnessGoal.cut && plan.missingCutInputs)
@@ -405,6 +400,11 @@ class TodayPage extends ConsumerWidget {
                 style: theme.textTheme.titleMedium,
               ),
               const Spacer(),
+              IconButton(
+                tooltip: isSelectedToday ? l10n.logMeal : l10n.backfillMeal,
+                onPressed: () => context.push('/log-meal'),
+                icon: const Icon(Icons.add),
+              ),
               PopupMenuButton<String>(
                 tooltip: l10n.more,
                 onSelected: (value) async {
