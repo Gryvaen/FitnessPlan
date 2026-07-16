@@ -6,6 +6,34 @@ import 'package:diet/data/repositories/meal_repository.dart';
 import 'package:diet/domain/models.dart';
 import 'package:diet/domain/deficit.dart';
 
+Future<void> _seedMeal(
+  AppDatabase db, {
+  required DateTime date,
+  required MealType mealType,
+  required FoodItem food,
+  required double grams,
+}) async {
+  final intake = MacroIntake.fromGrams(
+    grams: grams,
+    kcalPer100: food.kcalPer100,
+    proteinPer100: food.proteinPer100,
+    carbPer100: food.carbPer100,
+    fatPer100: food.fatPer100,
+  );
+  await db.into(db.mealEntries).insert(
+        MealEntriesCompanion.insert(
+          date: DateTime(date.year, date.month, date.day),
+          mealType: mealType.name,
+          foodId: food.id,
+          foodName: food.name,
+          grams: grams,
+          calories: intake.calories,
+          proteinG: intake.proteinG,
+          carbG: intake.carbG,
+          fatG: intake.fatG,
+        ),
+      );
+}
 void main() {
   test('actualDailyDeficit = planned + remaining', () {
     // planned 500, target 1800, ate 1600 → remain 200 → actual 700
@@ -110,27 +138,31 @@ void main() {
     final day3 = DateTime(2026, 7, 15);
 
     // Day1: 200g rice → 200 kcal, 4p, 44c, 1f
-    await repo.add(
+    await _seedMeal(
+      db,
       date: day1,
       mealType: MealType.lunch,
       food: rice,
       grams: 200,
     );
     // Day2: 100g chicken → 120 kcal, 25p, 0c, 2f
-    await repo.add(
+    await _seedMeal(
+      db,
       date: day2,
       mealType: MealType.dinner,
       food: chicken,
       grams: 100,
     );
     // Day3: 150g rice + 150g chicken
-    await repo.add(
+    await _seedMeal(
+      db,
       date: day3,
       mealType: MealType.breakfast,
       food: rice,
       grams: 150,
     );
-    await repo.add(
+    await _seedMeal(
+      db,
       date: day3,
       mealType: MealType.lunch,
       food: chicken,
@@ -179,13 +211,15 @@ void main() {
     final dayA = DateTime(2026, 7, 10);
     final dayB = DateTime(2026, 7, 11);
 
-    await repo.add(
+    await _seedMeal(
+      db,
       date: DateTime(2026, 7, 10, 23, 59, 59),
       mealType: MealType.snack,
       food: rice,
       grams: 100,
     );
-    await repo.add(
+    await _seedMeal(
+      db,
       date: DateTime(2026, 7, 11, 0, 0, 1),
       mealType: MealType.breakfast,
       food: chicken,
@@ -201,19 +235,22 @@ void main() {
   test('calorieTotalsBetween groups by local day', () async {
     final day1 = DateTime(2026, 7, 13);
     final day2 = DateTime(2026, 7, 14);
-    await repo.add(
+    await _seedMeal(
+      db,
       date: day1,
       mealType: MealType.lunch,
       food: rice,
       grams: 100,
     );
-    await repo.add(
+    await _seedMeal(
+      db,
       date: day1,
       mealType: MealType.dinner,
       food: chicken,
       grams: 100,
     );
-    await repo.add(
+    await _seedMeal(
+      db,
       date: day2,
       mealType: MealType.lunch,
       food: rice,
