@@ -4,10 +4,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
 import 'providers/app_providers.dart';
+import 'ui/tools/rest_timer_notifications.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
+  await RestTimerNotifications.ensureInitialized();
 
   runApp(
     ProviderScope(
