@@ -54,6 +54,8 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
       proteinPer100: entry.grams > 0 ? entry.proteinG / entry.grams * 100 : 0,
       carbPer100: entry.grams > 0 ? entry.carbG / entry.grams * 100 : 0,
       fatPer100: entry.grams > 0 ? entry.fatG / entry.grams * 100 : 0,
+      alcoholPer100: 0,
+      isCustom: false,
     );
 
     setState(() {
@@ -73,6 +75,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
       proteinPer100: food.proteinPer100,
       carbPer100: food.carbPer100,
       fatPer100: food.fatPer100,
+      alcoholPer100: food.alcoholPer100,
     );
   }
 

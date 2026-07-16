@@ -26,6 +26,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
   List<FoodItem> _results = [];
   List<FoodItem> _recent = [];
   List<FoodItem> _favorites = [];
+  List<FoodServing> _servings = [];
   bool _loadingFoods = true;
   bool _searching = false;
   int _searchVersion = 0;
@@ -52,7 +53,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
       final favorites = await repo.favorites();
       if (widget.initialFoodId != null) {
         final food = await repo.byId(widget.initialFoodId!);
-        if (mounted) setState(() => _selected = food);
+        if (mounted && food != null) await _selectFood(food);
       }
       if (!mounted) return;
       setState(() {
@@ -67,6 +68,16 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         SnackBar(content: Text('加载食材失败：$e')),
       );
     }
+  }
+
+  Future<void> _selectFood(FoodItem food) async {
+    final servings =
+        await ref.read(foodRepositoryProvider).listServings(food.id);
+    if (!mounted) return;
+    setState(() {
+      _selected = food;
+      _servings = servings;
+    });
   }
 
   Future<void> _persistMealDefaults() {
@@ -108,7 +119,31 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
       proteinPer100: food.proteinPer100,
       carbPer100: food.carbPer100,
       fatPer100: food.fatPer100,
+      alcoholPer100: food.alcoholPer100,
     );
+  }
+
+  Future<void> _applyPreset(MealPreset preset) async {
+    final day = ref.read(selectedDayProvider);
+    try {
+      final result = await ref.read(mealPresetRepositoryProvider).applyPreset(
+            presetId: preset.id,
+            date: day,
+          );
+      if (!mounted) return;
+      final skip = result.skippedMissingFood > 0
+          ? '，跳过 ${result.skippedMissingFood} 项缺失食材'
+          : '';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('已套用 ${result.copied} 项$skip')),
+      );
+      context.pop();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('套用失败：$e')),
+      );
+    }
   }
 
   Future<void> _save() async {
@@ -168,13 +203,40 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         ].join(' · '),
         style: theme.textTheme.meta,
       ),
-      onTap: () => setState(() => _selected = f),
+      onTap: () => _selectFood(f),
     );
   }
 
   Widget _browseList() {
     final theme = Theme.of(context);
+    final presetsAsync = ref.watch(mealPresetsProvider);
     final sections = <Widget>[];
+
+    presetsAsync.whenData((presets) {
+      if (presets.isEmpty) return;
+      sections.add(
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          child: Text('常用套餐', style: theme.textTheme.titleSmall),
+        ),
+      );
+      for (final p in presets) {
+        sections.add(
+          ListTile(
+            leading: const Icon(Icons.restaurant_menu_outlined),
+            title: Text(p.name),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () async {
+                await ref.read(mealPresetRepositoryProvider).deletePreset(p.id);
+                ref.invalidate(mealPresetsProvider);
+              },
+            ),
+            onTap: () => _applyPreset(p),
+          ),
+        );
+      }
+    });
 
     if (_favorites.isNotEmpty) {
       sections.add(
@@ -246,10 +308,32 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                       style: theme.textTheme.meta,
                     ),
                     trailing: TextButton(
-                      onPressed: () => setState(() => _selected = null),
+                      onPressed: () => setState(() {
+                        _selected = null;
+                        _servings = [];
+                      }),
                       child: const Text('更换'),
                     ),
                   ),
+                  if (_servings.isNotEmpty) ...[
+                    Text('常用份量', style: theme.textTheme.fieldLabel),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final s in _servings)
+                          ActionChip(
+                            label: Text('${s.label} · ${s.grams.round()}g'),
+                            onPressed: () {
+                              setState(() => _grams = s.grams);
+                              _persistMealDefaults();
+                            },
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.field),
+                  ],
                   AppDropdown<double>(
                     label: '克数',
                     value: FormOptions.snapDouble(
@@ -267,10 +351,14 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                   if (preview != null) ...[
                     const SizedBox(height: AppSpacing.field),
                     Text(
-                      '${preview.calories.round()} kcal · '
-                      'P ${preview.proteinG.toStringAsFixed(1)} · '
-                      'C ${preview.carbG.toStringAsFixed(1)} · '
-                      'F ${preview.fatG.toStringAsFixed(1)}',
+                      [
+                        '${preview.calories.round()} kcal',
+                        'P ${preview.proteinG.toStringAsFixed(1)}',
+                        'C ${preview.carbG.toStringAsFixed(1)}',
+                        'F ${preview.fatG.toStringAsFixed(1)}',
+                        if (preview.alcoholG > 0)
+                          '酒精 ${preview.alcoholG.toStringAsFixed(1)}',
+                      ].join(' · '),
                       style: theme.textTheme.meta,
                     ),
                   ],
