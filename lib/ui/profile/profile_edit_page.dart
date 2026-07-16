@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../domain/calorie_calculator.dart';
 import '../../domain/models.dart';
 import '../../providers/app_providers.dart';
+import '../../data/repositories/water_repository.dart';
 import '../theme/app_theme.dart';
 import '../widgets/form_options.dart';
 
@@ -24,6 +25,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   late double _weightKg;
   late double _targetWeightKg;
   late double _weeklyLossKg;
+  int? _waterGoalMl;
   bool _ready = false;
   bool _saving = false;
   bool _dirty = false;
@@ -53,6 +55,10 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         FormOptions.weeklyLossKg,
         p.weeklyLossKg ?? CalorieCalculator.defaultWeeklyLoss,
       );
+      final water = ref.read(waterRepositoryProvider).getGoalMlOrNull();
+      _waterGoalMl = water == null
+          ? null
+          : FormOptions.snapInt(FormOptions.waterGoalMl, water);
       _ready = true;
     }
   }
@@ -114,6 +120,11 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
             targetWeightKg: _goal == FitnessGoal.cut ? target : null,
             weeklyLossKg: _goal == FitnessGoal.cut ? _weeklyLossKg : null,
           );
+      if (_waterGoalMl == null) {
+        await ref.read(waterGoalProvider.notifier).clearGoal();
+      } else {
+        await ref.read(waterGoalProvider.notifier).setGoal(_waterGoalMl!);
+      }
       if (!mounted) return false;
       setState(() => _dirty = false);
       return true;
@@ -251,6 +262,15 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                 onChanged: (v) => _edit(() => _weeklyLossKg = v),
               ),
             ],
+            const SizedBox(height: AppSpacing.section),
+            AppOptionalDropdown<int>(
+              label: '每日饮水目标',
+              value: _waterGoalMl,
+              items: FormOptions.waterGoalMl,
+              suffixText: 'ml',
+              helperText: '不填写则使用默认 ${kDefaultWaterGoalMl} ml',
+              onChanged: (v) => _edit(() => _waterGoalMl = v),
+            ),
             const SizedBox(height: AppSpacing.section),
             FilledButton(
               onPressed: _saving || !_dirty ? null : _saveAndPop,

@@ -97,6 +97,70 @@ class FormOptions {
     240,
   ];
 
+  static const targetSets = <int>[1, 2, 3, 4, 5, 6, 8, 10];
+
+  /// Daily water goal options (ml), 500–5000 step 250.
+  static const waterGoalMl = <int>[
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250,
+    2500,
+    2750,
+    3000,
+    3250,
+    3500,
+    3750,
+    4000,
+    4250,
+    4500,
+    4750,
+    5000,
+  ];
+
+  static const targetRepsOrSeconds = <int>[
+    5,
+    6,
+    8,
+    10,
+    12,
+    15,
+    20,
+    25,
+    30,
+    40,
+    45,
+    60,
+    90,
+    120,
+  ];
+
+  /// Duration options for timed exercises (plank, etc.), up to 10 minutes.
+  static const targetSeconds = <int>[
+    5,
+    10,
+    15,
+    20,
+    30,
+    45,
+    60,
+    90,
+    120,
+    150,
+    180,
+    240,
+    300,
+    360,
+    420,
+    480,
+    540,
+    600,
+  ];
+
   static const mealGrams = <double>[
     50,
     75,

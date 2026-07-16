@@ -75,6 +75,11 @@ class WaterGoalNotifier extends Notifier<int> {
     await ref.read(waterRepositoryProvider).setGoalMl(ml);
     state = ref.read(waterRepositoryProvider).getGoalMl();
   }
+
+  Future<void> clearGoal() async {
+    await ref.read(waterRepositoryProvider).clearGoalMl();
+    state = ref.read(waterRepositoryProvider).getGoalMl();
+  }
 }
 
 final mealPresetsProvider = FutureProvider.autoDispose<List<MealPreset>>((ref) {

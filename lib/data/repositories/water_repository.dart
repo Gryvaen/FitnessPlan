@@ -16,9 +16,19 @@ class WaterRepository {
 
   int getGoalMl() => _prefs.getInt(_waterGoalKey) ?? kDefaultWaterGoalMl;
 
+  /// Null when the user has not set a custom goal (falls back to default).
+  int? getGoalMlOrNull() {
+    if (!_prefs.containsKey(_waterGoalKey)) return null;
+    return _prefs.getInt(_waterGoalKey);
+  }
+
   Future<void> setGoalMl(int ml) async {
     final clamped = ml.clamp(500, 5000);
     await _prefs.setInt(_waterGoalKey, clamped);
+  }
+
+  Future<void> clearGoalMl() async {
+    await _prefs.remove(_waterGoalKey);
   }
 
   Future<int> mlForDay(DateTime day) async {
