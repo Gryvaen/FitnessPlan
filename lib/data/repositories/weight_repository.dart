@@ -44,6 +44,22 @@ class WeightRepository {
         );
   }
 
+  Future<WeightLog?> getByDate(DateTime date) async {
+    final day = DateTime(date.year, date.month, date.day);
+    return (_db.select(_db.weightLogs)
+          ..where((t) => t.date.equals(day)))
+        .getSingleOrNull();
+  }
+
+  /// Updates [bodyFatPct] on an existing day log. Returns false if none.
+  Future<bool> updateBodyFatForDate(DateTime date, double bodyFatPct) async {
+    final existing = await getByDate(date);
+    if (existing == null) return false;
+    await (_db.update(_db.weightLogs)..where((t) => t.id.equals(existing.id)))
+        .write(WeightLogsCompanion(bodyFatPct: Value(bodyFatPct)));
+    return true;
+  }
+
   Future<void> delete(int id) =>
       (_db.delete(_db.weightLogs)..where((t) => t.id.equals(id))).go();
 

@@ -68,6 +68,19 @@ class FormOptions {
     return out;
   }
 
+  /// Circumference options in cm (neck / waist / hip).
+  static List<double> circumferencesCm({
+    double min = 20,
+    double max = 160,
+    double step = 0.5,
+  }) {
+    final out = <double>[];
+    for (var v = min; v <= max + 1e-9; v += step) {
+      out.add(_round1(v));
+    }
+    return out;
+  }
+
   static const exerciseMinutes = <int>[
     15,
     20,
