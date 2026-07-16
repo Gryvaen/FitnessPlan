@@ -95,12 +95,22 @@ class WorkoutRepository {
         .getSingleOrNull();
   }
 
+  Future<Exercise?> exerciseByName(String name) {
+    final trimmed = name.trim();
+    return (_db.select(_db.exercises)..where((t) => t.name.equals(trimmed)))
+        .getSingleOrNull();
+  }
+
   Future<int> addCustomExercise({
     required String name,
     required ExerciseUnit unit,
-  }) {
+  }) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) throw ArgumentError('动作名称不能为空');
+    final existing = await exerciseByName(trimmed);
+    if (existing != null) {
+      throw StateError('已存在同名动作，请换一个名称');
+    }
     return _db.into(_db.exercises).insert(
           ExercisesCompanion.insert(
             name: trimmed,
@@ -255,12 +265,21 @@ class WorkoutRepository {
     final start = _dayStart(day);
     late final StreamController<DayWorkoutSnapshot> controller;
     var pushing = false;
+    var dirty = false;
 
     Future<void> push() async {
-      if (pushing || controller.isClosed) return;
+      if (controller.isClosed) return;
+      if (pushing) {
+        dirty = true;
+        return;
+      }
       pushing = true;
       try {
-        controller.add(await daySnapshot(start));
+        do {
+          dirty = false;
+          if (controller.isClosed) return;
+          controller.add(await daySnapshot(start));
+        } while (dirty && !controller.isClosed);
       } finally {
         pushing = false;
       }
