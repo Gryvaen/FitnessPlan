@@ -154,6 +154,24 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
   Widget _numField(TextEditingController c, String label) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.field),
+      child: Focus(
+        onFocusChange: (hasFocus) {
+          if (hasFocus) {
+            // 聚焦时：把默认的 0 清掉；若已有值则全选方便覆盖输入
+            if (c.text.trim() == '0') {
+              c.text = '';
+              c.selection = const TextSelection.collapsed(offset: 0);
+            } else if (c.text.isNotEmpty) {
+              c.selection = TextSelection(baseOffset: 0, extentOffset: c.text.length);
+            }
+          } else {
+            // 失焦时：若没输入则显示 0
+            if (c.text.trim().isEmpty) {
+              c.text = '0';
+              c.selection = TextSelection.collapsed(offset: c.text.length);
+            }
+          }
+        },
         child: TextField(
           controller: c,
           decoration: InputDecoration(labelText: label),
@@ -162,6 +180,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
             FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
           ],
         ),
+      ),
     );
   }
 }

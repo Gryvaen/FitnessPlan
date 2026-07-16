@@ -9,6 +9,7 @@ import '../../domain/plateau.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import 'deficit_date_picker.dart';
+import 'today_summary_widgets.dart';
 
 class TodayPage extends ConsumerWidget {
   const TodayPage({super.key});
@@ -252,64 +253,43 @@ class TodayPage extends ConsumerWidget {
                   ],
                   const SizedBox(height: AppSpacing.field),
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '${intake.calories.round()}',
-                        style: theme.textTheme.statValue,
+                      CalorieRing(
+                        eaten: intake.calories,
+                        target: targets.calories.toDouble(),
+                        over: remainCal < 0,
+                        remainAbs: remainCal.abs(),
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '/ ${targets.calories} kcal',
-                        style: theme.textTheme.statUnit?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        '剩 ${remainCal.round()}',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: remainCal < 0 ? scheme.error : scheme.primary,
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            MacroMini(
+                              label: '蛋白',
+                              current: intake.proteinG,
+                              target: targets.proteinG,
+                              color: AppColors.protein,
+                              remainLabel: remainMacro(remainP),
+                            ),
+                            MacroMini(
+                              label: '碳水',
+                              current: intake.carbG,
+                              target: targets.carbG,
+                              color: AppColors.carb,
+                              remainLabel: remainMacro(remainC),
+                            ),
+                            MacroMini(
+                              label: '脂肪',
+                              current: intake.fatG,
+                              target: targets.fatG,
+                              color: AppColors.fat,
+                              remainLabel: remainMacro(remainF),
+                            ),
+                          ],
                         ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 10),
-                  _MacroBar(
-                    label: '热量',
-                    current: intake.calories,
-                    target: targets.calories.toDouble(),
-                    unit: 'kcal',
-                    color: scheme.primary,
-                    hideNumbers: true,
-                  ),
-                  const Divider(height: 28),
-                  _MacroBar(
-                    label: '蛋白',
-                    current: intake.proteinG,
-                    target: targets.proteinG,
-                    unit: 'g',
-                    color: AppColors.protein,
-                    remainLabel: remainMacro(remainP),
-                  ),
-                  const SizedBox(height: AppSpacing.field),
-                  _MacroBar(
-                    label: '碳水',
-                    current: intake.carbG,
-                    target: targets.carbG,
-                    unit: 'g',
-                    color: AppColors.carb,
-                    remainLabel: remainMacro(remainC),
-                  ),
-                  const SizedBox(height: AppSpacing.field),
-                  _MacroBar(
-                    label: '脂肪',
-                    current: intake.fatG,
-                    target: targets.fatG,
-                    unit: 'g',
-                    color: AppColors.fat,
-                    remainLabel: remainMacro(remainF),
                   ),
                   if (intake.alcoholG > 0) ...[
                     const SizedBox(height: AppSpacing.field),
@@ -331,54 +311,55 @@ class TodayPage extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text('饮水', style: theme.textTheme.titleMedium),
-                      const Spacer(),
-                      Text(
-                        '$waterMl / $waterGoal ml',
-                        style: theme.textTheme.meta,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('饮水', style: theme.textTheme.titleMedium),
+                            const SizedBox(height: 4),
+                            Text(
+                              '$waterMl / $waterGoal ml',
+                              style: theme.textTheme.meta,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () => ref
+                              .read(waterRepositoryProvider)
+                              .addMl(day, 250),
+                          child: Padding(
+                            padding: const EdgeInsets.all(6),
+                            child: WaterCup(
+                              progress:
+                                  waterGoal <= 0 ? 0 : waterMl / waterGoal,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(6),
                     child: LinearProgressIndicator(
                       value: waterGoal <= 0
                           ? 0
                           : (waterMl / waterGoal).clamp(0.0, 1.0),
-                      minHeight: 8,
+                      minHeight: 10,
                       color: scheme.primary,
-                      backgroundColor: scheme.primary.withValues(alpha: 0.15),
+                      backgroundColor:
+                          scheme.primary.withValues(alpha: 0.15),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      OutlinedButton(
-                        onPressed: () => ref
-                            .read(waterRepositoryProvider)
-                            .addMl(day, 250),
-                        child: const Text('+250'),
-                      ),
-                      const SizedBox(width: 8),
-                      OutlinedButton(
-                        onPressed: () => ref
-                            .read(waterRepositoryProvider)
-                            .addMl(day, 500),
-                        child: const Text('+500'),
-                      ),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: waterMl <= 0
-                            ? null
-                            : () => ref
-                                .read(waterRepositoryProvider)
-                                .addMl(day, -250),
-                        child: const Text('−250'),
-                      ),
-                    ],
-                  ),
+                  const SizedBox(height: 6),
+                  Text('点水杯 +250 ml', style: theme.textTheme.meta),
                 ],
               ),
             ),
@@ -562,64 +543,6 @@ class TodayPage extends ConsumerWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _MacroBar extends StatelessWidget {
-  const _MacroBar({
-    required this.label,
-    required this.current,
-    required this.target,
-    required this.unit,
-    required this.color,
-    this.remainLabel,
-    this.hideNumbers = false,
-  });
-
-  final String label;
-  final double current;
-  final double target;
-  final String unit;
-  final Color color;
-  final String? remainLabel;
-  final bool hideNumbers;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final progress = target <= 0 ? 0.0 : (current / target).clamp(0.0, 1.5);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: theme.textTheme.titleSmall),
-            if (!hideNumbers)
-              Text(
-                '${current.round()} / ${target.round()} $unit',
-                style: theme.textTheme.meta,
-              ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: progress > 1 ? 1 : progress,
-            minHeight: 8,
-            color: progress > 1
-                ? Theme.of(context).colorScheme.error
-                : color,
-            backgroundColor: color.withValues(alpha: 0.15),
-          ),
-        ),
-        if (remainLabel != null) ...[
-          const SizedBox(height: 4),
-          Text(remainLabel!, style: theme.textTheme.meta),
-        ],
-      ],
     );
   }
 }
