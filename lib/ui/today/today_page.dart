@@ -54,9 +54,9 @@ class TodayPage extends ConsumerWidget {
         profile.calorieAdjustment < CalorieCalculator.maxCalorieAdjustment;
 
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+    final today = AppDates.todayLocal(now);
     final earliest = DateTime(today.year - 1, today.month, today.day);
-    final isSelectedToday = day == today;
+    final isSelectedToday = AppDates.isLocalToday(day, now);
     final canGoPrev = day.isAfter(earliest);
     final canGoNext = day.isBefore(today);
     final dayLabel = day.year == today.year
@@ -334,14 +334,16 @@ class TodayPage extends ConsumerWidget {
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(10),
-                          onTap: waterMl <= 0
+                          onTap: !isSelectedToday || waterMl <= 0
                               ? null
                               : () => ref
                                   .read(waterRepositoryProvider)
                                   .addMl(day, -250),
                           child: Padding(
                             padding: const EdgeInsets.fromLTRB(4, 6, 0, 6),
-                            child: WaterCupLid(enabled: waterMl > 0),
+                            child: WaterCupLid(
+                              enabled: isSelectedToday && waterMl > 0,
+                            ),
                           ),
                         ),
                       ),
@@ -353,9 +355,11 @@ class TodayPage extends ConsumerWidget {
                           color: Colors.transparent,
                           child: InkWell(
                             borderRadius: BorderRadius.circular(12),
-                            onTap: () => ref
-                                .read(waterRepositoryProvider)
-                                .addMl(day, 250),
+                            onTap: !isSelectedToday
+                                ? null
+                                : () => ref
+                                    .read(waterRepositoryProvider)
+                                    .addMl(day, 250),
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(0, 6, 6, 6),
                               child: WaterCup(
@@ -383,7 +387,9 @@ class TodayPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    l10n.waterTapHint,
+                    isSelectedToday
+                        ? l10n.waterTapHint
+                        : l10n.pastDayReadOnly,
                     style: theme.textTheme.meta,
                   ),
                 ],
@@ -400,15 +406,17 @@ class TodayPage extends ConsumerWidget {
                 style: theme.textTheme.titleMedium,
               ),
               const Spacer(),
-              IconButton(
-                tooltip: isSelectedToday ? l10n.logMeal : l10n.backfillMeal,
-                onPressed: () => context.push('/log-meal'),
-                icon: const Icon(Icons.add),
-              ),
+              if (isSelectedToday)
+                IconButton(
+                  tooltip: l10n.logMeal,
+                  onPressed: () => context.push('/log-meal'),
+                  icon: const Icon(Icons.add),
+                ),
               PopupMenuButton<String>(
                 tooltip: l10n.more,
                 onSelected: (value) async {
                   if (value == 'copy') {
+                    if (!isSelectedToday) return;
                     final from = day.subtract(const Duration(days: 1));
                     final existing =
                         await ref.read(mealRepositoryProvider).forDay(day);
@@ -508,10 +516,11 @@ class TodayPage extends ConsumerWidget {
                   }
                 },
                 itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'copy',
-                    child: Text(l10n.copyYesterday),
-                  ),
+                  if (isSelectedToday)
+                    PopupMenuItem(
+                      value: 'copy',
+                      child: Text(l10n.copyYesterday),
+                    ),
                   PopupMenuItem(
                     value: 'preset',
                     child: Text(l10n.saveAsPreset),
