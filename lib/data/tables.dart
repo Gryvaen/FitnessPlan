@@ -91,3 +91,80 @@ class AppMeta extends Table {
   @override
   Set<Column> get primaryKey => {key};
 }
+
+/// Catalog of exercises (`unit`: reps | seconds).
+class Exercises extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  TextColumn get unit => text()();
+  BoolColumn get isCustom => boolean().withDefault(const Constant(false))();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {name},
+      ];
+}
+
+class WorkoutPlans extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  DateTimeColumn get createdAt => dateTime()();
+}
+
+class WorkoutPlanItems extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get planId => integer()();
+  IntColumn get exerciseId => integer()();
+  TextColumn get exerciseName => text()();
+  IntColumn get targetSets => integer()();
+  /// Target reps, or target seconds when the exercise unit is seconds.
+  IntColumn get targetReps => integer()();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+}
+
+class DayWorkouts extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get date => dateTime()();
+  IntColumn get planId => integer().nullable()();
+  TextColumn get planName => text().nullable()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {date},
+      ];
+}
+
+class DayWorkoutItems extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get dayWorkoutId => integer()();
+  IntColumn get exerciseId => integer()();
+  TextColumn get exerciseName => text()();
+  IntColumn get targetSets => integer()();
+  IntColumn get targetReps => integer()();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  BoolColumn get done => boolean().withDefault(const Constant(false))();
+}
+
+class WorkoutSetLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get date => dateTime()();
+  IntColumn get exerciseId => integer()();
+  TextColumn get exerciseName => text()();
+  IntColumn get setIndex => integer()();
+  IntColumn get reps => integer().nullable()();
+  IntColumn get durationSec => integer().nullable()();
+  IntColumn get dayWorkoutItemId => integer().nullable()();
+}
+
+/// One daily journal note per calendar day.
+class DailyNotes extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get date => dateTime()();
+  TextColumn get content => text()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {date},
+      ];
+}

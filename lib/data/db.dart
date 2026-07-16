@@ -20,6 +20,13 @@ part 'db.g.dart';
     MealPresetItems,
     WaterLogs,
     AppMeta,
+    Exercises,
+    WorkoutPlans,
+    WorkoutPlanItems,
+    DayWorkouts,
+    DayWorkoutItems,
+    WorkoutSetLogs,
+    DailyNotes,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -28,10 +35,14 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) async {
+          await m.createAll();
+          await seedBuiltinExercises();
+        },
         onUpgrade: (m, from, to) async {
           if (from < 2) {
             await m.addColumn(weightLogs, weightLogs.bodyFatPct);
@@ -76,8 +87,46 @@ WHERE id NOT IN (
           if (from < 8) {
             await m.addColumn(mealEntries, mealEntries.alcoholG);
           }
+          if (from < 9) {
+            await m.createTable(exercises);
+            await m.createTable(workoutPlans);
+            await m.createTable(workoutPlanItems);
+            await m.createTable(dayWorkouts);
+            await m.createTable(dayWorkoutItems);
+            await m.createTable(workoutSetLogs);
+            await seedBuiltinExercises();
+          }
+          if (from < 10) {
+            await m.createTable(dailyNotes);
+          }
         },
       );
+
+  /// Inserts built-in bodyweight exercises if the catalog is empty.
+  Future<void> seedBuiltinExercises() async {
+    final existing = await (select(exercises)..limit(1)).get();
+    if (existing.isNotEmpty) return;
+
+    const seeds = <(String, String)>[
+      ('俯卧撑', 'reps'),
+      ('引体向上', 'reps'),
+      ('深蹲', 'reps'),
+      ('平板支撑', 'seconds'),
+      ('开合跳', 'reps'),
+      ('卷腹', 'reps'),
+      ('跪姿俯卧撑', 'reps'),
+      ('臀桥', 'reps'),
+    ];
+    for (final (name, unit) in seeds) {
+      await into(exercises).insert(
+        ExercisesCompanion.insert(
+          name: name,
+          unit: unit,
+          isCustom: const Value(false),
+        ),
+      );
+    }
+  }
 }
 
 LazyDatabase _openConnection() {

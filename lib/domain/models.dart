@@ -31,6 +31,21 @@ enum MealType {
   final String label;
 }
 
+enum ExerciseUnit {
+  reps('次'),
+  seconds('秒');
+
+  const ExerciseUnit(this.label);
+  final String label;
+
+  static ExerciseUnit fromStorage(String raw) {
+    for (final u in values) {
+      if (u.name == raw) return u;
+    }
+    return ExerciseUnit.reps;
+  }
+}
+
 class MacroTargets {
   const MacroTargets({
     required this.calories,
