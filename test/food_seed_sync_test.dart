@@ -5,8 +5,8 @@ import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:fitness_plan/data/db.dart';
-import 'package:fitness_plan/data/repositories/food_repository.dart';
+import 'package:diet/data/db.dart';
+import 'package:diet/data/repositories/food_repository.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -150,11 +150,27 @@ void main() {
         .getSingle();
     expect(row.category, isNot('旧分类'));
     expect(row.kcalPer100, (first['kcal'] as num).toDouble());
+    expect(
+      row.alcoholPer100,
+      (first['alcohol'] as num?)?.toDouble() ?? 0.0,
+    );
 
     final ghost = await (db.select(db.foodItems)
           ..where((t) => t.name.equals('__obsolete_food__')))
         .getSingleOrNull();
     expect(ghost, isNull);
+
+    final alcoholic = list.cast<Map<String, dynamic>>().firstWhere(
+          (m) => ((m['alcohol'] as num?)?.toDouble() ?? 0) > 0,
+          orElse: () => <String, dynamic>{},
+        );
+    expect(alcoholic, isNotEmpty, reason: 'seed should include alcohol estimates');
+    final alcoholName = alcoholic['name'] as String;
+    final alcoholRow = await (db.select(db.foodItems)
+          ..where((t) => t.name.equals(alcoholName)))
+        .getSingle();
+    expect(alcoholRow.alcoholPer100, (alcoholic['alcohol'] as num).toDouble());
+    expect(alcoholRow.alcoholPer100, greaterThan(0));
 
     await repo.syncSeedFromAsset();
     expect(await foodCount(), list.length);

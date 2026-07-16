@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:fitness_plan/data/repositories/form_memory_repository.dart';
-import 'package:fitness_plan/domain/models.dart';
+import 'package:diet/data/repositories/form_memory_repository.dart';
+import 'package:diet/domain/models.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

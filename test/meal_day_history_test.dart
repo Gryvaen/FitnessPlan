@@ -1,10 +1,10 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:fitness_plan/data/db.dart';
-import 'package:fitness_plan/data/repositories/meal_repository.dart';
-import 'package:fitness_plan/domain/models.dart';
-import 'package:fitness_plan/domain/deficit.dart';
+import 'package:diet/data/db.dart';
+import 'package:diet/data/repositories/meal_repository.dart';
+import 'package:diet/domain/models.dart';
+import 'package:diet/domain/deficit.dart';
 
 void main() {
   test('actualDailyDeficit = planned + remaining', () {

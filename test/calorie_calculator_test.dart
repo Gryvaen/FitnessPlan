@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fitness_plan/domain/calorie_calculator.dart';
-import 'package:fitness_plan/domain/models.dart';
-import 'package:fitness_plan/domain/plateau.dart';
+import 'package:diet/domain/calorie_calculator.dart';
+import 'package:diet/domain/models.dart';
+import 'package:diet/domain/plateau.dart';
 
 void main() {
   const calc = CalorieCalculator();

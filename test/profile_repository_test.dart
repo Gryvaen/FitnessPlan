@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:fitness_plan/data/repositories/profile_repository.dart';
+import 'package:diet/data/repositories/profile_repository.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
