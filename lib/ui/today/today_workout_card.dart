@@ -27,6 +27,7 @@ class TodayWorkoutCard extends ConsumerWidget {
     if (plans.isEmpty) {
       final go = await showDialog<bool>(
         context: context,
+        useRootNavigator: true,
         builder: (ctx) => AlertDialog(
           title: Text(l10n.noWorkoutPlanTitle),
           content: Text(l10n.noWorkoutPlanBody),
@@ -53,29 +54,35 @@ class TodayWorkoutCard extends ConsumerWidget {
 
     final choice = await showModalBottomSheet<Object>(
       context: context,
+      useRootNavigator: true,
       builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.add),
-              title: Text(l10n.quickAddExercise),
-              onTap: () => Navigator.pop(ctx, 'quick'),
-            ),
-            const Divider(height: 1),
-            for (final p in plans)
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               ListTile(
-                title: Text(p.plan.name),
-                subtitle: Text(
-                  p.items
-                      .map((i) => '${i.exerciseName} ${i.targetSets}×${i.targetReps}')
-                      .join(' · '),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                onTap: () => Navigator.pop(ctx, p),
+                leading: const Icon(Icons.add),
+                title: Text(l10n.quickAddExercise),
+                onTap: () => Navigator.pop(ctx, 'quick'),
               ),
-          ],
+              const Divider(height: 1),
+              for (final p in plans)
+                ListTile(
+                  title: Text(p.plan.name),
+                  subtitle: Text(
+                    p.items
+                        .map(
+                          (i) =>
+                              '${i.exerciseName} ${i.targetSets}×${i.targetReps}',
+                        )
+                        .join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  onTap: () => Navigator.pop(ctx, p),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -90,6 +97,7 @@ class TodayWorkoutCard extends ConsumerWidget {
       if (!snap.isEmpty && context.mounted) {
         final ok = await showDialog<bool>(
           context: context,
+          useRootNavigator: true,
           builder: (ctx) => AlertDialog(
             title: Text(l10n.replaceTodayWorkout),
             content: Text(l10n.replaceTodayWorkoutBody),
