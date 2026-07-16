@@ -50,6 +50,11 @@ class FoodsPage extends ConsumerWidget {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/foods/custom'),
+        icon: const Icon(Icons.add),
+        label: const Text('自定义'),
+      ),
       body: Column(
         children: [
           Padding(
