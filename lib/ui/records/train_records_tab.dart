@@ -186,25 +186,24 @@ class TrainRecordsTab extends ConsumerWidget {
                           .read(workoutRepositoryProvider)
                           .deletePlan(summary.plan.id);
                     },
-                    child: Card(
-                      child: ListTile(
-                        title: Text(summary.plan.name),
-                        subtitle: Text(
-                          summary.items.isEmpty
-                              ? l10n.noExercisesInPlan
-                              : summary.items
-                                  .map(
-                                    (i) =>
-                                        '${i.exerciseName} ${i.targetSets}×${i.targetReps}',
-                                  )
-                                  .join(' · '),
-                          style: theme.textTheme.meta,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        onTap: () => context.push(
-                          '/records/plan?id=${summary.plan.id}',
-                        ),
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(summary.plan.name),
+                      subtitle: Text(
+                        summary.items.isEmpty
+                            ? l10n.noExercisesInPlan
+                            : summary.items
+                                .map(
+                                  (i) =>
+                                      '${i.exerciseName} ${i.targetSets}×${i.targetReps}',
+                                )
+                                .join(' · '),
+                        style: theme.textTheme.meta,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onTap: () => context.push(
+                        '/records/plan?id=${summary.plan.id}',
                       ),
                     ),
                   ),
@@ -224,31 +223,39 @@ class TrainRecordsTab extends ConsumerWidget {
             }
             return Column(
               children: [
-                for (final day in days)
-                  Card(
-                    child: ExpansionTile(
-                      title: Text(AppDates.md(day.date, locale)),
-                      subtitle: Text(
-                        l10n.nSets(day.sets.length),
-                        style: theme.textTheme.meta,
-                      ),
-                      children: [
-                        for (final set in day.sets)
-                          ListTile(
-                            dense: true,
-                            title: Text(
-                              l10n.setLine(set.exerciseName, set.setIndex),
-                            ),
-                            trailing: Text(
-                              set.reps != null
-                                  ? l10n.nReps(set.reps!)
-                                  : l10n.nSeconds(set.durationSec ?? 0),
-                              style: theme.textTheme.meta,
-                            ),
-                          ),
-                      ],
+                for (var i = 0; i < days.length; i++) ...[
+                  if (i > 0)
+                    Divider(
+                      height: 1,
+                      color: theme.colorScheme.outlineVariant
+                          .withValues(alpha: 0.6),
                     ),
+                  ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    childrenPadding: EdgeInsets.zero,
+                    title: Text(AppDates.md(days[i].date, locale)),
+                    subtitle: Text(
+                      l10n.nSets(days[i].sets.length),
+                      style: theme.textTheme.meta,
+                    ),
+                    children: [
+                      for (final set in days[i].sets)
+                        ListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            l10n.setLine(set.exerciseName, set.setIndex),
+                          ),
+                          trailing: Text(
+                            set.reps != null
+                                ? l10n.nReps(set.reps!)
+                                : l10n.nSeconds(set.durationSec ?? 0),
+                            style: theme.textTheme.meta,
+                          ),
+                        ),
+                    ],
                   ),
+                ],
               ],
             );
           },
