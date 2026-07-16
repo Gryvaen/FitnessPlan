@@ -56,6 +56,7 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
   }
 
   void _onChanged() {
+    if (!AppDates.isLocalToday(_day)) return;
     final trimmed = _ctrl.text.trim();
     if (trimmed == _lastSaved) {
       _timer?.cancel();
@@ -70,6 +71,7 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
   }
 
   Future<void> _persist() async {
+    if (!AppDates.isLocalToday(_day)) return;
     _timer?.cancel();
     final text = _ctrl.text;
     final trimmed = text.trim();
@@ -99,12 +101,16 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
   }
 
   String _titleForDay(AppLocalizations l10n, Locale locale) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    return AppDates.relativeDayTitle(_day, today, l10n, locale);
+    return AppDates.relativeDayTitle(
+      _day,
+      AppDates.todayLocal(),
+      l10n,
+      locale,
+    );
   }
 
   String _statusLabel(AppLocalizations l10n) {
+    if (!AppDates.isLocalToday(_day)) return l10n.pastDayReadOnly;
     switch (_status) {
       case _SaveStatus.idle:
         return l10n.startWriting;
@@ -133,6 +139,7 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final bodyStyle = theme.textTheme.bodyLarge?.copyWith(height: 1.55);
+    final editable = AppDates.isLocalToday(_day);
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -151,12 +158,13 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: _loading || _status == _SaveStatus.saving
-                ? null
-                : _persist,
-            child: Text(l10n.save),
-          ),
+          if (editable)
+            TextButton(
+              onPressed: _loading || _status == _SaveStatus.saving
+                  ? null
+                  : _persist,
+              child: Text(l10n.save),
+            ),
         ],
       ),
       body: _loading
@@ -180,6 +188,7 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
                 ),
                 child: TextField(
                   controller: _ctrl,
+                  readOnly: !editable,
                   expands: true,
                   maxLines: null,
                   minLines: null,
@@ -188,7 +197,7 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
                   cursorColor: scheme.primary,
                   decoration: InputDecoration(
                     filled: false,
-                    hintText: l10n.noteHint,
+                    hintText: editable ? l10n.noteHint : null,
                     hintStyle: bodyStyle?.copyWith(
                       color: scheme.onSurfaceVariant.withValues(alpha: 0.55),
                     ),
