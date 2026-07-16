@@ -76,16 +76,14 @@ class UserProfile {
     this.targetWeightKg,
     this.goalWeeks,
     this.weeklyLossKg,
-    int calorieAdjustment = 0,
+    this._calorieAdjustment = 0,
     this.bmr,
     this.tdee,
     this.dailyDeficit,
-    bool calorieFloorApplied = false,
-    bool missingCutInputs = false,
+    this._calorieFloorApplied = false,
+    this._missingCutInputs = false,
     this.calorieStandardSince,
-  })  : _calorieAdjustment = calorieAdjustment,
-        _calorieFloorApplied = calorieFloorApplied,
-        _missingCutInputs = missingCutInputs;
+  });
 
   final Sex sex;
   final int age;
@@ -103,6 +101,7 @@ class UserProfile {
   final double? dailyDeficit;
   final bool? _calorieFloorApplied;
   final bool? _missingCutInputs;
+
   /// Local calendar day when calorie targets / deficit last changed.
   final DateTime? calorieStandardSince;
 
