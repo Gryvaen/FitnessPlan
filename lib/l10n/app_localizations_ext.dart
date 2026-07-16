@@ -155,3 +155,33 @@ extension FoodCategoryL10n on String {
     return this;
   }
 }
+
+/// Display order for exercise library ExpansionTiles.
+const kExerciseCategoryOrder = <String>[
+  'chest',
+  'back',
+  'legs',
+  'core',
+  'core_timed',
+  'cardio',
+  'shoulders_arms',
+  'custom',
+  'other',
+];
+
+extension ExerciseCategoryL10n on String {
+  String localizedExerciseCategory(AppLocalizations l10n) {
+    return switch (this) {
+      'chest' => l10n.exerciseCategoryChest,
+      'back' => l10n.exerciseCategoryBack,
+      'legs' => l10n.exerciseCategoryLegs,
+      'core' => l10n.exerciseCategoryCore,
+      'core_timed' => l10n.exerciseCategoryCoreTimed,
+      'cardio' => l10n.exerciseCategoryCardio,
+      'shoulders_arms' => l10n.exerciseCategoryShouldersArms,
+      'custom' => l10n.exerciseCategoryCustom,
+      'other' => l10n.exerciseCategoryOther,
+      _ => this,
+    };
+  }
+}
