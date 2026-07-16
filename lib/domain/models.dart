@@ -209,18 +209,24 @@ class MacroIntake {
     this.proteinG = 0,
     this.carbG = 0,
     this.fatG = 0,
+    this.alcoholG = 0,
   });
 
   final double calories;
   final double proteinG;
   final double carbG;
   final double fatG;
+  final double alcoholG;
+
+  /// Approximate kcal from alcohol (~7 kcal/g); already included in [calories].
+  double get alcoholKcal => alcoholG * 7;
 
   MacroIntake operator +(MacroIntake other) => MacroIntake(
         calories: calories + other.calories,
         proteinG: proteinG + other.proteinG,
         carbG: carbG + other.carbG,
         fatG: fatG + other.fatG,
+        alcoholG: alcoholG + other.alcoholG,
       );
 
   static MacroIntake fromGrams({
@@ -229,6 +235,7 @@ class MacroIntake {
     required double proteinPer100,
     required double carbPer100,
     required double fatPer100,
+    double alcoholPer100 = 0,
   }) {
     final factor = grams / 100.0;
     return MacroIntake(
@@ -236,6 +243,7 @@ class MacroIntake {
       proteinG: proteinPer100 * factor,
       carbG: carbPer100 * factor,
       fatG: fatPer100 * factor,
+      alcoholG: alcoholPer100 * factor,
     );
   }
 }

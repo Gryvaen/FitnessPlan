@@ -8,11 +8,23 @@ class FoodItems extends Table {
   RealColumn get proteinPer100 => real()();
   RealColumn get carbPer100 => real()();
   RealColumn get fatPer100 => real()();
+  /// Estimated alcohol g/100g (mainly beverages with residual energy).
+  RealColumn get alcoholPer100 => real().withDefault(const Constant(0.0))();
+  /// User-created foods survive seed sync deletion.
+  BoolColumn get isCustom => boolean().withDefault(const Constant(false))();
 
   @override
   List<Set<Column>> get uniqueKeys => [
         {name},
       ];
+}
+
+class FoodServings extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get foodId => integer()();
+  TextColumn get label => text()();
+  /// Stored as grams; ml labels use ≈1 ml = 1 g.
+  RealColumn get grams => real()();
 }
 
 class FavoriteFoods extends Table {
@@ -43,6 +55,33 @@ class MealEntries extends Table {
   RealColumn get proteinG => real()();
   RealColumn get carbG => real()();
   RealColumn get fatG => real()();
+  RealColumn get alcoholG => real().withDefault(const Constant(0.0))();
+}
+
+class MealPresets extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  DateTimeColumn get createdAt => dateTime()();
+}
+
+class MealPresetItems extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get presetId => integer()();
+  IntColumn get foodId => integer()();
+  TextColumn get foodName => text()();
+  RealColumn get grams => real()();
+  TextColumn get mealType => text()();
+}
+
+class WaterLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get date => dateTime()();
+  IntColumn get ml => integer()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {date},
+      ];
 }
 
 class AppMeta extends Table {

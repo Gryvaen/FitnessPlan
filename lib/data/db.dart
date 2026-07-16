@@ -10,7 +10,17 @@ import 'tables.dart';
 part 'db.g.dart';
 
 @DriftDatabase(
-  tables: [FoodItems, FavoriteFoods, WeightLogs, MealEntries, AppMeta],
+  tables: [
+    FoodItems,
+    FoodServings,
+    FavoriteFoods,
+    WeightLogs,
+    MealEntries,
+    MealPresets,
+    MealPresetItems,
+    WaterLogs,
+    AppMeta,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -18,7 +28,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -52,6 +62,19 @@ WHERE id NOT IN (
           }
           if (from < 5) {
             await m.createTable(favoriteFoods);
+          }
+          if (from < 6) {
+            await m.addColumn(foodItems, foodItems.alcoholPer100);
+          }
+          if (from < 7) {
+            await m.addColumn(foodItems, foodItems.isCustom);
+            await m.createTable(foodServings);
+            await m.createTable(mealPresets);
+            await m.createTable(mealPresetItems);
+            await m.createTable(waterLogs);
+          }
+          if (from < 8) {
+            await m.addColumn(mealEntries, mealEntries.alcoholG);
           }
         },
       );
