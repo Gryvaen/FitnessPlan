@@ -35,7 +35,18 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
   @override
   void initState() {
     super.initState();
-    _bootstrap();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final day = ref.read(selectedDayProvider);
+      if (!AppDates.isLocalToday(day)) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.pastDayReadOnly)));
+        context.pop();
+        return;
+      }
+      _bootstrap();
+    });
   }
 
   Future<void> _bootstrap() async {
@@ -71,8 +82,9 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
   }
 
   Future<void> _selectFood(FoodItem food) async {
-    final servings =
-        await ref.read(foodRepositoryProvider).listServings(food.id);
+    final servings = await ref
+        .read(foodRepositoryProvider)
+        .listServings(food.id);
     if (!mounted) return;
     setState(() {
       _selected = food;
@@ -81,10 +93,9 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
   }
 
   Future<void> _persistMealDefaults() {
-    return ref.read(formMemoryRepositoryProvider).saveMealDefaults(
-          mealType: _mealType,
-          grams: _grams,
-        );
+    return ref
+        .read(formMemoryRepositoryProvider)
+        .saveMealDefaults(mealType: _mealType, grams: _grams);
   }
 
   Future<void> _search(String q) async {
@@ -126,11 +137,16 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
   Future<void> _applyPreset(MealPreset preset) async {
     final day = ref.read(selectedDayProvider);
     final l10n = context.l10n;
+    if (!AppDates.isLocalToday(day)) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.pastDayReadOnly)));
+      return;
+    }
     try {
-      final result = await ref.read(mealPresetRepositoryProvider).applyPreset(
-            presetId: preset.id,
-            date: day,
-          );
+      final result = await ref
+          .read(mealPresetRepositoryProvider)
+          .applyPreset(presetId: preset.id, date: day);
       if (!mounted) return;
       final skip = result.skippedMissingFood > 0
           ? l10n.skippedMissingFoods(result.skippedMissingFood)
@@ -141,9 +157,9 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
       context.pop();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.applyPresetFailed('$e'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.applyPresetFailed('$e'))));
     }
   }
 
@@ -151,43 +167,34 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     final l10n = context.l10n;
     final food = _selected;
     if (food == null || _grams <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.selectFoodAndGrams)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.selectFoodAndGrams)));
       return;
     }
     final day = ref.read(selectedDayProvider);
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final earliest = DateTime(today.year - 1, today.month, today.day);
-    if (day.isAfter(today) || day.isBefore(earliest)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.mealDateRangeError)),
-      );
+    if (!AppDates.isLocalToday(day)) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.pastDayReadOnly)));
       return;
     }
     setState(() => _saving = true);
     try {
-      await ref.read(mealRepositoryProvider).add(
-            date: day,
-            mealType: _mealType,
-            food: food,
-            grams: _grams,
-          );
+      await ref
+          .read(mealRepositoryProvider)
+          .add(date: day, mealType: _mealType, food: food, grams: _grams);
       if (mounted) {
-        final locale = Localizations.localeOf(context);
-        final label =
-            day == today ? l10n.today : AppDates.md(day, locale);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.loggedInto(label))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.loggedInto(l10n.today))));
         context.pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.saveFailed('$e'))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.saveFailed('$e'))));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -200,11 +207,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
       key: ValueKey('food-${f.id}'),
       title: Text(f.name, style: theme.textTheme.bodyLarge),
       subtitle: Text(
-        [
-          ?badge,
-          f.category,
-          '${f.kcalPer100.round()} kcal/100g',
-        ].join(' · '),
+        [?badge, f.category, '${f.kcalPer100.round()} kcal/100g'].join(' · '),
         style: theme.textTheme.meta,
       ),
       onTap: () => _selectFood(f),
@@ -266,9 +269,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
       }
     }
     if (sections.isEmpty) {
-      return Center(
-        child: Text(l10n.searchToLog, style: theme.textTheme.meta),
-      );
+      return Center(child: Text(l10n.searchToLog, style: theme.textTheme.meta));
     }
     return ListView(children: sections);
   }
@@ -280,9 +281,9 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     final locale = Localizations.localeOf(context);
     final preview = _preview;
     final day = ref.watch(selectedDayProvider);
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final dayLabel = day == today ? l10n.todayWord : AppDates.md(day, locale);
+    final dayLabel = AppDates.isLocalToday(day)
+        ? l10n.todayWord
+        : AppDates.md(day, locale);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.logMealTitle(dayLabel))),
@@ -307,7 +308,10 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                 if (_selected != null) ...[
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(_selected!.name, style: theme.textTheme.bodyLarge),
+                    title: Text(
+                      _selected!.name,
+                      style: theme.textTheme.bodyLarge,
+                    ),
                     subtitle: Text(
                       '${_selected!.kcalPer100.round()} kcal / 100g',
                       style: theme.textTheme.meta,
@@ -321,7 +325,10 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                     ),
                   ),
                   if (_servings.isNotEmpty) ...[
-                    Text(l10n.commonPortions, style: theme.textTheme.fieldLabel),
+                    Text(
+                      l10n.commonPortions,
+                      style: theme.textTheme.fieldLabel,
+                    ),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
@@ -389,21 +396,23 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
               child: _loadingFoods
                   ? const Center(child: CircularProgressIndicator())
                   : _searching
-                      ? (_results.isEmpty
-                          ? Center(
-                              child: Text(
-                                _query.isEmpty ? l10n.searchFood : l10n.noFoodFound,
-                                style: theme.textTheme.meta,
-                              ),
-                            )
-                          : ListView.builder(
-                              itemCount: _results.length,
-                              itemBuilder: (context, i) {
-                                final f = _results[i];
-                                return _foodTile(f);
-                              },
-                            ))
-                      : _browseList(),
+                  ? (_results.isEmpty
+                        ? Center(
+                            child: Text(
+                              _query.isEmpty
+                                  ? l10n.searchFood
+                                  : l10n.noFoodFound,
+                              style: theme.textTheme.meta,
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: _results.length,
+                            itemBuilder: (context, i) {
+                              final f = _results[i];
+                              return _foodTile(f);
+                            },
+                          ))
+                  : _browseList(),
             ),
         ],
       ),
