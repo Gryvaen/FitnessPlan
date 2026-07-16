@@ -16,6 +16,13 @@ abstract final class AppSpacing {
   static const field = 12.0;
 }
 
+/// Scroll padding so list content clears the floating pill nav / FAB.
+double listBottomInset(BuildContext context, {bool hasFab = true}) {
+  final pad = MediaQuery.viewPaddingOf(context).bottom;
+  // FAB(~56) + gap + compact icon-only floating pill (~52 bar + outer padding).
+  return (hasFab ? 72.0 : 16.0) + 60.0 + pad;
+}
+
 /// Semantic text roles on top of Material 3.
 extension AppTextStyles on TextTheme {
   TextStyle? get fieldLabel => labelMedium;
@@ -120,15 +127,25 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         elevation: 0,
-        height: 72,
-        backgroundColor: scheme.surfaceContainerLowest,
+        height: 52,
+        backgroundColor: Colors.transparent,
         indicatorColor: scheme.primaryContainer,
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
+            size: 24,
+            color: states.contains(WidgetState.selected)
+                ? scheme.onSurface
+                : scheme.onSurfaceVariant,
+          ),
+        ),
         labelTextStyle: WidgetStateProperty.resolveWith(
-          (states) => text.labelMedium?.copyWith(
+          (states) => text.labelSmall?.copyWith(
             fontWeight: states.contains(WidgetState.selected)
                 ? FontWeight.w700
                 : FontWeight.w500,
-            color: scheme.onSurface,
+            color: states.contains(WidgetState.selected)
+                ? scheme.onSurface
+                : scheme.onSurfaceVariant,
           ),
         ),
       ),
