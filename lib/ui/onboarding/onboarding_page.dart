@@ -57,7 +57,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             'P ${profile.targets.proteinG.toStringAsFixed(0)} · '
             'C ${profile.targets.carbG.toStringAsFixed(0)} · '
             'F ${profile.targets.fatG.toStringAsFixed(0)}\n\n'
-            '详情可在「我的」查看。',
+            '详情可在「我的 → 我的档案」查看。',
           ),
           actions: [
             TextButton(
