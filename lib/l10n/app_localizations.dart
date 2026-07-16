@@ -968,6 +968,60 @@ abstract class AppLocalizations {
   /// **'No exercises'**
   String get noExercises;
 
+  /// No description provided for @exerciseCategoryChest.
+  ///
+  /// In en, this message translates to:
+  /// **'Chest'**
+  String get exerciseCategoryChest;
+
+  /// No description provided for @exerciseCategoryBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get exerciseCategoryBack;
+
+  /// No description provided for @exerciseCategoryLegs.
+  ///
+  /// In en, this message translates to:
+  /// **'Legs'**
+  String get exerciseCategoryLegs;
+
+  /// No description provided for @exerciseCategoryCore.
+  ///
+  /// In en, this message translates to:
+  /// **'Core'**
+  String get exerciseCategoryCore;
+
+  /// No description provided for @exerciseCategoryCoreTimed.
+  ///
+  /// In en, this message translates to:
+  /// **'Core (timed)'**
+  String get exerciseCategoryCoreTimed;
+
+  /// No description provided for @exerciseCategoryCardio.
+  ///
+  /// In en, this message translates to:
+  /// **'Cardio'**
+  String get exerciseCategoryCardio;
+
+  /// No description provided for @exerciseCategoryShouldersArms.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoulders & arms'**
+  String get exerciseCategoryShouldersArms;
+
+  /// No description provided for @exerciseCategoryCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get exerciseCategoryCustom;
+
+  /// No description provided for @exerciseCategoryOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get exerciseCategoryOther;
+
   /// No description provided for @workoutPlans.
   ///
   /// In en, this message translates to:
