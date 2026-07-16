@@ -160,6 +160,19 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           const SizedBox(height: AppSpacing.field),
           Card(
             child: ListTile(
+              leading: const Icon(Icons.handyman_outlined),
+              title: const Text('工具箱'),
+              subtitle: Text(
+                '体脂估算 · 身体指标 · 食物换算 · 休息计时',
+                style: theme.textTheme.meta,
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/profile/tools'),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.field),
+          Card(
+            child: ListTile(
               leading: const Icon(Icons.water_drop_outlined),
               title: const Text('每日饮水目标'),
               subtitle: Text(

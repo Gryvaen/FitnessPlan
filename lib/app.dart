@@ -17,6 +17,11 @@ import 'ui/shell/main_shell.dart';
 import 'ui/shell/swipeable_branch_container.dart';
 import 'ui/today/today_page.dart';
 import 'ui/theme/app_theme.dart';
+import 'ui/tools/body_fat_page.dart';
+import 'ui/tools/body_metrics_page.dart';
+import 'ui/tools/food_convert_page.dart';
+import 'ui/tools/rest_timer_page.dart';
+import 'ui/tools/tools_hub_page.dart';
 import 'ui/weight/weight_page.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -118,6 +123,28 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'edit',
                     builder: (context, state) => const ProfileEditPage(),
+                  ),
+                  GoRoute(
+                    path: 'tools',
+                    builder: (context, state) => const ToolsHubPage(),
+                    routes: [
+                      GoRoute(
+                        path: 'body-fat',
+                        builder: (context, state) => const BodyFatPage(),
+                      ),
+                      GoRoute(
+                        path: 'body-metrics',
+                        builder: (context, state) => const BodyMetricsPage(),
+                      ),
+                      GoRoute(
+                        path: 'food-convert',
+                        builder: (context, state) => const FoodConvertPage(),
+                      ),
+                      GoRoute(
+                        path: 'rest-timer',
+                        builder: (context, state) => const RestTimerPage(),
+                      ),
+                    ],
                   ),
                 ],
               ),
