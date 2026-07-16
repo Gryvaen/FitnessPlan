@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../domain/calendar_day.dart';
 import '../../domain/models.dart';
 import '../db.dart';
 
@@ -18,7 +19,7 @@ class MealRepository {
 
   final AppDatabase _db;
 
-  DateTime _dayStart(DateTime d) => DateTime(d.year, d.month, d.day);
+  DateTime _dayStart(DateTime d) => CalendarDay.dayOnly(d);
   DateTime _dayEnd(DateTime d) =>
       DateTime(d.year, d.month, d.day, 23, 59, 59, 999);
 
@@ -59,7 +60,8 @@ class MealRepository {
     required MealType mealType,
     required FoodItem food,
     required double grams,
-  }) {
+  }) async {
+    CalendarDay.ensureEditableDay(date);
     final intake = _intakeFor(food, grams);
     return _db.into(_db.mealEntries).insert(
           MealEntriesCompanion.insert(
@@ -86,9 +88,12 @@ class MealRepository {
     required MealType mealType,
     required FoodItem food,
     required double grams,
-  }) {
+  }) async {
+    final existing = await byId(id);
+    if (existing == null) return;
+    CalendarDay.ensureEditableDay(existing.date);
     final intake = _intakeFor(food, grams);
-    return (_db.update(_db.mealEntries)..where((t) => t.id.equals(id))).write(
+    await (_db.update(_db.mealEntries)..where((t) => t.id.equals(id))).write(
           MealEntriesCompanion(
             mealType: Value(mealType.name),
             foodId: Value(food.id),
@@ -103,15 +108,21 @@ class MealRepository {
         );
   }
 
-  Future<void> delete(int id) =>
-      (_db.delete(_db.mealEntries)..where((t) => t.id.equals(id))).go();
+  Future<void> delete(int id) async {
+    final existing = await byId(id);
+    if (existing == null) return;
+    CalendarDay.ensureEditableDay(existing.date);
+    await (_db.delete(_db.mealEntries)..where((t) => t.id.equals(id))).go();
+  }
 
   /// Appends [from] day's meals onto [to]. Recalculates macros from current food rows.
+  /// [to] must be today; [from] may be any past day.
   Future<CopyDayResult> copyDay({
     required DateTime from,
     required DateTime to,
     MealType? mealType,
   }) async {
+    CalendarDay.ensureEditableDay(to);
     final source = await forDay(from);
     final filtered = mealType == null
         ? source
