@@ -50,12 +50,12 @@ class FoodsPage extends ConsumerWidget {
             icon: const Icon(Icons.star_outline),
             onPressed: () => context.push('/foods/favorites'),
           ),
+          IconButton(
+            tooltip: l10n.custom,
+            icon: const Icon(Icons.add),
+            onPressed: () => context.push('/foods/custom'),
+          ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/foods/custom'),
-        icon: const Icon(Icons.add),
-        label: Text(l10n.custom),
       ),
       body: Column(
         children: [
@@ -109,6 +109,9 @@ class _FoodBrowse extends ConsumerWidget {
       ),
       data: (categories) {
         return ListView(
+          padding: EdgeInsets.only(
+            bottom: listBottomInset(context, hasFab: false),
+          ),
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
@@ -160,6 +163,9 @@ class _FoodSearchList extends ConsumerWidget {
           return Center(child: Text(l10n.noFoodFound, style: theme.textTheme.meta));
         }
         return ListView.builder(
+          padding: EdgeInsets.only(
+            bottom: listBottomInset(context, hasFab: false),
+          ),
           itemCount: foods.length,
           itemBuilder: (context, i) {
             final f = foods[i];
