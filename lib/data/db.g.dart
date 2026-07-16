@@ -3206,8 +3206,20 @@ class $ExercisesTable extends Exercises
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _categoryMeta = const VerificationMeta(
+    'category',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, name, unit, isCustom];
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+    'category',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('other'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, name, unit, isCustom, category];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -3245,6 +3257,12 @@ class $ExercisesTable extends Exercises
         isCustom.isAcceptableOrUnknown(data['is_custom']!, _isCustomMeta),
       );
     }
+    if (data.containsKey('category')) {
+      context.handle(
+        _categoryMeta,
+        category.isAcceptableOrUnknown(data['category']!, _categoryMeta),
+      );
+    }
     return context;
   }
 
@@ -3274,6 +3292,10 @@ class $ExercisesTable extends Exercises
         DriftSqlType.bool,
         data['${effectivePrefix}is_custom'],
       )!,
+      category: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category'],
+      )!,
     );
   }
 
@@ -3288,11 +3310,16 @@ class Exercise extends DataClass implements Insertable<Exercise> {
   final String name;
   final String unit;
   final bool isCustom;
+
+  /// English category key: chest, back, legs, core, core_timed, cardio,
+  /// shoulders_arms, custom, other.
+  final String category;
   const Exercise({
     required this.id,
     required this.name,
     required this.unit,
     required this.isCustom,
+    required this.category,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3301,6 +3328,7 @@ class Exercise extends DataClass implements Insertable<Exercise> {
     map['name'] = Variable<String>(name);
     map['unit'] = Variable<String>(unit);
     map['is_custom'] = Variable<bool>(isCustom);
+    map['category'] = Variable<String>(category);
     return map;
   }
 
@@ -3310,6 +3338,7 @@ class Exercise extends DataClass implements Insertable<Exercise> {
       name: Value(name),
       unit: Value(unit),
       isCustom: Value(isCustom),
+      category: Value(category),
     );
   }
 
@@ -3323,6 +3352,7 @@ class Exercise extends DataClass implements Insertable<Exercise> {
       name: serializer.fromJson<String>(json['name']),
       unit: serializer.fromJson<String>(json['unit']),
       isCustom: serializer.fromJson<bool>(json['isCustom']),
+      category: serializer.fromJson<String>(json['category']),
     );
   }
   @override
@@ -3333,22 +3363,30 @@ class Exercise extends DataClass implements Insertable<Exercise> {
       'name': serializer.toJson<String>(name),
       'unit': serializer.toJson<String>(unit),
       'isCustom': serializer.toJson<bool>(isCustom),
+      'category': serializer.toJson<String>(category),
     };
   }
 
-  Exercise copyWith({int? id, String? name, String? unit, bool? isCustom}) =>
-      Exercise(
-        id: id ?? this.id,
-        name: name ?? this.name,
-        unit: unit ?? this.unit,
-        isCustom: isCustom ?? this.isCustom,
-      );
+  Exercise copyWith({
+    int? id,
+    String? name,
+    String? unit,
+    bool? isCustom,
+    String? category,
+  }) => Exercise(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    unit: unit ?? this.unit,
+    isCustom: isCustom ?? this.isCustom,
+    category: category ?? this.category,
+  );
   Exercise copyWithCompanion(ExercisesCompanion data) {
     return Exercise(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
       unit: data.unit.present ? data.unit.value : this.unit,
       isCustom: data.isCustom.present ? data.isCustom.value : this.isCustom,
+      category: data.category.present ? data.category.value : this.category,
     );
   }
 
@@ -3358,13 +3396,14 @@ class Exercise extends DataClass implements Insertable<Exercise> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('unit: $unit, ')
-          ..write('isCustom: $isCustom')
+          ..write('isCustom: $isCustom, ')
+          ..write('category: $category')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, unit, isCustom);
+  int get hashCode => Object.hash(id, name, unit, isCustom, category);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3372,7 +3411,8 @@ class Exercise extends DataClass implements Insertable<Exercise> {
           other.id == this.id &&
           other.name == this.name &&
           other.unit == this.unit &&
-          other.isCustom == this.isCustom);
+          other.isCustom == this.isCustom &&
+          other.category == this.category);
 }
 
 class ExercisesCompanion extends UpdateCompanion<Exercise> {
@@ -3380,17 +3420,20 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
   final Value<String> name;
   final Value<String> unit;
   final Value<bool> isCustom;
+  final Value<String> category;
   const ExercisesCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.unit = const Value.absent(),
     this.isCustom = const Value.absent(),
+    this.category = const Value.absent(),
   });
   ExercisesCompanion.insert({
     this.id = const Value.absent(),
     required String name,
     required String unit,
     this.isCustom = const Value.absent(),
+    this.category = const Value.absent(),
   }) : name = Value(name),
        unit = Value(unit);
   static Insertable<Exercise> custom({
@@ -3398,12 +3441,14 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     Expression<String>? name,
     Expression<String>? unit,
     Expression<bool>? isCustom,
+    Expression<String>? category,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (unit != null) 'unit': unit,
       if (isCustom != null) 'is_custom': isCustom,
+      if (category != null) 'category': category,
     });
   }
 
@@ -3412,12 +3457,14 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     Value<String>? name,
     Value<String>? unit,
     Value<bool>? isCustom,
+    Value<String>? category,
   }) {
     return ExercisesCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
       unit: unit ?? this.unit,
       isCustom: isCustom ?? this.isCustom,
+      category: category ?? this.category,
     );
   }
 
@@ -3436,6 +3483,9 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     if (isCustom.present) {
       map['is_custom'] = Variable<bool>(isCustom.value);
     }
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
+    }
     return map;
   }
 
@@ -3445,7 +3495,8 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('unit: $unit, ')
-          ..write('isCustom: $isCustom')
+          ..write('isCustom: $isCustom, ')
+          ..write('category: $category')
           ..write(')'))
         .toString();
   }
@@ -7587,6 +7638,7 @@ typedef $$ExercisesTableCreateCompanionBuilder =
       required String name,
       required String unit,
       Value<bool> isCustom,
+      Value<String> category,
     });
 typedef $$ExercisesTableUpdateCompanionBuilder =
     ExercisesCompanion Function({
@@ -7594,6 +7646,7 @@ typedef $$ExercisesTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String> unit,
       Value<bool> isCustom,
+      Value<String> category,
     });
 
 class $$ExercisesTableFilterComposer
@@ -7622,6 +7675,11 @@ class $$ExercisesTableFilterComposer
 
   ColumnFilters<bool> get isCustom => $composableBuilder(
     column: $table.isCustom,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get category => $composableBuilder(
+    column: $table.category,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -7654,6 +7712,11 @@ class $$ExercisesTableOrderingComposer
     column: $table.isCustom,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ExercisesTableAnnotationComposer
@@ -7676,6 +7739,9 @@ class $$ExercisesTableAnnotationComposer
 
   GeneratedColumn<bool> get isCustom =>
       $composableBuilder(column: $table.isCustom, builder: (column) => column);
+
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
 }
 
 class $$ExercisesTableTableManager
@@ -7710,11 +7776,13 @@ class $$ExercisesTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String> unit = const Value.absent(),
                 Value<bool> isCustom = const Value.absent(),
+                Value<String> category = const Value.absent(),
               }) => ExercisesCompanion(
                 id: id,
                 name: name,
                 unit: unit,
                 isCustom: isCustom,
+                category: category,
               ),
           createCompanionCallback:
               ({
@@ -7722,11 +7790,13 @@ class $$ExercisesTableTableManager
                 required String name,
                 required String unit,
                 Value<bool> isCustom = const Value.absent(),
+                Value<String> category = const Value.absent(),
               }) => ExercisesCompanion.insert(
                 id: id,
                 name: name,
                 unit: unit,
                 isCustom: isCustom,
+                category: category,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
