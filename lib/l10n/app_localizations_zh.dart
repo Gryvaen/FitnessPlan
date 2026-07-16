@@ -387,13 +387,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get yesterdayNoLogs => '昨日无记录';
 
   @override
-  String get emptyMealsToday => '还没有记录，点右下角记一笔';
+  String get emptyMealsToday => '还没有记录，点加号记一笔';
 
   @override
-  String get emptyMealsThatDay => '当日无记录';
+  String get emptyMealsThatDay => '当日无记录（仅可查看）';
 
   @override
-  String get emptyWeightLogs => '还没有记录，点右下角添加';
+  String get emptyWeightLogs => '还没有记录，点加号添加';
+
+  @override
+  String get pastDayReadOnly => '过去的日子只能查看，不能编辑';
 
   @override
   String get chartWeightTitle => '体重 (kg)';
@@ -474,7 +477,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get workoutPlans => '训练计划';
 
   @override
-  String get emptyPlans => '还没有计划，点右下角新建';
+  String get emptyPlans => '还没有计划，点加号新建';
 
   @override
   String get deletePlan => '删除计划';
@@ -525,7 +528,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get notesEmptyHint => '记录今天的训练感受、睡眠或饮食偏差';
 
   @override
-  String get notesEmptyCta => '点右下角开始写';
+  String get notesEmptyCta => '点加号开始写';
 
   @override
   String get deleteNote => '删除便签';
