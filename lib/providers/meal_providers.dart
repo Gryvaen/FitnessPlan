@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/db.dart';
+import '../domain/calendar_day.dart';
 import '../domain/models.dart';
 import 'core_providers.dart';
 
@@ -10,27 +11,22 @@ final selectedDayProvider = NotifierProvider<SelectedDayNotifier, DateTime>(
 
 class SelectedDayNotifier extends Notifier<DateTime> {
   @override
-  DateTime build() {
-    final now = DateTime.now();
-    return DateTime(now.year, now.month, now.day);
-  }
+  DateTime build() => CalendarDay.todayLocal();
 
   void setDay(DateTime day) {
-    state = DateTime(day.year, day.month, day.day);
+    state = CalendarDay.dayOnly(day);
   }
 
   void goToToday() {
-    final now = DateTime.now();
-    state = DateTime(now.year, now.month, now.day);
+    state = CalendarDay.todayLocal();
   }
 
   /// Shift by [delta] days, clamped to [earliest]..today (local calendar).
   void shiftDay(int delta, {DateTime? earliest}) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+    final today = CalendarDay.todayLocal();
     final min = earliest ?? DateTime(today.year - 1, today.month, today.day);
     var next = state.add(Duration(days: delta));
-    next = DateTime(next.year, next.month, next.day);
+    next = CalendarDay.dayOnly(next);
     if (next.isBefore(min)) next = min;
     if (next.isAfter(today)) next = today;
     state = next;
