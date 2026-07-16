@@ -211,7 +211,7 @@ class CalculatorEngine {
   void _setError() {
     error = true;
     expression = '';
-    input = '错误';
+    input = 'Error';
     _acc = null;
     _op = null;
     fresh = true;
@@ -234,7 +234,7 @@ class CalculatorEngine {
   }
 
   static String format(double v) {
-    if (v.isNaN || v.isInfinite) return '错误';
+    if (v.isNaN || v.isInfinite) return 'Error';
     if (v == v.roundToDouble() && v.abs() < 1e12) {
       return v.round().toString();
     }

@@ -1,5 +1,23 @@
 import 'models.dart';
 
+/// Identifiers for calorie-plan notes (localized in UI).
+enum CalorieNoteId {
+  missingTargetWeight,
+  weeklyLossTooHigh,
+  weeklyLossTooLow,
+  deficitCap,
+  estimateWeeks,
+  estimateWeeksShort,
+  plateauAdj,
+}
+
+class CalorieNote {
+  const CalorieNote(this.id, [this.params = const {}]);
+
+  final CalorieNoteId id;
+  final Map<String, Object> params;
+}
+
 /// Full calorie plan with intermediate values for transparent UI.
 class CaloriePlan {
   const CaloriePlan({
@@ -46,11 +64,7 @@ class CaloriePlan {
   final double? requestedDeficit;
   final int calorieAdjustment;
   final bool missingCutInputs;
-  final List<String> notes;
-
-  String get bmrFormulaLabel => sex == Sex.male
-      ? '男：10×体重 + 6.25×身高 − 5×年龄 + 5'
-      : '女：10×体重 + 6.25×身高 − 5×年龄 − 161';
+  final List<CalorieNote> notes;
 
   String get bmrSubstituted {
     final signConst = sex == Sex.male ? '+ 5' : '− 161';
@@ -138,7 +152,7 @@ class CalorieCalculator {
       age: age,
     );
     final tdeeValue = bmrValue * activity.factor;
-    final notes = <String>[];
+    final notes = <CalorieNote>[];
     final proteinRate = proteinPerKgFor(goal);
 
     double dailyDeficit = 0;
@@ -176,10 +190,7 @@ class CalorieCalculator {
           missingCutInputs = true;
           eat = tdeeValue * 0.8;
           dailyDeficit = tdeeValue - eat;
-          notes.add(
-            '未填写有效的目标体重，暂按维持消耗的 80% 估算。'
-            '请在「我的」中补全后重新计算。',
-          );
+          notes.add(const CalorieNote(CalorieNoteId.missingTargetWeight));
         } else {
           final lose = weightKg - effectiveTarget;
           kgToLose = lose;
@@ -193,12 +204,15 @@ class CalorieCalculator {
           if (rateClamped && rawWeekly > maxWeeklyLoss) {
             safetyApplied = true;
             notes.add(
-              '不建议超过 1 kg/周（推荐 0.3–0.8 kg/周）。'
-              '已自动调整为 ${maxWeeklyLoss.toStringAsFixed(1)} kg/周。',
+              CalorieNote(CalorieNoteId.weeklyLossTooHigh, {
+                'rate': maxWeeklyLoss.toStringAsFixed(1),
+              }),
             );
           } else if (rateClamped && rawWeekly < minWeeklyLoss) {
             notes.add(
-              '每周降重已调整为不低于 ${minWeeklyLoss.toStringAsFixed(1)} kg/周。',
+              CalorieNote(CalorieNoteId.weeklyLossTooLow, {
+                'rate': minWeeklyLoss.toStringAsFixed(1),
+              }),
             );
           }
 
@@ -225,21 +239,29 @@ class CalorieCalculator {
               dailyDeficit > 0 &&
               (effectiveWeekly < intendedWeekly - 0.001);
           if (rateWasLimited) {
-            if (!notes.any((n) => n.contains('日缺口上限'))) {
+            if (!notes.any((n) => n.id == CalorieNoteId.deficitCap)) {
               notes.add(
-                '已按日缺口上限调整：不超过 ${maxDailyDeficit.toInt()} kcal/日。'
-                '实际约 ${effectiveWeekly.toStringAsFixed(2)} kg/周，'
-                '大约需要 $estimatedWeeks 周。',
+                CalorieNote(CalorieNoteId.deficitCap, {
+                  'max': maxDailyDeficit.toInt().toString(),
+                  'weekly': effectiveWeekly.toStringAsFixed(2),
+                  'weeks': estimatedWeeks!,
+                }),
               );
             }
-          } else if (!notes.any((n) => n.contains('不建议超过'))) {
+          } else if (!notes.any((n) => n.id == CalorieNoteId.weeklyLossTooHigh)) {
             notes.add(
-              '按约 ${kcalPerKgFat.toInt()} kcal ≈ 1 kg 脂肪、'
-              '每周 ${effectiveWeekly.toStringAsFixed(1)} kg 估算。'
-              '预计约 $estimatedWeeks 周。',
+              CalorieNote(CalorieNoteId.estimateWeeks, {
+                'kcalPerKg': kcalPerKgFat.toInt().toString(),
+                'weekly': effectiveWeekly.toStringAsFixed(1),
+                'weeks': estimatedWeeks!,
+              }),
             );
           } else {
-            notes.add('预计约 $estimatedWeeks 周完成。');
+            notes.add(
+              CalorieNote(CalorieNoteId.estimateWeeksShort, {
+                'weeks': estimatedWeeks!,
+              }),
+            );
           }
         }
     }
@@ -247,7 +269,11 @@ class CalorieCalculator {
     final adj = calorieAdjustment.clamp(0, maxCalorieAdjustment);
     if (adj > 0) {
       eat = (eat - adj).clamp(0.0, double.infinity);
-      notes.add('已应用平台期调整：额外减少 $adj kcal/日。');
+      notes.add(
+        CalorieNote(CalorieNoteId.plateauAdj, {
+          'adj': adj.toString(),
+        }),
+      );
     }
 
     final targets = _macrosFor(

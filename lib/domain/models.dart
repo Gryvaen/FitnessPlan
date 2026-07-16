@@ -1,42 +1,32 @@
 enum Sex { male, female }
 
 enum ActivityLevel {
-  sedentary(1.2, '久坐'),
-  light(1.375, '轻度活动'),
-  moderate(1.55, '中度活动'),
-  high(1.725, '较高活动'),
-  athlete(1.9, '运动员级');
+  sedentary(1.2),
+  light(1.375),
+  moderate(1.55),
+  high(1.725),
+  athlete(1.9);
 
-  const ActivityLevel(this.factor, this.label);
+  const ActivityLevel(this.factor);
   final double factor;
-  final String label;
 }
 
 enum FitnessGoal {
-  cut('减脂'),
-  maintain('维持'),
-  bulk('增肌');
-
-  const FitnessGoal(this.label);
-  final String label;
+  cut,
+  maintain,
+  bulk;
 }
 
 enum MealType {
-  breakfast('早餐'),
-  lunch('午餐'),
-  dinner('晚餐'),
-  snack('加餐');
-
-  const MealType(this.label);
-  final String label;
+  breakfast,
+  lunch,
+  dinner,
+  snack;
 }
 
 enum ExerciseUnit {
-  reps('次'),
-  seconds('秒');
-
-  const ExerciseUnit(this.label);
-  final String label;
+  reps,
+  seconds;
 
   static ExerciseUnit fromStorage(String raw) {
     for (final u in values) {

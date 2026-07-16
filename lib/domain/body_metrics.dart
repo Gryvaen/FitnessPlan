@@ -4,13 +4,10 @@ import 'models.dart';
 
 /// BMI classification (WHO adult cut-offs, simplified labels).
 enum BmiCategory {
-  underweight('偏瘦'),
-  normal('正常'),
-  overweight('超重'),
-  obese('肥胖');
-
-  const BmiCategory(this.label);
-  final String label;
+  underweight,
+  normal,
+  overweight,
+  obese;
 }
 
 /// Pure body-composition helpers for the toolbox (no persistence).
@@ -137,11 +134,8 @@ abstract final class BodyMetrics {
 
 /// Coarse FFMI reading bands (adult male reference).
 enum FfmiBand {
-  average('普通人附近'),
-  trained('经常训练'),
-  advanced('较高水平'),
-  elite('接近高水平参考（非硬标准）');
-
-  const FfmiBand(this.label);
-  final String label;
+  average,
+  trained,
+  advanced,
+  elite;
 }

@@ -41,7 +41,7 @@ void main() {
       e.digit('0');
       expect(e.equals(), isNull);
       expect(e.error, isTrue);
-      expect(e.input, '错误');
+      expect(e.input, 'Error');
     });
 
     test('backspace', () {

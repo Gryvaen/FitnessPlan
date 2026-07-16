@@ -72,7 +72,7 @@ void main() {
       expect(plan.dailyDeficit, closeTo(0.8 * 7700 / 7, 0.01));
       expect(plan.goalWeeks, isNotNull);
       expect(
-        plan.notes.any((n) => n.contains('不建议超过')),
+        plan.notes.any((n) => n.id == CalorieNoteId.weeklyLossTooHigh),
         isTrue,
       );
     });
