@@ -98,6 +98,9 @@ class Exercises extends Table {
   TextColumn get name => text()();
   TextColumn get unit => text()();
   BoolColumn get isCustom => boolean().withDefault(const Constant(false))();
+  /// English category key: chest, back, legs, core, core_timed, cardio,
+  /// shoulders_arms, custom, other.
+  TextColumn get category => text().withDefault(const Constant('other'))();
 
   @override
   List<Set<Column>> get uniqueKeys => [
