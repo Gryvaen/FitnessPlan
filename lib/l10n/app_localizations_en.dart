@@ -390,10 +390,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emptyMealsToday => 'No logs yet — tap + to log';
 
   @override
-  String get emptyMealsThatDay => 'No logs that day';
+  String get emptyMealsThatDay => 'No logs that day (view only)';
 
   @override
   String get emptyWeightLogs => 'No logs yet — tap + to add';
+
+  @override
+  String get pastDayReadOnly => 'Past days are view-only';
 
   @override
   String get chartWeightTitle => 'Weight (kg)';
