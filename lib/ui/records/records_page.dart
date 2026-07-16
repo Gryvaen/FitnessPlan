@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations_ext.dart';
 import 'body_records_tab.dart';
@@ -20,7 +19,6 @@ class RecordsPage extends ConsumerStatefulWidget {
 
 class _RecordsPageState extends ConsumerState<RecordsPage> {
   late RecordsSegment _segment;
-  final _bodyKey = GlobalKey<BodyRecordsTabState>();
 
   @override
   void initState() {
@@ -35,25 +33,6 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
       _segment = widget.initialSegment;
     }
   }
-
-  Future<void> _onFab() async {
-    switch (_segment) {
-      case RecordsSegment.body:
-        await _bodyKey.currentState?.addWeight();
-        return;
-      case RecordsSegment.train:
-        await context.push('/records/plan');
-        return;
-      case RecordsSegment.notes:
-        await context.push(noteEditPath(DateTime.now()));
-    }
-  }
-
-  String _fabTooltip(AppLocalizations l10n) => switch (_segment) {
-        RecordsSegment.body => l10n.fabLogWeight,
-        RecordsSegment.train => l10n.fabNewPlan,
-        RecordsSegment.notes => l10n.fabWriteNote,
-      };
 
   @override
   Widget build(BuildContext context) {
@@ -89,13 +68,8 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _onFab,
-        tooltip: _fabTooltip(l10n),
-        child: const Icon(Icons.add),
-      ),
       body: switch (_segment) {
-        RecordsSegment.body => BodyRecordsTab(key: _bodyKey),
+        RecordsSegment.body => const BodyRecordsTab(),
         RecordsSegment.train => const TrainRecordsTab(),
         RecordsSegment.notes => const NotesRecordsTab(),
       },
