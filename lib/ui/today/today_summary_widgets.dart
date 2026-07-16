@@ -265,3 +265,112 @@ class _WaterCupPainter extends CustomPainter {
   bool shouldRepaint(covariant _WaterCupPainter oldDelegate) =>
       oldDelegate.progress != progress;
 }
+
+/// Compact screw-cap silhouette, paired with [WaterCup] for −ml taps.
+class WaterBottleCap extends StatelessWidget {
+  const WaterBottleCap({
+    super.key,
+    this.enabled = true,
+  });
+
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final outline = enabled
+        ? scheme.outline
+        : scheme.outline.withValues(alpha: 0.35);
+    return SizedBox(
+      width: 28,
+      height: 72,
+      child: CustomPaint(
+        painter: _WaterBottleCapPainter(
+          outlineColor: outline,
+          fillColor: scheme.primary.withValues(alpha: enabled ? 0.12 : 0.04),
+        ),
+      ),
+    );
+  }
+}
+
+class _WaterBottleCapPainter extends CustomPainter {
+  _WaterBottleCapPainter({
+    required this.outlineColor,
+    required this.fillColor,
+  });
+
+  final Color outlineColor;
+  final Color fillColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    // Sit against the cup: draw near the right edge, level with the cup rim.
+    final top = h * 0.08;
+    final bottom = h * 0.34;
+    final right = w - 1;
+    final left = right - 18;
+    final midX = (left + right) / 2;
+
+    final fill = Paint()
+      ..color = fillColor
+      ..style = PaintingStyle.fill;
+    final outline = Paint()
+      ..color = outlineColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.8
+      ..strokeJoin = StrokeJoin.round
+      ..strokeCap = StrokeCap.round;
+
+    // Flat top lip (slightly wider than body).
+    final lipH = (bottom - top) * 0.28;
+    final lip = RRect.fromRectAndRadius(
+      Rect.fromLTRB(left - 1.5, top, right + 0.5, top + lipH),
+      const Radius.circular(3),
+    );
+    canvas.drawRRect(lip, fill);
+    canvas.drawRRect(lip, outline);
+
+    // Short cylindrical body under the lip.
+    final bodyTop = top + (bottom - top) * 0.22;
+    final body = RRect.fromRectAndRadius(
+      Rect.fromLTRB(left, bodyTop, right, bottom),
+      const Radius.circular(4),
+    );
+    canvas.drawRRect(body, fill);
+    canvas.drawRRect(body, outline);
+
+    // Fine knurl ridges.
+    final ridge = Paint()
+      ..color = outlineColor.withValues(alpha: 0.65)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.1
+      ..strokeCap = StrokeCap.round;
+    final ridgeTop = bodyTop + 3;
+    final ridgeBottom = bottom - 3;
+    for (var i = 0; i < 4; i++) {
+      final t = (i + 1) / 5;
+      final x = left + (right - left) * t;
+      canvas.drawLine(Offset(x, ridgeTop), Offset(x, ridgeBottom), ridge);
+    }
+
+    // Crown dash on the lip.
+    final crown = Paint()
+      ..color = outlineColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+      Offset(midX - 4, top + 2.5),
+      Offset(midX + 4, top + 2.5),
+      crown,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _WaterBottleCapPainter oldDelegate) =>
+      oldDelegate.outlineColor != outlineColor ||
+      oldDelegate.fillColor != fillColor;
+}

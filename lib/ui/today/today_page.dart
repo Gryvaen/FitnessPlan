@@ -326,19 +326,38 @@ class TodayPage extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(width: 12),
                       Material(
                         color: Colors.transparent,
                         child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () => ref
-                              .read(waterRepositoryProvider)
-                              .addMl(day, 250),
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: waterMl <= 0
+                              ? null
+                              : () => ref
+                                  .read(waterRepositoryProvider)
+                                  .addMl(day, -250),
                           child: Padding(
-                            padding: const EdgeInsets.all(6),
-                            child: WaterCup(
-                              progress:
-                                  waterGoal <= 0 ? 0 : waterMl / waterGoal,
+                            padding: const EdgeInsets.fromLTRB(4, 6, 0, 6),
+                            child: WaterBottleCap(enabled: waterMl > 0),
+                          ),
+                        ),
+                      ),
+                      // Overlap into the cup's left canvas inset so the
+                      // cap sits flush against the drawn cup rim.
+                      Transform.translate(
+                        offset: const Offset(-10, 0),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () => ref
+                                .read(waterRepositoryProvider)
+                                .addMl(day, 250),
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(0, 6, 6, 6),
+                              child: WaterCup(
+                                progress:
+                                    waterGoal <= 0 ? 0 : waterMl / waterGoal,
+                              ),
                             ),
                           ),
                         ),
@@ -359,7 +378,10 @@ class TodayPage extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text('点水杯 +250 ml', style: theme.textTheme.meta),
+                  Text(
+                    '点水杯 +250 · 点瓶盖 −250',
+                    style: theme.textTheme.meta,
+                  ),
                 ],
               ),
             ),
