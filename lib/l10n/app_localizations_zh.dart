@@ -255,7 +255,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deleteRecord => '删除记录';
 
   @override
-  String get history => '历史记录';
+  String get history => '每日记录';
 
   @override
   String get water => '饮水';
