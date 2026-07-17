@@ -64,9 +64,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       await ref.read(profileProvider.notifier).clear();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.clearFailed('$e'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.clearFailed('$e'))));
     }
   }
 
@@ -77,10 +77,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final messenger = ScaffoldMessenger.of(context);
     final l10n = context.l10n;
     final local = _packageInfo?.version ?? '0.0.0';
+    final localBuildNumber = _packageInfo?.buildNumber ?? '0';
     final notifier = ref.read(appUpdateProvider.notifier);
 
     try {
-      final latest = await notifier.checkForUpdate(local);
+      final latest = await notifier.checkForUpdate(local, localBuildNumber);
       if (!mounted) return;
 
       if (latest == null) {
@@ -90,19 +91,21 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         return;
       }
 
-      final asset = AppUpdateLogic.pickApkAsset(latest.assets);
+      final asset = AppUpdateLogic.pickApkAsset(
+        latest.assets,
+        version: latest.version,
+        localBuildNumber: localBuildNumber,
+      );
       if (asset == null) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(l10n.noInstallPackage)),
-        );
+        messenger.showSnackBar(SnackBar(content: Text(l10n.noInstallPackage)));
         return;
       }
 
       final notes = latest.body.isEmpty
           ? l10n.newVersionAsk(latest.version)
           : latest.body.length > 400
-              ? '${latest.body.substring(0, 400)}…'
-              : latest.body;
+          ? '${latest.body.substring(0, 400)}…'
+          : latest.body;
 
       final go = await showDialog<bool>(
         context: context,
@@ -129,9 +132,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     } on StateError catch (e) {
       if (!mounted) return;
       if (e.message == 'no_apk') {
-        messenger.showSnackBar(
-          SnackBar(content: Text(l10n.noInstallPackage)),
-        );
+        messenger.showSnackBar(SnackBar(content: Text(l10n.noInstallPackage)));
         return;
       }
       messenger.showSnackBar(
@@ -198,8 +199,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               onPressed: update.isBusy ? null : _checkForUpdate,
               tooltip: update.phase == AppUpdatePhase.downloading
                   ? (update.progress > 0
-                      ? '${(update.progress * 100).toStringAsFixed(0)}%'
-                      : l10n.connecting)
+                        ? '${(update.progress * 100).toStringAsFixed(0)}%'
+                        : l10n.connecting)
                   : l10n.checkUpdate,
               icon: _UpdateDownloadIcon(status: update),
             ),
@@ -304,10 +305,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             child: ListTile(
               leading: const Icon(Icons.handyman_outlined),
               title: Text(l10n.toolbox),
-              subtitle: Text(
-                l10n.toolboxSubtitle,
-                style: theme.textTheme.meta,
-              ),
+              subtitle: Text(l10n.toolboxSubtitle, style: theme.textTheme.meta),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push('/profile/tools'),
             ),
@@ -331,8 +329,8 @@ class _UpdateDownloadIcon extends StatelessWidget {
     }
 
     final scheme = Theme.of(context).colorScheme;
-    final determinate = status.phase == AppUpdatePhase.downloading &&
-        status.progress > 0;
+    final determinate =
+        status.phase == AppUpdatePhase.downloading && status.progress > 0;
 
     return SizedBox(
       width: 28,
@@ -346,11 +344,7 @@ class _UpdateDownloadIcon extends StatelessWidget {
             color: scheme.primary,
             backgroundColor: scheme.primary.withValues(alpha: 0.18),
           ),
-          Icon(
-            Icons.download_outlined,
-            size: 16,
-            color: scheme.onSurface,
-          ),
+          Icon(Icons.download_outlined, size: 16, color: scheme.onSurface),
         ],
       ),
     );
