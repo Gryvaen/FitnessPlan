@@ -593,7 +593,7 @@ abstract class AppLocalizations {
   /// No description provided for @history.
   ///
   /// In en, this message translates to:
-  /// **'History'**
+  /// **'Daily records'**
   String get history;
 
   /// No description provided for @water.

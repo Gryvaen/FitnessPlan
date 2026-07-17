@@ -255,7 +255,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteRecord => 'Delete entry';
 
   @override
-  String get history => 'History';
+  String get history => 'Daily records';
 
   @override
   String get water => 'Water';
