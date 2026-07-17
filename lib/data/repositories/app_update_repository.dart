@@ -9,10 +9,7 @@ const kGithubOwner = 'Gryvaen';
 const kGithubRepo = 'FitnessPlan';
 
 class ReleaseAsset {
-  const ReleaseAsset({
-    required this.name,
-    required this.downloadUrl,
-  });
+  const ReleaseAsset({required this.name, required this.downloadUrl});
 
   final String name;
   final String downloadUrl;
@@ -67,28 +64,38 @@ abstract final class AppUpdateLogic {
     ];
   }
 
-  /// Prefer arm64 split APK, else universal `*-android.apk`.
-  static ReleaseAsset? pickApkAsset(List<ReleaseAsset> assets) {
-    ReleaseAsset? arm64;
-    ReleaseAsset? universal;
+  /// Selects the APK from the same version-code channel as the installed app.
+  ///
+  /// Flutter adds an ABI prefix to split APK version codes (1xxx for
+  /// armeabi-v7a, 2xxx for arm64-v8a and 3xxx for x86_64). Switching from a
+  /// split APK to a universal APK would therefore look like a downgrade to
+  /// Android even when its version name is newer.
+  static ReleaseAsset? pickApkAsset(
+    List<ReleaseAsset> assets, {
+    required String version,
+    required String localBuildNumber,
+  }) {
+    final buildNumber = int.tryParse(localBuildNumber) ?? 0;
+    final channel = switch (buildNumber ~/ 1000) {
+      1 => 'armeabi-v7a',
+      2 => 'arm64-v8a',
+      3 => 'x86_64',
+      _ => null,
+    };
+    final normalized = normalizeVersion(version);
+    final expectedName = channel == null
+        ? 'FitnessPlan-$normalized-android.apk'
+        : 'FitnessPlan-$normalized-android-$channel.apk';
     for (final a in assets) {
-      final name = a.name;
-      if (!name.endsWith('.apk')) continue;
-      if (name.contains('arm64-v8a')) {
-        arm64 = a;
-      } else if (RegExp(r'FitnessPlan-.*-android\.apk$').hasMatch(name)) {
-        universal = a;
-      }
+      if (a.name == expectedName) return a;
     }
-    return arm64 ?? universal;
+    return null;
   }
 }
 
 class AppUpdateRepository {
-  AppUpdateRepository({
-    http.Client? client,
-    this.userAgentVersion = '0.0.0',
-  }) : _client = client ?? http.Client();
+  AppUpdateRepository({http.Client? client, this.userAgentVersion = '0.0.0'})
+    : _client = client ?? http.Client();
 
   final http.Client _client;
   final String userAgentVersion;
@@ -99,16 +106,13 @@ class AppUpdateRepository {
   );
 
   Map<String, String> _headers([String? version]) => {
-        'Accept': 'application/vnd.github+json',
-        'User-Agent': 'FitnessPlan/${version ?? userAgentVersion}',
-        'X-GitHub-Api-Version': '2022-11-28',
-      };
+    'Accept': 'application/vnd.github+json',
+    'User-Agent': 'FitnessPlan/${version ?? userAgentVersion}',
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
 
   Future<LatestRelease> fetchLatest({String? localVersion}) async {
-    final res = await _client.get(
-      _latestUri,
-      headers: _headers(localVersion),
-    );
+    final res = await _client.get(_latestUri, headers: _headers(localVersion));
     if (res.statusCode != 200) {
       throw Exception('检查更新失败（HTTP ${res.statusCode}）');
     }
