@@ -1,6 +1,11 @@
 {
   "@@locale": "zh",
   "appTitle": "健身计划",
+  "loadingTitleLeft": "自律",
+  "loadingTitleRight": "自由",
+  "loadingSubtitle": "每一次坚持，遇见更自由的自己",
+  "loadingPreparingPlan": "正在准备今天的计划",
+  "loadingPreparationFailed": "准备失败，请重试",
   "cancel": "取消",
   "save": "保存",
   "delete": "删除",

@@ -12,6 +12,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appTitle => '健身计划';
 
   @override
+  String get loadingTitleLeft => '自律';
+
+  @override
+  String get loadingTitleRight => '自由';
+
+  @override
+  String get loadingSubtitle => '每一次坚持，遇见更自由的自己';
+
+  @override
+  String get loadingPreparingPlan => '正在准备今天的计划';
+
+  @override
+  String get loadingPreparationFailed => '准备失败，请重试';
+
+  @override
   String get cancel => '取消';
 
   @override

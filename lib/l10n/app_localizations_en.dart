@@ -12,6 +12,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Plan';
 
   @override
+  String get loadingTitleLeft => 'Discipline';
+
+  @override
+  String get loadingTitleRight => 'Freedom';
+
+  @override
+  String get loadingSubtitle => 'Every effort brings you closer to freedom';
+
+  @override
+  String get loadingPreparingPlan => 'Preparing today\'s plan';
+
+  @override
+  String get loadingPreparationFailed => 'Preparation failed. Please try again';
+
+  @override
   String get cancel => 'Cancel';
 
   @override

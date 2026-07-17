@@ -104,6 +104,36 @@ abstract class AppLocalizations {
   /// **'Plan'**
   String get appTitle;
 
+  /// No description provided for @loadingTitleLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Discipline'**
+  String get loadingTitleLeft;
+
+  /// No description provided for @loadingTitleRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Freedom'**
+  String get loadingTitleRight;
+
+  /// No description provided for @loadingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Every effort brings you closer to freedom'**
+  String get loadingSubtitle;
+
+  /// No description provided for @loadingPreparingPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing today\'s plan'**
+  String get loadingPreparingPlan;
+
+  /// No description provided for @loadingPreparationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparation failed. Please try again'**
+  String get loadingPreparationFailed;
+
   /// No description provided for @cancel.
   ///
   /// In en, this message translates to:

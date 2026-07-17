@@ -1,6 +1,11 @@
 {
   "@@locale": "en",
   "appTitle": "Plan",
+  "loadingTitleLeft": "Discipline",
+  "loadingTitleRight": "Freedom",
+  "loadingSubtitle": "Every effort brings you closer to freedom",
+  "loadingPreparingPlan": "Preparing today's plan",
+  "loadingPreparationFailed": "Preparation failed. Please try again",
   "cancel": "Cancel",
   "save": "Save",
   "delete": "Delete",

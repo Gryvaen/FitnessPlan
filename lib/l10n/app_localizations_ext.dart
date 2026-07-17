@@ -15,61 +15,61 @@ extension AppLocalizationsX on BuildContext {
 
 extension ActivityLevelL10n on ActivityLevel {
   String label(AppLocalizations l10n) => switch (this) {
-        ActivityLevel.sedentary => l10n.activitySedentary,
-        ActivityLevel.light => l10n.activityLight,
-        ActivityLevel.moderate => l10n.activityModerate,
-        ActivityLevel.high => l10n.activityHigh,
-        ActivityLevel.athlete => l10n.activityAthlete,
-      };
+    ActivityLevel.sedentary => l10n.activitySedentary,
+    ActivityLevel.light => l10n.activityLight,
+    ActivityLevel.moderate => l10n.activityModerate,
+    ActivityLevel.high => l10n.activityHigh,
+    ActivityLevel.athlete => l10n.activityAthlete,
+  };
 }
 
 extension FitnessGoalL10n on FitnessGoal {
   String label(AppLocalizations l10n) => switch (this) {
-        FitnessGoal.cut => l10n.goalCut,
-        FitnessGoal.maintain => l10n.goalMaintain,
-        FitnessGoal.bulk => l10n.goalBulk,
-      };
+    FitnessGoal.cut => l10n.goalCut,
+    FitnessGoal.maintain => l10n.goalMaintain,
+    FitnessGoal.bulk => l10n.goalBulk,
+  };
 }
 
 extension MealTypeL10n on MealType {
   String label(AppLocalizations l10n) => switch (this) {
-        MealType.breakfast => l10n.mealBreakfast,
-        MealType.lunch => l10n.mealLunch,
-        MealType.dinner => l10n.mealDinner,
-        MealType.snack => l10n.mealSnack,
-      };
+    MealType.breakfast => l10n.mealBreakfast,
+    MealType.lunch => l10n.mealLunch,
+    MealType.dinner => l10n.mealDinner,
+    MealType.snack => l10n.mealSnack,
+  };
 }
 
 extension ExerciseUnitL10n on ExerciseUnit {
   String label(AppLocalizations l10n) => switch (this) {
-        ExerciseUnit.reps => l10n.reps,
-        ExerciseUnit.seconds => l10n.seconds,
-      };
+    ExerciseUnit.reps => l10n.reps,
+    ExerciseUnit.seconds => l10n.seconds,
+  };
 }
 
 extension BmiCategoryL10n on BmiCategory {
   String label(AppLocalizations l10n) => switch (this) {
-        BmiCategory.underweight => l10n.bmiUnderweight,
-        BmiCategory.normal => l10n.bmiNormal,
-        BmiCategory.overweight => l10n.bmiOverweight,
-        BmiCategory.obese => l10n.bmiObese,
-      };
+    BmiCategory.underweight => l10n.bmiUnderweight,
+    BmiCategory.normal => l10n.bmiNormal,
+    BmiCategory.overweight => l10n.bmiOverweight,
+    BmiCategory.obese => l10n.bmiObese,
+  };
 }
 
 extension FfmiBandL10n on FfmiBand {
   String label(AppLocalizations l10n) => switch (this) {
-        FfmiBand.average => l10n.ffmiAverage,
-        FfmiBand.trained => l10n.ffmiTrained,
-        FfmiBand.advanced => l10n.ffmiAdvanced,
-        FfmiBand.elite => l10n.ffmiElite,
-      };
+    FfmiBand.average => l10n.ffmiAverage,
+    FfmiBand.trained => l10n.ffmiTrained,
+    FfmiBand.advanced => l10n.ffmiAdvanced,
+    FfmiBand.elite => l10n.ffmiElite,
+  };
 }
 
 extension SexL10n on Sex {
   String label(AppLocalizations l10n) => switch (this) {
-        Sex.male => l10n.male,
-        Sex.female => l10n.female,
-      };
+    Sex.male => l10n.male,
+    Sex.female => l10n.female,
+  };
 }
 
 extension CalorieNoteL10n on CalorieNote {
@@ -102,9 +102,8 @@ extension CalorieNoteL10n on CalorieNote {
 }
 
 extension CaloriePlanL10n on CaloriePlan {
-  String bmrFormula(AppLocalizations l10n) => sex == Sex.male
-      ? l10n.bmrFormulaMale
-      : l10n.bmrFormulaFemale;
+  String bmrFormula(AppLocalizations l10n) =>
+      sex == Sex.male ? l10n.bmrFormulaMale : l10n.bmrFormulaFemale;
 }
 
 /// Locale-aware date formatting helpers.
@@ -146,7 +145,12 @@ abstract final class AppDates {
     return '${ymd(d, locale)} ${weekdayShort(d, locale)}';
   }
 
-  static String relativeDayTitle(DateTime d, DateTime today, AppLocalizations l10n, Locale locale) {
+  static String relativeDayTitle(
+    DateTime d,
+    DateTime today,
+    AppLocalizations l10n,
+    Locale locale,
+  ) {
     final day = dayOnly(d);
     final t = dayOnly(today);
     if (day == t) return l10n.todayWord;
