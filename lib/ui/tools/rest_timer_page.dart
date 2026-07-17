@@ -18,7 +18,7 @@ class RestTimerPage extends StatefulWidget {
 
 class _RestTimerPageState extends State<RestTimerPage>
     with WidgetsBindingObserver {
-  static const _presets = <int>[60, 90, 120, 180];
+  static const _presets = <int>[30, 60, 90, 120, 180, 300, 600];
   static const _selectedKey = 'rest_timer_selected_seconds';
   static const _deadlineKey = 'rest_timer_deadline_ms';
   static const _pausedKey = 'rest_timer_paused_seconds';
@@ -139,6 +139,7 @@ class _RestTimerPageState extends State<RestTimerPage>
       Duration(seconds: seconds),
       title: l10n.restDoneTitle,
       body: l10n.restDoneBody,
+      dismissLabel: l10n.restTimerDismiss,
     );
     _startTicker();
   }
@@ -159,40 +160,6 @@ class _RestTimerPageState extends State<RestTimerPage>
     await _persist();
   }
 
-  Future<void> _adjust(int delta) async {
-    if (_running) {
-      final next = (_remainingSeconds + delta).clamp(1, 600);
-      final deadline = DateTime.now().add(Duration(seconds: next));
-      setState(() {
-        _remainingSeconds = next;
-        _totalSeconds = math.max(_totalSeconds, next);
-        _endsAt = deadline;
-      });
-      await _persist();
-      if (!mounted) return;
-      await RestTimerNotifications.scheduleRestEnd(
-        Duration(seconds: next),
-        title: context.l10n.restDoneTitle,
-        body: context.l10n.restDoneBody,
-      );
-      return;
-    }
-
-    final next =
-        (_paused ? _remainingSeconds + delta : _selectedSeconds + delta).clamp(
-          30,
-          600,
-        );
-    setState(() {
-      _selectedSeconds = next;
-      _remainingSeconds = next;
-      _totalSeconds = next;
-      _paused = false;
-      _finished = false;
-    });
-    await _persist();
-  }
-
   Future<void> _onFinished() async {
     if (!_running) return;
     _ticker?.cancel();
@@ -204,7 +171,6 @@ class _RestTimerPageState extends State<RestTimerPage>
       _remainingSeconds = 0;
       _endsAt = null;
     });
-    await RestTimerNotifications.cancel();
     await _persist();
     if (!mounted) return;
     HapticFeedback.heavyImpact();
@@ -251,6 +217,15 @@ class _RestTimerPageState extends State<RestTimerPage>
         '${seconds.toString().padLeft(2, '0')}';
   }
 
+  String _presetLabel(int seconds) {
+    if (seconds < 60) return '$seconds${context.l10n.seconds}';
+    final minutes = seconds / 60;
+    final value = minutes == minutes.roundToDouble()
+        ? minutes.toInt().toString()
+        : minutes.toStringAsFixed(1);
+    return context.l10n.restTimerMinutes(value);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -268,107 +243,113 @@ class _RestTimerPageState extends State<RestTimerPage>
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.formPage),
           children: [
-            Text(l10n.restTimerIntro, style: theme.textTheme.meta),
-            const SizedBox(height: 24),
-            Center(
-              child: SizedBox.square(
-                dimension: 220,
-                child: Stack(
-                  fit: StackFit.expand,
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+                child: Column(
                   children: [
-                    CircularProgressIndicator(
-                      value: progress,
-                      strokeWidth: 12,
-                      strokeCap: StrokeCap.round,
-                      backgroundColor:
-                          theme.colorScheme.surfaceContainerHighest,
-                    ),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    Row(
                       children: [
-                        Text(
-                          _running
-                              ? l10n.restTimerRunning
-                              : _paused
-                              ? l10n.restTimerPaused
-                              : _finished
-                              ? l10n.restTimerFinished
-                              : l10n.restTimerReady,
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: theme.colorScheme.primary,
-                          ),
+                        Icon(
+                          Icons.notifications_active_outlined,
+                          size: 18,
+                          color: theme.colorScheme.primary,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _format(display),
-                          style: theme.textTheme.displayLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -2,
-                            fontFeatures: const [FontFeature.tabularFigures()],
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            l10n.restTimerIntro,
+                            style: theme.textTheme.meta,
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 26),
+                    SizedBox.square(
+                      dimension: 210,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          CircularProgressIndicator(
+                            value: progress,
+                            strokeWidth: 12,
+                            strokeCap: StrokeCap.round,
+                            backgroundColor:
+                                theme.colorScheme.surfaceContainerHighest,
+                          ),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                _running
+                                    ? l10n.restTimerRunning
+                                    : _paused
+                                    ? l10n.restTimerPaused
+                                    : _finished
+                                    ? l10n.restTimerFinished
+                                    : l10n.restTimerReady,
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _format(display),
+                                style: theme.textTheme.displayLarge?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -2,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures(),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _AdjustButton(
-                  label: l10n.restTimerMinus15,
-                  onPressed: () => _adjust(-15),
-                ),
-                const SizedBox(width: 12),
-                _AdjustButton(
-                  label: l10n.restTimerPlus15,
-                  onPressed: () => _adjust(15),
-                ),
-              ],
-            ),
             if (!_running && !_paused) ...[
               const SizedBox(height: 24),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                alignment: WrapAlignment.center,
-                children: [
-                  for (final seconds in _presets)
-                    ChoiceChip(
-                      label: Text(_format(seconds)),
-                      selected: _selectedSeconds == seconds,
-                      onSelected: (_) {
-                        setState(() {
-                          _selectedSeconds = seconds;
-                          _remainingSeconds = seconds;
-                          _totalSeconds = seconds;
-                          _finished = false;
-                        });
-                        unawaited(_persist());
-                      },
-                    ),
-                ],
+              Text(
+                l10n.restTimerPresetTitle,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-              const SizedBox(height: AppSpacing.field),
-              Text(l10n.customDuration, style: theme.textTheme.fieldLabel),
-              Slider(
-                min: 30,
-                max: 600,
-                divisions: 38,
-                label: _format(_selectedSeconds),
-                value: _selectedSeconds.toDouble(),
-                onChanged: (value) {
-                  final seconds = (value / 15).round() * 15;
-                  setState(() {
-                    _selectedSeconds = seconds;
-                    _remainingSeconds = seconds;
-                    _totalSeconds = seconds;
-                    _finished = false;
-                  });
+              const SizedBox(height: 12),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = (constraints.maxWidth - 16) / 3;
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      for (final seconds in _presets)
+                        SizedBox(
+                          width: width,
+                          child: _PresetButton(
+                            label: _presetLabel(seconds),
+                            selected: _selectedSeconds == seconds,
+                            onPressed: () {
+                              setState(() {
+                                _selectedSeconds = seconds;
+                                _remainingSeconds = seconds;
+                                _totalSeconds = seconds;
+                                _finished = false;
+                              });
+                              unawaited(_persist());
+                            },
+                          ),
+                        ),
+                    ],
+                  );
                 },
-                onChangeEnd: (_) => unawaited(_persist()),
               ),
             ],
             const SizedBox(height: 28),
@@ -407,21 +388,47 @@ class _RestTimerPageState extends State<RestTimerPage>
   }
 }
 
-class _AdjustButton extends StatelessWidget {
-  const _AdjustButton({required this.label, required this.onPressed});
+class _PresetButton extends StatelessWidget {
+  const _PresetButton({
+    required this.label,
+    required this.selected,
+    required this.onPressed,
+  });
 
   final String label;
+  final bool selected;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: onPressed,
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size(92, 44),
-        shape: const StadiumBorder(),
+    final scheme = Theme.of(context).colorScheme;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      decoration: BoxDecoration(
+        color: selected ? scheme.primaryContainer : scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: selected ? scheme.primary : scheme.outlineVariant,
+          width: selected ? 1.5 : 1,
+        ),
       ),
-      child: Text(label),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 6),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: selected
+                  ? scheme.onPrimaryContainer
+                  : scheme.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

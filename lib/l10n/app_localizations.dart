@@ -1623,6 +1623,24 @@ abstract class AppLocalizations {
   /// **'Resume'**
   String get restTimerResume;
 
+  /// No description provided for @restTimerDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get restTimerDismiss;
+
+  /// No description provided for @restTimerPresetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose rest duration'**
+  String get restTimerPresetTitle;
+
+  /// No description provided for @restTimerMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} min'**
+  String restTimerMinutes(String value);
+
   /// No description provided for @restTimerMinus15.
   ///
   /// In en, this message translates to:

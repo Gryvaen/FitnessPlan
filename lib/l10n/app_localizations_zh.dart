@@ -787,6 +787,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get restTimerResume => '继续';
 
   @override
+  String get restTimerDismiss => '关闭';
+
+  @override
+  String get restTimerPresetTitle => '选择休息时长';
+
+  @override
+  String restTimerMinutes(String value) {
+    return '$value 分钟';
+  }
+
+  @override
   String get restTimerMinus15 => '−15 秒';
 
   @override

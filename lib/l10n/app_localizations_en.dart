@@ -795,6 +795,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restTimerResume => 'Resume';
 
   @override
+  String get restTimerDismiss => 'Close';
+
+  @override
+  String get restTimerPresetTitle => 'Choose rest duration';
+
+  @override
+  String restTimerMinutes(String value) {
+    return '$value min';
+  }
+
+  @override
   String get restTimerMinus15 => '−15 sec';
 
   @override

@@ -6,11 +6,16 @@ import 'package:timezone/timezone.dart' as tz;
 
 /// Thin wrapper around [FlutterLocalNotificationsPlugin] for rest-timer alerts.
 abstract final class RestTimerNotifications {
-  static const _channelId = 'rest_timer';
+  // Channel settings are immutable on Android. Keep a versioned id so users
+  // upgrading from the old one-shot channel receive alarm-level behavior.
+  static const _channelId = 'rest_timer_alarm_v2';
+
   /// English channel name for system settings (not re-localized easily).
   static const _channelName = 'Rest timer';
   static const _channelDesc = 'Between-set rest alerts';
   static const notificationId = 71001;
+  static const _dismissActionId = 'dismiss_rest_timer';
+  static const _darwinCategoryId = 'rest_timer_alarm';
 
   static final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -22,28 +27,39 @@ abstract final class RestTimerNotifications {
     tz_data.initializeTimeZones();
 
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const darwin = DarwinInitializationSettings(
+    final darwin = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
       requestSoundPermission: false,
+      notificationCategories: <DarwinNotificationCategory>[
+        DarwinNotificationCategory(
+          _darwinCategoryId,
+          actions: <DarwinNotificationAction>[
+            DarwinNotificationAction.plain(_dismissActionId, 'Close / 关闭'),
+          ],
+        ),
+      ],
     );
     await _plugin.initialize(
-      settings: const InitializationSettings(
+      settings: InitializationSettings(
         android: android,
         iOS: darwin,
         macOS: darwin,
       ),
     );
 
-    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     await androidPlugin?.createNotificationChannel(
       const AndroidNotificationChannel(
         _channelId,
         _channelName,
         description: _channelDesc,
-        importance: Importance.high,
+        importance: Importance.max,
         playSound: true,
+        enableVibration: true,
       ),
     );
 
@@ -59,14 +75,19 @@ abstract final class RestTimerNotifications {
     if (defaultTargetPlatform == TargetPlatform.android) {
       final notifStatus = await Permission.notification.request();
       await Permission.scheduleExactAlarm.request();
-      final android = _plugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
       await android?.requestExactAlarmsPermission();
+      await android?.requestFullScreenIntentPermission();
       return notifStatus.isGranted || notifStatus.isLimited;
     }
 
-    final ios = _plugin.resolvePlatformSpecificImplementation<
-        IOSFlutterLocalNotificationsPlugin>();
+    final ios = _plugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
     if (ios != null) {
       return await ios.requestPermissions(
             alert: true,
@@ -76,8 +97,10 @@ abstract final class RestTimerNotifications {
           false;
     }
 
-    final mac = _plugin.resolvePlatformSpecificImplementation<
-        MacOSFlutterLocalNotificationsPlugin>();
+    final mac = _plugin
+        .resolvePlatformSpecificImplementation<
+          MacOSFlutterLocalNotificationsPlugin
+        >();
     if (mac != null) {
       return await mac.requestPermissions(
             alert: true,
@@ -95,6 +118,7 @@ abstract final class RestTimerNotifications {
     Duration remaining, {
     required String title,
     required String body,
+    required String dismissLabel,
   }) async {
     await ensureInitialized();
     if (remaining.inSeconds < 1) return;
@@ -102,24 +126,38 @@ abstract final class RestTimerNotifications {
     await cancel();
 
     final when = tz.TZDateTime.now(tz.UTC).add(remaining);
-    const details = NotificationDetails(
+    final details = NotificationDetails(
       android: AndroidNotificationDetails(
         _channelId,
         _channelName,
         channelDescription: _channelDesc,
-        importance: Importance.high,
+        importance: Importance.max,
         priority: Priority.high,
         playSound: true,
         enableVibration: true,
         category: AndroidNotificationCategory.alarm,
+        fullScreenIntent: true,
+        ongoing: true,
+        autoCancel: true,
+        additionalFlags: Int32List.fromList(const <int>[4]),
+        actions: <AndroidNotificationAction>[
+          AndroidNotificationAction(
+            _dismissActionId,
+            dismissLabel,
+            showsUserInterface: false,
+            cancelNotification: true,
+          ),
+        ],
       ),
       iOS: DarwinNotificationDetails(
         presentAlert: true,
         presentSound: true,
+        categoryIdentifier: _darwinCategoryId,
       ),
       macOS: DarwinNotificationDetails(
         presentAlert: true,
         presentSound: true,
+        categoryIdentifier: _darwinCategoryId,
       ),
     );
 
