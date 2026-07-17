@@ -754,6 +754,30 @@ class AppLocalizationsZh extends AppLocalizations {
   String get restDoneBody => '开始下一组';
 
   @override
+  String get restTimerReady => '准备开始';
+
+  @override
+  String get restTimerRunning => '休息中';
+
+  @override
+  String get restTimerPaused => '已暂停';
+
+  @override
+  String get restTimerFinished => '休息结束';
+
+  @override
+  String get restTimerPause => '暂停';
+
+  @override
+  String get restTimerResume => '继续';
+
+  @override
+  String get restTimerMinus15 => '−15 秒';
+
+  @override
+  String get restTimerPlus15 => '+15 秒';
+
+  @override
   String get copiedClipboard => '已复制到剪贴板';
 
   @override
