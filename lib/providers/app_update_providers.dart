@@ -37,14 +37,16 @@ class AppUpdateStatus {
       phase: phase ?? this.phase,
       progress: progress ?? this.progress,
       lastError: clearError ? null : (lastError ?? this.lastError),
-      lastOpenMessage:
-          clearOpenMessage ? null : (lastOpenMessage ?? this.lastOpenMessage),
+      lastOpenMessage: clearOpenMessage
+          ? null
+          : (lastOpenMessage ?? this.lastOpenMessage),
     );
   }
 }
 
-final appUpdateProvider =
-    NotifierProvider<AppUpdateNotifier, AppUpdateStatus>(AppUpdateNotifier.new);
+final appUpdateProvider = NotifierProvider<AppUpdateNotifier, AppUpdateStatus>(
+  AppUpdateNotifier.new,
+);
 
 class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
   @override
@@ -52,7 +54,10 @@ class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
 
   /// Check GitHub for a newer release. Returns the release when an update is
   /// available; otherwise `null` (already latest / no APK / cancelled).
-  Future<LatestRelease?> checkForUpdate(String localVersion) async {
+  Future<LatestRelease?> checkForUpdate(
+    String localVersion,
+    String localBuildNumber,
+  ) async {
     if (state.isBusy) return null;
     state = const AppUpdateStatus(phase: AppUpdatePhase.checking);
     try {
@@ -62,7 +67,11 @@ class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
         state = const AppUpdateStatus();
         return null;
       }
-      final asset = AppUpdateLogic.pickApkAsset(latest.assets);
+      final asset = AppUpdateLogic.pickApkAsset(
+        latest.assets,
+        version: latest.version,
+        localBuildNumber: localBuildNumber,
+      );
       if (asset == null) {
         state = const AppUpdateStatus();
         throw StateError('no_apk');
