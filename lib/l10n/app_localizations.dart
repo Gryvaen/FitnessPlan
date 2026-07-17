@@ -1557,6 +1557,54 @@ abstract class AppLocalizations {
   /// **'Start next set'**
   String get restDoneBody;
 
+  /// No description provided for @restTimerReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get restTimerReady;
+
+  /// No description provided for @restTimerRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Resting'**
+  String get restTimerRunning;
+
+  /// No description provided for @restTimerPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get restTimerPaused;
+
+  /// No description provided for @restTimerFinished.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest complete'**
+  String get restTimerFinished;
+
+  /// No description provided for @restTimerPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get restTimerPause;
+
+  /// No description provided for @restTimerResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get restTimerResume;
+
+  /// No description provided for @restTimerMinus15.
+  ///
+  /// In en, this message translates to:
+  /// **'−15 sec'**
+  String get restTimerMinus15;
+
+  /// No description provided for @restTimerPlus15.
+  ///
+  /// In en, this message translates to:
+  /// **'+15 sec'**
+  String get restTimerPlus15;
+
   /// No description provided for @copiedClipboard.
   ///
   /// In en, this message translates to:
