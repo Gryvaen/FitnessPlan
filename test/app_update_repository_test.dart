@@ -27,43 +27,90 @@ void main() {
   });
 
   group('AppUpdateLogic.pickApkAsset', () {
-    test('prefers arm64 over universal', () {
-      final picked = AppUpdateLogic.pickApkAsset(const [
-        ReleaseAsset(
-          name: 'FitnessPlan-1.1.0-android.apk',
-          downloadUrl: 'https://example.com/universal.apk',
-        ),
-        ReleaseAsset(
-          name: 'FitnessPlan-1.1.0-android-arm64-v8a.apk',
-          downloadUrl: 'https://example.com/arm64.apk',
-        ),
-        ReleaseAsset(
-          name: 'FitnessPlan-1.1.0-android-armeabi-v7a.apk',
-          downloadUrl: 'https://example.com/v7a.apk',
-        ),
-      ]);
+    test('keeps an arm64 installation on the arm64 channel', () {
+      final picked = AppUpdateLogic.pickApkAsset(
+        const [
+          ReleaseAsset(
+            name: 'FitnessPlan-1.1.0-android.apk',
+            downloadUrl: 'https://example.com/universal.apk',
+          ),
+          ReleaseAsset(
+            name: 'FitnessPlan-1.1.0-android-arm64-v8a.apk',
+            downloadUrl: 'https://example.com/arm64.apk',
+          ),
+          ReleaseAsset(
+            name: 'FitnessPlan-1.1.0-android-armeabi-v7a.apk',
+            downloadUrl: 'https://example.com/v7a.apk',
+          ),
+        ],
+        version: '1.1.0',
+        localBuildNumber: '2008',
+      );
       expect(picked?.name, 'FitnessPlan-1.1.0-android-arm64-v8a.apk');
     });
 
-    test('falls back to universal', () {
-      final picked = AppUpdateLogic.pickApkAsset(const [
-        ReleaseAsset(
-          name: 'FitnessPlan-1.1.0-android-x86_64.apk',
-          downloadUrl: 'https://example.com/x64.apk',
-        ),
-        ReleaseAsset(
-          name: 'FitnessPlan-1.1.0-android.apk',
-          downloadUrl: 'https://example.com/universal.apk',
-        ),
-      ]);
+    test('keeps a universal installation on the universal channel', () {
+      final picked = AppUpdateLogic.pickApkAsset(
+        const [
+          ReleaseAsset(
+            name: 'FitnessPlan-1.1.0-android-x86_64.apk',
+            downloadUrl: 'https://example.com/x64.apk',
+          ),
+          ReleaseAsset(
+            name: 'FitnessPlan-1.1.0-android.apk',
+            downloadUrl: 'https://example.com/universal.apk',
+          ),
+        ],
+        version: '1.1.0',
+        localBuildNumber: '8',
+      );
       expect(picked?.downloadUrl, 'https://example.com/universal.apk');
     });
 
     test('returns null when no suitable apk', () {
       expect(
-        AppUpdateLogic.pickApkAsset(const [
-          ReleaseAsset(name: 'notes.txt', downloadUrl: 'https://example.com/n'),
-        ]),
+        AppUpdateLogic.pickApkAsset(
+          const [
+            ReleaseAsset(
+              name: 'notes.txt',
+              downloadUrl: 'https://example.com/n',
+            ),
+          ],
+          version: '1.1.0',
+          localBuildNumber: '2008',
+        ),
+        isNull,
+      );
+    });
+
+    test('does not fall back from split APK to universal APK', () {
+      expect(
+        AppUpdateLogic.pickApkAsset(
+          const [
+            ReleaseAsset(
+              name: 'FitnessPlan-1.1.4-android.apk',
+              downloadUrl: 'https://example.com/universal.apk',
+            ),
+          ],
+          version: '1.1.4',
+          localBuildNumber: '2008',
+        ),
+        isNull,
+      );
+    });
+
+    test('does not select an APK belonging to another release version', () {
+      expect(
+        AppUpdateLogic.pickApkAsset(
+          const [
+            ReleaseAsset(
+              name: 'FitnessPlan-1.1.3-android-arm64-v8a.apk',
+              downloadUrl: 'https://example.com/old.apk',
+            ),
+          ],
+          version: '1.1.4',
+          localBuildNumber: '2008',
+        ),
         isNull,
       );
     });
