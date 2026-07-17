@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">健身计划</string>
+    <string name="rest_timer_alarm_channel">休息计时闹钟</string>
+    <string name="rest_timer_alarm_channel_description">持续提醒组间休息结束</string>
+    <string name="rest_timer_alarm_title">休息结束</string>
+    <string name="rest_timer_alarm_body">开始下一组</string>
+    <string name="rest_timer_alarm_dismiss">关闭</string>
 </resources>

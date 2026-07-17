@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
@@ -16,6 +17,9 @@ abstract final class RestTimerNotifications {
   static const notificationId = 71001;
   static const _dismissActionId = 'dismiss_rest_timer';
   static const _darwinCategoryId = 'rest_timer_alarm';
+  static const _nativeAlarmChannel = MethodChannel(
+    'fitness_plan/rest_timer_alarm',
+  );
 
   static final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -125,6 +129,16 @@ abstract final class RestTimerNotifications {
 
     await cancel();
 
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      await _nativeAlarmChannel.invokeMethod<void>('schedule', {
+        'triggerAtMillis': DateTime.now().add(remaining).millisecondsSinceEpoch,
+        'title': title,
+        'body': body,
+        'dismissLabel': dismissLabel,
+      });
+      return;
+    }
+
     final when = tz.TZDateTime.now(tz.UTC).add(remaining);
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
@@ -184,6 +198,9 @@ abstract final class RestTimerNotifications {
 
   static Future<void> cancel() async {
     await ensureInitialized();
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      await _nativeAlarmChannel.invokeMethod<void>('cancel');
+    }
     await _plugin.cancel(id: notificationId);
   }
 }

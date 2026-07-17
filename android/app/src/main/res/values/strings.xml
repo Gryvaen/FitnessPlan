@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Diet</string>
+    <string name="rest_timer_alarm_channel">Rest timer alarm</string>
+    <string name="rest_timer_alarm_channel_description">Persistent rest timer alerts</string>
+    <string name="rest_timer_alarm_title">Rest over</string>
+    <string name="rest_timer_alarm_body">Start next set</string>
+    <string name="rest_timer_alarm_dismiss">Close</string>
 </resources>
