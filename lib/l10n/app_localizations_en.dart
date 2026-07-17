@@ -762,6 +762,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restDoneBody => 'Start next set';
 
   @override
+  String get restTimerReady => 'Ready';
+
+  @override
+  String get restTimerRunning => 'Resting';
+
+  @override
+  String get restTimerPaused => 'Paused';
+
+  @override
+  String get restTimerFinished => 'Rest complete';
+
+  @override
+  String get restTimerPause => 'Pause';
+
+  @override
+  String get restTimerResume => 'Resume';
+
+  @override
+  String get restTimerMinus15 => '−15 sec';
+
+  @override
+  String get restTimerPlus15 => '+15 sec';
+
+  @override
   String get copiedClipboard => 'Copied to clipboard';
 
   @override
