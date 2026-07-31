@@ -330,6 +330,40 @@ void main() {
     expect(saved.items.first.targetReps, 12);
   });
 
+  test('createPlan stores distinct exercises per row', () async {
+    final pushup = await addTestExercise(repo, name: '俯卧撑');
+    final squat = await addTestExercise(
+      repo,
+      name: '深蹲',
+      category: 'legs',
+    );
+    final planId = await repo.createPlan(
+      name: '全身',
+      items: [
+        PlanDraftItem(
+          exerciseId: pushup.id,
+          exerciseName: pushup.name,
+          targetSets: 3,
+          targetReps: 12,
+        ),
+        PlanDraftItem(
+          exerciseId: squat.id,
+          exerciseName: squat.name,
+          targetSets: 4,
+          targetReps: 10,
+        ),
+      ],
+    );
+
+    final summaries = await repo.listPlanSummaries();
+    final saved = summaries.firstWhere((s) => s.plan.id == planId);
+    expect(saved.items, hasLength(2));
+    expect(saved.items[0].exerciseId, pushup.id);
+    expect(saved.items[1].exerciseId, squat.id);
+    expect(saved.items[0].exerciseName, '俯卧撑');
+    expect(saved.items[1].exerciseName, '深蹲');
+  });
+
   test('watchDayWorkout emits non-empty snapshot after first add', () async {
     final pushup = await addTestExercise(repo, name: '俯卧撑');
     final planId = await repo.createPlan(
