@@ -172,13 +172,10 @@ extension FoodCategoryL10n on String {
 const kExerciseCategoryOrder = <String>[
   'chest',
   'back',
+  'shoulders',
   'legs',
-  'core',
-  'core_timed',
   'cardio',
-  'shoulders_arms',
-  'custom',
-  'other',
+  'core',
 ];
 
 extension ExerciseCategoryL10n on String {
@@ -186,13 +183,15 @@ extension ExerciseCategoryL10n on String {
     return switch (this) {
       'chest' => l10n.exerciseCategoryChest,
       'back' => l10n.exerciseCategoryBack,
+      'shoulders' => l10n.exerciseCategoryShoulders,
       'legs' => l10n.exerciseCategoryLegs,
-      'core' => l10n.exerciseCategoryCore,
-      'core_timed' => l10n.exerciseCategoryCoreTimed,
       'cardio' => l10n.exerciseCategoryCardio,
-      'shoulders_arms' => l10n.exerciseCategoryShouldersArms,
-      'custom' => l10n.exerciseCategoryCustom,
-      'other' => l10n.exerciseCategoryOther,
+      'core' => l10n.exerciseCategoryCore,
+      // Legacy keys before v12 migration.
+      'shoulders_arms' => l10n.exerciseCategoryShoulders,
+      'core_timed' => l10n.exerciseCategoryCore,
+      'custom' => l10n.exerciseCategoryCore,
+      'other' => l10n.exerciseCategoryCore,
       _ => this,
     };
   }

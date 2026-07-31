@@ -468,6 +468,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exerciseCategoryBack => 'Back';
 
   @override
+  String get exerciseCategoryShoulders => 'Shoulders';
+
+  @override
   String get exerciseCategoryLegs => 'Legs';
 
   @override
@@ -875,7 +878,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noWorkoutPlanBody =>
-      'Create a plan under Records → Train, or add an exercise.';
+      'Add an exercise now, or create a plan under Records → Train.';
 
   @override
   String get replaceTodayWorkout => 'Replace today\'s workout';
@@ -1190,6 +1193,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String confirmDeleteNote(String title) {
     return 'Delete note for $title?';
+  }
+
+  @override
+  String get deleteWorkoutItem => 'Delete exercise';
+
+  @override
+  String confirmDeleteWorkoutItem(String name) {
+    return 'Remove \"$name\" from today\'s workout?';
   }
 
   @override

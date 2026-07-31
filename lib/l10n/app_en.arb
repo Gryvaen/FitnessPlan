@@ -153,6 +153,7 @@
   "noExercises": "No exercises",
   "exerciseCategoryChest": "Chest",
   "exerciseCategoryBack": "Back",
+  "exerciseCategoryShoulders": "Shoulders",
   "exerciseCategoryLegs": "Legs",
   "exerciseCategoryCore": "Core",
   "exerciseCategoryCoreTimed": "Core (timed)",
@@ -332,7 +333,7 @@
   "legendAfterGreenRed": "After: past green/red",
   "waterTapHint": "Tap cup +250 · tap lid −250",
   "noWorkoutPlanTitle": "No workout plan yet",
-  "noWorkoutPlanBody": "Create a plan under Records → Train, or add an exercise.",
+  "noWorkoutPlanBody": "Add an exercise now, or create a plan under Records → Train.",
   "replaceTodayWorkout": "Replace today's workout",
   "replaceTodayWorkoutBody": "Today already has a workout; replace with this plan?",
   "noWorkoutTodo": "No workout for today",
@@ -700,6 +701,15 @@
   "@confirmDeleteNote": {
     "placeholders": {
       "title": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteWorkoutItem": "Delete exercise",
+  "confirmDeleteWorkoutItem": "Remove \"{name}\" from today's workout?",
+  "@confirmDeleteWorkoutItem": {
+    "placeholders": {
+      "name": {
         "type": "String"
       }
     }

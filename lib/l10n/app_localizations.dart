@@ -1016,6 +1016,12 @@ abstract class AppLocalizations {
   /// **'Back'**
   String get exerciseCategoryBack;
 
+  /// No description provided for @exerciseCategoryShoulders.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoulders'**
+  String get exerciseCategoryShoulders;
+
   /// No description provided for @exerciseCategoryLegs.
   ///
   /// In en, this message translates to:
@@ -1776,7 +1782,7 @@ abstract class AppLocalizations {
   /// No description provided for @noWorkoutPlanBody.
   ///
   /// In en, this message translates to:
-  /// **'Create a plan under Records → Train, or add an exercise.'**
+  /// **'Add an exercise now, or create a plan under Records → Train.'**
   String get noWorkoutPlanBody;
 
   /// No description provided for @replaceTodayWorkout.
@@ -2234,6 +2240,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete note for {title}?'**
   String confirmDeleteNote(String title);
+
+  /// No description provided for @deleteWorkoutItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete exercise'**
+  String get deleteWorkoutItem;
+
+  /// No description provided for @confirmDeleteWorkoutItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove \"{name}\" from today\'s workout?'**
+  String confirmDeleteWorkoutItem(String name);
 
   /// No description provided for @savedAt.
   ///

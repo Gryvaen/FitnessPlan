@@ -468,6 +468,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get exerciseCategoryBack => '背';
 
   @override
+  String get exerciseCategoryShoulders => '肩';
+
+  @override
   String get exerciseCategoryLegs => '腿';
 
   @override
@@ -866,7 +869,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noWorkoutPlanTitle => '还没有训练计划';
 
   @override
-  String get noWorkoutPlanBody => '先去「记录 → 训练」新建计划，或直接添加一个动作。';
+  String get noWorkoutPlanBody => '可直接添加一个动作，或去「记录 → 训练」新建计划。';
 
   @override
   String get replaceTodayWorkout => '替换今日训练';
@@ -1175,6 +1178,14 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String confirmDeleteNote(String title) {
     return '确定删除 $title 的便签？';
+  }
+
+  @override
+  String get deleteWorkoutItem => '删除训练动作';
+
+  @override
+  String confirmDeleteWorkoutItem(String name) {
+    return '确定从今日训练中删除「$name」？';
   }
 
   @override

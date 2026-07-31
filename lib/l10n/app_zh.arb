@@ -153,6 +153,7 @@
   "noExercises": "暂无动作",
   "exerciseCategoryChest": "胸",
   "exerciseCategoryBack": "背",
+  "exerciseCategoryShoulders": "肩",
   "exerciseCategoryLegs": "腿",
   "exerciseCategoryCore": "核心",
   "exerciseCategoryCoreTimed": "核心计时",
@@ -325,7 +326,7 @@
   "legendAfterGreenRed": "生效后：过去绿/红",
   "waterTapHint": "点水杯 +250 · 点杯盖 −250",
   "noWorkoutPlanTitle": "还没有训练计划",
-  "noWorkoutPlanBody": "先去「记录 → 训练」新建计划，或直接添加一个动作。",
+  "noWorkoutPlanBody": "可直接添加一个动作，或去「记录 → 训练」新建计划。",
   "replaceTodayWorkout": "替换今日训练",
   "replaceTodayWorkoutBody": "当天已有训练待办，将替换为该计划，确定？",
   "noWorkoutTodo": "还没有训练待办",
@@ -693,6 +694,15 @@
   "@confirmDeleteNote": {
     "placeholders": {
       "title": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteWorkoutItem": "删除训练动作",
+  "confirmDeleteWorkoutItem": "确定从今日训练中删除「{name}」？",
+  "@confirmDeleteWorkoutItem": {
+    "placeholders": {
+      "name": {
         "type": "String"
       }
     }
