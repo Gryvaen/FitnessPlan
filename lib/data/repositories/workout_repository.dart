@@ -238,6 +238,24 @@ class WorkoutRepository {
     });
   }
 
+  Future<int> createPlanFromDay({
+    required DateTime day,
+    required String name,
+  }) async {
+    final snap = await daySnapshot(day);
+    if (snap.isEmpty) throw StateError('当日无训练可保存');
+    final items = [
+      for (final progress in snap.items)
+        PlanDraftItem(
+          exerciseId: progress.item.exerciseId,
+          exerciseName: progress.item.exerciseName,
+          targetSets: progress.item.targetSets,
+          targetReps: progress.item.targetReps,
+        ),
+    ];
+    return createPlan(name: name, items: items);
+  }
+
   Future<void> updatePlan({
     required int planId,
     required String name,
