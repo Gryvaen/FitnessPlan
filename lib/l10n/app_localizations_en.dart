@@ -480,6 +480,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exerciseCategoryShoulders => 'Shoulders';
 
   @override
+  String get exerciseCategoryArms => 'Arms';
+
+  @override
   String get exerciseCategoryLegs => 'Legs';
 
   @override

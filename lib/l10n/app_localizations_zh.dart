@@ -480,6 +480,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get exerciseCategoryShoulders => '肩';
 
   @override
+  String get exerciseCategoryArms => '手臂';
+
+  @override
   String get exerciseCategoryLegs => '腿';
 
   @override

@@ -1040,6 +1040,12 @@ abstract class AppLocalizations {
   /// **'Shoulders'**
   String get exerciseCategoryShoulders;
 
+  /// No description provided for @exerciseCategoryArms.
+  ///
+  /// In en, this message translates to:
+  /// **'Arms'**
+  String get exerciseCategoryArms;
+
   /// No description provided for @exerciseCategoryLegs.
   ///
   /// In en, this message translates to:
