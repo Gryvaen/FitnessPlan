@@ -17,72 +17,14 @@ class TrainRecordsTab extends ConsumerWidget {
     required BuildContext context,
     Exercise? exercise,
     String defaultCategory = 'chest',
-  }) async {
-    final l10n = context.l10n;
-    final isEdit = exercise != null;
-    final nameCtrl = TextEditingController(text: exercise?.name ?? '');
-    var unit = exercise != null
-        ? ExerciseUnit.fromStorage(exercise.unit)
-        : ExerciseUnit.reps;
-    var selectedCategory = exercise != null &&
-            kExerciseCategoryOrder.contains(exercise.category)
-        ? exercise.category
-        : defaultCategory;
-
-    final result = await showDialog<_ExerciseFormData>(
+  }) {
+    return showDialog<_ExerciseFormData>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setLocal) => AlertDialog(
-          title: Text(isEdit ? l10n.edit : l10n.addExercise),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                decoration: InputDecoration(labelText: l10n.exerciseName),
-                autofocus: !isEdit,
-              ),
-              const SizedBox(height: 12),
-              AppDropdown<String>(
-                label: l10n.categories,
-                value: selectedCategory,
-                items: kExerciseCategoryOrder,
-                itemLabel: (c) => c.localizedExerciseCategory(l10n),
-                onChanged: (v) => setLocal(() => selectedCategory = v),
-              ),
-              const SizedBox(height: 12),
-              AppDropdown<ExerciseUnit>(
-                label: l10n.repsOrSeconds,
-                value: unit,
-                items: ExerciseUnit.values,
-                itemLabel: (u) =>
-                    u == ExerciseUnit.reps ? l10n.repsCount : l10n.seconds,
-                onChanged: (v) => setLocal(() => unit = v),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(l10n.cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(
-                ctx,
-                _ExerciseFormData(
-                  name: nameCtrl.text,
-                  unit: unit,
-                  category: selectedCategory,
-                ),
-              ),
-              child: Text(isEdit ? l10n.save : l10n.add),
-            ),
-          ],
-        ),
+      builder: (ctx) => _ExerciseFormDialog(
+        exercise: exercise,
+        defaultCategory: defaultCategory,
       ),
     );
-    nameCtrl.dispose();
-    return result;
   }
 
   Future<void> _addExercise(BuildContext context, WidgetRef ref) async {
@@ -158,9 +100,6 @@ class TrainRecordsTab extends ConsumerWidget {
               loading: () => const LinearProgressIndicator(),
               error: (e, _) => Text(l10n.loadFailed('$e')),
               data: (exercises) {
-                if (exercises.isEmpty) {
-                  return Text(l10n.noExercises, style: theme.textTheme.meta);
-                }
                 final grouped = <String, List<Exercise>>{};
                 for (final ex in exercises) {
                   final key = kExerciseCategoryOrder.contains(ex.category)
@@ -168,29 +107,34 @@ class TrainRecordsTab extends ConsumerWidget {
                       : 'core';
                   grouped.putIfAbsent(key, () => []).add(ex);
                 }
-                final orderedKeys = [
-                  for (final key in kExerciseCategoryOrder)
-                    if (grouped.containsKey(key)) key,
-                ];
                 return Column(
                   children: [
-                    for (final key in orderedKeys)
+                    for (final key in kExerciseCategoryOrder)
                       ExpansionTile(
                         tilePadding: EdgeInsets.zero,
                         childrenPadding: const EdgeInsets.only(bottom: 8),
                         initiallyExpanded: false,
                         title: Text(
-                          '${key.localizedExerciseCategory(l10n)} · ${grouped[key]!.length}',
+                          '${key.localizedExerciseCategory(l10n)} · ${grouped[key]?.length ?? 0}',
                           style: theme.textTheme.titleSmall,
                         ),
                         children: [
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                for (final ex in grouped[key]!)
+                          if ((grouped[key]?.isEmpty ?? true))
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                l10n.noExercises,
+                                style: theme.textTheme.meta,
+                              ),
+                            )
+                          else
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  for (final ex in grouped[key]!)
                                   InputChip(
                                     label: Text(
                                       '${ex.name} · ${ExerciseUnit.fromStorage(ex.unit).label(l10n)}',
@@ -536,6 +480,100 @@ class _SectionExpansionTileState extends State<_SectionExpansionTile> {
         ],
       ),
       children: widget.children,
+    );
+  }
+}
+
+class _ExerciseFormDialog extends StatefulWidget {
+  const _ExerciseFormDialog({
+    this.exercise,
+    this.defaultCategory = 'chest',
+  });
+
+  final Exercise? exercise;
+  final String defaultCategory;
+
+  @override
+  State<_ExerciseFormDialog> createState() => _ExerciseFormDialogState();
+}
+
+class _ExerciseFormDialogState extends State<_ExerciseFormDialog> {
+  late final TextEditingController _nameCtrl;
+  late ExerciseUnit _unit;
+  late String _selectedCategory;
+
+  @override
+  void initState() {
+    super.initState();
+    final exercise = widget.exercise;
+    _nameCtrl = TextEditingController(text: exercise?.name ?? '');
+    _unit = exercise != null
+        ? ExerciseUnit.fromStorage(exercise.unit)
+        : ExerciseUnit.reps;
+    _selectedCategory = exercise != null &&
+            kExerciseCategoryOrder.contains(exercise.category)
+        ? exercise.category
+        : widget.defaultCategory;
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final isEdit = widget.exercise != null;
+    return AlertDialog(
+      title: Text(isEdit ? l10n.edit : l10n.addExercise),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _nameCtrl,
+              decoration: InputDecoration(labelText: l10n.exerciseName),
+              autofocus: !isEdit,
+            ),
+            const SizedBox(height: 12),
+            AppDropdown<String>(
+              label: l10n.categories,
+              value: _selectedCategory,
+              items: kExerciseCategoryOrder,
+              itemLabel: (c) => c.localizedExerciseCategory(l10n),
+              onChanged: (v) => setState(() => _selectedCategory = v),
+            ),
+            const SizedBox(height: 12),
+            AppDropdown<ExerciseUnit>(
+              label: l10n.repsOrSeconds,
+              value: _unit,
+              items: ExerciseUnit.values,
+              itemLabel: (u) =>
+                  u == ExerciseUnit.reps ? l10n.repsCount : l10n.seconds,
+              onChanged: (v) => setState(() => _unit = v),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(
+            context,
+            _ExerciseFormData(
+              name: _nameCtrl.text,
+              unit: _unit,
+              category: _selectedCategory,
+            ),
+          ),
+          child: Text(isEdit ? l10n.save : l10n.add),
+        ),
+      ],
     );
   }
 }
