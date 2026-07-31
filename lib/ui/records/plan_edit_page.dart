@@ -21,14 +21,32 @@ class PlanEditPage extends ConsumerStatefulWidget {
 
 class _PlanRow {
   _PlanRow({
-    this.exercise,
+    this.exerciseId,
+    this.missingExerciseName,
     this.targetSets = 3,
     this.targetReps = 12,
   });
 
-  Exercise? exercise;
+  int? exerciseId;
+  String? missingExerciseName;
   int targetSets;
   int targetReps;
+}
+
+Exercise? _exerciseById(int? id, List<Exercise> exercises) {
+  if (id == null) return null;
+  for (final e in exercises) {
+    if (e.id == id) return e;
+  }
+  return null;
+}
+
+Exercise? _resolvePlanExercise(
+  WorkoutPlanItem item,
+  Map<int, Exercise> byId,
+  Map<String, Exercise> byName,
+) {
+  return byId[item.exerciseId] ?? byName[item.exerciseName];
 }
 
 class _PlanEditPageState extends ConsumerState<PlanEditPage> {
@@ -61,15 +79,21 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
       _nameCtrl.text = match.plan.name;
       final exercises = await repo.listExercises();
       final byId = {for (final e in exercises) e.id: e};
+      final byName = {for (final e in exercises) e.name: e};
       _rows
         ..clear()
         ..addAll([
           for (final item in match.items)
-            _PlanRow(
-              exercise: byId[item.exerciseId],
-              targetSets: item.targetSets,
-              targetReps: item.targetReps,
-            ),
+            () {
+              final resolved = _resolvePlanExercise(item, byId, byName);
+              return _PlanRow(
+                exerciseId: resolved?.id ?? item.exerciseId,
+                missingExerciseName:
+                    resolved == null ? item.exerciseName : null,
+                targetSets: item.targetSets,
+                targetReps: item.targetReps,
+              );
+            }(),
         ]);
       if (_rows.isEmpty) _rows.add(_PlanRow());
     } finally {
@@ -93,9 +117,11 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
       );
       return;
     }
+    final exercises = await ref.read(workoutRepositoryProvider).listExercises();
+    if (!mounted) return;
     final items = <PlanDraftItem>[];
     for (final row in _rows) {
-      final ex = row.exercise;
+      final ex = _exerciseById(row.exerciseId, exercises);
       if (ex == null) continue;
       items.add(
         PlanDraftItem(
@@ -107,6 +133,7 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
       );
     }
     if (items.isEmpty) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.selectOneExercise)),
       );
@@ -178,6 +205,7 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
                     const SizedBox(height: 8),
                     for (var i = 0; i < _rows.length; i++) ...[
                       _PlanRowSection(
+                        key: ValueKey('plan-row-$i-${_rows[i].exerciseId}'),
                         row: _rows[i],
                         exercises: exercises,
                         canRemove: _rows.length > 1,
@@ -188,9 +216,7 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
                         const SizedBox(height: AppSpacing.field),
                     ],
                     OutlinedButton.icon(
-                      onPressed: () => setState(
-                        () => _rows.add(_PlanRow(exercise: exercises.first)),
-                      ),
+                      onPressed: () => setState(() => _rows.add(_PlanRow())),
                       icon: const Icon(Icons.add),
                       label: Text(l10n.addExercise),
                     ),
@@ -204,6 +230,7 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
 
 class _PlanRowSection extends StatelessWidget {
   const _PlanRowSection({
+    super.key,
     required this.row,
     required this.exercises,
     required this.canRemove,
@@ -217,24 +244,19 @@ class _PlanRowSection extends StatelessWidget {
   final VoidCallback onChanged;
   final VoidCallback onRemove;
 
-  Exercise _selectedExercise() {
-    final current = row.exercise;
-    if (current != null) {
-      for (final e in exercises) {
-        if (e.id == current.id) return e;
-      }
-    }
-    return exercises.first;
+  void _setExercise(Exercise exercise) {
+    row.exerciseId = exercise.id;
+    row.missingExerciseName = null;
+    onChanged();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final selected = _selectedExercise();
-    if (row.exercise == null || row.exercise!.id != selected.id) {
-      row.exercise = selected;
-    }
-    final unit = ExerciseUnit.fromStorage(selected.unit);
+    final selected = _exerciseById(row.exerciseId, exercises);
+    final unit = ExerciseUnit.fromStorage(
+      selected?.unit ?? ExerciseUnit.reps.name,
+    );
     final isSeconds = unit == ExerciseUnit.seconds;
     final targetLabel = isSeconds ? l10n.targetSeconds : l10n.targetReps;
     final targetOptions =
@@ -245,16 +267,21 @@ class _PlanRowSection extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: AppDropdown<Exercise>(
-                label: l10n.exercise,
-                value: selected,
-                items: exercises,
-                itemLabel: (e) => e.name,
-                onChanged: (v) {
-                  row.exercise = v;
-                  onChanged();
-                },
-              ),
+              child: selected != null
+                  ? AppDropdown<Exercise>(
+                      label: l10n.exercise,
+                      value: selected,
+                      items: exercises,
+                      itemLabel: (e) => e.name,
+                      onChanged: _setExercise,
+                    )
+                  : _MissingExercisePicker(
+                      label: l10n.exercise,
+                      displayText:
+                          row.missingExerciseName ?? l10n.selectOneExercise,
+                      exercises: exercises,
+                      onChanged: _setExercise,
+                    ),
             ),
             if (canRemove)
               IconButton(
@@ -296,6 +323,65 @@ class _PlanRowSection extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _MissingExercisePicker extends StatelessWidget {
+  const _MissingExercisePicker({
+    required this.label,
+    required this.displayText,
+    required this.exercises,
+    required this.onChanged,
+  });
+
+  final String label;
+  final String displayText;
+  final List<Exercise> exercises;
+  final ValueChanged<Exercise> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+      ),
+      child: InkWell(
+        onTap: () async {
+          final picked = await showModalBottomSheet<Exercise>(
+            context: context,
+            builder: (ctx) => SafeArea(
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final exercise in exercises)
+                    ListTile(
+                      title: Text(exercise.name),
+                      onTap: () => Navigator.pop(ctx, exercise),
+                    ),
+                ],
+              ),
+            ),
+          );
+          if (picked != null) onChanged(picked);
+        },
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                displayText,
+                style: theme.textTheme.bodyLarge,
+              ),
+            ),
+            Icon(
+              Icons.expand_more,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
