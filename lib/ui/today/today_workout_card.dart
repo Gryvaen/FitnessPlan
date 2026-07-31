@@ -221,18 +221,20 @@ class TodayWorkoutCard extends ConsumerWidget {
     required BuildContext context,
     required WidgetRef ref,
     required AppLocalizations l10n,
-    required bool editable,
+    required bool canAdd,
+    required bool canSaveAsPlan,
     required Widget title,
   }) {
     return Row(
       children: [
         Expanded(child: title),
-        if (editable) ...[
+        if (canAdd)
           IconButton(
             tooltip: l10n.addTodayWorkout,
             onPressed: () => _pickPlan(context, ref),
             icon: const Icon(Icons.add),
           ),
+        if (canSaveAsPlan)
           PopupMenuButton<String>(
             tooltip: l10n.more,
             onSelected: (value) async {
@@ -247,7 +249,6 @@ class TodayWorkoutCard extends ConsumerWidget {
               ),
             ],
           ),
-        ],
       ],
     );
   }
@@ -275,7 +276,8 @@ class TodayWorkoutCard extends ConsumerWidget {
                 context: context,
                 ref: ref,
                 l10n: l10n,
-                editable: editable,
+                canAdd: editable,
+                canSaveAsPlan: editable,
                 title: Text(
                   l10n.sectionWorkout(sectionPrefix),
                   style: theme.textTheme.titleMedium,
@@ -300,7 +302,8 @@ class TodayWorkoutCard extends ConsumerWidget {
               context: context,
               ref: ref,
               l10n: l10n,
-              editable: editable,
+              canAdd: editable,
+              canSaveAsPlan: true,
               title: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
