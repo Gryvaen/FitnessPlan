@@ -812,6 +812,24 @@ abstract class AppLocalizations {
   /// **'Preset saved'**
   String get presetSaved;
 
+  /// No description provided for @saveAsPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as workout plan'**
+  String get saveAsPlan;
+
+  /// No description provided for @planSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout plan saved'**
+  String get planSaved;
+
+  /// No description provided for @noWorkoutToSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to save for this day'**
+  String get noWorkoutToSave;
+
   /// No description provided for @copyYesterday.
   ///
   /// In en, this message translates to:

@@ -366,6 +366,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get presetSaved => 'Preset saved';
 
   @override
+  String get saveAsPlan => 'Save as workout plan';
+
+  @override
+  String get planSaved => 'Workout plan saved';
+
+  @override
+  String get noWorkoutToSave => 'Nothing to save for this day';
+
+  @override
   String get copyYesterday => 'Copy yesterday';
 
   @override

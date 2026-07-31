@@ -366,6 +366,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get presetSaved => '套餐已保存';
 
   @override
+  String get saveAsPlan => '存为训练计划';
+
+  @override
+  String get planSaved => '训练计划已保存';
+
+  @override
+  String get noWorkoutToSave => '当日无训练可保存';
+
+  @override
   String get copyYesterday => '复制昨日';
 
   @override
