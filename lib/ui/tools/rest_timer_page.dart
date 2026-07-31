@@ -174,9 +174,6 @@ class _RestTimerPageState extends State<RestTimerPage>
     await _persist();
     if (!mounted) return;
     HapticFeedback.heavyImpact();
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(context.l10n.restDoneSnack)));
   }
 
   Future<void> _reset() async {
@@ -184,6 +181,7 @@ class _RestTimerPageState extends State<RestTimerPage>
     _ticker = null;
     await RestTimerNotifications.cancel();
     if (!mounted) return;
+    ScaffoldMessenger.of(context).clearSnackBars();
     setState(() {
       _running = false;
       _paused = false;
