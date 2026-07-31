@@ -149,6 +149,109 @@ class TodayWorkoutCard extends ConsumerWidget {
     }
   }
 
+  Future<void> _saveAsPlan(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
+    final locale = Localizations.localeOf(context);
+    final snap = await ref.read(workoutRepositoryProvider).daySnapshot(day);
+    if (!context.mounted) return;
+    if (snap.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.noWorkoutToSave)),
+      );
+      return;
+    }
+    final existingName = snap.workout?.planName?.trim();
+    final nameCtrl = TextEditingController(
+      text: (existingName != null && existingName.isNotEmpty)
+          ? existingName
+          : AppDates.relativeDayTitle(
+              day,
+              AppDates.todayLocal(),
+              l10n,
+              locale,
+            ),
+    );
+    final ok = await showDialog<bool>(
+      context: context,
+      useRootNavigator: true,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.saveAsPlan),
+        content: TextField(
+          controller: nameCtrl,
+          decoration: InputDecoration(
+            labelText: l10n.planName,
+            hintText: l10n.planNameHint,
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.save),
+          ),
+        ],
+      ),
+    );
+    final planName = nameCtrl.text;
+    WidgetsBinding.instance.addPostFrameCallback((_) => nameCtrl.dispose());
+    if (ok != true || !context.mounted) return;
+    try {
+      await ref.read(workoutRepositoryProvider).createPlanFromDay(
+            day: day,
+            name: planName,
+          );
+      ref.invalidate(workoutPlansProvider);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.planSaved)),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.saveFailed('$e'))),
+      );
+    }
+  }
+
+  Widget _headerRow({
+    required BuildContext context,
+    required WidgetRef ref,
+    required AppLocalizations l10n,
+    required bool editable,
+    required Widget title,
+  }) {
+    return Row(
+      children: [
+        Expanded(child: title),
+        if (editable) ...[
+          IconButton(
+            tooltip: l10n.addTodayWorkout,
+            onPressed: () => _pickPlan(context, ref),
+            icon: const Icon(Icons.add),
+          ),
+          PopupMenuButton<String>(
+            tooltip: l10n.more,
+            onSelected: (value) async {
+              if (value == 'savePlan') {
+                await _saveAsPlan(context, ref);
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'savePlan',
+                child: Text(l10n.saveAsPlan),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
@@ -168,21 +271,15 @@ class TodayWorkoutCard extends ConsumerWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      l10n.sectionWorkout(sectionPrefix),
-                      style: theme.textTheme.titleMedium,
-                    ),
-                  ),
-                  if (editable)
-                    IconButton(
-                      tooltip: l10n.addTodayWorkout,
-                      onPressed: () => _pickPlan(context, ref),
-                      icon: const Icon(Icons.add),
-                    ),
-                ],
+              _headerRow(
+                context: context,
+                ref: ref,
+                l10n: l10n,
+                editable: editable,
+                title: Text(
+                  l10n.sectionWorkout(sectionPrefix),
+                  style: theme.textTheme.titleMedium,
+                ),
               ),
               Text(
                 editable ? l10n.noWorkoutTodo : l10n.pastDayReadOnly,
@@ -199,30 +296,24 @@ class TodayWorkoutCard extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.sectionWorkout(sectionPrefix),
-                        style: theme.textTheme.titleMedium,
-                      ),
-                      if (planName != null && planName.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text(planName, style: theme.textTheme.meta),
-                      ],
-                    ],
+            _headerRow(
+              context: context,
+              ref: ref,
+              l10n: l10n,
+              editable: editable,
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.sectionWorkout(sectionPrefix),
+                    style: theme.textTheme.titleMedium,
                   ),
-                ),
-                if (editable)
-                  IconButton(
-                    tooltip: l10n.addTodayWorkout,
-                    onPressed: () => _pickPlan(context, ref),
-                    icon: const Icon(Icons.add),
-                  ),
-              ],
+                  if (planName != null && planName.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(planName, style: theme.textTheme.meta),
+                  ],
+                ],
+              ),
             ),
             const SizedBox(height: 4),
             for (final progress in snapshot.items)
