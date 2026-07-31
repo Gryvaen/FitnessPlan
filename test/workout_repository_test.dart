@@ -7,13 +7,28 @@ import 'package:diet/data/repositories/workout_repository.dart';
 import 'package:diet/domain/calendar_day.dart';
 import 'package:diet/domain/models.dart';
 
+Future<Exercise> addTestExercise(
+  WorkoutRepository repo, {
+  required String name,
+  ExerciseUnit unit = ExerciseUnit.reps,
+  String category = 'chest',
+}) async {
+  final id = await repo.addCustomExercise(
+    name: name,
+    unit: unit,
+    category: category,
+  );
+  final exercise = await repo.exerciseById(id);
+  expect(exercise, isNotNull);
+  return exercise!;
+}
+
 void main() {
   late AppDatabase db;
   late WorkoutRepository repo;
 
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    await db.seedBuiltinExercises();
     repo = WorkoutRepository(db);
   });
 
@@ -21,36 +36,38 @@ void main() {
     await db.close();
   });
 
-  test('seedBuiltinExercises inserts catalog once', () async {
-    final first = await repo.listExercises();
-    expect(first.length, greaterThanOrEqualTo(25));
-    expect(first.any((e) => e.category == 'chest'), isTrue);
-    expect(first.any((e) => e.category == 'shoulders'), isTrue);
-    expect(first.any((e) => e.category == 'core'), isTrue);
-    expect(first.any((e) => e.name == '平板支撑' && e.category == 'core'), isTrue);
+  test('fresh database has no pre-seeded exercises', () async {
+    final exercises = await repo.listExercises();
+    expect(exercises, isEmpty);
     await db.seedBuiltinExercises();
-    final second = await repo.listExercises();
-    expect(second.length, first.length);
+    expect(await repo.listExercises(), isEmpty);
   });
 
-  test('seedBuiltinExercises backfills category without duplicating', () async {
-    final before = await repo.listExercises();
-    final pushupBefore = before.firstWhere((e) => e.name == '俯卧撑');
-    await (db.update(db.exercises)..where((t) => t.id.equals(pushupBefore.id)))
-        .write(const ExercisesCompanion(category: Value('other')));
+  test('v13 migration removes builtin exercises', () async {
+    await db.into(db.exercises).insert(
+          ExercisesCompanion.insert(
+            name: '内置俯卧撑',
+            unit: 'reps',
+            category: const Value('chest'),
+            isCustom: const Value(false),
+          ),
+        );
+    final customId = await repo.addCustomExercise(
+      name: '自定义划船',
+      unit: ExerciseUnit.reps,
+      category: 'back',
+    );
 
-    await db.seedBuiltinExercises();
+    await db.customStatement('DELETE FROM exercises WHERE is_custom = 0');
 
-    final all = await repo.listExercises();
-    expect(all.where((e) => e.name == '俯卧撑'), hasLength(1));
-    final pushup = all.firstWhere((e) => e.name == '俯卧撑');
-    expect(pushup.category, 'chest');
-    expect(all.length, before.length);
+    final exercises = await repo.listExercises();
+    expect(exercises, hasLength(1));
+    expect(exercises.single.id, customId);
+    expect(exercises.single.name, '自定义划船');
   });
 
   test('applyPlanToDay copies items into day snapshot', () async {
-    final exercises = await repo.listExercises();
-    final pushup = exercises.firstWhere((e) => e.name == '俯卧撑');
+    final pushup = await addTestExercise(repo, name: '俯卧撑');
     final planId = await repo.createPlan(
       name: '上肢',
       items: [
@@ -75,8 +92,7 @@ void main() {
   });
 
   test('applyPlanToDay rejects past days', () async {
-    final exercises = await repo.listExercises();
-    final pushup = exercises.firstWhere((e) => e.name == '俯卧撑');
+    final pushup = await addTestExercise(repo, name: '俯卧撑');
     final planId = await repo.createPlan(
       name: '过去日拒写',
       items: [
@@ -98,8 +114,12 @@ void main() {
   });
 
   test('logSet auto-marks done when target sets reached', () async {
-    final exercises = await repo.listExercises();
-    final plank = exercises.firstWhere((e) => e.name == '平板支撑');
+    final plank = await addTestExercise(
+      repo,
+      name: '平板支撑',
+      unit: ExerciseUnit.seconds,
+      category: 'core',
+    );
     expect(ExerciseUnit.fromStorage(plank.unit), ExerciseUnit.seconds);
 
     final planId = await repo.createPlan(
@@ -142,8 +162,7 @@ void main() {
   });
 
   test('item writes reject a past item even when passed today', () async {
-    final exercises = await repo.listExercises();
-    final pushup = exercises.firstWhere((e) => e.name == '俯卧撑');
+    final pushup = await addTestExercise(repo, name: '俯卧撑');
     final planId = await repo.createPlan(
       name: '日期归属校验',
       items: [
@@ -191,6 +210,7 @@ void main() {
   });
 
   test('addCustomExercise rejects duplicate names', () async {
+    await addTestExercise(repo, name: '俯卧撑');
     await expectLater(
       repo.addCustomExercise(name: '俯卧撑', unit: ExerciseUnit.reps),
       throwsA(
@@ -225,9 +245,8 @@ void main() {
     expect(created?.category, 'back');
   });
 
-  test('updateExercise edits builtin exercise', () async {
-    final exercises = await repo.listExercises();
-    final pushup = exercises.firstWhere((e) => e.name == '俯卧撑');
+  test('updateExercise edits custom exercise', () async {
+    final pushup = await addTestExercise(repo, name: '俯卧撑');
     await repo.updateExercise(
       id: pushup.id,
       name: '俯卧撑（改）',
@@ -237,13 +256,16 @@ void main() {
     final updated = await repo.exerciseById(pushup.id);
     expect(updated?.name, '俯卧撑（改）');
     expect(updated?.category, 'shoulders');
-    expect(updated?.isCustom, isFalse);
+    expect(updated?.isCustom, isTrue);
   });
 
   test('updateExercise rejects duplicate names', () async {
-    final exercises = await repo.listExercises();
-    final pushup = exercises.firstWhere((e) => e.name == '俯卧撑');
-    final squat = exercises.firstWhere((e) => e.name == '深蹲');
+    final pushup = await addTestExercise(repo, name: '俯卧撑');
+    final squat = await addTestExercise(
+      repo,
+      name: '深蹲',
+      category: 'legs',
+    );
     await expectLater(
       repo.updateExercise(
         id: squat.id,
@@ -278,9 +300,38 @@ void main() {
     expect(migrated?.category, 'core');
   });
 
+  test('createPlanFromDay copies today workout into a reusable plan', () async {
+    final pushup = await addTestExercise(repo, name: '俯卧撑');
+    final planId = await repo.createPlan(
+      name: '源计划',
+      items: [
+        PlanDraftItem(
+          exerciseId: pushup.id,
+          exerciseName: pushup.name,
+          targetSets: 4,
+          targetReps: 12,
+        ),
+      ],
+    );
+    final day = CalendarDay.todayLocal();
+    await repo.applyPlanToDay(planId: planId, day: day);
+
+    final savedPlanId = await repo.createPlanFromDay(
+      day: day,
+      name: '今日备份',
+    );
+
+    final summaries = await repo.listPlanSummaries();
+    final saved = summaries.firstWhere((s) => s.plan.id == savedPlanId);
+    expect(saved.plan.name, '今日备份');
+    expect(saved.items, hasLength(1));
+    expect(saved.items.first.exerciseName, pushup.name);
+    expect(saved.items.first.targetSets, 4);
+    expect(saved.items.first.targetReps, 12);
+  });
+
   test('watchDayWorkout emits non-empty snapshot after first add', () async {
-    final exercises = await repo.listExercises();
-    final pushup = exercises.firstWhere((e) => e.name == '俯卧撑');
+    final pushup = await addTestExercise(repo, name: '俯卧撑');
     final planId = await repo.createPlan(
       name: '上肢',
       items: [
@@ -297,13 +348,11 @@ void main() {
     final events = <DayWorkoutSnapshot>[];
     final sub = repo.watchDayWorkout(day).listen(events.add);
 
-    // Allow initial empty emit.
     await Future<void>.delayed(Duration.zero);
     expect(events, isNotEmpty);
     expect(events.last.isEmpty, isTrue);
 
     await repo.applyPlanToDay(planId: planId, day: day);
-    // Concurrent table watches should still settle on a non-empty snapshot.
     await Future<void>.delayed(const Duration(milliseconds: 50));
 
     expect(events.last.isEmpty, isFalse);
