@@ -36,17 +36,31 @@ class TodayWorkoutCard extends ConsumerWidget {
         useRootNavigator: true,
         builder: (ctx) => AlertDialog(
           title: Text(l10n.noWorkoutPlanTitle),
-          content: Text(l10n.noWorkoutPlanBody),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l10n.addExercise),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l10n.goRecords),
-            ),
-          ],
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(l10n.noWorkoutPlanBody),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: Text(l10n.goRecords),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: Text(l10n.quickAddExercise),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       );
       if (!context.mounted) return;
@@ -222,6 +236,30 @@ class TodayWorkoutCard extends ConsumerWidget {
                     color: scheme.error,
                     child: const Icon(Icons.delete, color: Colors.white),
                   ),
+                  confirmDismiss: (_) async {
+                    return await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: Text(l10n.deleteWorkoutItem),
+                            content: Text(
+                              l10n.confirmDeleteWorkoutItem(
+                                progress.item.exerciseName,
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: Text(l10n.cancel),
+                              ),
+                              FilledButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: Text(l10n.delete),
+                              ),
+                            ],
+                          ),
+                        ) ==
+                        true;
+                  },
                   onDismissed: (_) {
                     ref
                         .read(workoutRepositoryProvider)

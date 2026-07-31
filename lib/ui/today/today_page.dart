@@ -588,6 +588,26 @@ class TodayPage extends ConsumerWidget {
                       color: scheme.error,
                       child: const Icon(Icons.delete, color: Colors.white),
                     ),
+                    confirmDismiss: (_) async {
+                      return await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: Text(l10n.deleteRecord),
+                              content: Text(l10n.confirmDeleteMeal),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, false),
+                                  child: Text(l10n.cancel),
+                                ),
+                                FilledButton(
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  child: Text(l10n.delete),
+                                ),
+                              ],
+                            ),
+                          ) ==
+                          true;
+                    },
                     onDismissed: (_) {
                       ref.read(mealRepositoryProvider).delete(m.id);
                     },
