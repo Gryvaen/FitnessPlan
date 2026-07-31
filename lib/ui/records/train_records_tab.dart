@@ -13,27 +13,34 @@ import '../widgets/form_options.dart';
 class TrainRecordsTab extends ConsumerWidget {
   const TrainRecordsTab({super.key});
 
-  Future<void> _addExercise(
-    BuildContext context,
-    WidgetRef ref, {
-    String category = 'custom',
+  Future<_ExerciseFormData?> _showExerciseFormDialog({
+    required BuildContext context,
+    Exercise? exercise,
+    String defaultCategory = 'chest',
   }) async {
     final l10n = context.l10n;
-    final nameCtrl = TextEditingController();
-    var unit = ExerciseUnit.reps;
-    var selectedCategory = category;
-    final ok = await showDialog<bool>(
+    final isEdit = exercise != null;
+    final nameCtrl = TextEditingController(text: exercise?.name ?? '');
+    var unit = exercise != null
+        ? ExerciseUnit.fromStorage(exercise.unit)
+        : ExerciseUnit.reps;
+    var selectedCategory = exercise != null &&
+            kExerciseCategoryOrder.contains(exercise.category)
+        ? exercise.category
+        : defaultCategory;
+
+    final result = await showDialog<_ExerciseFormData>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocal) => AlertDialog(
-          title: Text(l10n.addExercise),
+          title: Text(isEdit ? l10n.edit : l10n.addExercise),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameCtrl,
                 decoration: InputDecoration(labelText: l10n.exerciseName),
-                autofocus: true,
+                autofocus: !isEdit,
               ),
               const SizedBox(height: 12),
               AppDropdown<String>(
@@ -56,31 +63,69 @@ class TrainRecordsTab extends ConsumerWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
+              onPressed: () => Navigator.pop(ctx),
               child: Text(l10n.cancel),
             ),
             FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l10n.add),
+              onPressed: () => Navigator.pop(
+                ctx,
+                _ExerciseFormData(
+                  name: nameCtrl.text,
+                  unit: unit,
+                  category: selectedCategory,
+                ),
+              ),
+              child: Text(isEdit ? l10n.save : l10n.add),
             ),
           ],
         ),
       ),
     );
-    if (ok != true || !context.mounted) return;
+    nameCtrl.dispose();
+    return result;
+  }
+
+  Future<void> _addExercise(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
+    final form = await _showExerciseFormDialog(context: context);
+    if (form == null || !context.mounted) return;
     try {
       await ref.read(workoutRepositoryProvider).addCustomExercise(
-            name: nameCtrl.text,
-            unit: unit,
-            category: selectedCategory,
+            name: form.name,
+            unit: form.unit,
+            category: form.category,
           );
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.addFailed('$e'))),
       );
-    } finally {
-      nameCtrl.dispose();
+    }
+  }
+
+  Future<void> _editExercise(
+    BuildContext context,
+    WidgetRef ref,
+    Exercise exercise,
+  ) async {
+    final l10n = context.l10n;
+    final form = await _showExerciseFormDialog(
+      context: context,
+      exercise: exercise,
+    );
+    if (form == null || !context.mounted) return;
+    try {
+      await ref.read(workoutRepositoryProvider).updateExercise(
+            id: exercise.id,
+            name: form.name,
+            unit: form.unit,
+            category: form.category,
+          );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.saveFailed('$e'))),
+      );
     }
   }
 
@@ -101,226 +146,230 @@ class TrainRecordsTab extends ConsumerWidget {
         listBottomInset(context, hasFab: false),
       ),
       children: [
-        Row(
+        _SectionExpansionTile(
+          title: Text(
+            l10n.exerciseLibrary,
+            style: theme.textTheme.titleMedium,
+          ),
+          addTooltip: l10n.addExercise,
+          onAdd: () => _addExercise(context, ref),
           children: [
-            Expanded(
-              child: Text(
-                l10n.exerciseLibrary,
-                style: theme.textTheme.titleMedium,
-              ),
-            ),
-            IconButton(
-              tooltip: l10n.addExercise,
-              onPressed: () => _addExercise(context, ref),
-              icon: const Icon(Icons.add),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        exercisesAsync.when(
-          loading: () => const LinearProgressIndicator(),
-          error: (e, _) => Text(l10n.loadFailed('$e')),
-          data: (exercises) {
-            if (exercises.isEmpty) {
-              return Text(l10n.noExercises, style: theme.textTheme.meta);
-            }
-            final grouped = <String, List<Exercise>>{};
-            for (final ex in exercises) {
-              grouped.putIfAbsent(ex.category, () => []).add(ex);
-            }
-            final orderedKeys = [
-              for (final key in kExerciseCategoryOrder)
-                if (grouped.containsKey(key)) key,
-              for (final key in grouped.keys)
-                if (!kExerciseCategoryOrder.contains(key)) key,
-            ];
-            return Column(
-              children: [
-                for (final key in orderedKeys)
-                  ExpansionTile(
-                    tilePadding: EdgeInsets.zero,
-                    childrenPadding: const EdgeInsets.only(bottom: 8),
-                    initiallyExpanded: false,
-                    title: Text(
-                      '${key.localizedExerciseCategory(l10n)} · ${grouped[key]!.length}',
-                      style: theme.textTheme.titleSmall,
-                    ),
-                    children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final ex in grouped[key]!)
-                              InputChip(
-                                label: Text(
-                                  '${ex.name} · ${ExerciseUnit.fromStorage(ex.unit).label(l10n)}',
-                                ),
-                                onDeleted: ex.isCustom
-                                    ? () async {
-                                        try {
-                                          await ref
-                                              .read(workoutRepositoryProvider)
-                                              .deleteCustomExercise(ex.id);
-                                        } catch (e) {
-                                          if (!context.mounted) return;
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            SnackBar(content: Text('$e')),
-                                          );
-                                        }
-                                      }
-                                    : null,
-                              ),
-                          ],
+            exercisesAsync.when(
+              loading: () => const LinearProgressIndicator(),
+              error: (e, _) => Text(l10n.loadFailed('$e')),
+              data: (exercises) {
+                if (exercises.isEmpty) {
+                  return Text(l10n.noExercises, style: theme.textTheme.meta);
+                }
+                final grouped = <String, List<Exercise>>{};
+                for (final ex in exercises) {
+                  final key = kExerciseCategoryOrder.contains(ex.category)
+                      ? ex.category
+                      : 'core';
+                  grouped.putIfAbsent(key, () => []).add(ex);
+                }
+                final orderedKeys = [
+                  for (final key in kExerciseCategoryOrder)
+                    if (grouped.containsKey(key)) key,
+                ];
+                return Column(
+                  children: [
+                    for (final key in orderedKeys)
+                      ExpansionTile(
+                        tilePadding: EdgeInsets.zero,
+                        childrenPadding: const EdgeInsets.only(bottom: 8),
+                        initiallyExpanded: false,
+                        title: Text(
+                          '${key.localizedExerciseCategory(l10n)} · ${grouped[key]!.length}',
+                          style: theme.textTheme.titleSmall,
                         ),
-                      ),
-                    ],
-                  ),
-              ],
-            );
-          },
-        ),
-        const SizedBox(height: AppSpacing.section),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                l10n.workoutPlans,
-                style: theme.textTheme.titleMedium,
-              ),
-            ),
-            IconButton(
-              tooltip: l10n.fabNewPlan,
-              onPressed: () => context.push('/records/plan'),
-              icon: const Icon(Icons.add),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        plansAsync.when(
-          loading: () => const LinearProgressIndicator(),
-          error: (e, _) => Text(l10n.loadFailed('$e')),
-          data: (plans) {
-            if (plans.isEmpty) {
-              return Text(
-                l10n.emptyPlans,
-                style: theme.textTheme.meta,
-              );
-            }
-            return Column(
-              children: [
-                for (final summary in plans)
-                  Dismissible(
-                    key: ValueKey(summary.plan.id),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 16),
-                      color: theme.colorScheme.error,
-                      child: const Icon(Icons.delete, color: Colors.white),
-                    ),
-                    confirmDismiss: (_) async {
-                      return await showDialog<bool>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: Text(l10n.deletePlan),
-                              content: Text(
-                                l10n.confirmDeletePlan(summary.plan.name),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  child: Text(l10n.cancel),
-                                ),
-                                FilledButton(
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  child: Text(l10n.delete),
-                                ),
+                        children: [
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                for (final ex in grouped[key]!)
+                                  InputChip(
+                                    label: Text(
+                                      '${ex.name} · ${ExerciseUnit.fromStorage(ex.unit).label(l10n)}',
+                                    ),
+                                    onPressed: () =>
+                                        _editExercise(context, ref, ex),
+                                    onDeleted: ex.isCustom
+                                        ? () async {
+                                            try {
+                                              await ref
+                                                  .read(
+                                                    workoutRepositoryProvider,
+                                                  )
+                                                  .deleteCustomExercise(ex.id);
+                                            } catch (e) {
+                                              if (!context.mounted) return;
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                SnackBar(content: Text('$e')),
+                                              );
+                                            }
+                                          }
+                                        : null,
+                                  ),
                               ],
                             ),
-                          ) ==
-                          true;
-                    },
-                    onDismissed: (_) {
-                      ref
-                          .read(workoutRepositoryProvider)
-                          .deletePlan(summary.plan.id);
-                    },
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(summary.plan.name),
-                      subtitle: Text(
-                        summary.items.isEmpty
-                            ? l10n.noExercisesInPlan
-                            : summary.items
-                                .map(
-                                  (i) =>
-                                      '${i.exerciseName} ${i.targetSets}×${i.targetReps}',
-                                )
-                                .join(' · '),
-                        style: theme.textTheme.meta,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                      onTap: () => context.push(
-                        '/records/plan?id=${summary.plan.id}',
-                      ),
-                    ),
-                  ),
-              ],
-            );
-          },
+                  ],
+                );
+              },
+            ),
+          ],
         ),
         const SizedBox(height: AppSpacing.section),
-        Text(l10n.workoutHistory, style: theme.textTheme.titleMedium),
-        const SizedBox(height: 8),
-        historyAsync.when(
-          loading: () => const LinearProgressIndicator(),
-          error: (e, _) => Text(l10n.loadFailed('$e')),
-          data: (days) {
-            if (days.isEmpty) {
-              return Text(l10n.noSetLogs, style: theme.textTheme.meta);
-            }
-            return Column(
-              children: [
-                for (var i = 0; i < days.length; i++) ...[
-                  if (i > 0)
-                    Divider(
-                      height: 1,
-                      color: theme.colorScheme.outlineVariant
-                          .withValues(alpha: 0.6),
-                    ),
-                  ExpansionTile(
-                    tilePadding: EdgeInsets.zero,
-                    childrenPadding: EdgeInsets.zero,
-                    title: Text(AppDates.md(days[i].date, locale)),
-                    subtitle: Text(
-                      l10n.nSets(days[i].sets.length),
-                      style: theme.textTheme.meta,
-                    ),
-                    children: [
-                      for (final set in days[i].sets)
-                        ListTile(
-                          dense: true,
+        _SectionExpansionTile(
+          title: Text(
+            l10n.workoutPlans,
+            style: theme.textTheme.titleMedium,
+          ),
+          addTooltip: l10n.fabNewPlan,
+          onAdd: () => context.push('/records/plan'),
+          children: [
+            plansAsync.when(
+              loading: () => const LinearProgressIndicator(),
+              error: (e, _) => Text(l10n.loadFailed('$e')),
+              data: (plans) {
+                if (plans.isEmpty) {
+                  return Text(
+                    l10n.emptyPlans,
+                    style: theme.textTheme.meta,
+                  );
+                }
+                return Column(
+                  children: [
+                    for (final summary in plans)
+                      Dismissible(
+                        key: ValueKey(summary.plan.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 16),
+                          color: theme.colorScheme.error,
+                          child: const Icon(Icons.delete, color: Colors.white),
+                        ),
+                        confirmDismiss: (_) async {
+                          return await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: Text(l10n.deletePlan),
+                                  content: Text(
+                                    l10n.confirmDeletePlan(summary.plan.name),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(ctx, false),
+                                      child: Text(l10n.cancel),
+                                    ),
+                                    FilledButton(
+                                      onPressed: () => Navigator.pop(ctx, true),
+                                      child: Text(l10n.delete),
+                                    ),
+                                  ],
+                                ),
+                              ) ==
+                              true;
+                        },
+                        onDismissed: (_) {
+                          ref
+                              .read(workoutRepositoryProvider)
+                              .deletePlan(summary.plan.id);
+                        },
+                        child: ListTile(
                           contentPadding: EdgeInsets.zero,
-                          title: Text(
-                            l10n.setLine(set.exerciseName, set.setIndex),
-                          ),
-                          trailing: Text(
-                            set.reps != null
-                                ? l10n.nReps(set.reps!)
-                                : l10n.nSeconds(set.durationSec ?? 0),
+                          title: Text(summary.plan.name),
+                          subtitle: Text(
+                            summary.items.isEmpty
+                                ? l10n.noExercisesInPlan
+                                : summary.items
+                                    .map(
+                                      (i) =>
+                                          '${i.exerciseName} ${i.targetSets}×${i.targetReps}',
+                                    )
+                                    .join(' · '),
                             style: theme.textTheme.meta,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          onTap: () => context.push(
+                            '/records/plan?id=${summary.plan.id}',
                           ),
                         ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.section),
+        ExpansionTile(
+          tilePadding: EdgeInsets.zero,
+          childrenPadding: EdgeInsets.zero,
+          initiallyExpanded: false,
+          title: Text(
+            l10n.workoutHistory,
+            style: theme.textTheme.titleMedium,
+          ),
+          children: [
+            historyAsync.when(
+              loading: () => const LinearProgressIndicator(),
+              error: (e, _) => Text(l10n.loadFailed('$e')),
+              data: (days) {
+                if (days.isEmpty) {
+                  return Text(l10n.noSetLogs, style: theme.textTheme.meta);
+                }
+                return Column(
+                  children: [
+                    for (var i = 0; i < days.length; i++) ...[
+                      if (i > 0)
+                        Divider(
+                          height: 1,
+                          color: theme.colorScheme.outlineVariant
+                              .withValues(alpha: 0.6),
+                        ),
+                      ExpansionTile(
+                        tilePadding: EdgeInsets.zero,
+                        childrenPadding: EdgeInsets.zero,
+                        initiallyExpanded: false,
+                        title: Text(AppDates.md(days[i].date, locale)),
+                        subtitle: Text(
+                          l10n.nSets(days[i].sets.length),
+                          style: theme.textTheme.meta,
+                        ),
+                        children: [
+                          for (final set in days[i].sets)
+                            ListTile(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(
+                                l10n.setLine(set.exerciseName, set.setIndex),
+                              ),
+                              trailing: Text(
+                                set.reps != null
+                                    ? l10n.nReps(set.reps!)
+                                    : l10n.nSeconds(set.durationSec ?? 0),
+                                style: theme.textTheme.meta,
+                              ),
+                            ),
+                        ],
+                      ),
                     ],
-                  ),
-                ],
-              ],
-            );
-          },
+                  ],
+                );
+              },
+            ),
+          ],
         ),
       ],
     );
@@ -436,4 +485,69 @@ Future<void> showQuickAddDayItemDialog({
     if (!context.mounted) return;
     messenger?.showSnackBar(SnackBar(content: Text(l10n.addFailed('$e'))));
   }
+}
+
+class _SectionExpansionTile extends StatefulWidget {
+  const _SectionExpansionTile({
+    required this.title,
+    required this.children,
+    this.onAdd,
+    this.addTooltip,
+  });
+
+  final Widget title;
+  final List<Widget> children;
+  final VoidCallback? onAdd;
+  final String? addTooltip;
+
+  @override
+  State<_SectionExpansionTile> createState() => _SectionExpansionTileState();
+}
+
+class _SectionExpansionTileState extends State<_SectionExpansionTile> {
+  var _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      childrenPadding: EdgeInsets.zero,
+      initiallyExpanded: false,
+      onExpansionChanged: (expanded) => setState(() => _expanded = expanded),
+      title: widget.title,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.onAdd != null)
+            IconButton(
+              tooltip: widget.addTooltip,
+              onPressed: widget.onAdd,
+              icon: const Icon(Icons.add),
+            ),
+          AnimatedRotation(
+            turns: _expanded ? 0.5 : 0,
+            duration: kThemeAnimationDuration,
+            child: Icon(
+              Icons.expand_more,
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+      children: widget.children,
+    );
+  }
+}
+
+class _ExerciseFormData {
+  const _ExerciseFormData({
+    required this.name,
+    required this.unit,
+    required this.category,
+  });
+
+  final String name;
+  final ExerciseUnit unit;
+  final String category;
 }
