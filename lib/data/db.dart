@@ -35,7 +35,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -103,6 +103,17 @@ WHERE id NOT IN (
             await m.addColumn(exercises, exercises.category);
             await seedBuiltinExercises();
           }
+          if (from < 12) {
+            await customStatement(
+              "UPDATE exercises SET category = 'shoulders' "
+              "WHERE category = 'shoulders_arms'",
+            );
+            await customStatement(
+              "UPDATE exercises SET category = 'core' "
+              "WHERE category IN ('core_timed', 'other', 'custom')",
+            );
+            await seedBuiltinExercises();
+          }
         },
       );
 
@@ -125,15 +136,15 @@ WHERE id NOT IN (
       ('俄罗斯转体', 'reps', 'core'),
       ('登山跑', 'reps', 'core'),
       ('死虫', 'reps', 'core'),
-      ('平板支撑', 'seconds', 'core_timed'),
-      ('侧平板', 'seconds', 'core_timed'),
+      ('平板支撑', 'seconds', 'core'),
+      ('侧平板', 'seconds', 'core'),
       ('开合跳', 'reps', 'cardio'),
       ('高抬腿', 'reps', 'cardio'),
       ('波比跳', 'reps', 'cardio'),
       ('原地慢跑', 'reps', 'cardio'),
-      ('肩推（徒手）', 'reps', 'shoulders_arms'),
-      ('三头臂屈伸', 'reps', 'shoulders_arms'),
-      ('肱二头弯举（徒手）', 'reps', 'shoulders_arms'),
+      ('肩推（徒手）', 'reps', 'shoulders'),
+      ('三头臂屈伸', 'reps', 'shoulders'),
+      ('肱二头弯举（徒手）', 'reps', 'shoulders'),
     ];
     for (final (name, unit, category) in seeds) {
       final existing = await (select(exercises)
