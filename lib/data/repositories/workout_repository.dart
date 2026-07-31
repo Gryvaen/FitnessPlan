@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 
 import '../../domain/calendar_day.dart';
 import '../../domain/models.dart';
+import '../../l10n/app_localizations_ext.dart';
 import '../db.dart';
 
 class PlanDraftItem {
@@ -120,10 +121,13 @@ class WorkoutRepository {
   Future<int> addCustomExercise({
     required String name,
     required ExerciseUnit unit,
-    String category = 'custom',
+    String category = 'chest',
   }) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) throw ArgumentError('动作名称不能为空');
+    if (!kExerciseCategoryOrder.contains(category)) {
+      throw ArgumentError('无效的动作分类');
+    }
     final existing = await exerciseByName(trimmed);
     if (existing != null) {
       throw StateError('已存在同名动作，请换一个名称');
@@ -135,6 +139,32 @@ class WorkoutRepository {
             name: trimmed,
             unit: unit.name,
             isCustom: const Value(true),
+            category: Value(category),
+          ),
+        );
+  }
+
+  Future<void> updateExercise({
+    required int id,
+    required String name,
+    required ExerciseUnit unit,
+    required String category,
+  }) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) throw ArgumentError('动作名称不能为空');
+    if (!kExerciseCategoryOrder.contains(category)) {
+      throw ArgumentError('无效的动作分类');
+    }
+    final existing = await exerciseById(id);
+    if (existing == null) throw StateError('动作不存在');
+    final duplicate = await exerciseByName(trimmed);
+    if (duplicate != null && duplicate.id != id) {
+      throw StateError('已存在同名动作，请换一个名称');
+    }
+    await (_db.update(_db.exercises)..where((t) => t.id.equals(id))).write(
+          ExercisesCompanion(
+            name: Value(trimmed),
+            unit: Value(unit.name),
             category: Value(category),
           ),
         );

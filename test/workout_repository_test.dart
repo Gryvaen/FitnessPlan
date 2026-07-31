@@ -25,7 +25,9 @@ void main() {
     final first = await repo.listExercises();
     expect(first.length, greaterThanOrEqualTo(25));
     expect(first.any((e) => e.category == 'chest'), isTrue);
-    expect(first.any((e) => e.category == 'core_timed'), isTrue);
+    expect(first.any((e) => e.category == 'shoulders'), isTrue);
+    expect(first.any((e) => e.category == 'core'), isTrue);
+    expect(first.any((e) => e.name == '平板支撑' && e.category == 'core'), isTrue);
     await db.seedBuiltinExercises();
     final second = await repo.listExercises();
     expect(second.length, first.length);
@@ -208,7 +210,7 @@ void main() {
     final created = await repo.exerciseById(id);
     expect(created?.name, '弹力带侧平举');
     expect(created?.isCustom, isTrue);
-    expect(created?.category, 'custom');
+    expect(created?.category, 'chest');
   });
 
   test('addCustomExercise writes into given category', () async {
@@ -221,6 +223,59 @@ void main() {
     expect(created?.name, '弹力带划船');
     expect(created?.isCustom, isTrue);
     expect(created?.category, 'back');
+  });
+
+  test('updateExercise edits builtin exercise', () async {
+    final exercises = await repo.listExercises();
+    final pushup = exercises.firstWhere((e) => e.name == '俯卧撑');
+    await repo.updateExercise(
+      id: pushup.id,
+      name: '俯卧撑（改）',
+      unit: ExerciseUnit.reps,
+      category: 'shoulders',
+    );
+    final updated = await repo.exerciseById(pushup.id);
+    expect(updated?.name, '俯卧撑（改）');
+    expect(updated?.category, 'shoulders');
+    expect(updated?.isCustom, isFalse);
+  });
+
+  test('updateExercise rejects duplicate names', () async {
+    final exercises = await repo.listExercises();
+    final pushup = exercises.firstWhere((e) => e.name == '俯卧撑');
+    final squat = exercises.firstWhere((e) => e.name == '深蹲');
+    await expectLater(
+      repo.updateExercise(
+        id: squat.id,
+        name: pushup.name,
+        unit: ExerciseUnit.reps,
+        category: 'legs',
+      ),
+      throwsA(
+        isA<StateError>().having(
+          (e) => e.message,
+          'message',
+          contains('已存在同名动作'),
+        ),
+      ),
+    );
+  });
+
+  test('category migration maps legacy custom to core', () async {
+    final id = await repo.addCustomExercise(
+      name: '旧分类动作',
+      unit: ExerciseUnit.reps,
+      category: 'back',
+    );
+    await (db.update(db.exercises)..where((t) => t.id.equals(id))).write(
+      const ExercisesCompanion(category: Value('custom')),
+    );
+    await db.customStatement(
+      "UPDATE exercises SET category = 'core' "
+      "WHERE category IN ('core_timed', 'other', 'custom')",
+    );
+    final migrated = await repo.exerciseById(id);
+    expect(migrated?.category, 'core');
   });
 
   test('watchDayWorkout emits non-empty snapshot after first add', () async {
