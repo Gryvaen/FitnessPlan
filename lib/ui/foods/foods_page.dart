@@ -7,6 +7,7 @@ import '../../data/repositories/food_repository.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
+import '../theme/sport_chrome.dart';
 
 final _foodQueryProvider = NotifierProvider<_QueryNotifier, String>(
   _QueryNotifier.new,
@@ -41,7 +42,7 @@ class FoodsPage extends ConsumerWidget {
     final l10n = context.l10n;
     final searching = ref.watch(_foodQueryProvider).trim().isNotEmpty;
 
-    return Scaffold(
+    return AppChromeScaffold(
       appBar: AppBar(
         title: Text(l10n.foodLibrary),
         actions: [
@@ -126,18 +127,24 @@ class _FoodBrowse extends ConsumerWidget {
               )
             else
               for (final c in categories)
-                ListTile(
-                  title: Text(
-                    c.category.localizedCategory(l10n),
-                    style: theme.textTheme.bodyLarge,
-                  ),
-                  subtitle: Text(l10n.nKinds(c.count), style: theme.textTheme.meta),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push(
-                    Uri(
-                      path: '/foods/category',
-                      queryParameters: {'name': c.category},
-                    ).toString(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.listPage),
+                  child: SportListTile(
+                    title: Text(
+                      c.category.localizedCategory(l10n),
+                      style: theme.textTheme.bodyLarge,
+                    ),
+                    subtitle: Text(
+                      l10n.nKinds(c.count),
+                      style: theme.textTheme.meta,
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push(
+                      Uri(
+                        path: '/foods/category',
+                        queryParameters: {'name': c.category},
+                      ).toString(),
+                    ),
                   ),
                 ),
           ],
@@ -169,14 +176,17 @@ class _FoodSearchList extends ConsumerWidget {
           itemCount: foods.length,
           itemBuilder: (context, i) {
             final f = foods[i];
-            return ListTile(
-              key: ValueKey(f.id),
-              title: Text(f.name, style: theme.textTheme.bodyLarge),
-              subtitle: Text(
-                '${f.category.localizedCategory(l10n)} · ${f.kcalPer100.round()} kcal/100g',
-                style: theme.textTheme.meta,
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.listPage),
+              child: SportListTile(
+                key: ValueKey(f.id),
+                title: Text(f.name, style: theme.textTheme.bodyLarge),
+                subtitle: Text(
+                  '${f.category.localizedCategory(l10n)} · ${f.kcalPer100.round()} kcal/100g',
+                  style: theme.textTheme.meta,
+                ),
+                onTap: () => context.push('/foods/${f.id}'),
               ),
-              onTap: () => context.push('/foods/${f.id}'),
             );
           },
         );

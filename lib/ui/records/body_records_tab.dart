@@ -7,6 +7,7 @@ import '../../data/db.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
+import '../theme/sport_chrome.dart';
 import '../widgets/form_options.dart';
 
 class _WeightLogDraft {
@@ -196,9 +197,8 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
                 ),
               ),
             ...logs.reversed.map(
-              (log) => ListTile(
+              (log) => SportListTile(
                 key: ValueKey(log.id),
-                contentPadding: EdgeInsets.zero,
                 title: Text(
                   '${log.weightKg.toStringAsFixed(1)} kg',
                   style: Theme.of(context).textTheme.bodyLarge,

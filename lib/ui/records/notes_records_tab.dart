@@ -53,6 +53,7 @@ class NotesRecordsTab extends ConsumerWidget {
     final notesAsync = ref.watch(dailyNotesProvider);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final visuals = AppThemeVisuals.of(context);
     final now = DateTime.now();
 
     final header = Padding(
@@ -138,7 +139,10 @@ class NotesRecordsTab extends ConsumerWidget {
                   children: [
                     Container(
                       width: 3,
-                      color: isToday ? scheme.primary : Colors.transparent,
+                      decoration: BoxDecoration(
+                        gradient: isToday ? visuals.progress : null,
+                        color: isToday ? null : Colors.transparent,
+                      ),
                     ),
                     Expanded(
                       child: Padding(
@@ -161,15 +165,14 @@ class NotesRecordsTab extends ConsumerWidget {
                                       vertical: 2,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: scheme.primary
-                                          .withValues(alpha: 0.12),
+                                      gradient: visuals.chipSelected,
                                       borderRadius: BorderRadius.circular(999),
                                     ),
                                     child: Text(
                                       l10n.todayWord,
                                       style: theme.textTheme.labelSmall
                                           ?.copyWith(
-                                        color: scheme.primary,
+                                        color: visuals.heroOnGradient,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),

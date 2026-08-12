@@ -13,6 +13,9 @@ class CalorieRing extends StatelessWidget {
     required this.target,
     required this.over,
     required this.remainAbs,
+    this.color,
+    this.labelColor,
+    this.metaColor,
   });
 
   final double eaten;
@@ -20,13 +23,24 @@ class CalorieRing extends StatelessWidget {
   final bool over;
   final double remainAbs;
 
+  /// Ring progress color when not over; defaults to [ColorScheme.primary].
+  final Color? color;
+
+  /// Center remain/over label color when not over.
+  final Color? labelColor;
+
+  /// Secondary lines under the center label.
+  final Color? metaColor;
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
     final progress = target <= 0 ? 0.0 : (eaten / target).clamp(0.0, 1.0);
-    final ringColor = over ? scheme.error : scheme.primary;
+    final ringColor = over ? scheme.error : (color ?? scheme.primary);
+    final centerColor = over ? scheme.error : (labelColor ?? scheme.primary);
+    final secondary = metaColor ?? scheme.onSurfaceVariant;
     final centerLabel = over
         ? l10n.kcalOver('${remainAbs.round()}')
         : l10n.kcalRemain('${remainAbs.round()}');
@@ -38,7 +52,7 @@ class CalorieRing extends StatelessWidget {
         painter: _RingPainter(
           progress: progress,
           color: ringColor,
-          trackColor: ringColor.withValues(alpha: 0.15),
+          trackColor: ringColor.withValues(alpha: 0.22),
           strokeWidth: 10,
         ),
         child: Center(
@@ -49,15 +63,18 @@ class CalorieRing extends StatelessWidget {
                 centerLabel,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: over ? scheme.error : scheme.primary,
+                  color: centerColor,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 '${eaten.round()} / ${target.round()}',
-                style: theme.textTheme.meta,
+                style: theme.textTheme.meta?.copyWith(color: secondary),
               ),
-              Text('kcal', style: theme.textTheme.meta),
+              Text(
+                'kcal',
+                style: theme.textTheme.meta?.copyWith(color: secondary),
+              ),
             ],
           ),
         ),
@@ -123,6 +140,8 @@ class MacroMini extends StatelessWidget {
     required this.target,
     required this.color,
     required this.remainLabel,
+    this.labelColor,
+    this.metaColor,
   });
 
   final String label;
@@ -130,6 +149,8 @@ class MacroMini extends StatelessWidget {
   final double target;
   final Color color;
   final String remainLabel;
+  final Color? labelColor;
+  final Color? metaColor;
 
   @override
   Widget build(BuildContext context) {
@@ -137,6 +158,8 @@ class MacroMini extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final progress = target <= 0 ? 0.0 : (current / target).clamp(0.0, 1.5);
     final over = progress > 1;
+    final titleColor = labelColor;
+    final secondary = metaColor;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -154,11 +177,14 @@ class MacroMini extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 6),
-              Text(label, style: theme.textTheme.titleSmall),
+              Text(
+                label,
+                style: theme.textTheme.titleSmall?.copyWith(color: titleColor),
+              ),
               const Spacer(),
               Text(
                 '${current.round()} / ${target.round()} g',
-                style: theme.textTheme.meta,
+                style: theme.textTheme.meta?.copyWith(color: secondary),
               ),
             ],
           ),
@@ -169,11 +195,14 @@ class MacroMini extends StatelessWidget {
               value: progress > 1 ? 1 : progress,
               minHeight: 6,
               color: over ? scheme.error : color,
-              backgroundColor: color.withValues(alpha: 0.15),
+              backgroundColor: (secondary ?? color).withValues(alpha: 0.22),
             ),
           ),
           const SizedBox(height: 4),
-          Text(remainLabel, style: theme.textTheme.meta),
+          Text(
+            remainLabel,
+            style: theme.textTheme.meta?.copyWith(color: secondary),
+          ),
         ],
       ),
     );
@@ -191,16 +220,20 @@ class WaterCup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final visuals = AppThemeVisuals.of(context);
+    final liquid = visuals.progress.colors.length > 1
+        ? visuals.progress.colors[1]
+        : visuals.progress.colors.first;
+    final full = visuals.progress.colors.last;
     return SizedBox(
       width: 56,
       height: 72,
       child: CustomPaint(
         painter: _WaterCupPainter(
           progress: progress.clamp(0.0, 1.0),
-          outlineColor: scheme.outline,
-          liquidColor: scheme.primary.withValues(alpha: 0.55),
-          fullColor: scheme.primaryContainer.withValues(alpha: 0.85),
+          outlineColor: visuals.strokeGlow,
+          liquidColor: liquid.withValues(alpha: 0.65),
+          fullColor: full.withValues(alpha: 0.9),
         ),
       ),
     );
@@ -325,17 +358,16 @@ class WaterCupLid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final outline = enabled
-        ? scheme.outline
-        : scheme.outline.withValues(alpha: 0.35);
+    final visuals = AppThemeVisuals.of(context);
+    final stroke = visuals.strokeGlow;
+    final outline = enabled ? stroke : stroke.withValues(alpha: 0.35);
     return SizedBox(
       width: 36,
       height: 72,
       child: CustomPaint(
         painter: _WaterCupLidPainter(
           outlineColor: outline,
-          fillColor: scheme.primary.withValues(alpha: enabled ? 0.12 : 0.04),
+          fillColor: stroke.withValues(alpha: enabled ? 0.18 : 0.06),
         ),
       ),
     );

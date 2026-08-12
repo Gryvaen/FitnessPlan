@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations_ext.dart';
+import '../theme/app_theme.dart';
+import '../theme/sport_chrome.dart';
 
 class MainShell extends StatelessWidget {
   const MainShell({super.key, required this.navigationShell});
@@ -18,7 +20,7 @@ class MainShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final scheme = Theme.of(context).colorScheme;
+    final visuals = AppThemeVisuals.of(context);
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
     final selected = navigationShell.currentIndex;
 
@@ -45,63 +47,70 @@ class MainShell extends StatelessWidget {
       ),
     ];
 
-    return Scaffold(
-      body: navigationShell,
-      bottomNavigationBar: Padding(
-        padding: EdgeInsets.fromLTRB(20, 4, 20, 8 + bottomInset),
-        child: Material(
-          elevation: 2,
-          color: scheme.surfaceContainerLowest,
-          shadowColor: scheme.shadow.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(24),
-          clipBehavior: Clip.antiAlias,
-          child: SizedBox(
-            height: 52,
-            child: Stack(
-              children: [
-                // Shared indicator sliding between the equally divided slots.
-                AnimatedAlign(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOutCubic,
-                  alignment: Alignment(
-                    items.length == 1
-                        ? 0
-                        : -1 + selected * 2 / (items.length - 1),
-                    0,
-                  ),
-                  child: FractionallySizedBox(
-                    widthFactor: 1 / items.length,
-                    child: Center(
-                      child: Container(
-                        width: 56,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: scheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(18),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ColoredBox(color: Theme.of(context).colorScheme.surface),
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(gradient: visuals.scaffoldWash),
+          ),
+        ),
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          body: navigationShell,
+          bottomNavigationBar: Padding(
+            padding: EdgeInsets.fromLTRB(20, 4, 20, 8 + bottomInset),
+            child: SportPillShell(
+              child: SizedBox(
+                height: 52,
+                child: Stack(
+                  children: [
+                    // Shared indicator sliding between the equally divided slots.
+                    AnimatedAlign(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOutCubic,
+                      alignment: Alignment(
+                        items.length == 1
+                            ? 0
+                            : -1 + selected * 2 / (items.length - 1),
+                        0,
+                      ),
+                      child: FractionallySizedBox(
+                        widthFactor: 1 / items.length,
+                        child: Center(
+                          child: Container(
+                            width: 56,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              gradient: visuals.accent,
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-                Row(
-                  children: [
-                    for (var i = 0; i < items.length; i++)
-                      Expanded(
-                        child: _PillNavItem(
-                          selected: selected == i,
-                          icon: items[i].icon,
-                          selectedIcon: items[i].selectedIcon,
-                          tooltip: items[i].label,
-                          onTap: () => _onTap(i),
-                        ),
-                      ),
+                    Row(
+                      children: [
+                        for (var i = 0; i < items.length; i++)
+                          Expanded(
+                            child: _PillNavItem(
+                              selected: selected == i,
+                              icon: items[i].icon,
+                              selectedIcon: items[i].selectedIcon,
+                              tooltip: items[i].label,
+                              onTap: () => _onTap(i),
+                            ),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -124,6 +133,7 @@ class _PillNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final visuals = AppThemeVisuals.of(context);
     const pillRadius = BorderRadius.all(Radius.circular(18));
 
     return Tooltip(
@@ -147,8 +157,9 @@ class _PillNavItem extends StatelessWidget {
                     selected ? selectedIcon : icon,
                     key: ValueKey(selected),
                     size: 24,
-                    color:
-                        selected ? scheme.onSurface : scheme.onSurfaceVariant,
+                    color: selected
+                        ? visuals.heroOnGradient
+                        : scheme.onSurfaceVariant,
                   ),
                 ),
               ),

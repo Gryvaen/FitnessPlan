@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations_ext.dart';
+import '../theme/app_theme.dart';
 
 /// A lightweight startup page that runs [onInitialize] alongside its entrance
 /// animation. [onFinished] is called only after both have completed.
@@ -49,7 +50,7 @@ class _DisciplineFreedomLoadingPageState
     super.initState();
     _entrance = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2600),
+      duration: const Duration(milliseconds: 3400),
     )..forward();
     _ambient = AnimationController(
       vsync: this,
@@ -118,95 +119,281 @@ class _DisciplineFreedomLoadingPageState
         opacity: ReverseAnimation(
           CurvedAnimation(parent: _exit, curve: Curves.easeInCubic),
         ),
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final compact = constraints.maxHeight < 620;
-              final contentWidth = math.min(constraints.maxWidth - 40, 440.0);
-              return FadeTransition(
-                opacity: _interval(0, .12, Curves.easeIn),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Center(
-                      child: SizedBox(
-                        width: contentWidth,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _AnimatedRunner(
-                              progress: _interval(.05, .34),
-                              gait: _runnerController,
-                              color: colors.accent,
-                              compact: compact,
-                            ),
-                            SizedBox(height: compact ? 12 : 20),
-                            _AnimatedMainTitle(
-                              left: widget.titleLeft ?? l10n.loadingTitleLeft,
-                              right:
-                                  widget.titleRight ?? l10n.loadingTitleRight,
-                              movement: _interval(.14, .47, Curves.easeOutBack),
-                              dot: _interval(.39, .50, Curves.easeOutBack),
-                              primaryColor: colors.primaryText,
-                              accentColor: colors.accent,
-                              compact: compact,
-                            ),
-                            SizedBox(height: compact ? 12 : 18),
-                            _AnimatedSubtitle(
-                              text: widget.subtitle ?? l10n.loadingSubtitle,
-                              animation: _interval(.53, .76),
-                              color: colors.secondaryText,
-                            ),
-                            SizedBox(height: compact ? 20 : 30),
-                            RepaintBoundary(
-                              child: SizedBox(
-                                width: math.min(contentWidth * .65, 250),
-                                height: compact ? 48 : 58,
-                                child: AnimatedBuilder(
-                                  animation: _entrance,
-                                  builder: (context, _) => CustomPaint(
-                                    painter: _ProgressLinePainter(
-                                      progress: _interval(.70, .94).value,
-                                      lineColor: colors.decoration,
-                                      accentColor: colors.accent,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            ColoredBox(color: colors.background),
+            _InkRainbowBloom(
+              animation: _entrance,
+              drop: _interval(0, .12, Curves.easeInCubic),
+              bloom: _interval(.10, .55, Curves.easeOutCubic),
+            ),
+            SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final compact = constraints.maxHeight < 620;
+                  final contentWidth =
+                      math.min(constraints.maxWidth - 40, 440.0);
+                  return FadeTransition(
+                    opacity: _interval(.55, .68, Curves.easeIn),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Center(
+                          child: SizedBox(
+                            width: contentWidth,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _AnimatedRunner(
+                                  progress: _interval(.55, .74),
+                                  gait: _runnerController,
+                                  compact: compact,
+                                ),
+                                SizedBox(height: compact ? 12 : 20),
+                                _AnimatedMainTitle(
+                                  left:
+                                      widget.titleLeft ?? l10n.loadingTitleLeft,
+                                  right: widget.titleRight ??
+                                      l10n.loadingTitleRight,
+                                  movement: _interval(
+                                    .60,
+                                    .82,
+                                    Curves.easeOutBack,
+                                  ),
+                                  dot: _interval(
+                                    .74,
+                                    .84,
+                                    Curves.easeOutBack,
+                                  ),
+                                  compact: compact,
+                                ),
+                                SizedBox(height: compact ? 12 : 18),
+                                _AnimatedSubtitle(
+                                  text: widget.subtitle ??
+                                      l10n.loadingSubtitle,
+                                  animation: _interval(.78, .92),
+                                ),
+                                SizedBox(height: compact ? 20 : 30),
+                                RepaintBoundary(
+                                  child: SizedBox(
+                                    width:
+                                        math.min(contentWidth * .65, 250),
+                                    height: compact ? 48 : 58,
+                                    child: AnimatedBuilder(
+                                      animation: _entrance,
+                                      builder: (context, _) => CustomPaint(
+                                        painter: _ProgressLinePainter(
+                                          progress:
+                                              _interval(.85, .97).value,
+                                          lineColor: colors.decoration,
+                                          accentColor: colors.accent,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
-                      ),
+                        Positioned(
+                          left: 24,
+                          right: 24,
+                          bottom: compact ? 16 : 30,
+                          child: _BottomStatus(
+                            visible: _interval(.90, .98),
+                            pulse: _ambient,
+                            color: colors.accent,
+                            textColor: colors.secondaryText,
+                            statusText: widget.statusText ??
+                                l10n.loadingPreparingPlan,
+                            error: _error,
+                            onRetry: _initialize,
+                            onEnterAnyway: widget.onEnterAnyway == null
+                                ? null
+                                : () async {
+                                    widget.onEnterAnyway!();
+                                  },
+                          ),
+                        ),
+                      ],
                     ),
-                    Positioned(
-                      left: 24,
-                      right: 24,
-                      bottom: compact ? 16 : 30,
-                      child: _BottomStatus(
-                        visible: _interval(.83, .94),
-                        pulse: _ambient,
-                        color: colors.accent,
-                        textColor: colors.secondaryText,
-                        statusText:
-                            widget.statusText ?? l10n.loadingPreparingPlan,
-                        error: _error,
-                        onRetry: _initialize,
-                        onEnterAnyway: widget.onEnterAnyway == null
-                            ? null
-                            : () async {
-                                widget.onEnterAnyway!();
-                              },
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
+}
+
+/// Bright rainbow for loading text / runner (readable on soft wash).
+const _loadingBrightRainbow = <Color>[
+  Color(0xFFFF3B5C),
+  Color(0xFFFF8A00),
+  Color(0xFFFFE135),
+  Color(0xFF00C853),
+  Color(0xFF00B0FF),
+  Color(0xFF7C4DFF),
+  Color(0xFFFF2D95),
+];
+
+/// Tints opaque ink with a bright rainbow; optional dark halo for contrast.
+class _RainbowTint extends StatelessWidget {
+  const _RainbowTint({
+    required this.builder,
+    this.halo = true,
+  });
+
+  final WidgetBuilder builder;
+  final bool halo;
+
+  @override
+  Widget build(BuildContext context) {
+    final rainbow = ShaderMask(
+      blendMode: BlendMode.srcIn,
+      shaderCallback: (bounds) => const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: _loadingBrightRainbow,
+      ).createShader(bounds),
+      child: builder(context),
+    );
+    if (!halo) return rainbow;
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        ColorFiltered(
+          colorFilter: const ColorFilter.mode(
+            Color(0xB31A1020),
+            BlendMode.srcIn,
+          ),
+          child: Transform.translate(
+            offset: const Offset(0, 1.2),
+            child: builder(context),
+          ),
+        ),
+        rainbow,
+      ],
+    );
+  }
+}
+
+/// Full-screen ink drop → rainbow bloom fill.
+class _InkRainbowBloom extends StatelessWidget {
+  const _InkRainbowBloom({
+    required this.animation,
+    required this.drop,
+    required this.bloom,
+  });
+
+  final Animation<double> animation;
+  final Animation<double> drop;
+  final Animation<double> bloom;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, _) => CustomPaint(
+        painter: _InkRainbowBloomPainter(
+          dropT: drop.value,
+          bloomT: bloom.value,
+        ),
+        child: const SizedBox.expand(),
+      ),
+    );
+  }
+}
+
+class _InkRainbowBloomPainter extends CustomPainter {
+  _InkRainbowBloomPainter({
+    required this.dropT,
+    required this.bloomT,
+  });
+
+  final double dropT;
+  final double bloomT;
+
+  static const _inkCore = Color(0xFF0B3D2E);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width * 0.5;
+    final impact = Offset(cx, size.height * 0.42);
+    final dropStartY = -size.height * 0.06;
+    final dropY = dropStartY + (impact.dy - dropStartY) * dropT;
+    final dropCenter = Offset(cx, dropY);
+    final fullRect = Offset.zero & size;
+
+    // Expanding circular reveal of the same diagonal oil-rainbow wash
+    // used as the app scaffold base (not radially arranged colors).
+    if (bloomT > 0.001) {
+      final maxR = math.sqrt(
+            math.pow(math.max(cx, size.width - cx), 2) +
+                math.pow(math.max(impact.dy, size.height - impact.dy), 2),
+          ) *
+          1.2;
+      final bloomR = maxR * bloomT;
+
+      canvas.save();
+      canvas.clipPath(
+        Path()..addOval(Rect.fromCircle(center: impact, radius: bloomR)),
+      );
+      final washPaint = Paint()
+        ..shader = AppTheme.oilRainbowWash.createShader(fullRect);
+      canvas.drawRect(fullRect, washPaint);
+
+      // Brief ink heart that dissolves into the wash.
+      final inkFade = (1.0 - bloomT / 0.45).clamp(0.0, 1.0);
+      if (inkFade > 0.01) {
+        final inkR = bloomR * (0.22 + 0.18 * (1 - bloomT));
+        final inkPaint = Paint()
+          ..shader = RadialGradient(
+            colors: [
+              _inkCore.withValues(alpha: 0.85 * inkFade),
+              _inkCore.withValues(alpha: 0.35 * inkFade),
+              _inkCore.withValues(alpha: 0),
+            ],
+            stops: const [0.0, 0.45, 1.0],
+          ).createShader(Rect.fromCircle(center: impact, radius: inkR));
+        canvas.drawCircle(impact, inkR, inkPaint);
+      }
+      canvas.restore();
+    }
+
+    // Falling ink drop (fades as bloom expands).
+    if (dropT > 0.01 && bloomT < 0.4) {
+      final fade = (1.0 - bloomT / 0.4).clamp(0.0, 1.0);
+      final rx = 7.0 + 5.0 * dropT;
+      final ry = 10.0 + 8.0 * dropT;
+      final dropPaint = Paint()
+        ..color = _inkCore.withValues(alpha: 0.95 * fade);
+      canvas.drawOval(
+        Rect.fromCenter(center: dropCenter, width: rx * 2, height: ry * 2),
+        dropPaint,
+      );
+      // Tail while falling.
+      if (dropT < 0.95) {
+        final tailPaint = Paint()
+          ..color = _inkCore.withValues(alpha: 0.35 * fade)
+          ..strokeWidth = 3
+          ..strokeCap = StrokeCap.round;
+        canvas.drawLine(
+          Offset(cx, dropY - ry - 18 * (1 - dropT)),
+          Offset(cx, dropY - ry * 0.2),
+          tailPaint,
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _InkRainbowBloomPainter oldDelegate) =>
+      oldDelegate.dropT != dropT || oldDelegate.bloomT != bloomT;
 }
 
 class _LoadingColors {
@@ -239,8 +426,6 @@ class _AnimatedMainTitle extends StatelessWidget {
     required this.right,
     required this.movement,
     required this.dot,
-    required this.primaryColor,
-    required this.accentColor,
     required this.compact,
   });
 
@@ -248,8 +433,6 @@ class _AnimatedMainTitle extends StatelessWidget {
   final String right;
   final Animation<double> movement;
   final Animation<double> dot;
-  final Color primaryColor;
-  final Color accentColor;
   final bool compact;
 
   @override
@@ -259,42 +442,45 @@ class _AnimatedMainTitle extends StatelessWidget {
       fontWeight: FontWeight.w700,
       letterSpacing: 2,
       height: 1.15,
+      color: Colors.white,
     );
     return AnimatedBuilder(
       animation: Listenable.merge([movement, dot]),
-      builder: (context, _) => Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Transform.translate(
-            offset: Offset(
-              -MediaQuery.sizeOf(context).width * .55 * (1 - movement.value),
-              0,
+      builder: (context, _) => _RainbowTint(
+        builder: (context) => Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Transform.translate(
+              offset: Offset(
+                -MediaQuery.sizeOf(context).width * .55 * (1 - movement.value),
+                0,
+              ),
+              child: Text(left, style: style),
             ),
-            child: Text(left, style: style?.copyWith(color: primaryColor)),
-          ),
-          SizedBox(
-            width: compact ? 28 : 34,
-            child: Opacity(
-              opacity: dot.value.clamp(0, 1),
-              child: Transform.scale(
-                scale: dot.value,
-                child: Text(
-                  '·',
-                  textAlign: TextAlign.center,
-                  style: style?.copyWith(color: accentColor),
+            SizedBox(
+              width: compact ? 28 : 34,
+              child: Opacity(
+                opacity: dot.value.clamp(0, 1),
+                child: Transform.scale(
+                  scale: dot.value,
+                  child: Text(
+                    '·',
+                    textAlign: TextAlign.center,
+                    style: style,
+                  ),
                 ),
               ),
             ),
-          ),
-          Transform.translate(
-            offset: Offset(
-              MediaQuery.sizeOf(context).width * .55 * (1 - movement.value),
-              0,
+            Transform.translate(
+              offset: Offset(
+                MediaQuery.sizeOf(context).width * .55 * (1 - movement.value),
+                0,
+              ),
+              child: Text(right, style: style),
             ),
-            child: Text(right, style: style?.copyWith(color: accentColor)),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -304,12 +490,10 @@ class _AnimatedSubtitle extends StatelessWidget {
   const _AnimatedSubtitle({
     required this.text,
     required this.animation,
-    required this.color,
   });
 
   final String text;
   final Animation<double> animation;
-  final Color color;
 
   @override
   Widget build(BuildContext context) => FadeTransition(
@@ -321,14 +505,18 @@ class _AnimatedSubtitle extends StatelessWidget {
       ).animate(animation),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: color, letterSpacing: 1.2),
+        child: _RainbowTint(
+          builder: (context) => Text(
+            text,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.white,
+                  letterSpacing: 1.2,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
         ),
       ),
     ),
@@ -339,13 +527,11 @@ class _AnimatedRunner extends StatelessWidget {
   const _AnimatedRunner({
     required this.progress,
     required this.gait,
-    required this.color,
     required this.compact,
   });
 
   final Animation<double> progress;
   final Animation<double> gait;
-  final Color color;
   final bool compact;
 
   @override
@@ -355,11 +541,14 @@ class _AnimatedRunner extends StatelessWidget {
       height: compact ? 60 : 70,
       child: AnimatedBuilder(
         animation: Listenable.merge([progress, gait]),
-        builder: (context, _) => CustomPaint(
-          painter: _MinimalRunnerPainter(
-            progress: progress.value,
-            phase: gait.value,
-            color: color,
+        builder: (context, _) => _RainbowTint(
+          halo: false,
+          builder: (context) => CustomPaint(
+            painter: _MinimalRunnerPainter(
+              progress: progress.value,
+              phase: gait.value,
+              color: Colors.white,
+            ),
           ),
         ),
       ),
@@ -776,11 +965,14 @@ class _BottomStatus extends StatelessWidget {
               key: const ValueKey('loading'),
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  statusText,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: textColor.withValues(alpha: .75),
-                    letterSpacing: .8,
+                _RainbowTint(
+                  builder: (context) => Text(
+                    statusText,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.white,
+                      letterSpacing: .8,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -791,11 +983,14 @@ class _BottomStatus extends StatelessWidget {
               key: const ValueKey('error'),
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  context.l10n.loadingPreparationFailed,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: textColor),
+                _RainbowTint(
+                  builder: (context) => Text(
+                    context.l10n.loadingPreparationFailed,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Row(

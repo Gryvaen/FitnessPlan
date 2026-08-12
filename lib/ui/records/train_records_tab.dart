@@ -7,6 +7,7 @@ import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
+import '../theme/sport_chrome.dart';
 import '../widgets/form_options.dart';
 
 /// Training management: exercise catalog, plans, recent set history.
@@ -229,8 +230,7 @@ class TrainRecordsTab extends ConsumerWidget {
                               .read(workoutRepositoryProvider)
                               .deletePlan(summary.plan.id);
                         },
-                        child: ListTile(
-                          contentPadding: EdgeInsets.zero,
+                        child: SportListTile(
                           title: Text(summary.plan.name),
                           subtitle: Text(
                             summary.items.isEmpty

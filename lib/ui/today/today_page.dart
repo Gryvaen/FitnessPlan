@@ -8,6 +8,7 @@ import '../../domain/plateau.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
+import '../theme/sport_chrome.dart';
 import 'deficit_date_picker.dart';
 import 'today_summary_widgets.dart';
 import 'today_workout_card.dart';
@@ -31,6 +32,9 @@ class TodayPage extends ConsumerWidget {
 
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final visuals = AppThemeVisuals.of(context);
+    final onHero = visuals.heroOnGradient;
+    final onHeroMuted = onHero.withValues(alpha: 0.78);
     final targets = profile.targets;
     final plan = ref.read(profileRepositoryProvider).buildPlan(profile);
     final remainCal = targets.calories - intake.calories;
@@ -65,7 +69,7 @@ class TodayPage extends ConsumerWidget {
     final sectionPrefix =
         isSelectedToday ? l10n.today : l10n.sectionThatDay;
 
-    return Scaffold(
+    return AppChromeScaffold(
       appBar: AppBar(
         title: InkWell(
           onTap: () async {
@@ -135,25 +139,21 @@ class TodayPage extends ConsumerWidget {
           listBottomInset(context, hasFab: false),
         ),
         children: [
-          if (profile.goal == FitnessGoal.cut && plan.missingCutInputs)
-            Card(
-              color: scheme.errorContainer,
+          if (profile.goal == FitnessGoal.cut && plan.missingCutInputs) ...[
+            SportSurfaceCard(
+              tint: scheme.error,
               child: ListTile(
                 leading: Icon(
                   Icons.warning_amber_rounded,
-                  color: scheme.onErrorContainer,
+                  color: scheme.error,
                 ),
                 title: Text(
                   l10n.cutPlanIncomplete,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: scheme.onErrorContainer,
-                  ),
+                  style: theme.textTheme.titleSmall,
                 ),
                 subtitle: Text(
                   l10n.cutPlanIncompleteHint,
-                  style: theme.textTheme.meta?.copyWith(
-                    color: scheme.onErrorContainer,
-                  ),
+                  style: theme.textTheme.meta,
                 ),
                 trailing: TextButton(
                   onPressed: () => context.go('/profile/edit'),
@@ -161,239 +161,234 @@ class TodayPage extends ConsumerWidget {
                 ),
               ),
             ),
+            const SizedBox(height: AppSpacing.section),
+          ],
           if (onPlateau) ...[
-            Card(
-              color: scheme.secondaryContainer,
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.card),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.possiblePlateau,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: scheme.onSecondaryContainer,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      l10n.plateauHint(Plateau.days),
-                      style: theme.textTheme.meta?.copyWith(
-                        color: scheme.onSecondaryContainer,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.field),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        FilledButton.tonal(
-                          onPressed: !canCutMore
-                              ? null
-                              : () async {
-                                  final updated = await ref
-                                      .read(profileProvider.notifier)
-                                      .applyPlateauCalorieCut();
-                                  if (!context.mounted || updated == null) {
-                                    return;
-                                  }
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        l10n.cut100Applied(
-                                          '${updated.targets.calories}',
-                                        ),
+            SportSurfaceCard(
+              tint: scheme.tertiary,
+              padding: const EdgeInsets.all(AppSpacing.card),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.possiblePlateau,
+                    style: theme.textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    l10n.plateauHint(Plateau.days),
+                    style: theme.textTheme.meta,
+                  ),
+                  const SizedBox(height: AppSpacing.field),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      FilledButton.tonal(
+                        onPressed: !canCutMore
+                            ? null
+                            : () async {
+                                final updated = await ref
+                                    .read(profileProvider.notifier)
+                                    .applyPlateauCalorieCut();
+                                if (!context.mounted || updated == null) {
+                                  return;
+                                }
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      l10n.cut100Applied(
+                                        '${updated.targets.calories}',
                                       ),
                                     ),
-                                  );
-                                },
-                          child: Text(
-                            canCutMore
-                                ? l10n.cut100Kcal
-                                : l10n.cutAdjCapReached,
-                          ),
+                                  ),
+                                );
+                              },
+                        child: Text(
+                          canCutMore
+                              ? l10n.cut100Kcal
+                              : l10n.cutAdjCapReached,
                         ),
-                        OutlinedButton(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(l10n.walk3000Snack),
-                              ),
-                            );
-                          },
-                          child: Text(l10n.walk3000Btn),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                      OutlinedButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(l10n.walk3000Snack),
+                            ),
+                          );
+                        },
+                        child: Text(l10n.walk3000Btn),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: AppSpacing.section),
           ],
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.card),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+          SportHeroCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.sectionCalories(sectionPrefix),
+                  style: theme.textTheme.titleMedium?.copyWith(color: onHero),
+                ),
+                if (profile.goal == FitnessGoal.cut &&
+                    !plan.missingCutInputs &&
+                    plan.kgToLose != null &&
+                    plan.weeklyLossKg != null) ...[
+                  const SizedBox(height: 6),
                   Text(
-                    l10n.sectionCalories(sectionPrefix),
-                    style: theme.textTheme.titleMedium,
+                    '${l10n.deficitIntakeLine(
+                      '${plan.dailyDeficit.round()}',
+                      '${plan.targets.calories}',
+                    )}${plan.goalWeeks != null ? l10n.aboutNWeeks(plan.goalWeeks!) : ''}',
+                    style: theme.textTheme.meta?.copyWith(color: onHeroMuted),
                   ),
-                  if (profile.goal == FitnessGoal.cut &&
-                      !plan.missingCutInputs &&
-                      plan.kgToLose != null &&
-                      plan.weeklyLossKg != null) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      '${l10n.deficitIntakeLine(
-                        '${plan.dailyDeficit.round()}',
-                        '${plan.targets.calories}',
-                      )}${plan.goalWeeks != null ? l10n.aboutNWeeks(plan.goalWeeks!) : ''}',
-                      style: theme.textTheme.meta,
-                    ),
-                  ],
-                  const SizedBox(height: AppSpacing.field),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CalorieRing(
-                        eaten: intake.calories,
-                        target: targets.calories.toDouble(),
-                        over: remainCal < 0,
-                        remainAbs: remainCal.abs(),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          children: [
-                            MacroMini(
-                              label: l10n.proteinShort,
-                              current: intake.proteinG,
-                              target: targets.proteinG,
-                              color: AppColors.protein,
-                              remainLabel: remainMacro(remainP),
-                            ),
-                            MacroMini(
-                              label: l10n.carbs,
-                              current: intake.carbG,
-                              target: targets.carbG,
-                              color: AppColors.carb,
-                              remainLabel: remainMacro(remainC),
-                            ),
-                            MacroMini(
-                              label: l10n.fat,
-                              current: intake.fatG,
-                              target: targets.fatG,
-                              color: AppColors.fat,
-                              remainLabel: remainMacro(remainF),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (intake.alcoholG > 0) ...[
-                    const SizedBox(height: AppSpacing.field),
-                    Text(
-                      l10n.alcoholExtraKcal(
-                        '${intake.alcoholKcal.round()}',
-                      ),
-                      style: theme.textTheme.meta,
-                    ),
-                  ],
                 ],
-              ),
+                const SizedBox(height: AppSpacing.field),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CalorieRing(
+                      eaten: intake.calories,
+                      target: targets.calories.toDouble(),
+                      over: remainCal < 0,
+                      remainAbs: remainCal.abs(),
+                      color: onHero,
+                      labelColor: onHero,
+                      metaColor: onHeroMuted,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          MacroMini(
+                            label: l10n.proteinShort,
+                            current: intake.proteinG,
+                            target: targets.proteinG,
+                            color: AppColors.protein,
+                            remainLabel: remainMacro(remainP),
+                            labelColor: onHero,
+                            metaColor: onHeroMuted,
+                          ),
+                          MacroMini(
+                            label: l10n.carbs,
+                            current: intake.carbG,
+                            target: targets.carbG,
+                            color: AppColors.carb,
+                            remainLabel: remainMacro(remainC),
+                            labelColor: onHero,
+                            metaColor: onHeroMuted,
+                          ),
+                          MacroMini(
+                            label: l10n.fat,
+                            current: intake.fatG,
+                            target: targets.fatG,
+                            color: AppColors.fat,
+                            remainLabel: remainMacro(remainF),
+                            labelColor: onHero,
+                            metaColor: onHeroMuted,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (intake.alcoholG > 0) ...[
+                  const SizedBox(height: AppSpacing.field),
+                  Text(
+                    l10n.alcoholExtraKcal(
+                      '${intake.alcoholKcal.round()}',
+                    ),
+                    style: theme.textTheme.meta?.copyWith(color: onHeroMuted),
+                  ),
+                ],
+              ],
             ),
           ),
           const SizedBox(height: AppSpacing.section),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.card),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(l10n.water, style: theme.textTheme.titleMedium),
-                            const SizedBox(height: 4),
-                            Text(
-                              '$waterMl / $waterGoal ml',
-                              style: theme.textTheme.meta,
+          SportSectionBand(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SportSectionTitle(
+                            child: Text(
+                              l10n.water,
+                              style: theme.textTheme.titleMedium,
                             ),
-                          ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '$waterMl / $waterGoal ml',
+                            style: theme.textTheme.meta,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(10),
+                        onTap: !isSelectedToday || waterMl <= 0
+                            ? null
+                            : () => ref
+                                .read(waterRepositoryProvider)
+                                .addMl(day, -250),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(4, 6, 0, 6),
+                          child: WaterCupLid(
+                            enabled: isSelectedToday && waterMl > 0,
+                          ),
                         ),
                       ),
-                      Material(
+                    ),
+                    // Overlap into the cup's left canvas inset so the
+                    // cap sits flush against the drawn cup rim.
+                    Transform.translate(
+                      offset: const Offset(-10, 0),
+                      child: Material(
                         color: Colors.transparent,
                         child: InkWell(
-                          borderRadius: BorderRadius.circular(10),
-                          onTap: !isSelectedToday || waterMl <= 0
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: !isSelectedToday
                               ? null
                               : () => ref
                                   .read(waterRepositoryProvider)
-                                  .addMl(day, -250),
+                                  .addMl(day, 250),
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(4, 6, 0, 6),
-                            child: WaterCupLid(
-                              enabled: isSelectedToday && waterMl > 0,
+                            padding: const EdgeInsets.fromLTRB(0, 6, 6, 6),
+                            child: WaterCup(
+                              progress:
+                                  waterGoal <= 0 ? 0 : waterMl / waterGoal,
                             ),
                           ),
                         ),
                       ),
-                      // Overlap into the cup's left canvas inset so the
-                      // cap sits flush against the drawn cup rim.
-                      Transform.translate(
-                        offset: const Offset(-10, 0),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(12),
-                            onTap: !isSelectedToday
-                                ? null
-                                : () => ref
-                                    .read(waterRepositoryProvider)
-                                    .addMl(day, 250),
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(0, 6, 6, 6),
-                              child: WaterCup(
-                                progress:
-                                    waterGoal <= 0 ? 0 : waterMl / waterGoal,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: LinearProgressIndicator(
-                      value: waterGoal <= 0
-                          ? 0
-                          : (waterMl / waterGoal).clamp(0.0, 1.0),
-                      minHeight: 10,
-                      color: scheme.primary,
-                      backgroundColor:
-                          scheme.primary.withValues(alpha: 0.15),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    isSelectedToday
-                        ? l10n.waterTapHint
-                        : l10n.pastDayReadOnly,
-                    style: theme.textTheme.meta,
-                  ),
-                ],
-              ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SportProgressBar(
+                  value: waterGoal <= 0
+                      ? 0
+                      : (waterMl / waterGoal).clamp(0.0, 1.0),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  isSelectedToday ? l10n.waterTapHint : l10n.pastDayReadOnly,
+                  style: theme.textTheme.meta,
+                ),
+              ],
             ),
           ),
           const SizedBox(height: AppSpacing.section),
@@ -401,11 +396,14 @@ class TodayPage extends ConsumerWidget {
           const SizedBox(height: AppSpacing.section),
           Row(
             children: [
-              Text(
-                l10n.sectionLogs(sectionPrefix),
-                style: theme.textTheme.titleMedium,
+              Expanded(
+                child: SportSectionTitle(
+                  child: Text(
+                    l10n.sectionLogs(sectionPrefix),
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
               ),
-              const Spacer(),
               if (isSelectedToday)
                 IconButton(
                   tooltip: l10n.logMeal,
@@ -553,8 +551,7 @@ class TodayPage extends ConsumerWidget {
               return Column(
                 children: meals.map((m) {
                   final type = MealType.values.byName(m.mealType);
-                  final tile = ListTile(
-                    contentPadding: EdgeInsets.zero,
+                  final tile = SportListTile(
                     title: Text(m.foodName, style: theme.textTheme.bodyLarge),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -584,8 +581,12 @@ class TodayPage extends ConsumerWidget {
                     direction: DismissDirection.endToStart,
                     background: Container(
                       alignment: Alignment.centerRight,
+                      margin: const EdgeInsets.only(bottom: AppSpacing.field),
                       padding: const EdgeInsets.only(right: 16),
-                      color: scheme.error,
+                      decoration: BoxDecoration(
+                        color: scheme.error,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       child: const Icon(Icons.delete, color: Colors.white),
                     ),
                     confirmDismiss: (_) async {
