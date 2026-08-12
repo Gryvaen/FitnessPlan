@@ -941,6 +941,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get toolboxSubtitle => '体脂估算 · 身体指标 · 食物换算 · 休息计时';
 
   @override
+  String get theme => '主题';
+
+  @override
+  String get themeSubtitle => '外观配色';
+
+  @override
+  String get themeForest => '森林绿';
+
+  @override
+  String get themeMidnight => '午夜蓝';
+
+  @override
+  String get themeSunrise => '暖阳橙';
+
+  @override
+  String get themeGraphite => '石墨灰';
+
+  @override
   String get clearDataBody => '将清除所有饮食、体重、训练、便签、收藏与身体档案，相当于重新使用本程序。确定继续？';
 
   @override

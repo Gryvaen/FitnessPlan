@@ -955,6 +955,24 @@ class AppLocalizationsEn extends AppLocalizations {
       'Body fat · metrics · food convert · rest timer';
 
   @override
+  String get theme => 'Theme';
+
+  @override
+  String get themeSubtitle => 'Appearance colors';
+
+  @override
+  String get themeForest => 'Forest';
+
+  @override
+  String get themeMidnight => 'Midnight';
+
+  @override
+  String get themeSunrise => 'Sunrise';
+
+  @override
+  String get themeGraphite => 'Graphite';
+
+  @override
   String get clearDataBody =>
       'Clears all meals, weight, workouts, notes, favorites, and profile. Continue?';
 

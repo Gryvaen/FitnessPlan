@@ -1917,6 +1917,42 @@ abstract class AppLocalizations {
   /// **'Body fat · metrics · food convert · rest timer'**
   String get toolboxSubtitle;
 
+  /// No description provided for @theme.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get theme;
+
+  /// No description provided for @themeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance colors'**
+  String get themeSubtitle;
+
+  /// No description provided for @themeForest.
+  ///
+  /// In en, this message translates to:
+  /// **'Forest'**
+  String get themeForest;
+
+  /// No description provided for @themeMidnight.
+  ///
+  /// In en, this message translates to:
+  /// **'Midnight'**
+  String get themeMidnight;
+
+  /// No description provided for @themeSunrise.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunrise'**
+  String get themeSunrise;
+
+  /// No description provided for @themeGraphite.
+  ///
+  /// In en, this message translates to:
+  /// **'Graphite'**
+  String get themeGraphite;
+
   /// No description provided for @clearDataBody.
   ///
   /// In en, this message translates to:
