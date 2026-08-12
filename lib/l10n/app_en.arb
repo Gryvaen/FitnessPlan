@@ -293,6 +293,20 @@
   "restNotifyPermissionHint": "Without notification permission, lock-screen alerts may not fire; foreground timer still works.",
   "restDoneSnack": "Rest over — next set",
   "restTimerIntro": "Between-set countdown. With notifications, alerts work on lock screen / background.",
+  "workoutReminderTitle": "Time to train",
+  "workoutReminderBodyNormal": "Log a set today and keep the streak going.",
+  "workoutReminderBodyEncourage": "Missed yesterday? No worries — move today and you’ll feel better.",
+  "reminders": "Reminders",
+  "remindersSubtitle": "Daily workout reminder",
+  "workoutReminderTile": "Daily workout reminder",
+  "workoutReminderSubtitleOff": "Turn on to get a daily training nudge",
+  "workoutReminderSubtitleOn": "Every day at {time}",
+  "@workoutReminderSubtitleOn": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+  "workoutReminderPermissionDenied": "Notification permission denied; daily reminder stays off.",
   "customDuration": "Custom (0:30–10:00)",
   "notifChannelName": "Rest timer",
   "notifChannelDesc": "Between-set rest alerts",

@@ -777,6 +777,39 @@ class AppLocalizationsEn extends AppLocalizations {
       'Between-set countdown. With notifications, alerts work on lock screen / background.';
 
   @override
+  String get workoutReminderTitle => 'Time to train';
+
+  @override
+  String get workoutReminderBodyNormal =>
+      'Log a set today and keep the streak going.';
+
+  @override
+  String get workoutReminderBodyEncourage =>
+      'Missed yesterday? No worries — move today and you’ll feel better.';
+
+  @override
+  String get reminders => 'Reminders';
+
+  @override
+  String get remindersSubtitle => 'Daily workout reminder';
+
+  @override
+  String get workoutReminderTile => 'Daily workout reminder';
+
+  @override
+  String get workoutReminderSubtitleOff =>
+      'Turn on to get a daily training nudge';
+
+  @override
+  String workoutReminderSubtitleOn(String time) {
+    return 'Every day at $time';
+  }
+
+  @override
+  String get workoutReminderPermissionDenied =>
+      'Notification permission denied; daily reminder stays off.';
+
+  @override
   String get customDuration => 'Custom (0:30–10:00)';
 
   @override

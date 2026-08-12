@@ -1587,6 +1587,60 @@ abstract class AppLocalizations {
   /// **'Between-set countdown. With notifications, alerts work on lock screen / background.'**
   String get restTimerIntro;
 
+  /// No description provided for @workoutReminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Time to train'**
+  String get workoutReminderTitle;
+
+  /// No description provided for @workoutReminderBodyNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Log a set today and keep the streak going.'**
+  String get workoutReminderBodyNormal;
+
+  /// No description provided for @workoutReminderBodyEncourage.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed yesterday? No worries — move today and you’ll feel better.'**
+  String get workoutReminderBodyEncourage;
+
+  /// No description provided for @reminders.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders'**
+  String get reminders;
+
+  /// No description provided for @remindersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily workout reminder'**
+  String get remindersSubtitle;
+
+  /// No description provided for @workoutReminderTile.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily workout reminder'**
+  String get workoutReminderTile;
+
+  /// No description provided for @workoutReminderSubtitleOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on to get a daily training nudge'**
+  String get workoutReminderSubtitleOff;
+
+  /// No description provided for @workoutReminderSubtitleOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Every day at {time}'**
+  String workoutReminderSubtitleOn(String time);
+
+  /// No description provided for @workoutReminderPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification permission denied; daily reminder stays off.'**
+  String get workoutReminderPermissionDenied;
+
   /// No description provided for @customDuration.
   ///
   /// In en, this message translates to:

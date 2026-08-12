@@ -769,6 +769,36 @@ class AppLocalizationsZh extends AppLocalizations {
   String get restTimerIntro => '组间休息倒计时。授权通知后，锁屏或切到后台也会提醒。';
 
   @override
+  String get workoutReminderTitle => 'gogogo开始运动';
+
+  @override
+  String get workoutReminderBodyNormal => '今天也练一组，保持节奏。';
+
+  @override
+  String get workoutReminderBodyEncourage =>
+      '我们需要保持一个平和的心态,一件事情的效果来源于坚持,每天应该有规划才能获得满足,我不建议随便开始玩单机游戏或电视剧,因为大脑的多巴胺会持续刺激,想想看时间是不是浪费掉了';
+
+  @override
+  String get reminders => '提醒';
+
+  @override
+  String get remindersSubtitle => '每日运动提醒';
+
+  @override
+  String get workoutReminderTile => '每日运动提醒';
+
+  @override
+  String get workoutReminderSubtitleOff => '关闭后不再推送训练提醒';
+
+  @override
+  String workoutReminderSubtitleOn(String time) {
+    return '每天 $time 提醒';
+  }
+
+  @override
+  String get workoutReminderPermissionDenied => '未授予通知权限，无法开启每日提醒。';
+
+  @override
   String get customDuration => '自定义（0:30–10:00）';
 
   @override
