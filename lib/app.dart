@@ -15,6 +15,7 @@ import 'ui/meals/meal_detail_page.dart';
 import 'ui/onboarding/onboarding_page.dart';
 import 'ui/profile/profile_edit_page.dart';
 import 'ui/profile/profile_page.dart';
+import 'ui/profile/theme_page.dart';
 import 'ui/records/note_edit_page.dart';
 import 'ui/records/plan_edit_page.dart';
 import 'ui/records/records_page.dart';
@@ -167,6 +168,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                     builder: (context, state) => const RemindersHubPage(),
                   ),
                   GoRoute(
+                    path: 'theme',
+                    builder: (context, state) => const ThemePage(),
+                  ),
+                  GoRoute(
                     path: 'tools',
                     builder: (context, state) => const ToolsHubPage(),
                     routes: [
@@ -251,6 +256,7 @@ class _FitnessAppState extends ConsumerState<FitnessApp> {
   @override
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
+    final themeId = ref.watch(themeProvider);
     return MaterialApp.router(
       onGenerateTitle: (context) => context.l10n.appTitle,
       localeResolutionCallback: (locale, supported) {
@@ -269,7 +275,7 @@ class _FitnessAppState extends ConsumerState<FitnessApp> {
       ],
       supportedLocales: AppLocalizations.supportedLocales,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
+      theme: AppTheme.ofId(themeId),
       routerConfig: router,
     );
   }

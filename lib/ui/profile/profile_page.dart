@@ -9,7 +9,9 @@ import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
+import '../theme/sport_chrome.dart';
 import '../widgets/calorie_breakdown.dart';
+import 'theme_page.dart';
 
 /// 「我的」入口页：只读配额摘要 + 进入「我的档案」编辑。
 class ProfilePage extends ConsumerStatefulWidget {
@@ -175,10 +177,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final plan = ref.read(profileRepositoryProvider).buildPlan(profile);
     final theme = Theme.of(context);
     final l10n = context.l10n;
+    final visuals = AppThemeVisuals.of(context);
+    final onHero = visuals.heroOnGradient;
+    final onHeroMuted = onHero.withValues(alpha: 0.78);
     final isAndroid = defaultTargetPlatform == TargetPlatform.android;
     final versionLabel = _packageInfo?.version;
 
-    return Scaffold(
+    return AppChromeScaffold(
       appBar: AppBar(
         title: Row(
           children: [
@@ -220,70 +225,87 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           listBottomInset(context, hasFab: false),
         ),
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.card),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(l10n.dailyQuota, style: theme.textTheme.titleMedium),
-                  const SizedBox(height: 8),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        '${profile.targets.calories}',
-                        style: theme.textTheme.statValue,
+          SportHeroCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.dailyQuota,
+                  style: theme.textTheme.titleMedium?.copyWith(color: onHero),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      '${profile.targets.calories}',
+                      style: theme.textTheme.statValue?.copyWith(color: onHero),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'kcal',
+                      style: theme.textTheme.statUnit?.copyWith(
+                        color: onHeroMuted,
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'kcal',
-                        style: theme.textTheme.statUnit?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'P ${profile.targets.proteinG.toStringAsFixed(0)} · '
+                  'C ${profile.targets.carbG.toStringAsFixed(0)} · '
+                  'F ${profile.targets.fatG.toStringAsFixed(0)}',
+                  style: theme.textTheme.meta?.copyWith(color: onHeroMuted),
+                ),
+                if (profile.goal == FitnessGoal.cut &&
+                    profile.dailyDeficit != null) ...[
+                  const SizedBox(height: 4),
                   Text(
-                    'P ${profile.targets.proteinG.toStringAsFixed(0)} · '
-                    'C ${profile.targets.carbG.toStringAsFixed(0)} · '
-                    'F ${profile.targets.fatG.toStringAsFixed(0)}',
-                    style: theme.textTheme.meta,
+                    '${l10n.deficitLine('${profile.dailyDeficit!.round()}')}'
+                    '${profile.weeklyLossKg != null ? l10n.weeklyLossLine(profile.weeklyLossKg!.toStringAsFixed(1)) : ''}'
+                    '${profile.goalWeeks != null ? l10n.aboutNWeeks(profile.goalWeeks!) : ''}',
+                    style: theme.textTheme.meta?.copyWith(color: onHeroMuted),
                   ),
-                  if (profile.goal == FitnessGoal.cut &&
-                      profile.dailyDeficit != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      '${l10n.deficitLine('${profile.dailyDeficit!.round()}')}'
-                      '${profile.weeklyLossKg != null ? l10n.weeklyLossLine(profile.weeklyLossKg!.toStringAsFixed(1)) : ''}'
-                      '${profile.goalWeeks != null ? l10n.aboutNWeeks(profile.goalWeeks!) : ''}',
-                      style: theme.textTheme.meta,
+                ],
+                if (profile.calorieAdjustment > 0) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.plateauAdjLine('${profile.calorieAdjustment}'),
+                    style: theme.textTheme.meta?.copyWith(color: onHeroMuted),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                Theme(
+                  data: theme.copyWith(
+                    colorScheme: theme.colorScheme.copyWith(
+                      onSurface: onHero,
+                      onSurfaceVariant: onHeroMuted,
                     ),
-                  ],
-                  if (profile.calorieAdjustment > 0) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      l10n.plateauAdjLine('${profile.calorieAdjustment}'),
-                      style: theme.textTheme.meta,
+                    dividerColor: onHero.withValues(alpha: 0.2),
+                    textTheme: theme.textTheme.apply(
+                      bodyColor: onHero,
+                      displayColor: onHero,
                     ),
-                  ],
-                  const SizedBox(height: 8),
-                  ExpansionTile(
+                  ),
+                  child: ExpansionTile(
                     tilePadding: EdgeInsets.zero,
+                    iconColor: onHero,
+                    collapsedIconColor: onHeroMuted,
                     title: Text(
                       l10n.calcMethod,
-                      style: theme.textTheme.titleSmall,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: onHero,
+                      ),
                     ),
                     children: [CalorieBreakdown(plan: plan, compact: true)],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: AppSpacing.section),
-          Card(
+          SportSurfaceCard(
             child: ListTile(
               leading: const Icon(Icons.person_outline),
               title: Text(l10n.myProfile),
@@ -302,7 +324,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
           ),
           const SizedBox(height: AppSpacing.field),
-          Card(
+          SportSurfaceCard(
             child: ListTile(
               leading: const Icon(Icons.notifications_outlined),
               title: Text(l10n.reminders),
@@ -312,7 +334,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
           ),
           const SizedBox(height: AppSpacing.field),
-          Card(
+          SportSurfaceCard(
+            child: ListTile(
+              leading: const Icon(Icons.palette_outlined),
+              title: Text(l10n.theme),
+              subtitle: Text(
+                ref.watch(themeProvider).label(l10n),
+                style: theme.textTheme.meta,
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/profile/theme'),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.field),
+          SportSurfaceCard(
             child: ListTile(
               leading: const Icon(Icons.handyman_outlined),
               title: Text(l10n.toolbox),
