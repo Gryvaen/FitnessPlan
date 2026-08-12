@@ -26,6 +26,7 @@ import 'ui/tools/body_fat_page.dart';
 import 'ui/tools/body_metrics_page.dart';
 import 'ui/tools/calculator_page.dart';
 import 'ui/tools/food_convert_page.dart';
+import 'ui/tools/reminders_hub_page.dart';
 import 'ui/tools/rest_timer_page.dart';
 import 'ui/tools/tools_hub_page.dart';
 
@@ -160,6 +161,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'edit',
                     builder: (context, state) => const ProfileEditPage(),
+                  ),
+                  GoRoute(
+                    path: 'reminders',
+                    builder: (context, state) => const RemindersHubPage(),
                   ),
                   GoRoute(
                     path: 'tools',

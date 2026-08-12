@@ -304,6 +304,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           const SizedBox(height: AppSpacing.field),
           Card(
             child: ListTile(
+              leading: const Icon(Icons.notifications_outlined),
+              title: Text(l10n.reminders),
+              subtitle: Text(l10n.remindersSubtitle, style: theme.textTheme.meta),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/profile/reminders'),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.field),
+          Card(
+            child: ListTile(
               leading: const Icon(Icons.handyman_outlined),
               title: Text(l10n.toolbox),
               subtitle: Text(l10n.toolboxSubtitle, style: theme.textTheme.meta),
