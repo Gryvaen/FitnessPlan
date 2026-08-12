@@ -62,6 +62,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         ref.read(waterRepositoryProvider).clearAll(),
       ]);
       await ref.read(profileProvider.notifier).clear();
+      await ref.read(workoutReminderProvider.notifier).syncSchedule();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(

@@ -12,6 +12,7 @@ import '../data/repositories/note_repository.dart';
 import '../data/repositories/profile_repository.dart';
 import '../data/repositories/water_repository.dart';
 import '../data/repositories/weight_repository.dart';
+import '../data/repositories/workout_reminder_repository.dart';
 import '../data/repositories/workout_repository.dart';
 
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
@@ -65,6 +66,11 @@ final weightRepositoryProvider = Provider<WeightRepository>((ref) {
 
 final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
   return WorkoutRepository(ref.watch(databaseProvider));
+});
+
+final workoutReminderRepositoryProvider =
+    Provider<WorkoutReminderRepository>((ref) {
+  return WorkoutReminderRepository(ref.watch(sharedPreferencesProvider));
 });
 
 final noteRepositoryProvider = Provider<NoteRepository>((ref) {

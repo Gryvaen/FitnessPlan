@@ -9,11 +9,13 @@ import 'providers/app_providers.dart';
 import 'ui/loading/discipline_freedom_loading_page.dart';
 import 'ui/theme/app_theme.dart';
 import 'ui/tools/rest_timer_notifications.dart';
+import 'ui/tools/workout_reminder_notifications.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
   await RestTimerNotifications.ensureInitialized();
+  await WorkoutReminderNotifications.ensureInitialized();
 
   runApp(
     ProviderScope(

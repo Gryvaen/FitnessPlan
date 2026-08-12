@@ -6,3 +6,4 @@ export 'note_providers.dart';
 export 'profile_providers.dart';
 export 'weight_providers.dart';
 export 'workout_providers.dart';
+export 'workout_reminder_providers.dart';

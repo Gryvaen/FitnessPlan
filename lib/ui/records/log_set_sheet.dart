@@ -43,6 +43,7 @@ Future<bool> showLogSetSheet({
               perSetValue: value,
               unit: unit,
             );
+        await ref.read(workoutReminderProvider.notifier).syncSchedule();
         if (!ctx.mounted) return;
         Navigator.pop(ctx, true);
       },

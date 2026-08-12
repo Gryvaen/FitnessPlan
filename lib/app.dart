@@ -228,6 +228,14 @@ class FitnessApp extends ConsumerStatefulWidget {
 
 class _FitnessAppState extends ConsumerState<FitnessApp> {
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(workoutReminderProvider.notifier).syncSchedule();
+    });
+  }
+
+  @override
   void reassemble() {
     super.reassemble();
     // Hot reload can leave UserProfile instances with uninitialized new fields;
