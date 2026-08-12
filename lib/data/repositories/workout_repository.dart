@@ -663,6 +663,16 @@ class WorkoutRepository {
     ];
   }
 
+  /// True when [day] has at least one set log (counts as "worked out").
+  Future<bool> hasAnySetOn(DateTime day) async {
+    final key = _dayStart(day);
+    final row = await (_db.select(_db.workoutSetLogs)
+          ..where((t) => t.date.equals(key))
+          ..limit(1))
+        .getSingleOrNull();
+    return row != null;
+  }
+
   Future<void> clearAll() async {
     await _db.delete(_db.workoutSetLogs).go();
     await _db.delete(_db.dayWorkoutItems).go();
