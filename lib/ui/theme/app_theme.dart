@@ -28,13 +28,11 @@ extension AppTextStyles on TextTheme {
   TextStyle? get fieldLabel => labelMedium;
   TextStyle? get meta => bodySmall;
   TextStyle? get statValue => headlineSmall?.copyWith(
-        fontWeight: FontWeight.w700,
-        height: 1.1,
-        letterSpacing: -0.5,
-      );
-  TextStyle? get statUnit => titleSmall?.copyWith(
-        fontWeight: FontWeight.w500,
-      );
+    fontWeight: FontWeight.w700,
+    height: 1.1,
+    letterSpacing: -0.5,
+  );
+  TextStyle? get statUnit => titleSmall?.copyWith(fontWeight: FontWeight.w500);
 }
 
 /// Sporty gradient / dual-tone tokens per named theme.
@@ -145,7 +143,7 @@ class AppThemeVisuals extends ThemeExtension<AppThemeVisuals> {
     return AppThemeVisuals(
       scaffoldWash:
           LinearGradient.lerp(scaffoldWash, other.scaffoldWash, t) ??
-              scaffoldWash,
+          scaffoldWash,
       accent: LinearGradient.lerp(accent, other.accent, t) ?? accent,
       hero: LinearGradient.lerp(hero, other.hero, t) ?? hero,
       heroOnGradient:
@@ -163,10 +161,11 @@ class AppThemeVisuals extends ThemeExtension<AppThemeVisuals> {
           LinearGradient.lerp(surfaceGlow, other.surfaceGlow, t) ?? surfaceGlow,
       strokeGlow: Color.lerp(strokeGlow, other.strokeGlow, t) ?? strokeGlow,
       progress: LinearGradient.lerp(progress, other.progress, t) ?? progress,
-      pillShell: LinearGradient.lerp(pillShell, other.pillShell, t) ?? pillShell,
+      pillShell:
+          LinearGradient.lerp(pillShell, other.pillShell, t) ?? pillShell,
       chipSelected:
           LinearGradient.lerp(chipSelected, other.chipSelected, t) ??
-              chipSelected,
+          chipSelected,
       sectionWash:
           LinearGradient.lerp(sectionWash, other.sectionWash, t) ?? sectionWash,
       rail: LinearGradient.lerp(rail, other.rail, t) ?? rail,
@@ -186,12 +185,7 @@ enum AppThemeId {
   graphite;
 
   /// Colorful presets shown on the Theme page (excludes day / night).
-  static const styledPresets = [
-    forest,
-    midnight,
-    sunrise,
-    graphite,
-  ];
+  static const styledPresets = [forest, midnight, sunrise, graphite];
 
   static AppThemeId fromStorage(String? raw) {
     return AppThemeId.values.firstWhere(
@@ -209,6 +203,9 @@ enum AppThemeId {
 
 class AppTheme {
   const AppTheme._();
+
+  /// Display / loading-page typeface (霞鹜文楷 Lite Medium).
+  static const displayFontFamily = 'LXGWWenKai';
 
   /// Shared oil-painting rainbow base for all themes (soft pigment washes).
   static const oilRainbowWash = LinearGradient(
@@ -245,10 +242,10 @@ class AppTheme {
     final onSurface = scheme.onSurface;
 
     LinearGradient solid(Color a, [Color? b]) => LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [a, b ?? a],
-        );
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [a, b ?? a],
+    );
 
     return AppThemeVisuals(
       scaffoldWash: solid(surface.withValues(alpha: 0.0)),
@@ -271,14 +268,15 @@ class AppTheme {
   static ColorScheme _schemeFor(AppThemeId id) {
     return switch (id) {
       AppThemeId.day => ColorScheme.fromSeed(
-          seedColor: Colors.blueGrey,
-          brightness: Brightness.light,
-        ),
+        seedColor: Colors.blueGrey,
+        brightness: Brightness.light,
+      ),
       AppThemeId.night => ColorScheme.fromSeed(
-          seedColor: Colors.blueGrey,
-          brightness: Brightness.dark,
-        ),
-      AppThemeId.forest => ColorScheme.fromSeed(
+        seedColor: Colors.blueGrey,
+        brightness: Brightness.dark,
+      ),
+      AppThemeId.forest =>
+        ColorScheme.fromSeed(
           seedColor: const Color(0xFF0F766E),
           brightness: Brightness.light,
           surface: const Color(0xFFF3F8F5),
@@ -292,7 +290,8 @@ class AppTheme {
           secondaryContainer: const Color(0xFFD1FAE5),
           tertiary: const Color(0xFF059669),
         ),
-      AppThemeId.midnight => ColorScheme.fromSeed(
+      AppThemeId.midnight =>
+        ColorScheme.fromSeed(
           seedColor: const Color(0xFF3B82F6),
           brightness: Brightness.dark,
           surface: const Color(0xFF0A1628),
@@ -306,7 +305,8 @@ class AppTheme {
           secondaryContainer: const Color(0xFF1E293B),
           tertiary: const Color(0xFF38BDF8),
         ),
-      AppThemeId.sunrise => ColorScheme.fromSeed(
+      AppThemeId.sunrise =>
+        ColorScheme.fromSeed(
           seedColor: const Color(0xFFE85D04),
           brightness: Brightness.light,
           surface: const Color(0xFFFFF5ED),
@@ -320,7 +320,8 @@ class AppTheme {
           secondaryContainer: const Color(0xFFFFEDD5),
           tertiary: const Color(0xFFF59E0B),
         ),
-      AppThemeId.graphite => ColorScheme.fromSeed(
+      AppThemeId.graphite =>
+        ColorScheme.fromSeed(
           seedColor: const Color(0xFF38BDF8),
           brightness: Brightness.dark,
           surface: const Color(0xFF0E1116),
@@ -341,32 +342,21 @@ class AppTheme {
     return switch (id) {
       AppThemeId.day || AppThemeId.night => _plainVisuals(_schemeFor(id)),
       AppThemeId.forest => const AppThemeVisuals(
-          scaffoldWash: AppTheme.oilRainbowWash,
-          accent: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFA3E635),
-              Color(0xFFCA8A04),
-              Color(0xFF0D9488),
-              Color(0xFF22D3EE),
-            ],
-          ),
-          hero: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0B3D2E),
-              Color(0xFFA3E635),
-              Color(0xFFCA8A04),
-              Color(0xFF0D9488),
-              Color(0xFF22D3EE),
-              Color(0xFFC4B5FD),
-            ],
-            stops: [0.0, 0.18, 0.32, 0.5, 0.72, 1.0],
-          ),
-          heroOnGradient: Color(0xFFF0FDFA),
-          previewColors: [
+        scaffoldWash: AppTheme.oilRainbowWash,
+        accent: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFA3E635),
+            Color(0xFFCA8A04),
+            Color(0xFF0D9488),
+            Color(0xFF22D3EE),
+          ],
+        ),
+        hero: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
             Color(0xFF0B3D2E),
             Color(0xFFA3E635),
             Color(0xFFCA8A04),
@@ -374,328 +364,339 @@ class AppTheme {
             Color(0xFF22D3EE),
             Color(0xFFC4B5FD),
           ],
-          surfaceGlow: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xEBD9F99D),
-              Color(0xEBD4B86A),
-              Color(0xEB5EEAD4),
-              Color(0xEBA5F3FC),
-              Color(0xEBDDD6FE),
-            ],
-          ),
-          strokeGlow: Color(0xFF14B8A6),
-          progress: LinearGradient(
-            colors: [
-              Color(0xFF0B3D2E),
-              Color(0xFFA3E635),
-              Color(0xFFCA8A04),
-              Color(0xFF0D9488),
-              Color(0xFF22D3EE),
-              Color(0xFFC4B5FD),
-            ],
-          ),
-          pillShell: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xF5ECFDF5),
-              Color(0xF5D9F99D),
-              Color(0xF5D4B86A),
-              Color(0xF599F6E4),
-              Color(0xF5EDE9FE),
-            ],
-          ),
-          chipSelected: LinearGradient(
-            colors: [
-              Color(0xFFA3E635),
-              Color(0xFFCA8A04),
-              Color(0xFF0D9488),
-              Color(0xFF22D3EE),
-            ],
-          ),
-          sectionWash: LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              Color(0x77D9F99D),
-              Color(0x66D4B86A),
-              Color(0x5599F6E4),
-              Color(0x44A5F3FC),
-              Color(0x33DDD6FE),
-            ],
-          ),
-          rail: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0B3D2E),
-              Color(0xFFA3E635),
-              Color(0xFFCA8A04),
-              Color(0xFF0D9488),
-              Color(0xFF22D3EE),
-              Color(0xFFC4B5FD),
-            ],
-          ),
-          highlight: Color(0xFFC4B5FD),
-          glowSpot: Color(0xFFA16207),
+          stops: [0.0, 0.18, 0.32, 0.5, 0.72, 1.0],
         ),
+        heroOnGradient: Color(0xFFF0FDFA),
+        previewColors: [
+          Color(0xFF0B3D2E),
+          Color(0xFFA3E635),
+          Color(0xFFCA8A04),
+          Color(0xFF0D9488),
+          Color(0xFF22D3EE),
+          Color(0xFFC4B5FD),
+        ],
+        surfaceGlow: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xEBD9F99D),
+            Color(0xEBD4B86A),
+            Color(0xEB5EEAD4),
+            Color(0xEBA5F3FC),
+            Color(0xEBDDD6FE),
+          ],
+        ),
+        strokeGlow: Color(0xFF14B8A6),
+        progress: LinearGradient(
+          colors: [
+            Color(0xFF0B3D2E),
+            Color(0xFFA3E635),
+            Color(0xFFCA8A04),
+            Color(0xFF0D9488),
+            Color(0xFF22D3EE),
+            Color(0xFFC4B5FD),
+          ],
+        ),
+        pillShell: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xF5ECFDF5),
+            Color(0xF5D9F99D),
+            Color(0xF5D4B86A),
+            Color(0xF599F6E4),
+            Color(0xF5EDE9FE),
+          ],
+        ),
+        chipSelected: LinearGradient(
+          colors: [
+            Color(0xFFA3E635),
+            Color(0xFFCA8A04),
+            Color(0xFF0D9488),
+            Color(0xFF22D3EE),
+          ],
+        ),
+        sectionWash: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            Color(0x77D9F99D),
+            Color(0x66D4B86A),
+            Color(0x5599F6E4),
+            Color(0x44A5F3FC),
+            Color(0x33DDD6FE),
+          ],
+        ),
+        rail: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF0B3D2E),
+            Color(0xFFA3E635),
+            Color(0xFFCA8A04),
+            Color(0xFF0D9488),
+            Color(0xFF22D3EE),
+            Color(0xFFC4B5FD),
+          ],
+        ),
+        highlight: Color(0xFFC4B5FD),
+        glowSpot: Color(0xFFA16207),
+      ),
       AppThemeId.midnight => const AppThemeVisuals(
-          scaffoldWash: AppTheme.oilRainbowWash,
-          accent: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF6366F1), Color(0xFFE879F9), Color(0xFF38BDF8)],
-          ),
-          hero: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0A1628),
-              Color(0xFF4338CA),
-              Color(0xFFC026D3),
-              Color(0xFFF472B6),
-              Color(0xFF38BDF8),
-            ],
-            stops: [0.0, 0.25, 0.5, 0.75, 1.0],
-          ),
-          heroOnGradient: Color(0xFFEFF6FF),
-          previewColors: [
+        scaffoldWash: AppTheme.oilRainbowWash,
+        accent: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF6366F1), Color(0xFFE879F9), Color(0xFF38BDF8)],
+        ),
+        hero: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
             Color(0xFF0A1628),
             Color(0xFF4338CA),
             Color(0xFFC026D3),
             Color(0xFFF472B6),
             Color(0xFF38BDF8),
           ],
-          surfaceGlow: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xEB312E81),
-              Color(0xEB4C1D95),
-              Color(0xEB9D174D),
-              Color(0xEB1E40AF),
-              Color(0xEB0E7490),
-            ],
-          ),
-          strokeGlow: Color(0xFFE879F9),
-          progress: LinearGradient(
-            colors: [
-              Color(0xFF4338CA),
-              Color(0xFF6366F1),
-              Color(0xFFC026D3),
-              Color(0xFFF472B6),
-              Color(0xFF38BDF8),
-            ],
-          ),
-          pillShell: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xF51E1B4B),
-              Color(0xF55B21B6),
-              Color(0xF59D174D),
-              Color(0xF51E3A8A),
-            ],
-          ),
-          chipSelected: LinearGradient(
-            colors: [Color(0xFF6366F1), Color(0xFFD946EF), Color(0xFF38BDF8)],
-          ),
-          sectionWash: LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              Color(0x88312E81),
-              Color(0x776B21A8),
-              Color(0x669D174D),
-              Color(0x551E3A8A),
-            ],
-          ),
-          rail: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF4338CA),
-              Color(0xFF6366F1),
-              Color(0xFFC026D3),
-              Color(0xFFF472B6),
-              Color(0xFF38BDF8),
-            ],
-          ),
-          highlight: Color(0xFFF472B6),
-          glowSpot: Color(0xFF38BDF8),
+          stops: [0.0, 0.25, 0.5, 0.75, 1.0],
         ),
+        heroOnGradient: Color(0xFFEFF6FF),
+        previewColors: [
+          Color(0xFF0A1628),
+          Color(0xFF4338CA),
+          Color(0xFFC026D3),
+          Color(0xFFF472B6),
+          Color(0xFF38BDF8),
+        ],
+        surfaceGlow: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xEB312E81),
+            Color(0xEB4C1D95),
+            Color(0xEB9D174D),
+            Color(0xEB1E40AF),
+            Color(0xEB0E7490),
+          ],
+        ),
+        strokeGlow: Color(0xFFE879F9),
+        progress: LinearGradient(
+          colors: [
+            Color(0xFF4338CA),
+            Color(0xFF6366F1),
+            Color(0xFFC026D3),
+            Color(0xFFF472B6),
+            Color(0xFF38BDF8),
+          ],
+        ),
+        pillShell: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xF51E1B4B),
+            Color(0xF55B21B6),
+            Color(0xF59D174D),
+            Color(0xF51E3A8A),
+          ],
+        ),
+        chipSelected: LinearGradient(
+          colors: [Color(0xFF6366F1), Color(0xFFD946EF), Color(0xFF38BDF8)],
+        ),
+        sectionWash: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            Color(0x88312E81),
+            Color(0x776B21A8),
+            Color(0x669D174D),
+            Color(0x551E3A8A),
+          ],
+        ),
+        rail: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF4338CA),
+            Color(0xFF6366F1),
+            Color(0xFFC026D3),
+            Color(0xFFF472B6),
+            Color(0xFF38BDF8),
+          ],
+        ),
+        highlight: Color(0xFFF472B6),
+        glowSpot: Color(0xFF38BDF8),
+      ),
       AppThemeId.sunrise => const AppThemeVisuals(
-          scaffoldWash: AppTheme.oilRainbowWash,
-          accent: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFEA580C), Color(0xFFFBBF24), Color(0xFFF472B6)],
-          ),
-          hero: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF7C2D12),
-              Color(0xFFEA580C),
-              Color(0xFFF59E0B),
-              Color(0xFFFB7185),
-              Color(0xFFE9D5FF),
-            ],
-            stops: [0.0, 0.25, 0.5, 0.75, 1.0],
-          ),
-          heroOnGradient: Color(0xFFFFF7ED),
-          previewColors: [
+        scaffoldWash: AppTheme.oilRainbowWash,
+        accent: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFEA580C), Color(0xFFFBBF24), Color(0xFFF472B6)],
+        ),
+        hero: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
             Color(0xFF7C2D12),
             Color(0xFFEA580C),
             Color(0xFFF59E0B),
             Color(0xFFFB7185),
             Color(0xFFE9D5FF),
           ],
-          surfaceGlow: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xEBFFEDD5),
-              Color(0xEBFED7AA),
-              Color(0xEBFDE68A),
-              Color(0xEBFBCFE8),
-              Color(0xEBE9D5FF),
-            ],
-          ),
-          strokeGlow: Color(0xFFF472B6),
-          progress: LinearGradient(
-            colors: [
-              Color(0xFFC2410C),
-              Color(0xFFEA580C),
-              Color(0xFFFBBF24),
-              Color(0xFFFB7185),
-              Color(0xFFC084FC),
-            ],
-          ),
-          pillShell: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xF5FFF7ED),
-              Color(0xF5FED7AA),
-              Color(0xF5FCE7F3),
-              Color(0xF5F3E8FF),
-            ],
-          ),
-          chipSelected: LinearGradient(
-            colors: [Color(0xFFEA580C), Color(0xFFFBBF24), Color(0xFFF472B6)],
-          ),
-          sectionWash: LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              Color(0x77FFEDD5),
-              Color(0x66FED7AA),
-              Color(0x55FBCFE8),
-              Color(0x44E9D5FF),
-            ],
-          ),
-          rail: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFC2410C),
-              Color(0xFFEA580C),
-              Color(0xFFFBBF24),
-              Color(0xFFFB7185),
-              Color(0xFFC084FC),
-            ],
-          ),
-          highlight: Color(0xFFC084FC),
-          glowSpot: Color(0xFFFB7185),
+          stops: [0.0, 0.25, 0.5, 0.75, 1.0],
         ),
+        heroOnGradient: Color(0xFFFFF7ED),
+        previewColors: [
+          Color(0xFF7C2D12),
+          Color(0xFFEA580C),
+          Color(0xFFF59E0B),
+          Color(0xFFFB7185),
+          Color(0xFFE9D5FF),
+        ],
+        surfaceGlow: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xEBFFEDD5),
+            Color(0xEBFED7AA),
+            Color(0xEBFDE68A),
+            Color(0xEBFBCFE8),
+            Color(0xEBE9D5FF),
+          ],
+        ),
+        strokeGlow: Color(0xFFF472B6),
+        progress: LinearGradient(
+          colors: [
+            Color(0xFFC2410C),
+            Color(0xFFEA580C),
+            Color(0xFFFBBF24),
+            Color(0xFFFB7185),
+            Color(0xFFC084FC),
+          ],
+        ),
+        pillShell: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xF5FFF7ED),
+            Color(0xF5FED7AA),
+            Color(0xF5FCE7F3),
+            Color(0xF5F3E8FF),
+          ],
+        ),
+        chipSelected: LinearGradient(
+          colors: [Color(0xFFEA580C), Color(0xFFFBBF24), Color(0xFFF472B6)],
+        ),
+        sectionWash: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            Color(0x77FFEDD5),
+            Color(0x66FED7AA),
+            Color(0x55FBCFE8),
+            Color(0x44E9D5FF),
+          ],
+        ),
+        rail: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFC2410C),
+            Color(0xFFEA580C),
+            Color(0xFFFBBF24),
+            Color(0xFFFB7185),
+            Color(0xFFC084FC),
+          ],
+        ),
+        highlight: Color(0xFFC084FC),
+        glowSpot: Color(0xFFFB7185),
+      ),
       AppThemeId.graphite => const AppThemeVisuals(
-          scaffoldWash: AppTheme.oilRainbowWash,
-          accent: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF8B5CF6), Color(0xFF22D3EE), Color(0xFF6EE7B7)],
-          ),
-          hero: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0E1116),
-              Color(0xFF7C3AED),
-              Color(0xFF22D3EE),
-              Color(0xFFCBD5E1),
-              Color(0xFF6EE7B7),
-            ],
-            stops: [0.0, 0.25, 0.5, 0.75, 1.0],
-          ),
-          heroOnGradient: Color(0xFFF1F5F9),
-          previewColors: [
+        scaffoldWash: AppTheme.oilRainbowWash,
+        accent: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF8B5CF6), Color(0xFF22D3EE), Color(0xFF6EE7B7)],
+        ),
+        hero: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
             Color(0xFF0E1116),
             Color(0xFF7C3AED),
             Color(0xFF22D3EE),
             Color(0xFFCBD5E1),
             Color(0xFF6EE7B7),
           ],
-          surfaceGlow: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xEB2E1065),
-              Color(0xEB5B21B6),
-              Color(0xEB155E75),
-              Color(0xEB334155),
-              Color(0xEB064E3B),
-            ],
-          ),
-          strokeGlow: Color(0xFF67E8F9),
-          progress: LinearGradient(
-            colors: [
-              Color(0xFF7C3AED),
-              Color(0xFF8B5CF6),
-              Color(0xFF22D3EE),
-              Color(0xFFE2E8F0),
-              Color(0xFF6EE7B7),
-            ],
-          ),
-          pillShell: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xF51F2937),
-              Color(0xF54C1D95),
-              Color(0xF5155E75),
-              Color(0xF5064E3B),
-            ],
-          ),
-          chipSelected: LinearGradient(
-            colors: [Color(0xFF8B5CF6), Color(0xFF06B6D4), Color(0xFF34D399)],
-          ),
-          sectionWash: LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              Color(0x882E1065),
-              Color(0x775B21B6),
-              Color(0x66155E75),
-              Color(0x55064E3B),
-            ],
-          ),
-          rail: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF7C3AED),
-              Color(0xFF8B5CF6),
-              Color(0xFF22D3EE),
-              Color(0xFFE2E8F0),
-              Color(0xFF6EE7B7),
-            ],
-          ),
-          highlight: Color(0xFF6EE7B7),
-          glowSpot: Color(0xFF22D3EE),
+          stops: [0.0, 0.25, 0.5, 0.75, 1.0],
         ),
+        heroOnGradient: Color(0xFFF1F5F9),
+        previewColors: [
+          Color(0xFF0E1116),
+          Color(0xFF7C3AED),
+          Color(0xFF22D3EE),
+          Color(0xFFCBD5E1),
+          Color(0xFF6EE7B7),
+        ],
+        surfaceGlow: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xEB2E1065),
+            Color(0xEB5B21B6),
+            Color(0xEB155E75),
+            Color(0xEB334155),
+            Color(0xEB064E3B),
+          ],
+        ),
+        strokeGlow: Color(0xFF67E8F9),
+        progress: LinearGradient(
+          colors: [
+            Color(0xFF7C3AED),
+            Color(0xFF8B5CF6),
+            Color(0xFF22D3EE),
+            Color(0xFFE2E8F0),
+            Color(0xFF6EE7B7),
+          ],
+        ),
+        pillShell: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xF51F2937),
+            Color(0xF54C1D95),
+            Color(0xF5155E75),
+            Color(0xF5064E3B),
+          ],
+        ),
+        chipSelected: LinearGradient(
+          colors: [Color(0xFF8B5CF6), Color(0xFF06B6D4), Color(0xFF34D399)],
+        ),
+        sectionWash: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            Color(0x882E1065),
+            Color(0x775B21B6),
+            Color(0x66155E75),
+            Color(0x55064E3B),
+          ],
+        ),
+        rail: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF7C3AED),
+            Color(0xFF8B5CF6),
+            Color(0xFF22D3EE),
+            Color(0xFFE2E8F0),
+            Color(0xFF6EE7B7),
+          ],
+        ),
+        highlight: Color(0xFF6EE7B7),
+        glowSpot: Color(0xFF22D3EE),
+      ),
     };
   }
 
@@ -719,12 +720,8 @@ class AppTheme {
       labelSmall: base.textTheme.labelSmall?.copyWith(
         color: scheme.onSurfaceVariant,
       ),
-      bodyLarge: base.textTheme.bodyLarge?.copyWith(
-        height: 1.35,
-      ),
-      bodyMedium: base.textTheme.bodyMedium?.copyWith(
-        height: 1.4,
-      ),
+      bodyLarge: base.textTheme.bodyLarge?.copyWith(height: 1.35),
+      bodyMedium: base.textTheme.bodyMedium?.copyWith(height: 1.4),
       bodySmall: base.textTheme.bodySmall?.copyWith(
         height: 1.35,
         color: scheme.onSurfaceVariant,
