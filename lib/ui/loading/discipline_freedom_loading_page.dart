@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 
@@ -39,6 +40,7 @@ class _DisciplineFreedomLoadingPageState
     with TickerProviderStateMixin {
   late final AnimationController _entrance;
   late final AnimationController _ambient;
+  late final AnimationController _breath;
   late final AnimationController _runnerController;
   late final AnimationController _exit;
   Object? _error;
@@ -56,6 +58,10 @@ class _DisciplineFreedomLoadingPageState
       vsync: this,
       duration: const Duration(milliseconds: 1250),
     )..repeat();
+    _breath = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3200),
+    )..repeat();
     _runnerController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 820),
@@ -65,6 +71,24 @@ class _DisciplineFreedomLoadingPageState
       duration: const Duration(milliseconds: 320),
     );
     _initialize();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduce = MediaQuery.disableAnimationsOf(context);
+    void sync(AnimationController c) {
+      if (reduce) {
+        c.stop();
+        c.value = 0;
+      } else if (!c.isAnimating && c.duration != null) {
+        c.repeat();
+      }
+    }
+
+    sync(_ambient);
+    sync(_breath);
+    sync(_runnerController);
   }
 
   Future<void> _initialize() async {
@@ -93,6 +117,7 @@ class _DisciplineFreedomLoadingPageState
   void dispose() {
     _entrance.dispose();
     _ambient.dispose();
+    _breath.dispose();
     _runnerController.dispose();
     _exit.dispose();
     super.dispose();
@@ -112,6 +137,7 @@ class _DisciplineFreedomLoadingPageState
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final colors = _LoadingColors.from(theme.colorScheme);
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -132,8 +158,10 @@ class _DisciplineFreedomLoadingPageState
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final compact = constraints.maxHeight < 620;
-                  final contentWidth =
-                      math.min(constraints.maxWidth - 40, 440.0);
+                  final contentWidth = math.min(
+                    constraints.maxWidth - 40,
+                    440.0,
+                  );
                   return FadeTransition(
                     opacity: _interval(.55, .68, Curves.easeIn),
                     child: Stack(
@@ -151,41 +179,36 @@ class _DisciplineFreedomLoadingPageState
                                   compact: compact,
                                 ),
                                 SizedBox(height: compact ? 12 : 20),
-                                _AnimatedMainTitle(
+                                _KineticTitle(
                                   left:
                                       widget.titleLeft ?? l10n.loadingTitleLeft,
-                                  right: widget.titleRight ??
+                                  right:
+                                      widget.titleRight ??
                                       l10n.loadingTitleRight,
-                                  movement: _interval(
-                                    .60,
-                                    .82,
-                                    Curves.easeOutBack,
-                                  ),
-                                  dot: _interval(
-                                    .74,
-                                    .84,
-                                    Curves.easeOutBack,
-                                  ),
+                                  entrance: _entrance,
+                                  breath: _breath,
+                                  ripple: _ambient,
+                                  reduceMotion: reduceMotion,
+                                  accent: colors.accent,
                                   compact: compact,
                                 ),
                                 SizedBox(height: compact ? 12 : 18),
                                 _AnimatedSubtitle(
-                                  text: widget.subtitle ??
-                                      l10n.loadingSubtitle,
-                                  animation: _interval(.78, .92),
+                                  text: widget.subtitle ?? l10n.loadingSubtitle,
+                                  animation: _interval(.82, .95),
+                                  breath: _breath,
+                                  reduceMotion: reduceMotion,
                                 ),
                                 SizedBox(height: compact ? 20 : 30),
                                 RepaintBoundary(
                                   child: SizedBox(
-                                    width:
-                                        math.min(contentWidth * .65, 250),
+                                    width: math.min(contentWidth * .65, 250),
                                     height: compact ? 48 : 58,
                                     child: AnimatedBuilder(
                                       animation: _entrance,
                                       builder: (context, _) => CustomPaint(
                                         painter: _ProgressLinePainter(
-                                          progress:
-                                              _interval(.85, .97).value,
+                                          progress: _interval(.88, .99).value,
                                           lineColor: colors.decoration,
                                           accentColor: colors.accent,
                                         ),
@@ -204,10 +227,12 @@ class _DisciplineFreedomLoadingPageState
                           child: _BottomStatus(
                             visible: _interval(.90, .98),
                             pulse: _ambient,
+                            breath: _breath,
+                            reduceMotion: reduceMotion,
                             color: colors.accent,
                             textColor: colors.secondaryText,
-                            statusText: widget.statusText ??
-                                l10n.loadingPreparingPlan,
+                            statusText:
+                                widget.statusText ?? l10n.loadingPreparingPlan,
                             error: _error,
                             onRetry: _initialize,
                             onEnterAnyway: widget.onEnterAnyway == null
@@ -241,44 +266,63 @@ const _loadingBrightRainbow = <Color>[
   Color(0xFFFF2D95),
 ];
 
-/// Tints opaque ink with a bright rainbow; optional dark halo for contrast.
+/// Tints opaque ink with a bright rainbow; optional soft glow halo.
 class _RainbowTint extends StatelessWidget {
-  const _RainbowTint({
-    required this.builder,
-    this.halo = true,
-  });
+  const _RainbowTint({required this.builder, this.halo = true, this.shift = 0});
 
   final WidgetBuilder builder;
   final bool halo;
+  final double shift;
+
+  static final _flowColors = [
+    ..._loadingBrightRainbow,
+    _loadingBrightRainbow.first,
+  ];
 
   @override
   Widget build(BuildContext context) {
     final rainbow = ShaderMask(
       blendMode: BlendMode.srcIn,
-      shaderCallback: (bounds) => const LinearGradient(
+      shaderCallback: (bounds) => LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: _loadingBrightRainbow,
+        colors: _flowColors,
+        tileMode: TileMode.repeated,
+        transform: _SlidingGradientTransform(shift: shift),
       ).createShader(bounds),
       child: builder(context),
     );
     if (!halo) return rainbow;
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        ColorFiltered(
-          colorFilter: const ColorFilter.mode(
-            Color(0xB31A1020),
-            BlendMode.srcIn,
+    return RepaintBoundary(
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+            child: ColorFiltered(
+              colorFilter: const ColorFilter.mode(
+                Color(0x551A1020),
+                BlendMode.srcIn,
+              ),
+              child: builder(context),
+            ),
           ),
-          child: Transform.translate(
-            offset: const Offset(0, 1.2),
-            child: builder(context),
-          ),
-        ),
-        rainbow,
-      ],
+          rainbow,
+        ],
+      ),
     );
+  }
+}
+
+class _SlidingGradientTransform extends GradientTransform {
+  const _SlidingGradientTransform({required this.shift});
+
+  final double shift;
+
+  @override
+  Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
+    return Matrix4.translationValues(shift * bounds.width, 0, 0);
   }
 }
 
@@ -310,10 +354,7 @@ class _InkRainbowBloom extends StatelessWidget {
 }
 
 class _InkRainbowBloomPainter extends CustomPainter {
-  _InkRainbowBloomPainter({
-    required this.dropT,
-    required this.bloomT,
-  });
+  _InkRainbowBloomPainter({required this.dropT, required this.bloomT});
 
   final double dropT;
   final double bloomT;
@@ -332,7 +373,8 @@ class _InkRainbowBloomPainter extends CustomPainter {
     // Expanding circular reveal of the same diagonal oil-rainbow wash
     // used as the app scaffold base (not radially arranged colors).
     if (bloomT > 0.001) {
-      final maxR = math.sqrt(
+      final maxR =
+          math.sqrt(
             math.pow(math.max(cx, size.width - cx), 2) +
                 math.pow(math.max(impact.dy, size.height - impact.dy), 2),
           ) *
@@ -420,107 +462,325 @@ class _LoadingColors {
   final Color decoration;
 }
 
-class _AnimatedMainTitle extends StatelessWidget {
-  const _AnimatedMainTitle({
+class _KineticTitle extends StatelessWidget {
+  const _KineticTitle({
     required this.left,
     required this.right,
-    required this.movement,
-    required this.dot,
+    required this.entrance,
+    required this.breath,
+    required this.ripple,
+    required this.reduceMotion,
+    required this.accent,
     required this.compact,
   });
 
   final String left;
   final String right;
-  final Animation<double> movement;
-  final Animation<double> dot;
+  final AnimationController entrance;
+  final AnimationController breath;
+  final AnimationController ripple;
+  final bool reduceMotion;
+  final Color accent;
   final bool compact;
+
+  static const _titleBegin = 0.55;
+  static const _titleEnd = 0.88;
+  static const _dotBegin = 0.78;
+  static const _dotEnd = 0.92;
+  static const _charSpan = 0.16;
+  static const _stagger = 0.045;
 
   @override
   Widget build(BuildContext context) {
     final style = Theme.of(context).textTheme.headlineMedium?.copyWith(
-      fontSize: compact ? 29 : 34,
-      fontWeight: FontWeight.w700,
-      letterSpacing: 2,
+      fontFamily: AppTheme.displayFontFamily,
+      fontSize: compact ? 32 : 38,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 0,
       height: 1.15,
       color: Colors.white,
     );
+    final leftChars = left.characters.toList();
+    final rightChars = right.characters.toList();
+
     return AnimatedBuilder(
-      animation: Listenable.merge([movement, dot]),
-      builder: (context, _) => _RainbowTint(
-        builder: (context) => Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
+      animation: Listenable.merge([entrance, breath, ripple]),
+      builder: (context, _) {
+        final spacing = Tween<double>(begin: 12, end: 3).transform(
+          _intervalValue(
+            entrance.value,
+            _titleBegin,
+            _titleEnd,
+            Curves.easeOutCubic,
+          ),
+        );
+        final shift = reduceMotion ? 0.0 : breath.value;
+        final dotProgress = _intervalValue(
+          entrance.value,
+          _dotBegin,
+          _dotEnd,
+          Curves.elasticOut,
+        );
+
+        return Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
           children: [
-            Transform.translate(
-              offset: Offset(
-                -MediaQuery.sizeOf(context).width * .55 * (1 - movement.value),
-                0,
-              ),
-              child: Text(left, style: style),
-            ),
-            SizedBox(
-              width: compact ? 28 : 34,
-              child: Opacity(
-                opacity: dot.value.clamp(0, 1),
-                child: Transform.scale(
-                  scale: dot.value,
-                  child: Text(
-                    '·',
-                    textAlign: TextAlign.center,
-                    style: style,
+            IgnorePointer(
+              child: Container(
+                width: compact ? 160 : 200,
+                height: compact ? 56 : 68,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      accent.withValues(alpha: 0.10),
+                      accent.withValues(alpha: 0),
+                    ],
                   ),
                 ),
               ),
             ),
-            Transform.translate(
-              offset: Offset(
-                MediaQuery.sizeOf(context).width * .55 * (1 - movement.value),
-                0,
+            _RainbowTint(
+              shift: shift,
+              builder: (context) => Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ..._buildGroup(
+                    chars: leftChars,
+                    style: style,
+                    fromCenter: false,
+                    groupOffset: 0,
+                    shift: shift,
+                    spacing: spacing,
+                  ),
+                  _DotWithRipple(
+                    progress: dotProgress,
+                    ripple: reduceMotion ? 0 : ripple.value,
+                    style: style,
+                  ),
+                  ..._buildGroup(
+                    chars: rightChars,
+                    style: style,
+                    fromCenter: true,
+                    groupOffset: leftChars.length,
+                    shift: shift,
+                    spacing: spacing,
+                  ),
+                ],
               ),
-              child: Text(right, style: style),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  List<Widget> _buildGroup({
+    required List<String> chars,
+    required TextStyle? style,
+    required bool fromCenter,
+    required int groupOffset,
+    required double shift,
+    required double spacing,
+  }) {
+    final widgets = <Widget>[];
+    for (var i = 0; i < chars.length; i++) {
+      // Stagger from center outward: left group last→first, right group first→last.
+      final staggerIndex = fromCenter ? i : (chars.length - 1 - i);
+      final globalIndex = groupOffset + i;
+      final begin = (_titleBegin + staggerIndex * _stagger).clamp(0.0, 1.0);
+      final end = (begin + _charSpan).clamp(0.0, 1.0);
+      final t = _intervalValue(entrance.value, begin, end, Curves.easeOutBack);
+      final breathDy = reduceMotion
+          ? 0.0
+          : -2.2 * math.sin(2 * math.pi * (shift + globalIndex * 0.14));
+      final breathScale = reduceMotion
+          ? 1.0
+          : 1 + 0.012 * math.sin(2 * math.pi * (shift + globalIndex * 0.14));
+      if (i > 0) widgets.add(SizedBox(width: spacing));
+      widgets.add(
+        Transform.translate(
+          offset: Offset(0, (1 - t) * 26 + breathDy),
+          child: Transform.rotate(
+            angle: (1 - t) * -0.10,
+            child: Transform.scale(
+              scale: (0.72 + 0.28 * t) * breathScale,
+              child: Opacity(
+                opacity: t.clamp(0.0, 1.0),
+                child: Text(chars[i], style: style),
+              ),
+            ),
+          ),
         ),
+      );
+    }
+    return widgets;
+  }
+}
+
+class _DotWithRipple extends StatelessWidget {
+  const _DotWithRipple({
+    required this.progress,
+    required this.ripple,
+    required this.style,
+  });
+
+  final double progress;
+  final double ripple;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = (style?.fontSize ?? 34) * 1.1;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CustomPaint(
+            size: Size(size, size),
+            painter: _RipplePainter(
+              progress: progress,
+              ripple: ripple,
+              color: Colors.white,
+            ),
+          ),
+          Opacity(
+            opacity: progress.clamp(0.0, 1.0),
+            child: Transform.scale(
+              scale: progress,
+              child: Text('·', textAlign: TextAlign.center, style: style),
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class _RipplePainter extends CustomPainter {
+  const _RipplePainter({
+    required this.progress,
+    required this.ripple,
+    required this.color,
+  });
+
+  final double progress;
+  final double ripple;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (progress < 0.01) return;
+    final center = Offset(size.width / 2, size.height / 2);
+    final maxR = size.shortestSide * 0.48;
+    final wave = (ripple % 1.0);
+    final radius = maxR * (0.35 + 0.65 * wave);
+    final alpha = (1 - wave) * 0.45 * progress;
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..color = color.withValues(alpha: alpha)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.4,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _RipplePainter oldDelegate) =>
+      oldDelegate.progress != progress ||
+      oldDelegate.ripple != ripple ||
+      oldDelegate.color != color;
 }
 
 class _AnimatedSubtitle extends StatelessWidget {
   const _AnimatedSubtitle({
     required this.text,
     required this.animation,
+    required this.breath,
+    required this.reduceMotion,
   });
 
   final String text;
   final Animation<double> animation;
+  final AnimationController breath;
+  final bool reduceMotion;
+
+  List<String> _tokens(String value) {
+    final hasCjk = RegExp(r'[\u4e00-\u9fff]').hasMatch(value);
+    if (hasCjk) return value.characters.toList();
+    return value.split(RegExp(r'(\s+)')).where((t) => t.isNotEmpty).toList();
+  }
 
   @override
-  Widget build(BuildContext context) => FadeTransition(
-    opacity: animation,
-    child: SlideTransition(
-      position: Tween<Offset>(
-        begin: const Offset(-.35, 0),
-        end: Offset.zero,
-      ).animate(animation),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: _RainbowTint(
-          builder: (context) => Text(
-            text,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white,
-                  letterSpacing: 1.2,
-                  fontWeight: FontWeight.w600,
-                ),
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.bodyMedium?.copyWith(
+      fontFamily: AppTheme.displayFontFamily,
+      color: Colors.white,
+      letterSpacing: 1.2,
+      fontWeight: FontWeight.w500,
+    );
+    final tokens = _tokens(text);
+
+    return AnimatedBuilder(
+      animation: Listenable.merge([animation, breath]),
+      builder: (context, _) {
+        final shift = reduceMotion ? 0.0 : breath.value;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: _RainbowTint(
+            shift: shift,
+            builder: (context) => Wrap(
+              alignment: WrapAlignment.center,
+              children: [
+                for (var i = 0; i < tokens.length; i++)
+                  _staggerToken(
+                    token: tokens[i],
+                    index: i,
+                    total: tokens.length,
+                    style: style,
+                  ),
+              ],
+            ),
           ),
-        ),
+        );
+      },
+    );
+  }
+
+  Widget _staggerToken({
+    required String token,
+    required int index,
+    required int total,
+    required TextStyle? style,
+  }) {
+    final span = total <= 1 ? 1.0 : 1.0 / (total + 1);
+    final begin = (index * span * 0.85).clamp(0.0, 1.0);
+    final end = (begin + 0.45).clamp(0.0, 1.0);
+    final t = _intervalValue(animation.value, begin, end, Curves.easeOutCubic);
+    return Transform.translate(
+      offset: Offset(0, (1 - t) * 10),
+      child: Opacity(
+        opacity: t.clamp(0.0, 1.0),
+        child: Text(token, style: style),
       ),
-    ),
-  );
+    );
+  }
+}
+
+double _intervalValue(
+  double parent,
+  double begin,
+  double end, [
+  Curve curve = Curves.easeOutCubic,
+]) {
+  if (end <= begin) return parent >= end ? 1.0 : 0.0;
+  final raw = ((parent - begin) / (end - begin)).clamp(0.0, 1.0);
+  return curve.transform(raw);
 }
 
 class _AnimatedRunner extends StatelessWidget {
@@ -938,6 +1198,8 @@ class _BottomStatus extends StatelessWidget {
   const _BottomStatus({
     required this.visible,
     required this.pulse,
+    required this.breath,
+    required this.reduceMotion,
     required this.color,
     required this.textColor,
     required this.statusText,
@@ -948,6 +1210,8 @@ class _BottomStatus extends StatelessWidget {
 
   final Animation<double> visible;
   final Animation<double> pulse;
+  final AnimationController breath;
+  final bool reduceMotion;
   final Color color;
   final Color textColor;
   final String statusText;
@@ -965,13 +1229,18 @@ class _BottomStatus extends StatelessWidget {
               key: const ValueKey('loading'),
               mainAxisSize: MainAxisSize.min,
               children: [
-                _RainbowTint(
-                  builder: (context) => Text(
-                    statusText,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white,
-                      letterSpacing: .8,
-                      fontWeight: FontWeight.w600,
+                AnimatedBuilder(
+                  animation: breath,
+                  builder: (context, _) => _RainbowTint(
+                    shift: reduceMotion ? 0 : breath.value,
+                    builder: (context) => Text(
+                      statusText,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontFamily: AppTheme.displayFontFamily,
+                        color: Colors.white,
+                        letterSpacing: .8,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ),
@@ -987,9 +1256,10 @@ class _BottomStatus extends StatelessWidget {
                   builder: (context) => Text(
                     context.l10n.loadingPreparationFailed,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      fontFamily: AppTheme.displayFontFamily,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
