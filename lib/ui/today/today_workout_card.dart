@@ -272,36 +272,7 @@ class TodayWorkoutCard extends ConsumerWidget {
       error: (e, _) => Text(l10n.workoutLoadFailed('$e')),
       data: (snapshot) {
         if (snapshot.isEmpty) {
-          return SportSectionBand(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _headerRow(
-                  context: context,
-                  ref: ref,
-                  l10n: l10n,
-                  canAdd: editable,
-                  canSaveAsPlan: editable,
-                  title: Text(
-                    l10n.sectionWorkout(sectionPrefix),
-                    style: theme.textTheme.titleMedium,
-                  ),
-                ),
-                Text(
-                  editable ? l10n.noWorkoutTodo : l10n.pastDayReadOnly,
-                  style: theme.textTheme.meta,
-                ),
-              ],
-            ),
-          );
-        }
-
-        final done = snapshot.doneCount;
-        final total = snapshot.items.length;
-        final planName = snapshot.workout?.planName;
-
-        return SportSectionBand(
-          child: Column(
+          return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _headerRow(
@@ -309,82 +280,115 @@ class TodayWorkoutCard extends ConsumerWidget {
                 ref: ref,
                 l10n: l10n,
                 canAdd: editable,
-                canSaveAsPlan: true,
-                title: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.sectionWorkout(sectionPrefix),
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    if (planName != null && planName.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(planName, style: theme.textTheme.meta),
-                    ],
-                  ],
+                canSaveAsPlan: editable,
+                title: Text(
+                  l10n.sectionWorkout(sectionPrefix),
+                  style: theme.textTheme.titleMedium,
                 ),
               ),
-              const SizedBox(height: 4),
-              for (final progress in snapshot.items)
-                if (editable)
-                  Dismissible(
-                    key: ValueKey(progress.item.id),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 16),
-                      color: scheme.error,
-                      child: const Icon(Icons.delete, color: Colors.white),
-                    ),
-                    confirmDismiss: (_) async {
-                      return await showDialog<bool>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: Text(l10n.deleteWorkoutItem),
-                              content: Text(
-                                l10n.confirmDeleteWorkoutItem(
-                                  progress.item.exerciseName,
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  child: Text(l10n.cancel),
-                                ),
-                                FilledButton(
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  child: Text(l10n.delete),
-                                ),
-                              ],
-                            ),
-                          ) ==
-                          true;
-                    },
-                    onDismissed: (_) {
-                      ref
-                          .read(workoutRepositoryProvider)
-                          .deleteDayWorkoutItem(progress.item.id);
-                      ref.invalidate(workoutHistoryProvider);
-                    },
-                    child: _WorkoutItemTile(
-                      progress: progress,
-                      day: day,
-                      editable: true,
-                    ),
-                  )
-                else
-                  _WorkoutItemTile(
-                    progress: progress,
-                    day: day,
-                    editable: false,
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 28),
+                child: Center(
+                  child: Text(
+                    editable ? l10n.noWorkoutTodo : l10n.pastDayReadOnly,
+                    style: theme.textTheme.meta,
                   ),
-              const SizedBox(height: 4),
-              Text(
-                l10n.workoutProgressHint(done, total),
-                style: theme.textTheme.meta,
+                ),
               ),
             ],
-          ),
+          );
+        }
+
+        final done = snapshot.doneCount;
+        final total = snapshot.items.length;
+        final planName = snapshot.workout?.planName;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _headerRow(
+              context: context,
+              ref: ref,
+              l10n: l10n,
+              canAdd: editable,
+              canSaveAsPlan: true,
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.sectionWorkout(sectionPrefix),
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  if (planName != null && planName.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(planName, style: theme.textTheme.meta),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            for (final progress in snapshot.items)
+              if (editable)
+                Dismissible(
+                  key: ValueKey(progress.item.id),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    margin: const EdgeInsets.only(bottom: AppSpacing.field),
+                    padding: const EdgeInsets.only(right: 16),
+                    decoration: BoxDecoration(
+                      color: scheme.error,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ),
+                  confirmDismiss: (_) async {
+                    return await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: Text(l10n.deleteWorkoutItem),
+                            content: Text(
+                              l10n.confirmDeleteWorkoutItem(
+                                progress.item.exerciseName,
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: Text(l10n.cancel),
+                              ),
+                              FilledButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: Text(l10n.delete),
+                              ),
+                            ],
+                          ),
+                        ) ==
+                        true;
+                  },
+                  onDismissed: (_) {
+                    ref
+                        .read(workoutRepositoryProvider)
+                        .deleteDayWorkoutItem(progress.item.id);
+                    ref.invalidate(workoutHistoryProvider);
+                  },
+                  child: _WorkoutItemTile(
+                    progress: progress,
+                    day: day,
+                    editable: true,
+                  ),
+                )
+              else
+                _WorkoutItemTile(
+                  progress: progress,
+                  day: day,
+                  editable: false,
+                ),
+            Text(
+              l10n.workoutProgressHint(done, total),
+              style: theme.textTheme.meta,
+            ),
+          ],
         );
       },
     );
@@ -409,7 +413,7 @@ class _WorkoutItemTile extends ConsumerWidget {
     final unitLabel = progress.unit.label(l10n);
     final theme = Theme.of(context);
 
-    return SportInkRow(
+    return SportListTile(
       leading: Checkbox(
         value: item.done,
         onChanged: editable
