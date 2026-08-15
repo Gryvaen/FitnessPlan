@@ -60,13 +60,12 @@ class StepRepository {
     final byDay = <DateTime, int>{
       for (final row in rows) _dayStart(row.date): row.steps,
     };
-    return [
-      for (var i = 0; i < limitDays; i++)
-        StepDay(
-          date: today.subtract(Duration(days: i)),
-          steps: byDay[today.subtract(Duration(days: i))] ?? 0,
-        ),
-    ];
+    final out = <StepDay>[];
+    for (var i = 0; i < limitDays; i++) {
+      final date = CalendarDay.dayOnly(today.subtract(Duration(days: i)));
+      out.add(StepDay(date: date, steps: byDay[date] ?? 0));
+    }
+    return out;
   }
 
   Stream<List<StepDay>> watchRecentDays({int limitDays = 14}) {

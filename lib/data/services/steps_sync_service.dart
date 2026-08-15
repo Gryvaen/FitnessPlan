@@ -1,6 +1,4 @@
-import 'dart:io' show Platform;
-
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart';
 import 'package:health/health.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -18,7 +16,9 @@ class StepsSyncService {
   bool _syncing = false;
 
   static bool get isPlatformSupported =>
-      !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
 
   Future<void> _ensureConfigured() async {
     if (_configured) return;
@@ -32,7 +32,7 @@ class StepsSyncService {
     if (!isPlatformSupported) return false;
     try {
       await _ensureConfigured();
-      if (Platform.isAndroid) {
+      if (defaultTargetPlatform == TargetPlatform.android) {
         final status = await Permission.activityRecognition.request();
         if (!status.isGranted) return false;
       }
@@ -43,10 +43,10 @@ class StepsSyncService {
         permissions: permissions,
       );
       if (!ok) return false;
-      if (Platform.isAndroid) {
+      if (defaultTargetPlatform == TargetPlatform.android) {
         try {
           final historyOk = await _health.isHealthDataHistoryAuthorized();
-          if (historyOk != true) {
+          if (!historyOk) {
             await _health.requestHealthDataHistoryAuthorization();
           }
         } catch (_) {
@@ -70,13 +70,13 @@ class StepsSyncService {
       final today = CalendarDay.todayLocal();
       final now = DateTime.now();
       for (var i = 0; i < limitDays; i++) {
-        final day = today.subtract(Duration(days: i));
-        final start = CalendarDay.dayOnly(day);
+        final day = CalendarDay.dayOnly(today.subtract(Duration(days: i)));
+        final start = day;
         final end = i == 0
             ? now
-            : start.add(const Duration(days: 1)).subtract(
-                  const Duration(milliseconds: 1),
-                );
+            : start
+                .add(const Duration(days: 1))
+                .subtract(const Duration(milliseconds: 1));
         int steps = 0;
         try {
           final total = await _health.getTotalStepsInInterval(start, end);
