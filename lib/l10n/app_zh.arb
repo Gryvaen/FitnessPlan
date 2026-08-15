@@ -170,6 +170,16 @@
   "deletePlan": "删除计划",
   "noExercisesInPlan": "无动作",
   "workoutHistory": "训练历史",
+  "stepHistory": "运动步数",
+  "steps": "步数",
+  "nSteps": "{n} 步",
+  "@nSteps": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "noSetLogs": "暂无组次记录",
   "addExercisesFirst": "请先在记录页添加动作",
   "addExercisesFirstShort": "请先添加动作",

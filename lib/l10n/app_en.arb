@@ -170,6 +170,16 @@
   "deletePlan": "Delete plan",
   "noExercisesInPlan": "No exercises",
   "workoutHistory": "Workout history",
+  "stepHistory": "Daily steps",
+  "steps": "Steps",
+  "nSteps": "{n} steps",
+  "@nSteps": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "noSetLogs": "No set logs",
   "addExercisesFirst": "Add exercises on the Records page first",
   "addExercisesFirstShort": "Add exercises first",

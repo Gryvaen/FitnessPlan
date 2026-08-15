@@ -1118,6 +1118,24 @@ abstract class AppLocalizations {
   /// **'Workout history'**
   String get workoutHistory;
 
+  /// No description provided for @stepHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily steps'**
+  String get stepHistory;
+
+  /// No description provided for @steps.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps'**
+  String get steps;
+
+  /// No description provided for @nSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} steps'**
+  String nSteps(int n);
+
   /// No description provided for @noSetLogs.
   ///
   /// In en, this message translates to:

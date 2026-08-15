@@ -519,6 +519,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get workoutHistory => '训练历史';
 
   @override
+  String get stepHistory => '运动步数';
+
+  @override
+  String get steps => '步数';
+
+  @override
+  String nSteps(int n) {
+    return '$n 步';
+  }
+
+  @override
   String get noSetLogs => '暂无组次记录';
 
   @override

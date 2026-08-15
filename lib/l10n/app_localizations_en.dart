@@ -519,6 +519,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workoutHistory => 'Workout history';
 
   @override
+  String get stepHistory => 'Daily steps';
+
+  @override
+  String get steps => 'Steps';
+
+  @override
+  String nSteps(int n) {
+    return '$n steps';
+  }
+
+  @override
   String get noSetLogs => 'No set logs';
 
   @override
