@@ -356,6 +356,8 @@
   "toolboxSubtitle": "体脂估算 · 身体指标 · 食物换算 · 休息计时",
   "theme": "主题",
   "themeSubtitle": "外观配色",
+  "themeDay": "白天",
+  "themeNight": "晚上",
   "themeForest": "森林绿",
   "themeMidnight": "午夜蓝",
   "themeSunrise": "暖阳橙",

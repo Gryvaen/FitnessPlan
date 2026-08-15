@@ -1929,6 +1929,18 @@ abstract class AppLocalizations {
   /// **'Appearance colors'**
   String get themeSubtitle;
 
+  /// No description provided for @themeDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get themeDay;
+
+  /// No description provided for @themeNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Night'**
+  String get themeNight;
+
   /// No description provided for @themeForest.
   ///
   /// In en, this message translates to:

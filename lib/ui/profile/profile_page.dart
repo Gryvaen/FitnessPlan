@@ -197,6 +197,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 ),
               ),
             ],
+            const SizedBox(width: 4),
+            _DayNightToggle(
+              isDark: theme.brightness == Brightness.dark,
+              onToggle: () {
+                final next = theme.brightness == Brightness.dark
+                    ? AppThemeId.day
+                    : AppThemeId.night;
+                ref.read(themeProvider.notifier).select(next);
+              },
+            ),
           ],
         ),
         actions: [
@@ -357,6 +367,40 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// White / black circle next to Me title: tap to switch day ↔ night.
+class _DayNightToggle extends StatelessWidget {
+  const _DayNightToggle({
+    required this.isDark,
+    required this.onToggle,
+  });
+
+  final bool isDark;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return IconButton(
+      onPressed: onToggle,
+      tooltip: isDark ? l10n.themeDay : l10n.themeNight,
+      icon: Container(
+        width: 18,
+        height: 18,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: isDark ? Colors.white : Colors.black,
+          border: Border.all(
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.35)
+                : Colors.white.withValues(alpha: 0.55),
+            width: 1,
+          ),
+        ),
       ),
     );
   }

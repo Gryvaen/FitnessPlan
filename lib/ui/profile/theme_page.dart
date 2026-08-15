@@ -21,17 +21,17 @@ class ThemePage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.formPage),
         children: [
-          for (final id in AppThemeId.values) ...[
+          for (var i = 0; i < AppThemeId.styledPresets.length; i++) ...[
             SportSurfaceCard(
               child: ListTile(
                 leading: _ThemeSwatch(
-                  colors: AppTheme.ofId(id)
+                  colors: AppTheme.ofId(AppThemeId.styledPresets[i])
                       .extension<AppThemeVisuals>()!
                       .hero
                       .colors,
                 ),
-                title: Text(id.label(l10n)),
-                trailing: selected == id
+                title: Text(AppThemeId.styledPresets[i].label(l10n)),
+                trailing: selected == AppThemeId.styledPresets[i]
                     ? Icon(
                         Icons.check_circle,
                         color: AppThemeVisuals.of(context).strokeGlow,
@@ -40,10 +40,12 @@ class ThemePage extends ConsumerWidget {
                         Icons.circle_outlined,
                         color: theme.colorScheme.outlineVariant,
                       ),
-                onTap: () => ref.read(themeProvider.notifier).select(id),
+                onTap: () => ref
+                    .read(themeProvider.notifier)
+                    .select(AppThemeId.styledPresets[i]),
               ),
             ),
-            if (id != AppThemeId.values.last)
+            if (i != AppThemeId.styledPresets.length - 1)
               const SizedBox(height: AppSpacing.field),
           ],
         ],
@@ -93,6 +95,8 @@ class _ThemeSwatch extends StatelessWidget {
 
 extension AppThemeIdL10n on AppThemeId {
   String label(AppLocalizations l10n) => switch (this) {
+        AppThemeId.day => l10n.themeDay,
+        AppThemeId.night => l10n.themeNight,
         AppThemeId.forest => l10n.themeForest,
         AppThemeId.midnight => l10n.themeMidnight,
         AppThemeId.sunrise => l10n.themeSunrise,

@@ -947,6 +947,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get themeSubtitle => '外观配色';
 
   @override
+  String get themeDay => '白天';
+
+  @override
+  String get themeNight => '晚上';
+
+  @override
   String get themeForest => '森林绿';
 
   @override

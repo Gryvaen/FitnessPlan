@@ -961,6 +961,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themeSubtitle => 'Appearance colors';
 
   @override
+  String get themeDay => 'Day';
+
+  @override
+  String get themeNight => 'Night';
+
+  @override
   String get themeForest => 'Forest';
 
   @override

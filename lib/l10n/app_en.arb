@@ -363,6 +363,8 @@
   "toolboxSubtitle": "Body fat · metrics · food convert · rest timer",
   "theme": "Theme",
   "themeSubtitle": "Appearance colors",
+  "themeDay": "Day",
+  "themeNight": "Night",
   "themeForest": "Forest",
   "themeMidnight": "Midnight",
   "themeSunrise": "Sunrise",

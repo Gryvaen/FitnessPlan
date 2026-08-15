@@ -98,10 +98,10 @@ class AppThemeVisuals extends ThemeExtension<AppThemeVisuals> {
   /// Soft radial glow center for surfaces.
   final Color glowSpot;
 
-  /// Safe lookup with forest fallback for tests / bootstrap.
+  /// Safe lookup with day fallback for tests / bootstrap.
   static AppThemeVisuals of(BuildContext context) {
     return Theme.of(context).extension<AppThemeVisuals>() ??
-        AppTheme._visualsFor(AppThemeId.forest);
+        AppTheme._visualsFor(AppThemeId.day);
   }
 
   @override
@@ -176,17 +176,27 @@ class AppThemeVisuals extends ThemeExtension<AppThemeVisuals> {
   }
 }
 
-/// Named theme presets selectable in Profile → Theme.
+/// Named theme presets selectable in Profile → Theme (styled) or Me day/night toggle.
 enum AppThemeId {
+  day,
+  night,
   forest,
   midnight,
   sunrise,
   graphite;
 
+  /// Colorful presets shown on the Theme page (excludes day / night).
+  static const styledPresets = [
+    forest,
+    midnight,
+    sunrise,
+    graphite,
+  ];
+
   static AppThemeId fromStorage(String? raw) {
     return AppThemeId.values.firstWhere(
       (e) => e.name == raw,
-      orElse: () => AppThemeId.forest,
+      orElse: () => AppThemeId.day,
     );
   }
 
@@ -216,8 +226,8 @@ class AppTheme {
     stops: [0.0, 0.16, 0.32, 0.48, 0.64, 0.8, 1.0],
   );
 
-  /// Default light theme (Forest); used by bootstrap / tests.
-  static ThemeData get light => ofId(AppThemeId.forest);
+  /// Default light theme (Day); used by bootstrap / tests.
+  static ThemeData get light => ofId(AppThemeId.day);
 
   static ThemeData ofId(AppThemeId id) {
     final scheme = _schemeFor(id);
@@ -225,8 +235,49 @@ class AppTheme {
     return _buildTheme(scheme, visuals);
   }
 
+  /// Flat Material visuals from a ColorScheme (day / night).
+  static AppThemeVisuals _plainVisuals(ColorScheme scheme) {
+    final primary = scheme.primary;
+    final surface = scheme.surface;
+    final container = scheme.surfaceContainerHighest;
+    final primaryContainer = scheme.primaryContainer;
+    final onPrimary = scheme.onPrimary;
+    final onSurface = scheme.onSurface;
+
+    LinearGradient solid(Color a, [Color? b]) => LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [a, b ?? a],
+        );
+
+    return AppThemeVisuals(
+      scaffoldWash: solid(surface.withValues(alpha: 0.0)),
+      accent: solid(primary),
+      hero: solid(primary, primaryContainer),
+      heroOnGradient: onPrimary,
+      previewColors: [primary, container],
+      surfaceGlow: solid(container),
+      strokeGlow: primary,
+      progress: solid(primary, primaryContainer),
+      pillShell: solid(scheme.surfaceContainerHigh),
+      chipSelected: solid(primaryContainer),
+      sectionWash: solid(container.withValues(alpha: 0.35)),
+      rail: solid(primary),
+      highlight: primary,
+      glowSpot: onSurface.withValues(alpha: 0.12),
+    );
+  }
+
   static ColorScheme _schemeFor(AppThemeId id) {
     return switch (id) {
+      AppThemeId.day => ColorScheme.fromSeed(
+          seedColor: Colors.blueGrey,
+          brightness: Brightness.light,
+        ),
+      AppThemeId.night => ColorScheme.fromSeed(
+          seedColor: Colors.blueGrey,
+          brightness: Brightness.dark,
+        ),
       AppThemeId.forest => ColorScheme.fromSeed(
           seedColor: const Color(0xFF0F766E),
           brightness: Brightness.light,
@@ -288,6 +339,7 @@ class AppTheme {
 
   static AppThemeVisuals _visualsFor(AppThemeId id) {
     return switch (id) {
+      AppThemeId.day || AppThemeId.night => _plainVisuals(_schemeFor(id)),
       AppThemeId.forest => const AppThemeVisuals(
           scaffoldWash: AppTheme.oilRainbowWash,
           accent: LinearGradient(
