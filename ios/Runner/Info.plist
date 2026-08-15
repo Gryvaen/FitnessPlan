@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Read your daily step count to show activity on Today and in Records.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>This app only reads step data and does not write to Apple Health.</string>
 </dict>
 </plist>

@@ -84,6 +84,18 @@ class WaterLogs extends Table {
       ];
 }
 
+/// Daily step totals synced from HealthKit / Health Connect.
+class StepLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get date => dateTime()();
+  IntColumn get steps => integer()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {date},
+      ];
+}
+
 class AppMeta extends Table {
   TextColumn get key => text()();
   TextColumn get value => text()();

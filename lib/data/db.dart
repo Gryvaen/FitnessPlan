@@ -19,6 +19,7 @@ part 'db.g.dart';
     MealPresets,
     MealPresetItems,
     WaterLogs,
+    StepLogs,
     AppMeta,
     Exercises,
     WorkoutPlans,
@@ -35,7 +36,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -116,6 +117,9 @@ WHERE id NOT IN (
           }
           if (from < 13) {
             await customStatement('DELETE FROM exercises WHERE is_custom = 0');
+          }
+          if (from < 14) {
+            await m.createTable(stepLogs);
           }
         },
       );
