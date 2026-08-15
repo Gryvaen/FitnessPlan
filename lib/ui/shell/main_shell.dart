@@ -1,28 +1,61 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations_ext.dart';
+import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 
-class MainShell extends StatelessWidget {
+class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
+  @override
+  ConsumerState<MainShell> createState() => _MainShellState();
+}
+
+class _MainShellState extends ConsumerState<MainShell>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncSteps());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _syncSteps();
+    }
+  }
+
+  void _syncSteps() {
+    ref.invalidate(stepsSyncProvider);
+  }
+
   void _onTap(int index) {
-    navigationShell.goBranch(
+    widget.navigationShell.goBranch(
       index,
-      initialLocation: index == navigationShell.currentIndex,
+      initialLocation: index == widget.navigationShell.currentIndex,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(stepsSyncProvider);
     final l10n = context.l10n;
     final visuals = AppThemeVisuals.of(context);
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
-    final selected = navigationShell.currentIndex;
+    final selected = widget.navigationShell.currentIndex;
 
     final items = <({IconData icon, IconData selectedIcon, String label})>[
       (
@@ -58,7 +91,7 @@ class MainShell extends StatelessWidget {
         ),
         Scaffold(
           backgroundColor: Colors.transparent,
-          body: navigationShell,
+          body: widget.navigationShell,
           bottomNavigationBar: Padding(
             padding: EdgeInsets.fromLTRB(20, 4, 20, 8 + bottomInset),
             child: SportPillShell(

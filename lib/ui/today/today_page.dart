@@ -43,6 +43,7 @@ class TodayPage extends ConsumerWidget {
     final remainF = targets.fatG - intake.fatG;
     final waterMl = ref.watch(waterMlProvider).value ?? 0;
     final waterGoal = ref.watch(waterGoalProvider);
+    final steps = ref.watch(stepsForSelectedDayProvider).value ?? 0;
 
     String remainMacro(double remain) => remain < 0
         ? l10n.macroOverG((-remain).toStringAsFixed(0))
@@ -231,9 +232,25 @@ class TodayPage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  l10n.sectionCalories(sectionPrefix),
-                  style: theme.textTheme.titleMedium?.copyWith(color: onHero),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l10n.sectionCalories(sectionPrefix),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: onHero,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      l10n.nSteps(steps),
+                      style: theme.textTheme.meta?.copyWith(
+                        color: onHeroMuted,
+                      ),
+                    ),
+                  ],
                 ),
                 if (profile.goal == FitnessGoal.cut &&
                     !plan.missingCutInputs &&

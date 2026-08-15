@@ -79,6 +79,7 @@ class TrainRecordsTab extends ConsumerWidget {
     final exercisesAsync = ref.watch(exercisesProvider);
     final plansAsync = ref.watch(workoutPlansProvider);
     final historyAsync = ref.watch(workoutHistoryProvider);
+    final stepsAsync = ref.watch(recentStepsProvider);
     final theme = Theme.of(context);
 
     return ListView(
@@ -307,6 +308,45 @@ class TrainRecordsTab extends ConsumerWidget {
                               ),
                             ),
                         ],
+                      ),
+                    ],
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.section),
+        ExpansionTile(
+          tilePadding: EdgeInsets.zero,
+          childrenPadding: EdgeInsets.zero,
+          initiallyExpanded: false,
+          title: Text(
+            l10n.stepHistory,
+            style: theme.textTheme.titleMedium,
+          ),
+          children: [
+            stepsAsync.when(
+              loading: () => const LinearProgressIndicator(),
+              error: (e, _) => Text(l10n.loadFailed('$e')),
+              data: (days) {
+                return Column(
+                  children: [
+                    for (var i = 0; i < days.length; i++) ...[
+                      if (i > 0)
+                        Divider(
+                          height: 1,
+                          color: theme.colorScheme.outlineVariant
+                              .withValues(alpha: 0.6),
+                        ),
+                      ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(AppDates.md(days[i].date, locale)),
+                        trailing: Text(
+                          l10n.nSteps(days[i].steps),
+                          style: theme.textTheme.meta,
+                        ),
                       ),
                     ],
                   ],
