@@ -5,6 +5,21 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../domain/calendar_day.dart';
 import '../repositories/step_repository.dart';
 
+/// Result of syncing steps from HealthKit / Health Connect.
+enum StepsSyncStatus {
+  /// Desktop / web — no system health store.
+  unsupported,
+
+  /// Activity recognition or health read permission not granted.
+  denied,
+
+  /// Authorized and daily totals were read successfully (may still be 0).
+  connected,
+
+  /// Unexpected failure while reading or writing step totals.
+  failed,
+}
+
 /// Syncs daily step totals from HealthKit / Health Connect into [StepRepository].
 class StepsSyncService {
   StepsSyncService(this._repo, {Health? health}) : _health = health ?? Health();
@@ -13,7 +28,7 @@ class StepsSyncService {
   final Health _health;
 
   bool _configured = false;
-  bool _syncing = false;
+  Future<StepsSyncStatus>? _inFlight;
 
   static bool get isPlatformSupported =>
       !kIsWeb &&
@@ -60,15 +75,25 @@ class StepsSyncService {
   }
 
   /// Pull today + previous [limitDays]-1 days and upsert. Missing → 0.
-  Future<void> syncRecent({int limitDays = 14}) async {
-    if (!isPlatformSupported || _syncing) return;
-    _syncing = true;
+  ///
+  /// Concurrent callers share the in-flight run instead of getting a
+  /// short-circuit result, so every caller observes the real outcome.
+  Future<StepsSyncStatus> syncRecent({int limitDays = 14}) {
+    if (!isPlatformSupported) {
+      return Future.value(StepsSyncStatus.unsupported);
+    }
+    return _inFlight ??= _run(limitDays).whenComplete(() => _inFlight = null);
+  }
+
+  Future<StepsSyncStatus> _run(int limitDays) async {
     try {
       final authorized = await ensureAuthorized();
-      if (!authorized) return;
+      if (!authorized) return StepsSyncStatus.denied;
 
       final today = CalendarDay.todayLocal();
       final now = DateTime.now();
+      var readsOk = 0;
+      var readsFailed = 0;
       for (var i = 0; i < limitDays; i++) {
         final day = CalendarDay.dayOnly(today.subtract(Duration(days: i)));
         final start = day;
@@ -77,17 +102,20 @@ class StepsSyncService {
             : start
                 .add(const Duration(days: 1))
                 .subtract(const Duration(milliseconds: 1));
-        int steps = 0;
         try {
           final total = await _health.getTotalStepsInInterval(start, end);
-          steps = total ?? 0;
+          // null = successful read with no samples → store 0.
+          await _repo.setStepsForDay(day, total ?? 0);
+          readsOk++;
         } catch (_) {
-          steps = 0;
+          // Keep any existing DB value for this day.
+          readsFailed++;
         }
-        await _repo.setStepsForDay(day, steps);
       }
-    } finally {
-      _syncing = false;
+      if (readsOk == 0 && readsFailed > 0) return StepsSyncStatus.failed;
+      return StepsSyncStatus.connected;
+    } catch (_) {
+      return StepsSyncStatus.failed;
     }
   }
 }
