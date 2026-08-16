@@ -22,7 +22,25 @@ final recentStepsProvider = StreamProvider.autoDispose<List<StepDay>>((ref) {
   return ref.watch(stepRepositoryProvider).watchRecentDays(limitDays: 14);
 });
 
-/// Kick off a background sync; safe to call often (service debounces).
-final stepsSyncProvider = FutureProvider.autoDispose<void>((ref) async {
-  await ref.watch(stepsSyncServiceProvider).syncRecent(limitDays: 14);
+/// Last completed sync outcome. Null only before the first attempt finishes.
+final stepsSyncStatusProvider =
+    NotifierProvider<StepsSyncStatusNotifier, StepsSyncStatus?>(
+  StepsSyncStatusNotifier.new,
+);
+
+class StepsSyncStatusNotifier extends Notifier<StepsSyncStatus?> {
+  @override
+  StepsSyncStatus? build() => null;
+
+  void setStatus(StepsSyncStatus status) => state = status;
+}
+
+/// Kick off a background sync; concurrent calls share one in-flight run.
+final stepsSyncProvider = FutureProvider.autoDispose<StepsSyncStatus>((ref) async {
+  final status =
+      await ref.read(stepsSyncServiceProvider).syncRecent(limitDays: 14);
+  if (ref.mounted) {
+    ref.read(stepsSyncStatusProvider.notifier).setStatus(status);
+  }
+  return status;
 });

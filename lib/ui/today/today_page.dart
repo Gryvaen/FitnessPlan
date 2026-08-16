@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../domain/calorie_calculator.dart';
 import '../../domain/models.dart';
 import '../../domain/plateau.dart';
+import '../../data/services/steps_sync_service.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
@@ -233,8 +234,6 @@ class TodayPage extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
                   children: [
                     Expanded(
                       child: Text(
@@ -244,11 +243,12 @@ class TodayPage extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    Text(
-                      l10n.nSteps(steps),
-                      style: theme.textTheme.meta?.copyWith(
+                    _StepsStatusLabel(
+                      stepsLabel: l10n.nSteps(steps),
+                      textStyle: theme.textTheme.meta?.copyWith(
                         color: onHeroMuted,
                       ),
+                      mutedColor: onHeroMuted,
                     ),
                   ],
                 ),
@@ -636,6 +636,87 @@ class TodayPage extends ConsumerWidget {
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StepsStatusLabel extends ConsumerWidget {
+  const _StepsStatusLabel({
+    required this.stepsLabel,
+    required this.textStyle,
+    required this.mutedColor,
+  });
+
+  final String stepsLabel;
+  final TextStyle? textStyle;
+  final Color mutedColor;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    // Keep provider alive / kick sync; display uses last known status so
+    // resume/retry refresh does not flash a spinner over a known result.
+    final sync = ref.watch(stepsSyncProvider);
+    final status = ref.watch(stepsSyncStatusProvider);
+    final showSpinner = sync.isLoading && status == null;
+
+    final (:icon, :color, :tooltip) = switch (status) {
+      StepsSyncStatus.connected => (
+          icon: Icons.check_circle_outline,
+          color: const Color(0xFFB9F6CA),
+          tooltip: l10n.stepsStatusConnected,
+        ),
+      StepsSyncStatus.denied => (
+          icon: Icons.link_off,
+          color: const Color(0xFFFFCC80),
+          tooltip: l10n.stepsStatusDenied,
+        ),
+      StepsSyncStatus.unsupported => (
+          icon: Icons.phonelink_off,
+          color: mutedColor,
+          tooltip: l10n.stepsStatusUnsupported,
+        ),
+      StepsSyncStatus.failed => (
+          icon: Icons.error_outline,
+          color: const Color(0xFFFFAB91),
+          tooltip: l10n.stepsStatusFailed,
+        ),
+      null => (
+          icon: Icons.sync,
+          color: mutedColor,
+          tooltip: l10n.stepsStatusSyncing,
+        ),
+    };
+
+    final canRetry = status != null && status != StepsSyncStatus.unsupported;
+
+    return Tooltip(
+      message: canRetry ? '$tooltip\n${l10n.stepsStatusRetryHint}' : tooltip,
+      child: InkWell(
+        onTap: canRetry ? () => ref.invalidate(stepsSyncProvider) : null,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(stepsLabel, style: textStyle),
+              const SizedBox(width: 4),
+              if (showSpinner)
+                SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 1.6,
+                    color: mutedColor,
+                  ),
+                )
+              else
+                Icon(icon, size: 16, color: color),
+            ],
+          ),
+        ),
       ),
     );
   }

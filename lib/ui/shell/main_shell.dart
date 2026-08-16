@@ -22,7 +22,6 @@ class _MainShellState extends ConsumerState<MainShell>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _syncSteps());
   }
 
   @override
@@ -34,12 +33,8 @@ class _MainShellState extends ConsumerState<MainShell>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _syncSteps();
+      ref.invalidate(stepsSyncProvider);
     }
-  }
-
-  void _syncSteps() {
-    ref.invalidate(stepsSyncProvider);
   }
 
   void _onTap(int index) {
