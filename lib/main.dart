@@ -33,34 +33,54 @@ class _Bootstrap extends ConsumerStatefulWidget {
 }
 
 class _BootstrapState extends ConsumerState<_Bootstrap> {
-  bool _enterAnyway = false;
+  /// The loading page is done (finished, skipped or bypassed).
+  bool _ready = false;
+
+  /// Build the real app behind the loading page so the hand-off is instant.
+  bool _prewarm = false;
+
+  void _enterHome() {
+    if (mounted && !_ready) setState(() => _ready = true);
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (_enterAnyway) return const FitnessApp();
-
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: DisciplineFreedomLoadingPage(
-        onInitialize: () async {
-          ref.invalidate(foodsSeedProvider);
-          await ref.read(foodsSeedProvider.future);
-        },
-        onFinished: () {
-          if (mounted) setState(() => _enterAnyway = true);
-        },
-        onError: (_) {},
-        onEnterAnyway: () {
-          if (mounted) setState(() => _enterAnyway = true);
-        },
+    // The child list keeps a stable shape so the prewarmed [FitnessApp]
+    // element survives when the loading overlay is removed.
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (_prewarm || _ready)
+            const FitnessApp()
+          else
+            const SizedBox.shrink(),
+          if (!_ready)
+            MaterialApp(
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.light,
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: DisciplineFreedomLoadingPage(
+                onInitialize: () async {
+                  ref.invalidate(foodsSeedProvider);
+                  await ref.read(foodsSeedProvider.future);
+                },
+                onPrewarm: () {
+                  if (mounted && !_prewarm) setState(() => _prewarm = true);
+                },
+                onFinished: _enterHome,
+                onError: (_) {},
+                onEnterAnyway: _enterHome,
+              ),
+            ),
+        ],
       ),
     );
   }
