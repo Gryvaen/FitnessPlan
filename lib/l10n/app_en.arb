@@ -180,6 +180,12 @@
       }
     }
   },
+  "stepsStatusConnected": "Connected — can read system steps (0 may mean no health data source)",
+  "stepsStatusDenied": "Not authorized or Health Connect / Health app unavailable",
+  "stepsStatusUnsupported": "Step sync is not supported on this platform",
+  "stepsStatusSyncing": "Syncing steps…",
+  "stepsStatusFailed": "Step sync failed — tap to retry",
+  "stepsStatusRetryHint": "Tap to retry sync",
   "noSetLogs": "No set logs",
   "addExercisesFirst": "Add exercises on the Records page first",
   "addExercisesFirstShort": "Add exercises first",

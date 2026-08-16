@@ -180,6 +180,12 @@
       }
     }
   },
+  "stepsStatusConnected": "已连接，可读取系统步数（为 0 时可能是健康数据源未写入）",
+  "stepsStatusDenied": "未授权或无法连接 Health Connect / 健康 App",
+  "stepsStatusUnsupported": "当前平台不支持步数同步",
+  "stepsStatusSyncing": "正在同步步数…",
+  "stepsStatusFailed": "步数同步失败，点按可重试",
+  "stepsStatusRetryHint": "点按重试同步",
   "noSetLogs": "暂无组次记录",
   "addExercisesFirst": "请先在记录页添加动作",
   "addExercisesFirstShort": "请先添加动作",

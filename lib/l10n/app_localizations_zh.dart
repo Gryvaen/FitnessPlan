@@ -530,6 +530,24 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get stepsStatusConnected => '已连接，可读取系统步数（为 0 时可能是健康数据源未写入）';
+
+  @override
+  String get stepsStatusDenied => '未授权或无法连接 Health Connect / 健康 App';
+
+  @override
+  String get stepsStatusUnsupported => '当前平台不支持步数同步';
+
+  @override
+  String get stepsStatusSyncing => '正在同步步数…';
+
+  @override
+  String get stepsStatusFailed => '步数同步失败，点按可重试';
+
+  @override
+  String get stepsStatusRetryHint => '点按重试同步';
+
+  @override
   String get noSetLogs => '暂无组次记录';
 
   @override

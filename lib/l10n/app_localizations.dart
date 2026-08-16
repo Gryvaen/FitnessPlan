@@ -1136,6 +1136,42 @@ abstract class AppLocalizations {
   /// **'{n} steps'**
   String nSteps(int n);
 
+  /// No description provided for @stepsStatusConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected — can read system steps (0 may mean no health data source)'**
+  String get stepsStatusConnected;
+
+  /// No description provided for @stepsStatusDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Not authorized or Health Connect / Health app unavailable'**
+  String get stepsStatusDenied;
+
+  /// No description provided for @stepsStatusUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Step sync is not supported on this platform'**
+  String get stepsStatusUnsupported;
+
+  /// No description provided for @stepsStatusSyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing steps…'**
+  String get stepsStatusSyncing;
+
+  /// No description provided for @stepsStatusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Step sync failed — tap to retry'**
+  String get stepsStatusFailed;
+
+  /// No description provided for @stepsStatusRetryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to retry sync'**
+  String get stepsStatusRetryHint;
+
   /// No description provided for @noSetLogs.
   ///
   /// In en, this message translates to:

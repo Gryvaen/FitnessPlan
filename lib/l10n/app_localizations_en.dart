@@ -530,6 +530,27 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get stepsStatusConnected =>
+      'Connected — can read system steps (0 may mean no health data source)';
+
+  @override
+  String get stepsStatusDenied =>
+      'Not authorized or Health Connect / Health app unavailable';
+
+  @override
+  String get stepsStatusUnsupported =>
+      'Step sync is not supported on this platform';
+
+  @override
+  String get stepsStatusSyncing => 'Syncing steps…';
+
+  @override
+  String get stepsStatusFailed => 'Step sync failed — tap to retry';
+
+  @override
+  String get stepsStatusRetryHint => 'Tap to retry sync';
+
+  @override
   String get noSetLogs => 'No set logs';
 
   @override
