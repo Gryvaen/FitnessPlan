@@ -487,65 +487,47 @@ class _KineticTitle extends StatelessWidget {
     final rightChars = right.characters.toList();
     final gap = compact ? 18.0 : 26.0;
 
-    return Stack(
-      alignment: Alignment.center,
-      clipBehavior: Clip.none,
-      children: [
-        IgnorePointer(
-          child: Container(
-            width: compact ? 200 : 260,
-            height: compact ? 72 : 88,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [Color(0x2E141018), Color(0x00141018)],
-              ),
-            ),
+    return AnimatedBuilder(
+      animation: entrance,
+      builder: (context, _) {
+        final spacing = Tween<double>(begin: 12, end: 3).transform(
+          _intervalValue(
+            entrance.value,
+            _titleBegin,
+            _titleEnd,
+            Curves.easeOutCubic,
           ),
-        ),
-        AnimatedBuilder(
-          animation: entrance,
-          builder: (context, _) {
-            final spacing = Tween<double>(begin: 12, end: 3).transform(
-              _intervalValue(
-                entrance.value,
-                _titleBegin,
-                _titleEnd,
-                Curves.easeOutCubic,
-              ),
-            );
-            // Rainbow flows only during entrance, then settles.
-            final shift = reduceMotion
-                ? 0.0
-                : Curves.easeOut.transform(
-                    (entrance.value / _titleEnd).clamp(0.0, 1.0),
-                  );
+        );
+        // Rainbow flows only during entrance, then settles.
+        final shift = reduceMotion
+            ? 0.0
+            : Curves.easeOut.transform(
+                (entrance.value / _titleEnd).clamp(0.0, 1.0),
+              );
 
-            return _RainbowTint(
-              shift: shift * 0.35,
-              builder: (context) => Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ..._buildGroup(
-                    chars: leftChars,
-                    style: style,
-                    fromLeft: true,
-                    spacing: spacing,
-                  ),
-                  SizedBox(width: gap),
-                  ..._buildGroup(
-                    chars: rightChars,
-                    style: style,
-                    fromLeft: false,
-                    spacing: spacing,
-                  ),
-                ],
+        return _RainbowTint(
+          shift: shift * 0.35,
+          builder: (context) => Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ..._buildGroup(
+                chars: leftChars,
+                style: style,
+                fromLeft: true,
+                spacing: spacing,
               ),
-            );
-          },
-        ),
-      ],
+              SizedBox(width: gap),
+              ..._buildGroup(
+                chars: rightChars,
+                style: style,
+                fromLeft: false,
+                spacing: spacing,
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
