@@ -55,7 +55,6 @@ class _DisciplineFreedomLoadingPageState
 
   late final CurvedAnimation _exitCurve;
   late final Animation<double> _exitOpacity;
-  late final CurvedAnimation _inkDrop;
   late final CurvedAnimation _inkBloom;
   late final CurvedAnimation _contentFade;
   late final CurvedAnimation _runnerProgress;
@@ -93,13 +92,9 @@ class _DisciplineFreedomLoadingPageState
 
     _exitCurve = CurvedAnimation(parent: _exit, curve: Curves.easeInCubic);
     _exitOpacity = ReverseAnimation(_exitCurve);
-    _inkDrop = CurvedAnimation(
-      parent: _entrance,
-      curve: const Interval(0, .18, curve: Curves.easeInCubic),
-    );
     _inkBloom = CurvedAnimation(
       parent: _entrance,
-      curve: const Interval(.14, .55, curve: Curves.easeOutCubic),
+      curve: const Interval(0, .55, curve: Curves.easeOutCubic),
     );
     _contentFade = CurvedAnimation(
       parent: _entrance,
@@ -195,7 +190,6 @@ class _DisciplineFreedomLoadingPageState
   @override
   void dispose() {
     _exitCurve.dispose();
-    _inkDrop.dispose();
     _inkBloom.dispose();
     _contentFade.dispose();
     _runnerProgress.dispose();
@@ -228,7 +222,7 @@ class _DisciplineFreedomLoadingPageState
             children: [
               ColoredBox(color: colors.background),
               RepaintBoundary(
-                child: _InkRainbowBloom(drop: _inkDrop, bloom: _inkBloom),
+                child: _InkRainbowBloom(bloom: _inkBloom),
               ),
               SafeArea(
                 child: LayoutBuilder(
@@ -383,22 +377,18 @@ class _SlidingGradientTransform extends GradientTransform {
   }
 }
 
-/// Full-screen ink drop → rainbow bloom fill.
+/// Full-screen rainbow bloom fill.
 class _InkRainbowBloom extends StatelessWidget {
-  const _InkRainbowBloom({required this.drop, required this.bloom});
+  const _InkRainbowBloom({required this.bloom});
 
-  final Animation<double> drop;
   final Animation<double> bloom;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([drop, bloom]),
+      animation: bloom,
       builder: (context, _) => CustomPaint(
-        painter: _InkRainbowBloomPainter(
-          dropT: drop.value,
-          bloomT: bloom.value,
-        ),
+        painter: _InkRainbowBloomPainter(bloomT: bloom.value),
         child: const SizedBox.expand(),
       ),
     );
@@ -406,84 +396,34 @@ class _InkRainbowBloom extends StatelessWidget {
 }
 
 class _InkRainbowBloomPainter extends CustomPainter {
-  _InkRainbowBloomPainter({required this.dropT, required this.bloomT});
+  _InkRainbowBloomPainter({required this.bloomT});
 
-  final double dropT;
   final double bloomT;
-
-  static const _inkCore = Color(0xFF0B3D2E);
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (bloomT <= 0.001) return;
+
     final cx = size.width * 0.5;
     final impact = Offset(cx, size.height * 0.42);
-    final dropStartY = -size.height * 0.06;
-    final dropY = dropStartY + (impact.dy - dropStartY) * dropT;
-    final dropCenter = Offset(cx, dropY);
     final fullRect = Offset.zero & size;
+    final maxR =
+        math.sqrt(
+          math.pow(math.max(cx, size.width - cx), 2) +
+              math.pow(math.max(impact.dy, size.height - impact.dy), 2),
+        ) *
+        1.2;
+    final bloomR = maxR * bloomT;
 
-    if (bloomT > 0.001) {
-      final maxR =
-          math.sqrt(
-            math.pow(math.max(cx, size.width - cx), 2) +
-                math.pow(math.max(impact.dy, size.height - impact.dy), 2),
-          ) *
-          1.2;
-      final bloomR = maxR * bloomT;
-
-      final washPaint = Paint()
-        ..shader = AppTheme.oilRainbowWash.createShader(fullRect);
-      canvas.drawCircle(impact, bloomR, washPaint);
-
-      // Brief ink heart that dissolves into the wash.
-      final inkFade = (1.0 - bloomT / 0.45).clamp(0.0, 1.0);
-      if (inkFade > 0.01) {
-        final inkR = bloomR * (0.22 + 0.18 * (1 - bloomT));
-        final inkPaint = Paint()
-          ..shader = RadialGradient(
-            colors: [
-              _inkCore.withValues(alpha: 0.85 * inkFade),
-              _inkCore.withValues(alpha: 0.35 * inkFade),
-              _inkCore.withValues(alpha: 0),
-            ],
-            stops: const [0.0, 0.45, 1.0],
-          ).createShader(Rect.fromCircle(center: impact, radius: inkR));
-        canvas.drawCircle(impact, inkR, inkPaint);
-      }
-    }
-
-    // Falling ink drop (fades as bloom expands).
-    if (dropT > 0.01 && bloomT < 0.4) {
-      final fade = (1.0 - bloomT / 0.4).clamp(0.0, 1.0);
-      final rx = 7.0 + 5.0 * dropT;
-      final ry = 10.0 + 8.0 * dropT;
-      final dropPaint = Paint()
-        ..color = _inkCore.withValues(alpha: 0.95 * fade);
-      canvas.drawOval(
-        Rect.fromCenter(center: dropCenter, width: rx * 2, height: ry * 2),
-        dropPaint,
-      );
-      // Tail while falling.
-      if (dropT < 0.95) {
-        final tailPaint = Paint()
-          ..color = _inkCore.withValues(alpha: 0.35 * fade)
-          ..strokeWidth = 3
-          ..strokeCap = StrokeCap.round;
-        canvas.drawLine(
-          Offset(cx, dropY - ry - 18 * (1 - dropT)),
-          Offset(cx, dropY - ry * 0.2),
-          tailPaint,
-        );
-      }
-    }
+    final washPaint = Paint()
+      ..shader = AppTheme.oilRainbowWash.createShader(fullRect);
+    canvas.drawCircle(impact, bloomR, washPaint);
   }
 
   @override
   bool shouldRepaint(covariant _InkRainbowBloomPainter oldDelegate) {
-    if (oldDelegate.bloomT >= 1.0 && bloomT >= 1.0) {
-      return oldDelegate.dropT != dropT;
-    }
-    return oldDelegate.dropT != dropT || oldDelegate.bloomT != bloomT;
+    if (oldDelegate.bloomT >= 1.0 && bloomT >= 1.0) return false;
+    return oldDelegate.bloomT != bloomT;
   }
 }
 
