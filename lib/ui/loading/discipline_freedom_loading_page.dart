@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' show PathMetric;
 
 import 'package:flutter/material.dart';
 
@@ -51,6 +52,7 @@ class _DisciplineFreedomLoadingPageState
   late final AnimationController _entrance;
   late final AnimationController _ambient;
   late final AnimationController _runnerController;
+  late final AnimationController _lineClimb;
   late final AnimationController _exit;
 
   late final CurvedAnimation _exitCurve;
@@ -65,6 +67,7 @@ class _DisciplineFreedomLoadingPageState
   Object? _error;
   bool _finishing = false;
   bool _prewarmed = false;
+  bool _climbStarted = false;
   int _attempt = 0;
 
   @override
@@ -76,6 +79,7 @@ class _DisciplineFreedomLoadingPageState
             duration: const Duration(milliseconds: 2000),
           )
           ..addStatusListener(_onEntranceStatus)
+          ..addListener(_maybeStartClimb)
           ..forward();
     _ambient = AnimationController(
       vsync: this,
@@ -85,6 +89,10 @@ class _DisciplineFreedomLoadingPageState
       vsync: this,
       duration: const Duration(milliseconds: 820),
     )..repeat();
+    _lineClimb = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..addStatusListener(_onClimbStatus);
     _exit = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 320),
@@ -135,12 +143,42 @@ class _DisciplineFreedomLoadingPageState
 
     sync(_ambient);
     sync(_runnerController);
+    if (reduce) {
+      _climbStarted = true;
+      _lineClimb
+        ..stop()
+        ..value = 1;
+    }
+  }
+
+  void _maybeStartClimb() {
+    if (_climbStarted || _finishing) return;
+    if (_progressLine.value <= 0) return;
+    _climbStarted = true;
+    if (!mounted) return;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _lineClimb.value = 1;
+      return;
+    }
+    _lineClimb.forward();
   }
 
   void _onEntranceStatus(AnimationStatus status) {
     if (status != AnimationStatus.completed || _prewarmed) return;
+    // Keep the climb smooth: only prewarm now if the run already finished
+    // (reduce-motion jumps climb to 1 without a status callback).
+    if (_lineClimb.value < 1) return;
+    _schedulePrewarm();
+  }
+
+  void _onClimbStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed) return;
+    _schedulePrewarm();
+  }
+
+  void _schedulePrewarm() {
+    if (_prewarmed) return;
     _prewarmed = true;
-    // Let the last entrance frame land before building the real app tree.
     Future.delayed(_prewarmDelay, () {
       if (!mounted || _finishing) return;
       widget.onPrewarm?.call();
@@ -170,6 +208,7 @@ class _DisciplineFreedomLoadingPageState
     _entrance.stop();
     _ambient.stop();
     _runnerController.stop();
+    _lineClimb.stop();
   }
 
   void _skip() {
@@ -199,6 +238,7 @@ class _DisciplineFreedomLoadingPageState
     _entrance.dispose();
     _ambient.dispose();
     _runnerController.dispose();
+    _lineClimb.dispose();
     _exit.dispose();
     super.dispose();
   }
@@ -274,12 +314,21 @@ class _DisciplineFreedomLoadingPageState
                                   RepaintBoundary(
                                     child: SizedBox(
                                       width: math.min(contentWidth * .65, 250),
-                                      height: compact ? 48 : 58,
+                                      height: compact ? 88 : 102,
                                       child: AnimatedBuilder(
-                                        animation: _progressLine,
+                                        animation: Listenable.merge([
+                                          _lineClimb,
+                                          _runnerController,
+                                          _ambient,
+                                        ]),
                                         builder: (context, _) => CustomPaint(
+                                          isComplex: true,
+                                          willChange: _lineClimb.value < 1,
                                           painter: _ProgressLinePainter(
-                                            progress: _progressLine.value,
+                                            climb: _lineClimb.value,
+                                            gait: _runnerController.value,
+                                            flagPhase: _ambient.value,
+                                            reduceMotion: reduceMotion,
                                             lineColor: colors.decoration,
                                             accentColor: colors.accent,
                                           ),
@@ -1004,63 +1053,368 @@ double _intervalAmount(double cycle, int index) {
   return _smoothStep(raw.clamp(0.0, 1.0));
 }
 
+class _ClimbPathCache {
+  static const _samples = 48;
+
+  Size? _size;
+  double? _topInset;
+  Path? path;
+  PathMetric? metric;
+  Offset tip = Offset.zero;
+  List<double> _times = const [0, 1];
+
+  void sync(Size size, double topInset) {
+    if (_size == size &&
+        _topInset == topInset &&
+        path != null &&
+        metric != null) {
+      return;
+    }
+    _size = size;
+    _topInset = topInset;
+    final built = _buildClimbPath(size, topInset);
+    path = built;
+    metric = built.computeMetrics().first;
+    final end = metric!.getTangentForOffset(metric!.length);
+    tip = end?.position ?? Offset(size.width - 3, topInset);
+    _times = _buildEffortTimes(metric!);
+  }
+
+  /// Maps elapsed climb time 0–1 onto arc-length 0–1, slower on steep/rugged bits.
+  double pathTForTime(double u) {
+    final t = u.clamp(0.0, 1.0);
+    if (t <= 0) return 0;
+    if (t >= 1) return 1;
+    final times = _times;
+    var lo = 0;
+    var hi = times.length - 1;
+    while (lo < hi - 1) {
+      final mid = (lo + hi) >> 1;
+      if (times[mid] <= t) {
+        lo = mid;
+      } else {
+        hi = mid;
+      }
+    }
+    final span = times[hi] - times[lo];
+    final f = span <= 1e-9 ? 0.0 : (t - times[lo]) / span;
+    final step = 1.0 / (times.length - 1);
+    return (lo + f) * step;
+  }
+
+  List<double> _buildEffortTimes(PathMetric metric) {
+    final n = _samples;
+    final times = List<double>.filled(n, 0);
+    var acc = 0.0;
+    Offset? prevDir;
+    for (var i = 0; i < n; i++) {
+      if (i > 0) {
+        final tangent = metric.getTangentForOffset(
+          metric.length * (i - 0.5) / (n - 1),
+        );
+        var rugged = 0.0;
+        if (tangent != null) {
+          final v = tangent.vector;
+          final len = v.distance;
+          if (len > 1e-6) {
+            rugged = (v.dy.abs() / len).clamp(0.0, 1.0);
+            if (prevDir != null) {
+              final plen = prevDir.distance;
+              if (plen > 1e-6) {
+                final align = ((v.dx * prevDir.dx + v.dy * prevDir.dy) /
+                        (len * plen))
+                    .clamp(-1.0, 1.0);
+                final turn = (1 - align) * 0.5;
+                rugged = (rugged + turn * 0.85).clamp(0.0, 1.0);
+              }
+            }
+            prevDir = v;
+          }
+        }
+        final speed = 0.38 + 1.45 * math.pow(1 - rugged, 1.35);
+        acc += 1 / speed;
+      }
+      times[i] = acc;
+    }
+    final total = times.last;
+    if (total <= 1e-9) return const [0.0, 1.0];
+    for (var i = 0; i < n; i++) {
+      times[i] /= total;
+    }
+    return times;
+  }
+}
+
+final _climbPathCache = _ClimbPathCache();
+
+Path _buildClimbPath(Size size, double topInset) {
+  final usable = size.height - topInset;
+  double y(double f) => topInset + usable * f;
+  return Path()
+    ..moveTo(2, y(.8))
+    ..cubicTo(
+      size.width * .2,
+      y(.78),
+      size.width * .22,
+      y(.57),
+      size.width * .39,
+      y(.62),
+    )
+    ..cubicTo(
+      size.width * .55,
+      y(.68),
+      size.width * .61,
+      y(.30),
+      size.width * .76,
+      y(.38),
+    )
+    ..quadraticBezierTo(
+      size.width * .89,
+      y(.43),
+      size.width - 3,
+      y(.12),
+    );
+}
+
+class _MiniClimberPainter extends CustomPainter {
+  const _MiniClimberPainter({
+    required this.phase,
+    required this.color,
+    this.lineWidth = 1.8,
+  });
+
+  final double phase;
+  final Color color;
+  final double lineWidth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cycle = _wrapCycle(phase);
+    final bob = math.sin(cycle * math.pi * 2) * 1.15;
+    final w = size.width;
+    final h = size.height;
+
+    Paint stroke(double width, double alpha) => Paint()
+      ..color = color.withValues(alpha: color.a * alpha)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = width
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final hip = Offset(w * 0.46, h * 0.50 + bob);
+    final shoulder = Offset(w * 0.51, h * 0.29 + bob);
+    final headCenter = Offset(w * 0.56, h * 0.145 + bob);
+    final headR = h * 0.09;
+
+    void drawLeg(double limbCycle, Paint paint) {
+      final swing = math.sin(limbCycle * math.pi * 2);
+      final high = (swing + 1) / 2;
+      final knee = Offset(
+        hip.dx + swing * w * 0.16,
+        hip.dy + h * (0.18 - high * 0.12),
+      );
+      final foot = Offset(
+        hip.dx + swing * w * 0.26,
+        hip.dy + h * (0.46 - high * 0.33),
+      );
+      canvas.drawPath(
+        Path()
+          ..moveTo(hip.dx, hip.dy)
+          ..lineTo(knee.dx, knee.dy)
+          ..lineTo(foot.dx, foot.dy),
+        paint,
+      );
+    }
+
+    void drawArm(double limbCycle, Paint paint) {
+      final swing = math.sin(limbCycle * math.pi * 2);
+      final elbow = Offset(
+        shoulder.dx + swing * w * 0.13,
+        shoulder.dy + h * 0.13,
+      );
+      final hand = Offset(
+        shoulder.dx + swing * w * 0.23,
+        shoulder.dy + h * (0.10 - swing * 0.09),
+      );
+      canvas.drawPath(
+        Path()
+          ..moveTo(shoulder.dx, shoulder.dy)
+          ..lineTo(elbow.dx, elbow.dy)
+          ..lineTo(hand.dx, hand.dy),
+        paint,
+      );
+    }
+
+    final rightNear = math.cos(cycle * math.pi * 2) >= 0;
+    final farPaint = stroke(lineWidth * 0.9, 0.52);
+    final nearPaint = stroke(lineWidth, 1);
+    final torsoPaint = stroke(lineWidth, 1);
+    final farLeg = rightNear ? _wrapCycle(cycle + 0.5) : cycle;
+    final nearLeg = rightNear ? cycle : _wrapCycle(cycle + 0.5);
+    final farArm = rightNear ? cycle : _wrapCycle(cycle + 0.5);
+    final nearArm = rightNear ? _wrapCycle(cycle + 0.5) : cycle;
+
+    drawLeg(farLeg, farPaint);
+    drawArm(farArm, farPaint);
+    canvas.drawLine(hip, shoulder, torsoPaint);
+    canvas.drawLine(
+      shoulder,
+      Offset(headCenter.dx, headCenter.dy + headR * 0.65),
+      torsoPaint,
+    );
+    canvas.drawCircle(headCenter, headR, torsoPaint);
+    drawLeg(nearLeg, nearPaint);
+    drawArm(nearArm, nearPaint);
+  }
+
+  @override
+  bool shouldRepaint(_MiniClimberPainter oldDelegate) =>
+      oldDelegate.phase != phase ||
+      oldDelegate.color != color ||
+      oldDelegate.lineWidth != lineWidth;
+}
+
 class _ProgressLinePainter extends CustomPainter {
   const _ProgressLinePainter({
-    required this.progress,
+    required this.climb,
+    required this.gait,
+    required this.flagPhase,
+    required this.reduceMotion,
     required this.lineColor,
     required this.accentColor,
   });
 
-  final double progress;
+  final double climb;
+  final double gait;
+  final double flagPhase;
+  final bool reduceMotion;
   final Color lineColor;
   final Color accentColor;
 
+  static const _figureW = 30.0;
+  static const _figureH = 34.0;
+  static const _arriveAt = 0.82;
+
   @override
   void paint(Canvas canvas, Size size) {
-    final path = Path()
-      ..moveTo(2, size.height * .8)
-      ..cubicTo(
-        size.width * .2,
-        size.height * .78,
-        size.width * .22,
-        size.height * .57,
-        size.width * .39,
-        size.height * .62,
-      )
-      ..cubicTo(
-        size.width * .55,
-        size.height * .68,
-        size.width * .61,
-        size.height * .30,
-        size.width * .76,
-        size.height * .38,
-      )
-      ..quadraticBezierTo(
-        size.width * .89,
-        size.height * .43,
-        size.width - 3,
-        size.height * .12,
-      );
+    _climbPathCache.sync(size, _figureH);
+    final path = _climbPathCache.path!;
+    final metric = _climbPathCache.metric!;
+    final timeT = reduceMotion ? 1.0 : (climb / _arriveAt).clamp(0.0, 1.0);
+    final lineT = reduceMotion ? 1.0 : _climbPathCache.pathTForTime(timeT);
+    final underlay = Paint()
+      ..color = const Color(0x66141018)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4.5
+      ..strokeCap = StrokeCap.round;
+    _drawPartialMetric(canvas, path, metric, underlay, lineT);
     final paint = Paint()
       ..color = lineColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
+      ..strokeWidth = 2.75
       ..strokeCap = StrokeCap.round;
-    _drawPartialPath(canvas, path, paint, progress);
-    if (progress >= .98) {
-      canvas.drawCircle(
-        Offset(size.width - 3, size.height * .12),
-        4,
-        Paint()..color = accentColor,
-      );
+    _drawPartialMetric(canvas, path, metric, paint, lineT);
+
+    if (reduceMotion || climb >= _arriveAt) {
+      _drawSummitFlag(canvas);
     }
+
+    if (reduceMotion) return;
+    final climberAlpha = climb < _arriveAt
+        ? 1.0
+        : (1.0 - (climb - _arriveAt) / (1.0 - _arriveAt)).clamp(0.0, 1.0);
+    if (climberAlpha < 0.02 || lineT <= 0.01) return;
+    _drawClimber(canvas, metric, lineT, climberAlpha);
+  }
+
+  void _drawSummitFlag(Canvas canvas) {
+    final tip = _climbPathCache.tip;
+    canvas.drawCircle(tip, 6, Paint()..color = const Color(0x66141018));
+    canvas.drawCircle(tip, 4.5, Paint()..color = accentColor);
+
+    final sway = reduceMotion ? 0.0 : math.sin(flagPhase * math.pi * 2) * 3.5;
+    final poleTop = Offset(tip.dx, tip.dy - 16);
+    canvas.drawLine(
+      tip,
+      poleTop,
+      Paint()
+        ..color = lineColor
+        ..strokeWidth = 1.5
+        ..strokeCap = StrokeCap.round,
+    );
+    final flag = Path()
+      ..moveTo(poleTop.dx, poleTop.dy + 1)
+      ..lineTo(poleTop.dx + 11 + sway, poleTop.dy + 5.5)
+      ..lineTo(poleTop.dx, poleTop.dy + 10)
+      ..close();
+    canvas.drawPath(
+      flag,
+      Paint()
+        ..color = const Color(0x66141018)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.4
+        ..strokeJoin = StrokeJoin.round,
+    );
+    canvas.drawPath(flag, Paint()..color = accentColor);
+  }
+
+  void _drawClimber(Canvas canvas, PathMetric metric, double t, double alpha) {
+    final tangent = metric.getTangentForOffset(
+      metric.length * t.clamp(0.0, 1.0),
+    );
+    if (tangent == null) return;
+    final slope = math.atan2(tangent.vector.dy, tangent.vector.dx);
+    final lean = (-slope * 0.28).clamp(-0.12, 0.42);
+    const footLift = 2.0;
+    canvas.save();
+    canvas.translate(tangent.position.dx, tangent.position.dy);
+    canvas.rotate(lean);
+    canvas.translate(-_figureW * 0.5, -(_figureH - footLift));
+    _MiniClimberPainter(
+      phase: gait,
+      color: lineColor.withValues(alpha: alpha),
+    ).paint(canvas, const Size(_figureW, _figureH));
+    canvas.restore();
   }
 
   @override
-  bool shouldRepaint(_ProgressLinePainter oldDelegate) =>
-      oldDelegate.progress != progress ||
-      oldDelegate.lineColor != lineColor ||
-      oldDelegate.accentColor != accentColor;
+  bool shouldRepaint(_ProgressLinePainter oldDelegate) {
+    final climberGone = climb >= 1 && oldDelegate.climb >= 1;
+    if (climberGone) {
+      return oldDelegate.flagPhase != flagPhase ||
+          oldDelegate.lineColor != lineColor ||
+          oldDelegate.accentColor != accentColor ||
+          oldDelegate.reduceMotion != reduceMotion;
+    }
+    if (climb < _arriveAt && oldDelegate.climb < _arriveAt) {
+      return oldDelegate.climb != climb ||
+          oldDelegate.gait != gait ||
+          oldDelegate.reduceMotion != reduceMotion ||
+          oldDelegate.lineColor != lineColor;
+    }
+    return oldDelegate.climb != climb ||
+        oldDelegate.gait != gait ||
+        oldDelegate.flagPhase != flagPhase ||
+        oldDelegate.reduceMotion != reduceMotion ||
+        oldDelegate.lineColor != lineColor ||
+        oldDelegate.accentColor != accentColor;
+  }
+}
+
+void _drawPartialMetric(
+  Canvas canvas,
+  Path path,
+  PathMetric metric,
+  Paint paint,
+  double progress,
+) {
+  final t = progress.clamp(0.0, 1.0);
+  if (t <= 0) return;
+  if (t >= 1) {
+    canvas.drawPath(path, paint);
+    return;
+  }
+  canvas.drawPath(metric.extractPath(0, metric.length * t), paint);
 }
 
 void _drawPartialPath(Canvas canvas, Path path, Paint paint, double progress) {
