@@ -695,11 +695,13 @@ class _MinimalRunnerPainter extends CustomPainter {
     required this.progress,
     required this.phase,
     required this.color,
+    this.lineWidth = 2.2,
   });
 
   final double progress;
   final double phase;
   final Color color;
+  final double lineWidth;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -719,7 +721,8 @@ class _MinimalRunnerPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 
-    final mainPaint = stroke(color, 2.2);
+    final limbWidth = lineWidth * 0.82;
+    final mainPaint = stroke(color, lineWidth);
     final shoulder = bodyPoint(.565, .335);
     final hip = bodyPoint(.53, .545);
     final neckTop = bodyPoint(.598, .24);
@@ -737,11 +740,11 @@ class _MinimalRunnerPainter extends CustomPainter {
     final leftDepth = 1 - rightDepth;
     final rightPaint = stroke(
       color.withValues(alpha: .42 + rightDepth * .58),
-      1.8 + rightDepth * .4,
+      limbWidth + rightDepth * lineWidth * 0.18,
     );
     final leftPaint = stroke(
       color.withValues(alpha: .42 + leftDepth * .58),
-      1.8 + leftDepth * .4,
+      limbWidth + leftDepth * lineWidth * 0.18,
     );
     final bendUnit = size.shortestSide;
 
@@ -825,7 +828,8 @@ class _MinimalRunnerPainter extends CustomPainter {
   bool shouldRepaint(_MinimalRunnerPainter oldDelegate) =>
       oldDelegate.progress != progress ||
       oldDelegate.phase != phase ||
-      oldDelegate.color != color;
+      oldDelegate.color != color ||
+      oldDelegate.lineWidth != lineWidth;
 }
 
 double _wrapCycle(double value) {
