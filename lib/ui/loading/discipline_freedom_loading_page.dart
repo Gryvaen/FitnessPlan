@@ -441,7 +441,7 @@ class _LoadingColors {
     primaryText: scheme.onSurface,
     secondaryText: scheme.onSurfaceVariant,
     accent: scheme.primary,
-    decoration: scheme.outlineVariant,
+    decoration: Colors.white.withValues(alpha: 0.92),
   );
 
   final Color background;
