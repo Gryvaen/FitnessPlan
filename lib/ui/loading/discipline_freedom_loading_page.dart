@@ -505,26 +505,29 @@ class _KineticTitle extends StatelessWidget {
                 (entrance.value / _titleEnd).clamp(0.0, 1.0),
               );
 
-        return _RainbowTint(
-          shift: shift * 0.35,
-          builder: (context) => Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ..._buildGroup(
-                chars: leftChars,
-                style: style,
-                fromLeft: true,
-                spacing: spacing,
-              ),
-              SizedBox(width: gap),
-              ..._buildGroup(
-                chars: rightChars,
-                style: style,
-                fromLeft: false,
-                spacing: spacing,
-              ),
-            ],
+        return FittedBox(
+          fit: BoxFit.scaleDown,
+          child: _RainbowTint(
+            shift: shift * 0.35,
+            builder: (context) => Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ..._buildGroup(
+                  chars: leftChars,
+                  style: style,
+                  fromLeft: true,
+                  spacing: spacing,
+                ),
+                SizedBox(width: gap),
+                ..._buildGroup(
+                  chars: rightChars,
+                  style: style,
+                  fromLeft: false,
+                  spacing: spacing,
+                ),
+              ],
+            ),
           ),
         );
       },
