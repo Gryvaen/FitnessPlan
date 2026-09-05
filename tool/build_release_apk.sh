@@ -35,7 +35,8 @@ echo "==> flutter analyze"
 flutter analyze --no-fatal-infos
 
 echo "==> flutter test"
-flutter test
+# Soft著截图 golden 依赖本地 docs/copyright（已 gitignore），默认排除。
+flutter test --exclude-tags=copyright
 
 # package:sqlite3 downloads prebuilt .so from GitHub via Dart HttpClient.
 # Some networks fail that TLS handshake; curl usually works. Prefetch into

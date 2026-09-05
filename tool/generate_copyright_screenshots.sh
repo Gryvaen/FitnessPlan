@@ -4,5 +4,5 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 mkdir -p docs/copyright/screenshots
-flutter test test/copyright_screenshots_test.dart --update-goldens
+flutter test test/copyright_screenshots_test.dart --tags=copyright --update-goldens
 echo "Screenshots saved to docs/copyright/screenshots/"

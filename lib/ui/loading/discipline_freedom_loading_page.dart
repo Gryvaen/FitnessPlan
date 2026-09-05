@@ -1268,9 +1268,7 @@ class _MiniClimberPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_MiniClimberPainter oldDelegate) =>
-      oldDelegate.phase != phase ||
-      oldDelegate.color != color ||
-      oldDelegate.lineWidth != lineWidth;
+      oldDelegate.phase != phase || oldDelegate.color != color;
 }
 
 class _ProgressLinePainter extends CustomPainter {

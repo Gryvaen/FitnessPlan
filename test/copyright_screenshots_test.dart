@@ -1,3 +1,6 @@
+@Tags(['copyright'])
+library;
+
 import 'dart:convert';
 
 import 'package:diet/domain/models.dart';
