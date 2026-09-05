@@ -1078,5 +1078,714 @@
         "type": "String"
       }
     }
+  },
+  "untitledWorkoutGroup": "其他",
+  "removeDayWorkout": "移除该计划",
+  "confirmRemoveDayWorkout": "确定从今日训练中移除「{name}」及其全部动作？",
+  "@confirmRemoveDayWorkout": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "sectionThatDay": "当日",
+  "foodsSeedLoadFailed": "食材库加载失败",
+  "enterAnyway": "仍要进入",
+  "toolboxSubtitle": "体脂估算 · 身体指标 · 食物换算 · 休息计时",
+  "theme": "主题",
+  "themeSubtitle": "外观配色",
+  "themeDay": "白天",
+  "themeNight": "晚上",
+  "themeForest": "森林绿",
+  "themeMidnight": "午夜蓝",
+  "themeSunrise": "暖阳橙",
+  "themeGraphite": "石墨灰",
+  "clearDataBody": "将清除所有饮食、体重、训练、便签、收藏与身体档案，相当于重新使用本程序。确定继续？",
+  "noInstallPackage": "新版本没有可用的安装包",
+  "cutPlanIncompleteHint": "请到「我的 → 我的档案」填写目标体重与每周降重。",
+  "copyYesterdayConfirm": "当日已有记录，将追加昨日餐食，确定？",
+  "activitySedentary": "久坐",
+  "activityLight": "轻度活动",
+  "activityModerate": "中度活动",
+  "activityHigh": "较高活动",
+  "activityAthlete": "运动员级",
+  "goalCut": "减脂",
+  "goalMaintain": "维持",
+  "goalBulk": "增肌",
+  "mealBreakfast": "早餐",
+  "mealLunch": "午餐",
+  "mealDinner": "晚餐",
+  "mealSnack": "加餐",
+  "bmiUnderweight": "偏瘦",
+  "bmiNormal": "正常",
+  "bmiOverweight": "超重",
+  "bmiObese": "肥胖",
+  "ffmiAverage": "普通人附近",
+  "ffmiTrained": "经常训练",
+  "ffmiAdvanced": "较高水平",
+  "ffmiElite": "接近高水平参考（非硬标准）",
+  "bmrFormulaMale": "男：10×体重 + 6.25×身高 − 5×年龄 + 5",
+  "bmrFormulaFemale": "女：10×体重 + 6.25×身高 − 5×年龄 − 161",
+  "noteMissingTargetWeight": "未填写有效的目标体重，暂按维持消耗的 80% 估算。请在「我的」中补全后重新计算。",
+  "loadFailed": "加载失败：{error}",
+  "@loadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "saveFailed": "保存失败：{error}",
+  "@saveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteFailed": "删除失败：{error}",
+  "@deleteFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "addFailed": "添加失败：{error}",
+  "@addFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "operationFailed": "操作失败：{error}",
+  "@operationFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "clearFailed": "清空失败：{error}",
+  "@clearFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "checkUpdateFailed": "检查更新失败：{error}",
+  "@checkUpdateFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "cannotOpenApk": "无法打开安装包：{message}",
+  "@cannotOpenApk": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "workoutLoadFailed": "训练加载失败：{error}",
+  "@workoutLoadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "loadFoodsFailed": "加载食材失败：{error}",
+  "@loadFoodsFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "applyPresetFailed": "套用失败：{error}",
+  "@applyPresetFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutNWeeks": "· 约 {weeks} 周",
+  "@aboutNWeeks": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "macroOverG": "超 {g} g",
+  "@macroOverG": {
+    "placeholders": {
+      "g": {
+        "type": "String"
+      }
+    }
+  },
+  "macroRemainG": "剩 {g} g",
+  "@macroRemainG": {
+    "placeholders": {
+      "g": {
+        "type": "String"
+      }
+    }
+  },
+  "kcalOver": "超 {n}",
+  "@kcalOver": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "kcalRemain": "剩 {n}",
+  "@kcalRemain": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "plateauHint": "近 {days} 天体重几乎没变。可小幅减热量，或先加活动量。",
+  "@plateauHint": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "cut100Applied": "已减 100 kcal，日摄入 {kcal}",
+  "@cut100Applied": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "sectionCalories": "{prefix}热量",
+  "@sectionCalories": {
+    "placeholders": {
+      "prefix": {
+        "type": "String"
+      }
+    }
+  },
+  "sectionLogs": "{prefix}记录",
+  "@sectionLogs": {
+    "placeholders": {
+      "prefix": {
+        "type": "String"
+      }
+    }
+  },
+  "sectionWorkout": "{prefix}训练",
+  "@sectionWorkout": {
+    "placeholders": {
+      "prefix": {
+        "type": "String"
+      }
+    }
+  },
+  "deficitIntakeLine": "缺口 {deficit} kcal · 摄入 {intake} kcal",
+  "@deficitIntakeLine": {
+    "placeholders": {
+      "deficit": {
+        "type": "String"
+      },
+      "intake": {
+        "type": "String"
+      }
+    }
+  },
+  "alcoholExtraKcal": "酒精额外能量 ≈ {kcal} kcal",
+  "@alcoholExtraKcal": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "skippedItems": "，跳过 {n} 项",
+  "@skippedItems": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "copiedItems": "已复制 {n} 项{skip}",
+  "@copiedItems": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "skip": {
+        "type": "String"
+      }
+    }
+  },
+  "skippedMissingFoods": "，跳过 {n} 项缺失食材",
+  "@skippedMissingFoods": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "appliedPresetItems": "已套用 {n} 项{skip}",
+  "@appliedPresetItems": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "skip": {
+        "type": "String"
+      }
+    }
+  },
+  "loggedInto": "已记入{day}",
+  "@loggedInto": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "logMealTitle": "记一笔 · {day}",
+  "@logMealTitle": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "confirmDeleteWeight": "确定删除 {date} 的体重记录？",
+  "@confirmDeleteWeight": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyFatPctLine": "体脂 {pct}%",
+  "@bodyFatPctLine": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "weightLoggedSnack": "已记体重，日摄入 {kcal} kcal",
+  "@weightLoggedSnack": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "confirmDeletePlan": "确定删除「{name}」？",
+  "@confirmDeletePlan": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "nSets": "{n} 组",
+  "@nSets": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "setLine": "{name} · 第 {index} 组",
+  "@setLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "nReps": "{n} 次",
+  "@nReps": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "nSeconds": "{n} 秒",
+  "@nSeconds": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "nKinds": "{n} 种",
+  "@nKinds": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "editSetsHint": "目标 {sets} 组 · 分别修改组数与{valueLabel}",
+  "@editSetsHint": {
+    "placeholders": {
+      "sets": {
+        "type": "int"
+      },
+      "valueLabel": {
+        "type": "String"
+      }
+    }
+  },
+  "confirmDeleteNote": "确定删除 {title} 的便签？",
+  "@confirmDeleteNote": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteWorkoutItem": "删除训练动作",
+  "confirmDeleteWorkoutItem": "确定从今日训练中删除「{name}」？",
+  "@confirmDeleteWorkoutItem": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "savedAt": "已保存 · {time}",
+  "@savedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "charsUpdated": "{chars} 字 · 已更新 {time}",
+  "@charsUpdated": {
+    "placeholders": {
+      "chars": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "waterDefaultHint": "不填写则使用默认 {ml} ml",
+  "@waterDefaultHint": {
+    "placeholders": {
+      "ml": {
+        "type": "int"
+      }
+    }
+  },
+  "quotaReadyBody": "{kcal} kcal\nP {p} · C {c} · F {f}\n\n详情可在「我的 → 我的档案」查看。",
+  "@quotaReadyBody": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      },
+      "p": {
+        "type": "String"
+      },
+      "c": {
+        "type": "String"
+      },
+      "f": {
+        "type": "String"
+      }
+    }
+  },
+  "alreadyLatest": "已是最新版本（{version}）",
+  "@alreadyLatest": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "newVersionAsk": "发现新版本 {version}，是否下载并安装？",
+  "@newVersionAsk": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "newVersionTitle": "发现新版本 {version}",
+  "@newVersionTitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "deficitLine": "缺口 {kcal} kcal",
+  "@deficitLine": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "weeklyLossLine": "· {kg} kg/周",
+  "@weeklyLossLine": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      }
+    }
+  },
+  "plateauAdjLine": "平台期 −{kcal} kcal",
+  "@plateauAdjLine": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "profileSubtitle": "{sex} · {age} 岁 · {height} cm · {weight} kg · {goal}",
+  "@profileSubtitle": {
+    "placeholders": {
+      "sex": {
+        "type": "String"
+      },
+      "age": {
+        "type": "int"
+      },
+      "height": {
+        "type": "String"
+      },
+      "weight": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "bfWrittenSnack": "已写入今日体重记录的体脂 {pct}%",
+  "@bfWrittenSnack": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "whtrAboveRef": "高于参考线 {ref}",
+  "@whtrAboveRef": {
+    "placeholders": {
+      "ref": {
+        "type": "String"
+      }
+    }
+  },
+  "whtrRef": "参考线 {ref}",
+  "@whtrRef": {
+    "placeholders": {
+      "ref": {
+        "type": "String"
+      }
+    }
+  },
+  "alcoholWithKcal": "酒精 {g} g（约 {kcal} kcal）",
+  "@alcoholWithKcal": {
+    "placeholders": {
+      "g": {
+        "type": "String"
+      },
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "macroRule": "蛋白 {p} g/kg · 脂肪 0.8 g/kg · 其余为碳水",
+  "@macroRule": {
+    "placeholders": {
+      "p": {
+        "type": "String"
+      }
+    }
+  },
+  "includesPlateauAdj": "含平台期调整 −{kcal} kcal",
+  "@includesPlateauAdj": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "maintainLine": "维持：≈ TDEE = {kcal} kcal",
+  "@maintainLine": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "bulkLine": "增肌：TDEE × 1.1 = {kcal} kcal",
+  "@bulkLine": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "needLose": "（需减 {kg}）",
+  "@needLose": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      }
+    }
+  },
+  "dailyDeficitLine": "日缺口 {kcal} kcal",
+  "@dailyDeficitLine": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "narrowed": "（已收窄）",
+  "shouldEat": "应吃 {kcal} kcal",
+  "@shouldEat": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "tempEstimate80": "临时估算：TDEE × 80% = {kcal} kcal",
+  "@tempEstimate80": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "workoutProgressHint": "进度 {done}/{total} · 点条目修改组数与次数/秒 · 左滑删除",
+  "@workoutProgressHint": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "setsProgress": "{done}/{total} 组 · 目标 {reps} {unit}",
+  "@setsProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "reps": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "noteWeeklyLossTooHigh": "不建议超过 1 kg/周（推荐 0.3–0.8 kg/周）。已自动调整为 {rate} kg/周。",
+  "@noteWeeklyLossTooHigh": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "noteWeeklyLossTooLow": "每周降重已调整为不低于 {rate} kg/周。",
+  "@noteWeeklyLossTooLow": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "noteDeficitCap": "已按日缺口上限调整：不超过 {max} kcal/日。实际约 {weekly} kg/周，大约需要 {weeks} 周。",
+  "@noteDeficitCap": {
+    "placeholders": {
+      "max": {
+        "type": "String"
+      },
+      "weekly": {
+        "type": "String"
+      },
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "noteEstimateWeeks": "按约 {kcalPerKg} kcal ≈ 1 kg 脂肪、每周 {weekly} kg 估算。预计约 {weeks} 周。",
+  "@noteEstimateWeeks": {
+    "placeholders": {
+      "kcalPerKg": {
+        "type": "String"
+      },
+      "weekly": {
+        "type": "String"
+      },
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "noteEstimateWeeksShort": "预计约 {weeks} 周完成。",
+  "@noteEstimateWeeksShort": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "notePlateauAdj": "已应用平台期调整：额外减少 {adj} kcal/日。",
+  "@notePlateauAdj": {
+    "placeholders": {
+      "adj": {
+        "type": "String"
+      }
+    }
+  },
+  "estimatedWeeksAtRate": "预计约 {weeks} 周（按 {rate} kg/周）",
+  "@estimatedWeeksAtRate": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      },
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "@actualDeficitFormula": {
+    "placeholders": {
+      "planned": {
+        "type": "String"
+      }
+    }
   }
 }

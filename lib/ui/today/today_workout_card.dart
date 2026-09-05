@@ -21,6 +21,12 @@ class TodayWorkoutCard extends ConsumerWidget {
   final DateTime day;
   final String sectionPrefix;
 
+  String _groupTitle(DayWorkoutGroup group, AppLocalizations l10n) {
+    final name = group.workout.planName?.trim();
+    if (name != null && name.isNotEmpty) return name;
+    return l10n.untitledWorkoutGroup;
+  }
+
   Future<void> _pickPlan(BuildContext context, WidgetRef ref) async {
     final l10n = context.l10n;
     if (!AppDates.isLocalToday(day)) {
@@ -113,29 +119,6 @@ class TodayWorkoutCard extends ConsumerWidget {
       return;
     }
     if (choice is WorkoutPlanSummary) {
-      final snap =
-          await ref.read(workoutRepositoryProvider).daySnapshot(day);
-      if (!snap.isEmpty && context.mounted) {
-        final ok = await showDialog<bool>(
-          context: context,
-          useRootNavigator: true,
-          builder: (ctx) => AlertDialog(
-            title: Text(l10n.replaceTodayWorkout),
-            content: Text(l10n.replaceTodayWorkoutBody),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: Text(l10n.cancel),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: Text(l10n.replace),
-              ),
-            ],
-          ),
-        );
-        if (ok != true) return;
-      }
       try {
         await ref.read(workoutRepositoryProvider).applyPlanToDay(
               planId: choice.plan.id,
@@ -161,7 +144,14 @@ class TodayWorkoutCard extends ConsumerWidget {
       );
       return;
     }
-    final existingName = snap.workout?.planName?.trim();
+    String? existingName;
+    for (final group in snap.groups) {
+      final name = group.workout.planName?.trim();
+      if (name != null && name.isNotEmpty) {
+        existingName = name;
+        break;
+      }
+    }
     final nameCtrl = TextEditingController(
       text: (existingName != null && existingName.isNotEmpty)
           ? existingName
@@ -218,6 +208,38 @@ class TodayWorkoutCard extends ConsumerWidget {
     }
   }
 
+  Future<void> _removeGroup(
+    BuildContext context,
+    WidgetRef ref,
+    DayWorkoutGroup group,
+  ) async {
+    final l10n = context.l10n;
+    final title = _groupTitle(group, l10n);
+    final ok = await showDialog<bool>(
+      context: context,
+      useRootNavigator: true,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.removeDayWorkout),
+        content: Text(l10n.confirmRemoveDayWorkout(title)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    await ref
+        .read(workoutRepositoryProvider)
+        .deleteDayWorkout(group.workout.id);
+    ref.invalidate(workoutHistoryProvider);
+  }
+
   Widget _headerRow({
     required BuildContext context,
     required WidgetRef ref,
@@ -253,6 +275,72 @@ class TodayWorkoutCard extends ConsumerWidget {
             ],
           ),
       ],
+    );
+  }
+
+  Widget _itemTile({
+    required BuildContext context,
+    required WidgetRef ref,
+    required AppLocalizations l10n,
+    required ColorScheme scheme,
+    required DayWorkoutItemProgress progress,
+    required bool editable,
+  }) {
+    if (!editable) {
+      return _WorkoutItemTile(
+        progress: progress,
+        day: day,
+        editable: false,
+      );
+    }
+    return Dismissible(
+      key: ValueKey(progress.item.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        margin: const EdgeInsets.only(bottom: AppSpacing.field),
+        padding: const EdgeInsets.only(right: 16),
+        decoration: BoxDecoration(
+          color: scheme.error,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      confirmDismiss: (_) async {
+        return await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: Text(l10n.deleteWorkoutItem),
+                content: Text(
+                  l10n.confirmDeleteWorkoutItem(
+                    progress.item.exerciseName,
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: Text(l10n.cancel),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: Text(l10n.delete),
+                  ),
+                ],
+              ),
+            ) ==
+            true;
+      },
+      onDismissed: (_) {
+        ref
+            .read(workoutRepositoryProvider)
+            .deleteDayWorkoutItem(progress.item.id);
+        ref.invalidate(workoutHistoryProvider);
+      },
+      child: _WorkoutItemTile(
+        progress: progress,
+        day: day,
+        editable: true,
+      ),
     );
   }
 
@@ -301,7 +389,6 @@ class TodayWorkoutCard extends ConsumerWidget {
 
         final done = snapshot.doneCount;
         final total = snapshot.items.length;
-        final planName = snapshot.workout?.planName;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,78 +399,31 @@ class TodayWorkoutCard extends ConsumerWidget {
               l10n: l10n,
               canAdd: editable,
               canSaveAsPlan: true,
-              title: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.sectionWorkout(sectionPrefix),
-                    style: theme.textTheme.titleMedium,
-                  ),
-                  if (planName != null && planName.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(planName, style: theme.textTheme.meta),
-                  ],
-                ],
+              title: Text(
+                l10n.sectionWorkout(sectionPrefix),
+                style: theme.textTheme.titleMedium,
               ),
             ),
-            const SizedBox(height: 8),
-            for (final progress in snapshot.items)
-              if (editable)
-                Dismissible(
-                  key: ValueKey(progress.item.id),
-                  direction: DismissDirection.endToStart,
-                  background: Container(
-                    alignment: Alignment.centerRight,
-                    margin: const EdgeInsets.only(bottom: AppSpacing.field),
-                    padding: const EdgeInsets.only(right: 16),
-                    decoration: BoxDecoration(
-                      color: scheme.error,
-                      borderRadius: BorderRadius.circular(16),
+            const SizedBox(height: 4),
+            for (final group in snapshot.groups)
+              _DayWorkoutGroupTile(
+                title: _groupTitle(group, l10n),
+                done: group.doneCount,
+                total: group.items.length,
+                canRemove: editable,
+                onRemove: () => _removeGroup(context, ref, group),
+                children: [
+                  for (final progress in group.items)
+                    _itemTile(
+                      context: context,
+                      ref: ref,
+                      l10n: l10n,
+                      scheme: scheme,
+                      progress: progress,
+                      editable: editable,
                     ),
-                    child: const Icon(Icons.delete, color: Colors.white),
-                  ),
-                  confirmDismiss: (_) async {
-                    return await showDialog<bool>(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            title: Text(l10n.deleteWorkoutItem),
-                            content: Text(
-                              l10n.confirmDeleteWorkoutItem(
-                                progress.item.exerciseName,
-                              ),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx, false),
-                                child: Text(l10n.cancel),
-                              ),
-                              FilledButton(
-                                onPressed: () => Navigator.pop(ctx, true),
-                                child: Text(l10n.delete),
-                              ),
-                            ],
-                          ),
-                        ) ==
-                        true;
-                  },
-                  onDismissed: (_) {
-                    ref
-                        .read(workoutRepositoryProvider)
-                        .deleteDayWorkoutItem(progress.item.id);
-                    ref.invalidate(workoutHistoryProvider);
-                  },
-                  child: _WorkoutItemTile(
-                    progress: progress,
-                    day: day,
-                    editable: true,
-                  ),
-                )
-              else
-                _WorkoutItemTile(
-                  progress: progress,
-                  day: day,
-                  editable: false,
-                ),
+                ],
+              ),
             Text(
               l10n.workoutProgressHint(done, total),
               style: theme.textTheme.meta,
@@ -391,6 +431,70 @@ class TodayWorkoutCard extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _DayWorkoutGroupTile extends StatefulWidget {
+  const _DayWorkoutGroupTile({
+    required this.title,
+    required this.done,
+    required this.total,
+    required this.children,
+    required this.canRemove,
+    required this.onRemove,
+  });
+
+  final String title;
+  final int done;
+  final int total;
+  final List<Widget> children;
+  final bool canRemove;
+  final VoidCallback onRemove;
+
+  @override
+  State<_DayWorkoutGroupTile> createState() => _DayWorkoutGroupTileState();
+}
+
+class _DayWorkoutGroupTileState extends State<_DayWorkoutGroupTile> {
+  var _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final l10n = context.l10n;
+
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      childrenPadding: EdgeInsets.zero,
+      initiallyExpanded: false,
+      onExpansionChanged: (expanded) => setState(() => _expanded = expanded),
+      title: Text(widget.title, style: theme.textTheme.titleSmall),
+      subtitle: Text(
+        '${widget.done}/${widget.total}',
+        style: theme.textTheme.meta,
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.canRemove)
+            IconButton(
+              tooltip: l10n.removeDayWorkout,
+              onPressed: widget.onRemove,
+              icon: const Icon(Icons.delete_outline),
+            ),
+          AnimatedRotation(
+            turns: _expanded ? 0.5 : 0,
+            duration: kThemeAnimationDuration,
+            child: Icon(
+              Icons.expand_more,
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+      children: widget.children,
     );
   }
 }

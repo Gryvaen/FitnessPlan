@@ -33,13 +33,25 @@ class DayWorkoutItemProgress {
   final ExerciseUnit unit;
 }
 
-class DayWorkoutSnapshot {
-  const DayWorkoutSnapshot({this.workout, this.items = const []});
+class DayWorkoutGroup {
+  const DayWorkoutGroup({required this.workout, required this.items});
 
-  final DayWorkout? workout;
+  final DayWorkout workout;
   final List<DayWorkoutItemProgress> items;
 
-  bool get isEmpty => items.isEmpty;
+  int get doneCount => items.where((e) => e.item.done).length;
+}
+
+class DayWorkoutSnapshot {
+  const DayWorkoutSnapshot({this.groups = const []});
+
+  final List<DayWorkoutGroup> groups;
+
+  bool get isEmpty => groups.isEmpty || groups.every((g) => g.items.isEmpty);
+
+  List<DayWorkoutItemProgress> get items => [
+        for (final group in groups) ...group.items,
+      ];
 
   int get doneCount => items.where((e) => e.item.done).length;
 }
@@ -300,13 +312,6 @@ class WorkoutRepository {
     });
   }
 
-  Future<DayWorkout?> dayWorkoutFor(DateTime day) {
-    final start = _dayStart(day);
-    return (_db.select(
-      _db.dayWorkouts,
-    )..where((t) => t.date.equals(start))).getSingleOrNull();
-  }
-
   Future<List<DayWorkoutItem>> dayItemsFor(int dayWorkoutId) {
     return (_db.select(_db.dayWorkoutItems)
           ..where((t) => t.dayWorkoutId.equals(dayWorkoutId))
@@ -314,26 +319,38 @@ class WorkoutRepository {
         .get();
   }
 
-  Future<DayWorkoutSnapshot> daySnapshot(DateTime day) async {
+  Future<List<DayWorkout>> dayWorkoutsFor(DateTime day) {
     final start = _dayStart(day);
-    final workout = await (_db.select(
-      _db.dayWorkouts,
-    )..where((t) => t.date.equals(start))).getSingleOrNull();
-    if (workout == null) return const DayWorkoutSnapshot();
-    final items = await dayItemsFor(workout.id);
-    final progress = <DayWorkoutItemProgress>[];
-    for (final item in items) {
-      final sets = await _setsForDayItem(item.id);
-      final ex = await exerciseById(item.exerciseId);
-      progress.add(
-        DayWorkoutItemProgress(
-          item: item,
-          completedSets: sets.length,
-          unit: ExerciseUnit.fromStorage(ex?.unit ?? 'reps'),
-        ),
-      );
+    return (_db.select(_db.dayWorkouts)
+          ..where((t) => t.date.equals(start))
+          ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+        .get();
+  }
+
+  Future<DayWorkoutItemProgress> _progressForItem(DayWorkoutItem item) async {
+    final sets = await _setsForDayItem(item.id);
+    final ex = await exerciseById(item.exerciseId);
+    return DayWorkoutItemProgress(
+      item: item,
+      completedSets: sets.length,
+      unit: ExerciseUnit.fromStorage(ex?.unit ?? 'reps'),
+    );
+  }
+
+  Future<DayWorkoutSnapshot> daySnapshot(DateTime day) async {
+    final workouts = await dayWorkoutsFor(day);
+    if (workouts.isEmpty) return const DayWorkoutSnapshot();
+    final groups = <DayWorkoutGroup>[];
+    for (final workout in workouts) {
+      final items = await dayItemsFor(workout.id);
+      final progress = <DayWorkoutItemProgress>[];
+      for (final item in items) {
+        progress.add(await _progressForItem(item));
+      }
+      if (progress.isEmpty) continue;
+      groups.add(DayWorkoutGroup(workout: workout, items: progress));
     }
-    return DayWorkoutSnapshot(workout: workout, items: progress);
+    return DayWorkoutSnapshot(groups: groups);
   }
 
   /// Emits when day workout rows or that day's set logs change.
@@ -395,7 +412,7 @@ class WorkoutRepository {
     return rows.length;
   }
 
-  /// Replaces any existing day workout with a snapshot from [planId].
+  /// Appends a plan snapshot as a new day-workout group (does not clear existing).
   Future<void> applyPlanToDay({
     required int planId,
     required DateTime day,
@@ -410,7 +427,6 @@ class WorkoutRepository {
 
     final start = _dayStart(day);
     await _db.transaction(() async {
-      await _clearDayWorkout(start);
       final dayId = await _db
           .into(_db.dayWorkouts)
           .insert(
@@ -438,12 +454,8 @@ class WorkoutRepository {
     });
   }
 
-  Future<void> _clearDayWorkout(DateTime start) async {
-    final existing = await (_db.select(
-      _db.dayWorkouts,
-    )..where((t) => t.date.equals(start))).getSingleOrNull();
-    if (existing == null) return;
-    final items = await dayItemsFor(existing.id);
+  Future<void> _deleteDayWorkoutById(int dayWorkoutId) async {
+    final items = await dayItemsFor(dayWorkoutId);
     for (final item in items) {
       await (_db.delete(
         _db.workoutSetLogs,
@@ -451,10 +463,22 @@ class WorkoutRepository {
     }
     await (_db.delete(
       _db.dayWorkoutItems,
-    )..where((t) => t.dayWorkoutId.equals(existing.id))).go();
+    )..where((t) => t.dayWorkoutId.equals(dayWorkoutId))).go();
     await (_db.delete(
       _db.dayWorkouts,
-    )..where((t) => t.id.equals(existing.id))).go();
+    )..where((t) => t.id.equals(dayWorkoutId))).go();
+  }
+
+  /// Removes an entire day-workout group and its set logs.
+  Future<void> deleteDayWorkout(int dayWorkoutId) async {
+    final workout = await (_db.select(
+      _db.dayWorkouts,
+    )..where((t) => t.id.equals(dayWorkoutId))).getSingleOrNull();
+    if (workout == null) return;
+    CalendarDay.ensureEditableDay(workout.date);
+    await _db.transaction(() async {
+      await _deleteDayWorkoutById(dayWorkoutId);
+    });
   }
 
   Future<void> addQuickDayItem({
@@ -469,10 +493,14 @@ class WorkoutRepository {
     final start = _dayStart(day);
 
     await _db.transaction(() async {
-      var workout = await (_db.select(
-        _db.dayWorkouts,
-      )..where((t) => t.date.equals(start))).getSingleOrNull();
-      if (workout == null) {
+      final existing = await (_db.select(_db.dayWorkouts)
+            ..where((t) => t.date.equals(start) & t.planId.isNull())
+            ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+          .get();
+      DayWorkout workout;
+      if (existing.isNotEmpty) {
+        workout = existing.first;
+      } else {
         final id = await _db
             .into(_db.dayWorkouts)
             .insert(DayWorkoutsCompanion.insert(date: start));
@@ -480,7 +508,7 @@ class WorkoutRepository {
           _db.dayWorkouts,
         )..where((t) => t.id.equals(id))).getSingle();
       }
-      final existing = await dayItemsFor(workout.id);
+      final items = await dayItemsFor(workout.id);
       await _db
           .into(_db.dayWorkoutItems)
           .insert(
@@ -490,7 +518,7 @@ class WorkoutRepository {
               exerciseName: ex.name,
               targetSets: targetSets,
               targetReps: targetReps,
-              sortOrder: Value(existing.length),
+              sortOrder: Value(items.length),
             ),
           );
     });

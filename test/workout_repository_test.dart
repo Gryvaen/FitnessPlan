@@ -84,11 +84,131 @@ void main() {
     await repo.applyPlanToDay(planId: planId, day: day);
 
     final snap = await repo.daySnapshot(day);
-    expect(snap.workout?.planName, '上肢');
+    expect(snap.groups, hasLength(1));
+    expect(snap.groups.first.workout.planName, '上肢');
     expect(snap.items, hasLength(1));
     expect(snap.items.first.item.targetSets, 4);
     expect(snap.items.first.item.targetReps, 12);
     expect(snap.items.first.completedSets, 0);
+  });
+
+  test('applyPlanToDay stacks multiple plans on the same day', () async {
+    final pushup = await addTestExercise(repo, name: '俯卧撑');
+    final squat = await addTestExercise(
+      repo,
+      name: '深蹲',
+      category: 'legs',
+    );
+    final upperId = await repo.createPlan(
+      name: '上肢',
+      items: [
+        PlanDraftItem(
+          exerciseId: pushup.id,
+          exerciseName: pushup.name,
+          targetSets: 3,
+          targetReps: 10,
+        ),
+      ],
+    );
+    final lowerId = await repo.createPlan(
+      name: '下肢',
+      items: [
+        PlanDraftItem(
+          exerciseId: squat.id,
+          exerciseName: squat.name,
+          targetSets: 4,
+          targetReps: 8,
+        ),
+      ],
+    );
+
+    final day = CalendarDay.todayLocal();
+    await repo.applyPlanToDay(planId: upperId, day: day);
+    await repo.applyPlanToDay(planId: lowerId, day: day);
+
+    final snap = await repo.daySnapshot(day);
+    expect(snap.groups, hasLength(2));
+    expect(snap.groups.map((g) => g.workout.planName), ['上肢', '下肢']);
+    expect(snap.items, hasLength(2));
+    expect(snap.groups.first.items.single.item.exerciseName, '俯卧撑');
+    expect(snap.groups.last.items.single.item.exerciseName, '深蹲');
+  });
+
+  test('addQuickDayItem attaches to null-plan group without replacing plans',
+      () async {
+    final pushup = await addTestExercise(repo, name: '俯卧撑');
+    final plank = await addTestExercise(
+      repo,
+      name: '平板支撑',
+      unit: ExerciseUnit.seconds,
+      category: 'core',
+    );
+    final planId = await repo.createPlan(
+      name: '上肢',
+      items: [
+        PlanDraftItem(
+          exerciseId: pushup.id,
+          exerciseName: pushup.name,
+          targetSets: 3,
+          targetReps: 10,
+        ),
+      ],
+    );
+    final day = CalendarDay.todayLocal();
+    await repo.applyPlanToDay(planId: planId, day: day);
+    await repo.addQuickDayItem(
+      day: day,
+      exerciseId: plank.id,
+      targetSets: 2,
+      targetReps: 60,
+    );
+
+    final snap = await repo.daySnapshot(day);
+    expect(snap.groups, hasLength(2));
+    expect(snap.groups.first.workout.planName, '上肢');
+    expect(snap.groups.first.workout.planId, isNotNull);
+    expect(snap.groups.last.workout.planId, isNull);
+    expect(snap.groups.last.items.single.item.exerciseName, '平板支撑');
+  });
+
+  test('deleteDayWorkout removes one group and keeps the other', () async {
+    final pushup = await addTestExercise(repo, name: '俯卧撑');
+    final squat = await addTestExercise(
+      repo,
+      name: '深蹲',
+      category: 'legs',
+    );
+    final upperId = await repo.createPlan(
+      name: '上肢',
+      items: [
+        PlanDraftItem(
+          exerciseId: pushup.id,
+          exerciseName: pushup.name,
+          targetSets: 3,
+          targetReps: 10,
+        ),
+      ],
+    );
+    final lowerId = await repo.createPlan(
+      name: '下肢',
+      items: [
+        PlanDraftItem(
+          exerciseId: squat.id,
+          exerciseName: squat.name,
+          targetSets: 4,
+          targetReps: 8,
+        ),
+      ],
+    );
+    final day = CalendarDay.todayLocal();
+    await repo.applyPlanToDay(planId: upperId, day: day);
+    await repo.applyPlanToDay(planId: lowerId, day: day);
+
+    var snap = await repo.daySnapshot(day);
+    await repo.deleteDayWorkout(snap.groups.first.workout.id);
+    snap = await repo.daySnapshot(day);
+    expect(snap.groups, hasLength(1));
+    expect(snap.groups.single.workout.planName, '下肢');
   });
 
   test('applyPlanToDay rejects past days', () async {
@@ -180,7 +300,7 @@ void main() {
     final itemId = snapshot.items.single.item.id;
     final yesterday = today.subtract(const Duration(days: 1));
     await (db.update(db.dayWorkouts)
-          ..where((t) => t.id.equals(snapshot.workout!.id)))
+          ..where((t) => t.id.equals(snapshot.groups.single.workout.id)))
         .write(DayWorkoutsCompanion(date: Value(yesterday)));
 
     await expectLater(
@@ -330,6 +450,49 @@ void main() {
     expect(saved.items.first.targetReps, 12);
   });
 
+  test('createPlanFromDay merges items from multiple day groups', () async {
+    final pushup = await addTestExercise(repo, name: '俯卧撑');
+    final squat = await addTestExercise(
+      repo,
+      name: '深蹲',
+      category: 'legs',
+    );
+    final upperId = await repo.createPlan(
+      name: '上肢',
+      items: [
+        PlanDraftItem(
+          exerciseId: pushup.id,
+          exerciseName: pushup.name,
+          targetSets: 3,
+          targetReps: 10,
+        ),
+      ],
+    );
+    final lowerId = await repo.createPlan(
+      name: '下肢',
+      items: [
+        PlanDraftItem(
+          exerciseId: squat.id,
+          exerciseName: squat.name,
+          targetSets: 4,
+          targetReps: 8,
+        ),
+      ],
+    );
+    final day = CalendarDay.todayLocal();
+    await repo.applyPlanToDay(planId: upperId, day: day);
+    await repo.applyPlanToDay(planId: lowerId, day: day);
+
+    final savedPlanId = await repo.createPlanFromDay(
+      day: day,
+      name: '合并备份',
+    );
+    final summaries = await repo.listPlanSummaries();
+    final saved = summaries.firstWhere((s) => s.plan.id == savedPlanId);
+    expect(saved.items, hasLength(2));
+    expect(saved.items.map((i) => i.exerciseName), ['俯卧撑', '深蹲']);
+  });
+
   test('createPlan stores distinct exercises per row', () async {
     final pushup = await addTestExercise(repo, name: '俯卧撑');
     final squat = await addTestExercise(
@@ -391,7 +554,7 @@ void main() {
 
     expect(events.last.isEmpty, isFalse);
     expect(events.last.items, hasLength(1));
-    expect(events.last.workout?.planName, '上肢');
+    expect(events.last.groups.single.workout.planName, '上肢');
 
     await sub.cancel();
   });

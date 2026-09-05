@@ -1487,4 +1487,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String estimatedWeeksAtRate(int weeks, String rate) {
     return '预计约 $weeks 周（按 $rate kg/周）';
   }
+
+  @override
+  String get untitledWorkoutGroup => '其他';
+
+  @override
+  String get removeDayWorkout => '移除该计划';
+
+  @override
+  String confirmRemoveDayWorkout(String name) {
+    return '确定从今日训练中移除「$name」及其全部动作？';
+  }
 }

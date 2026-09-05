@@ -1508,4 +1508,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String estimatedWeeksAtRate(int weeks, String rate) {
     return '~$weeks weeks at $rate kg/week';
   }
+
+  @override
+  String get untitledWorkoutGroup => 'Other';
+
+  @override
+  String get removeDayWorkout => 'Remove this plan';
+
+  @override
+  String confirmRemoveDayWorkout(String name) {
+    return 'Remove \"$name\" and all its exercises from today\'s workout?';
+  }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../data/db.dart';
 import '../../domain/calorie_calculator.dart';
 import '../../domain/models.dart';
 import '../../domain/plateau.dart';
@@ -565,78 +566,157 @@ class TodayPage extends ConsumerWidget {
                   ),
                 );
               }
-              return Column(
-                children: meals.map((m) {
-                  final type = MealType.values.byName(m.mealType);
-                  final tile = SportListTile(
-                    title: Text(m.foodName, style: theme.textTheme.bodyLarge),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${type.label(l10n)} · ${m.grams.toStringAsFixed(0)} g',
-                          style: theme.textTheme.meta,
+              final groups = <Widget>[];
+              for (final type in MealType.values) {
+                final group =
+                    meals.where((m) => m.mealType == type.name).toList();
+                if (group.isEmpty) continue;
+                final calories =
+                    group.fold<double>(0, (sum, m) => sum + m.calories);
+                groups.add(
+                  _MealTypeGroupTile(
+                    title: type.label(l10n),
+                    subtitle: '${group.length} · ${calories.round()}',
+                    children: [
+                      for (final m in group)
+                        _MealEntryTile(
+                          entry: m,
+                          canDismiss: isSelectedToday,
                         ),
-                        Text(
-                          'P ${m.proteinG.toStringAsFixed(0)} · '
-                          'C ${m.carbG.toStringAsFixed(0)} · '
-                          'F ${m.fatG.toStringAsFixed(0)}',
-                          style: theme.textTheme.meta,
-                        ),
-                      ],
-                    ),
-                    isThreeLine: true,
-                    trailing: Text(
-                      '${m.calories.round()}',
-                      style: theme.textTheme.titleSmall,
-                    ),
-                    onTap: () => context.push('/meal/${m.id}'),
-                  );
-                  if (!isSelectedToday) return tile;
-                  return Dismissible(
-                    key: ValueKey(m.id),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      margin: const EdgeInsets.only(bottom: AppSpacing.field),
-                      padding: const EdgeInsets.only(right: 16),
-                      decoration: BoxDecoration(
-                        color: scheme.error,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(Icons.delete, color: Colors.white),
-                    ),
-                    confirmDismiss: (_) async {
-                      return await showDialog<bool>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: Text(l10n.deleteRecord),
-                              content: Text(l10n.confirmDeleteMeal),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  child: Text(l10n.cancel),
-                                ),
-                                FilledButton(
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  child: Text(l10n.delete),
-                                ),
-                              ],
-                            ),
-                          ) ==
-                          true;
-                    },
-                    onDismissed: (_) {
-                      ref.read(mealRepositoryProvider).delete(m.id);
-                    },
-                    child: tile,
-                  );
-                }).toList(),
-              );
+                    ],
+                  ),
+                );
+              }
+              return Column(children: groups);
             },
           ),
         ],
       ),
+    );
+  }
+}
+
+class _MealTypeGroupTile extends StatefulWidget {
+  const _MealTypeGroupTile({
+    required this.title,
+    required this.subtitle,
+    required this.children,
+  });
+
+  final String title;
+  final String subtitle;
+  final List<Widget> children;
+
+  @override
+  State<_MealTypeGroupTile> createState() => _MealTypeGroupTileState();
+}
+
+class _MealTypeGroupTileState extends State<_MealTypeGroupTile> {
+  var _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      childrenPadding: EdgeInsets.zero,
+      initiallyExpanded: false,
+      onExpansionChanged: (expanded) => setState(() => _expanded = expanded),
+      title: Text(widget.title, style: theme.textTheme.titleSmall),
+      subtitle: Text(widget.subtitle, style: theme.textTheme.meta),
+      trailing: AnimatedRotation(
+        turns: _expanded ? 0.5 : 0,
+        duration: kThemeAnimationDuration,
+        child: Icon(
+          Icons.expand_more,
+          color: scheme.onSurfaceVariant,
+        ),
+      ),
+      children: widget.children,
+    );
+  }
+}
+
+class _MealEntryTile extends ConsumerWidget {
+  const _MealEntryTile({
+    required this.entry,
+    required this.canDismiss,
+  });
+
+  final MealEntry entry;
+  final bool canDismiss;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final l10n = context.l10n;
+    final m = entry;
+
+    final tile = SportListTile(
+      title: Text(m.foodName, style: theme.textTheme.bodyLarge),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${m.grams.toStringAsFixed(0)} g',
+            style: theme.textTheme.meta,
+          ),
+          Text(
+            'P ${m.proteinG.toStringAsFixed(0)} · '
+            'C ${m.carbG.toStringAsFixed(0)} · '
+            'F ${m.fatG.toStringAsFixed(0)}',
+            style: theme.textTheme.meta,
+          ),
+        ],
+      ),
+      isThreeLine: true,
+      trailing: Text(
+        '${m.calories.round()}',
+        style: theme.textTheme.titleSmall,
+      ),
+      onTap: () => context.push('/meal/${m.id}'),
+    );
+    if (!canDismiss) return tile;
+    return Dismissible(
+      key: ValueKey(m.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        margin: const EdgeInsets.only(bottom: AppSpacing.field),
+        padding: const EdgeInsets.only(right: 16),
+        decoration: BoxDecoration(
+          color: scheme.error,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      confirmDismiss: (_) async {
+        return await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: Text(l10n.deleteRecord),
+                content: Text(l10n.confirmDeleteMeal),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: Text(l10n.cancel),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: Text(l10n.delete),
+                  ),
+                ],
+              ),
+            ) ==
+            true;
+      },
+      onDismissed: (_) {
+        ref.read(mealRepositoryProvider).delete(m.id);
+      },
+      child: tile,
     );
   }
 }

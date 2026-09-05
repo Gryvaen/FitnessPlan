@@ -2708,6 +2708,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'~{weeks} weeks at {rate} kg/week'**
   String estimatedWeeksAtRate(int weeks, String rate);
+
+  /// No description provided for @untitledWorkoutGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get untitledWorkoutGroup;
+
+  /// No description provided for @removeDayWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this plan'**
+  String get removeDayWorkout;
+
+  /// No description provided for @confirmRemoveDayWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove \"{name}\" and all its exercises from today\'s workout?'**
+  String confirmRemoveDayWorkout(String name);
 }
 
 class _AppLocalizationsDelegate

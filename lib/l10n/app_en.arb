@@ -1078,5 +1078,707 @@
         "type": "String"
       }
     }
+  },
+  "untitledWorkoutGroup": "Other",
+  "removeDayWorkout": "Remove this plan",
+  "confirmRemoveDayWorkout": "Remove \"{name}\" and all its exercises from today's workout?",
+  "@confirmRemoveDayWorkout": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "sectionThatDay": "That day",
+  "foodsSeedLoadFailed": "Failed to load food library",
+  "enterAnyway": "Enter anyway",
+  "toolboxSubtitle": "Body fat · metrics · food convert · rest timer",
+  "theme": "Theme",
+  "themeSubtitle": "Appearance colors",
+  "themeDay": "Day",
+  "themeNight": "Night",
+  "themeForest": "Forest",
+  "themeMidnight": "Midnight",
+  "themeSunrise": "Sunrise",
+  "themeGraphite": "Graphite",
+  "clearDataBody": "Clears all meals, weight, workouts, notes, favorites, and profile. Continue?",
+  "noInstallPackage": "No install package for the new version",
+  "cutPlanIncompleteHint": "Go to Me → My profile to set target weight and weekly loss.",
+  "copyYesterdayConfirm": "Day already has logs; append yesterday's meals?",
+  "activitySedentary": "Sedentary",
+  "activityLight": "Lightly active",
+  "activityModerate": "Moderately active",
+  "activityHigh": "Very active",
+  "activityAthlete": "Athlete",
+  "goalCut": "Cut",
+  "goalMaintain": "Maintain",
+  "goalBulk": "Bulk",
+  "mealBreakfast": "Breakfast",
+  "mealLunch": "Lunch",
+  "mealDinner": "Dinner",
+  "mealSnack": "Snack",
+  "bmiUnderweight": "Underweight",
+  "bmiNormal": "Normal",
+  "bmiOverweight": "Overweight",
+  "bmiObese": "Obese",
+  "ffmiAverage": "Average",
+  "ffmiTrained": "Trained",
+  "ffmiAdvanced": "Advanced",
+  "ffmiElite": "Near elite (not a hard cut-off)",
+  "bmrFormulaMale": "Male: 10×weight + 6.25×height − 5×age + 5",
+  "bmrFormulaFemale": "Female: 10×weight + 6.25×height − 5×age − 161",
+  "noteMissingTargetWeight": "No valid target weight; estimating at 80% of maintenance. Complete it under Me, then recalculate.",
+  "loadFailed": "Failed to load: {error}",
+  "@loadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "saveFailed": "Save failed: {error}",
+  "@saveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteFailed": "Delete failed: {error}",
+  "@deleteFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "addFailed": "Add failed: {error}",
+  "@addFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "operationFailed": "Operation failed: {error}",
+  "@operationFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "clearFailed": "Clear failed: {error}",
+  "@clearFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "checkUpdateFailed": "Update check failed: {error}",
+  "@checkUpdateFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "cannotOpenApk": "Cannot open package: {message}",
+  "@cannotOpenApk": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "workoutLoadFailed": "Workout load failed: {error}",
+  "@workoutLoadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "loadFoodsFailed": "Failed to load foods: {error}",
+  "@loadFoodsFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "applyPresetFailed": "Apply failed: {error}",
+  "@applyPresetFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutNWeeks": "· ~{weeks} wk",
+  "@aboutNWeeks": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "macroOverG": "Over {g} g",
+  "@macroOverG": {
+    "placeholders": {
+      "g": {
+        "type": "String"
+      }
+    }
+  },
+  "macroRemainG": "{g} g left",
+  "@macroRemainG": {
+    "placeholders": {
+      "g": {
+        "type": "String"
+      }
+    }
+  },
+  "kcalOver": "Over {n}",
+  "@kcalOver": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "kcalRemain": "{n} left",
+  "@kcalRemain": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "plateauHint": "Weight barely changed in {days} days. Trim calories slightly, or add activity first.",
+  "@plateauHint": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "cut100Applied": "Cut 100 kcal; daily intake {kcal}",
+  "@cut100Applied": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "sectionCalories": "{prefix} calories",
+  "@sectionCalories": {
+    "placeholders": {
+      "prefix": {
+        "type": "String"
+      }
+    }
+  },
+  "sectionLogs": "{prefix} logs",
+  "@sectionLogs": {
+    "placeholders": {
+      "prefix": {
+        "type": "String"
+      }
+    }
+  },
+  "sectionWorkout": "{prefix} workout",
+  "@sectionWorkout": {
+    "placeholders": {
+      "prefix": {
+        "type": "String"
+      }
+    }
+  },
+  "deficitIntakeLine": "Deficit {deficit} kcal · intake {intake} kcal",
+  "@deficitIntakeLine": {
+    "placeholders": {
+      "deficit": {
+        "type": "String"
+      },
+      "intake": {
+        "type": "String"
+      }
+    }
+  },
+  "alcoholExtraKcal": "Alcohol ≈ {kcal} kcal extra",
+  "@alcoholExtraKcal": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "skippedItems": ", skipped {n}",
+  "@skippedItems": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "copiedItems": "Copied {n}{skip}",
+  "@copiedItems": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "skip": {
+        "type": "String"
+      }
+    }
+  },
+  "skippedMissingFoods": ", skipped {n} missing foods",
+  "@skippedMissingFoods": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "appliedPresetItems": "Applied {n}{skip}",
+  "@appliedPresetItems": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "skip": {
+        "type": "String"
+      }
+    }
+  },
+  "loggedInto": "Logged to {day}",
+  "@loggedInto": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "logMealTitle": "Log meal · {day}",
+  "@logMealTitle": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "confirmDeleteWeight": "Delete weight log for {date}?",
+  "@confirmDeleteWeight": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyFatPctLine": "Body fat {pct}%",
+  "@bodyFatPctLine": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "weightLoggedSnack": "Weight saved; daily intake {kcal} kcal",
+  "@weightLoggedSnack": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "confirmDeletePlan": "Delete \"{name}\"?",
+  "@confirmDeletePlan": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "nSets": "{n} sets",
+  "@nSets": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "setLine": "{name} · set {index}",
+  "@setLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "nReps": "{n} reps",
+  "@nReps": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "nSeconds": "{n} sec",
+  "@nSeconds": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "nKinds": "{n} items",
+  "@nKinds": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "editSetsHint": "Target {sets} sets · edit sets and {valueLabel}",
+  "@editSetsHint": {
+    "placeholders": {
+      "sets": {
+        "type": "int"
+      },
+      "valueLabel": {
+        "type": "String"
+      }
+    }
+  },
+  "confirmDeleteNote": "Delete note for {title}?",
+  "@confirmDeleteNote": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteWorkoutItem": "Delete exercise",
+  "confirmDeleteWorkoutItem": "Remove \"{name}\" from today's workout?",
+  "@confirmDeleteWorkoutItem": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "savedAt": "Saved · {time}",
+  "@savedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "charsUpdated": "{chars} chars · updated {time}",
+  "@charsUpdated": {
+    "placeholders": {
+      "chars": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "waterDefaultHint": "Leave blank for default {ml} ml",
+  "@waterDefaultHint": {
+    "placeholders": {
+      "ml": {
+        "type": "int"
+      }
+    }
+  },
+  "quotaReadyBody": "{kcal} kcal\nP {p} · C {c} · F {f}\n\nDetails under Me → My profile.",
+  "@quotaReadyBody": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      },
+      "p": {
+        "type": "String"
+      },
+      "c": {
+        "type": "String"
+      },
+      "f": {
+        "type": "String"
+      }
+    }
+  },
+  "alreadyLatest": "Already up to date ({version})",
+  "@alreadyLatest": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "newVersionAsk": "New version {version}. Download and install?",
+  "@newVersionAsk": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "newVersionTitle": "New version {version}",
+  "@newVersionTitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "deficitLine": "Deficit {kcal} kcal",
+  "@deficitLine": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "weeklyLossLine": "· {kg} kg/week",
+  "@weeklyLossLine": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      }
+    }
+  },
+  "plateauAdjLine": "Plateau −{kcal} kcal",
+  "@plateauAdjLine": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "profileSubtitle": "{sex} · {age} yr · {height} cm · {weight} kg · {goal}",
+  "@profileSubtitle": {
+    "placeholders": {
+      "sex": {
+        "type": "String"
+      },
+      "age": {
+        "type": "int"
+      },
+      "height": {
+        "type": "String"
+      },
+      "weight": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "bfWrittenSnack": "Saved {pct}% body fat to today's weight log",
+  "@bfWrittenSnack": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "whtrAboveRef": "Above reference {ref}",
+  "@whtrAboveRef": {
+    "placeholders": {
+      "ref": {
+        "type": "String"
+      }
+    }
+  },
+  "whtrRef": "Reference {ref}",
+  "@whtrRef": {
+    "placeholders": {
+      "ref": {
+        "type": "String"
+      }
+    }
+  },
+  "alcoholWithKcal": "Alcohol {g} g (~{kcal} kcal)",
+  "@alcoholWithKcal": {
+    "placeholders": {
+      "g": {
+        "type": "String"
+      },
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "macroRule": "Protein {p} g/kg · fat 0.8 g/kg · rest carbs",
+  "@macroRule": {
+    "placeholders": {
+      "p": {
+        "type": "String"
+      }
+    }
+  },
+  "includesPlateauAdj": "Includes plateau −{kcal} kcal",
+  "@includesPlateauAdj": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "maintainLine": "Maintain: ≈ TDEE = {kcal} kcal",
+  "@maintainLine": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "bulkLine": "Bulk: TDEE × 1.1 = {kcal} kcal",
+  "@bulkLine": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "needLose": "(lose {kg})",
+  "@needLose": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      }
+    }
+  },
+  "dailyDeficitLine": "Daily deficit {kcal} kcal",
+  "@dailyDeficitLine": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "narrowed": "(narrowed)",
+  "shouldEat": "Eat {kcal} kcal",
+  "@shouldEat": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "tempEstimate80": "Temp estimate: TDEE × 80% = {kcal} kcal",
+  "@tempEstimate80": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "workoutProgressHint": "Progress {done}/{total} · tap to edit · swipe to delete",
+  "@workoutProgressHint": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "setsProgress": "{done}/{total} sets · target {reps} {unit}",
+  "@setsProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "reps": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "noteWeeklyLossTooHigh": "Over 1 kg/week is not recommended (0.3–0.8 preferred). Adjusted to {rate} kg/week.",
+  "@noteWeeklyLossTooHigh": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "noteWeeklyLossTooLow": "Weekly loss raised to at least {rate} kg/week.",
+  "@noteWeeklyLossTooLow": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "noteDeficitCap": "Capped at {max} kcal/day deficit. About {weekly} kg/week; ~{weeks} weeks.",
+  "@noteDeficitCap": {
+    "placeholders": {
+      "max": {
+        "type": "String"
+      },
+      "weekly": {
+        "type": "String"
+      },
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "noteEstimateWeeks": "~{kcalPerKg} kcal ≈ 1 kg fat, {weekly} kg/week. About {weeks} weeks.",
+  "@noteEstimateWeeks": {
+    "placeholders": {
+      "kcalPerKg": {
+        "type": "String"
+      },
+      "weekly": {
+        "type": "String"
+      },
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "noteEstimateWeeksShort": "About {weeks} weeks to finish.",
+  "@noteEstimateWeeksShort": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "notePlateauAdj": "Plateau adjustment applied: −{adj} kcal/day.",
+  "@notePlateauAdj": {
+    "placeholders": {
+      "adj": {
+        "type": "String"
+      }
+    }
+  },
+  "estimatedWeeksAtRate": "~{weeks} weeks at {rate} kg/week",
+  "@estimatedWeeksAtRate": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      },
+      "rate": {
+        "type": "String"
+      }
+    }
   }
 }
