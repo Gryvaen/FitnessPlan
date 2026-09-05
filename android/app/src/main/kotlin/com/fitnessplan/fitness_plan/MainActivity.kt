@@ -31,6 +31,39 @@ class MainActivity : FlutterFragmentActivity() {
                     else -> result.notImplemented()
                 }
             }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, WorkoutReminderScheduler.CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "scheduleAll" -> {
+                        val rawItems = call.argument<List<*>>("items")
+                        if (rawItems == null) {
+                            result.error("invalid_arguments", "Missing items", null)
+                            return@setMethodCallHandler
+                        }
+                        val items = rawItems.mapNotNull { entry ->
+                            val map = entry as? Map<*, *> ?: return@mapNotNull null
+                            val id = (map["id"] as? Number)?.toInt()
+                            val triggerAtMillis = (map["triggerAtMillis"] as? Number)?.toLong()
+                            val title = map["title"] as? String
+                            val body = map["body"] as? String
+                            if (id == null || triggerAtMillis == null || title == null || body == null) {
+                                null
+                            } else {
+                                WorkoutReminderScheduler.ReminderItem(
+                                    id, triggerAtMillis, title, body,
+                                )
+                            }
+                        }
+                        WorkoutReminderScheduler.scheduleAll(this, items)
+                        result.success(null)
+                    }
+                    "cancelAll" -> {
+                        WorkoutReminderScheduler.cancelAll(this)
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, StepCounterBridge.CHANNEL)
             .setMethodCallHandler { call, result ->
                 StepCounterBridge.handle(this, call.method, result)

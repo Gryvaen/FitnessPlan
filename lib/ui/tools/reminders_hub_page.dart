@@ -23,7 +23,14 @@ class RemindersHubPage extends ConsumerWidget {
         return;
       }
     }
-    await ref.read(workoutReminderProvider.notifier).setEnabled(wantOn);
+    try {
+      await ref.read(workoutReminderProvider.notifier).setEnabled(wantOn);
+    } catch (_) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.workoutReminderPermissionDenied)),
+      );
+    }
   }
 
   Future<void> _pickWorkoutTime(WidgetRef ref, BuildContext context) async {

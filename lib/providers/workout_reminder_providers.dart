@@ -18,17 +18,33 @@ class WorkoutReminderNotifier extends Notifier<WorkoutReminderSettings> {
   }
 
   Future<void> setEnabled(bool enabled) async {
+    final previous = state;
     await ref.read(workoutReminderRepositoryProvider).setEnabled(enabled);
     state = state.copyWith(enabled: enabled);
-    await syncSchedule();
+    try {
+      await syncSchedule();
+    } catch (e) {
+      await ref.read(workoutReminderRepositoryProvider).setEnabled(previous.enabled);
+      state = previous;
+      rethrow;
+    }
   }
 
   Future<void> setTime({required int hour, required int minute}) async {
+    final previous = state;
     await ref
         .read(workoutReminderRepositoryProvider)
         .setTime(hour: hour, minute: minute);
     state = state.copyWith(hour: hour, minute: minute);
-    await syncSchedule();
+    try {
+      await syncSchedule();
+    } catch (e) {
+      await ref
+          .read(workoutReminderRepositoryProvider)
+          .setTime(hour: previous.hour, minute: previous.minute);
+      state = previous;
+      rethrow;
+    }
   }
 
   /// Recompute and schedule the next 7 daily reminders from current prefs + DB.

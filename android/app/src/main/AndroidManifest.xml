@@ -60,6 +60,7 @@
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
         <receiver android:exported="false" android:name=".RestTimerAlarmReceiver" />
         <receiver android:exported="false" android:name=".RestTimerAlarmStopReceiver" />
+        <receiver android:exported="false" android:name=".WorkoutReminderReceiver" />
         <service
             android:name=".RestTimerAlarmService"
             android:exported="false"

@@ -6,4 +6,8 @@
     <string name="rest_timer_alarm_title">Rest over</string>
     <string name="rest_timer_alarm_body">Start next set</string>
     <string name="rest_timer_alarm_dismiss">Close</string>
+    <string name="workout_reminder_channel">Workout reminder</string>
+    <string name="workout_reminder_channel_description">Daily reminders to train</string>
+    <string name="workout_reminder_default_title">Time to train</string>
+    <string name="workout_reminder_default_body">Log a set to keep your streak.</string>
 </resources>
