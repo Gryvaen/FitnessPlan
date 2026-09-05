@@ -566,10 +566,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get saturatedFatGOptional => '饱和脂肪 (g，可选)';
 
   @override
-  String get stepsStatusConnected => '已连接，可读取系统步数（为 0 时可能是健康数据源未写入）';
+  String get stepsStatusConnected => '已连接系统步数（无 Health Connect 数据时会回退到手机计步传感器）';
 
   @override
-  String get stepsStatusDenied => '未授权或无法连接 Health Connect / 健康 App';
+  String get stepsStatusDenied => '未授予「身体活动」权限，或设备不支持计步';
 
   @override
   String get stepsStatusUnsupported => '当前平台不支持步数同步';

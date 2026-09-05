@@ -1211,13 +1211,13 @@ abstract class AppLocalizations {
   /// No description provided for @stepsStatusConnected.
   ///
   /// In en, this message translates to:
-  /// **'Connected — can read system steps (0 may mean no health data source)'**
+  /// **'Connected — reads Health Connect, or the phone step sensor as fallback'**
   String get stepsStatusConnected;
 
   /// No description provided for @stepsStatusDenied.
   ///
   /// In en, this message translates to:
-  /// **'Not authorized or Health Connect / Health app unavailable'**
+  /// **'Activity permission denied, or step counting is unavailable'**
   String get stepsStatusDenied;
 
   /// No description provided for @stepsStatusUnsupported.

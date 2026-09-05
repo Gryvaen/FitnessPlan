@@ -31,5 +31,9 @@ class MainActivity : FlutterFragmentActivity() {
                     else -> result.notImplemented()
                 }
             }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, StepCounterBridge.CHANNEL)
+            .setMethodCallHandler { call, result ->
+                StepCounterBridge.handle(this, call.method, result)
+            }
     }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/repositories/step_repository.dart';
+import '../data/services/android_step_sensor.dart';
 import '../data/services/steps_sync_service.dart';
 import 'core_providers.dart';
 import 'meal_providers.dart';
@@ -9,8 +10,15 @@ final stepRepositoryProvider = Provider<StepRepository>((ref) {
   return StepRepository(ref.watch(databaseProvider));
 });
 
+final androidStepSensorProvider = Provider<AndroidStepSensor>((ref) {
+  return AndroidStepSensor(ref.watch(sharedPreferencesProvider));
+});
+
 final stepsSyncServiceProvider = Provider<StepsSyncService>((ref) {
-  return StepsSyncService(ref.watch(stepRepositoryProvider));
+  return StepsSyncService(
+    ref.watch(stepRepositoryProvider),
+    stepSensor: ref.watch(androidStepSensorProvider),
+  );
 });
 
 final stepsForSelectedDayProvider = StreamProvider<int>((ref) {
