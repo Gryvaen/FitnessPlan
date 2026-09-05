@@ -744,13 +744,13 @@ class _MinimalRunnerPainter extends CustomPainter {
     required this.progress,
     required this.phase,
     required this.color,
-    this.lineWidth = 2.2,
   });
+
+  static const double lineWidth = 2.2;
 
   final double progress;
   final double phase;
   final Color color;
-  final double lineWidth;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -877,8 +877,7 @@ class _MinimalRunnerPainter extends CustomPainter {
   bool shouldRepaint(_MinimalRunnerPainter oldDelegate) =>
       oldDelegate.progress != progress ||
       oldDelegate.phase != phase ||
-      oldDelegate.color != color ||
-      oldDelegate.lineWidth != lineWidth;
+      oldDelegate.color != color;
 }
 
 double _wrapCycle(double value) {
@@ -1180,12 +1179,12 @@ class _MiniClimberPainter extends CustomPainter {
   const _MiniClimberPainter({
     required this.phase,
     required this.color,
-    this.lineWidth = 1.8,
   });
+
+  static const double lineWidth = 1.8;
 
   final double phase;
   final Color color;
-  final double lineWidth;
 
   @override
   void paint(Canvas canvas, Size size) {
