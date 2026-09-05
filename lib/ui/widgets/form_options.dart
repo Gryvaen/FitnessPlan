@@ -19,18 +19,18 @@ class FormOptions {
   static List<double> weightsKg({
     double min = 40,
     double max = 150,
-    double step = 0.5,
+    double step = 0.25,
   }) {
     final out = <double>[];
     for (var v = min; v <= max + 1e-9; v += step) {
-      out.add(_round1(v));
+      out.add(_round2(v));
     }
     return out;
   }
 
   /// Target weights strictly below [currentKg].
   static List<double> targetWeightsKg(double currentKg) {
-    final max = _round1(((currentKg - 0.5) * 2).floor() / 2);
+    final max = _round2(((currentKg - 0.25) * 4).floor() / 4);
     if (max < 30) return const [];
     return weightsKg(min: 30, max: max.clamp(30, 150));
   }
@@ -191,10 +191,16 @@ class FormOptions {
   }
 
   static double _round1(double v) => (v * 10).round() / 10;
+  static double _round2(double v) => (v * 100).round() / 100;
 }
 
-String formatKg(double v) =>
-    v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(1);
+String formatKg(double v) {
+  if (v == v.roundToDouble()) return v.toStringAsFixed(0);
+  final fixed = v.toStringAsFixed(2);
+  return fixed
+      .replaceFirst(RegExp(r'0+$'), '')
+      .replaceFirst(RegExp(r'\.$'), '');
+}
 
 Future<T?> _showCupertinoWheelPicker<T>({
   required BuildContext context,
@@ -366,6 +372,7 @@ class AppDropdown<T> extends StatelessWidget {
   }
 
   Future<void> _open(BuildContext context) async {
+    if (items.isEmpty) return;
     final selected = items.contains(value) ? value : items.first;
     final picked = await _showCupertinoWheelPicker<T>(
       context: context,

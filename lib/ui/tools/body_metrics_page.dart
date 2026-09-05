@@ -121,10 +121,10 @@ class _BodyMetricsPageState extends ConsumerState<BodyMetricsPage> {
           const SizedBox(height: AppSpacing.field),
           AppDropdown<double>(
             label: l10n.weight,
-            value: _weightKg,
+            value: FormOptions.snapDouble(FormOptions.weightsKg(), _weightKg),
             items: FormOptions.weightsKg(),
             suffixText: 'kg',
-            itemLabel: (v) => v.toStringAsFixed(1),
+            itemLabel: formatKg,
             onChanged: (v) => setState(() => _weightKg = v),
           ),
           const SizedBox(height: AppSpacing.field),
