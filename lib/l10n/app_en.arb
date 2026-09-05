@@ -180,6 +180,18 @@
       }
     }
   },
+  "fiber": "Fiber",
+  "sodium": "Sodium",
+  "sugar": "Sugar",
+  "saturatedFat": "Saturated fat",
+  "fiberG": "Fiber (g)",
+  "sodiumMg": "Sodium (mg)",
+  "sugarG": "Sugar (g)",
+  "saturatedFatG": "Saturated fat (g)",
+  "fiberGOptional": "Fiber (g, optional)",
+  "sodiumMgOptional": "Sodium (mg, optional)",
+  "sugarGOptional": "Sugar (g, optional)",
+  "saturatedFatGOptional": "Saturated fat (g, optional)",
   "stepsStatusConnected": "Connected — can read system steps (0 may mean no health data source)",
   "stepsStatusDenied": "Not authorized or Health Connect / Health app unavailable",
   "stepsStatusUnsupported": "Step sync is not supported on this platform",

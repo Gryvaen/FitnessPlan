@@ -163,19 +163,18 @@ class FormOptions {
     600,
   ];
 
-  static const mealGrams = <double>[
-    50,
-    75,
-    100,
-    120,
-    150,
-    200,
-    250,
-    300,
-    350,
-    400,
-    500,
-  ];
+  /// Meal portion options; consecutive values differ by at most [step] (default 5g).
+  static List<double> mealGrams({
+    double min = 5,
+    double max = 500,
+    double step = 5,
+  }) {
+    final out = <double>[];
+    for (var v = min; v <= max + 1e-9; v += step) {
+      out.add(v);
+    }
+    return out;
+  }
 
   static int snapInt(List<int> options, int value) {
     if (options.isEmpty) return value;

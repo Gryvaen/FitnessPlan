@@ -52,6 +52,10 @@ class MealRepository {
       carbPer100: food.carbPer100,
       fatPer100: food.fatPer100,
       alcoholPer100: food.alcoholPer100,
+      fiberPer100: food.fiberPer100,
+      sodiumMgPer100: food.sodiumMgPer100,
+      sugarPer100: food.sugarPer100,
+      saturatedFatPer100: food.saturatedFatPer100,
     );
   }
 
@@ -75,6 +79,10 @@ class MealRepository {
             carbG: intake.carbG,
             fatG: intake.fatG,
             alcoholG: Value(intake.alcoholG),
+            fiberG: Value(intake.fiberG),
+            sodiumMg: Value(intake.sodiumMg),
+            sugarG: Value(intake.sugarG),
+            saturatedFatG: Value(intake.saturatedFatG),
           ),
         );
   }
@@ -104,6 +112,10 @@ class MealRepository {
             carbG: Value(intake.carbG),
             fatG: Value(intake.fatG),
             alcoholG: Value(intake.alcoholG),
+            fiberG: Value(intake.fiberG),
+            sodiumMg: Value(intake.sodiumMg),
+            sugarG: Value(intake.sugarG),
+            saturatedFatG: Value(intake.saturatedFatG),
           ),
         );
   }
@@ -160,6 +172,10 @@ class MealRepository {
             carbG: e.carbG,
             fatG: e.fatG,
             alcoholG: e.alcoholG,
+            fiberG: e.fiberG,
+            sodiumMg: e.sodiumMg,
+            sugarG: e.sugarG,
+            saturatedFatG: e.saturatedFatG,
           ),
     );
   }

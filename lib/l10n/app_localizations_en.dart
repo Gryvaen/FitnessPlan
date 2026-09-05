@@ -530,6 +530,42 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get fiber => 'Fiber';
+
+  @override
+  String get sodium => 'Sodium';
+
+  @override
+  String get sugar => 'Sugar';
+
+  @override
+  String get saturatedFat => 'Saturated fat';
+
+  @override
+  String get fiberG => 'Fiber (g)';
+
+  @override
+  String get sodiumMg => 'Sodium (mg)';
+
+  @override
+  String get sugarG => 'Sugar (g)';
+
+  @override
+  String get saturatedFatG => 'Saturated fat (g)';
+
+  @override
+  String get fiberGOptional => 'Fiber (g, optional)';
+
+  @override
+  String get sodiumMgOptional => 'Sodium (mg, optional)';
+
+  @override
+  String get sugarGOptional => 'Sugar (g, optional)';
+
+  @override
+  String get saturatedFatGOptional => 'Saturated fat (g, optional)';
+
+  @override
   String get stepsStatusConnected =>
       'Connected — can read system steps (0 may mean no health data source)';
 

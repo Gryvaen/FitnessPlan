@@ -71,6 +71,13 @@ class FoodRepository {
         final carb = (m['carb'] as num).toDouble();
         final fat = (m['fat'] as num).toDouble();
         final alcohol = (m['alcohol'] as num?)?.toDouble() ?? 0.0;
+        final fiber = (m['fiber'] as num?)?.toDouble() ?? 0.0;
+        final sodiumMg = (m['sodium_mg'] as num?)?.toDouble() ??
+            (m['sodium'] as num?)?.toDouble() ??
+            0.0;
+        final sugar = (m['sugar'] as num?)?.toDouble() ?? 0.0;
+        final saturatedFat =
+            (m['saturated_fat'] as num?)?.toDouble() ?? 0.0;
         batch.insert(
           _db.foodItems,
           FoodItemsCompanion.insert(
@@ -81,6 +88,10 @@ class FoodRepository {
             carbPer100: carb,
             fatPer100: fat,
             alcoholPer100: Value(alcohol),
+            fiberPer100: Value(fiber),
+            sodiumMgPer100: Value(sodiumMg),
+            sugarPer100: Value(sugar),
+            saturatedFatPer100: Value(saturatedFat),
             isCustom: const Value(false),
           ),
           onConflict: DoUpdate(
@@ -91,6 +102,10 @@ class FoodRepository {
               carbPer100: Value(carb),
               fatPer100: Value(fat),
               alcoholPer100: Value(alcohol),
+              fiberPer100: Value(fiber),
+              sodiumMgPer100: Value(sodiumMg),
+              sugarPer100: Value(sugar),
+              saturatedFatPer100: Value(saturatedFat),
               // Never flip a custom row back to seed via name collision handling
               // after insert — conflict target is name; customs use unique names.
               isCustom: const Value(false),
@@ -207,6 +222,10 @@ LIMIT ?
     required double carbPer100,
     required double fatPer100,
     double alcoholPer100 = 0,
+    double fiberPer100 = 0,
+    double sodiumMgPer100 = 0,
+    double sugarPer100 = 0,
+    double saturatedFatPer100 = 0,
   }) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) {
@@ -225,6 +244,10 @@ LIMIT ?
             carbPer100: carbPer100,
             fatPer100: fatPer100,
             alcoholPer100: Value(alcoholPer100),
+            fiberPer100: Value(fiberPer100),
+            sodiumMgPer100: Value(sodiumMgPer100),
+            sugarPer100: Value(sugarPer100),
+            saturatedFatPer100: Value(saturatedFatPer100),
             isCustom: const Value(true),
           ),
         );
@@ -238,6 +261,10 @@ LIMIT ?
     required double carbPer100,
     required double fatPer100,
     double alcoholPer100 = 0,
+    double fiberPer100 = 0,
+    double sodiumMgPer100 = 0,
+    double sugarPer100 = 0,
+    double saturatedFatPer100 = 0,
   }) async {
     final food = await byId(id);
     if (food == null || !food.isCustom) {
@@ -260,6 +287,10 @@ LIMIT ?
             carbPer100: Value(carbPer100),
             fatPer100: Value(fatPer100),
             alcoholPer100: Value(alcoholPer100),
+            fiberPer100: Value(fiberPer100),
+            sodiumMgPer100: Value(sodiumMgPer100),
+            sugarPer100: Value(sugarPer100),
+            saturatedFatPer100: Value(saturatedFatPer100),
             isCustom: const Value(true),
           ),
         );

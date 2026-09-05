@@ -54,7 +54,14 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
       proteinPer100: entry.grams > 0 ? entry.proteinG / entry.grams * 100 : 0,
       carbPer100: entry.grams > 0 ? entry.carbG / entry.grams * 100 : 0,
       fatPer100: entry.grams > 0 ? entry.fatG / entry.grams * 100 : 0,
-      alcoholPer100: 0,
+      alcoholPer100:
+          entry.grams > 0 ? entry.alcoholG / entry.grams * 100 : 0,
+      fiberPer100: entry.grams > 0 ? entry.fiberG / entry.grams * 100 : 0,
+      sodiumMgPer100:
+          entry.grams > 0 ? entry.sodiumMg / entry.grams * 100 : 0,
+      sugarPer100: entry.grams > 0 ? entry.sugarG / entry.grams * 100 : 0,
+      saturatedFatPer100:
+          entry.grams > 0 ? entry.saturatedFatG / entry.grams * 100 : 0,
       isCustom: false,
     );
 
@@ -62,7 +69,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
       _entry = entry;
       _food = food;
       _mealType = MealType.values.byName(entry.mealType);
-      _grams = FormOptions.snapDouble(FormOptions.mealGrams, entry.grams);
+      _grams = FormOptions.snapDouble(FormOptions.mealGrams(), entry.grams);
       _loading = false;
     });
   }
@@ -76,6 +83,10 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
       carbPer100: food.carbPer100,
       fatPer100: food.fatPer100,
       alcoholPer100: food.alcoholPer100,
+      fiberPer100: food.fiberPer100,
+      sodiumMgPer100: food.sodiumMgPer100,
+      sugarPer100: food.sugarPer100,
+      saturatedFatPer100: food.saturatedFatPer100,
     );
   }
 
@@ -244,8 +255,8 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
                   const SizedBox(height: AppSpacing.field),
                   AppDropdown<double>(
                     label: l10n.grams,
-                    value: FormOptions.snapDouble(FormOptions.mealGrams, _grams),
-                    items: FormOptions.mealGrams,
+                    value: FormOptions.snapDouble(FormOptions.mealGrams(), _grams),
+                    items: FormOptions.mealGrams(),
                     suffixText: 'g',
                     itemLabel: formatKg,
                     onChanged: _onGramsChanged,
@@ -277,6 +288,36 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
             value: '${preview.fatG.toStringAsFixed(1)} g',
             color: AppColors.fat,
           ),
+          if (preview.saturatedFatG > 0)
+            _MacroRow(
+              label: l10n.saturatedFat,
+              value: '${preview.saturatedFatG.toStringAsFixed(1)} g',
+              color: AppColors.fat,
+            ),
+          if (preview.sugarG > 0)
+            _MacroRow(
+              label: l10n.sugar,
+              value: '${preview.sugarG.toStringAsFixed(1)} g',
+              color: AppColors.carb,
+            ),
+          if (preview.fiberG > 0)
+            _MacroRow(
+              label: l10n.fiber,
+              value: '${preview.fiberG.toStringAsFixed(1)} g',
+              color: AppColors.carb,
+            ),
+          if (preview.sodiumMg > 0)
+            _MacroRow(
+              label: l10n.sodium,
+              value: '${preview.sodiumMg.toStringAsFixed(0)} mg',
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          if (preview.alcoholG > 0)
+            _MacroRow(
+              label: l10n.alcohol,
+              value: '${preview.alcoholG.toStringAsFixed(1)} g',
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
         ],
       ),
     );

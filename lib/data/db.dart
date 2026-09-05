@@ -36,7 +36,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -120,6 +120,35 @@ WHERE id NOT IN (
           }
           if (from < 14) {
             await m.createTable(stepLogs);
+          }
+          if (from < 15) {
+            // Drop UNIQUE(date) so a day can hold multiple plans.
+            await customStatement('''
+CREATE TABLE day_workouts_new (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  date INTEGER NOT NULL,
+  plan_id INTEGER NULL,
+  plan_name TEXT NULL
+)
+''');
+            await customStatement(
+              'INSERT INTO day_workouts_new (id, date, plan_id, plan_name) '
+              'SELECT id, date, plan_id, plan_name FROM day_workouts',
+            );
+            await customStatement('DROP TABLE day_workouts');
+            await customStatement(
+              'ALTER TABLE day_workouts_new RENAME TO day_workouts',
+            );
+          }
+          if (from < 16) {
+            await m.addColumn(foodItems, foodItems.fiberPer100);
+            await m.addColumn(foodItems, foodItems.sodiumMgPer100);
+            await m.addColumn(foodItems, foodItems.sugarPer100);
+            await m.addColumn(foodItems, foodItems.saturatedFatPer100);
+            await m.addColumn(mealEntries, mealEntries.fiberG);
+            await m.addColumn(mealEntries, mealEntries.sodiumMg);
+            await m.addColumn(mealEntries, mealEntries.sugarG);
+            await m.addColumn(mealEntries, mealEntries.saturatedFatG);
           }
         },
       );

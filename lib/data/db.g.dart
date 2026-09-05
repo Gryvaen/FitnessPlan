@@ -98,6 +98,54 @@ class $FoodItemsTable extends FoodItems
     requiredDuringInsert: false,
     defaultValue: const Constant(0.0),
   );
+  static const VerificationMeta _fiberPer100Meta = const VerificationMeta(
+    'fiberPer100',
+  );
+  @override
+  late final GeneratedColumn<double> fiberPer100 = GeneratedColumn<double>(
+    'fiber_per100',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _sodiumMgPer100Meta = const VerificationMeta(
+    'sodiumMgPer100',
+  );
+  @override
+  late final GeneratedColumn<double> sodiumMgPer100 = GeneratedColumn<double>(
+    'sodium_mg_per100',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _sugarPer100Meta = const VerificationMeta(
+    'sugarPer100',
+  );
+  @override
+  late final GeneratedColumn<double> sugarPer100 = GeneratedColumn<double>(
+    'sugar_per100',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _saturatedFatPer100Meta =
+      const VerificationMeta('saturatedFatPer100');
+  @override
+  late final GeneratedColumn<double> saturatedFatPer100 =
+      GeneratedColumn<double>(
+        'saturated_fat_per100',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0.0),
+      );
   static const VerificationMeta _isCustomMeta = const VerificationMeta(
     'isCustom',
   );
@@ -123,6 +171,10 @@ class $FoodItemsTable extends FoodItems
     carbPer100,
     fatPer100,
     alcoholPer100,
+    fiberPer100,
+    sodiumMgPer100,
+    sugarPer100,
+    saturatedFatPer100,
     isCustom,
   ];
   @override
@@ -200,6 +252,42 @@ class $FoodItemsTable extends FoodItems
         ),
       );
     }
+    if (data.containsKey('fiber_per100')) {
+      context.handle(
+        _fiberPer100Meta,
+        fiberPer100.isAcceptableOrUnknown(
+          data['fiber_per100']!,
+          _fiberPer100Meta,
+        ),
+      );
+    }
+    if (data.containsKey('sodium_mg_per100')) {
+      context.handle(
+        _sodiumMgPer100Meta,
+        sodiumMgPer100.isAcceptableOrUnknown(
+          data['sodium_mg_per100']!,
+          _sodiumMgPer100Meta,
+        ),
+      );
+    }
+    if (data.containsKey('sugar_per100')) {
+      context.handle(
+        _sugarPer100Meta,
+        sugarPer100.isAcceptableOrUnknown(
+          data['sugar_per100']!,
+          _sugarPer100Meta,
+        ),
+      );
+    }
+    if (data.containsKey('saturated_fat_per100')) {
+      context.handle(
+        _saturatedFatPer100Meta,
+        saturatedFatPer100.isAcceptableOrUnknown(
+          data['saturated_fat_per100']!,
+          _saturatedFatPer100Meta,
+        ),
+      );
+    }
     if (data.containsKey('is_custom')) {
       context.handle(
         _isCustomMeta,
@@ -251,6 +339,22 @@ class $FoodItemsTable extends FoodItems
         DriftSqlType.double,
         data['${effectivePrefix}alcohol_per100'],
       )!,
+      fiberPer100: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fiber_per100'],
+      )!,
+      sodiumMgPer100: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sodium_mg_per100'],
+      )!,
+      sugarPer100: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sugar_per100'],
+      )!,
+      saturatedFatPer100: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}saturated_fat_per100'],
+      )!,
       isCustom: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_custom'],
@@ -276,6 +380,18 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
   /// Estimated alcohol g/100g (mainly beverages with residual energy).
   final double alcoholPer100;
 
+  /// Dietary fiber g/100g (营养成分表常见项).
+  final double fiberPer100;
+
+  /// Sodium mg/100g.
+  final double sodiumMgPer100;
+
+  /// Sugars g/100g.
+  final double sugarPer100;
+
+  /// Saturated fat g/100g.
+  final double saturatedFatPer100;
+
   /// User-created foods survive seed sync deletion.
   final bool isCustom;
   const FoodItem({
@@ -287,6 +403,10 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     required this.carbPer100,
     required this.fatPer100,
     required this.alcoholPer100,
+    required this.fiberPer100,
+    required this.sodiumMgPer100,
+    required this.sugarPer100,
+    required this.saturatedFatPer100,
     required this.isCustom,
   });
   @override
@@ -300,6 +420,10 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     map['carb_per100'] = Variable<double>(carbPer100);
     map['fat_per100'] = Variable<double>(fatPer100);
     map['alcohol_per100'] = Variable<double>(alcoholPer100);
+    map['fiber_per100'] = Variable<double>(fiberPer100);
+    map['sodium_mg_per100'] = Variable<double>(sodiumMgPer100);
+    map['sugar_per100'] = Variable<double>(sugarPer100);
+    map['saturated_fat_per100'] = Variable<double>(saturatedFatPer100);
     map['is_custom'] = Variable<bool>(isCustom);
     return map;
   }
@@ -314,6 +438,10 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       carbPer100: Value(carbPer100),
       fatPer100: Value(fatPer100),
       alcoholPer100: Value(alcoholPer100),
+      fiberPer100: Value(fiberPer100),
+      sodiumMgPer100: Value(sodiumMgPer100),
+      sugarPer100: Value(sugarPer100),
+      saturatedFatPer100: Value(saturatedFatPer100),
       isCustom: Value(isCustom),
     );
   }
@@ -332,6 +460,12 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       carbPer100: serializer.fromJson<double>(json['carbPer100']),
       fatPer100: serializer.fromJson<double>(json['fatPer100']),
       alcoholPer100: serializer.fromJson<double>(json['alcoholPer100']),
+      fiberPer100: serializer.fromJson<double>(json['fiberPer100']),
+      sodiumMgPer100: serializer.fromJson<double>(json['sodiumMgPer100']),
+      sugarPer100: serializer.fromJson<double>(json['sugarPer100']),
+      saturatedFatPer100: serializer.fromJson<double>(
+        json['saturatedFatPer100'],
+      ),
       isCustom: serializer.fromJson<bool>(json['isCustom']),
     );
   }
@@ -347,6 +481,10 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       'carbPer100': serializer.toJson<double>(carbPer100),
       'fatPer100': serializer.toJson<double>(fatPer100),
       'alcoholPer100': serializer.toJson<double>(alcoholPer100),
+      'fiberPer100': serializer.toJson<double>(fiberPer100),
+      'sodiumMgPer100': serializer.toJson<double>(sodiumMgPer100),
+      'sugarPer100': serializer.toJson<double>(sugarPer100),
+      'saturatedFatPer100': serializer.toJson<double>(saturatedFatPer100),
       'isCustom': serializer.toJson<bool>(isCustom),
     };
   }
@@ -360,6 +498,10 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     double? carbPer100,
     double? fatPer100,
     double? alcoholPer100,
+    double? fiberPer100,
+    double? sodiumMgPer100,
+    double? sugarPer100,
+    double? saturatedFatPer100,
     bool? isCustom,
   }) => FoodItem(
     id: id ?? this.id,
@@ -370,6 +512,10 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     carbPer100: carbPer100 ?? this.carbPer100,
     fatPer100: fatPer100 ?? this.fatPer100,
     alcoholPer100: alcoholPer100 ?? this.alcoholPer100,
+    fiberPer100: fiberPer100 ?? this.fiberPer100,
+    sodiumMgPer100: sodiumMgPer100 ?? this.sodiumMgPer100,
+    sugarPer100: sugarPer100 ?? this.sugarPer100,
+    saturatedFatPer100: saturatedFatPer100 ?? this.saturatedFatPer100,
     isCustom: isCustom ?? this.isCustom,
   );
   FoodItem copyWithCompanion(FoodItemsCompanion data) {
@@ -390,6 +536,18 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       alcoholPer100: data.alcoholPer100.present
           ? data.alcoholPer100.value
           : this.alcoholPer100,
+      fiberPer100: data.fiberPer100.present
+          ? data.fiberPer100.value
+          : this.fiberPer100,
+      sodiumMgPer100: data.sodiumMgPer100.present
+          ? data.sodiumMgPer100.value
+          : this.sodiumMgPer100,
+      sugarPer100: data.sugarPer100.present
+          ? data.sugarPer100.value
+          : this.sugarPer100,
+      saturatedFatPer100: data.saturatedFatPer100.present
+          ? data.saturatedFatPer100.value
+          : this.saturatedFatPer100,
       isCustom: data.isCustom.present ? data.isCustom.value : this.isCustom,
     );
   }
@@ -405,6 +563,10 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
           ..write('carbPer100: $carbPer100, ')
           ..write('fatPer100: $fatPer100, ')
           ..write('alcoholPer100: $alcoholPer100, ')
+          ..write('fiberPer100: $fiberPer100, ')
+          ..write('sodiumMgPer100: $sodiumMgPer100, ')
+          ..write('sugarPer100: $sugarPer100, ')
+          ..write('saturatedFatPer100: $saturatedFatPer100, ')
           ..write('isCustom: $isCustom')
           ..write(')'))
         .toString();
@@ -420,6 +582,10 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     carbPer100,
     fatPer100,
     alcoholPer100,
+    fiberPer100,
+    sodiumMgPer100,
+    sugarPer100,
+    saturatedFatPer100,
     isCustom,
   );
   @override
@@ -434,6 +600,10 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
           other.carbPer100 == this.carbPer100 &&
           other.fatPer100 == this.fatPer100 &&
           other.alcoholPer100 == this.alcoholPer100 &&
+          other.fiberPer100 == this.fiberPer100 &&
+          other.sodiumMgPer100 == this.sodiumMgPer100 &&
+          other.sugarPer100 == this.sugarPer100 &&
+          other.saturatedFatPer100 == this.saturatedFatPer100 &&
           other.isCustom == this.isCustom);
 }
 
@@ -446,6 +616,10 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
   final Value<double> carbPer100;
   final Value<double> fatPer100;
   final Value<double> alcoholPer100;
+  final Value<double> fiberPer100;
+  final Value<double> sodiumMgPer100;
+  final Value<double> sugarPer100;
+  final Value<double> saturatedFatPer100;
   final Value<bool> isCustom;
   const FoodItemsCompanion({
     this.id = const Value.absent(),
@@ -456,6 +630,10 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     this.carbPer100 = const Value.absent(),
     this.fatPer100 = const Value.absent(),
     this.alcoholPer100 = const Value.absent(),
+    this.fiberPer100 = const Value.absent(),
+    this.sodiumMgPer100 = const Value.absent(),
+    this.sugarPer100 = const Value.absent(),
+    this.saturatedFatPer100 = const Value.absent(),
     this.isCustom = const Value.absent(),
   });
   FoodItemsCompanion.insert({
@@ -467,6 +645,10 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     required double carbPer100,
     required double fatPer100,
     this.alcoholPer100 = const Value.absent(),
+    this.fiberPer100 = const Value.absent(),
+    this.sodiumMgPer100 = const Value.absent(),
+    this.sugarPer100 = const Value.absent(),
+    this.saturatedFatPer100 = const Value.absent(),
     this.isCustom = const Value.absent(),
   }) : name = Value(name),
        category = Value(category),
@@ -483,6 +665,10 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     Expression<double>? carbPer100,
     Expression<double>? fatPer100,
     Expression<double>? alcoholPer100,
+    Expression<double>? fiberPer100,
+    Expression<double>? sodiumMgPer100,
+    Expression<double>? sugarPer100,
+    Expression<double>? saturatedFatPer100,
     Expression<bool>? isCustom,
   }) {
     return RawValuesInsertable({
@@ -494,6 +680,11 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
       if (carbPer100 != null) 'carb_per100': carbPer100,
       if (fatPer100 != null) 'fat_per100': fatPer100,
       if (alcoholPer100 != null) 'alcohol_per100': alcoholPer100,
+      if (fiberPer100 != null) 'fiber_per100': fiberPer100,
+      if (sodiumMgPer100 != null) 'sodium_mg_per100': sodiumMgPer100,
+      if (sugarPer100 != null) 'sugar_per100': sugarPer100,
+      if (saturatedFatPer100 != null)
+        'saturated_fat_per100': saturatedFatPer100,
       if (isCustom != null) 'is_custom': isCustom,
     });
   }
@@ -507,6 +698,10 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     Value<double>? carbPer100,
     Value<double>? fatPer100,
     Value<double>? alcoholPer100,
+    Value<double>? fiberPer100,
+    Value<double>? sodiumMgPer100,
+    Value<double>? sugarPer100,
+    Value<double>? saturatedFatPer100,
     Value<bool>? isCustom,
   }) {
     return FoodItemsCompanion(
@@ -518,6 +713,10 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
       carbPer100: carbPer100 ?? this.carbPer100,
       fatPer100: fatPer100 ?? this.fatPer100,
       alcoholPer100: alcoholPer100 ?? this.alcoholPer100,
+      fiberPer100: fiberPer100 ?? this.fiberPer100,
+      sodiumMgPer100: sodiumMgPer100 ?? this.sodiumMgPer100,
+      sugarPer100: sugarPer100 ?? this.sugarPer100,
+      saturatedFatPer100: saturatedFatPer100 ?? this.saturatedFatPer100,
       isCustom: isCustom ?? this.isCustom,
     );
   }
@@ -549,6 +748,18 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     if (alcoholPer100.present) {
       map['alcohol_per100'] = Variable<double>(alcoholPer100.value);
     }
+    if (fiberPer100.present) {
+      map['fiber_per100'] = Variable<double>(fiberPer100.value);
+    }
+    if (sodiumMgPer100.present) {
+      map['sodium_mg_per100'] = Variable<double>(sodiumMgPer100.value);
+    }
+    if (sugarPer100.present) {
+      map['sugar_per100'] = Variable<double>(sugarPer100.value);
+    }
+    if (saturatedFatPer100.present) {
+      map['saturated_fat_per100'] = Variable<double>(saturatedFatPer100.value);
+    }
     if (isCustom.present) {
       map['is_custom'] = Variable<bool>(isCustom.value);
     }
@@ -566,6 +777,10 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
           ..write('carbPer100: $carbPer100, ')
           ..write('fatPer100: $fatPer100, ')
           ..write('alcoholPer100: $alcoholPer100, ')
+          ..write('fiberPer100: $fiberPer100, ')
+          ..write('sodiumMgPer100: $sodiumMgPer100, ')
+          ..write('sugarPer100: $sugarPer100, ')
+          ..write('saturatedFatPer100: $saturatedFatPer100, ')
           ..write('isCustom: $isCustom')
           ..write(')'))
         .toString();
@@ -1552,6 +1767,50 @@ class $MealEntriesTable extends MealEntries
     requiredDuringInsert: false,
     defaultValue: const Constant(0.0),
   );
+  static const VerificationMeta _fiberGMeta = const VerificationMeta('fiberG');
+  @override
+  late final GeneratedColumn<double> fiberG = GeneratedColumn<double>(
+    'fiber_g',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _sodiumMgMeta = const VerificationMeta(
+    'sodiumMg',
+  );
+  @override
+  late final GeneratedColumn<double> sodiumMg = GeneratedColumn<double>(
+    'sodium_mg',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _sugarGMeta = const VerificationMeta('sugarG');
+  @override
+  late final GeneratedColumn<double> sugarG = GeneratedColumn<double>(
+    'sugar_g',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _saturatedFatGMeta = const VerificationMeta(
+    'saturatedFatG',
+  );
+  @override
+  late final GeneratedColumn<double> saturatedFatG = GeneratedColumn<double>(
+    'saturated_fat_g',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1565,6 +1824,10 @@ class $MealEntriesTable extends MealEntries
     carbG,
     fatG,
     alcoholG,
+    fiberG,
+    sodiumMg,
+    sugarG,
+    saturatedFatG,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1659,6 +1922,33 @@ class $MealEntriesTable extends MealEntries
         alcoholG.isAcceptableOrUnknown(data['alcohol_g']!, _alcoholGMeta),
       );
     }
+    if (data.containsKey('fiber_g')) {
+      context.handle(
+        _fiberGMeta,
+        fiberG.isAcceptableOrUnknown(data['fiber_g']!, _fiberGMeta),
+      );
+    }
+    if (data.containsKey('sodium_mg')) {
+      context.handle(
+        _sodiumMgMeta,
+        sodiumMg.isAcceptableOrUnknown(data['sodium_mg']!, _sodiumMgMeta),
+      );
+    }
+    if (data.containsKey('sugar_g')) {
+      context.handle(
+        _sugarGMeta,
+        sugarG.isAcceptableOrUnknown(data['sugar_g']!, _sugarGMeta),
+      );
+    }
+    if (data.containsKey('saturated_fat_g')) {
+      context.handle(
+        _saturatedFatGMeta,
+        saturatedFatG.isAcceptableOrUnknown(
+          data['saturated_fat_g']!,
+          _saturatedFatGMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1712,6 +2002,22 @@ class $MealEntriesTable extends MealEntries
         DriftSqlType.double,
         data['${effectivePrefix}alcohol_g'],
       )!,
+      fiberG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fiber_g'],
+      )!,
+      sodiumMg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sodium_mg'],
+      )!,
+      sugarG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sugar_g'],
+      )!,
+      saturatedFatG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}saturated_fat_g'],
+      )!,
     );
   }
 
@@ -1733,6 +2039,10 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
   final double carbG;
   final double fatG;
   final double alcoholG;
+  final double fiberG;
+  final double sodiumMg;
+  final double sugarG;
+  final double saturatedFatG;
   const MealEntry({
     required this.id,
     required this.date,
@@ -1745,6 +2055,10 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
     required this.carbG,
     required this.fatG,
     required this.alcoholG,
+    required this.fiberG,
+    required this.sodiumMg,
+    required this.sugarG,
+    required this.saturatedFatG,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1760,6 +2074,10 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
     map['carb_g'] = Variable<double>(carbG);
     map['fat_g'] = Variable<double>(fatG);
     map['alcohol_g'] = Variable<double>(alcoholG);
+    map['fiber_g'] = Variable<double>(fiberG);
+    map['sodium_mg'] = Variable<double>(sodiumMg);
+    map['sugar_g'] = Variable<double>(sugarG);
+    map['saturated_fat_g'] = Variable<double>(saturatedFatG);
     return map;
   }
 
@@ -1776,6 +2094,10 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
       carbG: Value(carbG),
       fatG: Value(fatG),
       alcoholG: Value(alcoholG),
+      fiberG: Value(fiberG),
+      sodiumMg: Value(sodiumMg),
+      sugarG: Value(sugarG),
+      saturatedFatG: Value(saturatedFatG),
     );
   }
 
@@ -1796,6 +2118,10 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
       carbG: serializer.fromJson<double>(json['carbG']),
       fatG: serializer.fromJson<double>(json['fatG']),
       alcoholG: serializer.fromJson<double>(json['alcoholG']),
+      fiberG: serializer.fromJson<double>(json['fiberG']),
+      sodiumMg: serializer.fromJson<double>(json['sodiumMg']),
+      sugarG: serializer.fromJson<double>(json['sugarG']),
+      saturatedFatG: serializer.fromJson<double>(json['saturatedFatG']),
     );
   }
   @override
@@ -1813,6 +2139,10 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
       'carbG': serializer.toJson<double>(carbG),
       'fatG': serializer.toJson<double>(fatG),
       'alcoholG': serializer.toJson<double>(alcoholG),
+      'fiberG': serializer.toJson<double>(fiberG),
+      'sodiumMg': serializer.toJson<double>(sodiumMg),
+      'sugarG': serializer.toJson<double>(sugarG),
+      'saturatedFatG': serializer.toJson<double>(saturatedFatG),
     };
   }
 
@@ -1828,6 +2158,10 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
     double? carbG,
     double? fatG,
     double? alcoholG,
+    double? fiberG,
+    double? sodiumMg,
+    double? sugarG,
+    double? saturatedFatG,
   }) => MealEntry(
     id: id ?? this.id,
     date: date ?? this.date,
@@ -1840,6 +2174,10 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
     carbG: carbG ?? this.carbG,
     fatG: fatG ?? this.fatG,
     alcoholG: alcoholG ?? this.alcoholG,
+    fiberG: fiberG ?? this.fiberG,
+    sodiumMg: sodiumMg ?? this.sodiumMg,
+    sugarG: sugarG ?? this.sugarG,
+    saturatedFatG: saturatedFatG ?? this.saturatedFatG,
   );
   MealEntry copyWithCompanion(MealEntriesCompanion data) {
     return MealEntry(
@@ -1854,6 +2192,12 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
       carbG: data.carbG.present ? data.carbG.value : this.carbG,
       fatG: data.fatG.present ? data.fatG.value : this.fatG,
       alcoholG: data.alcoholG.present ? data.alcoholG.value : this.alcoholG,
+      fiberG: data.fiberG.present ? data.fiberG.value : this.fiberG,
+      sodiumMg: data.sodiumMg.present ? data.sodiumMg.value : this.sodiumMg,
+      sugarG: data.sugarG.present ? data.sugarG.value : this.sugarG,
+      saturatedFatG: data.saturatedFatG.present
+          ? data.saturatedFatG.value
+          : this.saturatedFatG,
     );
   }
 
@@ -1870,7 +2214,11 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
           ..write('proteinG: $proteinG, ')
           ..write('carbG: $carbG, ')
           ..write('fatG: $fatG, ')
-          ..write('alcoholG: $alcoholG')
+          ..write('alcoholG: $alcoholG, ')
+          ..write('fiberG: $fiberG, ')
+          ..write('sodiumMg: $sodiumMg, ')
+          ..write('sugarG: $sugarG, ')
+          ..write('saturatedFatG: $saturatedFatG')
           ..write(')'))
         .toString();
   }
@@ -1888,6 +2236,10 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
     carbG,
     fatG,
     alcoholG,
+    fiberG,
+    sodiumMg,
+    sugarG,
+    saturatedFatG,
   );
   @override
   bool operator ==(Object other) =>
@@ -1903,7 +2255,11 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
           other.proteinG == this.proteinG &&
           other.carbG == this.carbG &&
           other.fatG == this.fatG &&
-          other.alcoholG == this.alcoholG);
+          other.alcoholG == this.alcoholG &&
+          other.fiberG == this.fiberG &&
+          other.sodiumMg == this.sodiumMg &&
+          other.sugarG == this.sugarG &&
+          other.saturatedFatG == this.saturatedFatG);
 }
 
 class MealEntriesCompanion extends UpdateCompanion<MealEntry> {
@@ -1918,6 +2274,10 @@ class MealEntriesCompanion extends UpdateCompanion<MealEntry> {
   final Value<double> carbG;
   final Value<double> fatG;
   final Value<double> alcoholG;
+  final Value<double> fiberG;
+  final Value<double> sodiumMg;
+  final Value<double> sugarG;
+  final Value<double> saturatedFatG;
   const MealEntriesCompanion({
     this.id = const Value.absent(),
     this.date = const Value.absent(),
@@ -1930,6 +2290,10 @@ class MealEntriesCompanion extends UpdateCompanion<MealEntry> {
     this.carbG = const Value.absent(),
     this.fatG = const Value.absent(),
     this.alcoholG = const Value.absent(),
+    this.fiberG = const Value.absent(),
+    this.sodiumMg = const Value.absent(),
+    this.sugarG = const Value.absent(),
+    this.saturatedFatG = const Value.absent(),
   });
   MealEntriesCompanion.insert({
     this.id = const Value.absent(),
@@ -1943,6 +2307,10 @@ class MealEntriesCompanion extends UpdateCompanion<MealEntry> {
     required double carbG,
     required double fatG,
     this.alcoholG = const Value.absent(),
+    this.fiberG = const Value.absent(),
+    this.sodiumMg = const Value.absent(),
+    this.sugarG = const Value.absent(),
+    this.saturatedFatG = const Value.absent(),
   }) : date = Value(date),
        mealType = Value(mealType),
        foodId = Value(foodId),
@@ -1964,6 +2332,10 @@ class MealEntriesCompanion extends UpdateCompanion<MealEntry> {
     Expression<double>? carbG,
     Expression<double>? fatG,
     Expression<double>? alcoholG,
+    Expression<double>? fiberG,
+    Expression<double>? sodiumMg,
+    Expression<double>? sugarG,
+    Expression<double>? saturatedFatG,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1977,6 +2349,10 @@ class MealEntriesCompanion extends UpdateCompanion<MealEntry> {
       if (carbG != null) 'carb_g': carbG,
       if (fatG != null) 'fat_g': fatG,
       if (alcoholG != null) 'alcohol_g': alcoholG,
+      if (fiberG != null) 'fiber_g': fiberG,
+      if (sodiumMg != null) 'sodium_mg': sodiumMg,
+      if (sugarG != null) 'sugar_g': sugarG,
+      if (saturatedFatG != null) 'saturated_fat_g': saturatedFatG,
     });
   }
 
@@ -1992,6 +2368,10 @@ class MealEntriesCompanion extends UpdateCompanion<MealEntry> {
     Value<double>? carbG,
     Value<double>? fatG,
     Value<double>? alcoholG,
+    Value<double>? fiberG,
+    Value<double>? sodiumMg,
+    Value<double>? sugarG,
+    Value<double>? saturatedFatG,
   }) {
     return MealEntriesCompanion(
       id: id ?? this.id,
@@ -2005,6 +2385,10 @@ class MealEntriesCompanion extends UpdateCompanion<MealEntry> {
       carbG: carbG ?? this.carbG,
       fatG: fatG ?? this.fatG,
       alcoholG: alcoholG ?? this.alcoholG,
+      fiberG: fiberG ?? this.fiberG,
+      sodiumMg: sodiumMg ?? this.sodiumMg,
+      sugarG: sugarG ?? this.sugarG,
+      saturatedFatG: saturatedFatG ?? this.saturatedFatG,
     );
   }
 
@@ -2044,6 +2428,18 @@ class MealEntriesCompanion extends UpdateCompanion<MealEntry> {
     if (alcoholG.present) {
       map['alcohol_g'] = Variable<double>(alcoholG.value);
     }
+    if (fiberG.present) {
+      map['fiber_g'] = Variable<double>(fiberG.value);
+    }
+    if (sodiumMg.present) {
+      map['sodium_mg'] = Variable<double>(sodiumMg.value);
+    }
+    if (sugarG.present) {
+      map['sugar_g'] = Variable<double>(sugarG.value);
+    }
+    if (saturatedFatG.present) {
+      map['saturated_fat_g'] = Variable<double>(saturatedFatG.value);
+    }
     return map;
   }
 
@@ -2060,7 +2456,11 @@ class MealEntriesCompanion extends UpdateCompanion<MealEntry> {
           ..write('proteinG: $proteinG, ')
           ..write('carbG: $carbG, ')
           ..write('fatG: $fatG, ')
-          ..write('alcoholG: $alcoholG')
+          ..write('alcoholG: $alcoholG, ')
+          ..write('fiberG: $fiberG, ')
+          ..write('sodiumMg: $sodiumMg, ')
+          ..write('sugarG: $sugarG, ')
+          ..write('saturatedFatG: $saturatedFatG')
           ..write(')'))
         .toString();
   }
@@ -4550,10 +4950,6 @@ class $DayWorkoutsTable extends DayWorkouts
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  List<Set<GeneratedColumn>> get uniqueKeys => [
-    {date},
-  ];
-  @override
   DayWorkout map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return DayWorkout(
@@ -6157,6 +6553,10 @@ typedef $$FoodItemsTableCreateCompanionBuilder =
       required double carbPer100,
       required double fatPer100,
       Value<double> alcoholPer100,
+      Value<double> fiberPer100,
+      Value<double> sodiumMgPer100,
+      Value<double> sugarPer100,
+      Value<double> saturatedFatPer100,
       Value<bool> isCustom,
     });
 typedef $$FoodItemsTableUpdateCompanionBuilder =
@@ -6169,6 +6569,10 @@ typedef $$FoodItemsTableUpdateCompanionBuilder =
       Value<double> carbPer100,
       Value<double> fatPer100,
       Value<double> alcoholPer100,
+      Value<double> fiberPer100,
+      Value<double> sodiumMgPer100,
+      Value<double> sugarPer100,
+      Value<double> saturatedFatPer100,
       Value<bool> isCustom,
     });
 
@@ -6218,6 +6622,26 @@ class $$FoodItemsTableFilterComposer
 
   ColumnFilters<double> get alcoholPer100 => $composableBuilder(
     column: $table.alcoholPer100,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fiberPer100 => $composableBuilder(
+    column: $table.fiberPer100,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sodiumMgPer100 => $composableBuilder(
+    column: $table.sodiumMgPer100,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sugarPer100 => $composableBuilder(
+    column: $table.sugarPer100,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get saturatedFatPer100 => $composableBuilder(
+    column: $table.saturatedFatPer100,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6276,6 +6700,26 @@ class $$FoodItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get fiberPer100 => $composableBuilder(
+    column: $table.fiberPer100,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sodiumMgPer100 => $composableBuilder(
+    column: $table.sodiumMgPer100,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sugarPer100 => $composableBuilder(
+    column: $table.sugarPer100,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get saturatedFatPer100 => $composableBuilder(
+    column: $table.saturatedFatPer100,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isCustom => $composableBuilder(
     column: $table.isCustom,
     builder: (column) => ColumnOrderings(column),
@@ -6323,6 +6767,26 @@ class $$FoodItemsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get fiberPer100 => $composableBuilder(
+    column: $table.fiberPer100,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sodiumMgPer100 => $composableBuilder(
+    column: $table.sodiumMgPer100,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sugarPer100 => $composableBuilder(
+    column: $table.sugarPer100,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get saturatedFatPer100 => $composableBuilder(
+    column: $table.saturatedFatPer100,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get isCustom =>
       $composableBuilder(column: $table.isCustom, builder: (column) => column);
 }
@@ -6363,6 +6827,10 @@ class $$FoodItemsTableTableManager
                 Value<double> carbPer100 = const Value.absent(),
                 Value<double> fatPer100 = const Value.absent(),
                 Value<double> alcoholPer100 = const Value.absent(),
+                Value<double> fiberPer100 = const Value.absent(),
+                Value<double> sodiumMgPer100 = const Value.absent(),
+                Value<double> sugarPer100 = const Value.absent(),
+                Value<double> saturatedFatPer100 = const Value.absent(),
                 Value<bool> isCustom = const Value.absent(),
               }) => FoodItemsCompanion(
                 id: id,
@@ -6373,6 +6841,10 @@ class $$FoodItemsTableTableManager
                 carbPer100: carbPer100,
                 fatPer100: fatPer100,
                 alcoholPer100: alcoholPer100,
+                fiberPer100: fiberPer100,
+                sodiumMgPer100: sodiumMgPer100,
+                sugarPer100: sugarPer100,
+                saturatedFatPer100: saturatedFatPer100,
                 isCustom: isCustom,
               ),
           createCompanionCallback:
@@ -6385,6 +6857,10 @@ class $$FoodItemsTableTableManager
                 required double carbPer100,
                 required double fatPer100,
                 Value<double> alcoholPer100 = const Value.absent(),
+                Value<double> fiberPer100 = const Value.absent(),
+                Value<double> sodiumMgPer100 = const Value.absent(),
+                Value<double> sugarPer100 = const Value.absent(),
+                Value<double> saturatedFatPer100 = const Value.absent(),
                 Value<bool> isCustom = const Value.absent(),
               }) => FoodItemsCompanion.insert(
                 id: id,
@@ -6395,6 +6871,10 @@ class $$FoodItemsTableTableManager
                 carbPer100: carbPer100,
                 fatPer100: fatPer100,
                 alcoholPer100: alcoholPer100,
+                fiberPer100: fiberPer100,
+                sodiumMgPer100: sodiumMgPer100,
+                sugarPer100: sugarPer100,
+                saturatedFatPer100: saturatedFatPer100,
                 isCustom: isCustom,
               ),
           withReferenceMapper: (p0) => p0
@@ -6937,6 +7417,10 @@ typedef $$MealEntriesTableCreateCompanionBuilder =
       required double carbG,
       required double fatG,
       Value<double> alcoholG,
+      Value<double> fiberG,
+      Value<double> sodiumMg,
+      Value<double> sugarG,
+      Value<double> saturatedFatG,
     });
 typedef $$MealEntriesTableUpdateCompanionBuilder =
     MealEntriesCompanion Function({
@@ -6951,6 +7435,10 @@ typedef $$MealEntriesTableUpdateCompanionBuilder =
       Value<double> carbG,
       Value<double> fatG,
       Value<double> alcoholG,
+      Value<double> fiberG,
+      Value<double> sodiumMg,
+      Value<double> sugarG,
+      Value<double> saturatedFatG,
     });
 
 class $$MealEntriesTableFilterComposer
@@ -7014,6 +7502,26 @@ class $$MealEntriesTableFilterComposer
 
   ColumnFilters<double> get alcoholG => $composableBuilder(
     column: $table.alcoholG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fiberG => $composableBuilder(
+    column: $table.fiberG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sodiumMg => $composableBuilder(
+    column: $table.sodiumMg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sugarG => $composableBuilder(
+    column: $table.sugarG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get saturatedFatG => $composableBuilder(
+    column: $table.saturatedFatG,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -7081,6 +7589,26 @@ class $$MealEntriesTableOrderingComposer
     column: $table.alcoholG,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get fiberG => $composableBuilder(
+    column: $table.fiberG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sodiumMg => $composableBuilder(
+    column: $table.sodiumMg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sugarG => $composableBuilder(
+    column: $table.sugarG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get saturatedFatG => $composableBuilder(
+    column: $table.saturatedFatG,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$MealEntriesTableAnnotationComposer
@@ -7124,6 +7652,20 @@ class $$MealEntriesTableAnnotationComposer
 
   GeneratedColumn<double> get alcoholG =>
       $composableBuilder(column: $table.alcoholG, builder: (column) => column);
+
+  GeneratedColumn<double> get fiberG =>
+      $composableBuilder(column: $table.fiberG, builder: (column) => column);
+
+  GeneratedColumn<double> get sodiumMg =>
+      $composableBuilder(column: $table.sodiumMg, builder: (column) => column);
+
+  GeneratedColumn<double> get sugarG =>
+      $composableBuilder(column: $table.sugarG, builder: (column) => column);
+
+  GeneratedColumn<double> get saturatedFatG => $composableBuilder(
+    column: $table.saturatedFatG,
+    builder: (column) => column,
+  );
 }
 
 class $$MealEntriesTableTableManager
@@ -7168,6 +7710,10 @@ class $$MealEntriesTableTableManager
                 Value<double> carbG = const Value.absent(),
                 Value<double> fatG = const Value.absent(),
                 Value<double> alcoholG = const Value.absent(),
+                Value<double> fiberG = const Value.absent(),
+                Value<double> sodiumMg = const Value.absent(),
+                Value<double> sugarG = const Value.absent(),
+                Value<double> saturatedFatG = const Value.absent(),
               }) => MealEntriesCompanion(
                 id: id,
                 date: date,
@@ -7180,6 +7726,10 @@ class $$MealEntriesTableTableManager
                 carbG: carbG,
                 fatG: fatG,
                 alcoholG: alcoholG,
+                fiberG: fiberG,
+                sodiumMg: sodiumMg,
+                sugarG: sugarG,
+                saturatedFatG: saturatedFatG,
               ),
           createCompanionCallback:
               ({
@@ -7194,6 +7744,10 @@ class $$MealEntriesTableTableManager
                 required double carbG,
                 required double fatG,
                 Value<double> alcoholG = const Value.absent(),
+                Value<double> fiberG = const Value.absent(),
+                Value<double> sodiumMg = const Value.absent(),
+                Value<double> sugarG = const Value.absent(),
+                Value<double> saturatedFatG = const Value.absent(),
               }) => MealEntriesCompanion.insert(
                 id: id,
                 date: date,
@@ -7206,6 +7760,10 @@ class $$MealEntriesTableTableManager
                 carbG: carbG,
                 fatG: fatG,
                 alcoholG: alcoholG,
+                fiberG: fiberG,
+                sodiumMg: sodiumMg,
+                sugarG: sugarG,
+                saturatedFatG: saturatedFatG,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

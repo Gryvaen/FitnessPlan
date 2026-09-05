@@ -530,6 +530,42 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get fiber => '膳食纤维';
+
+  @override
+  String get sodium => '钠';
+
+  @override
+  String get sugar => '糖';
+
+  @override
+  String get saturatedFat => '饱和脂肪';
+
+  @override
+  String get fiberG => '膳食纤维 (g)';
+
+  @override
+  String get sodiumMg => '钠 (mg)';
+
+  @override
+  String get sugarG => '糖 (g)';
+
+  @override
+  String get saturatedFatG => '饱和脂肪 (g)';
+
+  @override
+  String get fiberGOptional => '膳食纤维 (g，可选)';
+
+  @override
+  String get sodiumMgOptional => '钠 (mg，可选)';
+
+  @override
+  String get sugarGOptional => '糖 (g，可选)';
+
+  @override
+  String get saturatedFatGOptional => '饱和脂肪 (g，可选)';
+
+  @override
   String get stepsStatusConnected => '已连接，可读取系统步数（为 0 时可能是健康数据源未写入）';
 
   @override

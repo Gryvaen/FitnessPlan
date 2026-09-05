@@ -180,6 +180,18 @@
       }
     }
   },
+  "fiber": "膳食纤维",
+  "sodium": "钠",
+  "sugar": "糖",
+  "saturatedFat": "饱和脂肪",
+  "fiberG": "膳食纤维 (g)",
+  "sodiumMg": "钠 (mg)",
+  "sugarG": "糖 (g)",
+  "saturatedFatG": "饱和脂肪 (g)",
+  "fiberGOptional": "膳食纤维 (g，可选)",
+  "sodiumMgOptional": "钠 (mg，可选)",
+  "sugarGOptional": "糖 (g，可选)",
+  "saturatedFatGOptional": "饱和脂肪 (g，可选)",
   "stepsStatusConnected": "已连接，可读取系统步数（为 0 时可能是健康数据源未写入）",
   "stepsStatusDenied": "未授权或无法连接 Health Connect / 健康 App",
   "stepsStatusUnsupported": "当前平台不支持步数同步",

@@ -72,6 +72,10 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
       carbPer100: food.carbPer100,
       fatPer100: food.fatPer100,
       alcoholPer100: food.alcoholPer100,
+      fiberPer100: food.fiberPer100,
+      sodiumMgPer100: food.sodiumMgPer100,
+      sugarPer100: food.sugarPer100,
+      saturatedFatPer100: food.saturatedFatPer100,
     );
   }
 
@@ -100,7 +104,7 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final intake = _intake;
-    final gramsOpts = FormOptions.mealGrams;
+    final gramsOpts = FormOptions.mealGrams();
     final favorites =
         ref.watch(favoriteFoodsProvider).value ?? const <FoodItem>[];
     final isFav = _selected == null
@@ -211,6 +215,26 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
                         '${l10n.fat} ${intake.fatG.toStringAsFixed(1)} g',
                         style: theme.textTheme.bodyMedium,
                       ),
+                      if (intake.saturatedFatG > 0.05)
+                        Text(
+                          '${l10n.saturatedFat} ${intake.saturatedFatG.toStringAsFixed(1)} g',
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      if (intake.sugarG > 0.05)
+                        Text(
+                          '${l10n.sugar} ${intake.sugarG.toStringAsFixed(1)} g',
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      if (intake.fiberG > 0.05)
+                        Text(
+                          '${l10n.fiber} ${intake.fiberG.toStringAsFixed(1)} g',
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      if (intake.sodiumMg > 0.5)
+                        Text(
+                          '${l10n.sodium} ${intake.sodiumMg.toStringAsFixed(0)} mg',
+                          style: theme.textTheme.bodyMedium,
+                        ),
                       if (intake.alcoholG > 0.05)
                         Text(
                           l10n.alcoholWithKcal(

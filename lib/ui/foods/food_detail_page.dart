@@ -64,8 +64,8 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
               builder: (context, setLocal) {
                 return AppDropdown<double>(
                   label: l10n.grams,
-                  value: FormOptions.snapDouble(FormOptions.mealGrams, grams),
-                  items: FormOptions.mealGrams,
+                  value: FormOptions.snapDouble(FormOptions.mealGrams(), grams),
+                  items: FormOptions.mealGrams(),
                   suffixText: 'g',
                   itemLabel: formatKg,
                   onChanged: (v) => setLocal(() => grams = v),
@@ -212,6 +212,22 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
           _row(context, l10n.protein, '${food.proteinPer100.toStringAsFixed(1)} g'),
           _row(context, l10n.carbs, '${food.carbPer100.toStringAsFixed(1)} g'),
           _row(context, l10n.fat, '${food.fatPer100.toStringAsFixed(1)} g'),
+          if (food.saturatedFatPer100 > 0)
+            _row(
+              context,
+              l10n.saturatedFat,
+              '${food.saturatedFatPer100.toStringAsFixed(1)} g',
+            ),
+          if (food.sugarPer100 > 0)
+            _row(context, l10n.sugar, '${food.sugarPer100.toStringAsFixed(1)} g'),
+          if (food.fiberPer100 > 0)
+            _row(context, l10n.fiber, '${food.fiberPer100.toStringAsFixed(1)} g'),
+          if (food.sodiumMgPer100 > 0)
+            _row(
+              context,
+              l10n.sodium,
+              '${food.sodiumMgPer100.toStringAsFixed(0)} mg',
+            ),
           if (food.alcoholPer100 > 0)
             _row(context, l10n.alcohol, '${food.alcoholPer100.toStringAsFixed(1)} g'),
           const SizedBox(height: AppSpacing.section),

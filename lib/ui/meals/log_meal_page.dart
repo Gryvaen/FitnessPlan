@@ -54,7 +54,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     if (mounted) {
       setState(() {
         _mealType = memory.mealType;
-        _grams = FormOptions.snapDouble(FormOptions.mealGrams, memory.grams);
+        _grams = FormOptions.snapDouble(FormOptions.mealGrams(), memory.grams);
       });
     }
     try {
@@ -131,6 +131,10 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
       carbPer100: food.carbPer100,
       fatPer100: food.fatPer100,
       alcoholPer100: food.alcoholPer100,
+      fiberPer100: food.fiberPer100,
+      sodiumMgPer100: food.sodiumMgPer100,
+      sugarPer100: food.sugarPer100,
+      saturatedFatPer100: food.saturatedFatPer100,
     );
   }
 
@@ -349,10 +353,10 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                   AppDropdown<double>(
                     label: l10n.grams,
                     value: FormOptions.snapDouble(
-                      FormOptions.mealGrams,
+                      FormOptions.mealGrams(),
                       _grams,
                     ),
-                    items: FormOptions.mealGrams,
+                    items: FormOptions.mealGrams(),
                     suffixText: 'g',
                     itemLabel: formatKg,
                     onChanged: (v) {
@@ -368,6 +372,14 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                         'P ${preview.proteinG.toStringAsFixed(1)}',
                         'C ${preview.carbG.toStringAsFixed(1)}',
                         'F ${preview.fatG.toStringAsFixed(1)}',
+                        if (preview.saturatedFatG > 0)
+                          '${l10n.saturatedFat} ${preview.saturatedFatG.toStringAsFixed(1)}',
+                        if (preview.sugarG > 0)
+                          '${l10n.sugar} ${preview.sugarG.toStringAsFixed(1)}',
+                        if (preview.fiberG > 0)
+                          '${l10n.fiber} ${preview.fiberG.toStringAsFixed(1)}',
+                        if (preview.sodiumMg > 0)
+                          '${l10n.sodium} ${preview.sodiumMg.toStringAsFixed(0)}mg',
                         if (preview.alcoholG > 0)
                           '${l10n.alcohol} ${preview.alcoholG.toStringAsFixed(1)}',
                       ].join(' · '),

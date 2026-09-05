@@ -214,6 +214,10 @@ class MacroIntake {
     this.carbG = 0,
     this.fatG = 0,
     this.alcoholG = 0,
+    this.fiberG = 0,
+    this.sodiumMg = 0,
+    this.sugarG = 0,
+    this.saturatedFatG = 0,
   });
 
   final double calories;
@@ -221,6 +225,10 @@ class MacroIntake {
   final double carbG;
   final double fatG;
   final double alcoholG;
+  final double fiberG;
+  final double sodiumMg;
+  final double sugarG;
+  final double saturatedFatG;
 
   /// Approximate kcal from alcohol (~7 kcal/g); already included in [calories].
   double get alcoholKcal => alcoholG * 7;
@@ -231,6 +239,10 @@ class MacroIntake {
         carbG: carbG + other.carbG,
         fatG: fatG + other.fatG,
         alcoholG: alcoholG + other.alcoholG,
+        fiberG: fiberG + other.fiberG,
+        sodiumMg: sodiumMg + other.sodiumMg,
+        sugarG: sugarG + other.sugarG,
+        saturatedFatG: saturatedFatG + other.saturatedFatG,
       );
 
   static MacroIntake fromGrams({
@@ -240,6 +252,10 @@ class MacroIntake {
     required double carbPer100,
     required double fatPer100,
     double alcoholPer100 = 0,
+    double fiberPer100 = 0,
+    double sodiumMgPer100 = 0,
+    double sugarPer100 = 0,
+    double saturatedFatPer100 = 0,
   }) {
     final factor = grams / 100.0;
     return MacroIntake(
@@ -248,6 +264,10 @@ class MacroIntake {
       carbG: carbPer100 * factor,
       fatG: fatPer100 * factor,
       alcoholG: alcoholPer100 * factor,
+      fiberG: fiberPer100 * factor,
+      sodiumMg: sodiumMgPer100 * factor,
+      sugarG: sugarPer100 * factor,
+      saturatedFatG: saturatedFatPer100 * factor,
     );
   }
 }

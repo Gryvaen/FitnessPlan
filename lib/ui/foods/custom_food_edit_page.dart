@@ -24,6 +24,10 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
   final _carb = TextEditingController(text: '0');
   final _fat = TextEditingController(text: '0');
   final _alcohol = TextEditingController(text: '0');
+  final _fiber = TextEditingController(text: '0');
+  final _sodium = TextEditingController(text: '0');
+  final _sugar = TextEditingController(text: '0');
+  final _saturatedFat = TextEditingController(text: '0');
   bool _loading = false;
   bool _ready = false;
 
@@ -52,6 +56,10 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
     _carb.text = _fmt(food.carbPer100);
     _fat.text = _fmt(food.fatPer100);
     _alcohol.text = _fmt(food.alcoholPer100);
+    _fiber.text = _fmt(food.fiberPer100);
+    _sodium.text = _fmt(food.sodiumMgPer100);
+    _sugar.text = _fmt(food.sugarPer100);
+    _saturatedFat.text = _fmt(food.saturatedFatPer100);
     setState(() => _ready = true);
   }
 
@@ -69,6 +77,10 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
     _carb.dispose();
     _fat.dispose();
     _alcohol.dispose();
+    _fiber.dispose();
+    _sodium.dispose();
+    _sugar.dispose();
+    _saturatedFat.dispose();
     super.dispose();
   }
 
@@ -86,6 +98,10 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
           carbPer100: _parse(_carb),
           fatPer100: _parse(_fat),
           alcoholPer100: _parse(_alcohol),
+          fiberPer100: _parse(_fiber),
+          sodiumMgPer100: _parse(_sodium),
+          sugarPer100: _parse(_sugar),
+          saturatedFatPer100: _parse(_saturatedFat),
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -101,6 +117,10 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
           carbPer100: _parse(_carb),
           fatPer100: _parse(_fat),
           alcoholPer100: _parse(_alcohol),
+          fiberPer100: _parse(_fiber),
+          sodiumMgPer100: _parse(_sodium),
+          sugarPer100: _parse(_sugar),
+          saturatedFatPer100: _parse(_saturatedFat),
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -145,6 +165,10 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
           _numField(_protein, l10n.proteinG),
           _numField(_carb, l10n.carbG),
           _numField(_fat, l10n.fatG),
+          _numField(_saturatedFat, l10n.saturatedFatGOptional),
+          _numField(_sugar, l10n.sugarGOptional),
+          _numField(_fiber, l10n.fiberGOptional),
+          _numField(_sodium, l10n.sodiumMgOptional),
           _numField(_alcohol, l10n.alcoholGOptional),
           const SizedBox(height: AppSpacing.section),
           FilledButton(

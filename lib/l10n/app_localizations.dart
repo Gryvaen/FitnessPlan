@@ -1136,6 +1136,78 @@ abstract class AppLocalizations {
   /// **'{n} steps'**
   String nSteps(int n);
 
+  /// No description provided for @fiber.
+  ///
+  /// In en, this message translates to:
+  /// **'Fiber'**
+  String get fiber;
+
+  /// No description provided for @sodium.
+  ///
+  /// In en, this message translates to:
+  /// **'Sodium'**
+  String get sodium;
+
+  /// No description provided for @sugar.
+  ///
+  /// In en, this message translates to:
+  /// **'Sugar'**
+  String get sugar;
+
+  /// No description provided for @saturatedFat.
+  ///
+  /// In en, this message translates to:
+  /// **'Saturated fat'**
+  String get saturatedFat;
+
+  /// No description provided for @fiberG.
+  ///
+  /// In en, this message translates to:
+  /// **'Fiber (g)'**
+  String get fiberG;
+
+  /// No description provided for @sodiumMg.
+  ///
+  /// In en, this message translates to:
+  /// **'Sodium (mg)'**
+  String get sodiumMg;
+
+  /// No description provided for @sugarG.
+  ///
+  /// In en, this message translates to:
+  /// **'Sugar (g)'**
+  String get sugarG;
+
+  /// No description provided for @saturatedFatG.
+  ///
+  /// In en, this message translates to:
+  /// **'Saturated fat (g)'**
+  String get saturatedFatG;
+
+  /// No description provided for @fiberGOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Fiber (g, optional)'**
+  String get fiberGOptional;
+
+  /// No description provided for @sodiumMgOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Sodium (mg, optional)'**
+  String get sodiumMgOptional;
+
+  /// No description provided for @sugarGOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Sugar (g, optional)'**
+  String get sugarGOptional;
+
+  /// No description provided for @saturatedFatGOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Saturated fat (g, optional)'**
+  String get saturatedFatGOptional;
+
   /// No description provided for @stepsStatusConnected.
   ///
   /// In en, this message translates to:

@@ -10,6 +10,15 @@ class FoodItems extends Table {
   RealColumn get fatPer100 => real()();
   /// Estimated alcohol g/100g (mainly beverages with residual energy).
   RealColumn get alcoholPer100 => real().withDefault(const Constant(0.0))();
+  /// Dietary fiber g/100g (营养成分表常见项).
+  RealColumn get fiberPer100 => real().withDefault(const Constant(0.0))();
+  /// Sodium mg/100g.
+  RealColumn get sodiumMgPer100 => real().withDefault(const Constant(0.0))();
+  /// Sugars g/100g.
+  RealColumn get sugarPer100 => real().withDefault(const Constant(0.0))();
+  /// Saturated fat g/100g.
+  RealColumn get saturatedFatPer100 =>
+      real().withDefault(const Constant(0.0))();
   /// User-created foods survive seed sync deletion.
   BoolColumn get isCustom => boolean().withDefault(const Constant(false))();
 
@@ -56,6 +65,10 @@ class MealEntries extends Table {
   RealColumn get carbG => real()();
   RealColumn get fatG => real()();
   RealColumn get alcoholG => real().withDefault(const Constant(0.0))();
+  RealColumn get fiberG => real().withDefault(const Constant(0.0))();
+  RealColumn get sodiumMg => real().withDefault(const Constant(0.0))();
+  RealColumn get sugarG => real().withDefault(const Constant(0.0))();
+  RealColumn get saturatedFatG => real().withDefault(const Constant(0.0))();
 }
 
 class MealPresets extends Table {
@@ -142,11 +155,6 @@ class DayWorkouts extends Table {
   DateTimeColumn get date => dateTime()();
   IntColumn get planId => integer().nullable()();
   TextColumn get planName => text().nullable()();
-
-  @override
-  List<Set<Column>> get uniqueKeys => [
-        {date},
-      ];
 }
 
 class DayWorkoutItems extends Table {
