@@ -11,7 +11,7 @@ final stepRepositoryProvider = Provider<StepRepository>((ref) {
 });
 
 final androidStepSensorProvider = Provider<AndroidStepSensor>((ref) {
-  return AndroidStepSensor(ref.watch(sharedPreferencesProvider));
+  return AndroidStepSensor();
 });
 
 final stepsSyncServiceProvider = Provider<StepsSyncService>((ref) {
