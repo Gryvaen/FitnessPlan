@@ -747,6 +747,11 @@ class _StepsStatusLabel extends ConsumerWidget {
           color: const Color(0xFFB9F6CA),
           tooltip: l10n.stepsStatusConnected,
         ),
+      StepsSyncStatus.empty => (
+          icon: Icons.info_outline,
+          color: const Color(0xFFFFCC80),
+          tooltip: l10n.stepsStatusEmpty,
+        ),
       StepsSyncStatus.denied => (
           icon: Icons.link_off,
           color: const Color(0xFFFFCC80),
@@ -774,7 +779,18 @@ class _StepsStatusLabel extends ConsumerWidget {
     return Tooltip(
       message: canRetry ? '$tooltip\n${l10n.stepsStatusRetryHint}' : tooltip,
       child: InkWell(
-        onTap: canRetry ? () => ref.invalidate(stepsSyncProvider) : null,
+        onTap: !canRetry
+            ? null
+            : () async {
+                final needsSettings = status == StepsSyncStatus.denied ||
+                    status == StepsSyncStatus.empty;
+                if (needsSettings) {
+                  await ref
+                      .read(stepsSyncServiceProvider)
+                      .openHealthConnectSettings();
+                }
+                ref.invalidate(stepsSyncProvider);
+              },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),

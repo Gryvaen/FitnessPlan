@@ -18,6 +18,10 @@ enum StepsSyncStatus {
   /// Authorized and daily totals were read successfully (may still be 0).
   connected,
 
+  /// Connected but today's total is 0 — often means OEM health data is not
+  /// shared into Health Connect yet.
+  empty,
+
   /// Unexpected failure while reading or writing step totals.
   failed,
 }
@@ -25,8 +29,8 @@ enum StepsSyncStatus {
 /// Syncs daily step totals from HealthKit / Health Connect into [StepRepository].
 ///
 /// On Android, when Health Connect is missing or returns 0 for today (common on
-/// OPPO / ColorOS and other OEMs without a HC data source), falls back to the
-/// hardware [Sensor.TYPE_STEP_COUNTER] for today's total.
+/// OPPO / ColorOS), also reads the OEM / hardware step counter and keeps the
+/// larger of the two values for today.
 class StepsSyncService {
   StepsSyncService(
     this._repo, {
@@ -59,7 +63,6 @@ class StepsSyncService {
   }
 
   /// Returns whether Health Connect / HealthKit read access was granted.
-  /// Does not wipe existing DB rows when authorization fails.
   Future<bool> ensureAuthorized() async {
     if (!isPlatformSupported) return false;
     try {
@@ -82,9 +85,13 @@ class StepsSyncService {
           if (!historyOk) {
             await _health.requestHealthDataHistoryAuthorization();
           }
-        } catch (_) {
-          // Optional on older Health Connect; ignore.
-        }
+        } catch (_) {}
+        try {
+          final bgOk = await _health.isHealthDataInBackgroundAuthorized();
+          if (!bgOk) {
+            await _health.requestHealthDataInBackgroundAuthorization();
+          }
+        } catch (_) {}
       }
       return true;
     } catch (_) {
@@ -92,10 +99,25 @@ class StepsSyncService {
     }
   }
 
-  /// Pull today + previous [limitDays]-1 days and upsert. Missing → 0.
-  ///
-  /// Concurrent callers share the in-flight run instead of getting a
-  /// short-circuit result, so every caller observes the real outcome.
+  Future<bool> openHealthConnectSettings() async {
+    final sensor = _stepSensor;
+    if (sensor != null) {
+      final opened = await sensor.openHealthConnectSettings();
+      if (opened) return true;
+    }
+    try {
+      await _ensureConfigured();
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final available = await _health.isHealthConnectAvailable();
+        if (!available) {
+          await _health.installHealthConnect();
+          return true;
+        }
+      }
+    } catch (_) {}
+    return openAppSettings();
+  }
+
   Future<StepsSyncStatus> syncRecent({int limitDays = 14}) {
     if (!isPlatformSupported) {
       return Future.value(StepsSyncStatus.unsupported);
@@ -106,8 +128,6 @@ class StepsSyncService {
   Future<StepsSyncStatus> _run(int limitDays) async {
     try {
       if (!await _ensureActivityRecognition()) {
-        // Still try sensor? ACTIVITY_RECOGNITION is required for step sensor
-        // on Android 10+. Without it both paths fail.
         return StepsSyncStatus.denied;
       }
 
@@ -128,54 +148,73 @@ class StepsSyncService {
                   .add(const Duration(days: 1))
                   .subtract(const Duration(milliseconds: 1));
           try {
-            final total = await _health.getTotalStepsInInterval(start, end);
-            final value = total ?? 0;
+            final value = await _readStepsForInterval(start, end);
             await _repo.setStepsForDay(day, value);
             if (i == 0) todayFromHealth = value;
             readsOk++;
           } catch (_) {
-            // Keep any existing DB value for this day.
             readsFailed++;
           }
         }
       }
 
-      final usedSensor = await _maybeApplySensorFallback(
-        healthToday: authorized ? todayFromHealth : null,
-        healthAuthorized: authorized,
-      );
+      final sensorToday = await _readSensorToday();
+      final today = CalendarDay.todayLocal();
+      var todayFinal = todayFromHealth;
+      if (sensorToday != null && sensorToday > todayFinal) {
+        todayFinal = sensorToday;
+      }
+      if (sensorToday != null || authorized) {
+        await _repo.setStepsForDay(today, todayFinal);
+      } else {
+        return StepsSyncStatus.denied;
+      }
 
       if (authorized) {
-        if (readsOk == 0 && readsFailed > 0 && !usedSensor) {
+        if (readsOk == 0 && readsFailed > 0 && sensorToday == null) {
           return StepsSyncStatus.failed;
         }
+        if (todayFinal <= 0) return StepsSyncStatus.empty;
         return StepsSyncStatus.connected;
       }
 
-      if (usedSensor) return StepsSyncStatus.connected;
-      return StepsSyncStatus.denied;
+      return todayFinal > 0
+          ? StepsSyncStatus.connected
+          : StepsSyncStatus.empty;
     } catch (_) {
       return StepsSyncStatus.failed;
     }
   }
 
-  /// When Health Connect has no today's data (or is unavailable), use the
-  /// OEM step counter. Returns true if a sensor value was written.
-  Future<bool> _maybeApplySensorFallback({
-    required int? healthToday,
-    required bool healthAuthorized,
-  }) async {
+  Future<int?> _readSensorToday() async {
     final sensor = _stepSensor;
-    if (sensor == null || !AndroidStepSensor.isSupported) return false;
-    if (healthAuthorized && (healthToday ?? 0) > 0) return false;
+    if (sensor == null || !AndroidStepSensor.isSupported) return null;
+    return sensor.readTodaySteps();
+  }
 
-    final sensorToday = await sensor.readTodaySteps();
-    if (sensorToday == null) return false;
+  /// Aggregate first; if 0, sum individual STEPS samples (some OEM HC builds).
+  Future<int> _readStepsForInterval(DateTime start, DateTime end) async {
+    try {
+      final total = await _health.getTotalStepsInInterval(start, end);
+      if (total != null && total > 0) return total;
+    } catch (_) {}
 
-    if (!healthAuthorized || sensorToday > (healthToday ?? 0)) {
-      await _repo.setStepsForDay(CalendarDay.todayLocal(), sensorToday);
-      return true;
-    }
-    return false;
+    try {
+      final points = await _health.getHealthDataFromTypes(
+        types: const [HealthDataType.STEPS],
+        startTime: start,
+        endTime: end,
+      );
+      var sum = 0;
+      for (final p in points) {
+        final v = p.value;
+        if (v is NumericHealthValue) {
+          sum += v.numericValue.round();
+        }
+      }
+      if (sum > 0) return sum;
+    } catch (_) {}
+
+    return 0;
   }
 }

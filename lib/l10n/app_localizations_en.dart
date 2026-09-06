@@ -566,12 +566,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saturatedFatGOptional => 'Saturated fat (g, optional)';
 
   @override
-  String get stepsStatusConnected =>
-      'Connected — reads Health Connect, or the phone step sensor as fallback';
+  String get stepsStatusConnected => 'System steps synced';
 
   @override
   String get stepsStatusDenied =>
-      'Activity permission denied, or step counting is unavailable';
+      'Activity permission denied. Tap to open settings';
+
+  @override
+  String get stepsStatusEmpty =>
+      'Authorized but 0 steps. Allow this app in Health Connect and share data from your health app. Tap to open settings';
 
   @override
   String get stepsStatusUnsupported =>
@@ -584,7 +587,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stepsStatusFailed => 'Step sync failed — tap to retry';
 
   @override
-  String get stepsStatusRetryHint => 'Tap to retry sync';
+  String get stepsStatusRetryHint =>
+      'Tap to retry; opens health settings if still 0';
 
   @override
   String get noSetLogs => 'No set logs';

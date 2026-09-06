@@ -1211,14 +1211,20 @@ abstract class AppLocalizations {
   /// No description provided for @stepsStatusConnected.
   ///
   /// In en, this message translates to:
-  /// **'Connected — reads Health Connect, or the phone step sensor as fallback'**
+  /// **'System steps synced'**
   String get stepsStatusConnected;
 
   /// No description provided for @stepsStatusDenied.
   ///
   /// In en, this message translates to:
-  /// **'Activity permission denied, or step counting is unavailable'**
+  /// **'Activity permission denied. Tap to open settings'**
   String get stepsStatusDenied;
+
+  /// No description provided for @stepsStatusEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Authorized but 0 steps. Allow this app in Health Connect and share data from your health app. Tap to open settings'**
+  String get stepsStatusEmpty;
 
   /// No description provided for @stepsStatusUnsupported.
   ///
@@ -1241,7 +1247,7 @@ abstract class AppLocalizations {
   /// No description provided for @stepsStatusRetryHint.
   ///
   /// In en, this message translates to:
-  /// **'Tap to retry sync'**
+  /// **'Tap to retry; opens health settings if still 0'**
   String get stepsStatusRetryHint;
 
   /// No description provided for @noSetLogs.
