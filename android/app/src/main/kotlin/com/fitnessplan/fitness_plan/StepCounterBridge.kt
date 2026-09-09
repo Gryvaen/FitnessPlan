@@ -9,6 +9,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -22,10 +23,13 @@ import kotlin.math.max
  * Reads [Sensor.TYPE_STEP_COUNTER] and converts the reboot-cumulative value into
  * local-calendar-day totals.
  *
- * - If the device booted today, cumulative ≈ steps since boot (best-effort today).
- * - Otherwise uses a midnight baseline snapshot (AlarmManager) so later days match
- *   the system pedometer more closely.
- * - Mid-day first install still cannot recover morning steps without Health Connect.
+ * Day boundary strategy (best → worst):
+ * 1. Midnight alarm snapshot of the cumulative counter (exact baseline).
+ * 2. Device booted today → cumulative == steps since boot ≈ today.
+ * 3. Last sample was late yesterday (≤ 6 h before midnight) → treat all steps
+ *    since that sample as today's (people rarely walk much before midnight).
+ * 4. Last sample was earlier yesterday → time-weighted interpolation.
+ * 5. Nothing usable → anchor at current value (morning steps are lost).
  */
 object StepCounterBridge {
     const val CHANNEL = "fitness_plan/step_counter"
@@ -35,35 +39,35 @@ object StepCounterBridge {
     private const val KEY_DATE = "date"
     private const val KEY_BASELINE = "baseline"
     private const val KEY_LAST = "last"
+    private const val KEY_LAST_TIME = "last_time"
     private const val KEY_TODAY = "today"
+    private const val KEY_BASELINE_SOURCE = "baseline_source"
     private const val MIDNIGHT_REQUEST = 71011
+    private const val SENSOR_TIMEOUT_MS = 6000L
+    private const val LATE_EVENING_MS = 6 * 60 * 60 * 1000L
 
     fun handle(context: Context, method: String, result: MethodChannel.Result) {
         when (method) {
             "readTodaySteps" -> readTodayStepsAsync(context, result)
-            "isAvailable" -> {
-                val sm = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-                val sensor = sm.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
-                    ?: sm.getDefaultSensor(Sensor.TYPE_STEP_COUNTER, true)
-                result.success(sensor != null)
-            }
-            "openHealthConnectSettings" -> {
-                result.success(openHealthConnectSettings(context))
-            }
+            "isAvailable" -> result.success(stepSensor(context) != null)
+            "openHealthConnectSettings" -> result.success(openHealthConnectSettings(context))
+            "diagnostics" -> diagnosticsAsync(context, result)
             else -> result.notImplemented()
         }
     }
 
     fun snapshotMidnightBaseline(context: Context) {
-        readCumulativeBlocking(context) { cumulative ->
-            if (cumulative == null) return@readCumulativeBlocking
+        readCumulative(context) { cumulative ->
+            if (cumulative == null) return@readCumulative
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             val today = localDateKey()
             prefs.edit()
                 .putString(KEY_DATE, today)
                 .putLong(KEY_BASELINE, cumulative)
                 .putLong(KEY_LAST, cumulative)
+                .putLong(KEY_LAST_TIME, System.currentTimeMillis())
                 .putInt(KEY_TODAY, 0)
+                .putString(KEY_BASELINE_SOURCE, "midnight_alarm")
                 .apply()
             scheduleNextMidnight(context)
             Log.i(TAG, "midnight baseline=$cumulative date=$today")
@@ -80,9 +84,7 @@ object StepCounterBridge {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         try {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S &&
-                !alarmManager.canScheduleExactAlarms()
-            ) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
                 alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, operation)
             } else {
                 alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, operation)
@@ -98,7 +100,6 @@ object StepCounterBridge {
     }
 
     private fun readTodayStepsAsync(context: Context, result: MethodChannel.Result) {
-        // Best-effort OEM shortcuts (may exist on some ColorOS / MIUI builds).
         val oemToday = readOemTodaySteps(context)
         if (oemToday != null && oemToday > 0) {
             result.success(oemToday)
@@ -106,10 +107,10 @@ object StepCounterBridge {
             return
         }
 
-        readCumulativeBlocking(context) { cumulative ->
+        readCumulative(context) { cumulative ->
             if (cumulative == null) {
                 result.success(null)
-                return@readCumulativeBlocking
+                return@readCumulative
             }
             try {
                 val today = applyCumulative(context, cumulative)
@@ -122,138 +123,158 @@ object StepCounterBridge {
         }
     }
 
-    /** Try known OEM content providers / settings keys; null if unavailable. */
+    private fun diagnosticsAsync(context: Context, result: MethodChannel.Result) {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val sensor = stepSensor(context)
+        val bootAt = System.currentTimeMillis() - SystemClock.elapsedRealtime()
+        val base = mutableMapOf<String, Any?>(
+            "manufacturer" to Build.MANUFACTURER,
+            "model" to Build.MODEL,
+            "sdkInt" to Build.VERSION.SDK_INT,
+            "sensorAvailable" to (sensor != null),
+            "sensorName" to sensor?.name,
+            "bootTimeMillis" to bootAt,
+            "bootToday" to isBootToday(),
+            "storedDate" to prefs.getString(KEY_DATE, null),
+            "baseline" to prefs.getLong(KEY_BASELINE, -1L),
+            "baselineSource" to prefs.getString(KEY_BASELINE_SOURCE, null),
+            "last" to prefs.getLong(KEY_LAST, -1L),
+            "lastTimeMillis" to prefs.getLong(KEY_LAST_TIME, -1L),
+            "today" to prefs.getInt(KEY_TODAY, -1),
+            "oemToday" to readOemTodaySteps(context),
+        )
+        if (sensor == null) {
+            base["cumulative"] = null
+            result.success(base)
+            return
+        }
+        readCumulative(context) { cumulative ->
+            base["cumulative"] = cumulative
+            result.success(base)
+        }
+    }
+
+    /** MIUI exposes a documented steps provider; other OEMs do not. */
     private fun readOemTodaySteps(context: Context): Int? {
-        val resolver = context.contentResolver
         val startOfDay = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }.timeInMillis
-        val uris = listOf(
-            "content://com.miui.providers.steps/item",
-            "content://com.oplus.providers.steps/item",
-            "content://com.heytap.providers.steps/item",
-            "content://com.coloros.providers.steps/item",
-        )
-        for (uriString in uris) {
-            try {
-                val uri = android.net.Uri.parse(uriString)
-                resolver.query(
-                    uri,
-                    arrayOf("_steps", "_begin_time", "_end_time"),
-                    "_begin_time>=?",
-                    arrayOf(startOfDay.toString()),
-                    null,
-                )?.use { cursor ->
-                    var sum = 0
-                    val stepsIdx = cursor.getColumnIndex("_steps")
-                    if (stepsIdx < 0) return@use
-                    while (cursor.moveToNext()) {
-                        sum += cursor.getInt(stepsIdx).coerceAtLeast(0)
-                    }
-                    if (sum > 0) {
-                        Log.i(TAG, "OEM steps from $uriString = $sum")
-                        return sum
-                    }
-                }
-            } catch (e: Exception) {
-                Log.d(TAG, "OEM uri $uriString unavailable: ${e.message}")
+        try {
+            context.contentResolver.query(
+                android.net.Uri.parse("content://com.miui.providers.steps/item"),
+                arrayOf("_steps", "_begin_time", "_end_time"),
+                "_begin_time>=?",
+                arrayOf(startOfDay.toString()),
+                null,
+            )?.use { cursor ->
+                val idx = cursor.getColumnIndex("_steps")
+                if (idx < 0) return null
+                var sum = 0
+                while (cursor.moveToNext()) sum += cursor.getInt(idx).coerceAtLeast(0)
+                if (sum > 0) return sum
             }
-        }
-
-        val settingKeys = listOf(
-            "today_steps",
-            "step_today",
-            "oplus_today_steps",
-            "heytap_today_steps",
-        )
-        for (key in settingKeys) {
-            try {
-                val v = android.provider.Settings.System.getInt(resolver, key, -1)
-                if (v > 0) {
-                    Log.i(TAG, "OEM settings $key = $v")
-                    return v
-                }
-            } catch (_: Exception) {
-            }
-            try {
-                val v = android.provider.Settings.Secure.getInt(resolver, key, -1)
-                if (v > 0) {
-                    Log.i(TAG, "OEM secure $key = $v")
-                    return v
-                }
-            } catch (_: Exception) {
-            }
+        } catch (e: Exception) {
+            Log.d(TAG, "MIUI steps provider unavailable: ${e.message}")
         }
         return null
     }
 
     internal fun applyCumulative(context: Context, cumulativeRaw: Long): Int {
         val cumulative = max(0L, cumulativeRaw)
+        val now = System.currentTimeMillis()
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val todayKey = localDateKey()
         val storedDate = prefs.getString(KEY_DATE, null)
         var baseline = prefs.getLong(KEY_BASELINE, -1L)
         var last = prefs.getLong(KEY_LAST, -1L)
+        val lastTime = prefs.getLong(KEY_LAST_TIME, -1L)
         var todaySteps = prefs.getInt(KEY_TODAY, 0).coerceAtLeast(0)
+        var source = prefs.getString(KEY_BASELINE_SOURCE, null)
         val bootToday = isBootToday()
 
         if (storedDate != todayKey) {
+            val midnight = todayStartMillis()
+            val sampleIsYesterday = lastTime in 1 until midnight &&
+                localDateKey(lastTime) == localDateKey(midnight - 1)
             if (bootToday) {
-                // Counter started today → cumulative is a usable today estimate.
                 todaySteps = cumulative.toInt().coerceAtLeast(0)
                 baseline = 0L
-                last = cumulative
+                source = "boot_today"
+            } else if (last >= 0L && sampleIsYesterday && cumulative >= last) {
+                val sinceSample = (cumulative - last).toInt().coerceAtLeast(0)
+                val gapBeforeMidnight = midnight - lastTime
+                if (gapBeforeMidnight <= LATE_EVENING_MS) {
+                    todaySteps = sinceSample
+                    source = "late_evening_sample"
+                } else {
+                    val total = (now - lastTime).coerceAtLeast(1L)
+                    val fraction = (now - midnight).toDouble() / total.toDouble()
+                    todaySteps = (sinceSample * fraction.coerceIn(0.0, 1.0)).toInt()
+                    source = "interpolated"
+                }
+                baseline = cumulative - todaySteps
             } else {
-                // First open of the day without a midnight snapshot — anchor.
-                // Morning steps before this open are not recoverable from the sensor.
                 todaySteps = 0
                 baseline = cumulative
-                last = cumulative
+                source = "anchored"
             }
-            prefs.edit()
-                .putString(KEY_DATE, todayKey)
-                .putLong(KEY_BASELINE, baseline)
-                .putLong(KEY_LAST, last)
-                .putInt(KEY_TODAY, todaySteps)
-                .apply()
+            last = cumulative
+            persist(prefs, todayKey, baseline, last, now, todaySteps, source)
             return todaySteps
         }
 
-        // Same calendar day.
         if (last < 0L) {
             if (bootToday && todaySteps == 0 && baseline <= 0L) {
                 todaySteps = cumulative.toInt().coerceAtLeast(0)
                 baseline = 0L
+                source = "boot_today"
             } else if (baseline >= 0L && cumulative >= baseline) {
                 todaySteps = (cumulative - baseline).toInt().coerceAtLeast(0)
             }
-            last = cumulative
         } else if (cumulative >= last) {
             todaySteps += (cumulative - last).toInt()
-            last = cumulative
         } else {
-            // Reboot: counter restarted.
+            // Counter reset (reboot) — keep what we had, add steps since boot.
             todaySteps += cumulative.toInt().coerceAtLeast(0)
             baseline = 0L
-            last = cumulative
+            source = "reboot_midday"
         }
-
-        prefs.edit()
-            .putString(KEY_DATE, todayKey)
-            .putLong(KEY_BASELINE, baseline)
-            .putLong(KEY_LAST, last)
-            .putInt(KEY_TODAY, todaySteps.coerceAtLeast(0))
-            .apply()
+        last = cumulative
+        persist(prefs, todayKey, baseline, last, now, todaySteps.coerceAtLeast(0), source)
         return todaySteps.coerceAtLeast(0)
     }
 
-    private fun readCumulativeBlocking(context: Context, callback: (Long?) -> Unit) {
+    private fun persist(
+        prefs: android.content.SharedPreferences,
+        date: String,
+        baseline: Long,
+        last: Long,
+        lastTime: Long,
+        today: Int,
+        source: String?,
+    ) {
+        prefs.edit()
+            .putString(KEY_DATE, date)
+            .putLong(KEY_BASELINE, baseline)
+            .putLong(KEY_LAST, last)
+            .putLong(KEY_LAST_TIME, lastTime)
+            .putInt(KEY_TODAY, today)
+            .putString(KEY_BASELINE_SOURCE, source)
+            .apply()
+    }
+
+    private fun stepSensor(context: Context): Sensor? {
+        val sm = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        return sm.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+            ?: sm.getDefaultSensor(Sensor.TYPE_STEP_COUNTER, true)
+    }
+
+    private fun readCumulative(context: Context, callback: (Long?) -> Unit) {
         val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        val sensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
-            ?: sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER, true)
+        val sensor = stepSensor(context)
         if (sensor == null) {
             callback(null)
             return
@@ -271,11 +292,7 @@ object StepCounterBridge {
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
         }
 
-        val registered = sensorManager.registerListener(
-            listener,
-            sensor,
-            SensorManager.SENSOR_DELAY_FASTEST,
-        )
+        val registered = sensorManager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_FASTEST)
         if (!registered) {
             callback(null)
             return
@@ -288,8 +305,9 @@ object StepCounterBridge {
         mainHandler.postDelayed({
             if (!done.compareAndSet(false, true)) return@postDelayed
             sensorManager.unregisterListener(listener)
+            Log.w(TAG, "step counter produced no event within ${SENSOR_TIMEOUT_MS}ms")
             callback(null)
-        }, 4000)
+        }, SENSOR_TIMEOUT_MS)
     }
 
     private fun openHealthConnectSettings(context: Context): Boolean {
@@ -323,20 +341,27 @@ object StepCounterBridge {
         return cal.timeInMillis
     }
 
-    private fun localDateKey(): String {
+    private fun todayStartMillis(): Long {
         val cal = Calendar.getInstance()
-        val y = cal.get(Calendar.YEAR)
-        val m = cal.get(Calendar.MONTH) + 1
-        val d = cal.get(Calendar.DAY_OF_MONTH)
-        return "%04d-%02d-%02d".format(y, m, d)
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        return cal.timeInMillis
+    }
+
+    private fun localDateKey(atMillis: Long = System.currentTimeMillis()): String {
+        val cal = Calendar.getInstance().apply { timeInMillis = atMillis }
+        return "%04d-%02d-%02d".format(
+            cal.get(Calendar.YEAR),
+            cal.get(Calendar.MONTH) + 1,
+            cal.get(Calendar.DAY_OF_MONTH),
+        )
     }
 
     private fun isBootToday(): Boolean {
         val bootAt = System.currentTimeMillis() - SystemClock.elapsedRealtime()
-        val bootCal = Calendar.getInstance().apply { timeInMillis = bootAt }
-        val nowCal = Calendar.getInstance()
-        return bootCal.get(Calendar.YEAR) == nowCal.get(Calendar.YEAR) &&
-            bootCal.get(Calendar.DAY_OF_YEAR) == nowCal.get(Calendar.DAY_OF_YEAR)
+        return localDateKey(bootAt) == localDateKey()
     }
 }
 
@@ -344,15 +369,10 @@ class StepCounterMidnightReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         val app = context.applicationContext
         when (intent?.action) {
-            StepCounterBridge.ACTION_MIDNIGHT_SNAPSHOT -> {
-                StepCounterBridge.snapshotMidnightBaseline(app)
-            }
+            StepCounterBridge.ACTION_MIDNIGHT_SNAPSHOT -> StepCounterBridge.snapshotMidnightBaseline(app)
             Intent.ACTION_BOOT_COMPLETED,
             Intent.ACTION_MY_PACKAGE_REPLACED,
-            "android.intent.action.QUICKBOOT_POWERON" -> {
-                // Do not snapshot here — that would zero out steps since boot.
-                StepCounterBridge.scheduleNextMidnight(app)
-            }
+            "android.intent.action.QUICKBOOT_POWERON" -> StepCounterBridge.scheduleNextMidnight(app)
         }
     }
 }

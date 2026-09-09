@@ -6,7 +6,7 @@ import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 
-/// Profile → Theme: pick a named preset.
+/// Profile → Theme: pick one of the four presets.
 class ThemePage extends ConsumerWidget {
   const ThemePage({super.key});
 
@@ -15,78 +15,176 @@ class ThemePage extends ConsumerWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final selected = ref.watch(themeProvider);
+    final presets = AppThemeId.presets;
 
     return AppChromeScaffold(
       appBar: AppBar(title: Text(l10n.theme)),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.formPage),
         children: [
-          for (var i = 0; i < AppThemeId.styledPresets.length; i++) ...[
-            SportSurfaceCard(
-              child: ListTile(
-                leading: _ThemeSwatch(
-                  colors: AppTheme.ofId(AppThemeId.styledPresets[i])
-                      .extension<AppThemeVisuals>()!
-                      .hero
-                      .colors,
-                ),
-                title: Text(AppThemeId.styledPresets[i].label(l10n)),
-                trailing: selected == AppThemeId.styledPresets[i]
-                    ? Icon(
-                        Icons.check_circle,
-                        color: AppThemeVisuals.of(context).strokeGlow,
-                      )
-                    : Icon(
-                        Icons.circle_outlined,
-                        color: theme.colorScheme.outlineVariant,
-                      ),
-                onTap: () => ref
-                    .read(themeProvider.notifier)
-                    .select(AppThemeId.styledPresets[i]),
-              ),
+          for (var i = 0; i < presets.length; i++) ...[
+            _ThemeOption(
+              id: presets[i],
+              selected: selected == presets[i],
+              onTap: () => ref.read(themeProvider.notifier).select(presets[i]),
             ),
-            if (i != AppThemeId.styledPresets.length - 1)
+            if (i != presets.length - 1)
               const SizedBox(height: AppSpacing.field),
           ],
+          const SizedBox(height: AppSpacing.section),
+          Text(l10n.themeNote, style: theme.textTheme.bodySmall),
         ],
       ),
     );
   }
 }
 
-class _ThemeSwatch extends StatelessWidget {
-  const _ThemeSwatch({required this.colors});
+class _ThemeOption extends StatelessWidget {
+  const _ThemeOption({
+    required this.id,
+    required this.selected,
+    required this.onTap,
+  });
 
-  final List<Color> colors;
-
-  static const double _size = 46;
-  static const double _dot = 18;
-  static const double _step = 7;
+  final AppThemeId id;
+  final bool selected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final outline = Theme.of(context).colorScheme.outlineVariant;
-    final dots = colors.isEmpty ? const [Colors.grey] : colors;
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final visuals = AppThemeVisuals.of(context);
+    final preview = AppTheme.visualsFor(id);
+    final scheme = AppTheme.schemeFor(id);
 
-    return SizedBox(
-      width: _size,
-      height: _size,
-      child: Stack(
-        children: [
-          for (var i = 0; i < dots.length; i++)
-            Positioned(
-              left: i * _step,
-              top: i * _step,
-              child: Container(
-                width: _dot,
-                height: _dot,
-                decoration: BoxDecoration(
-                  color: dots[i],
-                  shape: BoxShape.circle,
-                  border: Border.all(color: outline.withValues(alpha: 0.7)),
+    return Semantics(
+      selected: selected,
+      button: true,
+      label: id.label(l10n),
+      child: Material(
+        color: visuals.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          side: BorderSide(
+            color: selected ? visuals.accent : visuals.cardBorder,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.section),
+            child: Row(
+              children: [
+                _MiniPreview(scheme: scheme, visuals: preview),
+                const SizedBox(width: AppSpacing.section),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(id.label(l10n), style: theme.textTheme.titleMedium),
+                      const SizedBox(height: 2),
+                      Text(
+                        id.description(l10n),
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: AppSpacing.compact),
+                Icon(
+                  selected ? Icons.check_circle : Icons.circle_outlined,
+                  color: selected
+                      ? visuals.accent
+                      : theme.colorScheme.outlineVariant,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Tiny mock of the Today card in the target theme.
+class _MiniPreview extends StatelessWidget {
+  const _MiniPreview({required this.scheme, required this.visuals});
+
+  final ColorScheme scheme;
+  final AppThemeVisuals visuals;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 72,
+      height: 56,
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: visuals.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: visuals.heroCard,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: visuals.cardBorder),
+              ),
+              child: Row(
+                children: [
+                  const SizedBox(width: 6),
+                  Container(
+                    width: 14,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: visuals.onHero.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: visuals.accent, width: 2),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                ],
               ),
             ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              for (final c in [
+                AppColors.protein,
+                AppColors.carb,
+                AppColors.fat,
+                AppColors.water,
+              ]) ...[
+                Expanded(
+                  child: Container(
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: c,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                if (c != AppColors.water) const SizedBox(width: 2),
+              ],
+            ],
+          ),
         ],
       ),
     );
@@ -95,11 +193,16 @@ class _ThemeSwatch extends StatelessWidget {
 
 extension AppThemeIdL10n on AppThemeId {
   String label(AppLocalizations l10n) => switch (this) {
-        AppThemeId.day => l10n.themeDay,
-        AppThemeId.night => l10n.themeNight,
-        AppThemeId.forest => l10n.themeForest,
-        AppThemeId.midnight => l10n.themeMidnight,
-        AppThemeId.sunrise => l10n.themeSunrise,
-        AppThemeId.graphite => l10n.themeGraphite,
-      };
+    AppThemeId.fresh => l10n.themeFresh,
+    AppThemeId.aurora => l10n.themeAurora,
+    AppThemeId.warm => l10n.themeWarm,
+    AppThemeId.graphite => l10n.themeGraphite,
+  };
+
+  String description(AppLocalizations l10n) => switch (this) {
+    AppThemeId.fresh => l10n.themeFreshDesc,
+    AppThemeId.aurora => l10n.themeAuroraDesc,
+    AppThemeId.warm => l10n.themeWarmDesc,
+    AppThemeId.graphite => l10n.themeGraphiteDesc,
+  };
 }

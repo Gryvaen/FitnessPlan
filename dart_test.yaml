@@ -1,0 +1,5 @@
+tags:
+  copyright:
+    skip: "Goldens are gitignored under docs/copyright/; generate with tool/generate_copyright_screenshots.sh"
+  implementation_preview:
+    skip: "Run tool/generate_implementation_preview.sh to refresh design-handoff/implementation-preview/"

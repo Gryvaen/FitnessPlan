@@ -5,9 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../data/repositories/app_update_repository.dart';
+import '../../domain/diet_plan.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../strategy/strategy_labels.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/calorie_breakdown.dart';
@@ -62,6 +64,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         ref.read(formMemoryRepositoryProvider).clear(),
         ref.read(mealPresetRepositoryProvider).clearAll(),
         ref.read(waterRepositoryProvider).clearAll(),
+        ref.read(dietStrategyRepositoryProvider).clearAll(),
       ]);
       await ref.read(profileProvider.notifier).clear();
       await ref.read(workoutReminderProvider.notifier).syncSchedule();
@@ -71,6 +74,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         context,
       ).showSnackBar(SnackBar(content: Text(context.l10n.clearFailed('$e'))));
     }
+  }
+
+  String _nutritionSubtitle(WidgetRef ref, AppLocalizations l10n) {
+    final active = ref.watch(activeDietPlanProvider).value;
+    final today = ref.watch(todayTargetProvider).value;
+    final kcal = today?.caloriesRounded;
+    final strategy = active == null
+        ? l10n.noStrategyShort
+        : active.kind.label(l10n);
+    return kcal == null ? strategy : '$kcal kcal · $strategy';
   }
 
   Future<void> _checkForUpdate() async {
@@ -175,11 +188,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     });
 
     final plan = ref.read(profileRepositoryProvider).buildPlan(profile);
+    // Today's resolved target: follows the active fat-loss strategy when one
+    // is in effect, otherwise the plain profile target.
+    final todayTarget = ref.watch(todayTargetProvider).value;
+    final shownTargets = todayTarget?.toMacroTargets() ?? profile.targets;
+    final strategyDeficit = todayTarget?.source == TargetSource.strategy
+        ? todayTarget?.plannedDeficit
+        : null;
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final visuals = AppThemeVisuals.of(context);
-    final onHero = visuals.heroOnGradient;
-    final onHeroMuted = onHero.withValues(alpha: 0.78);
+    final onHero = visuals.onHero;
+    final onHeroMuted = visuals.onHeroMuted;
     final isAndroid = defaultTargetPlatform == TargetPlatform.android;
     final versionLabel = _packageInfo?.version;
 
@@ -201,10 +221,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             _DayNightToggle(
               isDark: theme.brightness == Brightness.dark,
               onToggle: () {
-                final next = theme.brightness == Brightness.dark
-                    ? AppThemeId.day
-                    : AppThemeId.night;
-                ref.read(themeProvider.notifier).select(next);
+                final current = ref.read(themeProvider);
+                ref.read(themeProvider.notifier).select(current.toggled);
               },
             ),
           ],
@@ -239,9 +257,23 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  l10n.dailyQuota,
-                  style: theme.textTheme.titleMedium?.copyWith(color: onHero),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      l10n.dailyQuota,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: onHero,
+                      ),
+                    ),
+                    if (todayTarget != null &&
+                        todayTarget.source == TargetSource.strategy)
+                      SoftChip(
+                        label: targetChipLabel(todayTarget, profile, l10n),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 Row(
@@ -249,7 +281,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   textBaseline: TextBaseline.alphabetic,
                   children: [
                     Text(
-                      '${profile.targets.calories}',
+                      '${shownTargets.calories}',
                       style: theme.textTheme.statValue?.copyWith(color: onHero),
                     ),
                     const SizedBox(width: 6),
@@ -263,12 +295,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'P ${profile.targets.proteinG.toStringAsFixed(0)} · '
-                  'C ${profile.targets.carbG.toStringAsFixed(0)} · '
-                  'F ${profile.targets.fatG.toStringAsFixed(0)}',
+                  'P ${shownTargets.proteinG.toStringAsFixed(0)} · '
+                  'C ${shownTargets.carbG.toStringAsFixed(0)} · '
+                  'F ${shownTargets.fatG.toStringAsFixed(0)}',
                   style: theme.textTheme.meta?.copyWith(color: onHeroMuted),
                 ),
-                if (profile.goal == FitnessGoal.cut &&
+                if (strategyDeficit != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.dailyDeficitLine('${strategyDeficit.round()}'),
+                    style: theme.textTheme.meta?.copyWith(color: onHeroMuted),
+                  ),
+                ] else if (profile.goal == FitnessGoal.cut &&
                     profile.dailyDeficit != null) ...[
                   const SizedBox(height: 4),
                   Text(
@@ -278,7 +316,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     style: theme.textTheme.meta?.copyWith(color: onHeroMuted),
                   ),
                 ],
-                if (profile.calorieAdjustment > 0) ...[
+                if (strategyDeficit == null &&
+                    profile.calorieAdjustment > 0) ...[
                   const SizedBox(height: 4),
                   Text(
                     l10n.plateauAdjLine('${profile.calorieAdjustment}'),
@@ -336,9 +375,25 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           const SizedBox(height: AppSpacing.field),
           SportSurfaceCard(
             child: ListTile(
+              leading: const Icon(Icons.track_changes_outlined),
+              title: Text(l10n.nutritionTargets),
+              subtitle: Text(
+                _nutritionSubtitle(ref, l10n),
+                style: theme.textTheme.meta,
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/profile/nutrition'),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.field),
+          SportSurfaceCard(
+            child: ListTile(
               leading: const Icon(Icons.notifications_outlined),
               title: Text(l10n.reminders),
-              subtitle: Text(l10n.remindersSubtitle, style: theme.textTheme.meta),
+              subtitle: Text(
+                l10n.remindersSubtitle,
+                style: theme.textTheme.meta,
+              ),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push('/profile/reminders'),
             ),
@@ -374,10 +429,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
 /// White / black circle next to Me title: tap to switch day ↔ night.
 class _DayNightToggle extends StatelessWidget {
-  const _DayNightToggle({
-    required this.isDark,
-    required this.onToggle,
-  });
+  const _DayNightToggle({required this.isDark, required this.onToggle});
 
   final bool isDark;
   final VoidCallback onToggle;

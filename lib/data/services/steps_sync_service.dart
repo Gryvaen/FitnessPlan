@@ -32,17 +32,15 @@ enum StepsSyncStatus {
 /// OPPO / ColorOS), also reads the OEM / hardware step counter and keeps the
 /// larger of the two values for today.
 class StepsSyncService {
-  StepsSyncService(
-    this._repo, {
-    Health? health,
-    this._stepSensor,
-  }) : _health = health ?? Health();
+  StepsSyncService(this._repo, {Health? health, this._stepSensor})
+    : _health = health ?? Health();
 
   final StepRepository _repo;
   final Health _health;
   final AndroidStepSensor? _stepSensor;
 
   bool _configured = false;
+  bool _promptedThisSession = false;
   Future<StepsSyncStatus>? _inFlight;
 
   static bool get isPlatformSupported =>
@@ -50,46 +48,56 @@ class StepsSyncService {
       (defaultTargetPlatform == TargetPlatform.android ||
           defaultTargetPlatform == TargetPlatform.iOS);
 
+  static bool get _isAndroid => defaultTargetPlatform == TargetPlatform.android;
+
   Future<void> _ensureConfigured() async {
     if (_configured) return;
     await _health.configure();
     _configured = true;
   }
 
-  Future<bool> _ensureActivityRecognition() async {
-    if (defaultTargetPlatform != TargetPlatform.android) return true;
-    final status = await Permission.activityRecognition.request();
+  Future<bool> _ensureActivityRecognition({required bool prompt}) async {
+    if (!_isAndroid) return true;
+    var status = await Permission.activityRecognition.status;
+    if (status.isGranted) return true;
+    if (!prompt) return false;
+    status = await Permission.activityRecognition.request();
     return status.isGranted;
   }
 
-  /// Returns whether Health Connect / HealthKit read access was granted.
-  Future<bool> ensureAuthorized() async {
+  /// Returns whether Health Connect / HealthKit read access is granted.
+  ///
+  /// Only shows system permission UI when [prompt] is true, so background
+  /// resyncs on app resume never spam the user with dialogs.
+  Future<bool> ensureAuthorized({bool prompt = true}) async {
     if (!isPlatformSupported) return false;
     try {
       await _ensureConfigured();
-      if (!await _ensureActivityRecognition()) return false;
-      if (defaultTargetPlatform == TargetPlatform.android) {
-        final available = await _health.isHealthConnectAvailable();
-        if (!available) return false;
+      if (!await _ensureActivityRecognition(prompt: prompt)) return false;
+      if (_isAndroid && !await _health.isHealthConnectAvailable()) return false;
+
+      const types = <HealthDataType>[HealthDataType.STEPS];
+      const permissions = <HealthDataAccess>[HealthDataAccess.READ];
+
+      var granted = false;
+      try {
+        granted =
+            await _health.hasPermissions(types, permissions: permissions) ??
+            false;
+      } catch (_) {}
+      if (!granted) {
+        if (!prompt) return false;
+        granted = await _health.requestAuthorization(
+          types,
+          permissions: permissions,
+        );
+        if (!granted) return false;
       }
-      final types = <HealthDataType>[HealthDataType.STEPS];
-      final permissions = <HealthDataAccess>[HealthDataAccess.READ];
-      final ok = await _health.requestAuthorization(
-        types,
-        permissions: permissions,
-      );
-      if (!ok) return false;
-      if (defaultTargetPlatform == TargetPlatform.android) {
+
+      if (_isAndroid && prompt) {
         try {
-          final historyOk = await _health.isHealthDataHistoryAuthorized();
-          if (!historyOk) {
+          if (!await _health.isHealthDataHistoryAuthorized()) {
             await _health.requestHealthDataHistoryAuthorization();
-          }
-        } catch (_) {}
-        try {
-          final bgOk = await _health.isHealthDataInBackgroundAuthorized();
-          if (!bgOk) {
-            await _health.requestHealthDataInBackgroundAuthorization();
           }
         } catch (_) {}
       }
@@ -101,37 +109,40 @@ class StepsSyncService {
 
   Future<bool> openHealthConnectSettings() async {
     final sensor = _stepSensor;
-    if (sensor != null) {
-      final opened = await sensor.openHealthConnectSettings();
-      if (opened) return true;
-    }
+    if (sensor != null && await sensor.openHealthConnectSettings()) return true;
     try {
       await _ensureConfigured();
-      if (defaultTargetPlatform == TargetPlatform.android) {
-        final available = await _health.isHealthConnectAvailable();
-        if (!available) {
-          await _health.installHealthConnect();
-          return true;
-        }
+      if (_isAndroid && !await _health.isHealthConnectAvailable()) {
+        await _health.installHealthConnect();
+        return true;
       }
     } catch (_) {}
     return openAppSettings();
   }
 
-  Future<StepsSyncStatus> syncRecent({int limitDays = 14}) {
+  /// [forcePrompt] re-shows permission dialogs (user-initiated retry).
+  Future<StepsSyncStatus> syncRecent({
+    int limitDays = 14,
+    bool forcePrompt = false,
+  }) {
     if (!isPlatformSupported) {
       return Future.value(StepsSyncStatus.unsupported);
     }
-    return _inFlight ??= _run(limitDays).whenComplete(() => _inFlight = null);
+    final prompt = forcePrompt || !_promptedThisSession;
+    _promptedThisSession = true;
+    return _inFlight ??= _run(
+      limitDays,
+      prompt: prompt,
+    ).whenComplete(() => _inFlight = null);
   }
 
-  Future<StepsSyncStatus> _run(int limitDays) async {
+  Future<StepsSyncStatus> _run(int limitDays, {required bool prompt}) async {
     try {
-      if (!await _ensureActivityRecognition()) {
+      if (!await _ensureActivityRecognition(prompt: prompt)) {
         return StepsSyncStatus.denied;
       }
 
-      final authorized = await ensureAuthorized();
+      final authorized = await ensureAuthorized(prompt: prompt);
       var readsOk = 0;
       var readsFailed = 0;
       var todayFromHealth = 0;
@@ -141,14 +152,13 @@ class StepsSyncService {
         final now = DateTime.now();
         for (var i = 0; i < limitDays; i++) {
           final day = CalendarDay.dayOnly(today.subtract(Duration(days: i)));
-          final start = day;
           final end = i == 0
               ? now
-              : start
-                  .add(const Duration(days: 1))
-                  .subtract(const Duration(milliseconds: 1));
+              : day
+                    .add(const Duration(days: 1))
+                    .subtract(const Duration(milliseconds: 1));
           try {
-            final value = await _readStepsForInterval(start, end);
+            final value = await _readStepsForInterval(day, end);
             await _repo.setStepsForDay(day, value);
             if (i == 0) todayFromHealth = value;
             readsOk++;
@@ -164,23 +174,18 @@ class StepsSyncService {
       if (sensorToday != null && sensorToday > todayFinal) {
         todayFinal = sensorToday;
       }
-      if (sensorToday != null || authorized) {
-        await _repo.setStepsForDay(today, todayFinal);
-      } else {
+      if (sensorToday == null && !authorized) {
         return StepsSyncStatus.denied;
       }
+      await _repo.setStepsForDay(today, todayFinal);
 
-      if (authorized) {
-        if (readsOk == 0 && readsFailed > 0 && sensorToday == null) {
-          return StepsSyncStatus.failed;
-        }
-        if (todayFinal <= 0) return StepsSyncStatus.empty;
-        return StepsSyncStatus.connected;
+      if (authorized &&
+          readsOk == 0 &&
+          readsFailed > 0 &&
+          sensorToday == null) {
+        return StepsSyncStatus.failed;
       }
-
-      return todayFinal > 0
-          ? StepsSyncStatus.connected
-          : StepsSyncStatus.empty;
+      return todayFinal > 0 ? StepsSyncStatus.connected : StepsSyncStatus.empty;
     } catch (_) {
       return StepsSyncStatus.failed;
     }
@@ -208,13 +213,58 @@ class StepsSyncService {
       var sum = 0;
       for (final p in points) {
         final v = p.value;
-        if (v is NumericHealthValue) {
-          sum += v.numericValue.round();
-        }
+        if (v is NumericHealthValue) sum += v.numericValue.round();
       }
       if (sum > 0) return sum;
     } catch (_) {}
 
     return 0;
+  }
+
+  /// Human-readable troubleshooting snapshot (no permission prompts).
+  Future<Map<String, Object?>> diagnostics() async {
+    final out = <String, Object?>{'platform': defaultTargetPlatform.name};
+    if (!isPlatformSupported) return out;
+    try {
+      if (_isAndroid) {
+        out['activityRecognition'] =
+            (await Permission.activityRecognition.status).name;
+      }
+      await _ensureConfigured();
+      if (_isAndroid) {
+        out['healthConnectSdkStatus'] =
+            (await _health.getHealthConnectSdkStatus())?.name;
+      }
+      final hcAvailable =
+          !_isAndroid || await _health.isHealthConnectAvailable();
+      out['healthConnectAvailable'] = hcAvailable;
+      if (hcAvailable) {
+        try {
+          out['healthStepsPermission'] = await _health.hasPermissions(
+            const [HealthDataType.STEPS],
+            permissions: const [HealthDataAccess.READ],
+          );
+        } catch (e) {
+          out['healthStepsPermission'] = 'error: $e';
+        }
+        try {
+          final today = CalendarDay.todayLocal();
+          out['healthTodaySteps'] = await _readStepsForInterval(
+            today,
+            DateTime.now(),
+          );
+        } catch (e) {
+          out['healthTodaySteps'] = 'error: $e';
+        }
+      }
+    } catch (e) {
+      out['healthError'] = e.toString();
+    }
+    final sensor = _stepSensor;
+    if (sensor != null && AndroidStepSensor.isSupported) {
+      out.addAll(await sensor.diagnostics());
+    }
+    out['dbToday'] = await _repo.stepsForDay(CalendarDay.todayLocal());
+    return out;
   }
 }

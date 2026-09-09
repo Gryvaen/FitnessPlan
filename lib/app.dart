@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'domain/diet_strategy.dart';
 import 'l10n/app_localizations_ext.dart';
 import 'providers/app_providers.dart';
 import 'ui/foods/custom_food_edit_page.dart';
@@ -21,6 +22,10 @@ import 'ui/records/plan_edit_page.dart';
 import 'ui/records/records_page.dart';
 import 'ui/shell/main_shell.dart';
 import 'ui/shell/swipeable_branch_container.dart';
+import 'ui/strategy/nutrition_targets_page.dart';
+import 'ui/strategy/strategy_configure_page.dart';
+import 'ui/strategy/strategy_picker_page.dart';
+import 'ui/strategy/taper_review_page.dart';
 import 'ui/today/today_page.dart';
 import 'ui/theme/app_theme.dart';
 import 'ui/tools/body_fat_page.dart';
@@ -81,8 +86,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'category',
                     builder: (context, state) {
-                      final category =
-                          state.uri.queryParameters['name'] ?? '';
+                      final category = state.uri.queryParameters['name'] ?? '';
                       return FoodCategoryPage(category: category);
                     },
                   ),
@@ -104,9 +108,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                       final id = int.tryParse(state.pathParameters['id'] ?? '');
                       if (id == null) {
                         return Scaffold(
-                          body: Center(
-                            child: Text(context.l10n.invalidFood),
-                          ),
+                          body: Center(child: Text(context.l10n.invalidFood)),
                         );
                       }
                       return FoodDetailPage(foodId: id);
@@ -172,6 +174,31 @@ final routerProvider = Provider<GoRouter>((ref) {
                     builder: (context, state) => const ThemePage(),
                   ),
                   GoRoute(
+                    path: 'nutrition',
+                    builder: (context, state) => const NutritionTargetsPage(),
+                    routes: [
+                      GoRoute(
+                        path: 'strategy',
+                        builder: (context, state) => const StrategyPickerPage(),
+                        routes: [
+                          GoRoute(
+                            path: 'configure',
+                            builder: (context, state) {
+                              final kind = DietStrategyKind.fromStorage(
+                                state.uri.queryParameters['kind'],
+                              );
+                              return StrategyConfigurePage(kind: kind);
+                            },
+                          ),
+                        ],
+                      ),
+                      GoRoute(
+                        path: 'taper',
+                        builder: (context, state) => const TaperReviewPage(),
+                      ),
+                    ],
+                  ),
+                  GoRoute(
                     path: 'tools',
                     builder: (context, state) => const ToolsHubPage(),
                     routes: [
@@ -217,9 +244,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           final id = int.tryParse(state.pathParameters['id'] ?? '');
           if (id == null) {
             return Scaffold(
-              body: Center(
-                child: Text(context.l10n.invalidRecord),
-              ),
+              body: Center(child: Text(context.l10n.invalidRecord)),
             );
           }
           return MealDetailPage(entryId: id);

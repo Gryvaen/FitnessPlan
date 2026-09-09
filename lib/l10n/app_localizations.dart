@@ -1217,13 +1217,13 @@ abstract class AppLocalizations {
   /// No description provided for @stepsStatusDenied.
   ///
   /// In en, this message translates to:
-  /// **'Activity permission denied. Tap to open settings'**
+  /// **'Physical activity permission not granted'**
   String get stepsStatusDenied;
 
   /// No description provided for @stepsStatusEmpty.
   ///
   /// In en, this message translates to:
-  /// **'Authorized but 0 steps. Allow this app in Health Connect and share data from your health app. Tap to open settings'**
+  /// **'Connected, but 0 steps read for today'**
   String get stepsStatusEmpty;
 
   /// No description provided for @stepsStatusUnsupported.
@@ -1241,14 +1241,62 @@ abstract class AppLocalizations {
   /// No description provided for @stepsStatusFailed.
   ///
   /// In en, this message translates to:
-  /// **'Step sync failed — tap to retry'**
+  /// **'Step sync failed'**
   String get stepsStatusFailed;
 
   /// No description provided for @stepsStatusRetryHint.
   ///
   /// In en, this message translates to:
-  /// **'Tap to retry; opens health settings if still 0'**
+  /// **'Tap for details'**
   String get stepsStatusRetryHint;
+
+  /// No description provided for @stepsSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Step sync'**
+  String get stepsSheetTitle;
+
+  /// No description provided for @stepsSheetSourceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s steps are the larger of Health Connect and the phone\'s step sensor. On OPPO, Xiaomi and similar phones the system health app does not share steps with third parties; without Health Connect data, the sensor counts from first authorization, earlier steps that day cannot be recovered, and days align automatically from the next day.'**
+  String get stepsSheetSourceHint;
+
+  /// No description provided for @stepsSheetEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'If your system health app shows steps but this is 0: allow this app to read steps in Health Connect and enable data sharing in the health app; otherwise walk a bit and come back to this page.'**
+  String get stepsSheetEmptyHint;
+
+  /// No description provided for @stepsSheetDeniedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Grant the Physical activity permission to this app in system settings, then resync.'**
+  String get stepsSheetDeniedHint;
+
+  /// No description provided for @stepsSheetResync.
+  ///
+  /// In en, this message translates to:
+  /// **'Resync'**
+  String get stepsSheetResync;
+
+  /// No description provided for @stepsSheetOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open health / permission settings'**
+  String get stepsSheetOpenSettings;
+
+  /// No description provided for @stepsSheetDiagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostics'**
+  String get stepsSheetDiagnostics;
+
+  /// No description provided for @stepsSheetDiagnosticsLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading…'**
+  String get stepsSheetDiagnosticsLoading;
 
   /// No description provided for @noSetLogs.
   ///
@@ -2055,12 +2103,6 @@ abstract class AppLocalizations {
   /// **'Theme'**
   String get theme;
 
-  /// No description provided for @themeSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Appearance colors'**
-  String get themeSubtitle;
-
   /// No description provided for @themeDay.
   ///
   /// In en, this message translates to:
@@ -2090,12 +2132,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sunrise'**
   String get themeSunrise;
-
-  /// No description provided for @themeGraphite.
-  ///
-  /// In en, this message translates to:
-  /// **'Graphite'**
-  String get themeGraphite;
 
   /// No description provided for @clearDataBody.
   ///
@@ -2732,6 +2768,846 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove \"{name}\" and all its exercises from today\'s workout?'**
   String confirmRemoveDayWorkout(String name);
+
+  /// No description provided for @themeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance colors'**
+  String get themeSubtitle;
+
+  /// No description provided for @themeGraphite.
+  ///
+  /// In en, this message translates to:
+  /// **'Graphite'**
+  String get themeGraphite;
+
+  /// No description provided for @themeFresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Fresh Green'**
+  String get themeFresh;
+
+  /// No description provided for @themeAurora.
+  ///
+  /// In en, this message translates to:
+  /// **'Aurora'**
+  String get themeAurora;
+
+  /// No description provided for @themeWarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm Sun'**
+  String get themeWarm;
+
+  /// No description provided for @themeFreshDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Light background, white cards, deep green accent'**
+  String get themeFreshDesc;
+
+  /// No description provided for @themeAuroraDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep sea blue with teal highlights'**
+  String get themeAuroraDesc;
+
+  /// No description provided for @themeWarmDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Cream background with warm orange'**
+  String get themeWarmDesc;
+
+  /// No description provided for @themeGraphiteDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Matte dark grey with silver accents'**
+  String get themeGraphiteDesc;
+
+  /// No description provided for @themeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'All four themes share one layout and nutrient colors stay the same. Your choice is kept after restart.'**
+  String get themeNote;
+
+  /// No description provided for @expandSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand'**
+  String get expandSection;
+
+  /// No description provided for @collapseSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse'**
+  String get collapseSection;
+
+  /// No description provided for @noWorkoutShort.
+  ///
+  /// In en, this message translates to:
+  /// **'None planned'**
+  String get noWorkoutShort;
+
+  /// No description provided for @remainingWord.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining'**
+  String get remainingWord;
+
+  /// No description provided for @overWord.
+  ///
+  /// In en, this message translates to:
+  /// **'Over'**
+  String get overWord;
+
+  /// No description provided for @eatenWord.
+  ///
+  /// In en, this message translates to:
+  /// **'eaten'**
+  String get eatenWord;
+
+  /// No description provided for @eatenOfTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Eaten {eaten} / target {target}'**
+  String eatenOfTarget(String eaten, String target);
+
+  /// No description provided for @waterAddMl.
+  ///
+  /// In en, this message translates to:
+  /// **'Add {ml} ml water'**
+  String waterAddMl(int ml);
+
+  /// No description provided for @waterUndoMl.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo {ml} ml water'**
+  String waterUndoMl(int ml);
+
+  /// No description provided for @mealsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} items · {kcal} kcal'**
+  String mealsSummary(int count, String kcal);
+
+  /// No description provided for @legacyTargetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Legacy estimate: this day predates per-day target records, so the target shown is derived from the current profile.'**
+  String get legacyTargetHint;
+
+  /// No description provided for @dietCompleteToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s food log is complete'**
+  String get dietCompleteToggle;
+
+  /// No description provided for @dietCompleteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only confirmed days count toward the taper review'**
+  String get dietCompleteHint;
+
+  /// No description provided for @weeklyAvgLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly avg {kcal} kcal'**
+  String weeklyAvgLine(String kcal);
+
+  /// No description provided for @nutritionTargets.
+  ///
+  /// In en, this message translates to:
+  /// **'Nutrition targets'**
+  String get nutritionTargets;
+
+  /// No description provided for @todaysTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s target'**
+  String get todaysTarget;
+
+  /// No description provided for @dietStrategy.
+  ///
+  /// In en, this message translates to:
+  /// **'Fat-loss strategy'**
+  String get dietStrategy;
+
+  /// No description provided for @noStrategyShort.
+  ///
+  /// In en, this message translates to:
+  /// **'No strategy'**
+  String get noStrategyShort;
+
+  /// No description provided for @noStrategyYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No strategy selected. Your profile target is used as-is until you choose one.'**
+  String get noStrategyYet;
+
+  /// No description provided for @strategyOnlyForCut.
+  ///
+  /// In en, this message translates to:
+  /// **'Strategies apply to the cut goal only. Maintain / bulk keep the profile target.'**
+  String get strategyOnlyForCut;
+
+  /// No description provided for @chooseStrategy.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose strategy'**
+  String get chooseStrategy;
+
+  /// No description provided for @changeStrategy.
+  ///
+  /// In en, this message translates to:
+  /// **'Change strategy'**
+  String get changeStrategy;
+
+  /// No description provided for @adjustSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust schedule'**
+  String get adjustSchedule;
+
+  /// No description provided for @stopStrategy.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop strategy'**
+  String get stopStrategy;
+
+  /// No description provided for @stopStrategyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'From today the profile target applies again. Past days keep the targets that were in effect.'**
+  String get stopStrategyBody;
+
+  /// No description provided for @strategyStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Strategy stopped'**
+  String get strategyStopped;
+
+  /// No description provided for @strategyApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Strategy saved'**
+  String get strategyApplied;
+
+  /// No description provided for @planStartsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts {date}'**
+  String planStartsOn(String date);
+
+  /// No description provided for @planActiveSince.
+  ///
+  /// In en, this message translates to:
+  /// **'In effect since {date} · v{version}'**
+  String planActiveSince(String date, int version);
+
+  /// No description provided for @planBaselineLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Ref. weight {kg} kg · TDEE {tdee} · avg target {e0} kcal'**
+  String planBaselineLine(String kg, String tdee, String e0);
+
+  /// No description provided for @baseTargetLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile target {kcal} kcal'**
+  String baseTargetLine(String kcal);
+
+  /// No description provided for @strategyBasisBody.
+  ///
+  /// In en, this message translates to:
+  /// **'TDEE is estimated with Mifflin–St Jeor × activity factor. Protein and fat are fixed per kg of reference weight; carbohydrate takes the remaining energy. Carb cycling redistributes the weekly budget across high / mid / low days with one common shrink factor so every day stays inside bounds and the weekly total is preserved. The taper lowers carbohydrate by 25 g (100 kcal) per stage only after a review you confirm.'**
+  String get strategyBasisBody;
+
+  /// No description provided for @strategyDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Product defaults for generally healthy adults; not a clinical prescription and not medically validated. Consult a professional for medical conditions.'**
+  String get strategyDisclaimer;
+
+  /// No description provided for @strategyScopeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Switching to maintain / bulk stops the strategy automatically. No extreme low-calorie, fasting or ketogenic presets are offered.'**
+  String get strategyScopeNote;
+
+  /// No description provided for @strategyPickerIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose one primary strategy. Protein and fat stay stable in all three; they differ in how carbohydrate and energy are arranged over time.'**
+  String get strategyPickerIntro;
+
+  /// No description provided for @defaultWord.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get defaultWord;
+
+  /// No description provided for @currentWord.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get currentWord;
+
+  /// No description provided for @strategyBalanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced deficit'**
+  String get strategyBalanced;
+
+  /// No description provided for @strategyCarbCycle.
+  ///
+  /// In en, this message translates to:
+  /// **'Carb cycling'**
+  String get strategyCarbCycle;
+
+  /// No description provided for @strategyCarbTaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Carb taper'**
+  String get strategyCarbTaper;
+
+  /// No description provided for @strategyBalancedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Same energy and macros every day. Simple and easy to follow.'**
+  String get strategyBalancedDesc;
+
+  /// No description provided for @strategyCarbCycleDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly budget is redistributed into high / mid / low-carb days while protein and fat stay fixed.'**
+  String get strategyCarbCycleDesc;
+
+  /// No description provided for @strategyCarbTaperDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Start at the baseline and lower carbohydrate one small step at a time, only after each review you confirm.'**
+  String get strategyCarbTaperDesc;
+
+  /// No description provided for @carbDayHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High-carb day'**
+  String get carbDayHigh;
+
+  /// No description provided for @carbDayMid.
+  ///
+  /// In en, this message translates to:
+  /// **'Mid-carb day'**
+  String get carbDayMid;
+
+  /// No description provided for @carbDayLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low-carb day'**
+  String get carbDayLow;
+
+  /// No description provided for @carbDayHighShort.
+  ///
+  /// In en, this message translates to:
+  /// **'H'**
+  String get carbDayHighShort;
+
+  /// No description provided for @carbDayMidShort.
+  ///
+  /// In en, this message translates to:
+  /// **'M'**
+  String get carbDayMidShort;
+
+  /// No description provided for @carbDayLowShort.
+  ///
+  /// In en, this message translates to:
+  /// **'L'**
+  String get carbDayLowShort;
+
+  /// No description provided for @taperStageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Stage {n}'**
+  String taperStageLabel(int n);
+
+  /// No description provided for @targetSourceOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom target'**
+  String get targetSourceOverride;
+
+  /// No description provided for @targetSourceProfileCut.
+  ///
+  /// In en, this message translates to:
+  /// **'Cut · profile target'**
+  String get targetSourceProfileCut;
+
+  /// No description provided for @targetLegacyEstimate.
+  ///
+  /// In en, this message translates to:
+  /// **'Legacy estimate'**
+  String get targetLegacyEstimate;
+
+  /// No description provided for @issueInvalidWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference weight must be a positive number.'**
+  String get issueInvalidWeight;
+
+  /// No description provided for @issueInvalidTdee.
+  ///
+  /// In en, this message translates to:
+  /// **'TDEE is unavailable; complete your profile first.'**
+  String get issueInvalidTdee;
+
+  /// No description provided for @issueInvalidTargetEnergy.
+  ///
+  /// In en, this message translates to:
+  /// **'Target energy must be a positive number.'**
+  String get issueInvalidTargetEnergy;
+
+  /// No description provided for @issueDeficitBelowRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Deficit is below the 10% minimum for a fat-loss strategy.'**
+  String get issueDeficitBelowRange;
+
+  /// No description provided for @issueDeficitAboveRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Deficit exceeds the 20% self-service maximum.'**
+  String get issueDeficitAboveRange;
+
+  /// No description provided for @issueEnergyBelowFloor.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy would fall below the product floor (max(0.75×TDEE, 1201 kcal, P/F + 130 g carb)).'**
+  String get issueEnergyBelowFloor;
+
+  /// No description provided for @issueEnergyAboveTdee.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy would exceed the estimated TDEE.'**
+  String get issueEnergyAboveTdee;
+
+  /// No description provided for @issueCarbBelowMinimum.
+  ///
+  /// In en, this message translates to:
+  /// **'Carbohydrate would fall below {g} g/day; lower protein/fat per kg or reduce the deficit.'**
+  String issueCarbBelowMinimum(int g);
+
+  /// No description provided for @issueInvalidSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'The weekly schedule is invalid.'**
+  String get issueInvalidSchedule;
+
+  /// No description provided for @issueAmplitudeNegligible.
+  ///
+  /// In en, this message translates to:
+  /// **'After bounds the high/low difference is negligible; the balanced strategy would be equivalent.'**
+  String get issueAmplitudeNegligible;
+
+  /// No description provided for @issueUnderage.
+  ///
+  /// In en, this message translates to:
+  /// **'Strategies are for adults ({age}+). Please seek professional guidance instead.'**
+  String issueUnderage(int age);
+
+  /// No description provided for @issueGoalNotCut.
+  ///
+  /// In en, this message translates to:
+  /// **'Only available with the cut goal.'**
+  String get issueGoalNotCut;
+
+  /// No description provided for @strategyParameters.
+  ///
+  /// In en, this message translates to:
+  /// **'Parameters'**
+  String get strategyParameters;
+
+  /// No description provided for @referenceWeightKg.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference weight'**
+  String get referenceWeightKg;
+
+  /// No description provided for @estimatedTdee.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated TDEE'**
+  String get estimatedTdee;
+
+  /// No description provided for @deficitFractionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Average deficit {pct}%'**
+  String deficitFractionLabel(int pct);
+
+  /// No description provided for @averageTargetEnergy.
+  ///
+  /// In en, this message translates to:
+  /// **'Average target energy'**
+  String get averageTargetEnergy;
+
+  /// No description provided for @energyBoundsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowed {min}–{max} kcal'**
+  String energyBoundsHint(int min, int max);
+
+  /// No description provided for @proteinPerKgLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Protein per kg'**
+  String get proteinPerKgLabel;
+
+  /// No description provided for @fatPerKgLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Fat per kg'**
+  String get fatPerKgLabel;
+
+  /// No description provided for @dailyBaselineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily baseline'**
+  String get dailyBaselineTitle;
+
+  /// No description provided for @weeklySchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'7-day schedule'**
+  String get weeklySchedule;
+
+  /// No description provided for @suggestFromTraining.
+  ///
+  /// In en, this message translates to:
+  /// **'Match training'**
+  String get suggestFromTraining;
+
+  /// No description provided for @trainingSuggestionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Based on the last 4 weeks: {high} high-carb day(s), {low} low-carb day(s). Apply only if it matches your plan.'**
+  String trainingSuggestionBody(int high, int low);
+
+  /// No description provided for @applySuggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get applySuggestion;
+
+  /// No description provided for @carbCycleEditHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a day to select it; tap the selected day again to cycle high → mid → low.'**
+  String get carbCycleEditHint;
+
+  /// No description provided for @weeklyBudgetLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly budget {total} kcal · daily average {avg} kcal'**
+  String weeklyBudgetLine(String total, String avg);
+
+  /// No description provided for @carbAmplitudeLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Carb amplitude ±{g} g per score step'**
+  String carbAmplitudeLine(String g);
+
+  /// No description provided for @carbAmplitudeShrunk.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested ±{g} g was shrunk uniformly so every day stays within bounds.'**
+  String carbAmplitudeShrunk(String g);
+
+  /// No description provided for @taperLadderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stage ladder (preview)'**
+  String get taperLadderTitle;
+
+  /// No description provided for @taperLadderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Each step is −25 g carbohydrate / −100 kcal and requires a review you confirm. Stages never advance automatically.'**
+  String get taperLadderHint;
+
+  /// No description provided for @taperFloorLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor: {kcal} kcal and {carb} g carbohydrate'**
+  String taperFloorLine(int kcal, int carb);
+
+  /// No description provided for @currentStage.
+  ///
+  /// In en, this message translates to:
+  /// **'Current stage'**
+  String get currentStage;
+
+  /// No description provided for @effectiveDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Effective date'**
+  String get effectiveDate;
+
+  /// No description provided for @startNextCycle.
+  ///
+  /// In en, this message translates to:
+  /// **'Next cycle ({date})'**
+  String startNextCycle(String date);
+
+  /// No description provided for @startTomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow ({date})'**
+  String startTomorrow(String date);
+
+  /// No description provided for @startToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Start today'**
+  String get startToday;
+
+  /// No description provided for @midCycleNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Mid-cycle start: {from}–{to} follow the plan; remaining budget for this week {kcal} kcal. Earlier days of the week are not recalculated.'**
+  String midCycleNotice(String from, String to, String kcal);
+
+  /// No description provided for @applyStrategyFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply from {date}'**
+  String applyStrategyFrom(String date);
+
+  /// No description provided for @taperReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Taper review'**
+  String get taperReview;
+
+  /// No description provided for @taperNotActive.
+  ///
+  /// In en, this message translates to:
+  /// **'The carb taper is not active.'**
+  String get taperNotActive;
+
+  /// No description provided for @observation.
+  ///
+  /// In en, this message translates to:
+  /// **'Observation'**
+  String get observation;
+
+  /// No description provided for @observationProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} / {total} days observed'**
+  String observationProgress(int done, int total);
+
+  /// No description provided for @nextReviewDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Review available from {date}'**
+  String nextReviewDate(String date);
+
+  /// No description provided for @weighInDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Weigh-in days (14 d)'**
+  String get weighInDays;
+
+  /// No description provided for @weighInDaysHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Need ≥{n} days, ≥{half} in each 7-day half'**
+  String weighInDaysHint(int n, int half);
+
+  /// No description provided for @completeDietDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete food-log days (14 d)'**
+  String get completeDietDays;
+
+  /// No description provided for @completeDietDaysHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Need ≥{n} days confirmed on the Today page'**
+  String completeDietDaysHint(int n);
+
+  /// No description provided for @weeklyRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly change (7-day means)'**
+  String get weeklyRate;
+
+  /// No description provided for @weeklyRateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Target band {low}%–{high}% of body weight per week'**
+  String weeklyRateHint(String low, String high);
+
+  /// No description provided for @suggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestion'**
+  String get suggestion;
+
+  /// No description provided for @taperStatusObserving.
+  ///
+  /// In en, this message translates to:
+  /// **'Observing'**
+  String get taperStatusObserving;
+
+  /// No description provided for @taperStatusInsufficientWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough weigh-ins'**
+  String get taperStatusInsufficientWeight;
+
+  /// No description provided for @taperStatusInsufficientDiet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough complete food-log days'**
+  String get taperStatusInsufficientDiet;
+
+  /// No description provided for @taperStatusHold.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the current stage'**
+  String get taperStatusHold;
+
+  /// No description provided for @taperStatusStepDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Step-down candidate'**
+  String get taperStatusStepDown;
+
+  /// No description provided for @taperStatusFloor.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor reached'**
+  String get taperStatusFloor;
+
+  /// No description provided for @taperStatusTooFast.
+  ///
+  /// In en, this message translates to:
+  /// **'Losing faster than the band'**
+  String get taperStatusTooFast;
+
+  /// No description provided for @taperObservingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} more day(s) of observation before a review is possible. Keep logging weight and confirming complete days.'**
+  String taperObservingBody(int days);
+
+  /// No description provided for @taperInsufficientWeightBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Weigh in on more days (both halves of the window) so the 7-day means are credible. No change is suggested.'**
+  String get taperInsufficientWeightBody;
+
+  /// No description provided for @taperInsufficientDietBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Too few days are confirmed as complete, so intake cannot be trusted. Confirm complete days on the Today page. No change is suggested.'**
+  String get taperInsufficientDietBody;
+
+  /// No description provided for @taperHoldBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight is changing within the target band. Keep the current stage and review again after the next window.'**
+  String get taperHoldBody;
+
+  /// No description provided for @taperStepDownBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight change is below the band with credible data. Candidate: {kcal} kcal · C {carb} g. Nothing changes until you confirm.'**
+  String taperStepDownBody(int kcal, String carb);
+
+  /// No description provided for @taperFloorBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The next stage would breach the energy or carbohydrate floor, so no further reduction is offered. Consider activity, adherence or a maintenance break.'**
+  String get taperFloorBody;
+
+  /// No description provided for @taperTooFastBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight is dropping faster than the band. Do not lower further; consider returning to the previous stage.'**
+  String get taperTooFastBody;
+
+  /// No description provided for @confirmNextStage.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter next stage?'**
+  String get confirmNextStage;
+
+  /// No description provided for @confirmNextStageBody.
+  ///
+  /// In en, this message translates to:
+  /// **'From tomorrow the target becomes {kcal} kcal with {carb} g carbohydrate. A new observation window starts.'**
+  String confirmNextStageBody(int kcal, String carb);
+
+  /// No description provided for @enterStage.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter stage {n}'**
+  String enterStage(int n);
+
+  /// No description provided for @keepStage.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep current stage'**
+  String get keepStage;
+
+  /// No description provided for @keepStageBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The target stays the same and a new observation window starts tomorrow.'**
+  String get keepStageBody;
+
+  /// No description provided for @backOneStage.
+  ///
+  /// In en, this message translates to:
+  /// **'Back one stage'**
+  String get backOneStage;
+
+  /// No description provided for @backOneStageBody.
+  ///
+  /// In en, this message translates to:
+  /// **'From tomorrow the previous stage\'s higher target applies and a new observation window starts.'**
+  String get backOneStageBody;
+
+  /// No description provided for @taperStageConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Stage {n} confirmed from tomorrow'**
+  String taperStageConfirmed(int n);
+
+  /// No description provided for @taperRulesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Rules: at least 14 days of observation (21 after carb cycling); ≥10 weigh-in days with ≥4 in each half; ≥10 confirmed complete food-log days; compare the two 7-day means; each step is −25 g carbohydrate / −100 kcal; never below the energy and 130 g carbohydrate floors.'**
+  String get taperRulesBody;
+
+  /// No description provided for @cancelScheduledStrategy.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel scheduled change'**
+  String get cancelScheduledStrategy;
+
+  /// No description provided for @cancelScheduledStrategyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The strategy that has not started yet is discarded. The strategy currently in effect keeps running.'**
+  String get cancelScheduledStrategyBody;
+
+  /// No description provided for @scheduledStrategyCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled change cancelled'**
+  String get scheduledStrategyCancelled;
 }
 
 class _AppLocalizationsDelegate

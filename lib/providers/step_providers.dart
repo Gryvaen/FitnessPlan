@@ -33,20 +33,32 @@ final recentStepsProvider = StreamProvider.autoDispose<List<StepDay>>((ref) {
 /// Last completed sync outcome. Null only before the first attempt finishes.
 final stepsSyncStatusProvider =
     NotifierProvider<StepsSyncStatusNotifier, StepsSyncStatus?>(
-  StepsSyncStatusNotifier.new,
-);
+      StepsSyncStatusNotifier.new,
+    );
 
 class StepsSyncStatusNotifier extends Notifier<StepsSyncStatus?> {
   @override
   StepsSyncStatus? build() => null;
 
   void setStatus(StepsSyncStatus status) => state = status;
+
+  /// User-initiated retry: re-shows permission prompts if needed.
+  Future<StepsSyncStatus> resync() async {
+    final status = await ref
+        .read(stepsSyncServiceProvider)
+        .syncRecent(limitDays: 14, forcePrompt: true);
+    state = status;
+    return status;
+  }
 }
 
 /// Kick off a background sync; concurrent calls share one in-flight run.
-final stepsSyncProvider = FutureProvider.autoDispose<StepsSyncStatus>((ref) async {
-  final status =
-      await ref.read(stepsSyncServiceProvider).syncRecent(limitDays: 14);
+final stepsSyncProvider = FutureProvider.autoDispose<StepsSyncStatus>((
+  ref,
+) async {
+  final status = await ref
+      .read(stepsSyncServiceProvider)
+      .syncRecent(limitDays: 14);
   if (ref.mounted) {
     ref.read(stepsSyncStatusProvider.notifier).setStatus(status);
   }

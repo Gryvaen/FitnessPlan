@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 /// Android step counter bridge: OEM providers / TYPE_STEP_COUNTER → today total.
 class AndroidStepSensor {
   AndroidStepSensor({MethodChannel? channel})
-      : _channel = channel ?? const MethodChannel('fitness_plan/step_counter');
+    : _channel = channel ?? const MethodChannel('fitness_plan/step_counter');
 
   final MethodChannel _channel;
 
@@ -42,6 +42,20 @@ class AndroidStepSensor {
       return ok ?? false;
     } catch (_) {
       return false;
+    }
+  }
+
+  /// Raw native state for troubleshooting (sensor, baseline, boot time…).
+  Future<Map<String, Object?>> diagnostics() async {
+    if (!isSupported) return const {};
+    try {
+      final raw = await _channel.invokeMethod<Map<Object?, Object?>>(
+        'diagnostics',
+      );
+      if (raw == null) return const {};
+      return {for (final e in raw.entries) e.key.toString(): e.value};
+    } catch (e) {
+      return {'error': e.toString()};
     }
   }
 }

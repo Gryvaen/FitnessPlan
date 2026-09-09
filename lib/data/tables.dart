@@ -8,30 +8,37 @@ class FoodItems extends Table {
   RealColumn get proteinPer100 => real()();
   RealColumn get carbPer100 => real()();
   RealColumn get fatPer100 => real()();
+
   /// Estimated alcohol g/100g (mainly beverages with residual energy).
   RealColumn get alcoholPer100 => real().withDefault(const Constant(0.0))();
+
   /// Dietary fiber g/100g (营养成分表常见项).
   RealColumn get fiberPer100 => real().withDefault(const Constant(0.0))();
+
   /// Sodium mg/100g.
   RealColumn get sodiumMgPer100 => real().withDefault(const Constant(0.0))();
+
   /// Sugars g/100g.
   RealColumn get sugarPer100 => real().withDefault(const Constant(0.0))();
+
   /// Saturated fat g/100g.
   RealColumn get saturatedFatPer100 =>
       real().withDefault(const Constant(0.0))();
+
   /// User-created foods survive seed sync deletion.
   BoolColumn get isCustom => boolean().withDefault(const Constant(false))();
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {name},
-      ];
+    {name},
+  ];
 }
 
 class FoodServings extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get foodId => integer()();
   TextColumn get label => text()();
+
   /// Stored as grams; ml labels use ≈1 ml = 1 g.
   RealColumn get grams => real()();
 }
@@ -49,6 +56,7 @@ class WeightLogs extends Table {
   DateTimeColumn get date => dateTime()();
   RealColumn get weightKg => real()();
   RealColumn get bodyFatPct => real().nullable()();
+
   /// Daily exercise minutes for this log date (not per-session).
   IntColumn get exerciseMinutes => integer().nullable()();
 }
@@ -93,8 +101,8 @@ class WaterLogs extends Table {
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {date},
-      ];
+    {date},
+  ];
 }
 
 /// Daily step totals synced from HealthKit / Health Connect.
@@ -105,8 +113,8 @@ class StepLogs extends Table {
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {date},
-      ];
+    {date},
+  ];
 }
 
 class AppMeta extends Table {
@@ -123,14 +131,15 @@ class Exercises extends Table {
   TextColumn get name => text()();
   TextColumn get unit => text()();
   BoolColumn get isCustom => boolean().withDefault(const Constant(false))();
+
   /// English category key: chest, back, legs, core, core_timed, cardio,
   /// shoulders_arms, custom, other.
   TextColumn get category => text().withDefault(const Constant('other'))();
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {name},
-      ];
+    {name},
+  ];
 }
 
 class WorkoutPlans extends Table {
@@ -145,6 +154,7 @@ class WorkoutPlanItems extends Table {
   IntColumn get exerciseId => integer()();
   TextColumn get exerciseName => text()();
   IntColumn get targetSets => integer()();
+
   /// Target reps, or target seconds when the exercise unit is seconds.
   IntColumn get targetReps => integer()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
@@ -179,6 +189,67 @@ class WorkoutSetLogs extends Table {
   IntColumn get dayWorkoutItemId => integer().nullable()();
 }
 
+/// Immutable fat-loss strategy versions. Dates are stored as local
+/// `yyyy-MM-dd` text so time-zone / DST changes cannot shift a day.
+@DataClassName('DietStrategyPlanRow')
+class DietStrategyPlans extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get version => integer()();
+  TextColumn get strategy => text()();
+  TextColumn get status => text()();
+  TextColumn get effectiveFrom => text()();
+  TextColumn get endedOn => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  RealColumn get referenceWeightKg => real()();
+  RealColumn get estimatedTdee => real()();
+  RealColumn get deficitFraction => real()();
+  RealColumn get proteinPerKg => real()();
+  RealColumn get fatPerKg => real()();
+  RealColumn get baseEnergy => real()();
+
+  /// 7-letter H/M/L code (Mon..Sun) for carb cycling.
+  TextColumn get schedule => text().nullable()();
+  RealColumn get carbAmplitudeG => real().nullable()();
+  IntColumn get taperStage => integer().withDefault(const Constant(0))();
+  TextColumn get observationStart => text().nullable()();
+  IntColumn get observationDays => integer().withDefault(const Constant(14))();
+  TextColumn get reason => text().withDefault(const Constant(''))();
+  IntColumn get legacyCalories => integer().nullable()();
+}
+
+/// Per-day resolved target snapshot (history stays fixed once written).
+@DataClassName('DailyNutritionTargetRow')
+class DailyNutritionTargets extends Table {
+  TextColumn get date => text()();
+  IntColumn get planId => integer().nullable()();
+  IntColumn get planVersion => integer().nullable()();
+  TextColumn get strategy => text().nullable()();
+  TextColumn get dayType => text().nullable()();
+  RealColumn get calories => real()();
+  RealColumn get proteinG => real()();
+  RealColumn get carbG => real()();
+  RealColumn get fatG => real()();
+  RealColumn get estimatedTdee => real().nullable()();
+  TextColumn get source => text()();
+  TextColumn get status => text().withDefault(const Constant('confirmed'))();
+  TextColumn get reason => text().nullable()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {date};
+}
+
+/// User confirmation that a day's diet log is complete (unknown when absent).
+@DataClassName('DayDietConfirmationRow')
+class DayDietConfirmations extends Table {
+  TextColumn get date => text()();
+  BoolColumn get complete => boolean()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {date};
+}
+
 /// One daily journal note per calendar day.
 class DailyNotes extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -188,6 +259,6 @@ class DailyNotes extends Table {
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {date},
-      ];
+    {date},
+  ];
 }

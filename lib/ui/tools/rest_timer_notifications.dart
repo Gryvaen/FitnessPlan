@@ -49,6 +49,8 @@ abstract final class RestTimerNotifications {
         android: android,
         iOS: darwin,
         macOS: darwin,
+        // Required by the plugin when running the desktop build on Linux.
+        linux: const LinuxInitializationSettings(defaultActionName: 'Open'),
       ),
     );
 

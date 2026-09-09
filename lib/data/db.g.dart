@@ -6492,6 +6492,2224 @@ class DailyNotesCompanion extends UpdateCompanion<DailyNote> {
   }
 }
 
+class $DietStrategyPlansTable extends DietStrategyPlans
+    with TableInfo<$DietStrategyPlansTable, DietStrategyPlanRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DietStrategyPlansTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _versionMeta = const VerificationMeta(
+    'version',
+  );
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+    'version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _strategyMeta = const VerificationMeta(
+    'strategy',
+  );
+  @override
+  late final GeneratedColumn<String> strategy = GeneratedColumn<String>(
+    'strategy',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _effectiveFromMeta = const VerificationMeta(
+    'effectiveFrom',
+  );
+  @override
+  late final GeneratedColumn<String> effectiveFrom = GeneratedColumn<String>(
+    'effective_from',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endedOnMeta = const VerificationMeta(
+    'endedOn',
+  );
+  @override
+  late final GeneratedColumn<String> endedOn = GeneratedColumn<String>(
+    'ended_on',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _referenceWeightKgMeta = const VerificationMeta(
+    'referenceWeightKg',
+  );
+  @override
+  late final GeneratedColumn<double> referenceWeightKg =
+      GeneratedColumn<double>(
+        'reference_weight_kg',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _estimatedTdeeMeta = const VerificationMeta(
+    'estimatedTdee',
+  );
+  @override
+  late final GeneratedColumn<double> estimatedTdee = GeneratedColumn<double>(
+    'estimated_tdee',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deficitFractionMeta = const VerificationMeta(
+    'deficitFraction',
+  );
+  @override
+  late final GeneratedColumn<double> deficitFraction = GeneratedColumn<double>(
+    'deficit_fraction',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _proteinPerKgMeta = const VerificationMeta(
+    'proteinPerKg',
+  );
+  @override
+  late final GeneratedColumn<double> proteinPerKg = GeneratedColumn<double>(
+    'protein_per_kg',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fatPerKgMeta = const VerificationMeta(
+    'fatPerKg',
+  );
+  @override
+  late final GeneratedColumn<double> fatPerKg = GeneratedColumn<double>(
+    'fat_per_kg',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _baseEnergyMeta = const VerificationMeta(
+    'baseEnergy',
+  );
+  @override
+  late final GeneratedColumn<double> baseEnergy = GeneratedColumn<double>(
+    'base_energy',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _scheduleMeta = const VerificationMeta(
+    'schedule',
+  );
+  @override
+  late final GeneratedColumn<String> schedule = GeneratedColumn<String>(
+    'schedule',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _carbAmplitudeGMeta = const VerificationMeta(
+    'carbAmplitudeG',
+  );
+  @override
+  late final GeneratedColumn<double> carbAmplitudeG = GeneratedColumn<double>(
+    'carb_amplitude_g',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _taperStageMeta = const VerificationMeta(
+    'taperStage',
+  );
+  @override
+  late final GeneratedColumn<int> taperStage = GeneratedColumn<int>(
+    'taper_stage',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _observationStartMeta = const VerificationMeta(
+    'observationStart',
+  );
+  @override
+  late final GeneratedColumn<String> observationStart = GeneratedColumn<String>(
+    'observation_start',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _observationDaysMeta = const VerificationMeta(
+    'observationDays',
+  );
+  @override
+  late final GeneratedColumn<int> observationDays = GeneratedColumn<int>(
+    'observation_days',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(14),
+  );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  @override
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _legacyCaloriesMeta = const VerificationMeta(
+    'legacyCalories',
+  );
+  @override
+  late final GeneratedColumn<int> legacyCalories = GeneratedColumn<int>(
+    'legacy_calories',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    version,
+    strategy,
+    status,
+    effectiveFrom,
+    endedOn,
+    createdAt,
+    referenceWeightKg,
+    estimatedTdee,
+    deficitFraction,
+    proteinPerKg,
+    fatPerKg,
+    baseEnergy,
+    schedule,
+    carbAmplitudeG,
+    taperStage,
+    observationStart,
+    observationDays,
+    reason,
+    legacyCalories,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'diet_strategy_plans';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DietStrategyPlanRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('version')) {
+      context.handle(
+        _versionMeta,
+        version.isAcceptableOrUnknown(data['version']!, _versionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_versionMeta);
+    }
+    if (data.containsKey('strategy')) {
+      context.handle(
+        _strategyMeta,
+        strategy.isAcceptableOrUnknown(data['strategy']!, _strategyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_strategyMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('effective_from')) {
+      context.handle(
+        _effectiveFromMeta,
+        effectiveFrom.isAcceptableOrUnknown(
+          data['effective_from']!,
+          _effectiveFromMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_effectiveFromMeta);
+    }
+    if (data.containsKey('ended_on')) {
+      context.handle(
+        _endedOnMeta,
+        endedOn.isAcceptableOrUnknown(data['ended_on']!, _endedOnMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('reference_weight_kg')) {
+      context.handle(
+        _referenceWeightKgMeta,
+        referenceWeightKg.isAcceptableOrUnknown(
+          data['reference_weight_kg']!,
+          _referenceWeightKgMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_referenceWeightKgMeta);
+    }
+    if (data.containsKey('estimated_tdee')) {
+      context.handle(
+        _estimatedTdeeMeta,
+        estimatedTdee.isAcceptableOrUnknown(
+          data['estimated_tdee']!,
+          _estimatedTdeeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_estimatedTdeeMeta);
+    }
+    if (data.containsKey('deficit_fraction')) {
+      context.handle(
+        _deficitFractionMeta,
+        deficitFraction.isAcceptableOrUnknown(
+          data['deficit_fraction']!,
+          _deficitFractionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_deficitFractionMeta);
+    }
+    if (data.containsKey('protein_per_kg')) {
+      context.handle(
+        _proteinPerKgMeta,
+        proteinPerKg.isAcceptableOrUnknown(
+          data['protein_per_kg']!,
+          _proteinPerKgMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_proteinPerKgMeta);
+    }
+    if (data.containsKey('fat_per_kg')) {
+      context.handle(
+        _fatPerKgMeta,
+        fatPerKg.isAcceptableOrUnknown(data['fat_per_kg']!, _fatPerKgMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fatPerKgMeta);
+    }
+    if (data.containsKey('base_energy')) {
+      context.handle(
+        _baseEnergyMeta,
+        baseEnergy.isAcceptableOrUnknown(data['base_energy']!, _baseEnergyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_baseEnergyMeta);
+    }
+    if (data.containsKey('schedule')) {
+      context.handle(
+        _scheduleMeta,
+        schedule.isAcceptableOrUnknown(data['schedule']!, _scheduleMeta),
+      );
+    }
+    if (data.containsKey('carb_amplitude_g')) {
+      context.handle(
+        _carbAmplitudeGMeta,
+        carbAmplitudeG.isAcceptableOrUnknown(
+          data['carb_amplitude_g']!,
+          _carbAmplitudeGMeta,
+        ),
+      );
+    }
+    if (data.containsKey('taper_stage')) {
+      context.handle(
+        _taperStageMeta,
+        taperStage.isAcceptableOrUnknown(data['taper_stage']!, _taperStageMeta),
+      );
+    }
+    if (data.containsKey('observation_start')) {
+      context.handle(
+        _observationStartMeta,
+        observationStart.isAcceptableOrUnknown(
+          data['observation_start']!,
+          _observationStartMeta,
+        ),
+      );
+    }
+    if (data.containsKey('observation_days')) {
+      context.handle(
+        _observationDaysMeta,
+        observationDays.isAcceptableOrUnknown(
+          data['observation_days']!,
+          _observationDaysMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    }
+    if (data.containsKey('legacy_calories')) {
+      context.handle(
+        _legacyCaloriesMeta,
+        legacyCalories.isAcceptableOrUnknown(
+          data['legacy_calories']!,
+          _legacyCaloriesMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DietStrategyPlanRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DietStrategyPlanRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      version: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}version'],
+      )!,
+      strategy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}strategy'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      effectiveFrom: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}effective_from'],
+      )!,
+      endedOn: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ended_on'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      referenceWeightKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}reference_weight_kg'],
+      )!,
+      estimatedTdee: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}estimated_tdee'],
+      )!,
+      deficitFraction: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}deficit_fraction'],
+      )!,
+      proteinPerKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}protein_per_kg'],
+      )!,
+      fatPerKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fat_per_kg'],
+      )!,
+      baseEnergy: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}base_energy'],
+      )!,
+      schedule: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}schedule'],
+      ),
+      carbAmplitudeG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}carb_amplitude_g'],
+      ),
+      taperStage: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}taper_stage'],
+      )!,
+      observationStart: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}observation_start'],
+      ),
+      observationDays: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}observation_days'],
+      )!,
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      )!,
+      legacyCalories: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}legacy_calories'],
+      ),
+    );
+  }
+
+  @override
+  $DietStrategyPlansTable createAlias(String alias) {
+    return $DietStrategyPlansTable(attachedDatabase, alias);
+  }
+}
+
+class DietStrategyPlanRow extends DataClass
+    implements Insertable<DietStrategyPlanRow> {
+  final int id;
+  final int version;
+  final String strategy;
+  final String status;
+  final String effectiveFrom;
+  final String? endedOn;
+  final DateTime createdAt;
+  final double referenceWeightKg;
+  final double estimatedTdee;
+  final double deficitFraction;
+  final double proteinPerKg;
+  final double fatPerKg;
+  final double baseEnergy;
+
+  /// 7-letter H/M/L code (Mon..Sun) for carb cycling.
+  final String? schedule;
+  final double? carbAmplitudeG;
+  final int taperStage;
+  final String? observationStart;
+  final int observationDays;
+  final String reason;
+  final int? legacyCalories;
+  const DietStrategyPlanRow({
+    required this.id,
+    required this.version,
+    required this.strategy,
+    required this.status,
+    required this.effectiveFrom,
+    this.endedOn,
+    required this.createdAt,
+    required this.referenceWeightKg,
+    required this.estimatedTdee,
+    required this.deficitFraction,
+    required this.proteinPerKg,
+    required this.fatPerKg,
+    required this.baseEnergy,
+    this.schedule,
+    this.carbAmplitudeG,
+    required this.taperStage,
+    this.observationStart,
+    required this.observationDays,
+    required this.reason,
+    this.legacyCalories,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['version'] = Variable<int>(version);
+    map['strategy'] = Variable<String>(strategy);
+    map['status'] = Variable<String>(status);
+    map['effective_from'] = Variable<String>(effectiveFrom);
+    if (!nullToAbsent || endedOn != null) {
+      map['ended_on'] = Variable<String>(endedOn);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['reference_weight_kg'] = Variable<double>(referenceWeightKg);
+    map['estimated_tdee'] = Variable<double>(estimatedTdee);
+    map['deficit_fraction'] = Variable<double>(deficitFraction);
+    map['protein_per_kg'] = Variable<double>(proteinPerKg);
+    map['fat_per_kg'] = Variable<double>(fatPerKg);
+    map['base_energy'] = Variable<double>(baseEnergy);
+    if (!nullToAbsent || schedule != null) {
+      map['schedule'] = Variable<String>(schedule);
+    }
+    if (!nullToAbsent || carbAmplitudeG != null) {
+      map['carb_amplitude_g'] = Variable<double>(carbAmplitudeG);
+    }
+    map['taper_stage'] = Variable<int>(taperStage);
+    if (!nullToAbsent || observationStart != null) {
+      map['observation_start'] = Variable<String>(observationStart);
+    }
+    map['observation_days'] = Variable<int>(observationDays);
+    map['reason'] = Variable<String>(reason);
+    if (!nullToAbsent || legacyCalories != null) {
+      map['legacy_calories'] = Variable<int>(legacyCalories);
+    }
+    return map;
+  }
+
+  DietStrategyPlansCompanion toCompanion(bool nullToAbsent) {
+    return DietStrategyPlansCompanion(
+      id: Value(id),
+      version: Value(version),
+      strategy: Value(strategy),
+      status: Value(status),
+      effectiveFrom: Value(effectiveFrom),
+      endedOn: endedOn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endedOn),
+      createdAt: Value(createdAt),
+      referenceWeightKg: Value(referenceWeightKg),
+      estimatedTdee: Value(estimatedTdee),
+      deficitFraction: Value(deficitFraction),
+      proteinPerKg: Value(proteinPerKg),
+      fatPerKg: Value(fatPerKg),
+      baseEnergy: Value(baseEnergy),
+      schedule: schedule == null && nullToAbsent
+          ? const Value.absent()
+          : Value(schedule),
+      carbAmplitudeG: carbAmplitudeG == null && nullToAbsent
+          ? const Value.absent()
+          : Value(carbAmplitudeG),
+      taperStage: Value(taperStage),
+      observationStart: observationStart == null && nullToAbsent
+          ? const Value.absent()
+          : Value(observationStart),
+      observationDays: Value(observationDays),
+      reason: Value(reason),
+      legacyCalories: legacyCalories == null && nullToAbsent
+          ? const Value.absent()
+          : Value(legacyCalories),
+    );
+  }
+
+  factory DietStrategyPlanRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DietStrategyPlanRow(
+      id: serializer.fromJson<int>(json['id']),
+      version: serializer.fromJson<int>(json['version']),
+      strategy: serializer.fromJson<String>(json['strategy']),
+      status: serializer.fromJson<String>(json['status']),
+      effectiveFrom: serializer.fromJson<String>(json['effectiveFrom']),
+      endedOn: serializer.fromJson<String?>(json['endedOn']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      referenceWeightKg: serializer.fromJson<double>(json['referenceWeightKg']),
+      estimatedTdee: serializer.fromJson<double>(json['estimatedTdee']),
+      deficitFraction: serializer.fromJson<double>(json['deficitFraction']),
+      proteinPerKg: serializer.fromJson<double>(json['proteinPerKg']),
+      fatPerKg: serializer.fromJson<double>(json['fatPerKg']),
+      baseEnergy: serializer.fromJson<double>(json['baseEnergy']),
+      schedule: serializer.fromJson<String?>(json['schedule']),
+      carbAmplitudeG: serializer.fromJson<double?>(json['carbAmplitudeG']),
+      taperStage: serializer.fromJson<int>(json['taperStage']),
+      observationStart: serializer.fromJson<String?>(json['observationStart']),
+      observationDays: serializer.fromJson<int>(json['observationDays']),
+      reason: serializer.fromJson<String>(json['reason']),
+      legacyCalories: serializer.fromJson<int?>(json['legacyCalories']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'version': serializer.toJson<int>(version),
+      'strategy': serializer.toJson<String>(strategy),
+      'status': serializer.toJson<String>(status),
+      'effectiveFrom': serializer.toJson<String>(effectiveFrom),
+      'endedOn': serializer.toJson<String?>(endedOn),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'referenceWeightKg': serializer.toJson<double>(referenceWeightKg),
+      'estimatedTdee': serializer.toJson<double>(estimatedTdee),
+      'deficitFraction': serializer.toJson<double>(deficitFraction),
+      'proteinPerKg': serializer.toJson<double>(proteinPerKg),
+      'fatPerKg': serializer.toJson<double>(fatPerKg),
+      'baseEnergy': serializer.toJson<double>(baseEnergy),
+      'schedule': serializer.toJson<String?>(schedule),
+      'carbAmplitudeG': serializer.toJson<double?>(carbAmplitudeG),
+      'taperStage': serializer.toJson<int>(taperStage),
+      'observationStart': serializer.toJson<String?>(observationStart),
+      'observationDays': serializer.toJson<int>(observationDays),
+      'reason': serializer.toJson<String>(reason),
+      'legacyCalories': serializer.toJson<int?>(legacyCalories),
+    };
+  }
+
+  DietStrategyPlanRow copyWith({
+    int? id,
+    int? version,
+    String? strategy,
+    String? status,
+    String? effectiveFrom,
+    Value<String?> endedOn = const Value.absent(),
+    DateTime? createdAt,
+    double? referenceWeightKg,
+    double? estimatedTdee,
+    double? deficitFraction,
+    double? proteinPerKg,
+    double? fatPerKg,
+    double? baseEnergy,
+    Value<String?> schedule = const Value.absent(),
+    Value<double?> carbAmplitudeG = const Value.absent(),
+    int? taperStage,
+    Value<String?> observationStart = const Value.absent(),
+    int? observationDays,
+    String? reason,
+    Value<int?> legacyCalories = const Value.absent(),
+  }) => DietStrategyPlanRow(
+    id: id ?? this.id,
+    version: version ?? this.version,
+    strategy: strategy ?? this.strategy,
+    status: status ?? this.status,
+    effectiveFrom: effectiveFrom ?? this.effectiveFrom,
+    endedOn: endedOn.present ? endedOn.value : this.endedOn,
+    createdAt: createdAt ?? this.createdAt,
+    referenceWeightKg: referenceWeightKg ?? this.referenceWeightKg,
+    estimatedTdee: estimatedTdee ?? this.estimatedTdee,
+    deficitFraction: deficitFraction ?? this.deficitFraction,
+    proteinPerKg: proteinPerKg ?? this.proteinPerKg,
+    fatPerKg: fatPerKg ?? this.fatPerKg,
+    baseEnergy: baseEnergy ?? this.baseEnergy,
+    schedule: schedule.present ? schedule.value : this.schedule,
+    carbAmplitudeG: carbAmplitudeG.present
+        ? carbAmplitudeG.value
+        : this.carbAmplitudeG,
+    taperStage: taperStage ?? this.taperStage,
+    observationStart: observationStart.present
+        ? observationStart.value
+        : this.observationStart,
+    observationDays: observationDays ?? this.observationDays,
+    reason: reason ?? this.reason,
+    legacyCalories: legacyCalories.present
+        ? legacyCalories.value
+        : this.legacyCalories,
+  );
+  DietStrategyPlanRow copyWithCompanion(DietStrategyPlansCompanion data) {
+    return DietStrategyPlanRow(
+      id: data.id.present ? data.id.value : this.id,
+      version: data.version.present ? data.version.value : this.version,
+      strategy: data.strategy.present ? data.strategy.value : this.strategy,
+      status: data.status.present ? data.status.value : this.status,
+      effectiveFrom: data.effectiveFrom.present
+          ? data.effectiveFrom.value
+          : this.effectiveFrom,
+      endedOn: data.endedOn.present ? data.endedOn.value : this.endedOn,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      referenceWeightKg: data.referenceWeightKg.present
+          ? data.referenceWeightKg.value
+          : this.referenceWeightKg,
+      estimatedTdee: data.estimatedTdee.present
+          ? data.estimatedTdee.value
+          : this.estimatedTdee,
+      deficitFraction: data.deficitFraction.present
+          ? data.deficitFraction.value
+          : this.deficitFraction,
+      proteinPerKg: data.proteinPerKg.present
+          ? data.proteinPerKg.value
+          : this.proteinPerKg,
+      fatPerKg: data.fatPerKg.present ? data.fatPerKg.value : this.fatPerKg,
+      baseEnergy: data.baseEnergy.present
+          ? data.baseEnergy.value
+          : this.baseEnergy,
+      schedule: data.schedule.present ? data.schedule.value : this.schedule,
+      carbAmplitudeG: data.carbAmplitudeG.present
+          ? data.carbAmplitudeG.value
+          : this.carbAmplitudeG,
+      taperStage: data.taperStage.present
+          ? data.taperStage.value
+          : this.taperStage,
+      observationStart: data.observationStart.present
+          ? data.observationStart.value
+          : this.observationStart,
+      observationDays: data.observationDays.present
+          ? data.observationDays.value
+          : this.observationDays,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      legacyCalories: data.legacyCalories.present
+          ? data.legacyCalories.value
+          : this.legacyCalories,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DietStrategyPlanRow(')
+          ..write('id: $id, ')
+          ..write('version: $version, ')
+          ..write('strategy: $strategy, ')
+          ..write('status: $status, ')
+          ..write('effectiveFrom: $effectiveFrom, ')
+          ..write('endedOn: $endedOn, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('referenceWeightKg: $referenceWeightKg, ')
+          ..write('estimatedTdee: $estimatedTdee, ')
+          ..write('deficitFraction: $deficitFraction, ')
+          ..write('proteinPerKg: $proteinPerKg, ')
+          ..write('fatPerKg: $fatPerKg, ')
+          ..write('baseEnergy: $baseEnergy, ')
+          ..write('schedule: $schedule, ')
+          ..write('carbAmplitudeG: $carbAmplitudeG, ')
+          ..write('taperStage: $taperStage, ')
+          ..write('observationStart: $observationStart, ')
+          ..write('observationDays: $observationDays, ')
+          ..write('reason: $reason, ')
+          ..write('legacyCalories: $legacyCalories')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    version,
+    strategy,
+    status,
+    effectiveFrom,
+    endedOn,
+    createdAt,
+    referenceWeightKg,
+    estimatedTdee,
+    deficitFraction,
+    proteinPerKg,
+    fatPerKg,
+    baseEnergy,
+    schedule,
+    carbAmplitudeG,
+    taperStage,
+    observationStart,
+    observationDays,
+    reason,
+    legacyCalories,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DietStrategyPlanRow &&
+          other.id == this.id &&
+          other.version == this.version &&
+          other.strategy == this.strategy &&
+          other.status == this.status &&
+          other.effectiveFrom == this.effectiveFrom &&
+          other.endedOn == this.endedOn &&
+          other.createdAt == this.createdAt &&
+          other.referenceWeightKg == this.referenceWeightKg &&
+          other.estimatedTdee == this.estimatedTdee &&
+          other.deficitFraction == this.deficitFraction &&
+          other.proteinPerKg == this.proteinPerKg &&
+          other.fatPerKg == this.fatPerKg &&
+          other.baseEnergy == this.baseEnergy &&
+          other.schedule == this.schedule &&
+          other.carbAmplitudeG == this.carbAmplitudeG &&
+          other.taperStage == this.taperStage &&
+          other.observationStart == this.observationStart &&
+          other.observationDays == this.observationDays &&
+          other.reason == this.reason &&
+          other.legacyCalories == this.legacyCalories);
+}
+
+class DietStrategyPlansCompanion extends UpdateCompanion<DietStrategyPlanRow> {
+  final Value<int> id;
+  final Value<int> version;
+  final Value<String> strategy;
+  final Value<String> status;
+  final Value<String> effectiveFrom;
+  final Value<String?> endedOn;
+  final Value<DateTime> createdAt;
+  final Value<double> referenceWeightKg;
+  final Value<double> estimatedTdee;
+  final Value<double> deficitFraction;
+  final Value<double> proteinPerKg;
+  final Value<double> fatPerKg;
+  final Value<double> baseEnergy;
+  final Value<String?> schedule;
+  final Value<double?> carbAmplitudeG;
+  final Value<int> taperStage;
+  final Value<String?> observationStart;
+  final Value<int> observationDays;
+  final Value<String> reason;
+  final Value<int?> legacyCalories;
+  const DietStrategyPlansCompanion({
+    this.id = const Value.absent(),
+    this.version = const Value.absent(),
+    this.strategy = const Value.absent(),
+    this.status = const Value.absent(),
+    this.effectiveFrom = const Value.absent(),
+    this.endedOn = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.referenceWeightKg = const Value.absent(),
+    this.estimatedTdee = const Value.absent(),
+    this.deficitFraction = const Value.absent(),
+    this.proteinPerKg = const Value.absent(),
+    this.fatPerKg = const Value.absent(),
+    this.baseEnergy = const Value.absent(),
+    this.schedule = const Value.absent(),
+    this.carbAmplitudeG = const Value.absent(),
+    this.taperStage = const Value.absent(),
+    this.observationStart = const Value.absent(),
+    this.observationDays = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.legacyCalories = const Value.absent(),
+  });
+  DietStrategyPlansCompanion.insert({
+    this.id = const Value.absent(),
+    required int version,
+    required String strategy,
+    required String status,
+    required String effectiveFrom,
+    this.endedOn = const Value.absent(),
+    required DateTime createdAt,
+    required double referenceWeightKg,
+    required double estimatedTdee,
+    required double deficitFraction,
+    required double proteinPerKg,
+    required double fatPerKg,
+    required double baseEnergy,
+    this.schedule = const Value.absent(),
+    this.carbAmplitudeG = const Value.absent(),
+    this.taperStage = const Value.absent(),
+    this.observationStart = const Value.absent(),
+    this.observationDays = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.legacyCalories = const Value.absent(),
+  }) : version = Value(version),
+       strategy = Value(strategy),
+       status = Value(status),
+       effectiveFrom = Value(effectiveFrom),
+       createdAt = Value(createdAt),
+       referenceWeightKg = Value(referenceWeightKg),
+       estimatedTdee = Value(estimatedTdee),
+       deficitFraction = Value(deficitFraction),
+       proteinPerKg = Value(proteinPerKg),
+       fatPerKg = Value(fatPerKg),
+       baseEnergy = Value(baseEnergy);
+  static Insertable<DietStrategyPlanRow> custom({
+    Expression<int>? id,
+    Expression<int>? version,
+    Expression<String>? strategy,
+    Expression<String>? status,
+    Expression<String>? effectiveFrom,
+    Expression<String>? endedOn,
+    Expression<DateTime>? createdAt,
+    Expression<double>? referenceWeightKg,
+    Expression<double>? estimatedTdee,
+    Expression<double>? deficitFraction,
+    Expression<double>? proteinPerKg,
+    Expression<double>? fatPerKg,
+    Expression<double>? baseEnergy,
+    Expression<String>? schedule,
+    Expression<double>? carbAmplitudeG,
+    Expression<int>? taperStage,
+    Expression<String>? observationStart,
+    Expression<int>? observationDays,
+    Expression<String>? reason,
+    Expression<int>? legacyCalories,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (version != null) 'version': version,
+      if (strategy != null) 'strategy': strategy,
+      if (status != null) 'status': status,
+      if (effectiveFrom != null) 'effective_from': effectiveFrom,
+      if (endedOn != null) 'ended_on': endedOn,
+      if (createdAt != null) 'created_at': createdAt,
+      if (referenceWeightKg != null) 'reference_weight_kg': referenceWeightKg,
+      if (estimatedTdee != null) 'estimated_tdee': estimatedTdee,
+      if (deficitFraction != null) 'deficit_fraction': deficitFraction,
+      if (proteinPerKg != null) 'protein_per_kg': proteinPerKg,
+      if (fatPerKg != null) 'fat_per_kg': fatPerKg,
+      if (baseEnergy != null) 'base_energy': baseEnergy,
+      if (schedule != null) 'schedule': schedule,
+      if (carbAmplitudeG != null) 'carb_amplitude_g': carbAmplitudeG,
+      if (taperStage != null) 'taper_stage': taperStage,
+      if (observationStart != null) 'observation_start': observationStart,
+      if (observationDays != null) 'observation_days': observationDays,
+      if (reason != null) 'reason': reason,
+      if (legacyCalories != null) 'legacy_calories': legacyCalories,
+    });
+  }
+
+  DietStrategyPlansCompanion copyWith({
+    Value<int>? id,
+    Value<int>? version,
+    Value<String>? strategy,
+    Value<String>? status,
+    Value<String>? effectiveFrom,
+    Value<String?>? endedOn,
+    Value<DateTime>? createdAt,
+    Value<double>? referenceWeightKg,
+    Value<double>? estimatedTdee,
+    Value<double>? deficitFraction,
+    Value<double>? proteinPerKg,
+    Value<double>? fatPerKg,
+    Value<double>? baseEnergy,
+    Value<String?>? schedule,
+    Value<double?>? carbAmplitudeG,
+    Value<int>? taperStage,
+    Value<String?>? observationStart,
+    Value<int>? observationDays,
+    Value<String>? reason,
+    Value<int?>? legacyCalories,
+  }) {
+    return DietStrategyPlansCompanion(
+      id: id ?? this.id,
+      version: version ?? this.version,
+      strategy: strategy ?? this.strategy,
+      status: status ?? this.status,
+      effectiveFrom: effectiveFrom ?? this.effectiveFrom,
+      endedOn: endedOn ?? this.endedOn,
+      createdAt: createdAt ?? this.createdAt,
+      referenceWeightKg: referenceWeightKg ?? this.referenceWeightKg,
+      estimatedTdee: estimatedTdee ?? this.estimatedTdee,
+      deficitFraction: deficitFraction ?? this.deficitFraction,
+      proteinPerKg: proteinPerKg ?? this.proteinPerKg,
+      fatPerKg: fatPerKg ?? this.fatPerKg,
+      baseEnergy: baseEnergy ?? this.baseEnergy,
+      schedule: schedule ?? this.schedule,
+      carbAmplitudeG: carbAmplitudeG ?? this.carbAmplitudeG,
+      taperStage: taperStage ?? this.taperStage,
+      observationStart: observationStart ?? this.observationStart,
+      observationDays: observationDays ?? this.observationDays,
+      reason: reason ?? this.reason,
+      legacyCalories: legacyCalories ?? this.legacyCalories,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (strategy.present) {
+      map['strategy'] = Variable<String>(strategy.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (effectiveFrom.present) {
+      map['effective_from'] = Variable<String>(effectiveFrom.value);
+    }
+    if (endedOn.present) {
+      map['ended_on'] = Variable<String>(endedOn.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (referenceWeightKg.present) {
+      map['reference_weight_kg'] = Variable<double>(referenceWeightKg.value);
+    }
+    if (estimatedTdee.present) {
+      map['estimated_tdee'] = Variable<double>(estimatedTdee.value);
+    }
+    if (deficitFraction.present) {
+      map['deficit_fraction'] = Variable<double>(deficitFraction.value);
+    }
+    if (proteinPerKg.present) {
+      map['protein_per_kg'] = Variable<double>(proteinPerKg.value);
+    }
+    if (fatPerKg.present) {
+      map['fat_per_kg'] = Variable<double>(fatPerKg.value);
+    }
+    if (baseEnergy.present) {
+      map['base_energy'] = Variable<double>(baseEnergy.value);
+    }
+    if (schedule.present) {
+      map['schedule'] = Variable<String>(schedule.value);
+    }
+    if (carbAmplitudeG.present) {
+      map['carb_amplitude_g'] = Variable<double>(carbAmplitudeG.value);
+    }
+    if (taperStage.present) {
+      map['taper_stage'] = Variable<int>(taperStage.value);
+    }
+    if (observationStart.present) {
+      map['observation_start'] = Variable<String>(observationStart.value);
+    }
+    if (observationDays.present) {
+      map['observation_days'] = Variable<int>(observationDays.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (legacyCalories.present) {
+      map['legacy_calories'] = Variable<int>(legacyCalories.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DietStrategyPlansCompanion(')
+          ..write('id: $id, ')
+          ..write('version: $version, ')
+          ..write('strategy: $strategy, ')
+          ..write('status: $status, ')
+          ..write('effectiveFrom: $effectiveFrom, ')
+          ..write('endedOn: $endedOn, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('referenceWeightKg: $referenceWeightKg, ')
+          ..write('estimatedTdee: $estimatedTdee, ')
+          ..write('deficitFraction: $deficitFraction, ')
+          ..write('proteinPerKg: $proteinPerKg, ')
+          ..write('fatPerKg: $fatPerKg, ')
+          ..write('baseEnergy: $baseEnergy, ')
+          ..write('schedule: $schedule, ')
+          ..write('carbAmplitudeG: $carbAmplitudeG, ')
+          ..write('taperStage: $taperStage, ')
+          ..write('observationStart: $observationStart, ')
+          ..write('observationDays: $observationDays, ')
+          ..write('reason: $reason, ')
+          ..write('legacyCalories: $legacyCalories')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DailyNutritionTargetsTable extends DailyNutritionTargets
+    with TableInfo<$DailyNutritionTargetsTable, DailyNutritionTargetRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DailyNutritionTargetsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<String> date = GeneratedColumn<String>(
+    'date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _planIdMeta = const VerificationMeta('planId');
+  @override
+  late final GeneratedColumn<int> planId = GeneratedColumn<int>(
+    'plan_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _planVersionMeta = const VerificationMeta(
+    'planVersion',
+  );
+  @override
+  late final GeneratedColumn<int> planVersion = GeneratedColumn<int>(
+    'plan_version',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _strategyMeta = const VerificationMeta(
+    'strategy',
+  );
+  @override
+  late final GeneratedColumn<String> strategy = GeneratedColumn<String>(
+    'strategy',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dayTypeMeta = const VerificationMeta(
+    'dayType',
+  );
+  @override
+  late final GeneratedColumn<String> dayType = GeneratedColumn<String>(
+    'day_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _caloriesMeta = const VerificationMeta(
+    'calories',
+  );
+  @override
+  late final GeneratedColumn<double> calories = GeneratedColumn<double>(
+    'calories',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _proteinGMeta = const VerificationMeta(
+    'proteinG',
+  );
+  @override
+  late final GeneratedColumn<double> proteinG = GeneratedColumn<double>(
+    'protein_g',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _carbGMeta = const VerificationMeta('carbG');
+  @override
+  late final GeneratedColumn<double> carbG = GeneratedColumn<double>(
+    'carb_g',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fatGMeta = const VerificationMeta('fatG');
+  @override
+  late final GeneratedColumn<double> fatG = GeneratedColumn<double>(
+    'fat_g',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _estimatedTdeeMeta = const VerificationMeta(
+    'estimatedTdee',
+  );
+  @override
+  late final GeneratedColumn<double> estimatedTdee = GeneratedColumn<double>(
+    'estimated_tdee',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('confirmed'),
+  );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  @override
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    date,
+    planId,
+    planVersion,
+    strategy,
+    dayType,
+    calories,
+    proteinG,
+    carbG,
+    fatG,
+    estimatedTdee,
+    source,
+    status,
+    reason,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'daily_nutrition_targets';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DailyNutritionTargetRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('date')) {
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('plan_id')) {
+      context.handle(
+        _planIdMeta,
+        planId.isAcceptableOrUnknown(data['plan_id']!, _planIdMeta),
+      );
+    }
+    if (data.containsKey('plan_version')) {
+      context.handle(
+        _planVersionMeta,
+        planVersion.isAcceptableOrUnknown(
+          data['plan_version']!,
+          _planVersionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('strategy')) {
+      context.handle(
+        _strategyMeta,
+        strategy.isAcceptableOrUnknown(data['strategy']!, _strategyMeta),
+      );
+    }
+    if (data.containsKey('day_type')) {
+      context.handle(
+        _dayTypeMeta,
+        dayType.isAcceptableOrUnknown(data['day_type']!, _dayTypeMeta),
+      );
+    }
+    if (data.containsKey('calories')) {
+      context.handle(
+        _caloriesMeta,
+        calories.isAcceptableOrUnknown(data['calories']!, _caloriesMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_caloriesMeta);
+    }
+    if (data.containsKey('protein_g')) {
+      context.handle(
+        _proteinGMeta,
+        proteinG.isAcceptableOrUnknown(data['protein_g']!, _proteinGMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_proteinGMeta);
+    }
+    if (data.containsKey('carb_g')) {
+      context.handle(
+        _carbGMeta,
+        carbG.isAcceptableOrUnknown(data['carb_g']!, _carbGMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_carbGMeta);
+    }
+    if (data.containsKey('fat_g')) {
+      context.handle(
+        _fatGMeta,
+        fatG.isAcceptableOrUnknown(data['fat_g']!, _fatGMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fatGMeta);
+    }
+    if (data.containsKey('estimated_tdee')) {
+      context.handle(
+        _estimatedTdeeMeta,
+        estimatedTdee.isAcceptableOrUnknown(
+          data['estimated_tdee']!,
+          _estimatedTdeeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {date};
+  @override
+  DailyNutritionTargetRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DailyNutritionTargetRow(
+      date: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}date'],
+      )!,
+      planId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}plan_id'],
+      ),
+      planVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}plan_version'],
+      ),
+      strategy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}strategy'],
+      ),
+      dayType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}day_type'],
+      ),
+      calories: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}calories'],
+      )!,
+      proteinG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}protein_g'],
+      )!,
+      carbG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}carb_g'],
+      )!,
+      fatG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fat_g'],
+      )!,
+      estimatedTdee: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}estimated_tdee'],
+      ),
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      ),
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $DailyNutritionTargetsTable createAlias(String alias) {
+    return $DailyNutritionTargetsTable(attachedDatabase, alias);
+  }
+}
+
+class DailyNutritionTargetRow extends DataClass
+    implements Insertable<DailyNutritionTargetRow> {
+  final String date;
+  final int? planId;
+  final int? planVersion;
+  final String? strategy;
+  final String? dayType;
+  final double calories;
+  final double proteinG;
+  final double carbG;
+  final double fatG;
+  final double? estimatedTdee;
+  final String source;
+  final String status;
+  final String? reason;
+  final DateTime updatedAt;
+  const DailyNutritionTargetRow({
+    required this.date,
+    this.planId,
+    this.planVersion,
+    this.strategy,
+    this.dayType,
+    required this.calories,
+    required this.proteinG,
+    required this.carbG,
+    required this.fatG,
+    this.estimatedTdee,
+    required this.source,
+    required this.status,
+    this.reason,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['date'] = Variable<String>(date);
+    if (!nullToAbsent || planId != null) {
+      map['plan_id'] = Variable<int>(planId);
+    }
+    if (!nullToAbsent || planVersion != null) {
+      map['plan_version'] = Variable<int>(planVersion);
+    }
+    if (!nullToAbsent || strategy != null) {
+      map['strategy'] = Variable<String>(strategy);
+    }
+    if (!nullToAbsent || dayType != null) {
+      map['day_type'] = Variable<String>(dayType);
+    }
+    map['calories'] = Variable<double>(calories);
+    map['protein_g'] = Variable<double>(proteinG);
+    map['carb_g'] = Variable<double>(carbG);
+    map['fat_g'] = Variable<double>(fatG);
+    if (!nullToAbsent || estimatedTdee != null) {
+      map['estimated_tdee'] = Variable<double>(estimatedTdee);
+    }
+    map['source'] = Variable<String>(source);
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || reason != null) {
+      map['reason'] = Variable<String>(reason);
+    }
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  DailyNutritionTargetsCompanion toCompanion(bool nullToAbsent) {
+    return DailyNutritionTargetsCompanion(
+      date: Value(date),
+      planId: planId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(planId),
+      planVersion: planVersion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(planVersion),
+      strategy: strategy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(strategy),
+      dayType: dayType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dayType),
+      calories: Value(calories),
+      proteinG: Value(proteinG),
+      carbG: Value(carbG),
+      fatG: Value(fatG),
+      estimatedTdee: estimatedTdee == null && nullToAbsent
+          ? const Value.absent()
+          : Value(estimatedTdee),
+      source: Value(source),
+      status: Value(status),
+      reason: reason == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reason),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory DailyNutritionTargetRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DailyNutritionTargetRow(
+      date: serializer.fromJson<String>(json['date']),
+      planId: serializer.fromJson<int?>(json['planId']),
+      planVersion: serializer.fromJson<int?>(json['planVersion']),
+      strategy: serializer.fromJson<String?>(json['strategy']),
+      dayType: serializer.fromJson<String?>(json['dayType']),
+      calories: serializer.fromJson<double>(json['calories']),
+      proteinG: serializer.fromJson<double>(json['proteinG']),
+      carbG: serializer.fromJson<double>(json['carbG']),
+      fatG: serializer.fromJson<double>(json['fatG']),
+      estimatedTdee: serializer.fromJson<double?>(json['estimatedTdee']),
+      source: serializer.fromJson<String>(json['source']),
+      status: serializer.fromJson<String>(json['status']),
+      reason: serializer.fromJson<String?>(json['reason']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'date': serializer.toJson<String>(date),
+      'planId': serializer.toJson<int?>(planId),
+      'planVersion': serializer.toJson<int?>(planVersion),
+      'strategy': serializer.toJson<String?>(strategy),
+      'dayType': serializer.toJson<String?>(dayType),
+      'calories': serializer.toJson<double>(calories),
+      'proteinG': serializer.toJson<double>(proteinG),
+      'carbG': serializer.toJson<double>(carbG),
+      'fatG': serializer.toJson<double>(fatG),
+      'estimatedTdee': serializer.toJson<double?>(estimatedTdee),
+      'source': serializer.toJson<String>(source),
+      'status': serializer.toJson<String>(status),
+      'reason': serializer.toJson<String?>(reason),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  DailyNutritionTargetRow copyWith({
+    String? date,
+    Value<int?> planId = const Value.absent(),
+    Value<int?> planVersion = const Value.absent(),
+    Value<String?> strategy = const Value.absent(),
+    Value<String?> dayType = const Value.absent(),
+    double? calories,
+    double? proteinG,
+    double? carbG,
+    double? fatG,
+    Value<double?> estimatedTdee = const Value.absent(),
+    String? source,
+    String? status,
+    Value<String?> reason = const Value.absent(),
+    DateTime? updatedAt,
+  }) => DailyNutritionTargetRow(
+    date: date ?? this.date,
+    planId: planId.present ? planId.value : this.planId,
+    planVersion: planVersion.present ? planVersion.value : this.planVersion,
+    strategy: strategy.present ? strategy.value : this.strategy,
+    dayType: dayType.present ? dayType.value : this.dayType,
+    calories: calories ?? this.calories,
+    proteinG: proteinG ?? this.proteinG,
+    carbG: carbG ?? this.carbG,
+    fatG: fatG ?? this.fatG,
+    estimatedTdee: estimatedTdee.present
+        ? estimatedTdee.value
+        : this.estimatedTdee,
+    source: source ?? this.source,
+    status: status ?? this.status,
+    reason: reason.present ? reason.value : this.reason,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  DailyNutritionTargetRow copyWithCompanion(
+    DailyNutritionTargetsCompanion data,
+  ) {
+    return DailyNutritionTargetRow(
+      date: data.date.present ? data.date.value : this.date,
+      planId: data.planId.present ? data.planId.value : this.planId,
+      planVersion: data.planVersion.present
+          ? data.planVersion.value
+          : this.planVersion,
+      strategy: data.strategy.present ? data.strategy.value : this.strategy,
+      dayType: data.dayType.present ? data.dayType.value : this.dayType,
+      calories: data.calories.present ? data.calories.value : this.calories,
+      proteinG: data.proteinG.present ? data.proteinG.value : this.proteinG,
+      carbG: data.carbG.present ? data.carbG.value : this.carbG,
+      fatG: data.fatG.present ? data.fatG.value : this.fatG,
+      estimatedTdee: data.estimatedTdee.present
+          ? data.estimatedTdee.value
+          : this.estimatedTdee,
+      source: data.source.present ? data.source.value : this.source,
+      status: data.status.present ? data.status.value : this.status,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyNutritionTargetRow(')
+          ..write('date: $date, ')
+          ..write('planId: $planId, ')
+          ..write('planVersion: $planVersion, ')
+          ..write('strategy: $strategy, ')
+          ..write('dayType: $dayType, ')
+          ..write('calories: $calories, ')
+          ..write('proteinG: $proteinG, ')
+          ..write('carbG: $carbG, ')
+          ..write('fatG: $fatG, ')
+          ..write('estimatedTdee: $estimatedTdee, ')
+          ..write('source: $source, ')
+          ..write('status: $status, ')
+          ..write('reason: $reason, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    date,
+    planId,
+    planVersion,
+    strategy,
+    dayType,
+    calories,
+    proteinG,
+    carbG,
+    fatG,
+    estimatedTdee,
+    source,
+    status,
+    reason,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DailyNutritionTargetRow &&
+          other.date == this.date &&
+          other.planId == this.planId &&
+          other.planVersion == this.planVersion &&
+          other.strategy == this.strategy &&
+          other.dayType == this.dayType &&
+          other.calories == this.calories &&
+          other.proteinG == this.proteinG &&
+          other.carbG == this.carbG &&
+          other.fatG == this.fatG &&
+          other.estimatedTdee == this.estimatedTdee &&
+          other.source == this.source &&
+          other.status == this.status &&
+          other.reason == this.reason &&
+          other.updatedAt == this.updatedAt);
+}
+
+class DailyNutritionTargetsCompanion
+    extends UpdateCompanion<DailyNutritionTargetRow> {
+  final Value<String> date;
+  final Value<int?> planId;
+  final Value<int?> planVersion;
+  final Value<String?> strategy;
+  final Value<String?> dayType;
+  final Value<double> calories;
+  final Value<double> proteinG;
+  final Value<double> carbG;
+  final Value<double> fatG;
+  final Value<double?> estimatedTdee;
+  final Value<String> source;
+  final Value<String> status;
+  final Value<String?> reason;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const DailyNutritionTargetsCompanion({
+    this.date = const Value.absent(),
+    this.planId = const Value.absent(),
+    this.planVersion = const Value.absent(),
+    this.strategy = const Value.absent(),
+    this.dayType = const Value.absent(),
+    this.calories = const Value.absent(),
+    this.proteinG = const Value.absent(),
+    this.carbG = const Value.absent(),
+    this.fatG = const Value.absent(),
+    this.estimatedTdee = const Value.absent(),
+    this.source = const Value.absent(),
+    this.status = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DailyNutritionTargetsCompanion.insert({
+    required String date,
+    this.planId = const Value.absent(),
+    this.planVersion = const Value.absent(),
+    this.strategy = const Value.absent(),
+    this.dayType = const Value.absent(),
+    required double calories,
+    required double proteinG,
+    required double carbG,
+    required double fatG,
+    this.estimatedTdee = const Value.absent(),
+    required String source,
+    this.status = const Value.absent(),
+    this.reason = const Value.absent(),
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : date = Value(date),
+       calories = Value(calories),
+       proteinG = Value(proteinG),
+       carbG = Value(carbG),
+       fatG = Value(fatG),
+       source = Value(source),
+       updatedAt = Value(updatedAt);
+  static Insertable<DailyNutritionTargetRow> custom({
+    Expression<String>? date,
+    Expression<int>? planId,
+    Expression<int>? planVersion,
+    Expression<String>? strategy,
+    Expression<String>? dayType,
+    Expression<double>? calories,
+    Expression<double>? proteinG,
+    Expression<double>? carbG,
+    Expression<double>? fatG,
+    Expression<double>? estimatedTdee,
+    Expression<String>? source,
+    Expression<String>? status,
+    Expression<String>? reason,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (date != null) 'date': date,
+      if (planId != null) 'plan_id': planId,
+      if (planVersion != null) 'plan_version': planVersion,
+      if (strategy != null) 'strategy': strategy,
+      if (dayType != null) 'day_type': dayType,
+      if (calories != null) 'calories': calories,
+      if (proteinG != null) 'protein_g': proteinG,
+      if (carbG != null) 'carb_g': carbG,
+      if (fatG != null) 'fat_g': fatG,
+      if (estimatedTdee != null) 'estimated_tdee': estimatedTdee,
+      if (source != null) 'source': source,
+      if (status != null) 'status': status,
+      if (reason != null) 'reason': reason,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DailyNutritionTargetsCompanion copyWith({
+    Value<String>? date,
+    Value<int?>? planId,
+    Value<int?>? planVersion,
+    Value<String?>? strategy,
+    Value<String?>? dayType,
+    Value<double>? calories,
+    Value<double>? proteinG,
+    Value<double>? carbG,
+    Value<double>? fatG,
+    Value<double?>? estimatedTdee,
+    Value<String>? source,
+    Value<String>? status,
+    Value<String?>? reason,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return DailyNutritionTargetsCompanion(
+      date: date ?? this.date,
+      planId: planId ?? this.planId,
+      planVersion: planVersion ?? this.planVersion,
+      strategy: strategy ?? this.strategy,
+      dayType: dayType ?? this.dayType,
+      calories: calories ?? this.calories,
+      proteinG: proteinG ?? this.proteinG,
+      carbG: carbG ?? this.carbG,
+      fatG: fatG ?? this.fatG,
+      estimatedTdee: estimatedTdee ?? this.estimatedTdee,
+      source: source ?? this.source,
+      status: status ?? this.status,
+      reason: reason ?? this.reason,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (date.present) {
+      map['date'] = Variable<String>(date.value);
+    }
+    if (planId.present) {
+      map['plan_id'] = Variable<int>(planId.value);
+    }
+    if (planVersion.present) {
+      map['plan_version'] = Variable<int>(planVersion.value);
+    }
+    if (strategy.present) {
+      map['strategy'] = Variable<String>(strategy.value);
+    }
+    if (dayType.present) {
+      map['day_type'] = Variable<String>(dayType.value);
+    }
+    if (calories.present) {
+      map['calories'] = Variable<double>(calories.value);
+    }
+    if (proteinG.present) {
+      map['protein_g'] = Variable<double>(proteinG.value);
+    }
+    if (carbG.present) {
+      map['carb_g'] = Variable<double>(carbG.value);
+    }
+    if (fatG.present) {
+      map['fat_g'] = Variable<double>(fatG.value);
+    }
+    if (estimatedTdee.present) {
+      map['estimated_tdee'] = Variable<double>(estimatedTdee.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyNutritionTargetsCompanion(')
+          ..write('date: $date, ')
+          ..write('planId: $planId, ')
+          ..write('planVersion: $planVersion, ')
+          ..write('strategy: $strategy, ')
+          ..write('dayType: $dayType, ')
+          ..write('calories: $calories, ')
+          ..write('proteinG: $proteinG, ')
+          ..write('carbG: $carbG, ')
+          ..write('fatG: $fatG, ')
+          ..write('estimatedTdee: $estimatedTdee, ')
+          ..write('source: $source, ')
+          ..write('status: $status, ')
+          ..write('reason: $reason, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DayDietConfirmationsTable extends DayDietConfirmations
+    with TableInfo<$DayDietConfirmationsTable, DayDietConfirmationRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DayDietConfirmationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<String> date = GeneratedColumn<String>(
+    'date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _completeMeta = const VerificationMeta(
+    'complete',
+  );
+  @override
+  late final GeneratedColumn<bool> complete = GeneratedColumn<bool>(
+    'complete',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("complete" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [date, complete, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'day_diet_confirmations';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DayDietConfirmationRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('date')) {
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('complete')) {
+      context.handle(
+        _completeMeta,
+        complete.isAcceptableOrUnknown(data['complete']!, _completeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_completeMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {date};
+  @override
+  DayDietConfirmationRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DayDietConfirmationRow(
+      date: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}date'],
+      )!,
+      complete: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}complete'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $DayDietConfirmationsTable createAlias(String alias) {
+    return $DayDietConfirmationsTable(attachedDatabase, alias);
+  }
+}
+
+class DayDietConfirmationRow extends DataClass
+    implements Insertable<DayDietConfirmationRow> {
+  final String date;
+  final bool complete;
+  final DateTime updatedAt;
+  const DayDietConfirmationRow({
+    required this.date,
+    required this.complete,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['date'] = Variable<String>(date);
+    map['complete'] = Variable<bool>(complete);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  DayDietConfirmationsCompanion toCompanion(bool nullToAbsent) {
+    return DayDietConfirmationsCompanion(
+      date: Value(date),
+      complete: Value(complete),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory DayDietConfirmationRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DayDietConfirmationRow(
+      date: serializer.fromJson<String>(json['date']),
+      complete: serializer.fromJson<bool>(json['complete']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'date': serializer.toJson<String>(date),
+      'complete': serializer.toJson<bool>(complete),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  DayDietConfirmationRow copyWith({
+    String? date,
+    bool? complete,
+    DateTime? updatedAt,
+  }) => DayDietConfirmationRow(
+    date: date ?? this.date,
+    complete: complete ?? this.complete,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  DayDietConfirmationRow copyWithCompanion(DayDietConfirmationsCompanion data) {
+    return DayDietConfirmationRow(
+      date: data.date.present ? data.date.value : this.date,
+      complete: data.complete.present ? data.complete.value : this.complete,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DayDietConfirmationRow(')
+          ..write('date: $date, ')
+          ..write('complete: $complete, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(date, complete, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DayDietConfirmationRow &&
+          other.date == this.date &&
+          other.complete == this.complete &&
+          other.updatedAt == this.updatedAt);
+}
+
+class DayDietConfirmationsCompanion
+    extends UpdateCompanion<DayDietConfirmationRow> {
+  final Value<String> date;
+  final Value<bool> complete;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const DayDietConfirmationsCompanion({
+    this.date = const Value.absent(),
+    this.complete = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DayDietConfirmationsCompanion.insert({
+    required String date,
+    required bool complete,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : date = Value(date),
+       complete = Value(complete),
+       updatedAt = Value(updatedAt);
+  static Insertable<DayDietConfirmationRow> custom({
+    Expression<String>? date,
+    Expression<bool>? complete,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (date != null) 'date': date,
+      if (complete != null) 'complete': complete,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DayDietConfirmationsCompanion copyWith({
+    Value<String>? date,
+    Value<bool>? complete,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return DayDietConfirmationsCompanion(
+      date: date ?? this.date,
+      complete: complete ?? this.complete,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (date.present) {
+      map['date'] = Variable<String>(date.value);
+    }
+    if (complete.present) {
+      map['complete'] = Variable<bool>(complete.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DayDietConfirmationsCompanion(')
+          ..write('date: $date, ')
+          ..write('complete: $complete, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -6518,6 +8736,12 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $WorkoutSetLogsTable workoutSetLogs = $WorkoutSetLogsTable(this);
   late final $DailyNotesTable dailyNotes = $DailyNotesTable(this);
+  late final $DietStrategyPlansTable dietStrategyPlans =
+      $DietStrategyPlansTable(this);
+  late final $DailyNutritionTargetsTable dailyNutritionTargets =
+      $DailyNutritionTargetsTable(this);
+  late final $DayDietConfirmationsTable dayDietConfirmations =
+      $DayDietConfirmationsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6540,6 +8764,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     dayWorkoutItems,
     workoutSetLogs,
     dailyNotes,
+    dietStrategyPlans,
+    dailyNutritionTargets,
+    dayDietConfirmations,
   ];
 }
 
@@ -10044,6 +12271,1092 @@ typedef $$DailyNotesTableProcessedTableManager =
       DailyNote,
       PrefetchHooks Function()
     >;
+typedef $$DietStrategyPlansTableCreateCompanionBuilder =
+    DietStrategyPlansCompanion Function({
+      Value<int> id,
+      required int version,
+      required String strategy,
+      required String status,
+      required String effectiveFrom,
+      Value<String?> endedOn,
+      required DateTime createdAt,
+      required double referenceWeightKg,
+      required double estimatedTdee,
+      required double deficitFraction,
+      required double proteinPerKg,
+      required double fatPerKg,
+      required double baseEnergy,
+      Value<String?> schedule,
+      Value<double?> carbAmplitudeG,
+      Value<int> taperStage,
+      Value<String?> observationStart,
+      Value<int> observationDays,
+      Value<String> reason,
+      Value<int?> legacyCalories,
+    });
+typedef $$DietStrategyPlansTableUpdateCompanionBuilder =
+    DietStrategyPlansCompanion Function({
+      Value<int> id,
+      Value<int> version,
+      Value<String> strategy,
+      Value<String> status,
+      Value<String> effectiveFrom,
+      Value<String?> endedOn,
+      Value<DateTime> createdAt,
+      Value<double> referenceWeightKg,
+      Value<double> estimatedTdee,
+      Value<double> deficitFraction,
+      Value<double> proteinPerKg,
+      Value<double> fatPerKg,
+      Value<double> baseEnergy,
+      Value<String?> schedule,
+      Value<double?> carbAmplitudeG,
+      Value<int> taperStage,
+      Value<String?> observationStart,
+      Value<int> observationDays,
+      Value<String> reason,
+      Value<int?> legacyCalories,
+    });
+
+class $$DietStrategyPlansTableFilterComposer
+    extends Composer<_$AppDatabase, $DietStrategyPlansTable> {
+  $$DietStrategyPlansTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get strategy => $composableBuilder(
+    column: $table.strategy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get effectiveFrom => $composableBuilder(
+    column: $table.effectiveFrom,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get endedOn => $composableBuilder(
+    column: $table.endedOn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get referenceWeightKg => $composableBuilder(
+    column: $table.referenceWeightKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get estimatedTdee => $composableBuilder(
+    column: $table.estimatedTdee,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get deficitFraction => $composableBuilder(
+    column: $table.deficitFraction,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get proteinPerKg => $composableBuilder(
+    column: $table.proteinPerKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fatPerKg => $composableBuilder(
+    column: $table.fatPerKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get baseEnergy => $composableBuilder(
+    column: $table.baseEnergy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get schedule => $composableBuilder(
+    column: $table.schedule,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get carbAmplitudeG => $composableBuilder(
+    column: $table.carbAmplitudeG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get taperStage => $composableBuilder(
+    column: $table.taperStage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get observationStart => $composableBuilder(
+    column: $table.observationStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get observationDays => $composableBuilder(
+    column: $table.observationDays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get legacyCalories => $composableBuilder(
+    column: $table.legacyCalories,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DietStrategyPlansTableOrderingComposer
+    extends Composer<_$AppDatabase, $DietStrategyPlansTable> {
+  $$DietStrategyPlansTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get strategy => $composableBuilder(
+    column: $table.strategy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get effectiveFrom => $composableBuilder(
+    column: $table.effectiveFrom,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get endedOn => $composableBuilder(
+    column: $table.endedOn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get referenceWeightKg => $composableBuilder(
+    column: $table.referenceWeightKg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get estimatedTdee => $composableBuilder(
+    column: $table.estimatedTdee,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get deficitFraction => $composableBuilder(
+    column: $table.deficitFraction,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get proteinPerKg => $composableBuilder(
+    column: $table.proteinPerKg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get fatPerKg => $composableBuilder(
+    column: $table.fatPerKg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get baseEnergy => $composableBuilder(
+    column: $table.baseEnergy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get schedule => $composableBuilder(
+    column: $table.schedule,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get carbAmplitudeG => $composableBuilder(
+    column: $table.carbAmplitudeG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get taperStage => $composableBuilder(
+    column: $table.taperStage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get observationStart => $composableBuilder(
+    column: $table.observationStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get observationDays => $composableBuilder(
+    column: $table.observationDays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get legacyCalories => $composableBuilder(
+    column: $table.legacyCalories,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DietStrategyPlansTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DietStrategyPlansTable> {
+  $$DietStrategyPlansTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<String> get strategy =>
+      $composableBuilder(column: $table.strategy, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get effectiveFrom => $composableBuilder(
+    column: $table.effectiveFrom,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get endedOn =>
+      $composableBuilder(column: $table.endedOn, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<double> get referenceWeightKg => $composableBuilder(
+    column: $table.referenceWeightKg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get estimatedTdee => $composableBuilder(
+    column: $table.estimatedTdee,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get deficitFraction => $composableBuilder(
+    column: $table.deficitFraction,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get proteinPerKg => $composableBuilder(
+    column: $table.proteinPerKg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get fatPerKg =>
+      $composableBuilder(column: $table.fatPerKg, builder: (column) => column);
+
+  GeneratedColumn<double> get baseEnergy => $composableBuilder(
+    column: $table.baseEnergy,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get schedule =>
+      $composableBuilder(column: $table.schedule, builder: (column) => column);
+
+  GeneratedColumn<double> get carbAmplitudeG => $composableBuilder(
+    column: $table.carbAmplitudeG,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get taperStage => $composableBuilder(
+    column: $table.taperStage,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get observationStart => $composableBuilder(
+    column: $table.observationStart,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get observationDays => $composableBuilder(
+    column: $table.observationDays,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<int> get legacyCalories => $composableBuilder(
+    column: $table.legacyCalories,
+    builder: (column) => column,
+  );
+}
+
+class $$DietStrategyPlansTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DietStrategyPlansTable,
+          DietStrategyPlanRow,
+          $$DietStrategyPlansTableFilterComposer,
+          $$DietStrategyPlansTableOrderingComposer,
+          $$DietStrategyPlansTableAnnotationComposer,
+          $$DietStrategyPlansTableCreateCompanionBuilder,
+          $$DietStrategyPlansTableUpdateCompanionBuilder,
+          (
+            DietStrategyPlanRow,
+            BaseReferences<
+              _$AppDatabase,
+              $DietStrategyPlansTable,
+              DietStrategyPlanRow
+            >,
+          ),
+          DietStrategyPlanRow,
+          PrefetchHooks Function()
+        > {
+  $$DietStrategyPlansTableTableManager(
+    _$AppDatabase db,
+    $DietStrategyPlansTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DietStrategyPlansTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DietStrategyPlansTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DietStrategyPlansTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> version = const Value.absent(),
+                Value<String> strategy = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String> effectiveFrom = const Value.absent(),
+                Value<String?> endedOn = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<double> referenceWeightKg = const Value.absent(),
+                Value<double> estimatedTdee = const Value.absent(),
+                Value<double> deficitFraction = const Value.absent(),
+                Value<double> proteinPerKg = const Value.absent(),
+                Value<double> fatPerKg = const Value.absent(),
+                Value<double> baseEnergy = const Value.absent(),
+                Value<String?> schedule = const Value.absent(),
+                Value<double?> carbAmplitudeG = const Value.absent(),
+                Value<int> taperStage = const Value.absent(),
+                Value<String?> observationStart = const Value.absent(),
+                Value<int> observationDays = const Value.absent(),
+                Value<String> reason = const Value.absent(),
+                Value<int?> legacyCalories = const Value.absent(),
+              }) => DietStrategyPlansCompanion(
+                id: id,
+                version: version,
+                strategy: strategy,
+                status: status,
+                effectiveFrom: effectiveFrom,
+                endedOn: endedOn,
+                createdAt: createdAt,
+                referenceWeightKg: referenceWeightKg,
+                estimatedTdee: estimatedTdee,
+                deficitFraction: deficitFraction,
+                proteinPerKg: proteinPerKg,
+                fatPerKg: fatPerKg,
+                baseEnergy: baseEnergy,
+                schedule: schedule,
+                carbAmplitudeG: carbAmplitudeG,
+                taperStage: taperStage,
+                observationStart: observationStart,
+                observationDays: observationDays,
+                reason: reason,
+                legacyCalories: legacyCalories,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int version,
+                required String strategy,
+                required String status,
+                required String effectiveFrom,
+                Value<String?> endedOn = const Value.absent(),
+                required DateTime createdAt,
+                required double referenceWeightKg,
+                required double estimatedTdee,
+                required double deficitFraction,
+                required double proteinPerKg,
+                required double fatPerKg,
+                required double baseEnergy,
+                Value<String?> schedule = const Value.absent(),
+                Value<double?> carbAmplitudeG = const Value.absent(),
+                Value<int> taperStage = const Value.absent(),
+                Value<String?> observationStart = const Value.absent(),
+                Value<int> observationDays = const Value.absent(),
+                Value<String> reason = const Value.absent(),
+                Value<int?> legacyCalories = const Value.absent(),
+              }) => DietStrategyPlansCompanion.insert(
+                id: id,
+                version: version,
+                strategy: strategy,
+                status: status,
+                effectiveFrom: effectiveFrom,
+                endedOn: endedOn,
+                createdAt: createdAt,
+                referenceWeightKg: referenceWeightKg,
+                estimatedTdee: estimatedTdee,
+                deficitFraction: deficitFraction,
+                proteinPerKg: proteinPerKg,
+                fatPerKg: fatPerKg,
+                baseEnergy: baseEnergy,
+                schedule: schedule,
+                carbAmplitudeG: carbAmplitudeG,
+                taperStage: taperStage,
+                observationStart: observationStart,
+                observationDays: observationDays,
+                reason: reason,
+                legacyCalories: legacyCalories,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DietStrategyPlansTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DietStrategyPlansTable,
+      DietStrategyPlanRow,
+      $$DietStrategyPlansTableFilterComposer,
+      $$DietStrategyPlansTableOrderingComposer,
+      $$DietStrategyPlansTableAnnotationComposer,
+      $$DietStrategyPlansTableCreateCompanionBuilder,
+      $$DietStrategyPlansTableUpdateCompanionBuilder,
+      (
+        DietStrategyPlanRow,
+        BaseReferences<
+          _$AppDatabase,
+          $DietStrategyPlansTable,
+          DietStrategyPlanRow
+        >,
+      ),
+      DietStrategyPlanRow,
+      PrefetchHooks Function()
+    >;
+typedef $$DailyNutritionTargetsTableCreateCompanionBuilder =
+    DailyNutritionTargetsCompanion Function({
+      required String date,
+      Value<int?> planId,
+      Value<int?> planVersion,
+      Value<String?> strategy,
+      Value<String?> dayType,
+      required double calories,
+      required double proteinG,
+      required double carbG,
+      required double fatG,
+      Value<double?> estimatedTdee,
+      required String source,
+      Value<String> status,
+      Value<String?> reason,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$DailyNutritionTargetsTableUpdateCompanionBuilder =
+    DailyNutritionTargetsCompanion Function({
+      Value<String> date,
+      Value<int?> planId,
+      Value<int?> planVersion,
+      Value<String?> strategy,
+      Value<String?> dayType,
+      Value<double> calories,
+      Value<double> proteinG,
+      Value<double> carbG,
+      Value<double> fatG,
+      Value<double?> estimatedTdee,
+      Value<String> source,
+      Value<String> status,
+      Value<String?> reason,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$DailyNutritionTargetsTableFilterComposer
+    extends Composer<_$AppDatabase, $DailyNutritionTargetsTable> {
+  $$DailyNutritionTargetsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get planId => $composableBuilder(
+    column: $table.planId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get planVersion => $composableBuilder(
+    column: $table.planVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get strategy => $composableBuilder(
+    column: $table.strategy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dayType => $composableBuilder(
+    column: $table.dayType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get calories => $composableBuilder(
+    column: $table.calories,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get proteinG => $composableBuilder(
+    column: $table.proteinG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get carbG => $composableBuilder(
+    column: $table.carbG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fatG => $composableBuilder(
+    column: $table.fatG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get estimatedTdee => $composableBuilder(
+    column: $table.estimatedTdee,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DailyNutritionTargetsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DailyNutritionTargetsTable> {
+  $$DailyNutritionTargetsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get planId => $composableBuilder(
+    column: $table.planId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get planVersion => $composableBuilder(
+    column: $table.planVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get strategy => $composableBuilder(
+    column: $table.strategy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dayType => $composableBuilder(
+    column: $table.dayType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get calories => $composableBuilder(
+    column: $table.calories,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get proteinG => $composableBuilder(
+    column: $table.proteinG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get carbG => $composableBuilder(
+    column: $table.carbG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get fatG => $composableBuilder(
+    column: $table.fatG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get estimatedTdee => $composableBuilder(
+    column: $table.estimatedTdee,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DailyNutritionTargetsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DailyNutritionTargetsTable> {
+  $$DailyNutritionTargetsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<int> get planId =>
+      $composableBuilder(column: $table.planId, builder: (column) => column);
+
+  GeneratedColumn<int> get planVersion => $composableBuilder(
+    column: $table.planVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get strategy =>
+      $composableBuilder(column: $table.strategy, builder: (column) => column);
+
+  GeneratedColumn<String> get dayType =>
+      $composableBuilder(column: $table.dayType, builder: (column) => column);
+
+  GeneratedColumn<double> get calories =>
+      $composableBuilder(column: $table.calories, builder: (column) => column);
+
+  GeneratedColumn<double> get proteinG =>
+      $composableBuilder(column: $table.proteinG, builder: (column) => column);
+
+  GeneratedColumn<double> get carbG =>
+      $composableBuilder(column: $table.carbG, builder: (column) => column);
+
+  GeneratedColumn<double> get fatG =>
+      $composableBuilder(column: $table.fatG, builder: (column) => column);
+
+  GeneratedColumn<double> get estimatedTdee => $composableBuilder(
+    column: $table.estimatedTdee,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$DailyNutritionTargetsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DailyNutritionTargetsTable,
+          DailyNutritionTargetRow,
+          $$DailyNutritionTargetsTableFilterComposer,
+          $$DailyNutritionTargetsTableOrderingComposer,
+          $$DailyNutritionTargetsTableAnnotationComposer,
+          $$DailyNutritionTargetsTableCreateCompanionBuilder,
+          $$DailyNutritionTargetsTableUpdateCompanionBuilder,
+          (
+            DailyNutritionTargetRow,
+            BaseReferences<
+              _$AppDatabase,
+              $DailyNutritionTargetsTable,
+              DailyNutritionTargetRow
+            >,
+          ),
+          DailyNutritionTargetRow,
+          PrefetchHooks Function()
+        > {
+  $$DailyNutritionTargetsTableTableManager(
+    _$AppDatabase db,
+    $DailyNutritionTargetsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DailyNutritionTargetsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$DailyNutritionTargetsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$DailyNutritionTargetsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> date = const Value.absent(),
+                Value<int?> planId = const Value.absent(),
+                Value<int?> planVersion = const Value.absent(),
+                Value<String?> strategy = const Value.absent(),
+                Value<String?> dayType = const Value.absent(),
+                Value<double> calories = const Value.absent(),
+                Value<double> proteinG = const Value.absent(),
+                Value<double> carbG = const Value.absent(),
+                Value<double> fatG = const Value.absent(),
+                Value<double?> estimatedTdee = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String?> reason = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DailyNutritionTargetsCompanion(
+                date: date,
+                planId: planId,
+                planVersion: planVersion,
+                strategy: strategy,
+                dayType: dayType,
+                calories: calories,
+                proteinG: proteinG,
+                carbG: carbG,
+                fatG: fatG,
+                estimatedTdee: estimatedTdee,
+                source: source,
+                status: status,
+                reason: reason,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String date,
+                Value<int?> planId = const Value.absent(),
+                Value<int?> planVersion = const Value.absent(),
+                Value<String?> strategy = const Value.absent(),
+                Value<String?> dayType = const Value.absent(),
+                required double calories,
+                required double proteinG,
+                required double carbG,
+                required double fatG,
+                Value<double?> estimatedTdee = const Value.absent(),
+                required String source,
+                Value<String> status = const Value.absent(),
+                Value<String?> reason = const Value.absent(),
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => DailyNutritionTargetsCompanion.insert(
+                date: date,
+                planId: planId,
+                planVersion: planVersion,
+                strategy: strategy,
+                dayType: dayType,
+                calories: calories,
+                proteinG: proteinG,
+                carbG: carbG,
+                fatG: fatG,
+                estimatedTdee: estimatedTdee,
+                source: source,
+                status: status,
+                reason: reason,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DailyNutritionTargetsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DailyNutritionTargetsTable,
+      DailyNutritionTargetRow,
+      $$DailyNutritionTargetsTableFilterComposer,
+      $$DailyNutritionTargetsTableOrderingComposer,
+      $$DailyNutritionTargetsTableAnnotationComposer,
+      $$DailyNutritionTargetsTableCreateCompanionBuilder,
+      $$DailyNutritionTargetsTableUpdateCompanionBuilder,
+      (
+        DailyNutritionTargetRow,
+        BaseReferences<
+          _$AppDatabase,
+          $DailyNutritionTargetsTable,
+          DailyNutritionTargetRow
+        >,
+      ),
+      DailyNutritionTargetRow,
+      PrefetchHooks Function()
+    >;
+typedef $$DayDietConfirmationsTableCreateCompanionBuilder =
+    DayDietConfirmationsCompanion Function({
+      required String date,
+      required bool complete,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$DayDietConfirmationsTableUpdateCompanionBuilder =
+    DayDietConfirmationsCompanion Function({
+      Value<String> date,
+      Value<bool> complete,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$DayDietConfirmationsTableFilterComposer
+    extends Composer<_$AppDatabase, $DayDietConfirmationsTable> {
+  $$DayDietConfirmationsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get complete => $composableBuilder(
+    column: $table.complete,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DayDietConfirmationsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DayDietConfirmationsTable> {
+  $$DayDietConfirmationsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get complete => $composableBuilder(
+    column: $table.complete,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DayDietConfirmationsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DayDietConfirmationsTable> {
+  $$DayDietConfirmationsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<bool> get complete =>
+      $composableBuilder(column: $table.complete, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$DayDietConfirmationsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DayDietConfirmationsTable,
+          DayDietConfirmationRow,
+          $$DayDietConfirmationsTableFilterComposer,
+          $$DayDietConfirmationsTableOrderingComposer,
+          $$DayDietConfirmationsTableAnnotationComposer,
+          $$DayDietConfirmationsTableCreateCompanionBuilder,
+          $$DayDietConfirmationsTableUpdateCompanionBuilder,
+          (
+            DayDietConfirmationRow,
+            BaseReferences<
+              _$AppDatabase,
+              $DayDietConfirmationsTable,
+              DayDietConfirmationRow
+            >,
+          ),
+          DayDietConfirmationRow,
+          PrefetchHooks Function()
+        > {
+  $$DayDietConfirmationsTableTableManager(
+    _$AppDatabase db,
+    $DayDietConfirmationsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DayDietConfirmationsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DayDietConfirmationsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$DayDietConfirmationsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> date = const Value.absent(),
+                Value<bool> complete = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DayDietConfirmationsCompanion(
+                date: date,
+                complete: complete,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String date,
+                required bool complete,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => DayDietConfirmationsCompanion.insert(
+                date: date,
+                complete: complete,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DayDietConfirmationsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DayDietConfirmationsTable,
+      DayDietConfirmationRow,
+      $$DayDietConfirmationsTableFilterComposer,
+      $$DayDietConfirmationsTableOrderingComposer,
+      $$DayDietConfirmationsTableAnnotationComposer,
+      $$DayDietConfirmationsTableCreateCompanionBuilder,
+      $$DayDietConfirmationsTableUpdateCompanionBuilder,
+      (
+        DayDietConfirmationRow,
+        BaseReferences<
+          _$AppDatabase,
+          $DayDietConfirmationsTable,
+          DayDietConfirmationRow
+        >,
+      ),
+      DayDietConfirmationRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -10082,4 +13395,10 @@ class $AppDatabaseManager {
       $$WorkoutSetLogsTableTableManager(_db, _db.workoutSetLogs);
   $$DailyNotesTableTableManager get dailyNotes =>
       $$DailyNotesTableTableManager(_db, _db.dailyNotes);
+  $$DietStrategyPlansTableTableManager get dietStrategyPlans =>
+      $$DietStrategyPlansTableTableManager(_db, _db.dietStrategyPlans);
+  $$DailyNutritionTargetsTableTableManager get dailyNutritionTargets =>
+      $$DailyNutritionTargetsTableTableManager(_db, _db.dailyNutritionTargets);
+  $$DayDietConfirmationsTableTableManager get dayDietConfirmations =>
+      $$DayDietConfirmationsTableTableManager(_db, _db.dayDietConfirmations);
 }

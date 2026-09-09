@@ -50,8 +50,8 @@ class DayWorkoutSnapshot {
   bool get isEmpty => groups.isEmpty || groups.every((g) => g.items.isEmpty);
 
   List<DayWorkoutItemProgress> get items => [
-        for (final group in groups) ...group.items,
-      ];
+    for (final group in groups) ...group.items,
+  ];
 
   int get doneCount => items.where((e) => e.item.done).length;
 }
@@ -174,12 +174,12 @@ class WorkoutRepository {
       throw StateError('已存在同名动作，请换一个名称');
     }
     await (_db.update(_db.exercises)..where((t) => t.id.equals(id))).write(
-          ExercisesCompanion(
-            name: Value(trimmed),
-            unit: Value(unit.name),
-            category: Value(category),
-          ),
-        );
+      ExercisesCompanion(
+        name: Value(trimmed),
+        unit: Value(unit.name),
+        category: Value(category),
+      ),
+    );
   }
 
   Future<void> deleteCustomExercise(int id) async {
@@ -335,6 +335,28 @@ class WorkoutRepository {
       completedSets: sets.length,
       unit: ExerciseUnit.fromStorage(ex?.unit ?? 'reps'),
     );
+  }
+
+  /// Number of distinct days with a planned workout per weekday (1=Mon..7=Sun)
+  /// within [[start], [end]] inclusive. Used to *suggest* carb-cycle days;
+  /// the user still confirms the schedule.
+  Future<Map<int, int>> trainingWeekdayCounts(
+    DateTime start,
+    DateTime end,
+  ) async {
+    final s = _dayStart(start);
+    final e = _dayStart(end);
+    final rows =
+        await (_db.select(_db.dayWorkouts)
+              ..where((t) => t.date.isBiggerOrEqualValue(s))
+              ..where((t) => t.date.isSmallerOrEqualValue(e)))
+            .get();
+    final days = <DateTime>{for (final r in rows) _dayStart(r.date)};
+    final counts = <int, int>{for (var i = 1; i <= 7; i++) i: 0};
+    for (final d in days) {
+      counts[d.weekday] = (counts[d.weekday] ?? 0) + 1;
+    }
+    return counts;
   }
 
   Future<DayWorkoutSnapshot> daySnapshot(DateTime day) async {
@@ -493,10 +515,11 @@ class WorkoutRepository {
     final start = _dayStart(day);
 
     await _db.transaction(() async {
-      final existing = await (_db.select(_db.dayWorkouts)
-            ..where((t) => t.date.equals(start) & t.planId.isNull())
-            ..orderBy([(t) => OrderingTerm.asc(t.id)]))
-          .get();
+      final existing =
+          await (_db.select(_db.dayWorkouts)
+                ..where((t) => t.date.equals(start) & t.planId.isNull())
+                ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+              .get();
       DayWorkout workout;
       if (existing.isNotEmpty) {
         workout = existing.first;
@@ -694,10 +717,11 @@ class WorkoutRepository {
   /// True when [day] has at least one set log (counts as "worked out").
   Future<bool> hasAnySetOn(DateTime day) async {
     final key = _dayStart(day);
-    final row = await (_db.select(_db.workoutSetLogs)
-          ..where((t) => t.date.equals(key))
-          ..limit(1))
-        .getSingleOrNull();
+    final row =
+        await (_db.select(_db.workoutSetLogs)
+              ..where((t) => t.date.equals(key))
+              ..limit(1))
+            .getSingleOrNull();
     return row != null;
   }
 

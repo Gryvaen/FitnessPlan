@@ -68,22 +68,13 @@ class _MainShellState extends ConsumerState<MainShell>
         selectedIcon: Icons.fitness_center,
         label: l10n.records,
       ),
-      (
-        icon: Icons.person_outline,
-        selectedIcon: Icons.person,
-        label: l10n.me,
-      ),
+      (icon: Icons.person_outline, selectedIcon: Icons.person, label: l10n.me),
     ];
 
     return Stack(
       fit: StackFit.expand,
       children: [
         ColoredBox(color: Theme.of(context).colorScheme.surface),
-        Positioned.fill(
-          child: DecoratedBox(
-            decoration: BoxDecoration(gradient: visuals.scaffoldWash),
-          ),
-        ),
         Scaffold(
           backgroundColor: Colors.transparent,
           body: widget.navigationShell,
@@ -111,7 +102,7 @@ class _MainShellState extends ConsumerState<MainShell>
                             width: 56,
                             height: 36,
                             decoration: BoxDecoration(
-                              gradient: visuals.accent,
+                              color: visuals.navIndicator,
                               borderRadius: BorderRadius.circular(18),
                             ),
                           ),
@@ -172,7 +163,9 @@ class _PillNavItem extends StatelessWidget {
           child: InkWell(
             onTap: onTap,
             borderRadius: pillRadius,
-            customBorder: const RoundedRectangleBorder(borderRadius: pillRadius),
+            customBorder: const RoundedRectangleBorder(
+              borderRadius: pillRadius,
+            ),
             child: SizedBox(
               width: 56,
               height: 36,
@@ -186,7 +179,7 @@ class _PillNavItem extends StatelessWidget {
                     key: ValueKey(selected),
                     size: 24,
                     color: selected
-                        ? visuals.heroOnGradient
+                        ? visuals.onNavIndicator
                         : scheme.onSurfaceVariant,
                   ),
                 ),

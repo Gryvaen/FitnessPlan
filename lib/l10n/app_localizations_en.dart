@@ -569,12 +569,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stepsStatusConnected => 'System steps synced';
 
   @override
-  String get stepsStatusDenied =>
-      'Activity permission denied. Tap to open settings';
+  String get stepsStatusDenied => 'Physical activity permission not granted';
 
   @override
-  String get stepsStatusEmpty =>
-      'Authorized but 0 steps. Allow this app in Health Connect and share data from your health app. Tap to open settings';
+  String get stepsStatusEmpty => 'Connected, but 0 steps read for today';
 
   @override
   String get stepsStatusUnsupported =>
@@ -584,11 +582,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stepsStatusSyncing => 'Syncing steps…';
 
   @override
-  String get stepsStatusFailed => 'Step sync failed — tap to retry';
+  String get stepsStatusFailed => 'Step sync failed';
 
   @override
-  String get stepsStatusRetryHint =>
-      'Tap to retry; opens health settings if still 0';
+  String get stepsStatusRetryHint => 'Tap for details';
+
+  @override
+  String get stepsSheetTitle => 'Step sync';
+
+  @override
+  String get stepsSheetSourceHint =>
+      'Today\'s steps are the larger of Health Connect and the phone\'s step sensor. On OPPO, Xiaomi and similar phones the system health app does not share steps with third parties; without Health Connect data, the sensor counts from first authorization, earlier steps that day cannot be recovered, and days align automatically from the next day.';
+
+  @override
+  String get stepsSheetEmptyHint =>
+      'If your system health app shows steps but this is 0: allow this app to read steps in Health Connect and enable data sharing in the health app; otherwise walk a bit and come back to this page.';
+
+  @override
+  String get stepsSheetDeniedHint =>
+      'Grant the Physical activity permission to this app in system settings, then resync.';
+
+  @override
+  String get stepsSheetResync => 'Resync';
+
+  @override
+  String get stepsSheetOpenSettings => 'Open health / permission settings';
+
+  @override
+  String get stepsSheetDiagnostics => 'Diagnostics';
+
+  @override
+  String get stepsSheetDiagnosticsLoading => 'Loading…';
 
   @override
   String get noSetLogs => 'No set logs';
@@ -1030,9 +1054,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get theme => 'Theme';
 
   @override
-  String get themeSubtitle => 'Appearance colors';
-
-  @override
   String get themeDay => 'Day';
 
   @override
@@ -1046,9 +1067,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get themeSunrise => 'Sunrise';
-
-  @override
-  String get themeGraphite => 'Graphite';
 
   @override
   String get clearDataBody =>
@@ -1523,4 +1541,522 @@ class AppLocalizationsEn extends AppLocalizations {
   String confirmRemoveDayWorkout(String name) {
     return 'Remove \"$name\" and all its exercises from today\'s workout?';
   }
+
+  @override
+  String get themeSubtitle => 'Appearance colors';
+
+  @override
+  String get themeGraphite => 'Graphite';
+
+  @override
+  String get themeFresh => 'Fresh Green';
+
+  @override
+  String get themeAurora => 'Aurora';
+
+  @override
+  String get themeWarm => 'Warm Sun';
+
+  @override
+  String get themeFreshDesc =>
+      'Light background, white cards, deep green accent';
+
+  @override
+  String get themeAuroraDesc => 'Deep sea blue with teal highlights';
+
+  @override
+  String get themeWarmDesc => 'Cream background with warm orange';
+
+  @override
+  String get themeGraphiteDesc => 'Matte dark grey with silver accents';
+
+  @override
+  String get themeNote =>
+      'All four themes share one layout and nutrient colors stay the same. Your choice is kept after restart.';
+
+  @override
+  String get expandSection => 'Expand';
+
+  @override
+  String get collapseSection => 'Collapse';
+
+  @override
+  String get noWorkoutShort => 'None planned';
+
+  @override
+  String get remainingWord => 'Remaining';
+
+  @override
+  String get overWord => 'Over';
+
+  @override
+  String get eatenWord => 'eaten';
+
+  @override
+  String eatenOfTarget(String eaten, String target) {
+    return 'Eaten $eaten / target $target';
+  }
+
+  @override
+  String waterAddMl(int ml) {
+    return 'Add $ml ml water';
+  }
+
+  @override
+  String waterUndoMl(int ml) {
+    return 'Undo $ml ml water';
+  }
+
+  @override
+  String mealsSummary(int count, String kcal) {
+    return '$count items · $kcal kcal';
+  }
+
+  @override
+  String get legacyTargetHint =>
+      'Legacy estimate: this day predates per-day target records, so the target shown is derived from the current profile.';
+
+  @override
+  String get dietCompleteToggle => 'Today\'s food log is complete';
+
+  @override
+  String get dietCompleteHint =>
+      'Only confirmed days count toward the taper review';
+
+  @override
+  String weeklyAvgLine(String kcal) {
+    return 'Weekly avg $kcal kcal';
+  }
+
+  @override
+  String get nutritionTargets => 'Nutrition targets';
+
+  @override
+  String get todaysTarget => 'Today\'s target';
+
+  @override
+  String get dietStrategy => 'Fat-loss strategy';
+
+  @override
+  String get noStrategyShort => 'No strategy';
+
+  @override
+  String get noStrategyYet =>
+      'No strategy selected. Your profile target is used as-is until you choose one.';
+
+  @override
+  String get strategyOnlyForCut =>
+      'Strategies apply to the cut goal only. Maintain / bulk keep the profile target.';
+
+  @override
+  String get chooseStrategy => 'Choose strategy';
+
+  @override
+  String get changeStrategy => 'Change strategy';
+
+  @override
+  String get adjustSchedule => 'Adjust schedule';
+
+  @override
+  String get stopStrategy => 'Stop strategy';
+
+  @override
+  String get stopStrategyBody =>
+      'From today the profile target applies again. Past days keep the targets that were in effect.';
+
+  @override
+  String get strategyStopped => 'Strategy stopped';
+
+  @override
+  String get strategyApplied => 'Strategy saved';
+
+  @override
+  String planStartsOn(String date) {
+    return 'Starts $date';
+  }
+
+  @override
+  String planActiveSince(String date, int version) {
+    return 'In effect since $date · v$version';
+  }
+
+  @override
+  String planBaselineLine(String kg, String tdee, String e0) {
+    return 'Ref. weight $kg kg · TDEE $tdee · avg target $e0 kcal';
+  }
+
+  @override
+  String baseTargetLine(String kcal) {
+    return 'Profile target $kcal kcal';
+  }
+
+  @override
+  String get strategyBasisBody =>
+      'TDEE is estimated with Mifflin–St Jeor × activity factor. Protein and fat are fixed per kg of reference weight; carbohydrate takes the remaining energy. Carb cycling redistributes the weekly budget across high / mid / low days with one common shrink factor so every day stays inside bounds and the weekly total is preserved. The taper lowers carbohydrate by 25 g (100 kcal) per stage only after a review you confirm.';
+
+  @override
+  String get strategyDisclaimer =>
+      'Product defaults for generally healthy adults; not a clinical prescription and not medically validated. Consult a professional for medical conditions.';
+
+  @override
+  String get strategyScopeNote =>
+      'Switching to maintain / bulk stops the strategy automatically. No extreme low-calorie, fasting or ketogenic presets are offered.';
+
+  @override
+  String get strategyPickerIntro =>
+      'Choose one primary strategy. Protein and fat stay stable in all three; they differ in how carbohydrate and energy are arranged over time.';
+
+  @override
+  String get defaultWord => 'Default';
+
+  @override
+  String get currentWord => 'Current';
+
+  @override
+  String get strategyBalanced => 'Balanced deficit';
+
+  @override
+  String get strategyCarbCycle => 'Carb cycling';
+
+  @override
+  String get strategyCarbTaper => 'Carb taper';
+
+  @override
+  String get strategyBalancedDesc =>
+      'Same energy and macros every day. Simple and easy to follow.';
+
+  @override
+  String get strategyCarbCycleDesc =>
+      'Weekly budget is redistributed into high / mid / low-carb days while protein and fat stay fixed.';
+
+  @override
+  String get strategyCarbTaperDesc =>
+      'Start at the baseline and lower carbohydrate one small step at a time, only after each review you confirm.';
+
+  @override
+  String get carbDayHigh => 'High-carb day';
+
+  @override
+  String get carbDayMid => 'Mid-carb day';
+
+  @override
+  String get carbDayLow => 'Low-carb day';
+
+  @override
+  String get carbDayHighShort => 'H';
+
+  @override
+  String get carbDayMidShort => 'M';
+
+  @override
+  String get carbDayLowShort => 'L';
+
+  @override
+  String taperStageLabel(int n) {
+    return 'Stage $n';
+  }
+
+  @override
+  String get targetSourceOverride => 'Custom target';
+
+  @override
+  String get targetSourceProfileCut => 'Cut · profile target';
+
+  @override
+  String get targetLegacyEstimate => 'Legacy estimate';
+
+  @override
+  String get issueInvalidWeight =>
+      'Reference weight must be a positive number.';
+
+  @override
+  String get issueInvalidTdee =>
+      'TDEE is unavailable; complete your profile first.';
+
+  @override
+  String get issueInvalidTargetEnergy =>
+      'Target energy must be a positive number.';
+
+  @override
+  String get issueDeficitBelowRange =>
+      'Deficit is below the 10% minimum for a fat-loss strategy.';
+
+  @override
+  String get issueDeficitAboveRange =>
+      'Deficit exceeds the 20% self-service maximum.';
+
+  @override
+  String get issueEnergyBelowFloor =>
+      'Energy would fall below the product floor (max(0.75×TDEE, 1201 kcal, P/F + 130 g carb)).';
+
+  @override
+  String get issueEnergyAboveTdee => 'Energy would exceed the estimated TDEE.';
+
+  @override
+  String issueCarbBelowMinimum(int g) {
+    return 'Carbohydrate would fall below $g g/day; lower protein/fat per kg or reduce the deficit.';
+  }
+
+  @override
+  String get issueInvalidSchedule => 'The weekly schedule is invalid.';
+
+  @override
+  String get issueAmplitudeNegligible =>
+      'After bounds the high/low difference is negligible; the balanced strategy would be equivalent.';
+
+  @override
+  String issueUnderage(int age) {
+    return 'Strategies are for adults ($age+). Please seek professional guidance instead.';
+  }
+
+  @override
+  String get issueGoalNotCut => 'Only available with the cut goal.';
+
+  @override
+  String get strategyParameters => 'Parameters';
+
+  @override
+  String get referenceWeightKg => 'Reference weight';
+
+  @override
+  String get estimatedTdee => 'Estimated TDEE';
+
+  @override
+  String deficitFractionLabel(int pct) {
+    return 'Average deficit $pct%';
+  }
+
+  @override
+  String get averageTargetEnergy => 'Average target energy';
+
+  @override
+  String energyBoundsHint(int min, int max) {
+    return 'Allowed $min–$max kcal';
+  }
+
+  @override
+  String get proteinPerKgLabel => 'Protein per kg';
+
+  @override
+  String get fatPerKgLabel => 'Fat per kg';
+
+  @override
+  String get dailyBaselineTitle => 'Daily baseline';
+
+  @override
+  String get weeklySchedule => '7-day schedule';
+
+  @override
+  String get suggestFromTraining => 'Match training';
+
+  @override
+  String trainingSuggestionBody(int high, int low) {
+    return 'Based on the last 4 weeks: $high high-carb day(s), $low low-carb day(s). Apply only if it matches your plan.';
+  }
+
+  @override
+  String get applySuggestion => 'Apply';
+
+  @override
+  String get carbCycleEditHint =>
+      'Tap a day to select it; tap the selected day again to cycle high → mid → low.';
+
+  @override
+  String weeklyBudgetLine(String total, String avg) {
+    return 'Weekly budget $total kcal · daily average $avg kcal';
+  }
+
+  @override
+  String carbAmplitudeLine(String g) {
+    return 'Carb amplitude ±$g g per score step';
+  }
+
+  @override
+  String carbAmplitudeShrunk(String g) {
+    return 'Requested ±$g g was shrunk uniformly so every day stays within bounds.';
+  }
+
+  @override
+  String get taperLadderTitle => 'Stage ladder (preview)';
+
+  @override
+  String get taperLadderHint =>
+      'Each step is −25 g carbohydrate / −100 kcal and requires a review you confirm. Stages never advance automatically.';
+
+  @override
+  String taperFloorLine(int kcal, int carb) {
+    return 'Floor: $kcal kcal and $carb g carbohydrate';
+  }
+
+  @override
+  String get currentStage => 'Current stage';
+
+  @override
+  String get effectiveDate => 'Effective date';
+
+  @override
+  String startNextCycle(String date) {
+    return 'Next cycle ($date)';
+  }
+
+  @override
+  String startTomorrow(String date) {
+    return 'Tomorrow ($date)';
+  }
+
+  @override
+  String get startToday => 'Start today';
+
+  @override
+  String midCycleNotice(String from, String to, String kcal) {
+    return 'Mid-cycle start: $from–$to follow the plan; remaining budget for this week $kcal kcal. Earlier days of the week are not recalculated.';
+  }
+
+  @override
+  String applyStrategyFrom(String date) {
+    return 'Apply from $date';
+  }
+
+  @override
+  String get taperReview => 'Taper review';
+
+  @override
+  String get taperNotActive => 'The carb taper is not active.';
+
+  @override
+  String get observation => 'Observation';
+
+  @override
+  String observationProgress(int done, int total) {
+    return '$done / $total days observed';
+  }
+
+  @override
+  String nextReviewDate(String date) {
+    return 'Review available from $date';
+  }
+
+  @override
+  String get weighInDays => 'Weigh-in days (14 d)';
+
+  @override
+  String weighInDaysHint(int n, int half) {
+    return 'Need ≥$n days, ≥$half in each 7-day half';
+  }
+
+  @override
+  String get completeDietDays => 'Complete food-log days (14 d)';
+
+  @override
+  String completeDietDaysHint(int n) {
+    return 'Need ≥$n days confirmed on the Today page';
+  }
+
+  @override
+  String get weeklyRate => 'Weekly change (7-day means)';
+
+  @override
+  String weeklyRateHint(String low, String high) {
+    return 'Target band $low%–$high% of body weight per week';
+  }
+
+  @override
+  String get suggestion => 'Suggestion';
+
+  @override
+  String get taperStatusObserving => 'Observing';
+
+  @override
+  String get taperStatusInsufficientWeight => 'Not enough weigh-ins';
+
+  @override
+  String get taperStatusInsufficientDiet => 'Not enough complete food-log days';
+
+  @override
+  String get taperStatusHold => 'Keep the current stage';
+
+  @override
+  String get taperStatusStepDown => 'Step-down candidate';
+
+  @override
+  String get taperStatusFloor => 'Floor reached';
+
+  @override
+  String get taperStatusTooFast => 'Losing faster than the band';
+
+  @override
+  String taperObservingBody(int days) {
+    return '$days more day(s) of observation before a review is possible. Keep logging weight and confirming complete days.';
+  }
+
+  @override
+  String get taperInsufficientWeightBody =>
+      'Weigh in on more days (both halves of the window) so the 7-day means are credible. No change is suggested.';
+
+  @override
+  String get taperInsufficientDietBody =>
+      'Too few days are confirmed as complete, so intake cannot be trusted. Confirm complete days on the Today page. No change is suggested.';
+
+  @override
+  String get taperHoldBody =>
+      'Weight is changing within the target band. Keep the current stage and review again after the next window.';
+
+  @override
+  String taperStepDownBody(int kcal, String carb) {
+    return 'Weight change is below the band with credible data. Candidate: $kcal kcal · C $carb g. Nothing changes until you confirm.';
+  }
+
+  @override
+  String get taperFloorBody =>
+      'The next stage would breach the energy or carbohydrate floor, so no further reduction is offered. Consider activity, adherence or a maintenance break.';
+
+  @override
+  String get taperTooFastBody =>
+      'Weight is dropping faster than the band. Do not lower further; consider returning to the previous stage.';
+
+  @override
+  String get confirmNextStage => 'Enter next stage?';
+
+  @override
+  String confirmNextStageBody(int kcal, String carb) {
+    return 'From tomorrow the target becomes $kcal kcal with $carb g carbohydrate. A new observation window starts.';
+  }
+
+  @override
+  String enterStage(int n) {
+    return 'Enter stage $n';
+  }
+
+  @override
+  String get keepStage => 'Keep current stage';
+
+  @override
+  String get keepStageBody =>
+      'The target stays the same and a new observation window starts tomorrow.';
+
+  @override
+  String get backOneStage => 'Back one stage';
+
+  @override
+  String get backOneStageBody =>
+      'From tomorrow the previous stage\'s higher target applies and a new observation window starts.';
+
+  @override
+  String taperStageConfirmed(int n) {
+    return 'Stage $n confirmed from tomorrow';
+  }
+
+  @override
+  String get taperRulesBody =>
+      'Rules: at least 14 days of observation (21 after carb cycling); ≥10 weigh-in days with ≥4 in each half; ≥10 confirmed complete food-log days; compare the two 7-day means; each step is −25 g carbohydrate / −100 kcal; never below the energy and 130 g carbohydrate floors.';
+
+  @override
+  String get cancelScheduledStrategy => 'Cancel scheduled change';
+
+  @override
+  String get cancelScheduledStrategyBody =>
+      'The strategy that has not started yet is discarded. The strategy currently in effect keeps running.';
+
+  @override
+  String get scheduledStrategyCancelled => 'Scheduled change cancelled';
 }

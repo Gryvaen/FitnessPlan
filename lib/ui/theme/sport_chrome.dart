@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_theme.dart';
 
-/// Tab-root scaffold with sporty top wash and transparent AppBar chrome.
+/// Tab-root scaffold: flat themed surface with a transparent AppBar.
 class AppChromeScaffold extends StatelessWidget {
   const AppChromeScaffold({
     super.key,
@@ -20,30 +20,39 @@ class AppChromeScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final visuals = AppThemeVisuals.of(context);
-
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        ColoredBox(color: scheme.surface),
-        Positioned.fill(
-          child: DecoratedBox(
-            decoration: BoxDecoration(gradient: visuals.scaffoldWash),
-          ),
-        ),
-        Scaffold(
-          backgroundColor: Colors.transparent,
-          appBar: appBar,
-          body: body,
-          floatingActionButton: floatingActionButton,
-          floatingActionButtonLocation: floatingActionButtonLocation,
-        ),
-      ],
+    return Scaffold(
+      backgroundColor: scheme.surface,
+      appBar: appBar,
+      body: body,
+      floatingActionButton: floatingActionButton,
+      floatingActionButtonLocation: floatingActionButtonLocation,
     );
   }
 }
 
-/// Gradient hero surface for core summary cards.
+BoxDecoration _cardDecoration(
+  AppThemeVisuals v, {
+  Color? color,
+  double radius = AppRadius.card,
+  bool shadow = true,
+}) {
+  return BoxDecoration(
+    color: color ?? v.card,
+    borderRadius: BorderRadius.circular(radius),
+    border: Border.all(color: v.cardBorder),
+    boxShadow: shadow
+        ? [
+            BoxShadow(
+              color: v.cardShadow,
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ]
+        : null,
+  );
+}
+
+/// Main summary card (Today calories, Profile quota).
 class SportHeroCard extends StatelessWidget {
   const SportHeroCard({
     super.key,
@@ -56,58 +65,33 @@ class SportHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visuals = AppThemeVisuals.of(context);
-    final on = visuals.heroOnGradient;
-    final heroColors = visuals.hero.colors;
-    final glowA = heroColors.length > 1
-        ? heroColors[heroColors.length - 2]
-        : heroColors.last;
-    final glowB = heroColors.last;
-
+    final v = AppThemeVisuals.of(context);
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: on.withValues(alpha: 0.28), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: glowB.withValues(alpha: 0.32),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+      decoration: _cardDecoration(v, color: v.heroCard),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         child: Stack(
           children: [
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(gradient: visuals.hero),
-              ),
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: const Alignment(0.85, -0.75),
-                    radius: 1.15,
-                    colors: [
-                      glowB.withValues(alpha: 0.4),
-                      glowA.withValues(alpha: 0.18),
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.45, 1.0],
+            if (v.heroGlow.a > 0)
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: const Alignment(0.9, -0.9),
+                      radius: 1.1,
+                      colors: [v.heroGlow, v.heroGlow.withValues(alpha: 0)],
+                      stops: const [0.0, 0.7],
+                    ),
                   ),
                 ),
               ),
-            ),
             Padding(
               padding: padding,
               child: DefaultTextStyle.merge(
-                style: TextStyle(color: on),
+                style: TextStyle(color: v.onHero),
                 child: IconTheme.merge(
-                  data: IconThemeData(color: on),
+                  data: IconThemeData(color: v.onHero),
                   child: child,
                 ),
               ),
@@ -119,7 +103,7 @@ class SportHeroCard extends StatelessWidget {
   }
 }
 
-/// Neon-edged surface for ordinary cards (warnings, menus, workout shell).
+/// Ordinary card (menus, warnings, sections).
 class SportSurfaceCard extends StatelessWidget {
   const SportSurfaceCard({
     super.key,
@@ -131,68 +115,33 @@ class SportSurfaceCard extends StatelessWidget {
 
   final Widget child;
   final EdgeInsetsGeometry? padding;
+
+  /// Optional semantic tint (warning / info) blended into the card.
   final Color? tint;
   final EdgeInsetsGeometry margin;
 
   @override
   Widget build(BuildContext context) {
-    final visuals = AppThemeVisuals.of(context);
-    final stroke = visuals.strokeGlow;
-
+    final v = AppThemeVisuals.of(context);
+    final color = tint == null
+        ? v.card
+        : Color.alphaBlend(tint!.withValues(alpha: 0.10), v.card);
     return Container(
       width: double.infinity,
       margin: margin,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: stroke.withValues(alpha: 0.55), width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: stroke.withValues(alpha: 0.22),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(gradient: visuals.surfaceGlow),
-              ),
-            ),
-            if (tint != null)
-              Positioned.fill(
-                child: ColoredBox(color: tint!.withValues(alpha: 0.28)),
-              ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                    colors: [
-                      stroke.withValues(alpha: 0.55),
-                      stroke.withValues(alpha: 0.0),
-                    ],
-                    stops: const [0.0, 0.08],
-                  ),
-                ),
-              ),
-            ),
-            if (padding != null)
-              Padding(padding: padding!, child: child)
-            else
-              child,
-          ],
-        ),
+      decoration: _cardDecoration(v, color: color),
+      clipBehavior: Clip.antiAlias,
+      child: Material(
+        type: MaterialType.transparency,
+        child: padding != null
+            ? Padding(padding: padding!, child: child)
+            : child,
       ),
     );
   }
 }
 
-/// List row with surface glow and left neon bar.
+/// List row rendered as a small card.
 class SportListTile extends StatelessWidget {
   const SportListTile({
     super.key,
@@ -219,103 +168,53 @@ class SportListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visuals = AppThemeVisuals.of(context);
-    final stroke = visuals.strokeGlow;
-
+    final v = AppThemeVisuals.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.field),
+      padding: const EdgeInsets.only(bottom: AppSpacing.compact),
       child: Material(
-        color: Colors.transparent,
-        child: InkWell(
+        color: v.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.tile),
+          side: BorderSide(color: v.cardBorder),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          enabled: enabled,
+          leading: leading,
+          title: title,
+          subtitle: subtitle,
+          trailing: trailing,
           onTap: enabled ? onTap : null,
-          borderRadius: BorderRadius.circular(16),
-          child: Ink(
-            decoration: BoxDecoration(
-              gradient: visuals.surfaceGlow,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: stroke.withValues(alpha: 0.4)),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          center: const Alignment(0.9, -0.85),
-                          radius: 0.95,
-                          colors: [
-                            visuals.glowSpot.withValues(alpha: 0.22),
-                            visuals.glowSpot.withValues(alpha: 0.06),
-                            Colors.transparent,
-                          ],
-                          stops: const [0.0, 0.4, 1.0],
-                        ),
-                      ),
-                    ),
-                  ),
-                  IntrinsicHeight(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Container(
-                          width: 4,
-                          decoration: BoxDecoration(
-                            gradient: visuals.rail,
-                            borderRadius: const BorderRadius.horizontal(
-                              left: Radius.circular(16),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: ListTile(
-                            enabled: enabled,
-                            leading: leading,
-                            title: title,
-                            subtitle: subtitle,
-                            trailing: trailing,
-                            onTap: null,
-                            dense: dense,
-                            isThreeLine: isThreeLine,
-                            contentPadding: contentPadding ??
-                                const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 2,
-                                ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          dense: dense,
+          isThreeLine: isThreeLine,
+          contentPadding:
+              contentPadding ??
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
         ),
       ),
     );
   }
 }
 
-/// Multi-color progress bar using theme [AppThemeVisuals.progress].
+/// Thin accent progress bar.
 class SportProgressBar extends StatelessWidget {
   const SportProgressBar({
     super.key,
     required this.value,
-    this.minHeight = 10,
-    this.borderRadius = 6,
+    this.minHeight = 6,
+    this.borderRadius = 4,
+    this.color,
   });
 
   final double value;
   final double minHeight;
   final double borderRadius;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
-    final visuals = AppThemeVisuals.of(context);
-    final v = value.clamp(0.0, 1.0);
-
+    final v = AppThemeVisuals.of(context);
+    final clamped = value.isFinite ? value.clamp(0.0, 1.0) : 0.0;
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),
       child: SizedBox(
@@ -323,15 +222,11 @@ class SportProgressBar extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            ColoredBox(
-              color: visuals.strokeGlow.withValues(alpha: 0.16),
-            ),
+            ColoredBox(color: v.track),
             FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: v,
-              child: DecoratedBox(
-                decoration: BoxDecoration(gradient: visuals.progress),
-              ),
+              alignment: AlignmentDirectional.centerStart,
+              widthFactor: clamped,
+              child: ColoredBox(color: color ?? v.accent),
             ),
           ],
         ),
@@ -340,74 +235,43 @@ class SportProgressBar extends StatelessWidget {
   }
 }
 
-/// Bottom nav pill outer shell with neon gradient.
+/// Floating pill nav shell.
 class SportPillShell extends StatelessWidget {
-  const SportPillShell({
-    super.key,
-    required this.child,
-  });
+  const SportPillShell({super.key, required this.child});
 
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    final visuals = AppThemeVisuals.of(context);
-    final stroke = visuals.strokeGlow;
-
+    final v = AppThemeVisuals.of(context);
     return DecoratedBox(
       decoration: BoxDecoration(
-        gradient: visuals.pillShell,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: stroke.withValues(alpha: 0.5), width: 1.2),
+        color: v.navShell,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: v.navBorder),
         boxShadow: [
           BoxShadow(
-            color: stroke.withValues(alpha: 0.28),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            color: v.cardShadow,
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: const Alignment(0.9, -0.85),
-                    radius: 1.0,
-                    colors: [
-                      visuals.glowSpot.withValues(alpha: 0.2),
-                      visuals.glowSpot.withValues(alpha: 0.05),
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.45, 1.0],
-                  ),
-                ),
-              ),
-            ),
-            Material(
-              color: Colors.transparent,
-              elevation: 0,
-              borderRadius: BorderRadius.circular(24),
-              clipBehavior: Clip.antiAlias,
-              child: child,
-            ),
-          ],
-        ),
+        borderRadius: BorderRadius.circular(28),
+        child: Material(color: Colors.transparent, child: child),
       ),
     );
   }
 }
 
-/// Flat neon section (no card chrome): wash + left rail + optional bottom line.
+/// Flat section container (card without shadow) for secondary blocks.
 class SportSectionBand extends StatelessWidget {
   const SportSectionBand({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.fromLTRB(12, 12, 12, 12),
-    this.showBottomRule = true,
+    this.padding = const EdgeInsets.all(AppSpacing.card),
+    this.showBottomRule = false,
   });
 
   final Widget child;
@@ -416,63 +280,16 @@ class SportSectionBand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visuals = AppThemeVisuals.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                width: 4,
-                decoration: BoxDecoration(gradient: visuals.rail),
-              ),
-              Expanded(
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: DecoratedBox(
-                        decoration:
-                            BoxDecoration(gradient: visuals.sectionWash),
-                      ),
-                    ),
-                    Positioned.fill(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: RadialGradient(
-                            center: const Alignment(0.95, -0.9),
-                            radius: 1.05,
-                            colors: [
-                              visuals.glowSpot.withValues(alpha: 0.18),
-                              visuals.glowSpot.withValues(alpha: 0.05),
-                              Colors.transparent,
-                            ],
-                            stops: const [0.0, 0.4, 1.0],
-                          ),
-                        ),
-                      ),
-                    ),
-                    Padding(padding: padding, child: child),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (showBottomRule)
-          Container(
-            height: 2,
-            margin: const EdgeInsets.only(top: 2),
-            decoration: BoxDecoration(gradient: visuals.progress),
-          ),
-      ],
+    final v = AppThemeVisuals.of(context);
+    return Container(
+      width: double.infinity,
+      decoration: _cardDecoration(v, shadow: false),
+      child: Padding(padding: padding, child: child),
     );
   }
 }
 
-/// Flat list row: rail + light wash, no border/shadow.
+/// Flat list row without card chrome.
 class SportInkRow extends StatelessWidget {
   const SportInkRow({
     super.key,
@@ -495,35 +312,78 @@ class SportInkRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visuals = AppThemeVisuals.of(context);
-
     return Material(
       color: Colors.transparent,
-      child: InkWell(
+      child: ListTile(
+        enabled: enabled,
+        leading: leading,
+        title: title,
+        subtitle: subtitle,
+        trailing: trailing,
         onTap: enabled ? onTap : null,
-        child: Ink(
-          decoration: BoxDecoration(gradient: visuals.sectionWash),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  width: 3,
-                  decoration: BoxDecoration(gradient: visuals.rail),
-                ),
-                Expanded(
-                  child: ListTile(
-                    enabled: enabled,
-                    leading: leading,
-                    title: title,
-                    subtitle: subtitle,
-                    trailing: trailing,
-                    onTap: null,
-                    contentPadding: contentPadding ??
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                  ),
-                ),
-              ],
+        contentPadding:
+            contentPadding ??
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+      ),
+    );
+  }
+}
+
+/// Section title (plain text; spacing handled by callers).
+class SportSectionTitle extends StatelessWidget {
+  const SportSectionTitle({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => child;
+}
+
+/// Icon-only action without any background, border or shadow, but with a
+/// full-size tap target and a semantic label.
+class PlainIconAction extends StatelessWidget {
+  const PlainIconAction({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.size = 24,
+    this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onPressed;
+  final double size;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final enabled = onPressed != null;
+    final fg = color ?? scheme.onSurface;
+    return Semantics(
+      button: true,
+      label: label,
+      enabled: enabled,
+      child: Tooltip(
+        message: label,
+        // The outer Semantics already carries the label.
+        excludeFromSemantics: true,
+        child: InkResponse(
+          onTap: onPressed,
+          radius: kMinTapTarget / 2,
+          containedInkWell: false,
+          highlightShape: BoxShape.circle,
+          child: SizedBox(
+            width: kMinTapTarget,
+            height: kMinTapTarget,
+            child: Center(
+              child: Icon(
+                icon,
+                size: size,
+                color: enabled ? fg : fg.withValues(alpha: 0.35),
+              ),
             ),
           ),
         ),
@@ -532,64 +392,73 @@ class SportInkRow extends StatelessWidget {
   }
 }
 
-/// Section title with a short neon underline.
-class SportSectionTitle extends StatelessWidget {
-  const SportSectionTitle({
+/// Small rounded label chip (e.g. strategy tag on the Today card).
+class SoftChip extends StatelessWidget {
+  const SoftChip({
     super.key,
-    required this.child,
+    required this.label,
+    this.icon,
+    this.onTap,
+    this.color,
+    this.foreground,
   });
 
-  final Widget child;
+  final String label;
+  final IconData? icon;
+  final VoidCallback? onTap;
+  final Color? color;
+  final Color? foreground;
 
   @override
   Widget build(BuildContext context) {
-    final visuals = AppThemeVisuals.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        child,
-        const SizedBox(height: 6),
-        SizedBox(
-          width: 64,
-          height: 8,
-          child: Stack(
-            alignment: Alignment.centerLeft,
-            children: [
-              Positioned(
-                left: 0,
-                top: 2.5,
-                child: Container(
-                  width: 56,
-                  height: 3,
-                  decoration: BoxDecoration(
-                    gradient: visuals.progress,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
+    final v = AppThemeVisuals.of(context);
+    final theme = Theme.of(context);
+    final bg = color ?? v.accentSoft;
+    final fg = foreground ?? theme.colorScheme.onSurface;
+    final chip = Container(
+      constraints: const BoxConstraints(minHeight: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(AppRadius.chip),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 14, color: fg),
+            const SizedBox(width: 4),
+          ],
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: fg,
+                fontWeight: FontWeight.w600,
               ),
-              Positioned(
-                left: 50,
-                top: 0.5,
-                child: Container(
-                  width: 7,
-                  height: 7,
-                  decoration: BoxDecoration(
-                    color: visuals.highlight,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: visuals.highlight.withValues(alpha: 0.55),
-                        blurRadius: 6,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
+          if (onTap != null) ...[
+            const SizedBox(width: 2),
+            Icon(Icons.chevron_right, size: 14, color: fg),
+          ],
+        ],
+      ),
+    );
+    if (onTap == null) return chip;
+    return Semantics(
+      button: true,
+      label: label,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.chip),
+          onTap: onTap,
+          child: chip,
         ),
-      ],
+      ),
     );
   }
 }

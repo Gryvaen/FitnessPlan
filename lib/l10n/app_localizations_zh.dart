@@ -569,11 +569,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stepsStatusConnected => '已同步系统步数';
 
   @override
-  String get stepsStatusDenied => '未授予「身体活动」权限。点按可打开设置';
+  String get stepsStatusDenied => '未授予「身体活动」权限，无法读取步数';
 
   @override
-  String get stepsStatusEmpty =>
-      '已授权但读到 0 步。请在「健康 / Health Connect」中允许本应用读取步数，并确认运动健康已共享数据。点按打开设置';
+  String get stepsStatusEmpty => '已连接，但今日读到 0 步';
 
   @override
   String get stepsStatusUnsupported => '当前平台不支持步数同步';
@@ -582,10 +581,36 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stepsStatusSyncing => '正在同步步数…';
 
   @override
-  String get stepsStatusFailed => '步数同步失败，点按可重试';
+  String get stepsStatusFailed => '步数同步失败';
 
   @override
-  String get stepsStatusRetryHint => '点按重试同步；若仍为 0 会打开健康权限设置';
+  String get stepsStatusRetryHint => '点按查看详情';
+
+  @override
+  String get stepsSheetTitle => '步数同步';
+
+  @override
+  String get stepsSheetSourceHint =>
+      '今日步数取 Health Connect 与手机计步传感器中的较大值。OPPO、小米等国产手机的系统「健康」步数通常不对第三方开放；若 Health Connect 没有数据，将从首次授权起用传感器累计，当天此前的步数无法补回，次日起会自动对齐。';
+
+  @override
+  String get stepsSheetEmptyHint =>
+      '若系统健康里有步数而这里为 0：请在「Health Connect / 健康数据共享」中允许本应用读取步数，并在系统健康 App 中开启数据共享；否则请稍后再走几步后回到本页查看。';
+
+  @override
+  String get stepsSheetDeniedHint => '请在系统设置中为本应用开启「身体活动 / 健身运动」权限，然后重新同步。';
+
+  @override
+  String get stepsSheetResync => '重新同步';
+
+  @override
+  String get stepsSheetOpenSettings => '打开健康 / 权限设置';
+
+  @override
+  String get stepsSheetDiagnostics => '诊断信息';
+
+  @override
+  String get stepsSheetDiagnosticsLoading => '正在读取…';
 
   @override
   String get noSetLogs => '暂无组次记录';
@@ -1013,9 +1038,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get theme => '主题';
 
   @override
-  String get themeSubtitle => '外观配色';
-
-  @override
   String get themeDay => '白天';
 
   @override
@@ -1029,9 +1051,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get themeSunrise => '暖阳橙';
-
-  @override
-  String get themeGraphite => '石墨灰';
 
   @override
   String get clearDataBody => '将清除所有饮食、体重、训练、便签、收藏与身体档案，相当于重新使用本程序。确定继续？';
@@ -1502,4 +1521,496 @@ class AppLocalizationsZh extends AppLocalizations {
   String confirmRemoveDayWorkout(String name) {
     return '确定从今日训练中移除「$name」及其全部动作？';
   }
+
+  @override
+  String get themeSubtitle => '外观配色';
+
+  @override
+  String get themeGraphite => '石墨';
+
+  @override
+  String get themeFresh => '清新绿';
+
+  @override
+  String get themeAurora => '极光';
+
+  @override
+  String get themeWarm => '暖阳';
+
+  @override
+  String get themeFreshDesc => '浅底白卡，深绿主色';
+
+  @override
+  String get themeAuroraDesc => '深海蓝底，青绿强调与局部光感';
+
+  @override
+  String get themeWarmDesc => '奶油底，暖橙主色，深棕文字';
+
+  @override
+  String get themeGraphiteDesc => '哑光深灰，银色强调';
+
+  @override
+  String get themeNote => '四套主题共用同一布局，营养素颜色保持一致；所选主题重启后保留。';
+
+  @override
+  String get expandSection => '展开';
+
+  @override
+  String get collapseSection => '收起';
+
+  @override
+  String get noWorkoutShort => '未安排';
+
+  @override
+  String get remainingWord => '剩余';
+
+  @override
+  String get overWord => '超出';
+
+  @override
+  String get eatenWord => '已摄入';
+
+  @override
+  String eatenOfTarget(String eaten, String target) {
+    return '已摄入 $eaten / 目标 $target';
+  }
+
+  @override
+  String waterAddMl(int ml) {
+    return '加水 $ml ml';
+  }
+
+  @override
+  String waterUndoMl(int ml) {
+    return '撤回 $ml ml';
+  }
+
+  @override
+  String mealsSummary(int count, String kcal) {
+    return '$count 条 · $kcal kcal';
+  }
+
+  @override
+  String get legacyTargetHint => '旧版估算：该日期早于按日目标记录，显示的目标由当前档案推算。';
+
+  @override
+  String get dietCompleteToggle => '今日饮食记录完整';
+
+  @override
+  String get dietCompleteHint => '仅明确确认的日期计入渐降复核完整度';
+
+  @override
+  String weeklyAvgLine(String kcal) {
+    return '周均 $kcal kcal';
+  }
+
+  @override
+  String get nutritionTargets => '营养目标';
+
+  @override
+  String get todaysTarget => '今日目标';
+
+  @override
+  String get dietStrategy => '减脂策略';
+
+  @override
+  String get noStrategyShort => '未选择策略';
+
+  @override
+  String get noStrategyYet => '尚未选择策略，当前沿用档案目标；显式选择后才会变更。';
+
+  @override
+  String get strategyOnlyForCut => '减脂策略仅在“减脂”目标下可用；维持 / 增肌沿用档案目标。';
+
+  @override
+  String get chooseStrategy => '选择策略';
+
+  @override
+  String get changeStrategy => '更换策略';
+
+  @override
+  String get adjustSchedule => '调整安排';
+
+  @override
+  String get stopStrategy => '停用策略';
+
+  @override
+  String get stopStrategyBody => '从今天起恢复档案目标；过去日期保留当时生效的目标。';
+
+  @override
+  String get strategyStopped => '已停用策略';
+
+  @override
+  String get strategyApplied => '策略已保存';
+
+  @override
+  String planStartsOn(String date) {
+    return '$date 起生效';
+  }
+
+  @override
+  String planActiveSince(String date, int version) {
+    return '$date 起生效 · 第 $version 版';
+  }
+
+  @override
+  String planBaselineLine(String kg, String tdee, String e0) {
+    return '参考体重 $kg kg · TDEE $tdee · 平均目标 $e0 kcal';
+  }
+
+  @override
+  String baseTargetLine(String kcal) {
+    return '档案目标 $kcal kcal';
+  }
+
+  @override
+  String get strategyBasisBody =>
+      'TDEE 采用 Mifflin–St Jeor × 活动系数估算；蛋白质与脂肪按参考体重固定，碳水承担剩余能量。碳循环用统一缩放因子在高 / 中 / 低碳日间重新分配周预算，保证每日都在上下界内且七日总量不变。渐降每阶段仅减少 25 g 碳水（100 kcal），且必须经复核后由你确认。';
+
+  @override
+  String get strategyDisclaimer =>
+      '以上为面向一般健康成年人的产品默认参数，非临床处方，未经医学认证；有疾病或特殊情况请咨询专业人士。';
+
+  @override
+  String get strategyScopeNote => '切换到维持 / 增肌会自动停用策略；不提供极低热量、自动禁食或生酮预设。';
+
+  @override
+  String get strategyPickerIntro => '选择一种主策略。三种策略都保持蛋白质与脂肪稳定，差别在于碳水与能量如何随时间安排。';
+
+  @override
+  String get defaultWord => '默认';
+
+  @override
+  String get currentWord => '当前';
+
+  @override
+  String get strategyBalanced => '均衡缺口';
+
+  @override
+  String get strategyCarbCycle => '碳循环';
+
+  @override
+  String get strategyCarbTaper => '碳水渐降';
+
+  @override
+  String get strategyBalancedDesc => '每天相同的热量与宏量，最简单、最易坚持。';
+
+  @override
+  String get strategyCarbCycleDesc => '七日预算按高 / 中 / 低碳日重新分配，蛋白质与脂肪保持不变。';
+
+  @override
+  String get strategyCarbTaperDesc => '从基线开始，每次复核确认后才降低一小步碳水。';
+
+  @override
+  String get carbDayHigh => '高碳日';
+
+  @override
+  String get carbDayMid => '中碳日';
+
+  @override
+  String get carbDayLow => '低碳日';
+
+  @override
+  String get carbDayHighShort => '高';
+
+  @override
+  String get carbDayMidShort => '中';
+
+  @override
+  String get carbDayLowShort => '低';
+
+  @override
+  String taperStageLabel(int n) {
+    return '第 $n 阶';
+  }
+
+  @override
+  String get targetSourceOverride => '自定义目标';
+
+  @override
+  String get targetSourceProfileCut => '减脂 · 档案目标';
+
+  @override
+  String get targetLegacyEstimate => '旧版估算';
+
+  @override
+  String get issueInvalidWeight => '参考体重需为正数。';
+
+  @override
+  String get issueInvalidTdee => '缺少 TDEE 估算，请先完善档案。';
+
+  @override
+  String get issueInvalidTargetEnergy => '目标热量需为正数。';
+
+  @override
+  String get issueDeficitBelowRange => '缺口低于 10% 下限，不构成减脂策略。';
+
+  @override
+  String get issueDeficitAboveRange => '缺口超过 20% 自助上限。';
+
+  @override
+  String get issueEnergyBelowFloor =>
+      '热量低于产品下限（max(0.75×TDEE, 1201 kcal, 蛋白脂肪 + 130 g 碳水)）。';
+
+  @override
+  String get issueEnergyAboveTdee => '热量超过 TDEE 估算值。';
+
+  @override
+  String issueCarbBelowMinimum(int g) {
+    return '碳水低于 $g g/天；请降低每公斤蛋白/脂肪或缩小缺口。';
+  }
+
+  @override
+  String get issueInvalidSchedule => '七日安排无效。';
+
+  @override
+  String get issueAmplitudeNegligible => '受边界限制后高低碳差异过小，与均衡策略几乎等价。';
+
+  @override
+  String issueUnderage(int age) {
+    return '策略仅面向 $age 岁及以上成年人，请寻求专业指导。';
+  }
+
+  @override
+  String get issueGoalNotCut => '仅在减脂目标下可用。';
+
+  @override
+  String get strategyParameters => '参数';
+
+  @override
+  String get referenceWeightKg => '参考体重';
+
+  @override
+  String get estimatedTdee => 'TDEE 估算';
+
+  @override
+  String deficitFractionLabel(int pct) {
+    return '平均缺口 $pct%';
+  }
+
+  @override
+  String get averageTargetEnergy => '平均目标热量';
+
+  @override
+  String energyBoundsHint(int min, int max) {
+    return '允许范围 $min–$max kcal';
+  }
+
+  @override
+  String get proteinPerKgLabel => '每公斤蛋白质';
+
+  @override
+  String get fatPerKgLabel => '每公斤脂肪';
+
+  @override
+  String get dailyBaselineTitle => '日均基线';
+
+  @override
+  String get weeklySchedule => '七日安排';
+
+  @override
+  String get suggestFromTraining => '按训练日建议';
+
+  @override
+  String trainingSuggestionBody(int high, int low) {
+    return '基于最近 4 周训练：$high 个高碳日、$low 个低碳日。与你的计划一致时再应用。';
+  }
+
+  @override
+  String get applySuggestion => '应用';
+
+  @override
+  String get carbCycleEditHint => '点击选中某天；再次点击已选中的日期在高 → 中 → 低间切换。';
+
+  @override
+  String weeklyBudgetLine(String total, String avg) {
+    return '每周预算 $total kcal · 日均 $avg kcal';
+  }
+
+  @override
+  String carbAmplitudeLine(String g) {
+    return '碳水振幅 每级 ±$g g';
+  }
+
+  @override
+  String carbAmplitudeShrunk(String g) {
+    return '原振幅 ±$g g 已统一收缩，使每日都在上下界内。';
+  }
+
+  @override
+  String get taperLadderTitle => '阶段预览';
+
+  @override
+  String get taperLadderHint => '每步 −25 g 碳水 / −100 kcal，需经复核由你确认；到期不会自动降低。';
+
+  @override
+  String taperFloorLine(int kcal, int carb) {
+    return '下限：$kcal kcal 与 $carb g 碳水';
+  }
+
+  @override
+  String get currentStage => '当前阶段';
+
+  @override
+  String get effectiveDate => '生效日期';
+
+  @override
+  String startNextCycle(String date) {
+    return '下个周期（$date）';
+  }
+
+  @override
+  String startTomorrow(String date) {
+    return '明天（$date）';
+  }
+
+  @override
+  String get startToday => '今天开始';
+
+  @override
+  String midCycleNotice(String from, String to, String kcal) {
+    return '周中开始：$from–$to 按计划覆盖，本周剩余预算 $kcal kcal；本周更早的日期不重算。';
+  }
+
+  @override
+  String applyStrategyFrom(String date) {
+    return '自 $date 起应用';
+  }
+
+  @override
+  String get taperReview => '渐降复核';
+
+  @override
+  String get taperNotActive => '当前未启用碳水渐降。';
+
+  @override
+  String get observation => '观察期';
+
+  @override
+  String observationProgress(int done, int total) {
+    return '已观察 $done / $total 天';
+  }
+
+  @override
+  String nextReviewDate(String date) {
+    return '可复核日期 $date';
+  }
+
+  @override
+  String get weighInDays => '称重天数（14 天）';
+
+  @override
+  String weighInDaysHint(int n, int half) {
+    return '需 ≥$n 天，且前后 7 天各 ≥$half 天';
+  }
+
+  @override
+  String get completeDietDays => '完整饮食天数（14 天）';
+
+  @override
+  String completeDietDaysHint(int n) {
+    return '需在今日页确认 ≥$n 天';
+  }
+
+  @override
+  String get weeklyRate => '周变化率（7 日均值）';
+
+  @override
+  String weeklyRateHint(String low, String high) {
+    return '目标区间 每周体重的 $low%–$high%';
+  }
+
+  @override
+  String get suggestion => '建议';
+
+  @override
+  String get taperStatusObserving => '观察中';
+
+  @override
+  String get taperStatusInsufficientWeight => '称重数据不足';
+
+  @override
+  String get taperStatusInsufficientDiet => '完整饮食天数不足';
+
+  @override
+  String get taperStatusHold => '保持当前阶段';
+
+  @override
+  String get taperStatusStepDown => '可考虑进入下一阶段';
+
+  @override
+  String get taperStatusFloor => '已到下限';
+
+  @override
+  String get taperStatusTooFast => '下降快于目标区间';
+
+  @override
+  String taperObservingBody(int days) {
+    return '还需观察 $days 天才能复核；请继续记录体重并确认完整饮食日。';
+  }
+
+  @override
+  String get taperInsufficientWeightBody =>
+      '请在更多日期称重（前后 7 天都需要），使 7 日均值可信；暂不建议调整。';
+
+  @override
+  String get taperInsufficientDietBody =>
+      '确认完整的饮食天数不足，无法判断摄入可信度；请在今日页确认完整日。暂不建议调整。';
+
+  @override
+  String get taperHoldBody => '体重变化在目标区间内，保持当前阶段，下个观察期后再复核。';
+
+  @override
+  String taperStepDownBody(int kcal, String carb) {
+    return '数据可信且体重变化低于区间。候选阶段：$kcal kcal · 碳水 $carb g。未经确认不会改变。';
+  }
+
+  @override
+  String get taperFloorBody => '下一阶段将低于热量或碳水下限，不再提供继续降低。可考虑活动量、执行度或维持期。';
+
+  @override
+  String get taperTooFastBody => '体重下降快于目标区间，请勿继续降低；可考虑回到上一阶段。';
+
+  @override
+  String get confirmNextStage => '进入下一阶段？';
+
+  @override
+  String confirmNextStageBody(int kcal, String carb) {
+    return '自明日起目标变为 $kcal kcal、碳水 $carb g，并开始新的观察期。';
+  }
+
+  @override
+  String enterStage(int n) {
+    return '进入第 $n 阶';
+  }
+
+  @override
+  String get keepStage => '保持当前阶段';
+
+  @override
+  String get keepStageBody => '目标不变，自明日起开始新的观察期。';
+
+  @override
+  String get backOneStage => '回到上一阶段';
+
+  @override
+  String get backOneStageBody => '自明日起恢复上一阶段的较高目标，并开始新的观察期。';
+
+  @override
+  String taperStageConfirmed(int n) {
+    return '已确认：明日起进入第 $n 阶';
+  }
+
+  @override
+  String get taperRulesBody =>
+      '规则：至少观察 14 天（碳循环后 21 天）；称重 ≥10 天且前后各 ≥4 天；确认完整饮食 ≥10 天；比较前后 7 日均值；每步 −25 g 碳水 / −100 kcal；不低于热量与 130 g 碳水下限。';
+
+  @override
+  String get cancelScheduledStrategy => '取消预约切换';
+
+  @override
+  String get cancelScheduledStrategyBody => '尚未生效的新策略将被丢弃，当前生效的策略继续执行。';
+
+  @override
+  String get scheduledStrategyCancelled => '已取消预约切换';
 }

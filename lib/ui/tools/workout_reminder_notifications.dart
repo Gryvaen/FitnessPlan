@@ -42,6 +42,8 @@ abstract final class WorkoutReminderNotifications {
         android: android,
         iOS: darwin,
         macOS: darwin,
+        // Required by the plugin when running the desktop build on Linux.
+        linux: LinuxInitializationSettings(defaultActionName: 'Open'),
       ),
     );
 

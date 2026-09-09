@@ -1,19 +1,22 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-import '../../l10n/app_localizations_ext.dart';
 import '../theme/app_theme.dart';
 
-/// Calorie intake ring with center remain/over label.
+/// Intake progress ring with a percentage in the centre.
 class CalorieRing extends StatelessWidget {
   const CalorieRing({
     super.key,
     required this.eaten,
     required this.target,
     required this.over,
-    required this.remainAbs,
+    this.size = 108,
+    this.strokeWidth = 10,
     this.color,
+    this.trackColor,
+    this.centerLabel,
     this.labelColor,
     this.metaColor,
   });
@@ -21,60 +24,64 @@ class CalorieRing extends StatelessWidget {
   final double eaten;
   final double target;
   final bool over;
-  final double remainAbs;
-
-  /// Ring progress color when not over; defaults to [ColorScheme.primary].
+  final double size;
+  final double strokeWidth;
   final Color? color;
+  final Color? trackColor;
 
-  /// Center remain/over label color when not over.
+  /// Small caption under the percentage.
+  final String? centerLabel;
   final Color? labelColor;
-
-  /// Secondary lines under the center label.
   final Color? metaColor;
+
+  /// Unclamped fraction (may exceed 1 when over target).
+  double get fraction =>
+      target <= 0 || !target.isFinite || !eaten.isFinite ? 0 : eaten / target;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final scheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
-    final progress = target <= 0 ? 0.0 : (eaten / target).clamp(0.0, 1.0);
-    final ringColor = over ? scheme.error : (color ?? scheme.primary);
-    final centerColor = over ? scheme.error : (labelColor ?? scheme.primary);
-    final secondary = metaColor ?? scheme.onSurfaceVariant;
-    final centerLabel = over
-        ? l10n.kcalOver('${remainAbs.round()}')
-        : l10n.kcalRemain('${remainAbs.round()}');
+    final scheme = theme.colorScheme;
+    final visuals = AppThemeVisuals.of(context);
+    final f = fraction;
+    final progress = f.clamp(0.0, 1.0);
+    final ringColor = over ? scheme.error : (color ?? visuals.accent);
+    final centerColor = over ? scheme.error : (labelColor ?? scheme.onSurface);
+    final percent = (f * 100).round();
 
     return SizedBox(
-      width: 120,
-      height: 120,
+      width: size,
+      height: size,
       child: CustomPaint(
         painter: _RingPainter(
           progress: progress,
           color: ringColor,
-          trackColor: ringColor.withValues(alpha: 0.22),
-          strokeWidth: 10,
+          trackColor: trackColor ?? visuals.track,
+          strokeWidth: strokeWidth,
         ),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                centerLabel,
-                style: theme.textTheme.titleMedium?.copyWith(
+                '$percent%',
+                style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: centerColor,
+                  height: 1.0,
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                '${eaten.round()} / ${target.round()}',
-                style: theme.textTheme.meta?.copyWith(color: secondary),
-              ),
-              Text(
-                'kcal',
-                style: theme.textTheme.meta?.copyWith(color: secondary),
-              ),
+              if (centerLabel != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  centerLabel!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: metaColor ?? scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -114,13 +121,7 @@ class _RingPainter extends CustomPainter {
 
     canvas.drawArc(rect, -math.pi / 2, 2 * math.pi, false, track);
     if (progress > 0) {
-      canvas.drawArc(
-        rect,
-        -math.pi / 2,
-        2 * math.pi * progress,
-        false,
-        arc,
-      );
+      canvas.drawArc(rect, -math.pi / 2, 2 * math.pi * progress, false, arc);
     }
   }
 
@@ -128,80 +129,119 @@ class _RingPainter extends CustomPainter {
   bool shouldRepaint(covariant _RingPainter oldDelegate) =>
       oldDelegate.progress != progress ||
       oldDelegate.color != color ||
-      oldDelegate.trackColor != trackColor;
+      oldDelegate.trackColor != trackColor ||
+      oldDelegate.strokeWidth != strokeWidth;
 }
 
-/// Compact horizontal macro progress row.
-class MacroMini extends StatelessWidget {
-  const MacroMini({
+/// One of the four metric columns under the Today ring
+/// (protein / carbs / fat / water).
+///
+/// Value and unit are laid out with [Wrap] so that on narrow widths the
+/// "/ target unit" part moves to its own line instead of overflowing.
+class MacroColumn extends StatelessWidget {
+  const MacroColumn({
     super.key,
     required this.label,
     required this.current,
     required this.target,
+    required this.unit,
     required this.color,
-    required this.remainLabel,
+    this.decimals = 0,
     this.labelColor,
     this.metaColor,
+    this.capProgress = true,
+    this.semanticsLabel,
   });
 
   final String label;
   final double current;
   final double target;
+  final String unit;
   final Color color;
-  final String remainLabel;
+  final int decimals;
   final Color? labelColor;
   final Color? metaColor;
+  final bool capProgress;
+  final String? semanticsLabel;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scheme = Theme.of(context).colorScheme;
-    final progress = target <= 0 ? 0.0 : (current / target).clamp(0.0, 1.5);
-    final over = progress > 1;
-    final titleColor = labelColor;
-    final secondary = metaColor;
+    final scheme = theme.colorScheme;
+    final visuals = AppThemeVisuals.of(context);
+    final safeCurrent = current.isFinite ? current : 0.0;
+    final safeTarget = target.isFinite ? target : 0.0;
+    final ratio = safeTarget <= 0 ? 0.0 : safeCurrent / safeTarget;
+    final over = ratio > 1.0 + 1e-9;
+    final barColor = over && capProgress ? scheme.error : color;
+    final valueText = safeCurrent.toStringAsFixed(decimals);
+    final targetText = safeTarget.toStringAsFixed(decimals);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+    return Semantics(
+      label: semanticsLabel ?? '$label $valueText / $targetText $unit',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
               Container(
                 width: 8,
                 height: 8,
-                decoration: BoxDecoration(
-                  color: over ? scheme.error : color,
-                  shape: BoxShape.circle,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: labelColor ?? scheme.onSurfaceVariant,
+                  ),
                 ),
               ),
-              const SizedBox(width: 6),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.end,
+            spacing: 2,
+            children: [
               Text(
-                label,
-                style: theme.textTheme.titleSmall?.copyWith(color: titleColor),
+                valueText,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  height: 1.1,
+                  color: over ? scheme.error : (labelColor ?? scheme.onSurface),
+                ),
               ),
-              const Spacer(),
               Text(
-                '${current.round()} / ${target.round()} g',
-                style: theme.textTheme.meta?.copyWith(color: secondary),
+                '/$targetText $unit',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  height: 1.2,
+                  color: metaColor ?? scheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 6),
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress > 1 ? 1 : progress,
-              minHeight: 6,
-              color: over ? scheme.error : color,
-              backgroundColor: (secondary ?? color).withValues(alpha: 0.22),
+            borderRadius: BorderRadius.circular(3),
+            child: SizedBox(
+              height: 5,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ColoredBox(color: visuals.track),
+                  FractionallySizedBox(
+                    alignment: AlignmentDirectional.centerStart,
+                    widthFactor: ratio.clamp(0.0, 1.0),
+                    child: ColoredBox(color: barColor),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            remainLabel,
-            style: theme.textTheme.meta?.copyWith(color: secondary),
           ),
         ],
       ),
@@ -209,224 +249,300 @@ class MacroMini extends StatelessWidget {
   }
 }
 
-/// Cup outline with liquid fill, drawn as a short tapered cylinder.
-class WaterCup extends StatelessWidget {
-  const WaterCup({
+/// Water cup: thin lid on top (tap = undo one serving) and a glass body
+/// below (tap = add one serving). Total height matches the calorie ring.
+class WaterCupControl extends StatelessWidget {
+  const WaterCupControl({
     super.key,
     required this.progress,
+    required this.onAdd,
+    required this.onUndo,
+    required this.addLabel,
+    required this.undoLabel,
+    this.height = 108,
+    this.width = 60,
   });
 
+  /// Fill fraction; values above 1 are drawn as full.
   final double progress;
+  final VoidCallback? onAdd;
+  final VoidCallback? onUndo;
+  final String addLabel;
+  final String undoLabel;
+  final double height;
+  final double width;
+
+  static const double lidZoneHeight = 22;
 
   @override
   Widget build(BuildContext context) {
     final visuals = AppThemeVisuals.of(context);
-    final liquid = visuals.progress.colors.length > 1
-        ? visuals.progress.colors[1]
-        : visuals.progress.colors.first;
-    final full = visuals.progress.colors.last;
-    return SizedBox(
-      width: 56,
-      height: 72,
-      child: CustomPaint(
-        painter: _WaterCupPainter(
-          progress: progress.clamp(0.0, 1.0),
-          outlineColor: visuals.strokeGlow,
-          liquidColor: liquid.withValues(alpha: 0.65),
-          fullColor: full.withValues(alpha: 0.9),
-        ),
-      ),
-    );
-  }
-}
+    final disableAnimations = MediaQuery.disableAnimationsOf(context);
+    final cupWidth = width - 10;
+    final bodyHeight = height - lidZoneHeight;
+    final clamped = progress.isFinite ? progress.clamp(0.0, 1.0) : 0.0;
 
-class _WaterCupPainter extends CustomPainter {
-  _WaterCupPainter({
-    required this.progress,
-    required this.outlineColor,
-    required this.liquidColor,
-    required this.fullColor,
-  });
-
-  final double progress;
-  final Color outlineColor;
-  final Color liquidColor;
-  final Color fullColor;
-
-  static const _pi = 3.14159265;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    // Tapered cylinder: wider rim, narrower base (same style as the lid).
-    final topL = w * 0.14;
-    final topR = w * 0.86;
-    final botL = w * 0.26;
-    final botR = w * 0.74;
-    final topY = h * 0.08;
-    final botY = h * 0.90;
-    final topOvalH = h * 0.12;
-    final botOvalH = h * 0.09;
-
-    final topOval = Rect.fromLTRB(topL, topY, topR, topY + topOvalH);
-    final botOval = Rect.fromLTRB(botL, botY - botOvalH, botR, botY);
-    final midTop = topY + topOvalH / 2;
-    final midBot = botY - botOvalH / 2;
-
-    // Cup body silhouette for clipping liquid.
-    final body = Path()
-      ..moveTo(topL, midTop)
-      ..lineTo(botL, midBot)
-      ..arcTo(botOval, _pi, -_pi, false)
-      ..lineTo(topR, midTop)
-      ..arcTo(topOval, 0, _pi, false)
-      ..close();
-
-    if (progress > 0) {
-      final liquidPaint = Paint()
-        ..color = progress >= 1 ? fullColor : liquidColor
-        ..style = PaintingStyle.fill;
-
-      // Interpolate rim→base for the liquid surface ellipse.
-      final t = 1.0 - progress;
-      final surfL = topL + (botL - topL) * t;
-      final surfR = topR + (botR - topR) * t;
-      final surfMidY = midTop + (midBot - midTop) * t;
-      final surfOvalH = topOvalH + (botOvalH - topOvalH) * t;
-      final surfOval = Rect.fromCenter(
-        center: Offset((surfL + surfR) / 2, surfMidY),
-        width: surfR - surfL,
-        height: surfOvalH,
-      );
-
-      canvas.save();
-      canvas.clipPath(body);
-      // Liquid column under the surface midline.
-      final liquidBody = Path()
-        ..moveTo(surfL, surfMidY)
-        ..lineTo(botL, midBot)
-        ..arcTo(botOval, _pi, -_pi, false)
-        ..lineTo(surfR, surfMidY)
-        ..close();
-      canvas.drawPath(liquidBody, liquidPaint);
-      canvas.drawOval(surfOval, liquidPaint);
-      canvas.restore();
-
-      // Liquid surface ellipse (visible on top of the fill).
-      canvas.drawOval(
-        surfOval,
-        Paint()
-          ..color = outlineColor.withValues(alpha: 0.35)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.2,
-      );
+    void haptic() {
+      HapticFeedback.selectionClick();
     }
 
-    final outline = Paint()
-      ..color = outlineColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
-      ..strokeJoin = StrokeJoin.round
-      ..strokeCap = StrokeCap.round;
-
-    // Side walls.
-    canvas.drawLine(Offset(topL, midTop), Offset(botL, midBot), outline);
-    canvas.drawLine(Offset(topR, midTop), Offset(botR, midBot), outline);
-
-    // Base front edge.
-    canvas.drawArc(botOval, 0, _pi, false, outline);
-
-    // Rim ellipse (opening).
-    canvas.drawOval(topOval, outline);
-  }
-
-  @override
-  bool shouldRepaint(covariant _WaterCupPainter oldDelegate) =>
-      oldDelegate.progress != progress;
-}
-
-/// Cylindrical cup-lid silhouette, paired with [WaterCup] for −ml taps.
-class WaterCupLid extends StatelessWidget {
-  const WaterCupLid({
-    super.key,
-    this.enabled = true,
-  });
-
-  final bool enabled;
-
-  @override
-  Widget build(BuildContext context) {
-    final visuals = AppThemeVisuals.of(context);
-    final stroke = visuals.strokeGlow;
-    final outline = enabled ? stroke : stroke.withValues(alpha: 0.35);
     return SizedBox(
-      width: 36,
-      height: 72,
-      child: CustomPaint(
-        painter: _WaterCupLidPainter(
-          outlineColor: outline,
-          fillColor: stroke.withValues(alpha: enabled ? 0.18 : 0.06),
-        ),
+      width: width,
+      height: height,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Lid + gap. The tap zone is taller than the drawn lid.
+          Semantics(
+            button: true,
+            enabled: onUndo != null,
+            label: undoLabel,
+            child: Tooltip(
+              message: undoLabel,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onUndo == null
+                      ? null
+                      : () {
+                          haptic();
+                          onUndo!();
+                        },
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    width: width,
+                    height: lidZoneHeight,
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 3),
+                        child: SizedBox(
+                          width: math.min(width, cupWidth + 6),
+                          height: 9,
+                          child: CustomPaint(
+                            painter: _WaterCupLidPainter(
+                              stroke: onUndo == null
+                                  ? visuals.waterStroke.withValues(alpha: 0.45)
+                                  : visuals.waterStroke,
+                              fill: visuals.cupGlass,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Semantics(
+            button: true,
+            enabled: onAdd != null,
+            label: addLabel,
+            child: Tooltip(
+              message: addLabel,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onAdd == null
+                      ? null
+                      : () {
+                          haptic();
+                          onAdd!();
+                        },
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: width,
+                    height: bodyHeight,
+                    child: Center(
+                      child: SizedBox(
+                        width: cupWidth,
+                        height: bodyHeight,
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween(end: clamped),
+                          duration: disableAnimations
+                              ? Duration.zero
+                              : const Duration(milliseconds: 420),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, level, _) => CustomPaint(
+                            painter: _WaterCupBodyPainter(
+                              level: level,
+                              stroke: visuals.waterStroke,
+                              glass: visuals.cupGlass,
+                              water: visuals.waterFill,
+                              waterDeep: visuals.waterFillDeep,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _WaterCupLidPainter extends CustomPainter {
-  _WaterCupLidPainter({
-    required this.outlineColor,
-    required this.fillColor,
+/// Slightly tapered glass with a rounded bottom, translucent water and a
+/// soft wave surface.
+class _WaterCupBodyPainter extends CustomPainter {
+  _WaterCupBodyPainter({
+    required this.level,
+    required this.stroke,
+    required this.glass,
+    required this.water,
+    required this.waterDeep,
   });
 
-  final Color outlineColor;
-  final Color fillColor;
+  final double level;
+  final Color stroke;
+  final Color glass;
+  final Color water;
+  final Color waterDeep;
+
+  static const _strokeWidth = 1.6;
+
+  Path _bodyPath(Size size) {
+    final w = size.width;
+    final h = size.height;
+    const inset = _strokeWidth;
+    final topL = w * 0.06 + inset;
+    final topR = w * 0.94 - inset;
+    final botL = w * 0.20 + inset;
+    final botR = w * 0.80 - inset;
+    final top = inset;
+    final bottom = h - inset;
+    final r = math.min(w * 0.18, (botR - botL) / 2);
+
+    // Side wall x at a given y (linear taper).
+    double leftAt(double y) =>
+        topL + (botL - topL) * ((y - top) / (bottom - top));
+    double rightAt(double y) =>
+        topR + (botR - topR) * ((y - top) / (bottom - top));
+
+    final path = Path()
+      ..moveTo(topL, top)
+      ..lineTo(leftAt(bottom - r), bottom - r)
+      ..quadraticBezierTo(botL, bottom, botL + r, bottom)
+      ..lineTo(botR - r, bottom)
+      ..quadraticBezierTo(botR, bottom, rightAt(bottom - r), bottom - r)
+      ..lineTo(topR, top);
+    return path;
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
-    // Short cylinder aligned with the cup rim, flush to the right.
-    final left = 3.0;
-    final right = w - 1;
-    final top = h * 0.06;
-    final bottom = h * 0.28;
-    final ovalH = (bottom - top) * 0.32;
+    final outline = _bodyPath(size);
+    final closed = Path.from(outline)..close();
 
-    final fill = Paint()
-      ..color = fillColor
-      ..style = PaintingStyle.fill;
-    final outline = Paint()
-      ..color = outlineColor
+    // Glass tint.
+    canvas.drawPath(closed, Paint()..color = glass);
+
+    if (level > 0) {
+      const inset = _strokeWidth;
+      final top = inset;
+      final bottom = h - inset;
+      final surfaceY = bottom - (bottom - top) * level;
+      // Keep a little head-room so the wave never pokes above the rim.
+      final amp = math.min(1.6, (surfaceY - top).clamp(0.0, 1.6));
+
+      Path wave(double phase, double y) {
+        final p = Path()..moveTo(-2, y);
+        const steps = 24;
+        for (var i = 0; i <= steps; i++) {
+          final x = -2 + (w + 4) * i / steps;
+          final yy = y + math.sin(phase + i / steps * 2 * math.pi * 1.5) * amp;
+          p.lineTo(x, yy);
+        }
+        p
+          ..lineTo(w + 2, h + 2)
+          ..lineTo(-2, h + 2)
+          ..close();
+        return p;
+      }
+
+      canvas.save();
+      canvas.clipPath(closed);
+      final gradient = Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [water, waterDeep],
+        ).createShader(Rect.fromLTWH(0, surfaceY, w, h - surfaceY));
+      canvas.drawPath(wave(0, surfaceY), gradient);
+      // Second, fainter ripple slightly offset for softness.
+      canvas.drawPath(
+        wave(math.pi * 0.8, surfaceY + amp * 0.9),
+        Paint()..color = water.withValues(alpha: water.a * 0.55),
+      );
+      canvas.restore();
+    }
+
+    // Subtle glass highlight on the left wall.
+    final hl = Paint()
+      ..color = Colors.white.withValues(alpha: 0.18)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8
-      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = 1.2
       ..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(w * 0.16, h * 0.18), Offset(w * 0.22, h * 0.72), hl);
 
-    final topOval = Rect.fromLTRB(left, top, right, top + ovalH);
-    final bottomOval = Rect.fromLTRB(left, bottom - ovalH, right, bottom);
-    final midTop = top + ovalH / 2;
-    final midBottom = bottom - ovalH / 2;
-
-    // Solid cylinder: side wall + bottom/top caps.
-    canvas.drawRect(Rect.fromLTRB(left, midTop, right, midBottom), fill);
-    canvas.drawOval(bottomOval, fill);
-    canvas.drawOval(topOval, fill);
-
-    // Side walls.
-    canvas.drawLine(Offset(left, midTop), Offset(left, midBottom), outline);
-    canvas.drawLine(Offset(right, midTop), Offset(right, midBottom), outline);
-
-    // Bottom front edge (lower half of bottom ellipse).
-    canvas.drawArc(bottomOval, 0, 3.14159265, false, outline);
-
-    // Top face ellipse.
-    canvas.drawOval(topOval, outline);
+    canvas.drawPath(
+      outline,
+      Paint()
+        ..color = stroke
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = _strokeWidth
+        ..strokeJoin = StrokeJoin.round
+        ..strokeCap = StrokeCap.round,
+    );
   }
 
   @override
-  bool shouldRepaint(covariant _WaterCupLidPainter oldDelegate) =>
-      oldDelegate.outlineColor != outlineColor ||
-      oldDelegate.fillColor != fillColor;
+  bool shouldRepaint(covariant _WaterCupBodyPainter old) =>
+      old.level != level ||
+      old.stroke != stroke ||
+      old.glass != glass ||
+      old.water != water ||
+      old.waterDeep != waterDeep;
+}
+
+/// Thin flat lid with a tiny centre nub; drawn separately from the body.
+class _WaterCupLidPainter extends CustomPainter {
+  _WaterCupLidPainter({required this.stroke, required this.fill});
+
+  final Color stroke;
+  final Color fill;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // A thin, slightly wider disc floating above the rim — drawn as a
+    // shallow ellipse so it reads as a lid seen from a low angle.
+    final rect = Rect.fromLTWH(0.8, 0.8, size.width - 1.6, size.height - 1.6);
+    canvas.drawOval(rect, Paint()..color = fill);
+    canvas.drawOval(
+      rect,
+      Paint()
+        ..color = stroke
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.3,
+    );
+    // Soft highlight along the upper edge.
+    final hi = Rect.fromLTWH(
+      rect.left + rect.width * 0.18,
+      rect.top + rect.height * 0.22,
+      rect.width * 0.64,
+      rect.height * 0.28,
+    );
+    canvas.drawOval(hi, Paint()..color = Colors.white.withValues(alpha: 0.35));
+  }
+
+  @override
+  bool shouldRepaint(covariant _WaterCupLidPainter old) =>
+      old.stroke != stroke || old.fill != fill;
 }

@@ -9,17 +9,26 @@ import '../records/log_set_sheet.dart';
 import '../records/train_records_tab.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
+import 'today_section_header.dart';
 
 /// Today's planned workout checklist with set logging.
+///
+/// Collapsible: the header is always shown, the checklist only when
+/// [expanded]. The plain "+" opens the existing add-workout flow and never
+/// toggles the block.
 class TodayWorkoutCard extends ConsumerWidget {
   const TodayWorkoutCard({
     super.key,
     required this.day,
     required this.sectionPrefix,
+    required this.expanded,
+    required this.onToggle,
   });
 
   final DateTime day;
   final String sectionPrefix;
+  final bool expanded;
+  final VoidCallback onToggle;
 
   String _groupTitle(DayWorkoutGroup group, AppLocalizations l10n) {
     final name = group.workout.planName?.trim();
@@ -30,9 +39,9 @@ class TodayWorkoutCard extends ConsumerWidget {
   Future<void> _pickPlan(BuildContext context, WidgetRef ref) async {
     final l10n = context.l10n;
     if (!AppDates.isLocalToday(day)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.pastDayReadOnly)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.pastDayReadOnly)));
       return;
     }
     final plans = await ref.read(workoutRepositoryProvider).listPlanSummaries();
@@ -120,15 +129,14 @@ class TodayWorkoutCard extends ConsumerWidget {
     }
     if (choice is WorkoutPlanSummary) {
       try {
-        await ref.read(workoutRepositoryProvider).applyPlanToDay(
-              planId: choice.plan.id,
-              day: day,
-            );
+        await ref
+            .read(workoutRepositoryProvider)
+            .applyPlanToDay(planId: choice.plan.id, day: day);
       } catch (e) {
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.addFailed('$e'))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.addFailed('$e'))));
       }
     }
   }
@@ -139,9 +147,9 @@ class TodayWorkoutCard extends ConsumerWidget {
     final snap = await ref.read(workoutRepositoryProvider).daySnapshot(day);
     if (!context.mounted) return;
     if (snap.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.noWorkoutToSave)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.noWorkoutToSave)));
       return;
     }
     String? existingName;
@@ -155,12 +163,7 @@ class TodayWorkoutCard extends ConsumerWidget {
     final nameCtrl = TextEditingController(
       text: (existingName != null && existingName.isNotEmpty)
           ? existingName
-          : AppDates.relativeDayTitle(
-              day,
-              AppDates.todayLocal(),
-              l10n,
-              locale,
-            ),
+          : AppDates.relativeDayTitle(day, AppDates.todayLocal(), l10n, locale),
     );
     final ok = await showDialog<bool>(
       context: context,
@@ -191,20 +194,19 @@ class TodayWorkoutCard extends ConsumerWidget {
     WidgetsBinding.instance.addPostFrameCallback((_) => nameCtrl.dispose());
     if (ok != true || !context.mounted) return;
     try {
-      await ref.read(workoutRepositoryProvider).createPlanFromDay(
-            day: day,
-            name: planName,
-          );
+      await ref
+          .read(workoutRepositoryProvider)
+          .createPlanFromDay(day: day, name: planName);
       ref.invalidate(workoutPlansProvider);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.planSaved)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.planSaved)));
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.saveFailed('$e'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.saveFailed('$e'))));
     }
   }
 
@@ -246,19 +248,18 @@ class TodayWorkoutCard extends ConsumerWidget {
     required AppLocalizations l10n,
     required bool canAdd,
     required bool canSaveAsPlan,
-    required Widget title,
+    required String? summary,
   }) {
-    return Row(
-      children: [
-        Expanded(
-          child: SportSectionTitle(child: title),
-        ),
-        if (canAdd)
-          IconButton(
-            tooltip: l10n.addTodayWorkout,
-            onPressed: () => _pickPlan(context, ref),
-            icon: const Icon(Icons.add),
-          ),
+    return TodaySectionHeader(
+      title: l10n.sectionWorkout(sectionPrefix),
+      summary: summary,
+      expanded: expanded,
+      onToggle: onToggle,
+      expandLabel: l10n.expandSection,
+      collapseLabel: l10n.collapseSection,
+      addLabel: canAdd ? l10n.addTodayWorkout : null,
+      onAdd: canAdd ? () => _pickPlan(context, ref) : null,
+      trailing: [
         if (canSaveAsPlan)
           PopupMenuButton<String>(
             tooltip: l10n.more,
@@ -268,10 +269,7 @@ class TodayWorkoutCard extends ConsumerWidget {
               }
             },
             itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'savePlan',
-                child: Text(l10n.saveAsPlan),
-              ),
+              PopupMenuItem(value: 'savePlan', child: Text(l10n.saveAsPlan)),
             ],
           ),
       ],
@@ -287,11 +285,7 @@ class TodayWorkoutCard extends ConsumerWidget {
     required bool editable,
   }) {
     if (!editable) {
-      return _WorkoutItemTile(
-        progress: progress,
-        day: day,
-        editable: false,
-      );
+      return _WorkoutItemTile(progress: progress, day: day, editable: false);
     }
     return Dismissible(
       key: ValueKey(progress.item.id),
@@ -312,9 +306,7 @@ class TodayWorkoutCard extends ConsumerWidget {
               builder: (ctx) => AlertDialog(
                 title: Text(l10n.deleteWorkoutItem),
                 content: Text(
-                  l10n.confirmDeleteWorkoutItem(
-                    progress.item.exerciseName,
-                  ),
+                  l10n.confirmDeleteWorkoutItem(progress.item.exerciseName),
                 ),
                 actions: [
                   TextButton(
@@ -336,11 +328,7 @@ class TodayWorkoutCard extends ConsumerWidget {
             .deleteDayWorkoutItem(progress.item.id);
         ref.invalidate(workoutHistoryProvider);
       },
-      child: _WorkoutItemTile(
-        progress: progress,
-        day: day,
-        editable: true,
-      ),
+      child: _WorkoutItemTile(progress: progress, day: day, editable: true),
     );
   }
 
@@ -353,9 +341,23 @@ class TodayWorkoutCard extends ConsumerWidget {
     final editable = AppDates.isLocalToday(day);
 
     return async.when(
-      loading: () => const SizedBox(
-        height: 48,
-        child: Center(child: CircularProgressIndicator()),
+      loading: () => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _headerRow(
+            context: context,
+            ref: ref,
+            l10n: l10n,
+            canAdd: editable,
+            canSaveAsPlan: false,
+            summary: null,
+          ),
+          if (expanded)
+            const SizedBox(
+              height: 48,
+              child: Center(child: CircularProgressIndicator()),
+            ),
+        ],
       ),
       error: (e, _) => Text(l10n.workoutLoadFailed('$e')),
       data: (snapshot) {
@@ -369,20 +371,18 @@ class TodayWorkoutCard extends ConsumerWidget {
                 l10n: l10n,
                 canAdd: editable,
                 canSaveAsPlan: editable,
-                title: Text(
-                  l10n.sectionWorkout(sectionPrefix),
-                  style: theme.textTheme.titleMedium,
-                ),
+                summary: l10n.noWorkoutShort,
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 28),
-                child: Center(
-                  child: Text(
-                    editable ? l10n.noWorkoutTodo : l10n.pastDayReadOnly,
-                    style: theme.textTheme.meta,
+              if (expanded)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Center(
+                    child: Text(
+                      editable ? l10n.noWorkoutTodo : l10n.pastDayReadOnly,
+                      style: theme.textTheme.meta,
+                    ),
                   ),
                 ),
-              ),
             ],
           );
         }
@@ -399,35 +399,34 @@ class TodayWorkoutCard extends ConsumerWidget {
               l10n: l10n,
               canAdd: editable,
               canSaveAsPlan: true,
-              title: Text(
-                l10n.sectionWorkout(sectionPrefix),
-                style: theme.textTheme.titleMedium,
-              ),
+              summary: '$done/$total',
             ),
-            const SizedBox(height: 4),
-            for (final group in snapshot.groups)
-              _DayWorkoutGroupTile(
-                title: _groupTitle(group, l10n),
-                done: group.doneCount,
-                total: group.items.length,
-                canRemove: editable,
-                onRemove: () => _removeGroup(context, ref, group),
-                children: [
-                  for (final progress in group.items)
-                    _itemTile(
-                      context: context,
-                      ref: ref,
-                      l10n: l10n,
-                      scheme: scheme,
-                      progress: progress,
-                      editable: editable,
-                    ),
-                ],
+            if (expanded) ...[
+              const SizedBox(height: 4),
+              for (final group in snapshot.groups)
+                _DayWorkoutGroupTile(
+                  title: _groupTitle(group, l10n),
+                  done: group.doneCount,
+                  total: group.items.length,
+                  canRemove: editable,
+                  onRemove: () => _removeGroup(context, ref, group),
+                  children: [
+                    for (final progress in group.items)
+                      _itemTile(
+                        context: context,
+                        ref: ref,
+                        l10n: l10n,
+                        scheme: scheme,
+                        progress: progress,
+                        editable: editable,
+                      ),
+                  ],
+                ),
+              Text(
+                l10n.workoutProgressHint(done, total),
+                style: theme.textTheme.meta,
               ),
-            Text(
-              l10n.workoutProgressHint(done, total),
-              style: theme.textTheme.meta,
-            ),
+            ],
           ],
         );
       },
@@ -487,10 +486,7 @@ class _DayWorkoutGroupTileState extends State<_DayWorkoutGroupTile> {
           AnimatedRotation(
             turns: _expanded ? 0.5 : 0,
             duration: kThemeAnimationDuration,
-            child: Icon(
-              Icons.expand_more,
-              color: scheme.onSurfaceVariant,
-            ),
+            child: Icon(Icons.expand_more, color: scheme.onSurfaceVariant),
           ),
         ],
       ),

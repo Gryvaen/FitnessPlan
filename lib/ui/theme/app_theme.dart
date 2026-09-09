@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
-/// Macro nutrient accent colors shared across Today / meals / charts.
+/// Nutrient semantic colors; identical across all themes so that protein /
+/// carbs / fat / water always read the same.
 abstract final class AppColors {
-  static const protein = Color(0xFFD62828);
-  static const carb = Color(0xFF457B9D);
-  static const fat = Color(0xFFE9C46A);
+  static const protein = Color(0xFFE0605A);
+  static const carb = Color(0xFF4C8BE0);
+  static const fat = Color(0xFFE4B94B);
+  static const water = Color(0xFF3FB8C6);
 }
 
 /// Layout spacing tokens.
@@ -12,9 +14,21 @@ abstract final class AppSpacing {
   static const listPage = 16.0;
   static const formPage = 20.0;
   static const card = 16.0;
-  static const section = 16.0;
+  static const section = 12.0;
   static const field = 12.0;
+  static const compact = 8.0;
 }
+
+/// Corner radius tokens.
+abstract final class AppRadius {
+  static const card = 20.0;
+  static const tile = 14.0;
+  static const chip = 999.0;
+  static const control = 12.0;
+}
+
+/// Minimum tap target for icon-only controls.
+const double kMinTapTarget = 44.0;
 
 /// Scroll padding so list content clears the floating pill nav / FAB.
 double listBottomInset(BuildContext context, {bool hasFab = true}) {
@@ -35,170 +49,222 @@ extension AppTextStyles on TextTheme {
   TextStyle? get statUnit => titleSmall?.copyWith(fontWeight: FontWeight.w500);
 }
 
-/// Sporty gradient / dual-tone tokens per named theme.
+/// Per-theme surface / accent tokens shared by every page.
+///
+/// Pages must not hard-code colors; they read these tokens (or the Material
+/// [ColorScheme]) so that all four themes share one layout.
 class AppThemeVisuals extends ThemeExtension<AppThemeVisuals> {
   const AppThemeVisuals({
-    required this.scaffoldWash,
+    required this.card,
+    required this.cardBorder,
+    required this.cardShadow,
+    required this.heroCard,
+    required this.heroGlow,
+    required this.onHero,
+    required this.onHeroMuted,
     required this.accent,
-    required this.hero,
-    required this.heroOnGradient,
+    required this.onAccent,
+    required this.accentSoft,
+    required this.divider,
+    required this.track,
+    required this.navShell,
+    required this.navBorder,
+    required this.navIndicator,
+    required this.onNavIndicator,
+    required this.waterFill,
+    required this.waterFillDeep,
+    required this.waterStroke,
+    required this.cupGlass,
     required this.previewColors,
-    required this.surfaceGlow,
-    required this.strokeGlow,
-    required this.progress,
-    required this.pillShell,
-    required this.chipSelected,
-    required this.sectionWash,
-    required this.rail,
-    required this.highlight,
-    required this.glowSpot,
   });
 
-  /// Soft top-of-page atmosphere (light wash or dark glow).
-  final LinearGradient scaffoldWash;
+  /// Ordinary card / list row background.
+  final Color card;
+  final Color cardBorder;
+  final Color cardShadow;
 
-  /// Nav indicator / strong accents.
-  final LinearGradient accent;
+  /// Main summary card (Today calories, Profile quota).
+  final Color heroCard;
 
-  /// Core hero cards (Today calories, Profile quota).
-  final LinearGradient hero;
+  /// Soft radial glow drawn on the hero card (transparent when unused).
+  final Color heroGlow;
+  final Color onHero;
+  final Color onHeroMuted;
 
-  /// Primary text/icon color on [hero].
-  final Color heroOnGradient;
+  /// Primary accent (buttons, rings, selected nav).
+  final Color accent;
+  final Color onAccent;
 
-  /// Dual swatch colors for theme picker preview.
+  /// Tinted accent surface (chips, selected states).
+  final Color accentSoft;
+  final Color divider;
+
+  /// Progress track behind bars / rings.
+  final Color track;
+
+  /// Floating pill nav.
+  final Color navShell;
+  final Color navBorder;
+  final Color navIndicator;
+  final Color onNavIndicator;
+
+  /// Water cup liquid (translucent) and its deeper tone near the bottom.
+  final Color waterFill;
+  final Color waterFillDeep;
+
+  /// Cup outline stroke.
+  final Color waterStroke;
+
+  /// Glass body tint.
+  final Color cupGlass;
+
+  /// Swatches for the theme picker preview.
   final List<Color> previewColors;
 
-  /// Ordinary cards / list rows (stronger than wash, weaker than hero).
-  final LinearGradient surfaceGlow;
-
-  /// Neon stroke / accent bar color.
-  final Color strokeGlow;
-
-  /// Progress bars / water liquid.
-  final LinearGradient progress;
-
-  /// Bottom pill nav shell.
-  final LinearGradient pillShell;
-
-  /// Segmented / chip selected fill.
-  final LinearGradient chipSelected;
-
-  /// Flat section band wash (water / workout); between wash and surfaceGlow.
-  final LinearGradient sectionWash;
-
-  /// Left neon rail for flat rows / bands.
-  final LinearGradient rail;
-
-  /// Title underline tip / check accents.
-  final Color highlight;
-
-  /// Soft radial glow center for surfaces.
-  final Color glowSpot;
-
-  /// Safe lookup with day fallback for tests / bootstrap.
+  /// Safe lookup with default-theme fallback for tests / bootstrap.
   static AppThemeVisuals of(BuildContext context) {
     return Theme.of(context).extension<AppThemeVisuals>() ??
-        AppTheme._visualsFor(AppThemeId.day);
+        AppTheme.visualsFor(AppThemeId.fresh);
   }
 
   @override
   AppThemeVisuals copyWith({
-    LinearGradient? scaffoldWash,
-    LinearGradient? accent,
-    LinearGradient? hero,
-    Color? heroOnGradient,
+    Color? card,
+    Color? cardBorder,
+    Color? cardShadow,
+    Color? heroCard,
+    Color? heroGlow,
+    Color? onHero,
+    Color? onHeroMuted,
+    Color? accent,
+    Color? onAccent,
+    Color? accentSoft,
+    Color? divider,
+    Color? track,
+    Color? navShell,
+    Color? navBorder,
+    Color? navIndicator,
+    Color? onNavIndicator,
+    Color? waterFill,
+    Color? waterFillDeep,
+    Color? waterStroke,
+    Color? cupGlass,
     List<Color>? previewColors,
-    LinearGradient? surfaceGlow,
-    Color? strokeGlow,
-    LinearGradient? progress,
-    LinearGradient? pillShell,
-    LinearGradient? chipSelected,
-    LinearGradient? sectionWash,
-    LinearGradient? rail,
-    Color? highlight,
-    Color? glowSpot,
   }) {
     return AppThemeVisuals(
-      scaffoldWash: scaffoldWash ?? this.scaffoldWash,
+      card: card ?? this.card,
+      cardBorder: cardBorder ?? this.cardBorder,
+      cardShadow: cardShadow ?? this.cardShadow,
+      heroCard: heroCard ?? this.heroCard,
+      heroGlow: heroGlow ?? this.heroGlow,
+      onHero: onHero ?? this.onHero,
+      onHeroMuted: onHeroMuted ?? this.onHeroMuted,
       accent: accent ?? this.accent,
-      hero: hero ?? this.hero,
-      heroOnGradient: heroOnGradient ?? this.heroOnGradient,
+      onAccent: onAccent ?? this.onAccent,
+      accentSoft: accentSoft ?? this.accentSoft,
+      divider: divider ?? this.divider,
+      track: track ?? this.track,
+      navShell: navShell ?? this.navShell,
+      navBorder: navBorder ?? this.navBorder,
+      navIndicator: navIndicator ?? this.navIndicator,
+      onNavIndicator: onNavIndicator ?? this.onNavIndicator,
+      waterFill: waterFill ?? this.waterFill,
+      waterFillDeep: waterFillDeep ?? this.waterFillDeep,
+      waterStroke: waterStroke ?? this.waterStroke,
+      cupGlass: cupGlass ?? this.cupGlass,
       previewColors: previewColors ?? this.previewColors,
-      surfaceGlow: surfaceGlow ?? this.surfaceGlow,
-      strokeGlow: strokeGlow ?? this.strokeGlow,
-      progress: progress ?? this.progress,
-      pillShell: pillShell ?? this.pillShell,
-      chipSelected: chipSelected ?? this.chipSelected,
-      sectionWash: sectionWash ?? this.sectionWash,
-      rail: rail ?? this.rail,
-      highlight: highlight ?? this.highlight,
-      glowSpot: glowSpot ?? this.glowSpot,
     );
   }
 
   @override
   AppThemeVisuals lerp(ThemeExtension<AppThemeVisuals>? other, double t) {
     if (other is! AppThemeVisuals) return this;
+    Color c(Color a, Color b) => Color.lerp(a, b, t) ?? a;
     return AppThemeVisuals(
-      scaffoldWash:
-          LinearGradient.lerp(scaffoldWash, other.scaffoldWash, t) ??
-          scaffoldWash,
-      accent: LinearGradient.lerp(accent, other.accent, t) ?? accent,
-      hero: LinearGradient.lerp(hero, other.hero, t) ?? hero,
-      heroOnGradient:
-          Color.lerp(heroOnGradient, other.heroOnGradient, t) ?? heroOnGradient,
+      card: c(card, other.card),
+      cardBorder: c(cardBorder, other.cardBorder),
+      cardShadow: c(cardShadow, other.cardShadow),
+      heroCard: c(heroCard, other.heroCard),
+      heroGlow: c(heroGlow, other.heroGlow),
+      onHero: c(onHero, other.onHero),
+      onHeroMuted: c(onHeroMuted, other.onHeroMuted),
+      accent: c(accent, other.accent),
+      onAccent: c(onAccent, other.onAccent),
+      accentSoft: c(accentSoft, other.accentSoft),
+      divider: c(divider, other.divider),
+      track: c(track, other.track),
+      navShell: c(navShell, other.navShell),
+      navBorder: c(navBorder, other.navBorder),
+      navIndicator: c(navIndicator, other.navIndicator),
+      onNavIndicator: c(onNavIndicator, other.onNavIndicator),
+      waterFill: c(waterFill, other.waterFill),
+      waterFillDeep: c(waterFillDeep, other.waterFillDeep),
+      waterStroke: c(waterStroke, other.waterStroke),
+      cupGlass: c(cupGlass, other.cupGlass),
       previewColors: [
         for (var i = 0; i < previewColors.length; i++)
-          Color.lerp(
-                previewColors[i],
-                other.previewColors[i.clamp(0, other.previewColors.length - 1)],
-                t,
-              ) ??
-              previewColors[i],
+          c(
+            previewColors[i],
+            other.previewColors[i.clamp(0, other.previewColors.length - 1)],
+          ),
       ],
-      surfaceGlow:
-          LinearGradient.lerp(surfaceGlow, other.surfaceGlow, t) ?? surfaceGlow,
-      strokeGlow: Color.lerp(strokeGlow, other.strokeGlow, t) ?? strokeGlow,
-      progress: LinearGradient.lerp(progress, other.progress, t) ?? progress,
-      pillShell:
-          LinearGradient.lerp(pillShell, other.pillShell, t) ?? pillShell,
-      chipSelected:
-          LinearGradient.lerp(chipSelected, other.chipSelected, t) ??
-          chipSelected,
-      sectionWash:
-          LinearGradient.lerp(sectionWash, other.sectionWash, t) ?? sectionWash,
-      rail: LinearGradient.lerp(rail, other.rail, t) ?? rail,
-      highlight: Color.lerp(highlight, other.highlight, t) ?? highlight,
-      glowSpot: Color.lerp(glowSpot, other.glowSpot, t) ?? glowSpot,
     );
   }
 }
 
-/// Named theme presets selectable in Profile → Theme (styled) or Me day/night toggle.
+/// The four selectable themes. Storage keeps the enum name; legacy ids from
+/// earlier releases are mapped in [fromStorage] so existing users keep a
+/// theme close to what they had chosen.
 enum AppThemeId {
-  day,
-  night,
-  forest,
-  midnight,
-  sunrise,
+  /// 清新绿 — default for new users.
+  fresh,
+
+  /// 极光 — deep sea blue with teal accents.
+  aurora,
+
+  /// 暖阳 — cream with warm orange.
+  warm,
+
+  /// 石墨 — matte dark grey with silver accents.
   graphite;
 
-  /// Colorful presets shown on the Theme page (excludes day / night).
-  static const styledPresets = [forest, midnight, sunrise, graphite];
+  static const defaultId = fresh;
+
+  /// Presets shown on the Theme page, in display order.
+  static const presets = [fresh, aurora, warm, graphite];
+
+  /// Legacy ids → current themes (kept for users who already picked one).
+  static const legacyMap = <String, AppThemeId>{
+    'day': fresh,
+    'forest': fresh,
+    'night': graphite,
+    'graphite': graphite,
+    'midnight': aurora,
+    'sunrise': warm,
+  };
 
   static AppThemeId fromStorage(String? raw) {
-    return AppThemeId.values.firstWhere(
-      (e) => e.name == raw,
-      orElse: () => AppThemeId.day,
-    );
+    if (raw == null) return defaultId;
+    for (final e in values) {
+      if (e.name == raw) return e;
+    }
+    return legacyMap[raw] ?? defaultId;
   }
 
-  /// Primary swatch for simple previews (first hero stop).
-  Color get previewColor => AppTheme._visualsFor(this).hero.colors.first;
+  bool get isDark => this == aurora || this == graphite;
 
-  /// Preview dots: same stops as the hero card gradient.
-  List<Color> get previewColors => AppTheme._visualsFor(this).hero.colors;
+  /// Light ↔ dark counterpart used by the quick day/night toggle.
+  AppThemeId get toggled => switch (this) {
+    fresh => graphite,
+    graphite => fresh,
+    warm => aurora,
+    aurora => warm,
+  };
+
+  /// Primary swatch for simple previews.
+  Color get previewColor => AppTheme.visualsFor(this).accent;
+
+  List<Color> get previewColors => AppTheme.visualsFor(this).previewColors;
 }
 
 class AppTheme {
@@ -207,7 +273,7 @@ class AppTheme {
   /// Display / loading-page typeface (霞鹜文楷 Lite Medium).
   static const displayFontFamily = 'LXGWWenKai';
 
-  /// Shared oil-painting rainbow base for all themes (soft pigment washes).
+  /// Soft rainbow wash used only by the loading-page ink bloom animation.
   static const oilRainbowWash = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -223,479 +289,269 @@ class AppTheme {
     stops: [0.0, 0.16, 0.32, 0.48, 0.64, 0.8, 1.0],
   );
 
-  /// Default light theme (Day); used by bootstrap / tests.
-  static ThemeData get light => ofId(AppThemeId.day);
+  /// Default light theme (清新绿); used by bootstrap / tests.
+  static ThemeData get light => ofId(AppThemeId.fresh);
 
   static ThemeData ofId(AppThemeId id) {
-    final scheme = _schemeFor(id);
-    final visuals = _visualsFor(id);
+    final scheme = schemeFor(id);
+    final visuals = visualsFor(id);
     return _buildTheme(scheme, visuals);
   }
 
-  /// Flat Material visuals from a ColorScheme (day / night).
-  static AppThemeVisuals _plainVisuals(ColorScheme scheme) {
-    final primary = scheme.primary;
-    final surface = scheme.surface;
-    final container = scheme.surfaceContainerHighest;
-    final primaryContainer = scheme.primaryContainer;
-    final onPrimary = scheme.onPrimary;
-    final onSurface = scheme.onSurface;
-
-    LinearGradient solid(Color a, [Color? b]) => LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [a, b ?? a],
-    );
-
-    return AppThemeVisuals(
-      scaffoldWash: solid(surface.withValues(alpha: 0.0)),
-      accent: solid(primary),
-      hero: solid(primary, primaryContainer),
-      heroOnGradient: onPrimary,
-      previewColors: [primary, container],
-      surfaceGlow: solid(container),
-      strokeGlow: primary,
-      progress: solid(primary, primaryContainer),
-      pillShell: solid(scheme.surfaceContainerHigh),
-      chipSelected: solid(primaryContainer),
-      sectionWash: solid(container.withValues(alpha: 0.35)),
-      rail: solid(primary),
-      highlight: primary,
-      glowSpot: onSurface.withValues(alpha: 0.12),
-    );
-  }
-
-  static ColorScheme _schemeFor(AppThemeId id) {
+  static ColorScheme schemeFor(AppThemeId id) {
     return switch (id) {
-      AppThemeId.day => ColorScheme.fromSeed(
-        seedColor: Colors.blueGrey,
+      AppThemeId.fresh => const ColorScheme(
         brightness: Brightness.light,
+        primary: Color(0xFF246B50),
+        onPrimary: Color(0xFFFFFFFF),
+        primaryContainer: Color(0xFFDCEDE4),
+        onPrimaryContainer: Color(0xFF12382A),
+        secondary: Color(0xFF3E8E6E),
+        onSecondary: Color(0xFFFFFFFF),
+        secondaryContainer: Color(0xFFE4F0EA),
+        onSecondaryContainer: Color(0xFF12382A),
+        tertiary: Color(0xFF3E8E6E),
+        onTertiary: Color(0xFFFFFFFF),
+        tertiaryContainer: Color(0xFFE4F0EA),
+        onTertiaryContainer: Color(0xFF12382A),
+        error: Color(0xFFC2413B),
+        onError: Color(0xFFFFFFFF),
+        errorContainer: Color(0xFFFBE0DD),
+        onErrorContainer: Color(0xFF5A1612),
+        surface: Color(0xFFF6F8F5),
+        onSurface: Color(0xFF1B2A24),
+        onSurfaceVariant: Color(0xFF5C6B65),
+        surfaceContainerLowest: Color(0xFFFFFFFF),
+        surfaceContainerLow: Color(0xFFF1F4F1),
+        surfaceContainer: Color(0xFFECF1EE),
+        surfaceContainerHigh: Color(0xFFE6ECE8),
+        surfaceContainerHighest: Color(0xFFE0E7E2),
+        outline: Color(0xFFC9D3CD),
+        outlineVariant: Color(0xFFE3E8E4),
+        inverseSurface: Color(0xFF2E3A35),
+        onInverseSurface: Color(0xFFF1F4F1),
+        inversePrimary: Color(0xFF8ED0B6),
+        shadow: Color(0xFF000000),
+        scrim: Color(0xFF000000),
+        surfaceTint: Color(0xFF246B50),
       ),
-      AppThemeId.night => ColorScheme.fromSeed(
-        seedColor: Colors.blueGrey,
+      AppThemeId.aurora => const ColorScheme(
         brightness: Brightness.dark,
+        primary: Color(0xFF34D3C2),
+        onPrimary: Color(0xFF05261F),
+        primaryContainer: Color(0xFF16404A),
+        onPrimaryContainer: Color(0xFFBFF3EC),
+        secondary: Color(0xFF62B6E9),
+        onSecondary: Color(0xFF07253A),
+        secondaryContainer: Color(0xFF173A55),
+        onSecondaryContainer: Color(0xFFCFE9FA),
+        tertiary: Color(0xFF9DE0D6),
+        onTertiary: Color(0xFF05261F),
+        tertiaryContainer: Color(0xFF16404A),
+        onTertiaryContainer: Color(0xFFBFF3EC),
+        error: Color(0xFFFF8A80),
+        onError: Color(0xFF3B0000),
+        errorContainer: Color(0xFF5C1F1B),
+        onErrorContainer: Color(0xFFFFDAD6),
+        surface: Color(0xFF0A1A2B),
+        onSurface: Color(0xFFE8F3F6),
+        onSurfaceVariant: Color(0xFFA3B7C1),
+        surfaceContainerLowest: Color(0xFF0F2439),
+        surfaceContainerLow: Color(0xFF122A41),
+        surfaceContainer: Color(0xFF16304A),
+        surfaceContainerHigh: Color(0xFF1B3752),
+        surfaceContainerHighest: Color(0xFF213E5B),
+        outline: Color(0xFF3B5670),
+        outlineVariant: Color(0xFF22384F),
+        inverseSurface: Color(0xFFE8F3F6),
+        onInverseSurface: Color(0xFF0A1A2B),
+        inversePrimary: Color(0xFF1C7F74),
+        shadow: Color(0xFF000000),
+        scrim: Color(0xFF000000),
+        surfaceTint: Color(0xFF34D3C2),
       ),
-      AppThemeId.forest =>
-        ColorScheme.fromSeed(
-          seedColor: const Color(0xFF0F766E),
-          brightness: Brightness.light,
-          surface: const Color(0xFFF3F8F5),
-        ).copyWith(
-          primary: const Color(0xFF0F766E),
-          onPrimary: const Color(0xFFFFFFFF),
-          secondary: const Color(0xFF2DD4A8),
-          onSecondary: const Color(0xFF042F2E),
-          primaryContainer: const Color(0xFFCCFBF1),
-          onPrimaryContainer: const Color(0xFF0B3D2E),
-          secondaryContainer: const Color(0xFFD1FAE5),
-          tertiary: const Color(0xFF059669),
-        ),
-      AppThemeId.midnight =>
-        ColorScheme.fromSeed(
-          seedColor: const Color(0xFF3B82F6),
-          brightness: Brightness.dark,
-          surface: const Color(0xFF0A1628),
-        ).copyWith(
-          primary: const Color(0xFF3B82F6),
-          onPrimary: const Color(0xFFEFF6FF),
-          secondary: const Color(0xFF60A5FA),
-          onSecondary: const Color(0xFF0A1628),
-          primaryContainer: const Color(0xFF1E3A5F),
-          onPrimaryContainer: const Color(0xFFDBEAFE),
-          secondaryContainer: const Color(0xFF1E293B),
-          tertiary: const Color(0xFF38BDF8),
-        ),
-      AppThemeId.sunrise =>
-        ColorScheme.fromSeed(
-          seedColor: const Color(0xFFE85D04),
-          brightness: Brightness.light,
-          surface: const Color(0xFFFFF5ED),
-        ).copyWith(
-          primary: const Color(0xFFE85D04),
-          onPrimary: const Color(0xFFFFFFFF),
-          secondary: const Color(0xFFFF8A4C),
-          onSecondary: const Color(0xFF4A1C08),
-          primaryContainer: const Color(0xFFFFE0CC),
-          onPrimaryContainer: const Color(0xFF4A1C08),
-          secondaryContainer: const Color(0xFFFFEDD5),
-          tertiary: const Color(0xFFF59E0B),
-        ),
-      AppThemeId.graphite =>
-        ColorScheme.fromSeed(
-          seedColor: const Color(0xFF38BDF8),
-          brightness: Brightness.dark,
-          surface: const Color(0xFF0E1116),
-        ).copyWith(
-          primary: const Color(0xFF38BDF8),
-          onPrimary: const Color(0xFF0C4A6E),
-          secondary: const Color(0xFF94A3B8),
-          onSecondary: const Color(0xFF0E1116),
-          primaryContainer: const Color(0xFF1E293B),
-          onPrimaryContainer: const Color(0xFFE0F2FE),
-          secondaryContainer: const Color(0xFF1F2937),
-          tertiary: const Color(0xFF64748B),
-        ),
+      AppThemeId.warm => const ColorScheme(
+        brightness: Brightness.light,
+        primary: Color(0xFFD96F2E),
+        onPrimary: Color(0xFFFFFFFF),
+        primaryContainer: Color(0xFFFCE3D0),
+        onPrimaryContainer: Color(0xFF5A2E12),
+        secondary: Color(0xFFC9932F),
+        onSecondary: Color(0xFFFFFFFF),
+        secondaryContainer: Color(0xFFFBEBD2),
+        onSecondaryContainer: Color(0xFF5A2E12),
+        tertiary: Color(0xFFB8552A),
+        onTertiary: Color(0xFFFFFFFF),
+        tertiaryContainer: Color(0xFFFCE3D0),
+        onTertiaryContainer: Color(0xFF5A2E12),
+        error: Color(0xFFC24A3B),
+        onError: Color(0xFFFFFFFF),
+        errorContainer: Color(0xFFFBE0DD),
+        onErrorContainer: Color(0xFF5A1612),
+        surface: Color(0xFFFBF5EC),
+        onSurface: Color(0xFF3B2A1F),
+        onSurfaceVariant: Color(0xFF7C6A5D),
+        surfaceContainerLowest: Color(0xFFFFFDF9),
+        surfaceContainerLow: Color(0xFFF8F0E5),
+        surfaceContainer: Color(0xFFF4EADF),
+        surfaceContainerHigh: Color(0xFFF0E4D6),
+        surfaceContainerHighest: Color(0xFFEBDDCD),
+        outline: Color(0xFFDCCDBE),
+        outlineVariant: Color(0xFFEFE3D6),
+        inverseSurface: Color(0xFF3B2A1F),
+        onInverseSurface: Color(0xFFFBF5EC),
+        inversePrimary: Color(0xFFF7B48E),
+        shadow: Color(0xFF000000),
+        scrim: Color(0xFF000000),
+        surfaceTint: Color(0xFFD96F2E),
+      ),
+      AppThemeId.graphite => const ColorScheme(
+        brightness: Brightness.dark,
+        primary: Color(0xFFC7CED6),
+        onPrimary: Color(0xFF14181D),
+        primaryContainer: Color(0xFF3A414A),
+        onPrimaryContainer: Color(0xFFEEF2F6),
+        secondary: Color(0xFF8FB6D6),
+        onSecondary: Color(0xFF0F1B26),
+        secondaryContainer: Color(0xFF2E3A47),
+        onSecondaryContainer: Color(0xFFDCE9F5),
+        tertiary: Color(0xFFA9B4C0),
+        onTertiary: Color(0xFF14181D),
+        tertiaryContainer: Color(0xFF3A414A),
+        onTertiaryContainer: Color(0xFFEEF2F6),
+        error: Color(0xFFFF8A80),
+        onError: Color(0xFF3B0000),
+        errorContainer: Color(0xFF5C1F1B),
+        onErrorContainer: Color(0xFFFFDAD6),
+        surface: Color(0xFF1B1E22),
+        onSurface: Color(0xFFECEFF2),
+        onSurfaceVariant: Color(0xFFA6AEB8),
+        surfaceContainerLowest: Color(0xFF24282E),
+        surfaceContainerLow: Color(0xFF272B31),
+        surfaceContainer: Color(0xFF2C3138),
+        surfaceContainerHigh: Color(0xFF31373E),
+        surfaceContainerHighest: Color(0xFF373E46),
+        outline: Color(0xFF4A525B),
+        outlineVariant: Color(0xFF30363D),
+        inverseSurface: Color(0xFFECEFF2),
+        onInverseSurface: Color(0xFF1B1E22),
+        inversePrimary: Color(0xFF5B646E),
+        shadow: Color(0xFF000000),
+        scrim: Color(0xFF000000),
+        surfaceTint: Color(0xFFC7CED6),
+      ),
     };
   }
 
-  static AppThemeVisuals _visualsFor(AppThemeId id) {
+  static AppThemeVisuals visualsFor(AppThemeId id) {
     return switch (id) {
-      AppThemeId.day || AppThemeId.night => _plainVisuals(_schemeFor(id)),
-      AppThemeId.forest => const AppThemeVisuals(
-        scaffoldWash: AppTheme.oilRainbowWash,
-        accent: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFA3E635),
-            Color(0xFFCA8A04),
-            Color(0xFF0D9488),
-            Color(0xFF22D3EE),
-          ],
-        ),
-        hero: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF0B3D2E),
-            Color(0xFFA3E635),
-            Color(0xFFCA8A04),
-            Color(0xFF0D9488),
-            Color(0xFF22D3EE),
-            Color(0xFFC4B5FD),
-          ],
-          stops: [0.0, 0.18, 0.32, 0.5, 0.72, 1.0],
-        ),
-        heroOnGradient: Color(0xFFF0FDFA),
+      AppThemeId.fresh => const AppThemeVisuals(
+        card: Color(0xFFFFFFFF),
+        cardBorder: Color(0xFFE3E8E4),
+        cardShadow: Color(0x14203A2E),
+        heroCard: Color(0xFFFFFFFF),
+        heroGlow: Color(0x00000000),
+        onHero: Color(0xFF1B2A24),
+        onHeroMuted: Color(0xFF5C6B65),
+        accent: Color(0xFF246B50),
+        onAccent: Color(0xFFFFFFFF),
+        accentSoft: Color(0xFFE4F0EA),
+        divider: Color(0xFFE3E8E4),
+        track: Color(0xFFE6ECE8),
+        navShell: Color(0xFFFFFFFF),
+        navBorder: Color(0xFFE3E8E4),
+        navIndicator: Color(0xFF246B50),
+        onNavIndicator: Color(0xFFFFFFFF),
+        waterFill: Color(0x9977CBB0),
+        waterFillDeep: Color(0xCC4FB894),
+        waterStroke: Color(0xFF246B50),
+        cupGlass: Color(0x14246B50),
         previewColors: [
-          Color(0xFF0B3D2E),
-          Color(0xFFA3E635),
-          Color(0xFFCA8A04),
-          Color(0xFF0D9488),
-          Color(0xFF22D3EE),
-          Color(0xFFC4B5FD),
+          Color(0xFF246B50),
+          Color(0xFFF6F8F5),
+          Color(0xFF77CBB0),
         ],
-        surfaceGlow: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xEBD9F99D),
-            Color(0xEBD4B86A),
-            Color(0xEB5EEAD4),
-            Color(0xEBA5F3FC),
-            Color(0xEBDDD6FE),
-          ],
-        ),
-        strokeGlow: Color(0xFF14B8A6),
-        progress: LinearGradient(
-          colors: [
-            Color(0xFF0B3D2E),
-            Color(0xFFA3E635),
-            Color(0xFFCA8A04),
-            Color(0xFF0D9488),
-            Color(0xFF22D3EE),
-            Color(0xFFC4B5FD),
-          ],
-        ),
-        pillShell: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xF5ECFDF5),
-            Color(0xF5D9F99D),
-            Color(0xF5D4B86A),
-            Color(0xF599F6E4),
-            Color(0xF5EDE9FE),
-          ],
-        ),
-        chipSelected: LinearGradient(
-          colors: [
-            Color(0xFFA3E635),
-            Color(0xFFCA8A04),
-            Color(0xFF0D9488),
-            Color(0xFF22D3EE),
-          ],
-        ),
-        sectionWash: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [
-            Color(0x77D9F99D),
-            Color(0x66D4B86A),
-            Color(0x5599F6E4),
-            Color(0x44A5F3FC),
-            Color(0x33DDD6FE),
-          ],
-        ),
-        rail: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF0B3D2E),
-            Color(0xFFA3E635),
-            Color(0xFFCA8A04),
-            Color(0xFF0D9488),
-            Color(0xFF22D3EE),
-            Color(0xFFC4B5FD),
-          ],
-        ),
-        highlight: Color(0xFFC4B5FD),
-        glowSpot: Color(0xFFA16207),
       ),
-      AppThemeId.midnight => const AppThemeVisuals(
-        scaffoldWash: AppTheme.oilRainbowWash,
-        accent: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF6366F1), Color(0xFFE879F9), Color(0xFF38BDF8)],
-        ),
-        hero: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF0A1628),
-            Color(0xFF4338CA),
-            Color(0xFFC026D3),
-            Color(0xFFF472B6),
-            Color(0xFF38BDF8),
-          ],
-          stops: [0.0, 0.25, 0.5, 0.75, 1.0],
-        ),
-        heroOnGradient: Color(0xFFEFF6FF),
+      AppThemeId.aurora => const AppThemeVisuals(
+        card: Color(0xFF0F2439),
+        cardBorder: Color(0xFF22384F),
+        cardShadow: Color(0x33000000),
+        heroCard: Color(0xFF0D2237),
+        heroGlow: Color(0x5534D3C2),
+        onHero: Color(0xFFE8F3F6),
+        onHeroMuted: Color(0xFFA3B7C1),
+        accent: Color(0xFF34D3C2),
+        onAccent: Color(0xFF05261F),
+        accentSoft: Color(0xFF16404A),
+        divider: Color(0xFF22384F),
+        track: Color(0xFF1B3752),
+        navShell: Color(0xFF0F2439),
+        navBorder: Color(0xFF22384F),
+        navIndicator: Color(0xFF34D3C2),
+        onNavIndicator: Color(0xFF05261F),
+        waterFill: Color(0xA634D3C2),
+        waterFillDeep: Color(0xD91FB3A6),
+        waterStroke: Color(0xFF9DE0D6),
+        cupGlass: Color(0x1A9DE0D6),
         previewColors: [
-          Color(0xFF0A1628),
-          Color(0xFF4338CA),
-          Color(0xFFC026D3),
-          Color(0xFFF472B6),
-          Color(0xFF38BDF8),
+          Color(0xFF0A1A2B),
+          Color(0xFF34D3C2),
+          Color(0xFF62B6E9),
         ],
-        surfaceGlow: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xEB312E81),
-            Color(0xEB4C1D95),
-            Color(0xEB9D174D),
-            Color(0xEB1E40AF),
-            Color(0xEB0E7490),
-          ],
-        ),
-        strokeGlow: Color(0xFFE879F9),
-        progress: LinearGradient(
-          colors: [
-            Color(0xFF4338CA),
-            Color(0xFF6366F1),
-            Color(0xFFC026D3),
-            Color(0xFFF472B6),
-            Color(0xFF38BDF8),
-          ],
-        ),
-        pillShell: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xF51E1B4B),
-            Color(0xF55B21B6),
-            Color(0xF59D174D),
-            Color(0xF51E3A8A),
-          ],
-        ),
-        chipSelected: LinearGradient(
-          colors: [Color(0xFF6366F1), Color(0xFFD946EF), Color(0xFF38BDF8)],
-        ),
-        sectionWash: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [
-            Color(0x88312E81),
-            Color(0x776B21A8),
-            Color(0x669D174D),
-            Color(0x551E3A8A),
-          ],
-        ),
-        rail: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF4338CA),
-            Color(0xFF6366F1),
-            Color(0xFFC026D3),
-            Color(0xFFF472B6),
-            Color(0xFF38BDF8),
-          ],
-        ),
-        highlight: Color(0xFFF472B6),
-        glowSpot: Color(0xFF38BDF8),
       ),
-      AppThemeId.sunrise => const AppThemeVisuals(
-        scaffoldWash: AppTheme.oilRainbowWash,
-        accent: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFEA580C), Color(0xFFFBBF24), Color(0xFFF472B6)],
-        ),
-        hero: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF7C2D12),
-            Color(0xFFEA580C),
-            Color(0xFFF59E0B),
-            Color(0xFFFB7185),
-            Color(0xFFE9D5FF),
-          ],
-          stops: [0.0, 0.25, 0.5, 0.75, 1.0],
-        ),
-        heroOnGradient: Color(0xFFFFF7ED),
+      AppThemeId.warm => const AppThemeVisuals(
+        card: Color(0xFFFFFDF9),
+        cardBorder: Color(0xFFEFE3D6),
+        cardShadow: Color(0x143B2A1F),
+        heroCard: Color(0xFFFFFDF9),
+        heroGlow: Color(0x00000000),
+        onHero: Color(0xFF3B2A1F),
+        onHeroMuted: Color(0xFF7C6A5D),
+        accent: Color(0xFFD96F2E),
+        onAccent: Color(0xFFFFFFFF),
+        accentSoft: Color(0xFFFCE3D0),
+        divider: Color(0xFFEFE3D6),
+        track: Color(0xFFF0E4D6),
+        navShell: Color(0xFFFFFDF9),
+        navBorder: Color(0xFFEFE3D6),
+        navIndicator: Color(0xFFD96F2E),
+        onNavIndicator: Color(0xFFFFFFFF),
+        waterFill: Color(0x99F2A968),
+        waterFillDeep: Color(0xCCE38A3E),
+        waterStroke: Color(0xFFB8552A),
+        cupGlass: Color(0x14D96F2E),
         previewColors: [
-          Color(0xFF7C2D12),
-          Color(0xFFEA580C),
-          Color(0xFFF59E0B),
-          Color(0xFFFB7185),
-          Color(0xFFE9D5FF),
+          Color(0xFFD96F2E),
+          Color(0xFFFBF5EC),
+          Color(0xFFF2A968),
         ],
-        surfaceGlow: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xEBFFEDD5),
-            Color(0xEBFED7AA),
-            Color(0xEBFDE68A),
-            Color(0xEBFBCFE8),
-            Color(0xEBE9D5FF),
-          ],
-        ),
-        strokeGlow: Color(0xFFF472B6),
-        progress: LinearGradient(
-          colors: [
-            Color(0xFFC2410C),
-            Color(0xFFEA580C),
-            Color(0xFFFBBF24),
-            Color(0xFFFB7185),
-            Color(0xFFC084FC),
-          ],
-        ),
-        pillShell: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xF5FFF7ED),
-            Color(0xF5FED7AA),
-            Color(0xF5FCE7F3),
-            Color(0xF5F3E8FF),
-          ],
-        ),
-        chipSelected: LinearGradient(
-          colors: [Color(0xFFEA580C), Color(0xFFFBBF24), Color(0xFFF472B6)],
-        ),
-        sectionWash: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [
-            Color(0x77FFEDD5),
-            Color(0x66FED7AA),
-            Color(0x55FBCFE8),
-            Color(0x44E9D5FF),
-          ],
-        ),
-        rail: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFFC2410C),
-            Color(0xFFEA580C),
-            Color(0xFFFBBF24),
-            Color(0xFFFB7185),
-            Color(0xFFC084FC),
-          ],
-        ),
-        highlight: Color(0xFFC084FC),
-        glowSpot: Color(0xFFFB7185),
       ),
       AppThemeId.graphite => const AppThemeVisuals(
-        scaffoldWash: AppTheme.oilRainbowWash,
-        accent: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF8B5CF6), Color(0xFF22D3EE), Color(0xFF6EE7B7)],
-        ),
-        hero: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF0E1116),
-            Color(0xFF7C3AED),
-            Color(0xFF22D3EE),
-            Color(0xFFCBD5E1),
-            Color(0xFF6EE7B7),
-          ],
-          stops: [0.0, 0.25, 0.5, 0.75, 1.0],
-        ),
-        heroOnGradient: Color(0xFFF1F5F9),
+        card: Color(0xFF24282E),
+        cardBorder: Color(0xFF30363D),
+        cardShadow: Color(0x33000000),
+        heroCard: Color(0xFF24282E),
+        heroGlow: Color(0x00000000),
+        onHero: Color(0xFFECEFF2),
+        onHeroMuted: Color(0xFFA6AEB8),
+        accent: Color(0xFFC7CED6),
+        onAccent: Color(0xFF14181D),
+        accentSoft: Color(0xFF3A414A),
+        divider: Color(0xFF30363D),
+        track: Color(0xFF31373E),
+        navShell: Color(0xFF24282E),
+        navBorder: Color(0xFF30363D),
+        navIndicator: Color(0xFFC7CED6),
+        onNavIndicator: Color(0xFF14181D),
+        waterFill: Color(0xA67FB3D5),
+        waterFillDeep: Color(0xD95C98C2),
+        waterStroke: Color(0xFFC7CED6),
+        cupGlass: Color(0x1AC7CED6),
         previewColors: [
-          Color(0xFF0E1116),
-          Color(0xFF7C3AED),
-          Color(0xFF22D3EE),
-          Color(0xFFCBD5E1),
-          Color(0xFF6EE7B7),
+          Color(0xFF1B1E22),
+          Color(0xFFC7CED6),
+          Color(0xFF7FB3D5),
         ],
-        surfaceGlow: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xEB2E1065),
-            Color(0xEB5B21B6),
-            Color(0xEB155E75),
-            Color(0xEB334155),
-            Color(0xEB064E3B),
-          ],
-        ),
-        strokeGlow: Color(0xFF67E8F9),
-        progress: LinearGradient(
-          colors: [
-            Color(0xFF7C3AED),
-            Color(0xFF8B5CF6),
-            Color(0xFF22D3EE),
-            Color(0xFFE2E8F0),
-            Color(0xFF6EE7B7),
-          ],
-        ),
-        pillShell: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xF51F2937),
-            Color(0xF54C1D95),
-            Color(0xF5155E75),
-            Color(0xF5064E3B),
-          ],
-        ),
-        chipSelected: LinearGradient(
-          colors: [Color(0xFF8B5CF6), Color(0xFF06B6D4), Color(0xFF34D399)],
-        ),
-        sectionWash: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [
-            Color(0x882E1065),
-            Color(0x775B21B6),
-            Color(0x66155E75),
-            Color(0x55064E3B),
-          ],
-        ),
-        rail: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF7C3AED),
-            Color(0xFF8B5CF6),
-            Color(0xFF22D3EE),
-            Color(0xFFE2E8F0),
-            Color(0xFF6EE7B7),
-          ],
-        ),
-        highlight: Color(0xFF6EE7B7),
-        glowSpot: Color(0xFF22D3EE),
       ),
     };
   }
@@ -732,60 +588,87 @@ class AppTheme {
       ),
     );
 
-    final stroke = visuals.strokeGlow;
+    final accent = visuals.accent;
+    final border = visuals.cardBorder;
 
     return base.copyWith(
       textTheme: text,
       scaffoldBackgroundColor: scheme.surface,
+      dividerColor: visuals.divider,
+      dividerTheme: DividerThemeData(
+        color: visuals.divider,
+        thickness: 1,
+        space: 1,
+      ),
       appBarTheme: AppBarTheme(
         centerTitle: false,
         elevation: 0,
-        backgroundColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,
+        foregroundColor: scheme.onSurface,
         titleTextStyle: text.titleLarge?.copyWith(color: scheme.onSurface),
       ),
       cardTheme: CardThemeData(
         elevation: 0,
         margin: EdgeInsets.zero,
-        color: Colors.transparent,
+        color: visuals.card,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: stroke.withValues(alpha: 0.45)),
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          side: BorderSide(color: border),
         ),
       ),
       listTileTheme: ListTileThemeData(
-        iconColor: stroke,
+        iconColor: accent,
         selectedColor: scheme.onSurface,
-        selectedTileColor: stroke.withValues(alpha: 0.18),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        selectedTileColor: visuals.accentSoft,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.tile),
+        ),
       ),
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return stroke;
+          if (states.contains(WidgetState.selected)) return accent;
           return null;
         }),
-        checkColor: WidgetStatePropertyAll(visuals.heroOnGradient),
-        side: BorderSide(color: stroke.withValues(alpha: 0.7), width: 1.6),
+        checkColor: WidgetStatePropertyAll(visuals.onAccent),
+        side: BorderSide(color: scheme.outline, width: 1.5),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? visuals.onAccent
+              : scheme.outline,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? accent
+              : scheme.surfaceContainerHighest,
+        ),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: stroke,
-        linearTrackColor: stroke.withValues(alpha: 0.18),
-        circularTrackColor: stroke.withValues(alpha: 0.18),
+        color: accent,
+        linearTrackColor: visuals.track,
+        circularTrackColor: visuals.track,
       ),
       chipTheme: ChipThemeData(
-        selectedColor: stroke.withValues(alpha: 0.28),
+        backgroundColor: visuals.card,
+        selectedColor: visuals.accentSoft,
         checkmarkColor: scheme.onSurface,
-        side: BorderSide(color: stroke.withValues(alpha: 0.4)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        side: BorderSide(color: border),
+        labelStyle: text.labelLarge?.copyWith(color: scheme.onSurface),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.control),
+        ),
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
           backgroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return stroke.withValues(alpha: 0.35);
+              return visuals.accentSoft;
             }
-            return scheme.surfaceContainerLowest.withValues(alpha: 0.55);
+            return visuals.card;
           }),
           foregroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
@@ -793,22 +676,52 @@ class AppTheme {
             }
             return scheme.onSurfaceVariant;
           }),
-          side: WidgetStatePropertyAll(
-            BorderSide(color: stroke.withValues(alpha: 0.45)),
+          side: WidgetStatePropertyAll(BorderSide(color: border)),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: accent,
+          foregroundColor: visuals.onAccent,
+          minimumSize: const Size(64, 48),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.tile),
           ),
+          textStyle: text.titleSmall,
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: scheme.onSurface,
+          minimumSize: const Size(64, 48),
+          side: BorderSide(color: scheme.outline),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.tile),
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: accent),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          foregroundColor: scheme.onSurface,
+          minimumSize: const Size(kMinTapTarget, kMinTapTarget),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: scheme.surfaceContainerLowest.withValues(alpha: 0.72),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+        fillColor: visuals.card,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.tile),
+        ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: stroke.withValues(alpha: 0.35)),
+          borderRadius: BorderRadius.circular(AppRadius.tile),
+          borderSide: BorderSide(color: border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: stroke, width: 1.5),
+          borderRadius: BorderRadius.circular(AppRadius.tile),
+          borderSide: BorderSide(color: accent, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -822,16 +735,42 @@ class AppTheme {
           color: scheme.onInverseSurface,
         ),
       ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: visuals.card,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: visuals.card,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: visuals.card,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.tile),
+          side: BorderSide(color: border),
+        ),
+      ),
+      expansionTileTheme: const ExpansionTileThemeData(
+        shape: Border(),
+        collapsedShape: Border(),
+      ),
       navigationBarTheme: NavigationBarThemeData(
         elevation: 0,
         height: 52,
         backgroundColor: Colors.transparent,
-        indicatorColor: scheme.primaryContainer,
+        indicatorColor: visuals.navIndicator,
         iconTheme: WidgetStateProperty.resolveWith(
           (states) => IconThemeData(
             size: 24,
             color: states.contains(WidgetState.selected)
-                ? scheme.onSurface
+                ? visuals.onNavIndicator
                 : scheme.onSurfaceVariant,
           ),
         ),
@@ -848,8 +787,8 @@ class AppTheme {
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         elevation: 2,
-        backgroundColor: stroke,
-        foregroundColor: visuals.heroOnGradient,
+        backgroundColor: accent,
+        foregroundColor: visuals.onAccent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
       extensions: [visuals],

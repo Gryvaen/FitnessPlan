@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/db.dart';
 import '../data/repositories/app_update_repository.dart';
 import '../data/repositories/calculator_history_repository.dart';
+import '../data/repositories/diet_strategy_repository.dart';
 import '../data/repositories/food_repository.dart';
 import '../data/repositories/form_memory_repository.dart';
 import '../data/repositories/meal_preset_repository.dart';
@@ -36,8 +37,8 @@ final formMemoryRepositoryProvider = Provider<FormMemoryRepository>((ref) {
 
 final calculatorHistoryRepositoryProvider =
     Provider<CalculatorHistoryRepository>((ref) {
-  return CalculatorHistoryRepository(ref.watch(sharedPreferencesProvider));
-});
+      return CalculatorHistoryRepository(ref.watch(sharedPreferencesProvider));
+    });
 
 final foodRepositoryProvider = Provider<FoodRepository>((ref) {
   return FoodRepository(ref.watch(databaseProvider));
@@ -69,13 +70,18 @@ final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
   return WorkoutRepository(ref.watch(databaseProvider));
 });
 
-final workoutReminderRepositoryProvider =
-    Provider<WorkoutReminderRepository>((ref) {
+final workoutReminderRepositoryProvider = Provider<WorkoutReminderRepository>((
+  ref,
+) {
   return WorkoutReminderRepository(ref.watch(sharedPreferencesProvider));
 });
 
 final themeRepositoryProvider = Provider<ThemeRepository>((ref) {
   return ThemeRepository(ref.watch(sharedPreferencesProvider));
+});
+
+final dietStrategyRepositoryProvider = Provider<DietStrategyRepository>((ref) {
+  return DietStrategyRepository(ref.watch(databaseProvider));
 });
 
 final noteRepositoryProvider = Provider<NoteRepository>((ref) {

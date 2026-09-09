@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/models.dart';
 import 'core_providers.dart';
 
-final profileProvider =
-    NotifierProvider<ProfileNotifier, UserProfile?>(ProfileNotifier.new);
+final profileProvider = NotifierProvider<ProfileNotifier, UserProfile?>(
+  ProfileNotifier.new,
+);
 
 class ProfileNotifier extends Notifier<UserProfile?> {
   @override
@@ -25,7 +26,9 @@ class ProfileNotifier extends Notifier<UserProfile?> {
     int? calorieAdjustment,
   }) async {
     final existing = state;
-    final profile = await ref.read(profileRepositoryProvider).saveFromInputs(
+    final profile = await ref
+        .read(profileRepositoryProvider)
+        .saveFromInputs(
           sex: sex,
           age: age,
           heightCm: heightCm,
@@ -38,6 +41,13 @@ class ProfileNotifier extends Notifier<UserProfile?> {
               calorieAdjustment ?? existing?.calorieAdjustment ?? 0,
         );
     state = profile;
+    if (goal != FitnessGoal.cut) {
+      // Fat-loss strategies only apply while cutting; maintain / bulk fall
+      // back to the profile target from today on (history is kept).
+      await ref
+          .read(dietStrategyRepositoryProvider)
+          .stopActivePlan(reason: 'goalChanged:${goal.name}');
+    }
     return profile;
   }
 

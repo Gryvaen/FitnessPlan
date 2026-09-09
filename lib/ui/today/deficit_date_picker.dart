@@ -3,7 +3,15 @@ import 'package:intl/intl.dart';
 
 import '../../data/repositories/meal_repository.dart';
 import '../../domain/deficit.dart';
+import '../../domain/diet_plan.dart';
 import '../../l10n/app_localizations_ext.dart';
+
+/// Loads the per-day target for every local day in an inclusive range.
+typedef DailyTargetsLoader =
+    Future<Map<DateTime, DailyNutritionTarget>> Function(
+      DateTime start,
+      DateTime end,
+    );
 
 /// Custom month calendar: actual daily deficit only on days with meal logs;
 /// past days green/red verdict, today neutral.
@@ -13,8 +21,8 @@ Future<DateTime?> showDeficitDatePicker({
   required DateTime firstDate,
   required DateTime lastDate,
   required double plannedDeficit,
-  required double targetCalories,
   required MealRepository mealRepository,
+  required DailyTargetsLoader loadTargets,
   DateTime? calorieStandardSince,
 }) {
   DateTime? since;
@@ -32,8 +40,8 @@ Future<DateTime?> showDeficitDatePicker({
       firstDate: DateTime(firstDate.year, firstDate.month, firstDate.day),
       lastDate: DateTime(lastDate.year, lastDate.month, lastDate.day),
       plannedDeficit: plannedDeficit,
-      targetCalories: targetCalories,
       mealRepository: mealRepository,
+      loadTargets: loadTargets,
       calorieStandardSince: since,
     ),
   );
@@ -45,19 +53,20 @@ class _DeficitDatePickerDialog extends StatefulWidget {
     required this.firstDate,
     required this.lastDate,
     required this.plannedDeficit,
-    required this.targetCalories,
     required this.mealRepository,
+    required this.loadTargets,
     this.calorieStandardSince,
   });
 
   final DateTime initialDate;
   final DateTime firstDate;
   final DateTime lastDate;
-  final double plannedDeficit;
-  final double targetCalories;
-  final MealRepository mealRepository;
-  final DateTime? calorieStandardSince;
 
+  /// Today's planned deficit, shown in the formula caption.
+  final double plannedDeficit;
+  final MealRepository mealRepository;
+  final DailyTargetsLoader loadTargets;
+  final DateTime? calorieStandardSince;
 
   @override
   State<_DeficitDatePickerDialog> createState() =>
@@ -68,6 +77,7 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
   late DateTime _visibleMonth;
   late DateTime _selected;
   Map<DateTime, double> _caloriesByDay = {};
+  Map<DateTime, DailyNutritionTarget> _targetsByDay = {};
   bool _loading = true;
 
   static final _okGreen = const Color(0xFF2A9D8F);
@@ -95,26 +105,35 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
     setState(() => _loading = true);
     final start = DateTime(_visibleMonth.year, _visibleMonth.month, 1);
     final end = DateTime(_visibleMonth.year, _visibleMonth.month + 1, 0);
-    final clampedStart =
-        start.isBefore(widget.firstDate) ? widget.firstDate : start;
+    final clampedStart = start.isBefore(widget.firstDate)
+        ? widget.firstDate
+        : start;
     final clampedEnd = end.isAfter(widget.lastDate) ? widget.lastDate : end;
-    final map = clampedStart.isAfter(clampedEnd)
-        ? <DateTime, double>{}
-        : await widget.mealRepository.calorieTotalsBetween(
-            clampedStart,
-            clampedEnd,
-          );
+    final empty = clampedStart.isAfter(clampedEnd);
+    final results = empty
+        ? null
+        : await Future.wait([
+            widget.mealRepository.calorieTotalsBetween(
+              clampedStart,
+              clampedEnd,
+            ),
+            widget.loadTargets(clampedStart, clampedEnd),
+          ]);
     if (!mounted) return;
     setState(() {
-      _caloriesByDay = map;
+      _caloriesByDay = results == null
+          ? {}
+          : results[0] as Map<DateTime, double>;
+      _targetsByDay = results == null
+          ? {}
+          : results[1] as Map<DateTime, DailyNutritionTarget>;
       _loading = false;
     });
   }
 
   void _shiftMonth(int delta) {
     final next = DateTime(_visibleMonth.year, _visibleMonth.month + delta);
-    final firstMonth =
-        DateTime(widget.firstDate.year, widget.firstDate.month);
+    final firstMonth = DateTime(widget.firstDate.year, widget.firstDate.month);
     final lastMonth = DateTime(widget.lastDate.year, widget.lastDate.month);
     if (next.isBefore(firstMonth) || next.isAfter(lastMonth)) return;
     setState(() => _visibleMonth = next);
@@ -142,15 +161,16 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
     final theme = Theme.of(context);
     final today = _today;
     final monthLabel = AppDates.ym(_visibleMonth, locale);
-    final firstOfMonth =
-        DateTime(_visibleMonth.year, _visibleMonth.month, 1);
+    final firstOfMonth = DateTime(_visibleMonth.year, _visibleMonth.month, 1);
     // Monday-based: weekday 1=Mon … 7=Sun → leading empty cells
     final leading = (firstOfMonth.weekday - 1) % 7;
-    final daysInMonth =
-        DateTime(_visibleMonth.year, _visibleMonth.month + 1, 0).day;
+    final daysInMonth = DateTime(
+      _visibleMonth.year,
+      _visibleMonth.month + 1,
+      0,
+    ).day;
 
-    final firstMonth =
-        DateTime(widget.firstDate.year, widget.firstDate.month);
+    final firstMonth = DateTime(widget.firstDate.year, widget.firstDate.month);
     final lastMonth = DateTime(widget.lastDate.year, widget.lastDate.month);
     final showPrev = _visibleMonth.isAfter(firstMonth);
     final showNext = _visibleMonth.isBefore(lastMonth);
@@ -180,103 +200,101 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
       ),
       content: SizedBox(
         width: 340,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              l10n.actualDeficitFormula('${widget.plannedDeficit.round()}'),
-              style: theme.textTheme.labelSmall,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            _LegendSection(
-              title: l10n.legendColors,
-              children: [
-                _LegendDot(color: _okGreen, label: l10n.legendPastOk),
-                _LegendDot(color: _badRed, label: l10n.legendPastBad),
-                _LegendDot(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  label: l10n.legendTodayOngoing,
-                ),
-              ],
-            ),
-            if (widget.calorieStandardSince != null) ...[
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                l10n.actualDeficitFormula('${widget.plannedDeficit.round()}'),
+                style: theme.textTheme.labelSmall,
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 12),
               _LegendSection(
-                title: l10n.legendStandardChange,
+                title: l10n.legendColors,
                 children: [
-                  _LegendLine(
-                    leading: Text(
-                      '|',
-                      style: theme.textTheme.titleSmall,
-                    ),
-                    label: l10n.legendNewStandardLine,
-                  ),
-                  _LegendLine(
-                    leading: const Icon(Icons.circle_outlined, size: 10),
-                    label: l10n.legendBeforeNeutral,
-                  ),
-                  _LegendLine(
-                    leading: const Icon(Icons.circle_outlined, size: 10),
-                    label: l10n.legendAfterGreenRed,
+                  _LegendDot(color: _okGreen, label: l10n.legendPastOk),
+                  _LegendDot(color: _badRed, label: l10n.legendPastBad),
+                  _LegendDot(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    label: l10n.legendTodayOngoing,
                   ),
                 ],
               ),
-            ],
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                for (final w in weekdayHeaders)
-                  Expanded(
-                    child: Center(
-                      child: Text(w, style: theme.textTheme.labelSmall),
+              if (widget.calorieStandardSince != null) ...[
+                const SizedBox(height: 12),
+                _LegendSection(
+                  title: l10n.legendStandardChange,
+                  children: [
+                    _LegendLine(
+                      leading: Text('|', style: theme.textTheme.titleSmall),
+                      label: l10n.legendNewStandardLine,
                     ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            if (_loading)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 48),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 7,
-                  mainAxisSpacing: 4,
-                  crossAxisSpacing: 4,
-                  childAspectRatio: 0.72,
+                    _LegendLine(
+                      leading: const Icon(Icons.circle_outlined, size: 10),
+                      label: l10n.legendBeforeNeutral,
+                    ),
+                    _LegendLine(
+                      leading: const Icon(Icons.circle_outlined, size: 10),
+                      label: l10n.legendAfterGreenRed,
+                    ),
+                  ],
                 ),
-                itemCount: leading + daysInMonth,
-                itemBuilder: (context, index) {
-                  if (index < leading) {
-                    return const SizedBox.shrink();
-                  }
-                  final dayNum = index - leading + 1;
-                  final date = DateTime(
-                    _visibleMonth.year,
-                    _visibleMonth.month,
-                    dayNum,
-                  );
-                  return _DayCell(
-                    date: date,
-                    today: today,
-                    selected: date == _selected,
-                    selectable: _isSelectable(date),
-                    intake: _caloriesByDay[date],
-                    plannedDeficit: widget.plannedDeficit,
-                    targetCalories: widget.targetCalories,
-                    calorieStandardSince: widget.calorieStandardSince,
-                    okColor: _okGreen,
-                    badColor: _badRed,
-                    onTap: () => setState(() => _selected = date),
-                  );
-                },
+              ],
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  for (final w in weekdayHeaders)
+                    Expanded(
+                      child: Center(
+                        child: Text(w, style: theme.textTheme.labelSmall),
+                      ),
+                    ),
+                ],
               ),
-          ],
+              const SizedBox(height: 6),
+              if (_loading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 48),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 7,
+                    mainAxisSpacing: 4,
+                    crossAxisSpacing: 4,
+                    childAspectRatio: 0.72,
+                  ),
+                  itemCount: leading + daysInMonth,
+                  itemBuilder: (context, index) {
+                    if (index < leading) {
+                      return const SizedBox.shrink();
+                    }
+                    final dayNum = index - leading + 1;
+                    final date = DateTime(
+                      _visibleMonth.year,
+                      _visibleMonth.month,
+                      dayNum,
+                    );
+                    return _DayCell(
+                      date: date,
+                      today: today,
+                      selected: date == _selected,
+                      selectable: _isSelectable(date),
+                      intake: _caloriesByDay[date],
+                      target: _targetsByDay[date],
+                      calorieStandardSince: widget.calorieStandardSince,
+                      okColor: _okGreen,
+                      badColor: _badRed,
+                      onTap: () => setState(() => _selected = date),
+                    );
+                  },
+                ),
+            ],
+          ),
         ),
       ),
       actions: [
@@ -296,10 +314,7 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
 }
 
 class _LegendSection extends StatelessWidget {
-  const _LegendSection({
-    required this.title,
-    required this.children,
-  });
+  const _LegendSection({required this.title, required this.children});
 
   final String title;
   final List<Widget> children;
@@ -349,10 +364,7 @@ class _LegendDot extends StatelessWidget {
 }
 
 class _LegendLine extends StatelessWidget {
-  const _LegendLine({
-    required this.leading,
-    required this.label,
-  });
+  const _LegendLine({required this.leading, required this.label});
 
   final Widget leading;
   final String label;
@@ -362,16 +374,10 @@ class _LegendLine extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 16,
-          child: Center(child: leading),
-        ),
+        SizedBox(width: 16, child: Center(child: leading)),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+          child: Text(label, style: Theme.of(context).textTheme.bodySmall),
         ),
       ],
     );
@@ -385,8 +391,7 @@ class _DayCell extends StatelessWidget {
     required this.selected,
     required this.selectable,
     required this.intake,
-    required this.plannedDeficit,
-    required this.targetCalories,
+    required this.target,
     required this.okColor,
     required this.badColor,
     required this.onTap,
@@ -398,8 +403,9 @@ class _DayCell extends StatelessWidget {
   final bool selected;
   final bool selectable;
   final double? intake;
-  final double plannedDeficit;
-  final double targetCalories;
+
+  /// Target that governed this day (null when unknown → no verdict).
+  final DailyNutritionTarget? target;
   final DateTime? calorieStandardSince;
   final Color okColor;
   final Color badColor;
@@ -412,19 +418,25 @@ class _DayCell extends StatelessWidget {
     final isToday = date == today;
     final hasLog = intake != null;
     final since = calorieStandardSince;
+    final t = target;
     final beforeStandard = since != null && date.isBefore(since);
     final showStandardBar = since != null && date == since;
-    // Only days with meal logs show deficit; empty days stay uncolored.
-    final showDeficit = selectable && hasLog && (isPast || isToday);
+    // Only days with meal logs and a known target show a deficit; empty
+    // days stay uncolored.
+    final plannedDeficit = t?.plannedDeficit ?? 0.0;
+    final showDeficit =
+        selectable && hasLog && t != null && (isPast || isToday);
     final actual = showDeficit
         ? actualDailyDeficit(
             plannedDeficit: plannedDeficit,
-            targetCalories: targetCalories,
-            intakeCalories: intake!,
+            targetCalories: t.calories,
+            intakeCalories: intake ?? 0,
           )
         : null;
-    // Finalize green/red only for days on/after the latest calorie standard.
-    final useVerdict = actual != null && isPast && !beforeStandard;
+    // Finalize green/red only for days whose target is a real record (not a
+    // legacy estimate) and on/after the latest calorie standard.
+    final legacy = t?.isLegacyEstimate ?? false;
+    final useVerdict = actual != null && isPast && !beforeStandard && !legacy;
     final met = actual != null && actual >= plannedDeficit;
 
     Color? bg;
