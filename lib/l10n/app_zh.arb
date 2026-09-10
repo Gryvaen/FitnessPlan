@@ -407,6 +407,7 @@
   "replaceTodayWorkout": "替换今日训练",
   "replaceTodayWorkoutBody": "当天已有训练待办，将替换为该计划，确定？",
   "noWorkoutTodo": "还没有训练待办",
+  "noWorkoutThatDay": "当日无训练记录",
   "addTodayWorkout": "添加今日训练",
   "quickAddExercise": "快速添加动作",
   "sectionThatDay": "当日",

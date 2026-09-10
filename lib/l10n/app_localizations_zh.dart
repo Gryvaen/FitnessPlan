@@ -1085,6 +1085,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noWorkoutTodo => '还没有训练待办';
 
   @override
+  String get noWorkoutThatDay => '当日无训练记录';
+
+  @override
   String get addTodayWorkout => '添加今日训练';
 
   @override

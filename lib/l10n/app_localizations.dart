@@ -2193,6 +2193,12 @@ abstract class AppLocalizations {
   /// **'No workout for today'**
   String get noWorkoutTodo;
 
+  /// No description provided for @noWorkoutThatDay.
+  ///
+  /// In en, this message translates to:
+  /// **'No workout logged that day'**
+  String get noWorkoutThatDay;
+
   /// No description provided for @addTodayWorkout.
   ///
   /// In en, this message translates to:

@@ -415,6 +415,7 @@
   "replaceTodayWorkout": "Replace today's workout",
   "replaceTodayWorkoutBody": "Today already has a workout; replace with this plan?",
   "noWorkoutTodo": "No workout for today",
+  "noWorkoutThatDay": "No workout logged that day",
   "addTodayWorkout": "Add today's workout",
   "quickAddExercise": "Quick-add exercise",
   "sectionThatDay": "That day",

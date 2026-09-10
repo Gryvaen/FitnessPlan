@@ -366,22 +366,15 @@ class TodayWorkoutCard extends ConsumerWidget {
                 canSaveAsPlan: editable,
                 summary: l10n.noWorkoutShort,
               ),
-              if (editable)
-                SportEmptyState(
-                  icon: Icons.fitness_center,
-                  title: l10n.noWorkoutPlannedTitle,
-                  message: l10n.noWorkoutPlannedHint,
-                )
-              else
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  child: Center(
-                    child: Text(
-                      l10n.pastDayReadOnly,
-                      style: theme.textTheme.meta,
-                    ),
-                  ),
-                ),
+              SportEmptyState(
+                icon: Icons.fitness_center,
+                title: editable
+                    ? l10n.noWorkoutPlannedTitle
+                    : l10n.noWorkoutThatDay,
+                message: editable
+                    ? l10n.noWorkoutPlannedHint
+                    : l10n.pastDayReadOnly,
+              ),
             ],
           );
         }

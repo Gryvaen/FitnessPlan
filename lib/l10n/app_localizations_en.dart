@@ -1101,6 +1101,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noWorkoutTodo => 'No workout for today';
 
   @override
+  String get noWorkoutThatDay => 'No workout logged that day';
+
+  @override
   String get addTodayWorkout => 'Add today\'s workout';
 
   @override
