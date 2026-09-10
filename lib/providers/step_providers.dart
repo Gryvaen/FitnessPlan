@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../data/repositories/step_repository.dart';
 import '../data/services/android_step_sensor.dart';
@@ -49,6 +51,42 @@ class StepsSyncStatusNotifier extends Notifier<StepsSyncStatus?> {
         .syncRecent(limitDays: 14, forcePrompt: true);
     state = status;
     return status;
+  }
+}
+
+/// Whether the always-on background step-counting service is enabled
+/// (Android only). Turning it on requests activity-recognition + notification
+/// permission and kicks a resync.
+final stepServiceProvider = NotifierProvider<StepServiceNotifier, bool>(
+  StepServiceNotifier.new,
+);
+
+class StepServiceNotifier extends Notifier<bool> {
+  @override
+  bool build() {
+    _load();
+    return false;
+  }
+
+  static bool get isAvailable =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
+  Future<void> _load() async {
+    final on = await ref.read(androidStepSensorProvider).isServiceEnabled();
+    if (ref.mounted) state = on;
+  }
+
+  Future<void> setEnabled(bool enabled) async {
+    if (enabled) {
+      final activity = await Permission.activityRecognition.request();
+      if (!activity.isGranted) return;
+      await Permission.notification.request();
+    }
+    state = enabled;
+    await ref.read(androidStepSensorProvider).setServiceEnabled(enabled);
+    if (enabled) {
+      ref.invalidate(stepsSyncProvider);
+    }
   }
 }
 

@@ -616,6 +616,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stepsSheetDiagnosticsLoading => '正在读取…';
 
   @override
+  String get stepsServiceTitle => '后台持续统计步数';
+
+  @override
+  String get stepsServiceHint =>
+      '会在通知栏显示一个常驻通知，即使系统限制后台也能继续计步 —— OPPO、小米等机型上更可靠。';
+
+  @override
   String get noSetLogs => '暂无组次记录';
 
   @override

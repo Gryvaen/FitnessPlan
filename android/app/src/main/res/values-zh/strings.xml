@@ -6,4 +6,8 @@
     <string name="rest_timer_alarm_title">休息结束</string>
     <string name="rest_timer_alarm_body">开始下一组</string>
     <string name="rest_timer_alarm_dismiss">关闭</string>
+    <string name="step_service_channel">步数统计</string>
+    <string name="step_service_channel_description">在后台持续记录每日步数</string>
+    <string name="step_service_notification_title">正在统计步数</string>
+    <string name="step_service_notification_body">点按查看今日步数</string>
 </resources>

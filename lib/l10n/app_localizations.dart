@@ -1304,6 +1304,18 @@ abstract class AppLocalizations {
   /// **'Loading…'**
   String get stepsSheetDiagnosticsLoading;
 
+  /// No description provided for @stepsServiceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Count steps in the background'**
+  String get stepsServiceTitle;
+
+  /// No description provided for @stepsServiceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows an ongoing notification and keeps counting even when the system limits background apps — the reliable option on OPPO, Xiaomi and similar phones.'**
+  String get stepsServiceHint;
+
   /// No description provided for @noSetLogs.
   ///
   /// In en, this message translates to:

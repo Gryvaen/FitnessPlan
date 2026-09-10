@@ -208,6 +208,8 @@
   "stepsSheetOpenSettings": "打开健康 / 权限设置",
   "stepsSheetDiagnostics": "诊断信息",
   "stepsSheetDiagnosticsLoading": "正在读取…",
+  "stepsServiceTitle": "后台持续统计步数",
+  "stepsServiceHint": "会在通知栏显示一个常驻通知，即使系统限制后台也能继续计步 —— OPPO、小米等机型上更可靠。",
   "noSetLogs": "暂无组次记录",
   "addExercisesFirst": "请先在记录页添加动作",
   "addExercisesFirstShort": "请先添加动作",

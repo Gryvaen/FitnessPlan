@@ -977,6 +977,23 @@ class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
                   ),
                 ],
               ),
+              if (StepServiceNotifier.isAvailable) ...[
+                const SizedBox(height: 4),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.stepsServiceTitle),
+                  subtitle: Text(
+                    l10n.stepsServiceHint,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  isThreeLine: true,
+                  value: ref.watch(stepServiceProvider),
+                  onChanged: (v) =>
+                      ref.read(stepServiceProvider.notifier).setEnabled(v),
+                ),
+              ],
               const SizedBox(height: 8),
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,

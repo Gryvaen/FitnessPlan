@@ -66,7 +66,19 @@ class MainActivity : FlutterFragmentActivity() {
             }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, StepCounterBridge.CHANNEL)
             .setMethodCallHandler { call, result ->
-                StepCounterBridge.handle(this, call.method, result)
+                when (call.method) {
+                    "setStepService" -> {
+                        val enabled = call.argument<Boolean>("enabled") ?: false
+                        StepCounterService.setEnabled(applicationContext, enabled)
+                        result.success(null)
+                    }
+                    "isStepServiceEnabled" ->
+                        result.success(StepCounterService.isEnabled(applicationContext))
+                    else -> StepCounterBridge.handle(this, call.method, result)
+                }
             }
+
+        // Re-arm the background counter after a cold start / app update.
+        StepCounterService.startIfEnabled(applicationContext)
     }
 }

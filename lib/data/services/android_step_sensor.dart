@@ -34,6 +34,25 @@ class AndroidStepSensor {
     }
   }
 
+  /// Whether the always-on background step-counting foreground service is on.
+  Future<bool> isServiceEnabled() async {
+    if (!isSupported) return false;
+    try {
+      final on = await _channel.invokeMethod<bool>('isStepServiceEnabled');
+      return on ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Enables / disables the always-on background step-counting service.
+  Future<void> setServiceEnabled(bool enabled) async {
+    if (!isSupported) return;
+    try {
+      await _channel.invokeMethod<void>('setStepService', {'enabled': enabled});
+    } catch (_) {}
+  }
+
   /// Opens Health Connect / app settings so the user can grant step access.
   Future<bool> openHealthConnectSettings() async {
     if (!isSupported) return false;

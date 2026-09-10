@@ -10,4 +10,8 @@
     <string name="workout_reminder_channel_description">Daily reminders to train</string>
     <string name="workout_reminder_default_title">Time to train</string>
     <string name="workout_reminder_default_body">Log a set to keep your streak.</string>
+    <string name="step_service_channel">Step tracking</string>
+    <string name="step_service_channel_description">Keeps a step count running in the background</string>
+    <string name="step_service_notification_title">Counting your steps</string>
+    <string name="step_service_notification_body">Tap to see today\'s total</string>
 </resources>

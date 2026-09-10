@@ -618,6 +618,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stepsSheetDiagnosticsLoading => 'Loading…';
 
   @override
+  String get stepsServiceTitle => 'Count steps in the background';
+
+  @override
+  String get stepsServiceHint =>
+      'Shows an ongoing notification and keeps counting even when the system limits background apps — the reliable option on OPPO, Xiaomi and similar phones.';
+
+  @override
   String get noSetLogs => 'No set logs';
 
   @override

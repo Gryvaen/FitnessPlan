@@ -208,6 +208,8 @@
   "stepsSheetOpenSettings": "Open health / permission settings",
   "stepsSheetDiagnostics": "Diagnostics",
   "stepsSheetDiagnosticsLoading": "Loading…",
+  "stepsServiceTitle": "Count steps in the background",
+  "stepsServiceHint": "Shows an ongoing notification and keeps counting even when the system limits background apps — the reliable option on OPPO, Xiaomi and similar phones.",
   "noSetLogs": "No set logs",
   "addExercisesFirst": "Add exercises on the Records page first",
   "addExercisesFirstShort": "Add exercises first",

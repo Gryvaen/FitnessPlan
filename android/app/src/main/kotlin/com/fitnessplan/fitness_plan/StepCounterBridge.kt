@@ -185,7 +185,14 @@ object StepCounterBridge {
         return null
     }
 
-    internal fun applyCumulative(context: Context, cumulativeRaw: Long): Int {
+    /** Guards the prefs read-modify-write against the sensor service and the
+     *  MethodChannel touching the day counter at the same time. */
+    private val counterLock = Any()
+
+    internal fun applyCumulative(context: Context, cumulativeRaw: Long): Int =
+        synchronized(counterLock) { applyCumulativeLocked(context, cumulativeRaw) }
+
+    private fun applyCumulativeLocked(context: Context, cumulativeRaw: Long): Int {
         val cumulative = max(0L, cumulativeRaw)
         val now = System.currentTimeMillis()
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -380,7 +387,10 @@ class StepCounterMidnightReceiver : BroadcastReceiver() {
             StepCounterBridge.ACTION_MIDNIGHT_SNAPSHOT -> StepCounterBridge.snapshotMidnightBaseline(app)
             Intent.ACTION_BOOT_COMPLETED,
             Intent.ACTION_MY_PACKAGE_REPLACED,
-            "android.intent.action.QUICKBOOT_POWERON" -> StepCounterBridge.scheduleNextMidnight(app)
+            "android.intent.action.QUICKBOOT_POWERON" -> {
+                StepCounterBridge.scheduleNextMidnight(app)
+                StepCounterService.startIfEnabled(app)
+            }
         }
     }
 }
