@@ -2178,6 +2178,56 @@ class AppLocalizationsZh extends AppLocalizations {
   String get toolboxTagline => '实用工具 · 辅助你的健康生活';
 
   @override
+  String get onboardingWelcomeCta => '开始设置';
+
+  @override
+  String get onboardingNext => '下一步';
+
+  @override
+  String get onboardingFinish => '完成设置';
+
+  @override
+  String onboardingStep(int step, int total) {
+    return '$step/$total';
+  }
+
+  @override
+  String get onboardingDataUseNote => '我们仅根据这些信息为你生成个性化的饮食与训练建议，不会用于其他用途。';
+
+  @override
+  String get onboardingBasicTitle => '设置个人信息';
+
+  @override
+  String get onboardingGoalTitle => '选择你的健身目标';
+
+  @override
+  String get onboardingFeature1Title => '记录饮食';
+
+  @override
+  String get onboardingFeature1Sub => '简单记录每一餐，掌握营养摄入';
+
+  @override
+  String get onboardingFeature2Title => '规划训练';
+
+  @override
+  String get onboardingFeature2Sub => '制定训练计划，保持规律运动';
+
+  @override
+  String get onboardingFeature3Title => '见证变化';
+
+  @override
+  String get onboardingFeature3Sub => '持续记录，看到更好的自己';
+
+  @override
+  String get goalCutDesc => '减少体脂，塑造更轻盈的体态';
+
+  @override
+  String get goalMaintainDesc => '保持当前体重与体型';
+
+  @override
+  String get goalBulkDesc => '增加肌肉量，提升力量与体能';
+
+  @override
   String get profileGreeting => '健身小伙伴';
 
   @override

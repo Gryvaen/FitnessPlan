@@ -3915,6 +3915,102 @@ abstract class AppLocalizations {
   /// **'Handy tools for your healthy routine'**
   String get toolboxTagline;
 
+  /// No description provided for @onboardingWelcomeCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Get started'**
+  String get onboardingWelcomeCta;
+
+  /// No description provided for @onboardingNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get onboardingNext;
+
+  /// No description provided for @onboardingFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish setup'**
+  String get onboardingFinish;
+
+  /// No description provided for @onboardingStep.
+  ///
+  /// In en, this message translates to:
+  /// **'{step}/{total}'**
+  String onboardingStep(int step, int total);
+
+  /// No description provided for @onboardingDataUseNote.
+  ///
+  /// In en, this message translates to:
+  /// **'We only use this to personalise your food and training plan — nothing else.'**
+  String get onboardingDataUseNote;
+
+  /// No description provided for @onboardingBasicTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up your info'**
+  String get onboardingBasicTitle;
+
+  /// No description provided for @onboardingGoalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your fitness goal'**
+  String get onboardingGoalTitle;
+
+  /// No description provided for @onboardingFeature1Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Log your food'**
+  String get onboardingFeature1Title;
+
+  /// No description provided for @onboardingFeature1Sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Track intake meal by meal'**
+  String get onboardingFeature1Sub;
+
+  /// No description provided for @onboardingFeature2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan your training'**
+  String get onboardingFeature2Title;
+
+  /// No description provided for @onboardingFeature2Sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Build plans, stay consistent'**
+  String get onboardingFeature2Sub;
+
+  /// No description provided for @onboardingFeature3Title.
+  ///
+  /// In en, this message translates to:
+  /// **'See your progress'**
+  String get onboardingFeature3Title;
+
+  /// No description provided for @onboardingFeature3Sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep logging, watch it change'**
+  String get onboardingFeature3Sub;
+
+  /// No description provided for @goalCutDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Lose body fat for a leaner shape'**
+  String get goalCutDesc;
+
+  /// No description provided for @goalMaintainDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold your current weight and shape'**
+  String get goalMaintainDesc;
+
+  /// No description provided for @goalBulkDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Add muscle, build strength'**
+  String get goalBulkDesc;
+
   /// No description provided for @profileGreeting.
   ///
   /// In en, this message translates to:

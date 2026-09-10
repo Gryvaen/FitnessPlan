@@ -2224,6 +2224,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get toolboxTagline => 'Handy tools for your healthy routine';
 
   @override
+  String get onboardingWelcomeCta => 'Get started';
+
+  @override
+  String get onboardingNext => 'Next';
+
+  @override
+  String get onboardingFinish => 'Finish setup';
+
+  @override
+  String onboardingStep(int step, int total) {
+    return '$step/$total';
+  }
+
+  @override
+  String get onboardingDataUseNote =>
+      'We only use this to personalise your food and training plan — nothing else.';
+
+  @override
+  String get onboardingBasicTitle => 'Set up your info';
+
+  @override
+  String get onboardingGoalTitle => 'Choose your fitness goal';
+
+  @override
+  String get onboardingFeature1Title => 'Log your food';
+
+  @override
+  String get onboardingFeature1Sub => 'Track intake meal by meal';
+
+  @override
+  String get onboardingFeature2Title => 'Plan your training';
+
+  @override
+  String get onboardingFeature2Sub => 'Build plans, stay consistent';
+
+  @override
+  String get onboardingFeature3Title => 'See your progress';
+
+  @override
+  String get onboardingFeature3Sub => 'Keep logging, watch it change';
+
+  @override
+  String get goalCutDesc => 'Lose body fat for a leaner shape';
+
+  @override
+  String get goalMaintainDesc => 'Hold your current weight and shape';
+
+  @override
+  String get goalBulkDesc => 'Add muscle, build strength';
+
+  @override
   String get profileGreeting => 'Fitness buddy';
 
   @override
