@@ -125,6 +125,7 @@ abstract final class ReminderNotifications {
       for (var i = 0; i < daysAhead; i++) {
         final whenLocal = fireDay.add(Duration(days: i));
         if (whenLocal.difference(now).inSeconds < 1) continue;
+        if (!s.firesOn(whenLocal.weekday)) continue;
         var workedOut = true;
         if (kind == ReminderKind.workout) {
           final prev = DateTime(
@@ -147,13 +148,15 @@ abstract final class ReminderNotifications {
     if (items.isEmpty) return;
 
     if (defaultTargetPlatform == TargetPlatform.android) {
-      await _scheduleAndroidNative(items);
-      return;
+      final native = await _scheduleAndroidNative(items);
+      if (native) return;
+      // Native AlarmManager path unavailable — fall back to the plugin.
     }
     await _schedulePlugin(items, now);
   }
 
-  static Future<void> _scheduleAndroidNative(
+  /// Returns true when the native AlarmManager path handled the schedule.
+  static Future<bool> _scheduleAndroidNative(
     List<_ScheduledReminder> items,
   ) async {
     final payload = [
@@ -165,7 +168,12 @@ abstract final class ReminderNotifications {
           'body': item.body,
         },
     ];
-    await _nativeChannel.invokeMethod<void>('scheduleAll', {'items': payload});
+    try {
+      await _nativeChannel.invokeMethod<void>('scheduleAll', {'items': payload});
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   static Future<void> _schedulePlugin(

@@ -23,43 +23,48 @@ class RemindersNotifier extends Notifier<Map<ReminderKind, ReminderSetting>> {
         enabled: false,
         hour: kind.defaultTime.hour,
         minute: kind.defaultTime.minute,
+        weekdays: const {1, 2, 3, 4, 5, 6, 7},
       );
 
-  Future<void> setEnabled(ReminderKind kind, bool enabled) async {
-    final previous = state;
-    await ref.read(remindersRepositoryProvider).setEnabled(kind, enabled);
-    state = {...state, kind: settingFor(kind).copyWith(enabled: enabled)};
+  Future<void> _apply(
+    ReminderKind kind,
+    ReminderSetting next,
+    Future<void> Function() persist,
+  ) async {
+    await persist();
+    state = {...state, kind: next};
+    // Scheduling is best-effort: an OS-side failure (no permission, no exact
+    // alarm, a platform without notifications) must not undo the user's choice.
     try {
       await syncSchedule();
     } catch (e) {
-      await ref
-          .read(remindersRepositoryProvider)
-          .setEnabled(kind, previous[kind]?.enabled ?? false);
-      state = previous;
-      rethrow;
+      debugPrint('reminder sync failed: $e');
     }
   }
+
+  Future<void> setEnabled(ReminderKind kind, bool enabled) => _apply(
+    kind,
+    settingFor(kind).copyWith(enabled: enabled),
+    () => ref.read(remindersRepositoryProvider).setEnabled(kind, enabled),
+  );
 
   Future<void> setTime(
     ReminderKind kind, {
     required int hour,
     required int minute,
-  }) async {
-    final previous = state;
-    await ref
+  }) => _apply(
+    kind,
+    settingFor(kind).copyWith(hour: hour, minute: minute),
+    () => ref
         .read(remindersRepositoryProvider)
-        .setTime(kind, hour: hour, minute: minute);
-    state = {
-      ...state,
-      kind: settingFor(kind).copyWith(hour: hour, minute: minute),
-    };
-    try {
-      await syncSchedule();
-    } catch (e) {
-      state = previous;
-      rethrow;
-    }
-  }
+        .setTime(kind, hour: hour, minute: minute),
+  );
+
+  Future<void> setWeekdays(ReminderKind kind, Set<int> weekdays) => _apply(
+    kind,
+    settingFor(kind).copyWith(weekdays: weekdays),
+    () => ref.read(remindersRepositoryProvider).setWeekdays(kind, weekdays),
+  );
 
   /// Recompute and schedule the next days for every enabled reminder kind.
   Future<void> syncSchedule([AppLocalizations? l10n]) async {

@@ -8,8 +8,8 @@ import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import 'workout_reminder_notifications.dart';
 
-/// Reminder settings: an independent on/off + time for each reminder kind,
-/// plus the notification-permission status (board 06.03).
+/// Reminder settings: an independent on/off + time + repeat-days for each
+/// reminder kind, plus the notification-permission status (board 06.03).
 class RemindersHubPage extends ConsumerStatefulWidget {
   const RemindersHubPage({super.key});
 
@@ -18,36 +18,27 @@ class RemindersHubPage extends ConsumerStatefulWidget {
 }
 
 class _RemindersHubPageState extends ConsumerState<RemindersHubPage> {
-  Future<bool>? _permission;
+  bool? _granted;
 
   @override
   void initState() {
     super.initState();
-    _permission = ReminderNotifications.permissionGranted();
+    _refreshPermission();
+  }
+
+  Future<void> _refreshPermission() async {
+    final ok = await ReminderNotifications.permissionGranted();
+    if (mounted) setState(() => _granted = ok);
   }
 
   Future<void> _toggle(ReminderKind kind, bool wantOn) async {
-    final l10n = context.l10n;
-    final messenger = ScaffoldMessenger.of(context);
-    if (wantOn) {
-      final ok = await ReminderNotifications.requestPermissions();
-      if (!mounted) return;
-      setState(() => _permission = ReminderNotifications.permissionGranted());
-      if (!ok) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(l10n.workoutReminderPermissionDenied)),
-        );
-        return;
-      }
+    if (wantOn && !(_granted ?? true)) {
+      await ReminderNotifications.requestPermissions();
+      await _refreshPermission();
     }
-    try {
-      await ref.read(remindersProvider.notifier).setEnabled(kind, wantOn);
-    } catch (_) {
-      if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.workoutReminderPermissionDenied)),
-      );
-    }
+    // Save the choice regardless of the permission outcome; the reminders row
+    // below tells the user if notifications still need allowing.
+    await ref.read(remindersProvider.notifier).setEnabled(kind, wantOn);
   }
 
   Future<void> _pickTime(ReminderKind kind) async {
@@ -60,6 +51,14 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage> {
     await ref
         .read(remindersProvider.notifier)
         .setTime(kind, hour: picked.hour, minute: picked.minute);
+  }
+
+  void _toggleWeekday(ReminderKind kind, int weekday) {
+    final s = ref.read(remindersProvider.notifier).settingFor(kind);
+    final next = {...s.weekdays};
+    if (!next.remove(weekday)) next.add(weekday);
+    if (next.isEmpty) return; // keep at least one day
+    ref.read(remindersProvider.notifier).setWeekdays(kind, next);
   }
 
   String _label(ReminderKind kind, AppLocalizations l10n) => switch (kind) {
@@ -83,15 +82,12 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage> {
     ReminderKind.weighIn => Icons.monitor_weight_outlined,
   };
 
-  String _time(ReminderSetting s) =>
-      '${s.hour.toString().padLeft(2, '0')}:'
-      '${s.minute.toString().padLeft(2, '0')}';
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final settings = ref.watch(remindersProvider);
+    final granted = _granted ?? true;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.reminders)),
@@ -103,55 +99,64 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage> {
           listBottomInset(context, hasFab: false),
         ),
         children: [
+          if (!granted)
+            SportListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(
+                Icons.notifications_off_outlined,
+                color: theme.colorScheme.error,
+              ),
+              title: Text(l10n.notificationPermissionRow),
+              subtitle: Text(
+                l10n.notificationPermissionHint,
+                style: theme.textTheme.bodySmall,
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                await ReminderNotifications.requestPermissions();
+                await _refreshPermission();
+              },
+            ),
           for (final kind in ReminderKind.values)
             _ReminderTile(
               icon: _icon(kind),
               label: _label(kind, l10n),
               description: _desc(kind, l10n),
-              setting: settings[kind]!,
-              timeText: _time(settings[kind]!),
+              setting: settings[kind] ?? _fallback(kind),
               onToggle: (v) => _toggle(kind, v),
               onPickTime: () => _pickTime(kind),
+              onToggleWeekday: (d) => _toggleWeekday(kind, d),
             ),
-          const SizedBox(height: AppSpacing.section),
-          FutureBuilder<bool>(
-            future: _permission,
-            builder: (context, snap) {
-              final granted = snap.data ?? true;
-              return SportListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(
-                  granted
-                      ? Icons.notifications_active_outlined
-                      : Icons.notifications_off_outlined,
+          if (granted) ...[
+            const SizedBox(height: AppSpacing.section),
+            Row(
+              children: [
+                Icon(
+                  Icons.check_circle_outline,
+                  size: 16,
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
-                title: Text(l10n.notificationPermissionRow),
-                subtitle: Text(
-                  granted
-                      ? l10n.notificationPermissionOn
-                      : l10n.notificationPermissionHint,
+                const SizedBox(width: 6),
+                Text(
+                  l10n.notificationPermissionOn,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
-                trailing: granted ? null : const Icon(Icons.chevron_right),
-                onTap: granted
-                    ? null
-                    : () async {
-                        await ReminderNotifications.requestPermissions();
-                        if (!mounted) return;
-                        setState(
-                          () => _permission =
-                              ReminderNotifications.permissionGranted(),
-                        );
-                      },
-              );
-            },
-          ),
+              ],
+            ),
+          ],
         ],
       ),
     );
   }
+
+  ReminderSetting _fallback(ReminderKind kind) => ReminderSetting(
+    enabled: false,
+    hour: kind.defaultTime.hour,
+    minute: kind.defaultTime.minute,
+    weekdays: const {1, 2, 3, 4, 5, 6, 7},
+  );
 }
 
 class _ReminderTile extends StatelessWidget {
@@ -160,31 +165,38 @@ class _ReminderTile extends StatelessWidget {
     required this.label,
     required this.description,
     required this.setting,
-    required this.timeText,
     required this.onToggle,
     required this.onPickTime,
+    required this.onToggleWeekday,
   });
 
   final IconData icon;
   final String label;
   final String description;
   final ReminderSetting setting;
-  final String timeText;
   final ValueChanged<bool> onToggle;
   final VoidCallback onPickTime;
+  final ValueChanged<int> onToggleWeekday;
+
+  String get _timeText =>
+      '${setting.hour.toString().padLeft(2, '0')}:'
+      '${setting.minute.toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
+    final labels = l10n.weekdayLettersMonSun.split(',');
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           secondary: Icon(icon),
           title: Text(label),
           subtitle: Text(
-            setting.enabled ? l10n.reminderDailyAt(timeText) : description,
+            setting.enabled ? l10n.reminderDailyAt(_timeText) : description,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -192,15 +204,91 @@ class _ReminderTile extends StatelessWidget {
           value: setting.enabled,
           onChanged: onToggle,
         ),
-        if (setting.enabled)
-          SportListTile(
-            contentPadding: const EdgeInsets.only(left: 40),
-            leading: const Icon(Icons.schedule_outlined, size: 20),
-            title: Text(timeText),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: onPickTime,
+        if (setting.enabled) ...[
+          Padding(
+            padding: const EdgeInsets.only(left: 40, bottom: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                InkWell(
+                  onTap: onPickTime,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.schedule_outlined, size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          l10n.reminderTimeLabel,
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                        const Spacer(),
+                        Text(_timeText, style: theme.textTheme.bodyMedium),
+                        const Icon(Icons.chevron_right, size: 18),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  l10n.reminderRepeatLabel,
+                  style: theme.textTheme.labelMedium,
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  children: [
+                    for (var d = 1; d <= 7; d++)
+                      _DayToggle(
+                        letter: labels.length >= 7 ? labels[d - 1] : '$d',
+                        on: setting.firesOn(d),
+                        onTap: () => onToggleWeekday(d),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
           ),
+        ],
       ],
+    );
+  }
+}
+
+class _DayToggle extends StatelessWidget {
+  const _DayToggle({
+    required this.letter,
+    required this.on,
+    required this.onTap,
+  });
+
+  final String letter;
+  final bool on;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return InkResponse(
+      onTap: onTap,
+      radius: 22,
+      child: Container(
+        width: 34,
+        height: 34,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: on ? scheme.primary : scheme.surfaceContainerHighest,
+        ),
+        child: Text(
+          letter,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: on ? scheme.onPrimary : scheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
     );
   }
 }

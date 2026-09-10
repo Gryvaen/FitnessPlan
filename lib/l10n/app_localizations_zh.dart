@@ -943,6 +943,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reminderOff => '已关闭';
 
   @override
+  String get reminderTimeLabel => '提醒时间';
+
+  @override
+  String get reminderRepeatLabel => '重复日期';
+
+  @override
+  String get weekdayLettersMonSun => '一,二,三,四,五,六,日';
+
+  @override
   String get notificationPermissionRow => '通知权限';
 
   @override

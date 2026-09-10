@@ -19,8 +19,8 @@ class FormOptions {
   ];
 
   static List<double> weightsKg({
-    double min = 40,
-    double max = 150,
+    double min = 30,
+    double max = 200,
     double step = 0.25,
   }) {
     final out = <double>[];
@@ -34,7 +34,7 @@ class FormOptions {
   static List<double> targetWeightsKg(double currentKg) {
     final max = _round2(((currentKg - 0.25) * 4).floor() / 4);
     if (max < 30) return const [];
-    return weightsKg(min: 30, max: max.clamp(30, 150));
+    return weightsKg(min: 30, max: max.clamp(30, 200));
   }
 
   /// Options for cut target picker; never empty for the dropdown.

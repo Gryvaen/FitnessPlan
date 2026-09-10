@@ -956,6 +956,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reminderOff => 'Off';
 
   @override
+  String get reminderTimeLabel => 'Reminder time';
+
+  @override
+  String get reminderRepeatLabel => 'Repeat';
+
+  @override
+  String get weekdayLettersMonSun => 'M,T,W,T,F,S,S';
+
+  @override
   String get notificationPermissionRow => 'Notification permission';
 
   @override

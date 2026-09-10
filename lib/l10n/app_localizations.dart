@@ -1917,6 +1917,24 @@ abstract class AppLocalizations {
   /// **'Off'**
   String get reminderOff;
 
+  /// No description provided for @reminderTimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder time'**
+  String get reminderTimeLabel;
+
+  /// No description provided for @reminderRepeatLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat'**
+  String get reminderRepeatLabel;
+
+  /// No description provided for @weekdayLettersMonSun.
+  ///
+  /// In en, this message translates to:
+  /// **'M,T,W,T,F,S,S'**
+  String get weekdayLettersMonSun;
+
   /// No description provided for @notificationPermissionRow.
   ///
   /// In en, this message translates to:

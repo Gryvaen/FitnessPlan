@@ -1,7 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// The reminder types the app can schedule. Each gets its own on/off + time
-/// and a distinct notification-id range (100 slots) so they never collide.
+/// The reminder types the app can schedule. Each gets its own on/off, time and
+/// repeat-days, plus a distinct notification-id range (100 slots).
 enum ReminderKind { workout, water, meal, weighIn }
 
 extension ReminderKindMeta on ReminderKind {
@@ -20,23 +20,33 @@ extension ReminderKindMeta on ReminderKind {
   };
 }
 
+/// `weekdays` uses DateTime weekday numbers (Mon = 1 … Sun = 7).
 class ReminderSetting {
   const ReminderSetting({
     required this.enabled,
     required this.hour,
     required this.minute,
+    required this.weekdays,
   });
 
   final bool enabled;
   final int hour;
   final int minute;
+  final Set<int> weekdays;
 
-  ReminderSetting copyWith({bool? enabled, int? hour, int? minute}) =>
-      ReminderSetting(
-        enabled: enabled ?? this.enabled,
-        hour: hour ?? this.hour,
-        minute: minute ?? this.minute,
-      );
+  bool firesOn(int weekday) => weekdays.contains(weekday);
+
+  ReminderSetting copyWith({
+    bool? enabled,
+    int? hour,
+    int? minute,
+    Set<int>? weekdays,
+  }) => ReminderSetting(
+    enabled: enabled ?? this.enabled,
+    hour: hour ?? this.hour,
+    minute: minute ?? this.minute,
+    weekdays: weekdays ?? this.weekdays,
+  );
 }
 
 class RemindersRepository {
@@ -62,12 +72,23 @@ class RemindersRepository {
     if (m != null) _prefs.setInt(_key(ReminderKind.workout, 'minute'), m);
   }
 
+  Set<int> _parseWeekdays(String? raw) {
+    if (raw == null || raw.isEmpty) return {1, 2, 3, 4, 5, 6, 7};
+    final out = <int>{};
+    for (final c in raw.split(',')) {
+      final n = int.tryParse(c.trim());
+      if (n != null && n >= 1 && n <= 7) out.add(n);
+    }
+    return out.isEmpty ? {1, 2, 3, 4, 5, 6, 7} : out;
+  }
+
   ReminderSetting get(ReminderKind kind) {
     final t = kind.defaultTime;
     return ReminderSetting(
       enabled: _prefs.getBool(_key(kind, 'enabled')) ?? false,
       hour: (_prefs.getInt(_key(kind, 'hour')) ?? t.hour).clamp(0, 23),
       minute: (_prefs.getInt(_key(kind, 'minute')) ?? t.minute).clamp(0, 59),
+      weekdays: _parseWeekdays(_prefs.getString(_key(kind, 'weekdays'))),
     );
   }
 
@@ -87,11 +108,17 @@ class RemindersRepository {
     await _prefs.setInt(_key(kind, 'minute'), minute.clamp(0, 59));
   }
 
+  Future<void> setWeekdays(ReminderKind kind, Set<int> weekdays) async {
+    final valid = weekdays.where((d) => d >= 1 && d <= 7).toList()..sort();
+    await _prefs.setString(_key(kind, 'weekdays'), valid.join(','));
+  }
+
   Future<void> clear() async {
     for (final kind in ReminderKind.values) {
       await _prefs.remove(_key(kind, 'enabled'));
       await _prefs.remove(_key(kind, 'hour'));
       await _prefs.remove(_key(kind, 'minute'));
+      await _prefs.remove(_key(kind, 'weekdays'));
     }
   }
 }
