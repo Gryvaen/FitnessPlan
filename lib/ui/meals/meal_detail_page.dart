@@ -54,14 +54,13 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
       proteinPer100: entry.grams > 0 ? entry.proteinG / entry.grams * 100 : 0,
       carbPer100: entry.grams > 0 ? entry.carbG / entry.grams * 100 : 0,
       fatPer100: entry.grams > 0 ? entry.fatG / entry.grams * 100 : 0,
-      alcoholPer100:
-          entry.grams > 0 ? entry.alcoholG / entry.grams * 100 : 0,
+      alcoholPer100: entry.grams > 0 ? entry.alcoholG / entry.grams * 100 : 0,
       fiberPer100: entry.grams > 0 ? entry.fiberG / entry.grams * 100 : 0,
-      sodiumMgPer100:
-          entry.grams > 0 ? entry.sodiumMg / entry.grams * 100 : 0,
+      sodiumMgPer100: entry.grams > 0 ? entry.sodiumMg / entry.grams * 100 : 0,
       sugarPer100: entry.grams > 0 ? entry.sugarG / entry.grams * 100 : 0,
-      saturatedFatPer100:
-          entry.grams > 0 ? entry.saturatedFatG / entry.grams * 100 : 0,
+      saturatedFatPer100: entry.grams > 0
+          ? entry.saturatedFatG / entry.grams * 100
+          : 0,
       isCustom: false,
     );
 
@@ -97,22 +96,25 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
     if (!AppDates.isLocalToday(entry.date)) return;
     setState(() => _saving = true);
     try {
-      await ref.read(mealRepositoryProvider).update(
+      await ref
+          .read(mealRepositoryProvider)
+          .update(
             id: widget.entryId,
             mealType: _mealType,
             food: food,
             grams: _grams,
           );
-      final updated =
-          await ref.read(mealRepositoryProvider).byId(widget.entryId);
+      final updated = await ref
+          .read(mealRepositoryProvider)
+          .byId(widget.entryId);
       if (mounted && updated != null) {
         setState(() => _entry = updated);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.saveFailed('$e'))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.saveFailed('$e'))));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -136,9 +138,9 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
     if (entry == null) return;
     if (!AppDates.isLocalToday(entry.date)) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.pastDayReadOnly)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.pastDayReadOnly)));
       return;
     }
 
@@ -165,15 +167,15 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
     try {
       await ref.read(mealRepositoryProvider).delete(widget.entryId);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.deleted)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.deleted)));
       context.pop();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.deleteFailed('$e'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.deleteFailed('$e'))));
     }
   }
 
@@ -181,9 +183,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (_notFound || _entry == null || _food == null) {
       return Scaffold(
@@ -255,7 +255,10 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
                   const SizedBox(height: AppSpacing.field),
                   AppDropdown<double>(
                     label: l10n.grams,
-                    value: FormOptions.snapDouble(FormOptions.mealGrams(), _grams),
+                    value: FormOptions.snapDouble(
+                      FormOptions.mealGrams(),
+                      _grams,
+                    ),
                     items: FormOptions.mealGrams(),
                     suffixText: 'g',
                     itemLabel: formatKg,
@@ -351,9 +354,7 @@ class _MacroRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(
-            child: Text(label, style: theme.textTheme.bodyLarge),
-          ),
+          Expanded(child: Text(label, style: theme.textTheme.bodyLarge)),
           Text(value, style: theme.textTheme.titleMedium),
         ],
       ),

@@ -66,8 +66,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
   String _fmt(double v) =>
       v == v.roundToDouble() ? '${v.round()}' : v.toStringAsFixed(1);
 
-  double _parse(TextEditingController c) =>
-      double.tryParse(c.text.trim()) ?? 0;
+  double _parse(TextEditingController c) => double.tryParse(c.text.trim()) ?? 0;
 
   @override
   void dispose() {
@@ -104,9 +103,9 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
           saturatedFatPer100: _parse(_saturatedFat),
         );
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.saved)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.saved)));
           context.pop();
         }
       } else {
@@ -123,17 +122,17 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
           saturatedFatPer100: _parse(_saturatedFat),
         );
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.customFoodAdded)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.customFoodAdded)));
           context.pushReplacement('/foods/$id');
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$e')));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -159,7 +158,10 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: AppSpacing.field),
-          Text(l10n.per100gNutrition, style: Theme.of(context).textTheme.titleSmall),
+          Text(
+            l10n.per100gNutrition,
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
           const SizedBox(height: 8),
           _numField(_kcal, l10n.kcalField),
           _numField(_protein, l10n.proteinG),
@@ -191,7 +193,10 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
               c.text = '';
               c.selection = const TextSelection.collapsed(offset: 0);
             } else if (c.text.isNotEmpty) {
-              c.selection = TextSelection(baseOffset: 0, extentOffset: c.text.length);
+              c.selection = TextSelection(
+                baseOffset: 0,
+                extentOffset: c.text.length,
+              );
             }
           } else {
             // 失焦时：若没输入则显示 0

@@ -1991,6 +1991,15 @@
   "recordIncomplete": "Not confirmed",
   "mealNotLogged": "Not logged",
   "mealsRecordSection": "Food log",
+  "noRecentFoods": "No recent foods yet",
+  "editKeywords": "Edit keywords",
+  "createFood": "New food",
+  "servingSize": "Serving size",
+  "nutritionResult": "Nutrition",
+  "mealAddedTo": "Add to {meal}",
+  "@mealAddedTo": {"placeholders": {"meal": {"type": "String"}}},
+  "mealLoggedTo": "Added to {meal}",
+  "@mealLoggedTo": {"placeholders": {"meal": {"type": "String"}}},
   "addMealNamed": "Add {meal}",
   "@addMealNamed": {"placeholders": {"meal": {"type": "String"}}}
 }

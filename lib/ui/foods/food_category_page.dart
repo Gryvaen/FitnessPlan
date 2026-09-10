@@ -46,7 +46,9 @@ class _FoodCategoryPageState extends ConsumerState<FoodCategoryPage> {
 
     try {
       await ref.read(foodsSeedProvider.future);
-      final page = await ref.read(foodRepositoryProvider).byCategory(
+      final page = await ref
+          .read(foodRepositoryProvider)
+          .byCategory(
             widget.category,
             limit: _pageSize,
             offset: reset ? 0 : _items.length,
@@ -78,64 +80,58 @@ class _FoodCategoryPageState extends ConsumerState<FoodCategoryPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(l10n.loadFailed('$_error')),
-                      const SizedBox(height: 8),
-                      FilledButton(
-                        onPressed: () => _load(reset: true),
-                        child: Text(l10n.retry),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(l10n.loadFailed('$_error')),
+                  const SizedBox(height: 8),
+                  FilledButton(
+                    onPressed: () => _load(reset: true),
+                    child: Text(l10n.retry),
                   ),
-                )
-              : _items.isEmpty
-                  ? Center(
-                      child: Text(l10n.categoryEmpty, style: theme.textTheme.meta),
-                    )
-                  : NotificationListener<ScrollNotification>(
-                      onNotification: (n) {
-                        if (n.metrics.pixels >
-                            n.metrics.maxScrollExtent - 240) {
-                          _load(reset: false);
-                        }
-                        return false;
-                      },
-                      child: ListView.separated(
-                        itemCount: _items.length + (_hasMore ? 1 : 0),
-                        separatorBuilder: (_, _) => const Divider(height: 1),
-                        itemBuilder: (context, i) {
-                          if (i >= _items.length) {
-                            return const Padding(
-                              padding: EdgeInsets.all(16),
-                              child: Center(
-                                child: SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                              ),
-                            );
-                          }
-                          final f = _items[i];
-                          return ListTile(
-                            key: ValueKey(f.id),
-                            title:
-                                Text(f.name, style: theme.textTheme.bodyLarge),
-                            subtitle: Text(
-                              '${f.kcalPer100.round()} kcal / 100g',
-                              style: theme.textTheme.meta,
-                            ),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () => context.push('/foods/${f.id}'),
-                          );
-                        },
+                ],
+              ),
+            )
+          : _items.isEmpty
+          ? Center(child: Text(l10n.categoryEmpty, style: theme.textTheme.meta))
+          : NotificationListener<ScrollNotification>(
+              onNotification: (n) {
+                if (n.metrics.pixels > n.metrics.maxScrollExtent - 240) {
+                  _load(reset: false);
+                }
+                return false;
+              },
+              child: ListView.separated(
+                itemCount: _items.length + (_hasMore ? 1 : 0),
+                separatorBuilder: (_, _) => const Divider(height: 1),
+                itemBuilder: (context, i) {
+                  if (i >= _items.length) {
+                    return const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Center(
+                        child: SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
                       ),
+                    );
+                  }
+                  final f = _items[i];
+                  return ListTile(
+                    key: ValueKey(f.id),
+                    title: Text(f.name, style: theme.textTheme.bodyLarge),
+                    subtitle: Text(
+                      '${f.kcalPer100.round()} kcal / 100g',
+                      style: theme.textTheme.meta,
                     ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push('/foods/${f.id}'),
+                  );
+                },
+              ),
+            ),
     );
   }
 }

@@ -2151,6 +2151,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealsRecordSection => 'Food log';
 
   @override
+  String get noRecentFoods => 'No recent foods yet';
+
+  @override
+  String get editKeywords => 'Edit keywords';
+
+  @override
+  String get createFood => 'New food';
+
+  @override
+  String get servingSize => 'Serving size';
+
+  @override
+  String get nutritionResult => 'Nutrition';
+
+  @override
+  String mealAddedTo(String meal) {
+    return 'Add to $meal';
+  }
+
+  @override
+  String mealLoggedTo(String meal) {
+    return 'Added to $meal';
+  }
+
+  @override
   String addMealNamed(String meal) {
     return 'Add $meal';
   }

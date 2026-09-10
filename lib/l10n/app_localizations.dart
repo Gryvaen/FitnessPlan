@@ -3789,6 +3789,48 @@ abstract class AppLocalizations {
   /// **'Food log'**
   String get mealsRecordSection;
 
+  /// No description provided for @noRecentFoods.
+  ///
+  /// In en, this message translates to:
+  /// **'No recent foods yet'**
+  String get noRecentFoods;
+
+  /// No description provided for @editKeywords.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit keywords'**
+  String get editKeywords;
+
+  /// No description provided for @createFood.
+  ///
+  /// In en, this message translates to:
+  /// **'New food'**
+  String get createFood;
+
+  /// No description provided for @servingSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Serving size'**
+  String get servingSize;
+
+  /// No description provided for @nutritionResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Nutrition'**
+  String get nutritionResult;
+
+  /// No description provided for @mealAddedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to {meal}'**
+  String mealAddedTo(String meal);
+
+  /// No description provided for @mealLoggedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to {meal}'**
+  String mealLoggedTo(String meal);
+
   /// No description provided for @addMealNamed.
   ///
   /// In en, this message translates to:

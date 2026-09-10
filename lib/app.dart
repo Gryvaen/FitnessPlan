@@ -9,7 +9,6 @@ import 'providers/app_providers.dart';
 import 'ui/foods/custom_food_edit_page.dart';
 import 'ui/foods/food_category_page.dart';
 import 'ui/foods/food_detail_page.dart';
-import 'ui/foods/food_favorites_page.dart';
 import 'ui/foods/foods_page.dart';
 import 'ui/meals/daily_meals_page.dart';
 import 'ui/meals/log_meal_page.dart';
@@ -90,10 +89,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                       final category = state.uri.queryParameters['name'] ?? '';
                       return FoodCategoryPage(category: category);
                     },
-                  ),
-                  GoRoute(
-                    path: 'favorites',
-                    builder: (context, state) => const FoodFavoritesPage(),
                   ),
                   GoRoute(
                     path: 'custom',

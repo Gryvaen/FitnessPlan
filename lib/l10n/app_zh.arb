@@ -1965,5 +1965,12 @@
   "recordIncomplete": "尚未确认完整",
   "mealNotLogged": "未记录",
   "mealsRecordSection": "饮食记录",
+  "noRecentFoods": "还没有最近记录的食物",
+  "editKeywords": "修改关键词",
+  "createFood": "新建食物",
+  "servingSize": "食用份量",
+  "nutritionResult": "营养结果",
+  "mealAddedTo": "添加到{meal}",
+  "mealLoggedTo": "已添加到{meal}",
   "addMealNamed": "添加{meal}"
 }

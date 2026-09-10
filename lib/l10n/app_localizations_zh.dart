@@ -2105,6 +2105,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mealsRecordSection => '饮食记录';
 
   @override
+  String get noRecentFoods => '还没有最近记录的食物';
+
+  @override
+  String get editKeywords => '修改关键词';
+
+  @override
+  String get createFood => '新建食物';
+
+  @override
+  String get servingSize => '食用份量';
+
+  @override
+  String get nutritionResult => '营养结果';
+
+  @override
+  String mealAddedTo(String meal) {
+    return '添加到$meal';
+  }
+
+  @override
+  String mealLoggedTo(String meal) {
+    return '已添加到$meal';
+  }
+
+  @override
   String addMealNamed(String meal) {
     return '添加$meal';
   }
