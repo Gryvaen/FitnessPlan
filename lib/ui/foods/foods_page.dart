@@ -8,6 +8,7 @@ import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
+import 'food_category_art.dart';
 
 final _foodQueryProvider = NotifierProvider<_QueryNotifier, String>(
   _QueryNotifier.new,
@@ -260,6 +261,7 @@ class _FoodCategoryList extends ConsumerWidget {
                 for (final c in categories)
                   SportListTile(
                     contentPadding: EdgeInsets.zero,
+                    leading: FoodCategoryAvatar(category: c.category),
                     title: Text(
                       c.category.localizedCategory(l10n),
                       style: theme.textTheme.bodyLarge,
@@ -278,7 +280,7 @@ class _FoodCategoryList extends ConsumerWidget {
                   ),
                 SportListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.add),
+                  leading: const FoodCategoryAvatar(category: '自定义'),
                   title: Text(l10n.custom, style: theme.textTheme.bodyLarge),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push('/foods/custom'),

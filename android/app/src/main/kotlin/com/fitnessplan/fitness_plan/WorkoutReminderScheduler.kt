@@ -16,8 +16,10 @@ object WorkoutReminderScheduler {
     const val EXTRA_TITLE = "title"
     const val EXTRA_BODY = "body"
 
-    private const val BASE_REQUEST_CODE = 72001
-    private const val MAX_COUNT = 14
+    // One 100-slot id range per reminder kind (workout / water / meal /
+    // weigh-in), matching ReminderKind.idBase on the Dart side.
+    private val BASE_REQUEST_CODES = intArrayOf(72001, 72101, 72201, 72301)
+    private const val SLOTS_PER_KIND = 32
 
     fun scheduleAll(context: Context, items: List<ReminderItem>) {
         cancelAll(context)
@@ -28,8 +30,10 @@ object WorkoutReminderScheduler {
 
     fun cancelAll(context: Context) {
         val alarmManager = context.getSystemService(AlarmManager::class.java) ?: return
-        for (i in 0 until MAX_COUNT) {
-            alarmManager.cancel(alarmPendingIntent(context, BASE_REQUEST_CODE + i, 0, "", ""))
+        for (base in BASE_REQUEST_CODES) {
+            for (i in 0 until SLOTS_PER_KIND) {
+                alarmManager.cancel(alarmPendingIntent(context, base + i, 0, "", ""))
+            }
         }
     }
 

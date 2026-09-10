@@ -6,6 +6,7 @@ import '../../data/db.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
+import 'food_category_art.dart';
 
 const _pageSize = 80;
 
@@ -76,7 +77,16 @@ class _FoodCategoryPageState extends ConsumerState<FoodCategoryPage> {
     final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.category.localizedCategory(l10n))),
+      appBar: AppBar(
+        titleSpacing: 0,
+        title: Row(
+          children: [
+            FoodCategoryAvatar(category: widget.category, size: 30),
+            const SizedBox(width: 10),
+            Text(widget.category.localizedCategory(l10n)),
+          ],
+        ),
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null

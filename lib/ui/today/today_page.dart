@@ -50,8 +50,10 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final visuals = AppThemeVisuals.of(context);
-    final onHero = visuals.onHero;
-    final onHeroMuted = visuals.onHeroMuted;
+    // The calorie summary is a flat page section now (no hero card), so its
+    // text sits on the ordinary surface colours.
+    final onHero = scheme.onSurface;
+    final onHeroMuted = scheme.onSurfaceVariant;
     final plan = ref.read(profileRepositoryProvider).buildPlan(profile);
 
     // Single per-date target source; fall back to the profile target only
@@ -225,7 +227,8 @@ class _TodayPageState extends ConsumerState<TodayPage> {
               ),
               const SizedBox(height: AppSpacing.section),
             ],
-            SportHeroCard(
+            Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.compact),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -399,6 +402,8 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                 ],
               ),
             ),
+            const SizedBox(height: AppSpacing.section),
+            Divider(height: 1, color: visuals.divider),
             const SizedBox(height: AppSpacing.section),
             SportSectionBand(
               padding: const EdgeInsets.fromLTRB(
@@ -1083,15 +1088,16 @@ class _TodayHeader extends StatelessWidget {
             icon: const Icon(Icons.chevron_left),
           ),
           IconButton(
+            tooltip: l10n.selectDate,
+            visualDensity: VisualDensity.compact,
+            onPressed: onCalendar,
+            icon: const Icon(Icons.calendar_today_outlined),
+          ),
+          IconButton(
             tooltip: l10n.nextDay,
             visualDensity: VisualDensity.compact,
             onPressed: canGoNext ? onNext : null,
             icon: const Icon(Icons.chevron_right),
-          ),
-          IconButton(
-            tooltip: l10n.selectDate,
-            onPressed: onCalendar,
-            icon: const Icon(Icons.calendar_today_outlined),
           ),
         ],
       ),
