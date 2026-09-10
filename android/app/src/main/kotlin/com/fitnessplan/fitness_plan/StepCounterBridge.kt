@@ -46,6 +46,9 @@ object StepCounterBridge {
     private const val SENSOR_TIMEOUT_MS = 6000L
     private const val LATE_EVENING_MS = 6 * 60 * 60 * 1000L
 
+    /** How stale a prior sample may be and still seed today's reconstruction. */
+    private const val RECONSTRUCT_WINDOW_MS = 3L * 24 * 60 * 60 * 1000
+
     fun handle(context: Context, method: String, result: MethodChannel.Result) {
         when (method) {
             "readTodaySteps" -> readTodayStepsAsync(context, result)
@@ -197,23 +200,28 @@ object StepCounterBridge {
 
         if (storedDate != todayKey) {
             val midnight = todayStartMillis()
-            val sampleIsYesterday = lastTime in 1 until midnight &&
-                localDateKey(lastTime) == localDateKey(midnight - 1)
+            val haveSample = last in 0L..cumulative && lastTime in 1 until now
+            val sampleAgeMs = if (haveSample) now - lastTime else Long.MAX_VALUE
             if (bootToday) {
                 todaySteps = cumulative.toInt().coerceAtLeast(0)
                 baseline = 0L
                 source = "boot_today"
-            } else if (last >= 0L && sampleIsYesterday && cumulative >= last) {
+            } else if (haveSample && sampleAgeMs <= RECONSTRUCT_WINDOW_MS) {
                 val sinceSample = (cumulative - last).toInt().coerceAtLeast(0)
                 val gapBeforeMidnight = midnight - lastTime
-                if (gapBeforeMidnight <= LATE_EVENING_MS) {
+                if (lastTime < midnight && gapBeforeMidnight in 0..LATE_EVENING_MS) {
+                    // Last sample was late yesterday evening — few people walk
+                    // much before midnight, so count it all as today.
                     todaySteps = sinceSample
                     source = "late_evening_sample"
                 } else {
-                    val total = (now - lastTime).coerceAtLeast(1L)
-                    val fraction = (now - midnight).toDouble() / total.toDouble()
-                    todaySteps = (sinceSample * fraction.coerceIn(0.0, 1.0)).toInt()
-                    source = "interpolated"
+                    // Apportion the steps since the last sample to the slice
+                    // that falls after today's midnight.
+                    val windowMs = (now - lastTime).coerceAtLeast(1L)
+                    val afterMidnightMs = (now - midnight).coerceAtLeast(0L)
+                    val fraction = (afterMidnightMs.toDouble() / windowMs).coerceIn(0.0, 1.0)
+                    todaySteps = (sinceSample * fraction).toInt().coerceAtLeast(0)
+                    source = "reconstructed"
                 }
                 baseline = cumulative - todaySteps
             } else {

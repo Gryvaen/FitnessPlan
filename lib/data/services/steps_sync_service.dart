@@ -159,8 +159,12 @@ class StepsSyncService {
                     .subtract(const Duration(milliseconds: 1));
           try {
             final value = await _readStepsForInterval(day, end);
-            await _repo.setStepsForDay(day, value);
-            if (i == 0) todayFromHealth = value;
+            // Today is written once below, after reconciling every source.
+            if (i == 0) {
+              todayFromHealth = value;
+            } else {
+              await _repo.setStepsForDay(day, value);
+            }
             readsOk++;
           } catch (_) {
             readsFailed++;
@@ -170,12 +174,21 @@ class StepsSyncService {
 
       final sensorToday = await _readSensorToday();
       final today = CalendarDay.todayLocal();
+      if (sensorToday == null && !authorized) {
+        return StepsSyncStatus.denied;
+      }
+
       var todayFinal = todayFromHealth;
       if (sensorToday != null && sensorToday > todayFinal) {
         todayFinal = sensorToday;
       }
-      if (sensorToday == null && !authorized) {
-        return StepsSyncStatus.denied;
+      // Both live sources came back empty — a later sensor read can regress to
+      // 0 after a reboot / OEM midnight counter reset, and some OEM Health
+      // Connect builds briefly return 0. A day's total never drops, so keep
+      // what we already had rather than overwriting it with 0.
+      if (todayFinal == 0) {
+        final storedToday = await _repo.stepsForDay(today);
+        if (storedToday > 0) todayFinal = storedToday;
       }
       await _repo.setStepsForDay(today, todayFinal);
 
