@@ -178,15 +178,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         context.pop();
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(l10n.myProfile),
-          actions: [
-            TextButton(
-              onPressed: _saving || !_dirty ? null : _saveAndPop,
-              child: Text(_saving ? l10n.saving : l10n.save),
-            ),
-          ],
-        ),
+        appBar: AppBar(title: Text(l10n.myProfile)),
         body: ListView(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.formPage,

@@ -78,16 +78,7 @@ class NutritionTargetsPage extends ConsumerWidget {
         active != null && active.effectiveFrom.isAfter(today);
 
     return AppChromeScaffold(
-      appBar: AppBar(
-        title: Text(l10n.nutritionTargets),
-        actions: [
-          if (blocking.isEmpty)
-            TextButton(
-              onPressed: () => context.push('/profile/nutrition/strategy'),
-              child: Text(l10n.adjustStrategy),
-            ),
-        ],
-      ),
+      appBar: AppBar(title: Text(l10n.nutritionTargets)),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           AppSpacing.formPage,
