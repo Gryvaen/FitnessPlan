@@ -2089,6 +2089,7 @@
   "goalMaintainDesc": "Hold your current weight and shape",
   "goalBulkDesc": "Add muscle, build strength",
   "profileGreeting": "Fitness buddy",
+  "editName": "Edit name",
   "profileTagline": "Keep going — a better you is coming",
   "appVersionLabel": "Version {version}",
   "@appVersionLabel": {"placeholders": {"version": {"type": "String"}}},

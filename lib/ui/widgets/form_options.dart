@@ -505,22 +505,33 @@ class _PickerField extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             onTap: onTap,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               child: Row(
                 children: [
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(label, style: theme.textTheme.fieldLabel),
-                        const SizedBox(height: 4),
-                        Text(displayText, style: theme.textTheme.titleMedium),
-                      ],
+                    flex: 4,
+                    child: Text(
+                      label,
+                      style: theme.textTheme.bodyLarge,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  const SizedBox(width: 12),
+                  Flexible(
+                    flex: 5,
+                    child: Text(
+                      displayText,
+                      textAlign: TextAlign.end,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
                   Icon(
                     CupertinoIcons.chevron_up_chevron_down,
-                    size: 18,
+                    size: 16,
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ],

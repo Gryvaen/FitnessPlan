@@ -2390,6 +2390,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileGreeting => '健身小伙伴';
 
   @override
+  String get editName => '修改昵称';
+
+  @override
   String get profileTagline => '坚持，让更好的自己出现';
 
   @override

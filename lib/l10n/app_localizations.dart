@@ -4305,6 +4305,12 @@ abstract class AppLocalizations {
   /// **'Fitness buddy'**
   String get profileGreeting;
 
+  /// No description provided for @editName.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit name'**
+  String get editName;
+
   /// No description provided for @profileTagline.
   ///
   /// In en, this message translates to:

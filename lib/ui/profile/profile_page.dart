@@ -75,6 +75,39 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     }
   }
 
+  Future<void> _renameUser() async {
+    final l10n = context.l10n;
+    final controller = TextEditingController(
+      text: ref.read(userNameProvider) ?? '',
+    );
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.editName),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 24,
+          decoration: InputDecoration(hintText: l10n.profileGreeting),
+          onSubmitted: (v) => Navigator.pop(ctx, v),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, controller.text),
+            child: Text(l10n.save),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (name == null) return;
+    await ref.read(userNameProvider.notifier).set(name);
+  }
+
   String _nutritionSubtitle(WidgetRef ref, AppLocalizations l10n) {
     final active = ref.watch(activeDietPlanProvider).value;
     final today = ref.watch(todayTargetProvider).value;
@@ -268,7 +301,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 ),
               ),
               title: Text(
-                l10n.profileGreeting,
+                ref.watch(userNameProvider) ?? l10n.profileGreeting,
                 style: theme.textTheme.titleMedium,
               ),
               subtitle: Text(
@@ -281,7 +314,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 ),
                 style: theme.textTheme.meta,
               ),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: l10n.editName,
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.edit_outlined, size: 18),
+                    onPressed: _renameUser,
+                  ),
+                  const Icon(Icons.chevron_right),
+                ],
+              ),
               onTap: () => context.push('/profile/edit'),
             ),
             _MenuRow(

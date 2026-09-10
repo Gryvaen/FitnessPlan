@@ -2051,6 +2051,7 @@
   "goalMaintainDesc": "保持当前体重与体型",
   "goalBulkDesc": "增加肌肉量，提升力量与体能",
   "profileGreeting": "健身小伙伴",
+  "editName": "修改昵称",
   "profileTagline": "坚持，让更好的自己出现",
   "appVersionLabel": "版本 {version}",
   "weekdayColumn": "日期",

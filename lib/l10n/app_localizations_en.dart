@@ -2449,6 +2449,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileGreeting => 'Fitness buddy';
 
   @override
+  String get editName => 'Edit name';
+
+  @override
   String get profileTagline => 'Keep going — a better you is coming';
 
   @override
