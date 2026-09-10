@@ -709,13 +709,14 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: visuals.card,
+        fillColor: scheme.surfaceContainerLow,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.tile),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.tile),
-          borderSide: BorderSide(color: border),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.tile),
@@ -725,6 +726,7 @@ class AppTheme {
           horizontal: 16,
           vertical: 14,
         ),
+        floatingLabelBehavior: FloatingLabelBehavior.auto,
         hintStyle: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
       ),
       snackBarTheme: SnackBarThemeData(

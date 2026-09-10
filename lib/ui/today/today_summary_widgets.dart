@@ -183,53 +183,19 @@ class MacroColumn extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-              ),
-              const SizedBox(width: 5),
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: labelColor ?? scheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ],
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: labelColor ?? scheme.onSurfaceVariant,
+            ),
           ),
-          const SizedBox(height: 4),
-          Wrap(
-            crossAxisAlignment: WrapCrossAlignment.end,
-            spacing: 2,
-            children: [
-              Text(
-                valueText,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  height: 1.1,
-                  color: over ? scheme.error : (labelColor ?? scheme.onSurface),
-                ),
-              ),
-              Text(
-                '/$targetText $unit',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  height: 1.2,
-                  color: metaColor ?? scheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 7),
           ClipRRect(
-            borderRadius: BorderRadius.circular(3),
+            borderRadius: BorderRadius.circular(2),
             child: SizedBox(
-              height: 5,
+              height: 3,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -242,6 +208,28 @@ class MacroColumn extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+          const SizedBox(height: 7),
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: valueText,
+                  style: TextStyle(
+                    color: over
+                        ? scheme.error
+                        : (labelColor ?? scheme.onSurface),
+                  ),
+                ),
+                TextSpan(
+                  text: ' /$targetText $unit',
+                  style: TextStyle(color: metaColor ?? scheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelSmall,
           ),
         ],
       ),

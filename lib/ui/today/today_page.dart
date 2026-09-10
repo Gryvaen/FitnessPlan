@@ -288,7 +288,8 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                         eaten: intake.calories,
                         target: targetCalories,
                         over: remainCal < 0,
-                        size: 108,
+                        size: 88,
+                        strokeWidth: 8,
                         color: visuals.accent,
                         trackColor: visuals.track,
                         centerLabel: l10n.eatenWord,
@@ -298,8 +299,8 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                       const SizedBox(width: 12),
                       WaterCupControl(
                         progress: waterGoal <= 0 ? 0 : waterMl / waterGoal,
-                        height: 108,
-                        width: 68,
+                        height: 92,
+                        width: 60,
                         onAdd: canAddWater
                             ? () => ref
                                   .read(waterRepositoryProvider)
@@ -698,23 +699,44 @@ class _MealGroups extends StatelessWidget {
       if (group.isEmpty) continue;
       final calories = group.fold<double>(0, (sum, m) => sum + m.calories);
       groups.add(
-        SportListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(type.label(l10n), style: theme.textTheme.titleSmall),
-          subtitle: Text(
-            group.map((m) => m.foodName).join(' · '),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: Text(
-            '${calories.round()} kcal',
-            style: theme.textTheme.bodySmall,
-          ),
+        InkWell(
           onTap: onOpen,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              children: [
+                Text(type.label(l10n), style: theme.textTheme.titleSmall),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    group.map((m) => m.foodName).join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${calories.round()} kcal',
+                  style: theme.textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
         ),
       );
     }
-    return Column(children: groups);
+    return Column(
+      children: [
+        for (var i = 0; i < groups.length; i++) ...[
+          if (i > 0)
+            Divider(height: 1, color: AppThemeVisuals.of(context).divider),
+          groups[i],
+        ],
+      ],
+    );
   }
 }
 

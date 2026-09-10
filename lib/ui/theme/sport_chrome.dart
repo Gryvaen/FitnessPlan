@@ -141,11 +141,15 @@ class SportEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 36, color: theme.colorScheme.onSurfaceVariant),
+          Icon(
+            icon,
+            size: 48,
+            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.55),
+          ),
           const SizedBox(height: 16),
           Text(
             title,
@@ -384,8 +388,8 @@ class SportProgressBar extends StatelessWidget {
   const SportProgressBar({
     super.key,
     required this.value,
-    this.minHeight = 6,
-    this.borderRadius = 4,
+    this.minHeight = 4,
+    this.borderRadius = 3,
     this.color,
   });
 

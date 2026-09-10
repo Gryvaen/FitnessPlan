@@ -156,7 +156,20 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 24),
+                  Center(
+                    child: SizedBox(
+                      width: 200,
+                      height: 160,
+                      child: CustomPaint(
+                        painter: _WelcomeArtPainter(
+                          stroke: theme.colorScheme.primary,
+                          fill: theme.colorScheme.primaryContainer,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
                   _Feature(
                     icon: Icons.restaurant_outlined,
                     title: l10n.onboardingFeature1Title,
@@ -327,6 +340,69 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       ),
     );
   }
+}
+
+/// Simple line-art: a glass of water beside a dumbbell (board 08.01).
+class _WelcomeArtPainter extends CustomPainter {
+  _WelcomeArtPainter({required this.stroke, required this.fill});
+
+  final Color stroke;
+  final Color fill;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final line = Paint()
+      ..color = stroke
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    final soft = Paint()..color = fill;
+
+    // Glass (tapered tumbler) on the left.
+    final glass = Path()
+      ..moveTo(24, 30)
+      ..lineTo(34, 140)
+      ..lineTo(84, 140)
+      ..lineTo(94, 30)
+      ..close();
+    canvas.drawPath(
+      Path()
+        ..moveTo(30, 78)
+        ..lineTo(38, 140)
+        ..lineTo(80, 140)
+        ..lineTo(88, 78)
+        ..close(),
+      soft,
+    );
+    canvas.drawPath(glass, line);
+    canvas.drawLine(const Offset(27, 55), const Offset(91, 55), line);
+
+    // Dumbbell on the right.
+    canvas.drawLine(const Offset(120, 92), const Offset(180, 92), line);
+    for (final x in [116.0, 184.0]) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: Offset(x, 92), width: 16, height: 44),
+          const Radius.circular(4),
+        ),
+        line,
+      );
+    }
+    for (final x in [104.0, 196.0]) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: Offset(x, 92), width: 12, height: 30),
+          const Radius.circular(4),
+        ),
+        line,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_WelcomeArtPainter old) =>
+      old.stroke != stroke || old.fill != fill;
 }
 
 class _Feature extends StatelessWidget {
