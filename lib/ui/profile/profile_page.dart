@@ -238,12 +238,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ),
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.listPage,
-                8,
-                AppSpacing.listPage,
-                AppSpacing.section,
-              ),
+              // Align the title with the rows below and with the 食物 / 记录
+              // pages: the ListView already supplies the 20px side inset.
+              padding: const EdgeInsets.only(bottom: AppSpacing.section),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -276,6 +273,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           style: theme.textTheme.labelLarge,
                         ),
                       ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: l10n.theme,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () {
+                      final current = ref.read(themeProvider);
+                      ref.read(themeProvider.notifier).select(current.toggled);
+                    },
+                    icon: Icon(
+                      ref.watch(themeProvider).isDark
+                          ? Icons.dark_mode_outlined
+                          : Icons.light_mode_outlined,
+                      size: 20,
                     ),
                   ),
                   if (isAndroid)
