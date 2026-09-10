@@ -20,10 +20,6 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   final _engine = CalculatorEngine();
   List<CalcHistoryEntry> _history = [];
 
-  static const _opOrange = Color(0xFFFF9F0A);
-  static const _numDark = Color(0xFF3D3D3D);
-  static const _fnLight = Color(0xFFD4D4D4);
-
   @override
   void initState() {
     super.initState();
@@ -49,14 +45,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final display = _engine.error ? l10n.calcError : _engine.input;
     final text = expr.isEmpty
         ? display
-        : (expr.endsWith('=')
-            ? '$expr $display'
-            : '$expr\n$display');
+        : (expr.endsWith('=') ? '$expr $display' : '$expr\n$display');
     await Clipboard.setData(ClipboardData(text: text));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.copiedClipboard)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l10n.copiedClipboard)));
   }
 
   Future<void> _openHistory() async {
@@ -182,108 +176,190 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               ),
               const SizedBox(height: AppSpacing.section),
               _row([
-                _KeySpec('MC', kind: _KeyKind.mem, onTap: () {
-                  HapticFeedback.selectionClick();
-                  _bump(_engine.memoryClear);
-                }),
-                _KeySpec('MR', kind: _KeyKind.mem, onTap: () {
-                  HapticFeedback.selectionClick();
-                  _bump(_engine.memoryRecall);
-                }),
-                _KeySpec('M+', kind: _KeyKind.mem, onTap: () {
-                  HapticFeedback.selectionClick();
-                  _bump(_engine.memoryAdd);
-                }),
-                _KeySpec('M−', kind: _KeyKind.mem, onTap: () {
-                  HapticFeedback.selectionClick();
-                  _bump(_engine.memorySub);
-                }),
-                _KeySpec('⌫', kind: _KeyKind.fn, onTap: () {
-                  HapticFeedback.selectionClick();
-                  _bump(_engine.backspace);
-                }),
+                _KeySpec(
+                  'MC',
+                  kind: _KeyKind.mem,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _bump(_engine.memoryClear);
+                  },
+                ),
+                _KeySpec(
+                  'MR',
+                  kind: _KeyKind.mem,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _bump(_engine.memoryRecall);
+                  },
+                ),
+                _KeySpec(
+                  'M+',
+                  kind: _KeyKind.mem,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _bump(_engine.memoryAdd);
+                  },
+                ),
+                _KeySpec(
+                  'M−',
+                  kind: _KeyKind.mem,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _bump(_engine.memorySub);
+                  },
+                ),
+                _KeySpec(
+                  '⌫',
+                  kind: _KeyKind.fn,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _bump(_engine.backspace);
+                  },
+                ),
               ]),
               _row([
-                _KeySpec('AC', kind: _KeyKind.fn, onTap: () {
-                  HapticFeedback.selectionClick();
-                  _bump(_engine.clear);
-                }),
-                _KeySpec('+/−', kind: _KeyKind.fn, onTap: () {
-                  HapticFeedback.selectionClick();
-                  _bump(_engine.negate);
-                }),
-                _KeySpec('%', kind: _KeyKind.fn, onTap: () {
-                  HapticFeedback.selectionClick();
-                  _bump(_engine.percent);
-                }),
-                _KeySpec('÷', kind: _KeyKind.op, onTap: () {
-                  HapticFeedback.lightImpact();
-                  _bump(() => _engine.op('÷'));
-                }),
+                _KeySpec(
+                  'AC',
+                  kind: _KeyKind.fn,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _bump(_engine.clear);
+                  },
+                ),
+                _KeySpec(
+                  '+/−',
+                  kind: _KeyKind.fn,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _bump(_engine.negate);
+                  },
+                ),
+                _KeySpec(
+                  '%',
+                  kind: _KeyKind.fn,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _bump(_engine.percent);
+                  },
+                ),
+                _KeySpec(
+                  '÷',
+                  kind: _KeyKind.op,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    _bump(() => _engine.op('÷'));
+                  },
+                ),
               ]),
               _row([
-                _KeySpec('7', onTap: () {
-                  HapticFeedback.selectionClick();
-                  _bump(() => _engine.digit('7'));
-                }),
-                _KeySpec('8', onTap: () {
-                  HapticFeedback.selectionClick();
-                  _bump(() => _engine.digit('8'));
-                }),
-                _KeySpec('9', onTap: () {
-                  HapticFeedback.selectionClick();
-                  _bump(() => _engine.digit('9'));
-                }),
-                _KeySpec('×', kind: _KeyKind.op, onTap: () {
-                  HapticFeedback.lightImpact();
-                  _bump(() => _engine.op('×'));
-                }),
+                _KeySpec(
+                  '7',
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _bump(() => _engine.digit('7'));
+                  },
+                ),
+                _KeySpec(
+                  '8',
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _bump(() => _engine.digit('8'));
+                  },
+                ),
+                _KeySpec(
+                  '9',
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _bump(() => _engine.digit('9'));
+                  },
+                ),
+                _KeySpec(
+                  '×',
+                  kind: _KeyKind.op,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    _bump(() => _engine.op('×'));
+                  },
+                ),
               ]),
               _row([
-                _KeySpec('4', onTap: () {
-                  HapticFeedback.selectionClick();
-                  _bump(() => _engine.digit('4'));
-                }),
-                _KeySpec('5', onTap: () {
-                  HapticFeedback.selectionClick();
-                  _bump(() => _engine.digit('5'));
-                }),
-                _KeySpec('6', onTap: () {
-                  HapticFeedback.selectionClick();
-                  _bump(() => _engine.digit('6'));
-                }),
-                _KeySpec('−', kind: _KeyKind.op, onTap: () {
-                  HapticFeedback.lightImpact();
-                  _bump(() => _engine.op('−'));
-                }),
+                _KeySpec(
+                  '4',
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _bump(() => _engine.digit('4'));
+                  },
+                ),
+                _KeySpec(
+                  '5',
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _bump(() => _engine.digit('5'));
+                  },
+                ),
+                _KeySpec(
+                  '6',
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _bump(() => _engine.digit('6'));
+                  },
+                ),
+                _KeySpec(
+                  '−',
+                  kind: _KeyKind.op,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    _bump(() => _engine.op('−'));
+                  },
+                ),
               ]),
               _row([
-                _KeySpec('1', onTap: () {
-                  HapticFeedback.selectionClick();
-                  _bump(() => _engine.digit('1'));
-                }),
-                _KeySpec('2', onTap: () {
-                  HapticFeedback.selectionClick();
-                  _bump(() => _engine.digit('2'));
-                }),
-                _KeySpec('3', onTap: () {
-                  HapticFeedback.selectionClick();
-                  _bump(() => _engine.digit('3'));
-                }),
-                _KeySpec('+', kind: _KeyKind.op, onTap: () {
-                  HapticFeedback.lightImpact();
-                  _bump(() => _engine.op('+'));
-                }),
+                _KeySpec(
+                  '1',
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _bump(() => _engine.digit('1'));
+                  },
+                ),
+                _KeySpec(
+                  '2',
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _bump(() => _engine.digit('2'));
+                  },
+                ),
+                _KeySpec(
+                  '3',
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _bump(() => _engine.digit('3'));
+                  },
+                ),
+                _KeySpec(
+                  '+',
+                  kind: _KeyKind.op,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    _bump(() => _engine.op('+'));
+                  },
+                ),
               ]),
               _row([
-                _KeySpec('0', wide: true, onTap: () {
-                  HapticFeedback.selectionClick();
-                  _bump(() => _engine.digit('0'));
-                }),
-                _KeySpec('.', onTap: () {
-                  HapticFeedback.selectionClick();
-                  _bump(_engine.dot);
-                }),
+                _KeySpec(
+                  '0',
+                  wide: true,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _bump(() => _engine.digit('0'));
+                  },
+                ),
+                _KeySpec(
+                  '.',
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _bump(_engine.dot);
+                  },
+                ),
                 _KeySpec('=', kind: _KeyKind.op, onTap: _onEquals),
               ]),
             ],
@@ -305,7 +381,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               child: _CalcButton(
                 label: keys[i].label,
                 kind: keys[i].kind,
-                selected: keys[i].kind == _KeyKind.op &&
+                selected:
+                    keys[i].kind == _KeyKind.op &&
                     _engine.pendingOp == keys[i].label &&
                     _engine.fresh &&
                     !_engine.error,
@@ -356,9 +433,7 @@ class _HistorySheet extends StatelessWidget {
         ),
         Expanded(
           child: entries.isEmpty
-              ? Center(
-                  child: Text(l10n.noHistory, style: theme.textTheme.meta),
-                )
+              ? Center(child: Text(l10n.noHistory, style: theme.textTheme.meta))
               : ListView.separated(
                   controller: scrollController,
                   padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
@@ -427,27 +502,29 @@ class _CalcButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final visuals = AppThemeVisuals.of(context);
     late final Color bg;
     late final Color fg;
     switch (kind) {
       case _KeyKind.fn:
-        bg = _CalculatorPageState._fnLight;
-        fg = const Color(0xFF1C1C1C);
+        bg = scheme.surfaceContainerHigh;
+        fg = scheme.onSurface;
       case _KeyKind.mem:
-        bg = Theme.of(context).colorScheme.surfaceContainerHighest;
-        fg = Theme.of(context).colorScheme.onSurface;
+        bg = scheme.surfaceContainerHighest;
+        fg = scheme.onSurface;
       case _KeyKind.op:
-        bg = selected ? Colors.white : _CalculatorPageState._opOrange;
-        fg = selected ? _CalculatorPageState._opOrange : Colors.white;
+        bg = selected ? scheme.surface : visuals.accent;
+        fg = selected ? visuals.accent : visuals.onAccent;
       case _KeyKind.num:
-        bg = _CalculatorPageState._numDark;
-        fg = Colors.white;
+        bg = scheme.surfaceContainerHighest;
+        fg = scheme.onSurface;
     }
 
     final shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(16),
       side: kind == _KeyKind.op && selected
-          ? const BorderSide(color: _CalculatorPageState._opOrange, width: 1.5)
+          ? BorderSide(color: visuals.accent, width: 1.5)
           : BorderSide.none,
     );
 

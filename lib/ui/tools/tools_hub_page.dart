@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations_ext.dart';
 import '../theme/app_theme.dart';
+import '../theme/sport_chrome.dart';
 
 /// Hub listing fitness toolbox calculators.
 class ToolsHubPage extends StatelessWidget {
@@ -12,40 +13,46 @@ class ToolsHubPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.toolbox)),
+    return AppChromeScaffold(
+      appBar: AppBar(),
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.formPage),
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.listPage,
+          0,
+          AppSpacing.listPage,
+          listBottomInset(context, hasFab: false),
+        ),
         children: [
-          _ToolTile(
+          PageTitle(
+            title: l10n.toolbox,
+            subtitle: l10n.toolboxTagline,
+            padding: const EdgeInsets.only(bottom: AppSpacing.section),
+          ),
+          _ToolRow(
             icon: Icons.accessibility_new_outlined,
             title: l10n.toolBodyFat,
             subtitle: l10n.toolBodyFatSub,
             onTap: () => context.push('/profile/tools/body-fat'),
           ),
-          const SizedBox(height: AppSpacing.field),
-          _ToolTile(
+          _ToolRow(
             icon: Icons.monitor_weight_outlined,
             title: l10n.toolBodyMetrics,
             subtitle: l10n.toolBodyMetricsSub,
             onTap: () => context.push('/profile/tools/body-metrics'),
           ),
-          const SizedBox(height: AppSpacing.field),
-          _ToolTile(
+          _ToolRow(
             icon: Icons.restaurant_outlined,
             title: l10n.toolFoodConvert,
             subtitle: l10n.toolFoodConvertSub,
             onTap: () => context.push('/profile/tools/food-convert'),
           ),
-          const SizedBox(height: AppSpacing.field),
-          _ToolTile(
+          _ToolRow(
             icon: Icons.timer_outlined,
             title: l10n.toolRestTimer,
             subtitle: l10n.toolRestTimerSub,
             onTap: () => context.push('/profile/tools/rest-timer'),
           ),
-          const SizedBox(height: AppSpacing.field),
-          _ToolTile(
+          _ToolRow(
             icon: Icons.calculate_outlined,
             title: l10n.toolCalculator,
             subtitle: l10n.toolCalculatorSub,
@@ -54,7 +61,9 @@ class ToolsHubPage extends StatelessWidget {
           const SizedBox(height: AppSpacing.section),
           Text(
             l10n.toolsDisclaimer,
-            style: theme.textTheme.meta,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
       ),
@@ -62,8 +71,8 @@ class ToolsHubPage extends StatelessWidget {
   }
 }
 
-class _ToolTile extends StatelessWidget {
-  const _ToolTile({
+class _ToolRow extends StatelessWidget {
+  const _ToolRow({
     required this.icon,
     required this.title,
     required this.subtitle,
@@ -77,14 +86,18 @@ class _ToolTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: Icon(icon),
-        title: Text(title),
-        subtitle: Text(subtitle, style: Theme.of(context).textTheme.meta),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: onTap,
+    return SportListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon),
+      title: Text(title),
+      subtitle: Text(
+        subtitle,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       ),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
     );
   }
 }

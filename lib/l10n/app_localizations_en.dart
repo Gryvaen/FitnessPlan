@@ -2221,6 +2221,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get about => 'About';
 
   @override
+  String get toolboxTagline => 'Handy tools for your healthy routine';
+
+  @override
   String get profileGreeting => 'Fitness buddy';
 
   @override

@@ -3909,6 +3909,12 @@ abstract class AppLocalizations {
   /// **'About'**
   String get about;
 
+  /// No description provided for @toolboxTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Handy tools for your healthy routine'**
+  String get toolboxTagline;
+
   /// No description provided for @profileGreeting.
   ///
   /// In en, this message translates to:

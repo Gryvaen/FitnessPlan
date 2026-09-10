@@ -10,7 +10,11 @@ import 'workout_reminder_notifications.dart';
 class RemindersHubPage extends ConsumerWidget {
   const RemindersHubPage({super.key});
 
-  Future<void> _onWorkoutToggle(WidgetRef ref, BuildContext context, bool wantOn) async {
+  Future<void> _onWorkoutToggle(
+    WidgetRef ref,
+    BuildContext context,
+    bool wantOn,
+  ) async {
     final l10n = context.l10n;
     final messenger = ScaffoldMessenger.of(context);
     if (wantOn) {

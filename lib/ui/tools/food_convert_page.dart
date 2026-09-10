@@ -85,11 +85,7 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
       contentPadding: EdgeInsets.zero,
       leading: badge == null
           ? null
-          : Icon(
-              Icons.star,
-              color: theme.colorScheme.primary,
-              size: 20,
-            ),
+          : Icon(Icons.star, color: theme.colorScheme.primary, size: 20),
       title: Text(food.name),
       subtitle: Text(
         '${food.kcalPer100.round()} kcal / 100g',
@@ -196,7 +192,10 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(l10n.convertResult, style: theme.textTheme.titleMedium),
+                      Text(
+                        l10n.convertResult,
+                        style: theme.textTheme.titleMedium,
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         '${intake.calories.round()} kcal',
@@ -250,10 +249,7 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
           ] else if (_query.isEmpty) ...[
             const SizedBox(height: AppSpacing.section),
             if (favorites.isEmpty)
-              Text(
-                l10n.foodConvertHint,
-                style: theme.textTheme.meta,
-              )
+              Text(l10n.foodConvertHint, style: theme.textTheme.meta)
             else ...[
               Text(l10n.favorites, style: theme.textTheme.titleSmall),
               const SizedBox(height: AppSpacing.field),

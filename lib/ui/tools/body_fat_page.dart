@@ -6,6 +6,7 @@ import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
+import '../theme/sport_chrome.dart';
 import '../widgets/form_options.dart';
 
 class BodyFatPage extends ConsumerStatefulWidget {
@@ -42,12 +43,12 @@ class _BodyFatPageState extends ConsumerState<BodyFatPage> {
   }
 
   double? get _pct => BodyMetrics.bodyFatNavyPct(
-        sex: _sex,
-        heightCm: _heightCm,
-        neckCm: _neckCm,
-        waistCm: _waistCm,
-        hipCm: _sex == Sex.female ? _hipCm : null,
-      );
+    sex: _sex,
+    heightCm: _heightCm,
+    neckCm: _neckCm,
+    waistCm: _waistCm,
+    hipCm: _sex == Sex.female ? _hipCm : null,
+  );
 
   Future<void> _writeToTodayWeight() async {
     final pct = _pct;
@@ -79,25 +80,21 @@ class _BodyFatPageState extends ConsumerState<BodyFatPage> {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final pct = _pct;
-    final heights =
-        FormOptions.heightsCm().map((e) => e.toDouble()).toList();
+    final heights = FormOptions.heightsCm().map((e) => e.toDouble()).toList();
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.toolBodyFat)),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.formPage),
         children: [
-          Text(
-            l10n.bfDisclaimer,
-            style: theme.textTheme.meta,
-          ),
+          Text(l10n.bfDisclaimer, style: theme.textTheme.meta),
           const SizedBox(height: AppSpacing.section),
-          AppDropdown<Sex>(
-            label: l10n.sex,
-            value: _sex,
-            items: Sex.values,
-            itemLabel: (s) => s.label(l10n),
-            onChanged: (v) => setState(() => _sex = v),
+          Text(l10n.sex, style: theme.textTheme.fieldLabel),
+          const SizedBox(height: 4),
+          SportTabs<Sex>(
+            items: {Sex.male: l10n.male, Sex.female: l10n.female},
+            selected: _sex,
+            onSelected: (v) => setState(() => _sex = v),
           ),
           const SizedBox(height: AppSpacing.field),
           AppDropdown<double>(

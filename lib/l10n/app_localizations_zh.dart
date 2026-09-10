@@ -2175,6 +2175,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get about => '关于';
 
   @override
+  String get toolboxTagline => '实用工具 · 辅助你的健康生活';
+
+  @override
   String get profileGreeting => '健身小伙伴';
 
   @override

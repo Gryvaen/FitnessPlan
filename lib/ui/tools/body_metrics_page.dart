@@ -36,10 +36,7 @@ class _BodyMetricsPageState extends ConsumerState<BodyMetricsPage> {
     );
     _weightKg = FormOptions.snapDouble(FormOptions.weightsKg(), p.weightKg);
     _waistCm = FormOptions.snapDouble(_waists, _sex == Sex.male ? 85 : 70);
-    _bodyFatPct = FormOptions.snapDouble(
-      _bodyFats,
-      _defaultBodyFatPct(),
-    );
+    _bodyFatPct = FormOptions.snapDouble(_bodyFats, _defaultBodyFatPct());
   }
 
   double _defaultBodyFatPct() {
@@ -57,16 +54,12 @@ class _BodyMetricsPageState extends ConsumerState<BodyMetricsPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
-    final heights =
-        FormOptions.heightsCm().map((e) => e.toDouble()).toList();
+    final heights = FormOptions.heightsCm().map((e) => e.toDouble()).toList();
     final heightM = _heightCm / 100;
     final heightIn = _heightCm / 2.54;
     final bmi = BodyMetrics.bmi(weightKg: _weightKg, heightCm: _heightCm);
     final category = BodyMetrics.bmiCategory(bmi);
-    final ideal = BodyMetrics.idealWeightDevine(
-      sex: _sex,
-      heightCm: _heightCm,
-    );
+    final ideal = BodyMetrics.idealWeightDevine(sex: _sex, heightCm: _heightCm);
     final whtr = BodyMetrics.waistToHeightRatio(
       waistCm: _waistCm,
       heightCm: _heightCm,
@@ -97,10 +90,7 @@ class _BodyMetricsPageState extends ConsumerState<BodyMetricsPage> {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.formPage),
         children: [
-          Text(
-            l10n.metricsLocalOnly,
-            style: theme.textTheme.meta,
-          ),
+          Text(l10n.metricsLocalOnly, style: theme.textTheme.meta),
           const SizedBox(height: AppSpacing.section),
           AppDropdown<Sex>(
             label: l10n.sex,
@@ -173,10 +163,9 @@ class _BodyMetricsPageState extends ConsumerState<BodyMetricsPage> {
           _ResultCard(
             title: l10n.whtr,
             value: whtr.toStringAsFixed(2),
-            unit: whtrHigh
-                ? l10n.whtrAboveRef(ref)
-                : l10n.whtrRef(ref),
-            formula: l10n.whtrFormula(
+            unit: whtrHigh ? l10n.whtrAboveRef(ref) : l10n.whtrRef(ref),
+            formula:
+                l10n.whtrFormula(
                   _waistCm.toStringAsFixed(1),
                   '${_heightCm.round()}',
                   whtr.toStringAsFixed(2),
@@ -189,10 +178,7 @@ class _BodyMetricsPageState extends ConsumerState<BodyMetricsPage> {
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.card),
-                child: Text(
-                  l10n.ffmiNeedBf,
-                  style: theme.textTheme.bodyMedium,
-                ),
+                child: Text(l10n.ffmiNeedBf, style: theme.textTheme.bodyMedium),
               ),
             )
           else ...[
@@ -251,44 +237,39 @@ class _ResultCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.card,
-          vertical: 4,
-        ),
-        childrenPadding: const EdgeInsets.fromLTRB(
-          AppSpacing.card,
-          0,
-          AppSpacing.card,
-          AppSpacing.card,
-        ),
-        title: Text(title, style: theme.textTheme.titleMedium),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.compact),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: theme.textTheme.titleSmall),
+                const SizedBox(height: 2),
+                Text(
+                  formula,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(value, style: theme.textTheme.statValue),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(unit, style: theme.textTheme.statUnit),
+              Text(
+                unit,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
-          ),
-        ),
-        children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              formula,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                height: 1.45,
-              ),
-            ),
           ),
         ],
       ),
