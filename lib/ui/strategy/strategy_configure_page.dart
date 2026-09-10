@@ -331,32 +331,21 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
             unit: 'g/kg',
             onChanged: (v) => setState(() => _fatPerKg = v),
           ),
-          const SizedBox(height: AppSpacing.card),
+          const SizedBox(height: AppSpacing.section),
           // ------------------------------------------------ baseline
-          SportSurfaceCard(
-            padding: const EdgeInsets.all(AppSpacing.card),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.dailyBaselineTitle,
-                  style: theme.textTheme.titleSmall,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '${baseline.energy.round()} kcal · '
-                  'P ${baseline.proteinG.toStringAsFixed(0)} · '
-                  'C ${baseline.carbG.isFinite ? baseline.carbG.toStringAsFixed(0) : '–'} · '
-                  'F ${baseline.fatG.toStringAsFixed(0)} g',
-                  style: theme.textTheme.bodyLarge,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.dailyDeficitLine('${baseline.dailyDeficit.round()}'),
-                  style: theme.textTheme.bodySmall,
-                ),
-              ],
-            ),
+          Text(l10n.dailyBaselineTitle, style: theme.textTheme.titleSmall),
+          const SizedBox(height: 6),
+          Text(
+            '${baseline.energy.round()} kcal · '
+            'P ${baseline.proteinG.toStringAsFixed(0)} · '
+            'C ${baseline.carbG.isFinite ? baseline.carbG.toStringAsFixed(0) : '–'} · '
+            'F ${baseline.fatG.toStringAsFixed(0)} g',
+            style: theme.textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            l10n.dailyDeficitLine('${baseline.dailyDeficit.round()}'),
+            style: theme.textTheme.bodySmall,
           ),
           // ------------------------------------------------ kind-specific
           if (cyclePlan != null) ...[
@@ -424,24 +413,17 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
           const SizedBox(height: AppSpacing.card),
           Text(l10n.effectiveDate, style: theme.textTheme.titleMedium),
           const SizedBox(height: AppSpacing.compact),
-          SegmentedButton<bool>(
-            segments: [
-              ButtonSegment(
-                value: false,
-                label: Text(
-                  widget.kind == DietStrategyKind.carbCycle
-                      ? l10n.startNextCycle(
-                          AppDates.md(_nextCycleStart, locale),
-                        )
-                      : l10n.startTomorrow(
-                          AppDates.md(_nextCycleStart, locale),
-                        ),
-                ),
-              ),
-              ButtonSegment(value: true, label: Text(l10n.startToday)),
-            ],
-            selected: {_startToday},
-            onSelectionChanged: (s) => setState(() => _startToday = s.first),
+          _EffectiveDateOption(
+            label: widget.kind == DietStrategyKind.carbCycle
+                ? l10n.startNextCycle(AppDates.md(_nextCycleStart, locale))
+                : l10n.startTomorrow(AppDates.md(_nextCycleStart, locale)),
+            selected: !_startToday,
+            onTap: () => setState(() => _startToday = false),
+          ),
+          _EffectiveDateOption(
+            label: l10n.startToday,
+            selected: _startToday,
+            onTap: () => setState(() => _startToday = true),
           ),
           if (_startToday &&
               widget.kind == DietStrategyKind.carbCycle &&
@@ -512,6 +494,43 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
           const SizedBox(height: AppSpacing.section),
           Text(l10n.strategyDisclaimer, style: theme.textTheme.bodySmall),
         ],
+      ),
+    );
+  }
+}
+
+/// A radio-style row for the binary "effective date" choice.
+class _EffectiveDateOption extends StatelessWidget {
+  const _EffectiveDateOption({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            Icon(
+              selected ? Icons.radio_button_checked : Icons.radio_button_off,
+              color: selected
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurfaceVariant,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Text(label, style: theme.textTheme.bodyMedium)),
+          ],
+        ),
       ),
     );
   }

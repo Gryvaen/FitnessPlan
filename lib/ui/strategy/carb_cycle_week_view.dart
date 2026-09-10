@@ -6,9 +6,9 @@ import '../../l10n/app_localizations_ext.dart';
 import '../theme/app_theme.dart';
 import 'strategy_labels.dart';
 
-/// Seven-day carb-cycle view: tappable weekday chips (optionally editable),
-/// details for the selected day and the weekly budget line.
-class CarbCycleWeekView extends StatefulWidget {
+/// Seven-day carb-cycle table: weekday · carb-day type pill · target kcal.
+/// When [onScheduleChanged] is set, tapping a row cycles H → M → L.
+class CarbCycleWeekView extends StatelessWidget {
   const CarbCycleWeekView({
     super.key,
     required this.plan,
@@ -17,20 +17,8 @@ class CarbCycleWeekView extends StatefulWidget {
   });
 
   final CarbCyclePlan plan;
-
-  /// When non-null the chips cycle H → M → L on tap.
   final ValueChanged<CarbCycleSchedule>? onScheduleChanged;
-
-  /// Weekday index 0..6 to select initially (defaults to today).
   final int? initialSelected;
-
-  @override
-  State<CarbCycleWeekView> createState() => _CarbCycleWeekViewState();
-}
-
-class _CarbCycleWeekViewState extends State<CarbCycleWeekView> {
-  late int _selected =
-      widget.initialSelected ?? (DateTime.now().weekday - 1).clamp(0, 6);
 
   static const _cycle = [CarbDayType.high, CarbDayType.mid, CarbDayType.low];
 
@@ -42,96 +30,91 @@ class _CarbCycleWeekViewState extends State<CarbCycleWeekView> {
     ];
   }
 
-  Color _typeColor(CarbDayType t, AppThemeVisuals v, ColorScheme scheme) =>
-      switch (t) {
-        CarbDayType.high => AppColors.carb,
-        CarbDayType.mid => v.accent,
-        CarbDayType.low => scheme.onSurfaceVariant,
-      };
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final visuals = AppThemeVisuals.of(context);
-    final plan = widget.plan;
     final days = plan.integerDays();
     final names = _weekdayShort(locale);
-    final editable = widget.onScheduleChanged != null;
-    final sel = days[_selected];
+    final editable = onScheduleChanged != null;
     final todayIndex = DateTime.now().weekday - 1;
+
+    final counts = {
+      for (final t in CarbDayType.values)
+        t: days.where((d) => d.dayType == t).length,
+    };
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            for (var i = 0; i < 7; i++) ...[
-              Expanded(
-                child: _DayChip(
-                  name: names[i],
-                  type: days[i].dayType,
-                  typeLabel: days[i].dayType.shortLabel(l10n),
-                  kcal: days[i].energy.round(),
-                  color: _typeColor(days[i].dayType, visuals, scheme),
-                  selected: i == _selected,
-                  isToday: i == todayIndex,
-                  onTap: () {
-                    if (i == _selected && editable) {
-                      final next =
-                          _cycle[(_cycle.indexOf(days[i].dayType) + 1) %
-                              _cycle.length];
-                      widget.onScheduleChanged!(plan.schedule.withDay(i, next));
-                    } else {
-                      setState(() => _selected = i);
-                    }
-                  },
-                ),
+            Expanded(
+              flex: 3,
+              child: Text(
+                l10n.weekdayColumn,
+                style: theme.textTheme.labelSmall,
               ),
-              if (i != 6) const SizedBox(width: 4),
-            ],
+            ),
+            Expanded(
+              flex: 4,
+              child: Text(l10n.carbDayType, style: theme.textTheme.labelSmall),
+            ),
+            Expanded(
+              flex: 3,
+              child: Text(
+                l10n.targetKcalColumn,
+                textAlign: TextAlign.end,
+                style: theme.textTheme.labelSmall,
+              ),
+            ),
           ],
         ),
+        const SizedBox(height: 4),
+        for (var i = 0; i < 7; i++)
+          _DayRow(
+            name: names[i],
+            isToday: i == todayIndex,
+            type: days[i].dayType,
+            kcal: days[i].energy.round(),
+            onTap: editable
+                ? () {
+                    final next =
+                        _cycle[(_cycle.indexOf(days[i].dayType) + 1) %
+                            _cycle.length];
+                    onScheduleChanged!(plan.schedule.withDay(i, next));
+                  }
+                : null,
+          ),
         if (editable) ...[
           const SizedBox(height: 6),
           Text(l10n.carbCycleEditHint, style: theme.textTheme.bodySmall),
         ],
         const SizedBox(height: AppSpacing.section),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(AppSpacing.section),
-          decoration: BoxDecoration(
-            color: visuals.accentSoft.withValues(alpha: 0.6),
-            borderRadius: BorderRadius.circular(AppRadius.tile),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${names[_selected]} · ${sel.dayType.label(l10n)}',
-                style: theme.textTheme.titleSmall,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${sel.energy.round()} kcal · '
-                'P ${sel.proteinG.toStringAsFixed(0)} · '
-                'C ${sel.carbG.toStringAsFixed(0)} · '
-                'F ${sel.fatG.toStringAsFixed(0)} g',
-                style: theme.textTheme.bodyMedium,
-              ),
-            ],
-          ),
+        Text(l10n.weeklySummary, style: theme.textTheme.titleSmall),
+        const SizedBox(height: AppSpacing.compact),
+        Row(
+          children: [
+            _SummaryCell(
+              value: '${plan.weeklyEnergy.round()}',
+              label: l10n.weekTotalKcalLabel,
+            ),
+            _SummaryCell(
+              value: '${plan.weeklyAverage.round()}',
+              label: l10n.dailyAvgKcalLabel,
+            ),
+            _SummaryCell(
+              value:
+                  '${counts[CarbDayType.high]}/'
+                  '${counts[CarbDayType.mid]}/'
+                  '${counts[CarbDayType.low]}',
+              label: l10n.hmlDayCountLabel,
+            ),
+          ],
         ),
         const SizedBox(height: AppSpacing.compact),
-        Text(
-          l10n.weeklyBudgetLine(
-            '${plan.weeklyEnergy.round()}',
-            '${plan.weeklyAverage.round()}',
-          ),
-          style: theme.textTheme.bodySmall,
-        ),
         Text(
           l10n.carbAmplitudeLine(plan.effectiveAmplitudeG.toStringAsFixed(0)),
           style: theme.textTheme.bodySmall,
@@ -148,90 +131,115 @@ class _CarbCycleWeekViewState extends State<CarbCycleWeekView> {
   }
 }
 
-class _DayChip extends StatelessWidget {
-  const _DayChip({
+class _DayRow extends StatelessWidget {
+  const _DayRow({
     required this.name,
-    required this.type,
-    required this.typeLabel,
-    required this.kcal,
-    required this.color,
-    required this.selected,
     required this.isToday,
+    required this.type,
+    required this.kcal,
     required this.onTap,
   });
 
   final String name;
-  final CarbDayType type;
-  final String typeLabel;
-  final int kcal;
-  final Color color;
-  final bool selected;
   final bool isToday;
-  final VoidCallback onTap;
+  final CarbDayType type;
+  final int kcal;
+  final VoidCallback? onTap;
+
+  Color _pillColor(AppThemeVisuals v, ColorScheme scheme) => switch (type) {
+    CarbDayType.high => AppColors.carb,
+    CarbDayType.mid => v.accent,
+    CarbDayType.low => scheme.onSurfaceVariant,
+  };
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final visuals = AppThemeVisuals.of(context);
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: '$name $typeLabel $kcal kcal',
-      child: Material(
-        color: selected ? visuals.accentSoft : visuals.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          side: BorderSide(
-            color: selected ? visuals.accent : visuals.cardBorder,
-            width: selected ? 1.5 : 1,
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
+    final scheme = theme.colorScheme;
+    final v = AppThemeVisuals.of(context);
+    final l10n = context.l10n;
+    final pill = _pillColor(v, scheme);
+
+    return Material(
+      color: Colors.transparent,
+      shape: Border(bottom: BorderSide(color: v.divider)),
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: Text(
                   name,
-                  maxLines: 1,
-                  overflow: TextOverflow.clip,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Container(
-                  width: 22,
-                  height: 22,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    typeLabel,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color:
-                          ThemeData.estimateBrightnessForColor(color) ==
-                              Brightness.dark
-                          ? Colors.white
-                          : Colors.black,
-                      fontWeight: FontWeight.w700,
+              ),
+              Expanded(
+                flex: 4,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: pill.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      type.label(l10n),
+                      style: theme.textTheme.labelMedium?.copyWith(color: pill),
                     ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text('$kcal', style: theme.textTheme.labelSmall),
+              ),
+              Expanded(
+                flex: 3,
+                child: Text(
+                  '$kcal',
+                  textAlign: TextAlign.end,
+                  style: theme.textTheme.bodyMedium,
                 ),
-              ],
-            ),
+              ),
+              if (onTap != null)
+                const Padding(
+                  padding: EdgeInsets.only(left: 4),
+                  child: Icon(Icons.autorenew, size: 16),
+                ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SummaryCell extends StatelessWidget {
+  const _SummaryCell({required this.value, required this.label});
+
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(value, style: theme.textTheme.titleMedium),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
       ),
     );
   }

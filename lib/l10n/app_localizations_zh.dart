@@ -2148,6 +2148,45 @@ class AppLocalizationsZh extends AppLocalizations {
   String get saveThisSet => '保存本组';
 
   @override
+  String get adjustStrategy => '调整策略';
+
+  @override
+  String get weeklySummary => '每周汇总';
+
+  @override
+  String get carbDayType => '碳水日类型';
+
+  @override
+  String get reviewPoints => '复核要点';
+
+  @override
+  String get dataPendingTitle => '数据待补齐';
+
+  @override
+  String get dataPendingHint => '请持续记录体重';
+
+  @override
+  String get keepCurrentPlan => '保持当前计划';
+
+  @override
+  String get addRecords => '补充记录';
+
+  @override
+  String get weekdayColumn => '日期';
+
+  @override
+  String get targetKcalColumn => '目标热量';
+
+  @override
+  String get weekTotalKcalLabel => '周总热量';
+
+  @override
+  String get dailyAvgKcalLabel => '日均热量';
+
+  @override
+  String get hmlDayCountLabel => '高 / 中 / 低 天数';
+
+  @override
   String get servingSize => '食用份量';
 
   @override

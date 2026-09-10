@@ -2194,6 +2194,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveThisSet => 'Save';
 
   @override
+  String get adjustStrategy => 'Adjust strategy';
+
+  @override
+  String get weeklySummary => 'Weekly summary';
+
+  @override
+  String get carbDayType => 'Carb-day type';
+
+  @override
+  String get reviewPoints => 'Review points';
+
+  @override
+  String get dataPendingTitle => 'Data pending';
+
+  @override
+  String get dataPendingHint => 'Keep logging your weight';
+
+  @override
+  String get keepCurrentPlan => 'Keep current plan';
+
+  @override
+  String get addRecords => 'Add records';
+
+  @override
+  String get weekdayColumn => 'Day';
+
+  @override
+  String get targetKcalColumn => 'Target kcal';
+
+  @override
+  String get weekTotalKcalLabel => 'Weekly kcal';
+
+  @override
+  String get dailyAvgKcalLabel => 'Daily avg';
+
+  @override
+  String get hmlDayCountLabel => 'H / M / L days';
+
+  @override
   String get servingSize => 'Serving size';
 
   @override

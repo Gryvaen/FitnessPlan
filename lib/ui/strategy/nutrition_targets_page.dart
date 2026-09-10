@@ -78,7 +78,16 @@ class NutritionTargetsPage extends ConsumerWidget {
         active != null && active.effectiveFrom.isAfter(today);
 
     return AppChromeScaffold(
-      appBar: AppBar(title: Text(l10n.nutritionTargets)),
+      appBar: AppBar(
+        title: Text(l10n.nutritionTargets),
+        actions: [
+          if (blocking.isEmpty)
+            TextButton(
+              onPressed: () => context.push('/profile/nutrition/strategy'),
+              child: Text(l10n.adjustStrategy),
+            ),
+        ],
+      ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           AppSpacing.formPage,
@@ -208,46 +217,44 @@ class NutritionTargetsPage extends ConsumerWidget {
                     _TaperSummary(plan: active),
                   ],
                 ],
-                const SizedBox(height: AppSpacing.section),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    FilledButton.tonal(
-                      onPressed: blocking.isEmpty
-                          ? () => context.push('/profile/nutrition/strategy')
-                          : null,
-                      child: Text(
-                        active == null
-                            ? l10n.chooseStrategy
-                            : l10n.changeStrategy,
-                      ),
-                    ),
-                    if (active?.kind == DietStrategyKind.carbCycle)
-                      OutlinedButton(
-                        onPressed: () => context.push(
-                          '/profile/nutrition/strategy/configure?kind=carbCycle',
-                        ),
-                        child: Text(l10n.adjustSchedule),
-                      ),
-                    if (active?.kind == DietStrategyKind.carbTaper)
-                      OutlinedButton(
-                        onPressed: () =>
-                            context.push('/profile/nutrition/taper'),
-                        child: Text(l10n.taperReview),
-                      ),
-                    if (active != null)
-                      TextButton(
-                        onPressed: () =>
-                            _stop(context, ref, pending: activeStartsLater),
-                        child: Text(
-                          activeStartsLater
-                              ? l10n.cancelScheduledStrategy
-                              : l10n.stopStrategy,
-                        ),
-                      ),
-                  ],
+                const SizedBox(height: AppSpacing.card),
+                SportListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    active == null ? l10n.chooseStrategy : l10n.changeStrategy,
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: blocking.isEmpty
+                      ? () => context.push('/profile/nutrition/strategy')
+                      : null,
                 ),
+                if (active?.kind == DietStrategyKind.carbCycle)
+                  SportListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l10n.adjustSchedule),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push(
+                      '/profile/nutrition/strategy/configure?kind=carbCycle',
+                    ),
+                  ),
+                if (active?.kind == DietStrategyKind.carbTaper)
+                  SportListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l10n.taperReview),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push('/profile/nutrition/taper'),
+                  ),
+                if (active != null)
+                  SportListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      activeStartsLater
+                          ? l10n.cancelScheduledStrategy
+                          : l10n.stopStrategy,
+                    ),
+                    onTap: () =>
+                        _stop(context, ref, pending: activeStartsLater),
+                  ),
                 if (blocking.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.compact),
                   for (final i in blocking)
@@ -263,35 +270,48 @@ class NutritionTargetsPage extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.section),
           // ------------------------------------------------ basis
-          SportSurfaceCard(
-            child: ExpansionTile(
-              tilePadding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.card,
+          SportListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(l10n.calcMethod, style: theme.textTheme.titleSmall),
+            subtitle: Text(
+              active != null
+                  ? l10n.planBaselineLine(
+                      active.referenceWeightKg.toStringAsFixed(1),
+                      '${active.estimatedTdee.round()}',
+                      '${active.baseEnergy.round()}',
+                    )
+                  : l10n.baseTargetLine('${profile.targets.calories}'),
+              style: theme.textTheme.bodySmall,
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => showModalBottomSheet<void>(
+              context: context,
+              useRootNavigator: true,
+              isScrollControlled: true,
+              showDragHandle: true,
+              builder: (_) => SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(AppSpacing.formPage),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l10n.calcMethod, style: theme.textTheme.titleMedium),
+                      const SizedBox(height: AppSpacing.field),
+                      CalorieBreakdown(plan: plan, compact: true),
+                      const SizedBox(height: AppSpacing.compact),
+                      Text(
+                        l10n.strategyBasisBody,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        l10n.strategyDisclaimer,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              childrenPadding: const EdgeInsets.fromLTRB(
-                AppSpacing.card,
-                0,
-                AppSpacing.card,
-                AppSpacing.card,
-              ),
-              title: Text(l10n.calcMethod, style: theme.textTheme.titleSmall),
-              subtitle: Text(
-                active != null
-                    ? l10n.planBaselineLine(
-                        active.referenceWeightKg.toStringAsFixed(1),
-                        '${active.estimatedTdee.round()}',
-                        '${active.baseEnergy.round()}',
-                      )
-                    : l10n.baseTargetLine('${profile.targets.calories}'),
-                style: theme.textTheme.bodySmall,
-              ),
-              children: [
-                CalorieBreakdown(plan: plan, compact: true),
-                const SizedBox(height: AppSpacing.compact),
-                Text(l10n.strategyBasisBody, style: theme.textTheme.bodySmall),
-                const SizedBox(height: 6),
-                Text(l10n.strategyDisclaimer, style: theme.textTheme.bodySmall),
-              ],
             ),
           ),
         ],

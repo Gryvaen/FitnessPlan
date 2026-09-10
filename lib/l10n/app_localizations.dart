@@ -3855,6 +3855,84 @@ abstract class AppLocalizations {
   /// **'Save'**
   String get saveThisSet;
 
+  /// No description provided for @adjustStrategy.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust strategy'**
+  String get adjustStrategy;
+
+  /// No description provided for @weeklySummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly summary'**
+  String get weeklySummary;
+
+  /// No description provided for @carbDayType.
+  ///
+  /// In en, this message translates to:
+  /// **'Carb-day type'**
+  String get carbDayType;
+
+  /// No description provided for @reviewPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Review points'**
+  String get reviewPoints;
+
+  /// No description provided for @dataPendingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Data pending'**
+  String get dataPendingTitle;
+
+  /// No description provided for @dataPendingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep logging your weight'**
+  String get dataPendingHint;
+
+  /// No description provided for @keepCurrentPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep current plan'**
+  String get keepCurrentPlan;
+
+  /// No description provided for @addRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'Add records'**
+  String get addRecords;
+
+  /// No description provided for @weekdayColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get weekdayColumn;
+
+  /// No description provided for @targetKcalColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Target kcal'**
+  String get targetKcalColumn;
+
+  /// No description provided for @weekTotalKcalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly kcal'**
+  String get weekTotalKcalLabel;
+
+  /// No description provided for @dailyAvgKcalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily avg'**
+  String get dailyAvgKcalLabel;
+
+  /// No description provided for @hmlDayCountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'H / M / L days'**
+  String get hmlDayCountLabel;
+
   /// No description provided for @servingSize.
   ///
   /// In en, this message translates to:

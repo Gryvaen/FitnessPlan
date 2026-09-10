@@ -114,21 +114,13 @@ class _StrategyOption extends StatelessWidget {
             padding: const EdgeInsets.all(AppSpacing.card),
             child: Row(
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: visuals.accentSoft,
-                    borderRadius: BorderRadius.circular(AppRadius.control),
-                  ),
-                  child: Icon(
-                    current
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_off,
-                    color: visuals.accent,
-                  ),
+                Icon(
+                  current ? Icons.radio_button_checked : Icons.radio_button_off,
+                  color: enabled
+                      ? visuals.accent
+                      : theme.colorScheme.onSurfaceVariant,
                 ),
-                const SizedBox(width: AppSpacing.section),
+                const SizedBox(width: AppSpacing.card),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
