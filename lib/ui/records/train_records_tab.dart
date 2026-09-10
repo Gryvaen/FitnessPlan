@@ -9,6 +9,7 @@ import '../today/today_workout_card.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../shell/swipe_tab_view.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/form_options.dart';
@@ -197,329 +198,366 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: SportTabs<int>(
+                  items: {
+                    0: l10n.tabPlans,
+                    1: l10n.tabHistory,
+                    2: l10n.exerciseLibrary,
+                  },
+                  selected: _tab,
+                  onSelected: (v) => setState(() => _tab = v),
+                ),
+              ),
+              if (_tab != 1)
+                PlainIconAction(
+                  icon: Icons.add,
+                  label: _tab == 0 ? l10n.fabNewPlan : l10n.addExercise,
+                  onPressed: () => _tab == 0
+                      ? context.push('/records/plan')
+                      : _addExercise(context, ref),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Expanded(
+          child: SwipeTabView(
+            tabIndex: 1,
+            index: _tab,
+            onIndexChanged: (v) => setState(() => _tab = v),
+            children: [
+              _plansPanel(context),
+              _historyPanel(context),
+              _exercisesPanel(context),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _plansPanel(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    return ListView(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        12,
+        20,
+        listBottomInset(context, hasFab: false),
+      ),
+      children: [
+        ref
+            .watch(workoutPlansProvider)
+            .when(
+              loading: () => const LinearProgressIndicator(),
+              error: (e, _) => SportLoadError(
+                onRetry: () => ref.invalidate(workoutPlansProvider),
+              ),
+              data: (plans) {
+                if (plans.isEmpty) {
+                  return SportEmptyState(
+                    title: l10n.emptyPlans,
+                    icon: Icons.fitness_center,
+                  );
+                }
+                final plan =
+                    plans.where((p) => p.plan.id == _planId).firstOrNull ??
+                    plans.first;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(l10n.currentPlan, style: theme.textTheme.bodySmall),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            plan.plan.name,
+                            style: theme.textTheme.headlineSmall,
+                          ),
+                        ),
+                        PopupMenuButton<String>(
+                          tooltip: l10n.more,
+                          onSelected: (v) {
+                            if (v == 'edit') {
+                              context.push('/records/plan?id=${plan.plan.id}');
+                            }
+                            if (v == 'delete') _deletePlan(plan);
+                          },
+                          itemBuilder: (_) => [
+                            PopupMenuItem(
+                              value: 'edit',
+                              child: Text(l10n.edit),
+                            ),
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Text(l10n.delete),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Text(
+                      l10n.planSummary(
+                        plan.items.length,
+                        plan.items.fold<int>(0, (sum, i) => sum + i.targetSets),
+                      ),
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 20),
+                    FilledButton(
+                      onPressed: _starting || plan.items.isEmpty
+                          ? null
+                          : () => _start(plan),
+                      child: Text(l10n.startRecording),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      l10n.exerciseSchedule,
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    for (var i = 0; i < plan.items.length; i++)
+                      SportListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Text(
+                          '${i + 1}'.padLeft(2, '0'),
+                          style: theme.textTheme.bodySmall,
+                        ),
+                        title: Text(plan.items[i].exerciseName),
+                        subtitle: Text(
+                          '${plan.items[i].targetSets} × ${plan.items[i].targetReps}',
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () =>
+                            context.push('/records/plan?id=${plan.plan.id}'),
+                      ),
+                    if (plans.length > 1) ...[
+                      const SizedBox(height: 24),
+                      Text(l10n.otherPlans, style: theme.textTheme.titleMedium),
+                    ],
+                    for (final other in plans.where(
+                      (p) => p.plan.id != plan.plan.id,
+                    ))
+                      SportListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(other.plan.name),
+                        subtitle: Text(l10n.nExercises(other.items.length)),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => setState(() => _planId = other.plan.id),
+                      ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        onPressed: () => setState(() => _tab = 1),
+                        child: Text(l10n.viewWorkoutHistory),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+      ],
+    );
+  }
+
+  Widget _historyPanel(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final locale = Localizations.localeOf(context);
     return ListView(
       padding: EdgeInsets.fromLTRB(
         20,
-        8,
+        12,
         20,
         listBottomInset(context, hasFab: false),
       ),
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: SportTabs<int>(
-                items: {
-                  0: l10n.tabPlans,
-                  1: l10n.tabHistory,
-                  2: l10n.exerciseLibrary,
-                },
-                selected: _tab,
-                onSelected: (v) => setState(() => _tab = v),
-              ),
+        ref
+            .watch(recentStepsProvider)
+            .when(
+              loading: () => const SizedBox.shrink(),
+              error: (e, _) => const SizedBox.shrink(),
+              data: (days) {
+                if (days.isEmpty) return const SizedBox.shrink();
+                final latest = days.first;
+                return SportListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.directions_walk),
+                  title: Text(l10n.recentSteps),
+                  subtitle: Text(AppDates.md(latest.date, locale)),
+                  trailing: Text(l10n.nSteps(latest.steps)),
+                  onTap: () => _showStepHistory(context, days, locale),
+                );
+              },
             ),
-            if (_tab != 1)
-              PlainIconAction(
-                icon: Icons.add,
-                label: _tab == 0 ? l10n.fabNewPlan : l10n.addExercise,
-                onPressed: () => _tab == 0
-                    ? context.push('/records/plan')
-                    : _addExercise(context, ref),
+        ref
+            .watch(workoutHistoryProvider)
+            .when(
+              loading: () => const LinearProgressIndicator(),
+              error: (e, _) => SportLoadError(
+                onRetry: () => ref.invalidate(workoutHistoryProvider),
+              ),
+              data: (days) => days.isEmpty
+                  ? SportEmptyState(
+                      title: l10n.noSetLogs,
+                      icon: Icons.fitness_center,
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (final day in days) ...[
+                          Padding(
+                            padding: const EdgeInsets.only(top: 20, bottom: 8),
+                            child: Text(
+                              AppDates.mdWithWeekday(day.date, locale),
+                              style: theme.textTheme.titleMedium,
+                            ),
+                          ),
+                          for (final entry in _groupSets(day.sets).entries)
+                            SportListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(entry.key),
+                              subtitle: Text(
+                                l10n.setsWithReps(
+                                  entry.value.length,
+                                  _repsSummary(entry.value, l10n),
+                                ),
+                              ),
+                              trailing: const Icon(
+                                Icons.chevron_right,
+                                size: 18,
+                              ),
+                              onTap: () =>
+                                  showDayWorkoutDetails(context, day.date),
+                            ),
+                        ],
+                      ],
+                    ),
+            ),
+      ],
+    );
+  }
+
+  Widget _exercisesPanel(BuildContext context) {
+    final l10n = context.l10n;
+    return ListView(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        12,
+        20,
+        listBottomInset(context, hasFab: false),
+      ),
+      children: [
+        TextField(
+          decoration: InputDecoration(
+            hintText: l10n.exerciseName,
+            prefixIcon: const Icon(Icons.search),
+          ),
+          onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          children: [
+            ChoiceChip(
+              label: Text(l10n.filterAll),
+              selected: _category == null,
+              onSelected: (_) => setState(() => _category = null),
+            ),
+            for (final c in kExerciseCategoryOrder)
+              ChoiceChip(
+                label: Text(c.localizedExerciseCategory(l10n)),
+                selected: _category == c,
+                onSelected: (_) => setState(() => _category = c),
               ),
           ],
         ),
-        const SizedBox(height: 24),
-        if (_tab == 0)
-          ref
-              .watch(workoutPlansProvider)
-              .when(
-                loading: () => const LinearProgressIndicator(),
-                error: (e, _) => SportLoadError(
-                  onRetry: () => ref.invalidate(workoutPlansProvider),
-                ),
-                data: (plans) {
-                  if (plans.isEmpty) {
-                    return SportEmptyState(
-                      title: l10n.emptyPlans,
-                      icon: Icons.fitness_center,
-                    );
-                  }
-                  final plan =
-                      plans.where((p) => p.plan.id == _planId).firstOrNull ??
-                      plans.first;
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(l10n.currentPlan, style: theme.textTheme.bodySmall),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              plan.plan.name,
-                              style: theme.textTheme.headlineSmall,
-                            ),
-                          ),
-                          PopupMenuButton<String>(
-                            tooltip: l10n.more,
-                            onSelected: (v) {
-                              if (v == 'edit') {
-                                context.push(
-                                  '/records/plan?id=${plan.plan.id}',
-                                );
-                              }
-                              if (v == 'delete') _deletePlan(plan);
-                            },
-                            itemBuilder: (_) => [
-                              PopupMenuItem(
-                                value: 'edit',
-                                child: Text(l10n.edit),
-                              ),
-                              PopupMenuItem(
-                                value: 'delete',
-                                child: Text(l10n.delete),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      Text(
-                        l10n.planSummary(
-                          plan.items.length,
-                          plan.items.fold<int>(
-                            0,
-                            (sum, i) => sum + i.targetSets,
-                          ),
-                        ),
-                        style: theme.textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 20),
-                      FilledButton(
-                        onPressed: _starting || plan.items.isEmpty
-                            ? null
-                            : () => _start(plan),
-                        child: Text(l10n.startRecording),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        l10n.exerciseSchedule,
-                        style: theme.textTheme.titleMedium,
-                      ),
-                      for (var i = 0; i < plan.items.length; i++)
-                        SportListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: Text(
-                            '${i + 1}'.padLeft(2, '0'),
-                            style: theme.textTheme.bodySmall,
-                          ),
-                          title: Text(plan.items[i].exerciseName),
-                          subtitle: Text(
-                            '${plan.items[i].targetSets} × ${plan.items[i].targetReps}',
-                          ),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () =>
-                              context.push('/records/plan?id=${plan.plan.id}'),
-                        ),
-                      if (plans.length > 1) ...[
-                        const SizedBox(height: 24),
-                        Text(
-                          l10n.otherPlans,
-                          style: theme.textTheme.titleMedium,
-                        ),
-                      ],
-                      for (final other in plans.where(
-                        (p) => p.plan.id != plan.plan.id,
-                      ))
-                        SportListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(other.plan.name),
-                          subtitle: Text(l10n.nExercises(other.items.length)),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => setState(() => _planId = other.plan.id),
-                        ),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton(
-                          onPressed: () => setState(() => _tab = 1),
-                          child: Text(l10n.viewWorkoutHistory),
-                        ),
-                      ),
-                    ],
+        ref
+            .watch(exercisesProvider)
+            .when(
+              loading: () => const LinearProgressIndicator(),
+              error: (e, _) => SportLoadError(
+                onRetry: () => ref.invalidate(exercisesProvider),
+              ),
+              data: (exercises) {
+                final visible = exercises
+                    .where(
+                      (e) =>
+                          (_category == null || e.category == _category) &&
+                          e.name.toLowerCase().contains(_query),
+                    )
+                    .toList();
+                if (visible.isEmpty) {
+                  return SportEmptyState(
+                    title: l10n.noExercises,
+                    icon: Icons.fitness_center,
                   );
-                },
-              ),
-        if (_tab == 1) ...[
-          ref
-              .watch(recentStepsProvider)
-              .when(
-                loading: () => const SizedBox.shrink(),
-                error: (e, _) => const SizedBox.shrink(),
-                data: (days) {
-                  if (days.isEmpty) return const SizedBox.shrink();
-                  final latest = days.first;
-                  return SportListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.directions_walk),
-                    title: Text(l10n.recentSteps),
-                    subtitle: Text(AppDates.md(latest.date, locale)),
-                    trailing: Text(l10n.nSteps(latest.steps)),
-                    onTap: () => _showStepHistory(context, days, locale),
-                  );
-                },
-              ),
-          ref
-              .watch(workoutHistoryProvider)
-              .when(
-                loading: () => const LinearProgressIndicator(),
-                error: (e, _) => SportLoadError(
-                  onRetry: () => ref.invalidate(workoutHistoryProvider),
-                ),
-                data: (days) => days.isEmpty
-                    ? SportEmptyState(
-                        title: l10n.noSetLogs,
-                        icon: Icons.fitness_center,
-                      )
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          for (final day in days) ...[
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                top: 20,
-                                bottom: 8,
-                              ),
-                              child: Text(
-                                AppDates.mdWithWeekday(day.date, locale),
-                                style: theme.textTheme.titleMedium,
-                              ),
-                            ),
-                            for (final entry in _groupSets(day.sets).entries)
-                              SportListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: Text(entry.key),
-                                subtitle: Text(
-                                  l10n.setsWithReps(
-                                    entry.value.length,
-                                    _repsSummary(entry.value, l10n),
-                                  ),
-                                ),
-                                trailing: const Icon(
-                                  Icons.chevron_right,
-                                  size: 18,
-                                ),
-                                onTap: () =>
-                                    showDayWorkoutDetails(context, day.date),
-                              ),
-                          ],
-                        ],
-                      ),
-              ),
-        ],
-        if (_tab == 2) ...[
-          TextField(
-            decoration: InputDecoration(
-              hintText: l10n.exerciseName,
-              prefixIcon: const Icon(Icons.search),
-            ),
-            onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            children: [
-              ChoiceChip(
-                label: Text(l10n.filterAll),
-                selected: _category == null,
-                onSelected: (_) => setState(() => _category = null),
-              ),
-              for (final c in kExerciseCategoryOrder)
-                ChoiceChip(
-                  label: Text(c.localizedExerciseCategory(l10n)),
-                  selected: _category == c,
-                  onSelected: (_) => setState(() => _category = c),
-                ),
-            ],
-          ),
-          ref
-              .watch(exercisesProvider)
-              .when(
-                loading: () => const LinearProgressIndicator(),
-                error: (e, _) => SportLoadError(
-                  onRetry: () => ref.invalidate(exercisesProvider),
-                ),
-                data: (exercises) {
-                  final visible = exercises
-                      .where(
-                        (e) =>
-                            (_category == null || e.category == _category) &&
-                            e.name.toLowerCase().contains(_query),
-                      )
-                      .toList();
-                  if (visible.isEmpty) {
-                    return SportEmptyState(
-                      title: l10n.noExercises,
-                      icon: Icons.fitness_center,
-                    );
-                  }
-                  return Column(
-                    children: [
-                      for (final ex in visible)
-                        SportListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(ex.name),
-                          subtitle: Text(
-                            '${ex.category.localizedExerciseCategory(l10n)} · ${ExerciseUnit.fromStorage(ex.unit).label(l10n)}',
-                          ),
-                          onTap: () => _editExercise(context, ref, ex),
-                          trailing: ex.isCustom
-                              ? IconButton(
-                                  tooltip: l10n.delete,
-                                  icon: const Icon(Icons.delete_outline),
-                                  onPressed: () async {
-                                    final ok = await showDialog<bool>(
-                                      context: context,
-                                      builder: (ctx) => AlertDialog(
-                                        title: Text(l10n.delete),
-                                        content: Text(ex.name),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(ctx, false),
-                                            child: Text(l10n.cancel),
-                                          ),
-                                          FilledButton(
-                                            onPressed: () =>
-                                                Navigator.pop(ctx, true),
-                                            child: Text(l10n.delete),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                    if (ok != true || !context.mounted) return;
-                                    try {
-                                      await ref
-                                          .read(workoutRepositoryProvider)
-                                          .deleteCustomExercise(ex.id);
-                                    } catch (e) {
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(content: Text('$e')),
-                                        );
-                                      }
+                }
+                return Column(
+                  children: [
+                    for (final ex in visible)
+                      SportListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(ex.name),
+                        subtitle: Text(
+                          '${ex.category.localizedExerciseCategory(l10n)} · ${ExerciseUnit.fromStorage(ex.unit).label(l10n)}',
+                        ),
+                        onTap: () => _editExercise(context, ref, ex),
+                        trailing: ex.isCustom
+                            ? IconButton(
+                                tooltip: l10n.delete,
+                                icon: const Icon(Icons.delete_outline),
+                                onPressed: () async {
+                                  final ok = await showDialog<bool>(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: Text(l10n.delete),
+                                      content: Text(ex.name),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(ctx, false),
+                                          child: Text(l10n.cancel),
+                                        ),
+                                        FilledButton(
+                                          onPressed: () =>
+                                              Navigator.pop(ctx, true),
+                                          child: Text(l10n.delete),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  if (ok != true || !context.mounted) return;
+                                  try {
+                                    await ref
+                                        .read(workoutRepositoryProvider)
+                                        .deleteCustomExercise(ex.id);
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(content: Text('$e')),
+                                      );
                                     }
-                                  },
-                                )
-                              : const Icon(Icons.chevron_right),
-                        ),
-                    ],
-                  );
-                },
-              ),
-        ],
+                                  }
+                                },
+                              )
+                            : const Icon(Icons.chevron_right),
+                      ),
+                  ],
+                );
+              },
+            ),
       ],
     );
   }

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../data/db.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../shell/swipe_tab_view.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/form_options.dart';
@@ -131,11 +132,12 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
     return parts.join(' · ');
   }
 
+  static const _periods = [7, 30, 0];
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final logsAsync = ref.watch(weightLogsProvider);
-    final scheme = Theme.of(context).colorScheme;
 
     return logsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -147,141 +149,171 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
         final previous = ordered.length > 1
             ? ordered[ordered.length - 2]
             : null;
-        final cutoff = AppDates.todayLocal().subtract(
-          Duration(days: _period - 1),
-        );
-        final visible = ordered
-            .where((log) => _period == 0 || !log.date.isBefore(cutoff))
-            .toList();
-        final weightSeries = [
-          for (final log in visible)
-            _SeriesPoint(date: log.date, value: log.weightKg),
-        ];
-        final bodyFatSeries = [
-          for (final log in visible)
-            if (log.bodyFatPct != null)
-              _SeriesPoint(date: log.date, value: log.bodyFatPct!),
-        ];
+        final theme = Theme.of(context);
 
-        return ListView(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.listPage,
-            8,
-            AppSpacing.listPage,
-            listBottomInset(context, hasFab: false),
-          ),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (latest != null) ...[
-              Text(
-                '${latest.weightKg.toStringAsFixed(1)} kg',
-                style: Theme.of(context).textTheme.headlineLarge,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.listPage, 8, 20, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (latest != null) ...[
+                    Text(
+                      '${latest.weightKg.toStringAsFixed(1)} kg',
+                      style: theme.textTheme.headlineLarge,
+                    ),
+                    if (previous != null) _deltaRow(context, latest, previous),
+                    const SizedBox(height: 12),
+                  ],
+                  SportTabs<int>(
+                    items: {
+                      7: l10n.lastNDays(7),
+                      30: l10n.lastNDays(30),
+                      0: l10n.filterAll,
+                    },
+                    selected: _period,
+                    onSelected: (v) => setState(() => _period = v),
+                  ),
+                ],
               ),
-              if (previous != null)
-                Builder(
-                  builder: (context) {
-                    final delta = latest.weightKg - previous.weightKg;
-                    final up = delta > 0;
-                    final flat = delta.abs() < 0.05;
-                    final scheme = Theme.of(context).colorScheme;
-                    return Row(
-                      children: [
-                        Icon(
-                          flat
-                              ? Icons.remove
-                              : up
-                              ? Icons.arrow_upward
-                              : Icons.arrow_downward,
-                          size: 14,
-                          color: flat
-                              ? scheme.onSurfaceVariant
-                              : up
-                              ? scheme.error
-                              : scheme.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${up ? '+' : ''}${delta.toStringAsFixed(1)} kg · '
-                          '${l10n.sincePreviousRecord}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    );
-                  },
-                ),
-            ],
-            const SizedBox(height: 16),
-            SportTabs<int>(
-              items: {
-                7: l10n.lastNDays(7),
-                30: l10n.lastNDays(30),
-                0: l10n.filterAll,
-              },
-              selected: _period,
-              onSelected: (v) => setState(() => _period = v),
-            ),
-            const SizedBox(height: 20),
-            _SeriesChart(
-              title: l10n.chartWeightTitle,
-              points: weightSeries,
-              color: scheme.primary,
-              emptyHint: l10n.chartWeightEmpty,
-            ),
-            const SizedBox(height: AppSpacing.field),
-            _SeriesChart(
-              title: l10n.chartBfTitle,
-              points: bodyFatSeries,
-              color: AppColors.protein,
-              emptyHint: l10n.chartBfEmpty,
-            ),
-            const SizedBox(height: AppSpacing.section),
-            Row(
-              children: [
-                Text(
-                  l10n.history,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const Spacer(),
-                IconButton(
-                  tooltip: l10n.fabLogWeight,
-                  onPressed: addWeight,
-                  icon: const Icon(Icons.add),
-                ),
-              ],
             ),
             const SizedBox(height: 8),
-            if (logs.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Center(
-                  child: Text(
-                    l10n.emptyWeightLogs,
-                    style: Theme.of(context).textTheme.meta,
-                  ),
-                ),
-              ),
-            ...visible.reversed.map(
-              (log) => SportListTile(
-                key: ValueKey(log.id),
-                title: Text(
-                  '${log.weightKg.toStringAsFixed(1)} kg',
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-                subtitle: Text(
-                  _logSubtitle(log, l10n),
-                  style: Theme.of(context).textTheme.meta,
-                ),
-                trailing: AppDates.isLocalToday(log.date)
-                    ? IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        tooltip: l10n.delete,
-                        onPressed: () => _confirmDelete(log),
-                      )
-                    : null,
+            Expanded(
+              child: SwipeTabView(
+                tabIndex: 0,
+                index: _periods.indexOf(_period),
+                onIndexChanged: (i) => setState(() => _period = _periods[i]),
+                children: [
+                  for (final p in _periods)
+                    _periodPanel(context, ordered, logs, p),
+                ],
               ),
             ),
           ],
         );
       },
+    );
+  }
+
+  Widget _deltaRow(BuildContext context, WeightLog latest, WeightLog previous) {
+    final delta = latest.weightKg - previous.weightKg;
+    final up = delta > 0;
+    final flat = delta.abs() < 0.05;
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Icon(
+          flat
+              ? Icons.remove
+              : up
+              ? Icons.arrow_upward
+              : Icons.arrow_downward,
+          size: 14,
+          color: flat
+              ? scheme.onSurfaceVariant
+              : up
+              ? scheme.error
+              : scheme.primary,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '${up ? '+' : ''}${delta.toStringAsFixed(1)} kg · '
+          '${context.l10n.sincePreviousRecord}',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+    );
+  }
+
+  Widget _periodPanel(
+    BuildContext context,
+    List<WeightLog> ordered,
+    List<WeightLog> logs,
+    int period,
+  ) {
+    final l10n = context.l10n;
+    final scheme = Theme.of(context).colorScheme;
+    final cutoff = AppDates.todayLocal().subtract(Duration(days: period - 1));
+    final visible = ordered
+        .where((log) => period == 0 || !log.date.isBefore(cutoff))
+        .toList();
+    final weightSeries = [
+      for (final log in visible)
+        _SeriesPoint(date: log.date, value: log.weightKg),
+    ];
+    final bodyFatSeries = [
+      for (final log in visible)
+        if (log.bodyFatPct != null)
+          _SeriesPoint(date: log.date, value: log.bodyFatPct!),
+    ];
+
+    return ListView(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.listPage,
+        12,
+        AppSpacing.listPage,
+        listBottomInset(context, hasFab: false),
+      ),
+      children: [
+        _SeriesChart(
+          title: l10n.chartWeightTitle,
+          points: weightSeries,
+          color: scheme.primary,
+          emptyHint: l10n.chartWeightEmpty,
+        ),
+        const SizedBox(height: AppSpacing.field),
+        _SeriesChart(
+          title: l10n.chartBfTitle,
+          points: bodyFatSeries,
+          color: AppColors.protein,
+          emptyHint: l10n.chartBfEmpty,
+        ),
+        const SizedBox(height: AppSpacing.section),
+        Row(
+          children: [
+            Text(l10n.history, style: Theme.of(context).textTheme.titleMedium),
+            const Spacer(),
+            IconButton(
+              tooltip: l10n.fabLogWeight,
+              onPressed: addWeight,
+              icon: const Icon(Icons.add),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (logs.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Center(
+              child: Text(
+                l10n.emptyWeightLogs,
+                style: Theme.of(context).textTheme.meta,
+              ),
+            ),
+          ),
+        ...visible.reversed.map(
+          (log) => SportListTile(
+            key: ValueKey(log.id),
+            title: Text(
+              '${log.weightKg.toStringAsFixed(1)} kg',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            subtitle: Text(
+              _logSubtitle(log, l10n),
+              style: Theme.of(context).textTheme.meta,
+            ),
+            trailing: AppDates.isLocalToday(log.date)
+                ? IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: l10n.delete,
+                    onPressed: () => _confirmDelete(log),
+                  )
+                : null,
+          ),
+        ),
+      ],
     );
   }
 }
