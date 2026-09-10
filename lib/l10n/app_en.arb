@@ -1980,5 +1980,17 @@
   "sincePreviousRecord": "Since previous record",
   "stepsPermissionNeeded": "Permission needed",
   "stepsNotSynced": "Not synced",
-  "appTagline": "Track food, training and progress"
+  "appTagline": "Track food, training and progress",
+  "selectDate": "Select date",
+  "noWorkoutPlannedTitle": "No workout planned yet",
+  "noWorkoutPlannedHint": "Tap + to add your first workout plan",
+  "noMealsTitle": "No meals logged yet",
+  "noMealsHint": "Tap + to log today's first meal",
+  "recordStatusLabel": "Record status",
+  "recordComplete": "Fully logged",
+  "recordIncomplete": "Not confirmed",
+  "mealNotLogged": "Not logged",
+  "mealsRecordSection": "Food log",
+  "addMealNamed": "Add {meal}",
+  "@addMealNamed": {"placeholders": {"meal": {"type": "String"}}}
 }

@@ -3728,6 +3728,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Track food, training and progress'**
   String get appTagline;
+
+  /// No description provided for @selectDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Select date'**
+  String get selectDate;
+
+  /// No description provided for @noWorkoutPlannedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No workout planned yet'**
+  String get noWorkoutPlannedTitle;
+
+  /// No description provided for @noWorkoutPlannedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap + to add your first workout plan'**
+  String get noWorkoutPlannedHint;
+
+  /// No description provided for @noMealsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No meals logged yet'**
+  String get noMealsTitle;
+
+  /// No description provided for @noMealsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap + to log today\'s first meal'**
+  String get noMealsHint;
+
+  /// No description provided for @recordStatusLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Record status'**
+  String get recordStatusLabel;
+
+  /// No description provided for @recordComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Fully logged'**
+  String get recordComplete;
+
+  /// No description provided for @recordIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Not confirmed'**
+  String get recordIncomplete;
+
+  /// No description provided for @mealNotLogged.
+  ///
+  /// In en, this message translates to:
+  /// **'Not logged'**
+  String get mealNotLogged;
+
+  /// No description provided for @mealsRecordSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Food log'**
+  String get mealsRecordSection;
+
+  /// No description provided for @addMealNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Add {meal}'**
+  String addMealNamed(String meal);
 }
 
 class _AppLocalizationsDelegate

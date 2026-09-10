@@ -2073,4 +2073,39 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get appTagline => '记录饮食训练与变化';
+
+  @override
+  String get selectDate => '选择日期';
+
+  @override
+  String get noWorkoutPlannedTitle => '还没有安排训练';
+
+  @override
+  String get noWorkoutPlannedHint => '点击 + 添加你的第一个训练计划';
+
+  @override
+  String get noMealsTitle => '还没有记录饮食';
+
+  @override
+  String get noMealsHint => '点击 + 记录今天的第一餐';
+
+  @override
+  String get recordStatusLabel => '记录状态';
+
+  @override
+  String get recordComplete => '已完整记录';
+
+  @override
+  String get recordIncomplete => '尚未确认完整';
+
+  @override
+  String get mealNotLogged => '未记录';
+
+  @override
+  String get mealsRecordSection => '饮食记录';
+
+  @override
+  String addMealNamed(String meal) {
+    return '添加$meal';
+  }
 }

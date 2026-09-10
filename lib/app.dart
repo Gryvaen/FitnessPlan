@@ -11,6 +11,7 @@ import 'ui/foods/food_category_page.dart';
 import 'ui/foods/food_detail_page.dart';
 import 'ui/foods/food_favorites_page.dart';
 import 'ui/foods/foods_page.dart';
+import 'ui/meals/daily_meals_page.dart';
 import 'ui/meals/log_meal_page.dart';
 import 'ui/meals/meal_detail_page.dart';
 import 'ui/onboarding/onboarding_page.dart';
@@ -236,6 +237,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           final idStr = state.uri.queryParameters['foodId'];
           final id = idStr == null ? null : int.tryParse(idStr);
           return LogMealPage(initialFoodId: id);
+        },
+      ),
+      GoRoute(
+        path: '/day-meals',
+        builder: (context, state) {
+          final raw = state.uri.queryParameters['date'];
+          final parsed = raw == null ? null : DateTime.tryParse(raw);
+          return DailyMealsPage(date: parsed ?? AppDates.todayLocal());
         },
       ),
       GoRoute(

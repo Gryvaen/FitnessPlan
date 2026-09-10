@@ -2119,4 +2119,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appTagline => 'Track food, training and progress';
+
+  @override
+  String get selectDate => 'Select date';
+
+  @override
+  String get noWorkoutPlannedTitle => 'No workout planned yet';
+
+  @override
+  String get noWorkoutPlannedHint => 'Tap + to add your first workout plan';
+
+  @override
+  String get noMealsTitle => 'No meals logged yet';
+
+  @override
+  String get noMealsHint => 'Tap + to log today\'s first meal';
+
+  @override
+  String get recordStatusLabel => 'Record status';
+
+  @override
+  String get recordComplete => 'Fully logged';
+
+  @override
+  String get recordIncomplete => 'Not confirmed';
+
+  @override
+  String get mealNotLogged => 'Not logged';
+
+  @override
+  String get mealsRecordSection => 'Food log';
+
+  @override
+  String addMealNamed(String meal) {
+    return 'Add $meal';
+  }
 }

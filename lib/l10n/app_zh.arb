@@ -1954,5 +1954,16 @@
   "sincePreviousRecord": "相比上次记录",
   "stepsPermissionNeeded": "未授权",
   "stepsNotSynced": "未同步",
-  "appTagline": "记录饮食训练与变化"
+  "appTagline": "记录饮食训练与变化",
+  "selectDate": "选择日期",
+  "noWorkoutPlannedTitle": "还没有安排训练",
+  "noWorkoutPlannedHint": "点击 + 添加你的第一个训练计划",
+  "noMealsTitle": "还没有记录饮食",
+  "noMealsHint": "点击 + 记录今天的第一餐",
+  "recordStatusLabel": "记录状态",
+  "recordComplete": "已完整记录",
+  "recordIncomplete": "尚未确认完整",
+  "mealNotLogged": "未记录",
+  "mealsRecordSection": "饮食记录",
+  "addMealNamed": "添加{meal}"
 }

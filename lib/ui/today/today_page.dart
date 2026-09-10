@@ -12,6 +12,7 @@ import '../../domain/plateau.dart';
 import '../../data/services/steps_sync_service.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../meals/daily_meals_page.dart';
 import '../strategy/strategy_labels.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
@@ -91,398 +92,364 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     final canAddWater = isSelectedToday;
     final canUndoWater = isSelectedToday && waterMl > 0;
 
+    Future<void> openDatePicker() async {
+      final repo = ref.read(dietStrategyRepositoryProvider);
+      final picked = await showDeficitDatePicker(
+        context: context,
+        initialDate: day,
+        firstDate: earliest,
+        lastDate: today,
+        plannedDeficit: plannedDeficit,
+        mealRepository: ref.read(mealRepositoryProvider),
+        loadTargets: (start, end) => repo.targetsBetween(start, end, profile),
+        calorieStandardSince: profile.calorieStandardSince,
+      );
+      if (picked == null) return;
+      ref.read(selectedDayProvider.notifier).setDay(picked);
+    }
+
     return AppChromeScaffold(
-      appBar: AppBar(
-        title: InkWell(
-          onTap: () async {
-            final repo = ref.read(dietStrategyRepositoryProvider);
-            final picked = await showDeficitDatePicker(
-              context: context,
-              initialDate: day,
-              firstDate: earliest,
-              lastDate: today,
-              plannedDeficit: plannedDeficit,
-              mealRepository: ref.read(mealRepositoryProvider),
-              loadTargets: (start, end) =>
-                  repo.targetsBetween(start, end, profile),
-              calorieStandardSince: profile.calorieStandardSince,
-            );
-            if (picked == null) return;
-            ref.read(selectedDayProvider.notifier).setDay(picked);
-          },
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(dayLabel),
-                const SizedBox(width: 4),
-                Icon(
-                  Icons.calendar_today_outlined,
-                  size: 18,
-                  color: scheme.onSurfaceVariant,
-                ),
-              ],
+      body: SafeArea(
+        bottom: false,
+        child: ListView(
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.listPage,
+            4,
+            AppSpacing.listPage,
+            listBottomInset(context, hasFab: false),
+          ),
+          children: [
+            _TodayHeader(
+              title: isSelectedToday
+                  ? l10n.todayWord
+                  : AppDates.relativeDayTitle(day, today, l10n, locale),
+              dateLabel:
+                  '${AppDates.md(day, locale)} · '
+                  '${AppDates.weekdayShort(day, locale)}',
+              canGoPrev: canGoPrev,
+              canGoNext: canGoNext,
+              onPrev: () => ref
+                  .read(selectedDayProvider.notifier)
+                  .shiftDay(-1, earliest: earliest),
+              onNext: () => ref
+                  .read(selectedDayProvider.notifier)
+                  .shiftDay(1, earliest: earliest),
+              onCalendar: openDatePicker,
             ),
-          ),
-        ),
-        actions: [
-          IconButton(
-            tooltip: l10n.prevDay,
-            onPressed: canGoPrev
-                ? () => ref
-                      .read(selectedDayProvider.notifier)
-                      .shiftDay(-1, earliest: earliest)
-                : null,
-            icon: const Icon(Icons.chevron_left),
-          ),
-          IconButton(
-            tooltip: l10n.todayWord,
-            onPressed: isSelectedToday
-                ? null
-                : () => ref.read(selectedDayProvider.notifier).goToToday(),
-            icon: const Icon(Icons.today),
-          ),
-          IconButton(
-            tooltip: l10n.nextDay,
-            onPressed: canGoNext
-                ? () => ref
-                      .read(selectedDayProvider.notifier)
-                      .shiftDay(1, earliest: earliest)
-                : null,
-            icon: const Icon(Icons.chevron_right),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(
-          AppSpacing.listPage,
-          8,
-          AppSpacing.listPage,
-          listBottomInset(context, hasFab: false),
-        ),
-        children: [
-          if (profile.goal == FitnessGoal.cut && plan.missingCutInputs) ...[
-            SportSurfaceCard(
-              tint: scheme.error,
-              child: Material(
-                type: MaterialType.transparency,
-                child: ListTile(
-                  leading: Icon(
-                    Icons.warning_amber_rounded,
-                    color: scheme.error,
-                  ),
-                  title: Text(
-                    l10n.cutPlanIncomplete,
-                    style: theme.textTheme.titleSmall,
-                  ),
-                  subtitle: Text(
-                    l10n.cutPlanIncompleteHint,
-                    style: theme.textTheme.meta,
-                  ),
-                  trailing: TextButton(
-                    onPressed: () => context.go('/profile/edit'),
-                    child: Text(l10n.goFillIn),
+            if (profile.goal == FitnessGoal.cut && plan.missingCutInputs) ...[
+              SportSurfaceCard(
+                tint: scheme.error,
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: ListTile(
+                    leading: Icon(
+                      Icons.warning_amber_rounded,
+                      color: scheme.error,
+                    ),
+                    title: Text(
+                      l10n.cutPlanIncomplete,
+                      style: theme.textTheme.titleSmall,
+                    ),
+                    subtitle: Text(
+                      l10n.cutPlanIncompleteHint,
+                      style: theme.textTheme.meta,
+                    ),
+                    trailing: TextButton(
+                      onPressed: () => context.go('/profile/edit'),
+                      child: Text(l10n.goFillIn),
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.section),
-          ],
-          if (onPlateau) ...[
-            SportSurfaceCard(
-              tint: scheme.tertiary,
-              padding: const EdgeInsets.all(AppSpacing.card),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(l10n.possiblePlateau, style: theme.textTheme.titleSmall),
-                  const SizedBox(height: 6),
-                  Text(
-                    l10n.plateauHint(Plateau.days),
-                    style: theme.textTheme.meta,
-                  ),
-                  const SizedBox(height: AppSpacing.field),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      FilledButton.tonal(
-                        onPressed: !canCutMore
-                            ? null
-                            : () async {
-                                final updated = await ref
-                                    .read(profileProvider.notifier)
-                                    .applyPlateauCalorieCut();
-                                if (!context.mounted || updated == null) {
-                                  return;
-                                }
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      l10n.cut100Applied(
-                                        '${updated.targets.calories}',
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                        child: Text(
-                          canCutMore ? l10n.cut100Kcal : l10n.cutAdjCapReached,
-                        ),
-                      ),
-                      OutlinedButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(l10n.walk3000Snack)),
-                          );
-                        },
-                        child: Text(l10n.walk3000Btn),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.section),
-          ],
-          SportHeroCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        l10n.sectionCalories(sectionPrefix),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: onHero,
-                        ),
-                      ),
-                    ),
-                    _StepsStatusLabel(
-                      stepsLabel: l10n.nSteps(steps),
-                      textStyle: theme.textTheme.meta?.copyWith(
-                        color: onHeroMuted,
-                      ),
-                      mutedColor: onHeroMuted,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    if (strategyLabel != null)
-                      SoftChip(
-                        label: strategyLabel,
-                        icon: dayTarget?.source == TargetSource.strategy
-                            ? Icons.auto_graph
-                            : Icons.flag_outlined,
-                        onTap: () => context.go('/profile/nutrition'),
-                      ),
-                    if (profile.goal == FitnessGoal.cut &&
-                        plannedDeficit > 0 &&
-                        plannedDeficit.isFinite)
-                      Text(
-                        l10n.dailyDeficitLine('${plannedDeficit.round()}'),
-                        style: theme.textTheme.meta?.copyWith(
-                          color: onHeroMuted,
-                        ),
-                      ),
-                    if (dayTarget?.strategy == DietStrategyKind.carbCycle &&
-                        dayTarget?.isLegacyEstimate == false)
-                      _WeeklyAverageLabel(
-                        planId: dayTarget?.planId,
-                        color: onHeroMuted,
-                      ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.card),
-                // Upper row: remaining (left) · ring (centre) · cup (right).
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: _RemainingBlock(
-                        remain: remainCal,
-                        eaten: intake.calories,
-                        target: targetCalories,
-                        onHero: onHero,
-                        onHeroMuted: onHeroMuted,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    CalorieRing(
-                      eaten: intake.calories,
-                      target: targetCalories,
-                      over: remainCal < 0,
-                      size: 108,
-                      color: visuals.accent,
-                      trackColor: visuals.track,
-                      centerLabel: l10n.eatenWord,
-                      labelColor: onHero,
-                      metaColor: onHeroMuted,
-                    ),
-                    const SizedBox(width: 12),
-                    WaterCupControl(
-                      progress: waterGoal <= 0 ? 0 : waterMl / waterGoal,
-                      height: 108,
-                      width: 68,
-                      onAdd: canAddWater
-                          ? () => ref
-                                .read(waterRepositoryProvider)
-                                .addMl(day, kWaterServingMl)
-                          : null,
-                      onUndo: canUndoWater
-                          ? () => ref
-                                .read(waterRepositoryProvider)
-                                .addMl(day, -kWaterServingMl)
-                          : null,
-                      addLabel: l10n.waterAddMl(kWaterServingMl),
-                      undoLabel: l10n.waterUndoMl(kWaterServingMl),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.card),
-                Divider(color: onHero.withValues(alpha: 0.10), height: 1),
-                const SizedBox(height: AppSpacing.section),
-                // Lower row: strictly four columns.
-                Row(
+              const SizedBox(height: AppSpacing.section),
+            ],
+            if (onPlateau) ...[
+              SportSurfaceCard(
+                tint: scheme.tertiary,
+                padding: const EdgeInsets.all(AppSpacing.card),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: MacroColumn(
-                        label: l10n.protein,
-                        current: intake.proteinG,
-                        target: targets.proteinG,
-                        unit: 'g',
-                        color: AppColors.protein,
-                        labelColor: onHero,
-                        metaColor: onHeroMuted,
-                      ),
+                    Text(
+                      l10n.possiblePlateau,
+                      style: theme.textTheme.titleSmall,
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: MacroColumn(
-                        label: l10n.carbs,
-                        current: intake.carbG,
-                        target: targets.carbG,
-                        unit: 'g',
-                        color: AppColors.carb,
-                        labelColor: onHero,
-                        metaColor: onHeroMuted,
-                      ),
+                    const SizedBox(height: 6),
+                    Text(
+                      l10n.plateauHint(Plateau.days),
+                      style: theme.textTheme.meta,
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: MacroColumn(
-                        label: l10n.fat,
-                        current: intake.fatG,
-                        target: targets.fatG,
-                        unit: 'g',
-                        color: AppColors.fat,
-                        labelColor: onHero,
-                        metaColor: onHeroMuted,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: MacroColumn(
-                        label: l10n.water,
-                        current: waterMl.toDouble(),
-                        target: waterGoal.toDouble(),
-                        unit: 'ml',
-                        color: AppColors.water,
-                        labelColor: onHero,
-                        metaColor: onHeroMuted,
-                        // Over-goal water is fine: show the real value and
-                        // keep the bar in the water colour.
-                        capProgress: false,
-                      ),
-                    ),
-                  ],
-                ),
-                if (intake.alcoholG > 0) ...[
-                  const SizedBox(height: AppSpacing.field),
-                  Text(
-                    l10n.alcoholExtraKcal('${intake.alcoholKcal.round()}'),
-                    style: theme.textTheme.meta?.copyWith(color: onHeroMuted),
-                  ),
-                ],
-                if (dayTarget?.isLegacyEstimate == true) ...[
-                  const SizedBox(height: AppSpacing.field),
-                  Text(
-                    l10n.legacyTargetHint,
-                    style: theme.textTheme.meta?.copyWith(color: onHeroMuted),
-                  ),
-                ],
-                const SizedBox(height: 6),
-                Text(
-                  isSelectedToday ? l10n.waterTapHint : l10n.pastDayReadOnly,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: onHeroMuted,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.section),
-          SportSectionBand(
-            padding: const EdgeInsets.fromLTRB(
-              0,
-              4,
-              AppSpacing.compact,
-              AppSpacing.compact,
-            ),
-            child: TodayWorkoutCard(day: day, sectionPrefix: sectionPrefix),
-          ),
-          const SizedBox(height: AppSpacing.section),
-          SportSectionBand(
-            padding: const EdgeInsets.fromLTRB(
-              0,
-              4,
-              AppSpacing.compact,
-              AppSpacing.compact,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TodaySectionHeader(
-                  title: l10n.sectionLogs(sectionPrefix),
-                  summary: mealsAsync.value == null
-                      ? null
-                      : l10n.mealsSummary(
-                          mealsAsync.value!.length,
-                          '${intake.calories.round()}',
-                        ),
-                  addLabel: isSelectedToday ? l10n.logMeal : null,
-                  onAdd: isSelectedToday
-                      ? () => context.push('/log-meal')
-                      : null,
-                  trailing: [
-                    PopupMenuButton<String>(
-                      tooltip: l10n.more,
-                      onSelected: (value) =>
-                          _onMealMenu(value, day, isSelectedToday, dayLabel),
-                      itemBuilder: (context) => [
-                        if (isSelectedToday)
-                          PopupMenuItem(
-                            value: 'copy',
-                            child: Text(l10n.copyYesterday),
+                    const SizedBox(height: AppSpacing.field),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        FilledButton.tonal(
+                          onPressed: !canCutMore
+                              ? null
+                              : () async {
+                                  final updated = await ref
+                                      .read(profileProvider.notifier)
+                                      .applyPlateauCalorieCut();
+                                  if (!context.mounted || updated == null) {
+                                    return;
+                                  }
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        l10n.cut100Applied(
+                                          '${updated.targets.calories}',
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                          child: Text(
+                            canCutMore
+                                ? l10n.cut100Kcal
+                                : l10n.cutAdjCapReached,
                           ),
-                        PopupMenuItem(
-                          value: 'preset',
-                          child: Text(l10n.saveAsPreset),
+                        ),
+                        OutlinedButton(
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(l10n.walk3000Snack)),
+                            );
+                          },
+                          child: Text(l10n.walk3000Btn),
                         ),
                       ],
                     ),
                   ],
                 ),
-                ...[
+              ),
+              const SizedBox(height: AppSpacing.section),
+            ],
+            SportHeroCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          l10n.sectionCalories(sectionPrefix),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: onHero,
+                          ),
+                        ),
+                      ),
+                      _StepsStatusLabel(
+                        stepsLabel: l10n.nSteps(steps),
+                        textStyle: theme.textTheme.meta?.copyWith(
+                          color: onHeroMuted,
+                        ),
+                        mutedColor: onHeroMuted,
+                      ),
+                    ],
+                  ),
+                  if (strategyLabel != null) ...[
+                    const SizedBox(height: 4),
+                    InkWell(
+                      onTap: () => context.go('/profile/nutrition'),
+                      borderRadius: BorderRadius.circular(6),
+                      child: Text(
+                        strategyLabel,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: onHeroMuted,
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (dayTarget?.strategy == DietStrategyKind.carbCycle &&
+                      dayTarget?.isLegacyEstimate == false) ...[
+                    const SizedBox(height: 2),
+                    _WeeklyAverageLabel(
+                      planId: dayTarget?.planId,
+                      color: onHeroMuted,
+                    ),
+                  ],
+                  const SizedBox(height: AppSpacing.card),
+                  // Upper row: remaining (left) · ring (centre) · cup (right).
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: _RemainingBlock(
+                          remain: remainCal,
+                          eaten: intake.calories,
+                          target: targetCalories,
+                          onHero: onHero,
+                          onHeroMuted: onHeroMuted,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      CalorieRing(
+                        eaten: intake.calories,
+                        target: targetCalories,
+                        over: remainCal < 0,
+                        size: 108,
+                        color: visuals.accent,
+                        trackColor: visuals.track,
+                        centerLabel: l10n.eatenWord,
+                        labelColor: onHero,
+                        metaColor: onHeroMuted,
+                      ),
+                      const SizedBox(width: 12),
+                      WaterCupControl(
+                        progress: waterGoal <= 0 ? 0 : waterMl / waterGoal,
+                        height: 108,
+                        width: 68,
+                        onAdd: canAddWater
+                            ? () => ref
+                                  .read(waterRepositoryProvider)
+                                  .addMl(day, kWaterServingMl)
+                            : null,
+                        onUndo: canUndoWater
+                            ? () => ref
+                                  .read(waterRepositoryProvider)
+                                  .addMl(day, -kWaterServingMl)
+                            : null,
+                        addLabel: l10n.waterAddMl(kWaterServingMl),
+                        undoLabel: l10n.waterUndoMl(kWaterServingMl),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.card),
+                  Divider(color: onHero.withValues(alpha: 0.10), height: 1),
+                  const SizedBox(height: AppSpacing.section),
+                  // Lower row: strictly four columns.
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: MacroColumn(
+                          label: l10n.protein,
+                          current: intake.proteinG,
+                          target: targets.proteinG,
+                          unit: 'g',
+                          color: AppColors.protein,
+                          labelColor: onHero,
+                          metaColor: onHeroMuted,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: MacroColumn(
+                          label: l10n.carbs,
+                          current: intake.carbG,
+                          target: targets.carbG,
+                          unit: 'g',
+                          color: AppColors.carb,
+                          labelColor: onHero,
+                          metaColor: onHeroMuted,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: MacroColumn(
+                          label: l10n.fat,
+                          current: intake.fatG,
+                          target: targets.fatG,
+                          unit: 'g',
+                          color: AppColors.fat,
+                          labelColor: onHero,
+                          metaColor: onHeroMuted,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: MacroColumn(
+                          label: l10n.water,
+                          current: waterMl.toDouble(),
+                          target: waterGoal.toDouble(),
+                          unit: 'ml',
+                          color: AppColors.water,
+                          labelColor: onHero,
+                          metaColor: onHeroMuted,
+                          // Over-goal water is fine: show the real value and
+                          // keep the bar in the water colour.
+                          capProgress: false,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (intake.alcoholG > 0) ...[
+                    const SizedBox(height: AppSpacing.field),
+                    Text(
+                      l10n.alcoholExtraKcal('${intake.alcoholKcal.round()}'),
+                      style: theme.textTheme.meta?.copyWith(color: onHeroMuted),
+                    ),
+                  ],
+                  if (dayTarget?.isLegacyEstimate == true) ...[
+                    const SizedBox(height: AppSpacing.field),
+                    Text(
+                      l10n.legacyTargetHint,
+                      style: theme.textTheme.meta?.copyWith(color: onHeroMuted),
+                    ),
+                  ],
+                  const SizedBox(height: 6),
+                  Text(
+                    isSelectedToday ? l10n.waterTapHint : l10n.pastDayReadOnly,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: onHeroMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.section),
+            SportSectionBand(
+              padding: const EdgeInsets.fromLTRB(
+                0,
+                4,
+                AppSpacing.compact,
+                AppSpacing.compact,
+              ),
+              child: TodayWorkoutCard(day: day, sectionPrefix: sectionPrefix),
+            ),
+            const SizedBox(height: AppSpacing.section),
+            SportSectionBand(
+              padding: const EdgeInsets.fromLTRB(
+                0,
+                4,
+                AppSpacing.compact,
+                AppSpacing.compact,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TodaySectionHeader(
+                    title: l10n.sectionLogs(sectionPrefix),
+                    summary: mealsAsync.value == null
+                        ? null
+                        : l10n.mealsSummary(
+                            mealsAsync.value!.length,
+                            '${intake.calories.round()}',
+                          ),
+                    addLabel: isSelectedToday ? l10n.logMeal : null,
+                    onAdd: isSelectedToday
+                        ? () => context.push('/log-meal')
+                        : null,
+                    trailing: [
+                      PopupMenuButton<String>(
+                        tooltip: l10n.more,
+                        onSelected: (value) =>
+                            _onMealMenu(value, day, isSelectedToday, dayLabel),
+                        itemBuilder: (context) => [
+                          if (isSelectedToday)
+                            PopupMenuItem(
+                              value: 'copy',
+                              child: Text(l10n.copyYesterday),
+                            ),
+                          PopupMenuItem(
+                            value: 'preset',
+                            child: Text(l10n.saveAsPreset),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 4),
                   mealsAsync.when(
                     loading: () =>
@@ -491,21 +458,37 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                       l10n.loadFailed('$e'),
                       style: theme.textTheme.meta,
                     ),
-                    data: (meals) => _MealGroups(
-                      meals: meals,
-                      isSelectedToday: isSelectedToday,
-                    ),
-                  ),
-                  TextButton.icon(
-                    onPressed: () => showDailyMeals(context, day),
-                    icon: const Icon(Icons.arrow_forward, size: 18),
-                    label: Text(l10n.viewDayRecords),
+                    data: (meals) => meals.isEmpty
+                        ? SportEmptyState(
+                            icon: Icons.restaurant_outlined,
+                            title: isSelectedToday
+                                ? l10n.noMealsTitle
+                                : l10n.emptyMealsThatDay,
+                            message: isSelectedToday ? l10n.noMealsHint : null,
+                          )
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _MealGroups(
+                                meals: meals,
+                                onOpen: () => context.push(dailyMealsPath(day)),
+                              ),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: TextButton(
+                                  onPressed: () =>
+                                      context.push(dailyMealsPath(day)),
+                                  child: Text(l10n.viewDayRecords),
+                                ),
+                              ),
+                            ],
+                          ),
                   ),
                 ],
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -696,182 +679,42 @@ class _WeeklyAverageLabel extends ConsumerWidget {
   }
 }
 
-/// Explicit per-day "my food log is complete" confirmation (today only).
-class _DietCompleteRow extends StatelessWidget {
-  const _DietCompleteRow({required this.value, required this.onChanged});
-
-  final bool? value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(right: AppSpacing.compact),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.dietCompleteToggle,
-                  style: theme.textTheme.bodyMedium,
-                ),
-                Text(l10n.dietCompleteHint, style: theme.textTheme.bodySmall),
-              ],
-            ),
-          ),
-          Switch(value: value ?? false, onChanged: onChanged),
-        ],
-      ),
-    );
-  }
-}
-
+/// Compact per-meal-type summary shown on the Today page (one row each:
+/// meal name · food list · kcal). The full per-entry list lives on
+/// [DailyMealsPage].
 class _MealGroups extends StatelessWidget {
-  const _MealGroups({
-    required this.meals,
-    required this.isSelectedToday,
-    this.summary = true,
-  });
-
-  final bool summary;
+  const _MealGroups({required this.meals, required this.onOpen});
 
   final List<MealEntry> meals;
-  final bool isSelectedToday;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
-    if (meals.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        child: Center(
-          child: Text(
-            isSelectedToday ? l10n.emptyMealsToday : l10n.emptyMealsThatDay,
-            style: theme.textTheme.meta,
-          ),
-        ),
-      );
-    }
     final groups = <Widget>[];
     for (final type in MealType.values) {
       final group = meals.where((m) => m.mealType == type.name).toList();
       if (group.isEmpty) continue;
       final calories = group.fold<double>(0, (sum, m) => sum + m.calories);
       groups.add(
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(type.label(l10n), style: theme.textTheme.titleSmall),
-              subtitle: summary
-                  ? Text(
-                      group.map((m) => m.foodName).join(' · '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    )
-                  : null,
-              trailing: Text(
-                '${calories.round()} kcal',
-                style: theme.textTheme.bodySmall,
-              ),
-              onTap: summary
-                  ? () => showDailyMeals(context, meals.first.date)
-                  : null,
-            ),
-            if (!summary)
-              for (final m in group)
-                _MealEntryTile(entry: m, canDismiss: isSelectedToday),
-            const Divider(),
-          ],
+        SportListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(type.label(l10n), style: theme.textTheme.titleSmall),
+          subtitle: Text(
+            group.map((m) => m.foodName).join(' · '),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: Text(
+            '${calories.round()} kcal',
+            style: theme.textTheme.bodySmall,
+          ),
+          onTap: onOpen,
         ),
       );
     }
-    return Padding(
-      padding: const EdgeInsets.only(right: AppSpacing.compact),
-      child: Column(children: groups),
-    );
-  }
-}
-
-class _MealEntryTile extends ConsumerWidget {
-  const _MealEntryTile({required this.entry, required this.canDismiss});
-
-  final MealEntry entry;
-  final bool canDismiss;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final l10n = context.l10n;
-    final m = entry;
-
-    final tile = SportListTile(
-      title: Text(m.foodName, style: theme.textTheme.bodyLarge),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('${m.grams.toStringAsFixed(0)} g', style: theme.textTheme.meta),
-          Text(
-            'P ${m.proteinG.toStringAsFixed(0)} · '
-            'C ${m.carbG.toStringAsFixed(0)} · '
-            'F ${m.fatG.toStringAsFixed(0)}',
-            style: theme.textTheme.meta,
-          ),
-        ],
-      ),
-      isThreeLine: true,
-      trailing: Text(
-        '${m.calories.round()}',
-        style: theme.textTheme.titleSmall,
-      ),
-      onTap: () => context.push('/meal/${m.id}'),
-    );
-    if (!canDismiss) return tile;
-    return Dismissible(
-      key: ValueKey(m.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        margin: const EdgeInsets.only(bottom: AppSpacing.compact),
-        padding: const EdgeInsets.only(right: 16),
-        decoration: BoxDecoration(
-          color: scheme.error,
-          borderRadius: BorderRadius.circular(AppRadius.tile),
-        ),
-        child: const Icon(Icons.delete, color: Colors.white),
-      ),
-      confirmDismiss: (_) async {
-        return await showDialog<bool>(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                title: Text(l10n.deleteRecord),
-                content: Text(l10n.confirmDeleteMeal),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx, false),
-                    child: Text(l10n.cancel),
-                  ),
-                  FilledButton(
-                    onPressed: () => Navigator.pop(ctx, true),
-                    child: Text(l10n.delete),
-                  ),
-                ],
-              ),
-            ) ==
-            true;
-      },
-      onDismissed: (_) {
-        ref.read(mealRepositoryProvider).delete(m.id);
-      },
-      child: tile,
-    );
+    return Column(children: groups);
   }
 }
 
@@ -889,73 +732,38 @@ class _StepsStatusLabel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final scheme = Theme.of(context).colorScheme;
     // Keep provider alive / kick sync; display uses last known status so
     // resume/retry refresh does not flash a spinner over a known result.
     final sync = ref.watch(stepsSyncProvider);
     final status = ref.watch(stepsSyncStatusProvider);
     final showSpinner = sync.isLoading && status == null;
-
-    final (:icon, :color, :tooltip) = switch (status) {
-      StepsSyncStatus.connected => (
-        icon: Icons.check_circle_outline,
-        color: AppThemeVisuals.of(context).accent,
-        tooltip: l10n.stepsStatusConnected,
-      ),
-      StepsSyncStatus.empty => (
-        icon: Icons.info_outline,
-        color: AppColors.fat,
-        tooltip: l10n.stepsStatusEmpty,
-      ),
-      StepsSyncStatus.denied => (
-        icon: Icons.link_off,
-        color: AppColors.fat,
-        tooltip: l10n.stepsStatusDenied,
-      ),
-      StepsSyncStatus.unsupported => (
-        icon: Icons.phonelink_off,
-        color: mutedColor,
-        tooltip: l10n.stepsStatusUnsupported,
-      ),
-      StepsSyncStatus.failed => (
-        icon: Icons.error_outline,
-        color: scheme.error,
-        tooltip: l10n.stepsStatusFailed,
-      ),
-      null => (
-        icon: Icons.sync,
-        color: mutedColor,
-        tooltip: l10n.stepsStatusSyncing,
-      ),
-    };
-
     final canOpen = status != StepsSyncStatus.unsupported;
 
+    final label = switch (status) {
+      StepsSyncStatus.denied => l10n.stepsPermissionNeeded,
+      StepsSyncStatus.failed || StepsSyncStatus.empty => l10n.stepsNotSynced,
+      _ => stepsLabel,
+    };
+
     return Tooltip(
-      message: canOpen ? '$tooltip\n${l10n.stepsStatusRetryHint}' : tooltip,
+      message: canOpen
+          ? l10n.stepsStatusRetryHint
+          : l10n.stepsStatusUnsupported,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: canOpen ? () => _showStepsDetailSheet(context) : null,
           borderRadius: BorderRadius.circular(12),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+            padding: const EdgeInsets.symmetric(vertical: 12),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.directions_walk, size: 18, color: mutedColor),
                 const SizedBox(width: 4),
-                Text(
-                  status == StepsSyncStatus.denied
-                      ? l10n.stepsPermissionNeeded
-                      : status == StepsSyncStatus.failed ||
-                            status == StepsSyncStatus.empty
-                      ? l10n.stepsNotSynced
-                      : stepsLabel,
-                  style: textStyle,
-                ),
-                const SizedBox(width: 4),
-                if (showSpinner)
+                Text(label, style: textStyle),
+                if (showSpinner) ...[
+                  const SizedBox(width: 6),
                   SizedBox(
                     width: 14,
                     height: 14,
@@ -963,9 +771,8 @@ class _StepsStatusLabel extends ConsumerWidget {
                       strokeWidth: 1.6,
                       color: mutedColor,
                     ),
-                  )
-                else
-                  Icon(icon, size: 16, color: color),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1201,50 +1008,71 @@ class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
   }
 }
 
-Future<void> showDailyMeals(BuildContext context, DateTime day) =>
-    showModalBottomSheet<void>(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (context) => FractionallySizedBox(
-        heightFactor: .9,
-        child: Consumer(
-          builder: (context, ref, _) {
-            final editable = AppDates.isLocalToday(day);
-            final meals = ref.watch(mealsForDayProvider(day));
-            return SafeArea(
-              child: ListView(
-                padding: const EdgeInsets.all(20),
-                children: [
-                  TodaySectionHeader(
-                    title: context.l10n.viewDayRecords,
-                    addLabel: editable ? context.l10n.logMeal : null,
-                    onAdd: editable ? () => context.push('/log-meal') : null,
-                  ),
-                  Text(AppDates.ymd(day, Localizations.localeOf(context))),
-                  if (editable)
-                    _DietCompleteRow(
-                      value: ref.watch(dayDietCompleteProvider(day)).value,
-                      onChanged: (v) => ref
-                          .read(dietStrategyRepositoryProvider)
-                          .setDayComplete(day, v),
-                    ),
-                  meals.when(
-                    loading: () => const LinearProgressIndicator(),
-                    error: (e, _) => SportLoadError(
-                      onRetry: () => ref.invalidate(mealsForDayProvider(day)),
-                    ),
-                    data: (data) => _MealGroups(
-                      meals: data,
-                      isSelectedToday: editable,
-                      summary: false,
+class _TodayHeader extends StatelessWidget {
+  const _TodayHeader({
+    required this.title,
+    required this.dateLabel,
+    required this.canGoPrev,
+    required this.canGoNext,
+    required this.onPrev,
+    required this.onNext,
+    required this.onCalendar,
+  });
+
+  final String title;
+  final String dateLabel;
+  final bool canGoPrev;
+  final bool canGoNext;
+  final VoidCallback onPrev;
+  final VoidCallback onNext;
+  final VoidCallback onCalendar;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final showDate = title != dateLabel;
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: AppSpacing.section),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: theme.textTheme.headlineSmall),
+                if (showDate) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    dateLabel,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
-              ),
-            );
-          },
-        ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: l10n.prevDay,
+            visualDensity: VisualDensity.compact,
+            onPressed: canGoPrev ? onPrev : null,
+            icon: const Icon(Icons.chevron_left),
+          ),
+          IconButton(
+            tooltip: l10n.nextDay,
+            visualDensity: VisualDensity.compact,
+            onPressed: canGoNext ? onNext : null,
+            icon: const Icon(Icons.chevron_right),
+          ),
+          IconButton(
+            tooltip: l10n.selectDate,
+            onPressed: onCalendar,
+            icon: const Icon(Icons.calendar_today_outlined),
+          ),
+        ],
       ),
     );
+  }
+}
