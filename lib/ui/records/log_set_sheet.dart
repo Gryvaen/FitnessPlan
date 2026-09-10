@@ -21,9 +21,9 @@ Future<bool> showLogSetSheet({
 }) async {
   final l10n = context.l10n;
   if (!AppDates.isLocalToday(day)) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.pastDayReadOnly)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l10n.pastDayReadOnly)));
     return false;
   }
   final result = await showModalBottomSheet<bool>(
@@ -36,7 +36,9 @@ Future<bool> showLogSetSheet({
       targetSets: targetSets,
       initialPerSetValue: perSetValue,
       onSave: (sets, value) async {
-        await ref.read(workoutRepositoryProvider).updateDayItemProgress(
+        await ref
+            .read(workoutRepositoryProvider)
+            .updateDayItemProgress(
               dayWorkoutItemId: dayWorkoutItemId,
               day: day,
               completedSets: sets,
@@ -107,9 +109,9 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
       await widget.onSave(_completedSets, _perSetValue);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.saveFailed('$e'))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.saveFailed('$e'))));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -142,27 +144,76 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
             l10n.editSetsHint(widget.targetSets, valueLabel),
             style: theme.textTheme.meta,
           ),
-          const SizedBox(height: AppSpacing.field),
-          AppDropdown<int>(
+          const SizedBox(height: AppSpacing.section),
+          _StepperField(
             label: l10n.completedSets,
-            value: FormOptions.snapInt(_setOptions, _completedSets),
-            items: _setOptions,
-            onChanged: (v) => setState(() => _completedSets = v),
+            value: _completedSets,
+            onMinus: _completedSets > _setOptions.first
+                ? () => setState(() => _completedSets--)
+                : null,
+            onPlus: _completedSets < _setOptions.last
+                ? () => setState(() => _completedSets++)
+                : null,
           ),
           const SizedBox(height: AppSpacing.field),
-          AppDropdown<int>(
+          _StepperField(
             label: valueLabel,
-            value: FormOptions.snapInt(_valueOptions, _perSetValue),
-            items: _valueOptions,
-            onChanged: (v) => setState(() => _perSetValue = v),
+            value: _perSetValue,
+            onMinus: () =>
+                setState(() => _perSetValue = (_perSetValue - 1).clamp(0, 999)),
+            onPlus: () =>
+                setState(() => _perSetValue = (_perSetValue + 1).clamp(0, 999)),
           ),
           const SizedBox(height: AppSpacing.section),
           FilledButton(
             onPressed: _saving ? null : _submit,
-            child: Text(l10n.save),
+            child: Text(l10n.saveThisSet),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// A labelled `− value +` stepper row for the log-set sheet.
+class _StepperField extends StatelessWidget {
+  const _StepperField({
+    required this.label,
+    required this.value,
+    required this.onMinus,
+    required this.onPlus,
+  });
+
+  final String label;
+  final int value;
+  final VoidCallback? onMinus;
+  final VoidCallback? onPlus;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: theme.textTheme.labelMedium),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            IconButton.outlined(
+              onPressed: onMinus,
+              icon: const Icon(Icons.remove),
+            ),
+            Expanded(
+              child: Text(
+                '$value',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.headlineSmall,
+              ),
+            ),
+            IconButton.outlined(onPressed: onPlus, icon: const Icon(Icons.add)),
+          ],
+        ),
+      ],
     );
   }
 }

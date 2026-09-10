@@ -3807,6 +3807,54 @@ abstract class AppLocalizations {
   /// **'New food'**
   String get createFood;
 
+  /// No description provided for @charCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} characters'**
+  String charCount(int n);
+
+  /// No description provided for @lastNDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} days'**
+  String lastNDays(int n);
+
+  /// No description provided for @nExercises.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} exercises'**
+  String nExercises(int n);
+
+  /// No description provided for @planSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{exercises} exercises · {sets} sets'**
+  String planSummary(int exercises, int sets);
+
+  /// No description provided for @viewWorkoutHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'View workout history'**
+  String get viewWorkoutHistory;
+
+  /// No description provided for @setsWithReps.
+  ///
+  /// In en, this message translates to:
+  /// **'{sets} × {reps}'**
+  String setsWithReps(int sets, String reps);
+
+  /// No description provided for @recentSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent steps'**
+  String get recentSteps;
+
+  /// No description provided for @saveThisSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get saveThisSet;
+
   /// No description provided for @servingSize.
   ///
   /// In en, this message translates to:

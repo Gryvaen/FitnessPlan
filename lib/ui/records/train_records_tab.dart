@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/db.dart';
+import '../../data/repositories/step_repository.dart';
 import '../../data/repositories/workout_repository.dart';
 import '../today/today_workout_card.dart';
 import '../../domain/models.dart';
@@ -25,6 +26,57 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   String _query = '';
   String? _category;
   bool _starting = false;
+
+  /// Groups a day's set logs by exercise name, preserving first-seen order.
+  Map<String, List<WorkoutSetLog>> _groupSets(List<WorkoutSetLog> sets) {
+    final out = <String, List<WorkoutSetLog>>{};
+    for (final s in sets) {
+      out.putIfAbsent(s.exerciseName, () => []).add(s);
+    }
+    return out;
+  }
+
+  String _repsSummary(List<WorkoutSetLog> sets, AppLocalizations l10n) {
+    final values = [
+      for (final s in sets)
+        s.reps != null ? '${s.reps}' : '${s.durationSec ?? 0}s',
+    ];
+    if (values.isEmpty) return '';
+    if (values.every((v) => v == values.first)) return values.first;
+    return values.join('/');
+  }
+
+  void _showStepHistory(
+    BuildContext context,
+    List<StepDay> days,
+    Locale locale,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      showDragHandle: true,
+      builder: (_) => SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          shrinkWrap: true,
+          children: [
+            Text(
+              context.l10n.stepHistory,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            for (final day in days)
+              SportListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.directions_walk),
+                title: Text(AppDates.md(day.date, locale)),
+                trailing: Text(context.l10n.nSteps(day.steps)),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Future<_ExerciseFormData?> _showExerciseFormDialog({
     required BuildContext context,
@@ -101,10 +153,11 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
       if (!mounted) return;
       await showDayWorkoutDetails(context, day);
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(context.l10n.addFailed('$e'))));
+      }
     } finally {
       if (mounted) setState(() => _starting = false);
     }
@@ -133,10 +186,11 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     try {
       await ref.read(workoutRepositoryProvider).deletePlan(plan.plan.id);
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('$e')));
+      }
     }
   }
 
@@ -187,13 +241,14 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                   onRetry: () => ref.invalidate(workoutPlansProvider),
                 ),
                 data: (plans) {
-                  if (plans.isEmpty)
+                  if (plans.isEmpty) {
                     return SportEmptyState(
                       title: l10n.emptyPlans,
                       icon: Icons.fitness_center,
                       actionLabel: l10n.fabNewPlan,
                       onAction: () => context.push('/records/plan'),
                     );
+                  }
                   final plan =
                       plans.where((p) => p.plan.id == _planId).firstOrNull ??
                       plans.first;
@@ -212,10 +267,11 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                           PopupMenuButton<String>(
                             tooltip: l10n.more,
                             onSelected: (v) {
-                              if (v == 'edit')
+                              if (v == 'edit') {
                                 context.push(
                                   '/records/plan?id=${plan.plan.id}',
                                 );
+                              }
                               if (v == 'delete') _deletePlan(plan);
                             },
                             itemBuilder: (_) => [
@@ -232,7 +288,8 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                         ],
                       ),
                       Text(
-                        l10n.nSets(
+                        l10n.planSummary(
+                          plan.items.length,
                           plan.items.fold<int>(
                             0,
                             (sum, i) => sum + i.targetSets,
@@ -280,18 +337,40 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                         SportListTile(
                           contentPadding: EdgeInsets.zero,
                           title: Text(other.plan.name),
+                          subtitle: Text(l10n.nExercises(other.items.length)),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () => setState(() => _planId = other.plan.id),
                         ),
-                      TextButton(
-                        onPressed: () => setState(() => _tab = 1),
-                        child: Text(l10n.workoutHistory),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton(
+                          onPressed: () => setState(() => _tab = 1),
+                          child: Text(l10n.viewWorkoutHistory),
+                        ),
                       ),
                     ],
                   );
                 },
               ),
         if (_tab == 1) ...[
+          ref
+              .watch(recentStepsProvider)
+              .when(
+                loading: () => const SizedBox.shrink(),
+                error: (e, _) => const SizedBox.shrink(),
+                data: (days) {
+                  if (days.isEmpty) return const SizedBox.shrink();
+                  final latest = days.first;
+                  return SportListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.directions_walk),
+                    title: Text(l10n.recentSteps),
+                    subtitle: Text(AppDates.md(latest.date, locale)),
+                    trailing: Text(l10n.nSteps(latest.steps)),
+                    onTap: () => _showStepHistory(context, days, locale),
+                  );
+                },
+              ),
           ref
               .watch(workoutHistoryProvider)
               .when(
@@ -309,22 +388,28 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                         children: [
                           for (final day in days) ...[
                             Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              padding: const EdgeInsets.only(
+                                top: 20,
+                                bottom: 8,
+                              ),
                               child: Text(
-                                AppDates.ymd(day.date, locale),
+                                AppDates.mdWithWeekday(day.date, locale),
                                 style: theme.textTheme.titleMedium,
                               ),
                             ),
-                            for (final set in day.sets)
+                            for (final entry in _groupSets(day.sets).entries)
                               SportListTile(
                                 contentPadding: EdgeInsets.zero,
-                                title: Text(
-                                  l10n.setLine(set.exerciseName, set.setIndex),
+                                title: Text(entry.key),
+                                subtitle: Text(
+                                  l10n.setsWithReps(
+                                    entry.value.length,
+                                    _repsSummary(entry.value, l10n),
+                                  ),
                                 ),
-                                trailing: Text(
-                                  set.reps != null
-                                      ? l10n.nReps(set.reps!)
-                                      : l10n.nSeconds(set.durationSec ?? 0),
+                                trailing: const Icon(
+                                  Icons.chevron_right,
+                                  size: 18,
                                 ),
                                 onTap: () =>
                                     showDayWorkoutDetails(context, day.date),
@@ -332,27 +417,6 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                           ],
                         ],
                       ),
-              ),
-          const SizedBox(height: 24),
-          Text(l10n.stepHistory, style: theme.textTheme.titleMedium),
-          ref
-              .watch(recentStepsProvider)
-              .when(
-                loading: () => const LinearProgressIndicator(),
-                error: (e, _) => SportLoadError(
-                  onRetry: () => ref.invalidate(recentStepsProvider),
-                ),
-                data: (days) => Column(
-                  children: [
-                    for (final day in days)
-                      SportListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.directions_walk),
-                        title: Text(AppDates.md(day.date, locale)),
-                        trailing: Text(l10n.nSteps(day.steps)),
-                      ),
-                  ],
-                ),
               ),
         ],
         if (_tab == 2) ...[
@@ -395,12 +459,13 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                             e.name.toLowerCase().contains(_query),
                       )
                       .toList();
-                  if (visible.isEmpty)
+                  if (visible.isEmpty) {
                     return SportEmptyState(
                       title: l10n.noExercises,
                       actionLabel: l10n.addExercise,
                       onAction: () => _addExercise(context, ref),
                     );
+                  }
                   return Column(
                     children: [
                       for (final ex in visible)
@@ -441,12 +506,13 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                                           .read(workoutRepositoryProvider)
                                           .deleteCustomExercise(ex.id);
                                     } catch (e) {
-                                      if (context.mounted)
+                                      if (context.mounted) {
                                         ScaffoldMessenger.of(
                                           context,
                                         ).showSnackBar(
                                           SnackBar(content: Text('$e')),
                                         );
+                                      }
                                     }
                                   },
                                 )

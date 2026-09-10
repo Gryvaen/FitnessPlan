@@ -32,7 +32,7 @@ class BodyRecordsTab extends ConsumerStatefulWidget {
 }
 
 class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
-  int _period = 30;
+  int _period = 7;
 
   Future<void> addWeight() async {
     final l10n = context.l10n;
@@ -177,16 +177,43 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
                 style: Theme.of(context).textTheme.headlineLarge,
               ),
               if (previous != null)
-                Text(
-                  '${latest.weightKg - previous.weightKg >= 0 ? '+' : ''}${(latest.weightKg - previous.weightKg).toStringAsFixed(1)} kg · ${l10n.sincePreviousRecord}',
-                  style: Theme.of(context).textTheme.bodySmall,
+                Builder(
+                  builder: (context) {
+                    final delta = latest.weightKg - previous.weightKg;
+                    final up = delta > 0;
+                    final flat = delta.abs() < 0.05;
+                    final scheme = Theme.of(context).colorScheme;
+                    return Row(
+                      children: [
+                        Icon(
+                          flat
+                              ? Icons.remove
+                              : up
+                              ? Icons.arrow_upward
+                              : Icons.arrow_downward,
+                          size: 14,
+                          color: flat
+                              ? scheme.onSurfaceVariant
+                              : up
+                              ? scheme.error
+                              : scheme.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${up ? '+' : ''}${delta.toStringAsFixed(1)} kg · '
+                          '${l10n.sincePreviousRecord}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    );
+                  },
                 ),
             ],
             const SizedBox(height: 16),
             SportTabs<int>(
               items: {
-                7: l10n.localeName.startsWith('zh') ? '7天' : '7 days',
-                30: l10n.localeName.startsWith('zh') ? '30天' : '30 days',
+                7: l10n.lastNDays(7),
+                30: l10n.lastNDays(30),
                 0: l10n.filterAll,
               },
               selected: _period,

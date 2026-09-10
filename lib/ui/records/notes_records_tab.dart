@@ -15,18 +15,21 @@ String noteEditPath(DateTime day) {
   return '/records/notes/edit?date=$key';
 }
 
-String _noteMeta(DailyNote note, AppLocalizations l10n) {
-  final chars = note.content.trim().runes.length;
+String _noteMeta(DailyNote note, AppLocalizations l10n, Locale locale) {
   final updated = note.updatedAt;
   final now = DateTime.now();
-  final sameDay =
-      updated.year == now.year &&
-      updated.month == now.month &&
-      updated.day == now.day;
-  final time = sameDay
-      ? DateFormat('HH:mm').format(updated)
-      : DateFormat('M/d HH:mm').format(updated);
-  return l10n.charsUpdated(chars, time);
+  final today = AppDates.dayOnly(now);
+  final updatedDay = AppDates.dayOnly(updated);
+  final time = DateFormat('HH:mm').format(updated);
+  final String dayPart;
+  if (updatedDay == today) {
+    dayPart = l10n.todayWord;
+  } else if (updatedDay == today.subtract(const Duration(days: 1))) {
+    dayPart = l10n.yesterday;
+  } else {
+    dayPart = AppDates.md(updated, locale);
+  }
+  return '$dayPart · $time';
 }
 
 /// Daily journal notes list under Records → Notes.
@@ -79,7 +82,7 @@ class NotesRecordsTab extends ConsumerWidget {
       error: (e, _) =>
           SportLoadError(onRetry: () => ref.invalidate(dailyNotesProvider)),
       data: (notes) {
-        if (notes.isEmpty)
+        if (notes.isEmpty) {
           return ListView(
             children: [
               header,
@@ -91,6 +94,7 @@ class NotesRecordsTab extends ConsumerWidget {
               ),
             ],
           );
+        }
         return Column(
           children: [
             header,
@@ -189,7 +193,7 @@ class NotesRecordsTab extends ConsumerWidget {
                                       ],
                                       const SizedBox(height: 8),
                                       Text(
-                                        _noteMeta(note, l10n),
+                                        _noteMeta(note, l10n, locale),
                                         style: theme.textTheme.bodySmall,
                                       ),
                                     ],

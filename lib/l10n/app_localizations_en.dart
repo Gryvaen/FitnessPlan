@@ -2160,6 +2160,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createFood => 'New food';
 
   @override
+  String charCount(int n) {
+    return '$n characters';
+  }
+
+  @override
+  String lastNDays(int n) {
+    return '$n days';
+  }
+
+  @override
+  String nExercises(int n) {
+    return '$n exercises';
+  }
+
+  @override
+  String planSummary(int exercises, int sets) {
+    return '$exercises exercises · $sets sets';
+  }
+
+  @override
+  String get viewWorkoutHistory => 'View workout history';
+
+  @override
+  String setsWithReps(int sets, String reps) {
+    return '$sets × $reps';
+  }
+
+  @override
+  String get recentSteps => 'Recent steps';
+
+  @override
+  String get saveThisSet => 'Save';
+
+  @override
   String get servingSize => 'Serving size';
 
   @override

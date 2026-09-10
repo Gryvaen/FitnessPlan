@@ -191,6 +191,15 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
                       decoration: InputDecoration(
                         labelText: l10n.planName,
                         hintText: l10n.planNameHint,
+                        suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                          valueListenable: _nameCtrl,
+                          builder: (context, value, _) => value.text.isEmpty
+                              ? const SizedBox.shrink()
+                              : IconButton(
+                                  icon: const Icon(Icons.close),
+                                  onPressed: () => _nameCtrl.clear(),
+                                ),
+                        ),
                       ),
                       textInputAction: TextInputAction.next,
                     ),
@@ -202,10 +211,9 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
                       physics: const NeverScrollableScrollPhysics(),
                       buildDefaultDragHandles: false,
                       itemCount: _rows.length,
-                      onReorder: (oldIndex, newIndex) => setState(() {
-                        if (newIndex > oldIndex) newIndex--;
-                        final row = _rows.removeAt(oldIndex);
-                        _rows.insert(newIndex, row);
+                      onReorderItem: (fromIndex, toIndex) => setState(() {
+                        final row = _rows.removeAt(fromIndex);
+                        _rows.insert(toIndex, row);
                       }),
                       itemBuilder: (context, i) => Padding(
                         key: ObjectKey(_rows[i]),
@@ -215,10 +223,24 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
                           children: [
                             ReorderableDragStartListener(
                               index: i,
-                              child: const SizedBox(
+                              child: SizedBox(
                                 width: 44,
                                 height: 56,
-                                child: Icon(Icons.drag_handle),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      '${i + 1}'.padLeft(2, '0'),
+                                      style: theme.textTheme.bodySmall,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Icon(
+                                      Icons.drag_handle,
+                                      size: 18,
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                             Expanded(
@@ -250,7 +272,6 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
 
 class _PlanRowSection extends StatelessWidget {
   const _PlanRowSection({
-    super.key,
     required this.row,
     required this.exercises,
     required this.canRemove,

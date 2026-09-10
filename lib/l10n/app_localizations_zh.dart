@@ -2114,6 +2114,40 @@ class AppLocalizationsZh extends AppLocalizations {
   String get createFood => '新建食物';
 
   @override
+  String charCount(int n) {
+    return '已输入 $n 字';
+  }
+
+  @override
+  String lastNDays(int n) {
+    return '$n 天';
+  }
+
+  @override
+  String nExercises(int n) {
+    return '$n 个动作';
+  }
+
+  @override
+  String planSummary(int exercises, int sets) {
+    return '$exercises 个动作 · $sets 组';
+  }
+
+  @override
+  String get viewWorkoutHistory => '查看训练历史';
+
+  @override
+  String setsWithReps(int sets, String reps) {
+    return '$sets × $reps';
+  }
+
+  @override
+  String get recentSteps => '最近步数';
+
+  @override
+  String get saveThisSet => '保存本组';
+
+  @override
   String get servingSize => '食用份量';
 
   @override

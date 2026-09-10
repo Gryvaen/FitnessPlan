@@ -53,11 +53,12 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
         _status = note == null ? _SaveStatus.idle : _SaveStatus.saved;
       });
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loading = false;
           _loadFailed = true;
         });
+      }
     }
   }
 
@@ -99,10 +100,6 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
         context,
       ).showSnackBar(SnackBar(content: Text(context.l10n.saveFailed('$e'))));
     }
-  }
-
-  String _titleForDay(AppLocalizations l10n, Locale locale) {
-    return AppDates.relativeDayTitle(_day, AppDates.todayLocal(), l10n, locale);
   }
 
   String _statusLabel(AppLocalizations l10n) {
@@ -153,7 +150,7 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: Text(l10n.delete),
+                child: Text(l10n.discard),
               ),
             ],
           ),
@@ -171,16 +168,6 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
         appBar: AppBar(
           backgroundColor: scheme.surface,
           surfaceTintColor: Colors.transparent,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(_titleForDay(l10n, locale)),
-              Text(
-                _statusLabel(l10n),
-                style: theme.textTheme.meta?.copyWith(fontSize: 12),
-              ),
-            ],
-          ),
           actions: [
             if (editable)
               TextButton(
@@ -197,44 +184,76 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
             ? Center(
                 child: TextButton(onPressed: _load, child: Text(l10n.retry)),
               )
-            : Theme(
-                data: theme.copyWith(
-                  inputDecorationTheme: const InputDecorationTheme(
-                    filled: false,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                  ),
+            : Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.formPage,
+                  4,
+                  AppSpacing.formPage,
+                  AppSpacing.formPage,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.formPage,
-                    8,
-                    AppSpacing.formPage,
-                    AppSpacing.formPage,
-                  ),
-                  child: TextField(
-                    controller: _ctrl,
-                    readOnly: !editable || _status == _SaveStatus.saving,
-                    expands: true,
-                    maxLines: null,
-                    minLines: null,
-                    textAlignVertical: TextAlignVertical.top,
-                    style: bodyStyle,
-                    cursorColor: scheme.primary,
-                    decoration: InputDecoration(
-                      filled: false,
-                      hintText: editable ? l10n.noteHint : null,
-                      hintStyle: bodyStyle?.copyWith(
-                        color: scheme.onSurfaceVariant.withValues(alpha: 0.55),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppDates.ymdWithWeekday(_day, locale),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
                       ),
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      contentPadding: EdgeInsets.zero,
                     ),
-                  ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _statusLabel(l10n),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.field),
+                    Expanded(
+                      child: Theme(
+                        data: theme.copyWith(
+                          inputDecorationTheme: const InputDecorationTheme(
+                            filled: false,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                        child: TextField(
+                          controller: _ctrl,
+                          readOnly: !editable || _status == _SaveStatus.saving,
+                          expands: true,
+                          maxLines: null,
+                          minLines: null,
+                          textAlignVertical: TextAlignVertical.top,
+                          style: bodyStyle,
+                          cursorColor: scheme.primary,
+                          decoration: InputDecoration(
+                            filled: false,
+                            hintText: editable ? l10n.noteHint : null,
+                            hintStyle: bodyStyle?.copyWith(
+                              color: scheme.onSurfaceVariant.withValues(
+                                alpha: 0.55,
+                              ),
+                            ),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        l10n.charCount(_ctrl.text.trim().runes.length),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
       ),
