@@ -231,7 +231,6 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
         const SizedBox(height: 12),
         Expanded(
           child: SwipeTabView(
-            tabIndex: 1,
             index: _tab,
             onIndexChanged: (v) => setState(() => _tab = v),
             children: [

@@ -182,7 +182,6 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
             const SizedBox(height: 8),
             Expanded(
               child: SwipeTabView(
-                tabIndex: 0,
                 index: _periods.indexOf(_period),
                 onIndexChanged: (i) => setState(() => _period = _periods[i]),
                 children: [
