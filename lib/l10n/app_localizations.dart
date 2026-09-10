@@ -3608,6 +3608,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scheduled change cancelled'**
   String get scheduledStrategyCancelled;
+
+  /// No description provided for @tabPlans.
+  ///
+  /// In en, this message translates to:
+  /// **'Plans'**
+  String get tabPlans;
+
+  /// No description provided for @tabHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get tabHistory;
+
+  /// No description provided for @tabRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get tabRecent;
+
+  /// No description provided for @filterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterAll;
+
+  /// No description provided for @currentPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Current plan'**
+  String get currentPlan;
+
+  /// No description provided for @otherPlans.
+  ///
+  /// In en, this message translates to:
+  /// **'Other plans'**
+  String get otherPlans;
+
+  /// No description provided for @exerciseSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercises'**
+  String get exerciseSchedule;
+
+  /// No description provided for @startRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Start recording'**
+  String get startRecording;
+
+  /// No description provided for @continueRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue recording'**
+  String get continueRecording;
+
+  /// No description provided for @viewDayRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'View daily records'**
+  String get viewDayRecords;
+
+  /// No description provided for @viewWorkoutDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'View workout'**
+  String get viewWorkoutDetails;
+
+  /// No description provided for @dailyJournal.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily journal'**
+  String get dailyJournal;
+
+  /// No description provided for @journalSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reflect on training, food and how you feel'**
+  String get journalSubtitle;
+
+  /// No description provided for @journalPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'How are you feeling today?'**
+  String get journalPrompt;
+
+  /// No description provided for @loadRecordsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load records'**
+  String get loadRecordsFailed;
+
+  /// No description provided for @discardChangesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard unsaved changes?'**
+  String get discardChangesTitle;
+
+  /// No description provided for @sincePreviousRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Since previous record'**
+  String get sincePreviousRecord;
+
+  /// No description provided for @stepsPermissionNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission needed'**
+  String get stepsPermissionNeeded;
+
+  /// No description provided for @stepsNotSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Not synced'**
+  String get stepsNotSynced;
+
+  /// No description provided for @appTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Track food, training and progress'**
+  String get appTagline;
 }
 
 class _AppLocalizationsDelegate

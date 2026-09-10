@@ -2059,4 +2059,64 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get scheduledStrategyCancelled => 'Scheduled change cancelled';
+
+  @override
+  String get tabPlans => 'Plans';
+
+  @override
+  String get tabHistory => 'History';
+
+  @override
+  String get tabRecent => 'Recent';
+
+  @override
+  String get filterAll => 'All';
+
+  @override
+  String get currentPlan => 'Current plan';
+
+  @override
+  String get otherPlans => 'Other plans';
+
+  @override
+  String get exerciseSchedule => 'Exercises';
+
+  @override
+  String get startRecording => 'Start recording';
+
+  @override
+  String get continueRecording => 'Continue recording';
+
+  @override
+  String get viewDayRecords => 'View daily records';
+
+  @override
+  String get viewWorkoutDetails => 'View workout';
+
+  @override
+  String get dailyJournal => 'Daily journal';
+
+  @override
+  String get journalSubtitle => 'Reflect on training, food and how you feel';
+
+  @override
+  String get journalPrompt => 'How are you feeling today?';
+
+  @override
+  String get loadRecordsFailed => 'Unable to load records';
+
+  @override
+  String get discardChangesTitle => 'Discard unsaved changes?';
+
+  @override
+  String get sincePreviousRecord => 'Since previous record';
+
+  @override
+  String get stepsPermissionNeeded => 'Permission needed';
+
+  @override
+  String get stepsNotSynced => 'Not synced';
+
+  @override
+  String get appTagline => 'Track food, training and progress';
 }

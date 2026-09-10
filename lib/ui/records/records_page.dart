@@ -39,41 +39,32 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return AppChromeScaffold(
-      appBar: AppBar(
-        title: Text(l10n.records),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(52),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-            child: SegmentedButton<RecordsSegment>(
-              segments: [
-                ButtonSegment(
-                  value: RecordsSegment.body,
-                  label: Text(l10n.segmentBody),
-                  icon: const Icon(Icons.monitor_weight_outlined, size: 18),
-                ),
-                ButtonSegment(
-                  value: RecordsSegment.train,
-                  label: Text(l10n.segmentTrain),
-                  icon: const Icon(Icons.fitness_center, size: 18),
-                ),
-                ButtonSegment(
-                  value: RecordsSegment.notes,
-                  label: Text(l10n.segmentNotes),
-                  icon: const Icon(Icons.sticky_note_2_outlined, size: 18),
-                ),
-              ],
-              selected: {_segment},
-              onSelectionChanged: (s) => setState(() => _segment = s.first),
+      appBar: AppBar(title: Text(l10n.records)),
+
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: SportTabs<RecordsSegment>(
+              items: {
+                RecordsSegment.body: l10n.segmentBody,
+                RecordsSegment.train: l10n.segmentTrain,
+                RecordsSegment.notes: l10n.segmentNotes,
+              },
+              selected: _segment,
+              onSelected: (value) => setState(() => _segment = value),
             ),
           ),
-        ),
+          const Divider(),
+          Expanded(
+            child: switch (_segment) {
+              RecordsSegment.body => const BodyRecordsTab(),
+              RecordsSegment.train => const TrainRecordsTab(),
+              RecordsSegment.notes => const NotesRecordsTab(),
+            },
+          ),
+        ],
       ),
-      body: switch (_segment) {
-        RecordsSegment.body => const BodyRecordsTab(),
-        RecordsSegment.train => const TrainRecordsTab(),
-        RecordsSegment.notes => const NotesRecordsTab(),
-      },
     );
   }
 }

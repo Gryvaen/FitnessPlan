@@ -88,8 +88,9 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
               final resolved = _resolvePlanExercise(item, byId, byName);
               return _PlanRow(
                 exerciseId: resolved?.id ?? item.exerciseId,
-                missingExerciseName:
-                    resolved == null ? item.exerciseName : null,
+                missingExerciseName: resolved == null
+                    ? item.exerciseName
+                    : null,
                 targetSets: item.targetSets,
                 targetReps: item.targetReps,
               );
@@ -112,9 +113,9 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
     final l10n = context.l10n;
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.planNameRequired)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.planNameRequired)));
       return;
     }
     final exercises = await ref.read(workoutRepositoryProvider).listExercises();
@@ -134,9 +135,9 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
     }
     if (items.isEmpty) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.selectOneExercise)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.selectOneExercise)));
       return;
     }
 
@@ -146,19 +147,15 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
       if (widget.planId == null) {
         await repo.createPlan(name: name, items: items);
       } else {
-        await repo.updatePlan(
-          planId: widget.planId!,
-          name: name,
-          items: items,
-        );
+        await repo.updatePlan(planId: widget.planId!, name: name, items: items);
       }
       if (!mounted) return;
       context.pop();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.saveFailed('$e'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.saveFailed('$e'))));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -174,10 +171,7 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
       appBar: AppBar(
         title: Text(widget.planId == null ? l10n.newPlan : l10n.editPlan),
         actions: [
-          TextButton(
-            onPressed: _saving ? null : _save,
-            child: Text(l10n.save),
-          ),
+          TextButton(onPressed: _saving ? null : _save, child: Text(l10n.save)),
         ],
       ),
       body: _loading
@@ -203,18 +197,44 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
                     const SizedBox(height: AppSpacing.section),
                     Text(l10n.exercise, style: theme.textTheme.titleMedium),
                     const SizedBox(height: 8),
-                    for (var i = 0; i < _rows.length; i++) ...[
-                      _PlanRowSection(
-                        key: ValueKey('plan-row-$i-${_rows[i].exerciseId}'),
-                        row: _rows[i],
-                        exercises: exercises,
-                        canRemove: _rows.length > 1,
-                        onChanged: () => setState(() {}),
-                        onRemove: () => setState(() => _rows.removeAt(i)),
+                    ReorderableListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      buildDefaultDragHandles: false,
+                      itemCount: _rows.length,
+                      onReorder: (oldIndex, newIndex) => setState(() {
+                        if (newIndex > oldIndex) newIndex--;
+                        final row = _rows.removeAt(oldIndex);
+                        _rows.insert(newIndex, row);
+                      }),
+                      itemBuilder: (context, i) => Padding(
+                        key: ObjectKey(_rows[i]),
+                        padding: const EdgeInsets.only(bottom: 20),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ReorderableDragStartListener(
+                              index: i,
+                              child: const SizedBox(
+                                width: 44,
+                                height: 56,
+                                child: Icon(Icons.drag_handle),
+                              ),
+                            ),
+                            Expanded(
+                              child: _PlanRowSection(
+                                row: _rows[i],
+                                exercises: exercises,
+                                canRemove: _rows.length > 1,
+                                onChanged: () => setState(() {}),
+                                onRemove: () =>
+                                    setState(() => _rows.removeAt(i)),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      if (i < _rows.length - 1)
-                        const SizedBox(height: AppSpacing.field),
-                    ],
+                    ),
                     OutlinedButton.icon(
                       onPressed: () => setState(() => _rows.add(_PlanRow())),
                       icon: const Icon(Icons.add),
@@ -259,8 +279,9 @@ class _PlanRowSection extends StatelessWidget {
     );
     final isSeconds = unit == ExerciseUnit.seconds;
     final targetLabel = isSeconds ? l10n.targetSeconds : l10n.targetReps;
-    final targetOptions =
-        isSeconds ? FormOptions.targetSeconds : FormOptions.targetRepsOrSeconds;
+    final targetOptions = isSeconds
+        ? FormOptions.targetSeconds
+        : FormOptions.targetRepsOrSeconds;
 
     return Column(
       children: [
@@ -370,15 +391,9 @@ class _MissingExercisePicker extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: Text(
-                displayText,
-                style: theme.textTheme.bodyLarge,
-              ),
+              child: Text(displayText, style: theme.textTheme.bodyLarge),
             ),
-            Icon(
-              Icons.expand_more,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            Icon(Icons.expand_more, color: theme.colorScheme.onSurfaceVariant),
           ],
         ),
       ),

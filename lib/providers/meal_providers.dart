@@ -81,3 +81,8 @@ class WaterGoalNotifier extends Notifier<int> {
 final mealPresetsProvider = FutureProvider.autoDispose<List<MealPreset>>((ref) {
   return ref.watch(mealPresetRepositoryProvider).listPresets();
 });
+
+final mealsForDayProvider = StreamProvider.autoDispose
+    .family<List<MealEntry>, DateTime>((ref, day) {
+      return ref.watch(mealRepositoryProvider).watchForDay(day);
+    });

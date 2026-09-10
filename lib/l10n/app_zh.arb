@@ -1933,5 +1933,26 @@
   "taperRulesBody": "规则：至少观察 14 天（碳循环后 21 天）；称重 ≥10 天且前后各 ≥4 天；确认完整饮食 ≥10 天；比较前后 7 日均值；每步 −25 g 碳水 / −100 kcal；不低于热量与 130 g 碳水下限。",
   "cancelScheduledStrategy": "取消预约切换",
   "cancelScheduledStrategyBody": "尚未生效的新策略将被丢弃，当前生效的策略继续执行。",
-  "scheduledStrategyCancelled": "已取消预约切换"
+  "scheduledStrategyCancelled": "已取消预约切换",
+
+  "tabPlans": "计划",
+  "tabHistory": "历史",
+  "tabRecent": "最近",
+  "filterAll": "全部",
+  "currentPlan": "当前计划",
+  "otherPlans": "其他计划",
+  "exerciseSchedule": "动作安排",
+  "startRecording": "开始记录",
+  "continueRecording": "继续记录",
+  "viewDayRecords": "查看全天记录",
+  "viewWorkoutDetails": "查看训练详情",
+  "dailyJournal": "每日笔记",
+  "journalSubtitle": "记录训练、饮食与身体感受",
+  "journalPrompt": "写下今天的感受…",
+  "loadRecordsFailed": "暂时无法加载记录",
+  "discardChangesTitle": "放弃未保存的修改？",
+  "sincePreviousRecord": "相比上次记录",
+  "stepsPermissionNeeded": "未授权",
+  "stepsNotSynced": "未同步",
+  "appTagline": "记录饮食训练与变化"
 }

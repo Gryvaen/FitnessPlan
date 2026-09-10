@@ -7,26 +7,12 @@ import '../../data/db.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
+import '../theme/sport_chrome.dart';
 
 String noteEditPath(DateTime day) {
   final d = AppDates.dayOnly(day);
   final key = DateFormat('yyyy-MM-dd').format(d);
   return '/records/notes/edit?date=$key';
-}
-
-String _noteTitle(DateTime day, AppLocalizations l10n, Locale locale) {
-  return AppDates.relativeDayTitle(day, AppDates.todayLocal(), l10n, locale);
-}
-
-String _notePreview(String content) {
-  final lines = content
-      .split('\n')
-      .map((l) => l.trim())
-      .where((l) => l.isNotEmpty)
-      .take(2)
-      .toList();
-  if (lines.isEmpty) return '';
-  return lines.join('\n');
 }
 
 String _noteMeta(DailyNote note, AppLocalizations l10n) {
@@ -54,20 +40,35 @@ class NotesRecordsTab extends ConsumerWidget {
     final notesAsync = ref.watch(dailyNotesProvider);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final visuals = AppThemeVisuals.of(context);
     final now = DateTime.now();
 
     final header = Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.listPage, 8, 8, 0),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(20, 16, 8, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(l10n.segmentNotes, style: theme.textTheme.titleMedium),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.dailyJournal,
+                  style: theme.textTheme.titleLarge,
+                ),
+              ),
+              PlainIconAction(
+                icon: Icons.add,
+                label: l10n.fabWriteNote,
+                onPressed: () => context.push(noteEditPath(DateTime.now())),
+              ),
+            ],
           ),
-          IconButton(
-            tooltip: l10n.fabWriteNote,
-            onPressed: () => context.push(noteEditPath(DateTime.now())),
-            icon: const Icon(Icons.add),
+          Text(l10n.journalSubtitle, style: theme.textTheme.bodySmall),
+          const SizedBox(height: 12),
+          SportInkRow(
+            leading: const Icon(Icons.edit_outlined),
+            title: Text(l10n.journalPrompt),
+            trailing: const Icon(Icons.arrow_forward, size: 18),
+            onTap: () => context.push(noteEditPath(DateTime.now())),
           ),
         ],
       ),
@@ -75,34 +76,21 @@ class NotesRecordsTab extends ConsumerWidget {
 
     return notesAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text(l10n.loadFailed('$e'))),
+      error: (e, _) =>
+          SportLoadError(onRetry: () => ref.invalidate(dailyNotesProvider)),
       data: (notes) {
-        if (notes.isEmpty) {
-          return Column(
+        if (notes.isEmpty)
+          return ListView(
             children: [
               header,
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.formPage),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          l10n.notesEmptyHint,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyLarge,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(l10n.notesEmptyCta, style: theme.textTheme.meta),
-                      ],
-                    ),
-                  ),
-                ),
+              SportEmptyState(
+                title: l10n.notesEmptyHint,
+                icon: Icons.edit_note,
+                actionLabel: l10n.fabWriteNote,
+                onAction: () => context.push(noteEditPath(now)),
               ),
             ],
           );
-        }
         return Column(
           children: [
             header,
@@ -123,82 +111,96 @@ class NotesRecordsTab extends ConsumerWidget {
                   final note = notes[index];
                   final day = AppDates.dayOnly(note.date);
                   final isToday = AppDates.isLocalToday(day, now);
-                  final preview = _notePreview(note.content);
-                  final title = _noteTitle(note.date, l10n, locale);
-
-                  final tile = InkWell(
-                    onTap: () => context.push(noteEditPath(note.date)),
-                    child: IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Container(
-                            width: 3,
-                            decoration: BoxDecoration(
-                              color: isToday
-                                  ? visuals.accent
-                                  : Colors.transparent,
-                            ),
+                  final lines = note.content
+                      .split('\n')
+                      .map((s) => s.trim())
+                      .where((s) => s.isNotEmpty)
+                      .toList();
+                  final title = lines.isEmpty ? l10n.dailyJournal : lines.first;
+                  final monthStart =
+                      index == 0 ||
+                      notes[index - 1].date.month != day.month ||
+                      notes[index - 1].date.year != day.year;
+                  final tile = Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (monthStart)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 24, bottom: 12),
+                          child: Text(
+                            DateFormat.yMMMM(
+                              locale.toLanguageTag(),
+                            ).format(day),
+                            style: theme.textTheme.titleMedium,
                           ),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          title,
-                                          style: theme.textTheme.titleSmall,
-                                        ),
-                                      ),
-                                      if (isToday)
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 2,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: visuals.accent,
-                                            borderRadius: BorderRadius.circular(
-                                              999,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            l10n.todayWord,
-                                            style: theme.textTheme.labelSmall
-                                                ?.copyWith(
-                                                  color: visuals.onAccent,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                  if (preview.isNotEmpty) ...[
-                                    const SizedBox(height: 6),
+                        ),
+                      InkWell(
+                        onTap: () => context.push(noteEditPath(day)),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                width: 56,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
                                     Text(
-                                      preview,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(height: 1.4),
+                                      '${day.day}'.padLeft(2, '0'),
+                                      style: theme.textTheme.headlineSmall,
+                                    ),
+                                    Text(
+                                      DateFormat.E(
+                                        locale.toLanguageTag(),
+                                      ).format(day),
+                                      style: theme.textTheme.bodySmall,
                                     ),
                                   ],
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    _noteMeta(note, l10n),
-                                    style: theme.textTheme.meta,
-                                  ),
-                                ],
+                                ),
                               ),
-                            ),
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.only(left: 16),
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      left: BorderSide(
+                                        color: scheme.outlineVariant,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        title,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: theme.textTheme.titleSmall,
+                                      ),
+                                      if (lines.length > 1) ...[
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          lines.skip(1).join('\n'),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        _noteMeta(note, l10n),
+                                        style: theme.textTheme.bodySmall,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
                   );
 
                   if (!isToday) return tile;

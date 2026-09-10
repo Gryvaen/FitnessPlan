@@ -253,108 +253,173 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           listBottomInset(context, hasFab: false),
         ),
         children: [
-          SportHeroCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Padding(
+            padding: const EdgeInsets.only(bottom: 24),
+            child: Row(
               children: [
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 6,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(
-                      l10n.dailyQuota,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: onHero,
-                      ),
-                    ),
-                    if (todayTarget != null &&
-                        todayTarget.source == TargetSource.strategy)
-                      SoftChip(
-                        label: targetChipLabel(todayTarget, profile, l10n),
-                      ),
-                  ],
+                CircleAvatar(
+                  radius: 28,
+                  backgroundColor: theme.colorScheme.primaryContainer,
+                  child: Icon(
+                    Icons.person_outline,
+                    size: 30,
+                    color: theme.colorScheme.onPrimaryContainer,
+                  ),
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      '${shownTargets.calories}',
-                      style: theme.textTheme.statValue?.copyWith(color: onHero),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'kcal',
-                      style: theme.textTheme.statUnit?.copyWith(
-                        color: onHeroMuted,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.myProfile,
+                        style: theme.textTheme.headlineSmall,
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'P ${shownTargets.proteinG.toStringAsFixed(0)} · '
-                  'C ${shownTargets.carbG.toStringAsFixed(0)} · '
-                  'F ${shownTargets.fatG.toStringAsFixed(0)}',
-                  style: theme.textTheme.meta?.copyWith(color: onHeroMuted),
-                ),
-                if (strategyDeficit != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    l10n.dailyDeficitLine('${strategyDeficit.round()}'),
-                    style: theme.textTheme.meta?.copyWith(color: onHeroMuted),
-                  ),
-                ] else if (profile.goal == FitnessGoal.cut &&
-                    profile.dailyDeficit != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    '${l10n.deficitLine('${profile.dailyDeficit!.round()}')}'
-                    '${profile.weeklyLossKg != null ? l10n.weeklyLossLine(profile.weeklyLossKg!.toStringAsFixed(1)) : ''}'
-                    '${profile.goalWeeks != null ? l10n.aboutNWeeks(profile.goalWeeks!) : ''}',
-                    style: theme.textTheme.meta?.copyWith(color: onHeroMuted),
-                  ),
-                ],
-                if (strategyDeficit == null &&
-                    profile.calorieAdjustment > 0) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    l10n.plateauAdjLine('${profile.calorieAdjustment}'),
-                    style: theme.textTheme.meta?.copyWith(color: onHeroMuted),
-                  ),
-                ],
-                const SizedBox(height: 8),
-                Theme(
-                  data: theme.copyWith(
-                    colorScheme: theme.colorScheme.copyWith(
-                      onSurface: onHero,
-                      onSurfaceVariant: onHeroMuted,
-                    ),
-                    dividerColor: onHero.withValues(alpha: 0.2),
-                    textTheme: theme.textTheme.apply(
-                      bodyColor: onHero,
-                      displayColor: onHero,
-                    ),
-                  ),
-                  child: ExpansionTile(
-                    tilePadding: EdgeInsets.zero,
-                    iconColor: onHero,
-                    collapsedIconColor: onHeroMuted,
-                    title: Text(
-                      l10n.calcMethod,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: onHero,
+                      Text(
+                        profile.goal.label(l10n),
+                        style: theme.textTheme.bodySmall,
                       ),
-                    ),
-                    children: [CalorieBreakdown(plan: plan, compact: true)],
+                    ],
                   ),
                 ),
               ],
             ),
           ),
+          TextButton.icon(
+            icon: const Icon(Icons.info_outline, size: 18),
+            label: Text(l10n.dailyQuota),
+            onPressed: () => showModalBottomSheet<void>(
+              context: context,
+              useRootNavigator: true,
+              isScrollControlled: true,
+              showDragHandle: true,
+              builder: (_) => SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: SportHeroCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 6,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(
+                              l10n.dailyQuota,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: onHero,
+                              ),
+                            ),
+                            if (todayTarget != null &&
+                                todayTarget.source == TargetSource.strategy)
+                              SoftChip(
+                                label: targetChipLabel(
+                                  todayTarget,
+                                  profile,
+                                  l10n,
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text(
+                              '${shownTargets.calories}',
+                              style: theme.textTheme.statValue?.copyWith(
+                                color: onHero,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'kcal',
+                              style: theme.textTheme.statUnit?.copyWith(
+                                color: onHeroMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'P ${shownTargets.proteinG.toStringAsFixed(0)} · '
+                          'C ${shownTargets.carbG.toStringAsFixed(0)} · '
+                          'F ${shownTargets.fatG.toStringAsFixed(0)}',
+                          style: theme.textTheme.meta?.copyWith(
+                            color: onHeroMuted,
+                          ),
+                        ),
+                        if (strategyDeficit != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            l10n.dailyDeficitLine('${strategyDeficit.round()}'),
+                            style: theme.textTheme.meta?.copyWith(
+                              color: onHeroMuted,
+                            ),
+                          ),
+                        ] else if (profile.goal == FitnessGoal.cut &&
+                            profile.dailyDeficit != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            '${l10n.deficitLine('${profile.dailyDeficit!.round()}')}'
+                            '${profile.weeklyLossKg != null ? l10n.weeklyLossLine(profile.weeklyLossKg!.toStringAsFixed(1)) : ''}'
+                            '${profile.goalWeeks != null ? l10n.aboutNWeeks(profile.goalWeeks!) : ''}',
+                            style: theme.textTheme.meta?.copyWith(
+                              color: onHeroMuted,
+                            ),
+                          ),
+                        ],
+                        if (strategyDeficit == null &&
+                            profile.calorieAdjustment > 0) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            l10n.plateauAdjLine('${profile.calorieAdjustment}'),
+                            style: theme.textTheme.meta?.copyWith(
+                              color: onHeroMuted,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 8),
+                        Theme(
+                          data: theme.copyWith(
+                            colorScheme: theme.colorScheme.copyWith(
+                              onSurface: onHero,
+                              onSurfaceVariant: onHeroMuted,
+                            ),
+                            dividerColor: onHero.withValues(alpha: 0.2),
+                            textTheme: theme.textTheme.apply(
+                              bodyColor: onHero,
+                              displayColor: onHero,
+                            ),
+                          ),
+                          child: ExpansionTile(
+                            tilePadding: EdgeInsets.zero,
+                            iconColor: onHero,
+                            collapsedIconColor: onHeroMuted,
+                            title: Text(
+                              l10n.calcMethod,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                color: onHero,
+                              ),
+                            ),
+                            children: [
+                              CalorieBreakdown(plan: plan, compact: true),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
           const SizedBox(height: AppSpacing.section),
-          SportSurfaceCard(
+          SportSectionBand(
+            padding: EdgeInsets.zero,
+            showBottomRule: true,
             child: ListTile(
               leading: const Icon(Icons.person_outline),
               title: Text(l10n.myProfile),
@@ -373,7 +438,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
           ),
           const SizedBox(height: AppSpacing.field),
-          SportSurfaceCard(
+          SportSectionBand(
+            padding: EdgeInsets.zero,
+            showBottomRule: true,
             child: ListTile(
               leading: const Icon(Icons.track_changes_outlined),
               title: Text(l10n.nutritionTargets),
@@ -386,7 +453,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
           ),
           const SizedBox(height: AppSpacing.field),
-          SportSurfaceCard(
+          SportSectionBand(
+            padding: EdgeInsets.zero,
+            showBottomRule: true,
             child: ListTile(
               leading: const Icon(Icons.notifications_outlined),
               title: Text(l10n.reminders),
@@ -399,7 +468,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
           ),
           const SizedBox(height: AppSpacing.field),
-          SportSurfaceCard(
+          SportSectionBand(
+            padding: EdgeInsets.zero,
+            showBottomRule: true,
             child: ListTile(
               leading: const Icon(Icons.palette_outlined),
               title: Text(l10n.theme),
@@ -412,7 +483,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
           ),
           const SizedBox(height: AppSpacing.field),
-          SportSurfaceCard(
+          SportSectionBand(
+            padding: EdgeInsets.zero,
+            showBottomRule: true,
             child: ListTile(
               leading: const Icon(Icons.handyman_outlined),
               title: Text(l10n.toolbox),

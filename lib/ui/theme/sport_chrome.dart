@@ -1,6 +1,192 @@
 import 'package:flutter/material.dart';
 
 import 'app_theme.dart';
+import '../../l10n/app_localizations_ext.dart';
+
+/// Large inline page heading used at the top of a tab-root body (replaces the
+/// AppBar title in the V2 "open list" layout). Optional [subtitle] and a
+/// trailing [action] (usually a text button or plain "+").
+class PageTitle extends StatelessWidget {
+  const PageTitle({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.action,
+    this.padding = const EdgeInsets.fromLTRB(
+      AppSpacing.listPage,
+      8,
+      AppSpacing.listPage,
+      AppSpacing.section,
+    ),
+  });
+
+  final String title;
+  final String? subtitle;
+  final Widget? action;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: padding,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: theme.textTheme.headlineSmall),
+                if (subtitle != null && subtitle!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (action != null) ...[const SizedBox(width: 8), action!],
+        ],
+      ),
+    );
+  }
+}
+
+/// Underlined text navigation; wraps at large text sizes instead of clipping.
+class SportTabs<T> extends StatelessWidget {
+  const SportTabs({
+    super.key,
+    required this.items,
+    required this.selected,
+    required this.onSelected,
+  });
+  final Map<T, String> items;
+  final T selected;
+  final ValueChanged<T> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Wrap(
+      spacing: 12,
+      children: [
+        for (final entry in items.entries)
+          Semantics(
+            selected: entry.key == selected,
+            button: true,
+            child: InkWell(
+              onTap: () => onSelected(entry.key),
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 48, minWidth: 64),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      width: 3,
+                      color: entry.key == selected
+                          ? theme.colorScheme.primary
+                          : Colors.transparent,
+                    ),
+                  ),
+                ),
+                child: Text(
+                  entry.value,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: entry.key == selected
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class SportEmptyState extends StatelessWidget {
+  const SportEmptyState({
+    super.key,
+    required this.title,
+    this.message,
+    this.icon = Icons.inbox_outlined,
+    this.actionLabel,
+    this.onAction,
+    this.secondaryLabel,
+    this.onSecondary,
+  });
+  final String title;
+  final String? message;
+  final IconData icon;
+
+  /// Primary call to action, rendered as a [FilledButton].
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  /// Optional lower-emphasis action, rendered as a [TextButton] below the primary.
+  final String? secondaryLabel;
+  final VoidCallback? onSecondary;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 36, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleMedium,
+          ),
+          if (message != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              message!,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+          if (onAction != null && actionLabel != null) ...[
+            const SizedBox(height: 20),
+            FilledButton(onPressed: onAction, child: Text(actionLabel!)),
+          ],
+          if (onSecondary != null && secondaryLabel != null) ...[
+            const SizedBox(height: 4),
+            TextButton(onPressed: onSecondary, child: Text(secondaryLabel!)),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class SportLoadError extends StatelessWidget {
+  const SportLoadError({super.key, required this.onRetry});
+  final VoidCallback onRetry;
+  @override
+  Widget build(BuildContext context) => SportEmptyState(
+    title: context.l10n.loadRecordsFailed,
+    icon: Icons.error_outline,
+    actionLabel: context.l10n.retry,
+    onAction: onRetry,
+  );
+}
 
 /// Tab-root scaffold: flat themed surface with a transparent AppBar.
 class AppChromeScaffold extends StatelessWidget {
@@ -129,7 +315,10 @@ class SportSurfaceCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       margin: margin,
-      decoration: _cardDecoration(v, color: color),
+      decoration: BoxDecoration(
+        color: tint == null ? Colors.transparent : color,
+        border: Border(bottom: BorderSide(color: v.divider)),
+      ),
       clipBehavior: Clip.antiAlias,
       child: Material(
         type: MaterialType.transparency,
@@ -169,28 +358,22 @@ class SportListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final v = AppThemeVisuals.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.compact),
-      child: Material(
-        color: v.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.tile),
-          side: BorderSide(color: v.cardBorder),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: ListTile(
-          enabled: enabled,
-          leading: leading,
-          title: title,
-          subtitle: subtitle,
-          trailing: trailing,
-          onTap: enabled ? onTap : null,
-          dense: dense,
-          isThreeLine: isThreeLine,
-          contentPadding:
-              contentPadding ??
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-        ),
+    return Material(
+      color: Colors.transparent,
+      shape: Border(bottom: BorderSide(color: v.divider)),
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        enabled: enabled,
+        leading: leading,
+        title: title,
+        subtitle: subtitle,
+        trailing: trailing,
+        onTap: enabled ? onTap : null,
+        dense: dense,
+        isThreeLine: isThreeLine,
+        contentPadding:
+            contentPadding ??
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
       ),
     );
   }
@@ -283,7 +466,11 @@ class SportSectionBand extends StatelessWidget {
     final v = AppThemeVisuals.of(context);
     return Container(
       width: double.infinity,
-      decoration: _cardDecoration(v, shadow: false),
+      decoration: BoxDecoration(
+        border: showBottomRule
+            ? Border(bottom: BorderSide(color: v.divider))
+            : null,
+      ),
       child: Padding(padding: padding, child: child),
     );
   }

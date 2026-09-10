@@ -1959,5 +1959,26 @@
   "taperRulesBody": "Rules: at least 14 days of observation (21 after carb cycling); ≥10 weigh-in days with ≥4 in each half; ≥10 confirmed complete food-log days; compare the two 7-day means; each step is −25 g carbohydrate / −100 kcal; never below the energy and 130 g carbohydrate floors.",
   "cancelScheduledStrategy": "Cancel scheduled change",
   "cancelScheduledStrategyBody": "The strategy that has not started yet is discarded. The strategy currently in effect keeps running.",
-  "scheduledStrategyCancelled": "Scheduled change cancelled"
+  "scheduledStrategyCancelled": "Scheduled change cancelled",
+
+  "tabPlans": "Plans",
+  "tabHistory": "History",
+  "tabRecent": "Recent",
+  "filterAll": "All",
+  "currentPlan": "Current plan",
+  "otherPlans": "Other plans",
+  "exerciseSchedule": "Exercises",
+  "startRecording": "Start recording",
+  "continueRecording": "Continue recording",
+  "viewDayRecords": "View daily records",
+  "viewWorkoutDetails": "View workout",
+  "dailyJournal": "Daily journal",
+  "journalSubtitle": "Reflect on training, food and how you feel",
+  "journalPrompt": "How are you feeling today?",
+  "loadRecordsFailed": "Unable to load records",
+  "discardChangesTitle": "Discard unsaved changes?",
+  "sincePreviousRecord": "Since previous record",
+  "stepsPermissionNeeded": "Permission needed",
+  "stepsNotSynced": "Not synced",
+  "appTagline": "Track food, training and progress"
 }

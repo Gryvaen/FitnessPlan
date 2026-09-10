@@ -11,17 +11,17 @@ abstract final class AppColors {
 
 /// Layout spacing tokens.
 abstract final class AppSpacing {
-  static const listPage = 16.0;
+  static const listPage = 20.0;
   static const formPage = 20.0;
   static const card = 16.0;
-  static const section = 12.0;
+  static const section = 24.0;
   static const field = 12.0;
   static const compact = 8.0;
 }
 
 /// Corner radius tokens.
 abstract final class AppRadius {
-  static const card = 20.0;
+  static const card = 16.0;
   static const tile = 14.0;
   static const chip = 999.0;
   static const control = 12.0;
@@ -612,12 +612,9 @@ class AppTheme {
       cardTheme: CardThemeData(
         elevation: 0,
         margin: EdgeInsets.zero,
-        color: visuals.card,
+        color: Colors.transparent,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          side: BorderSide(color: border),
-        ),
+        shape: Border(bottom: BorderSide(color: border)),
       ),
       listTileTheme: ListTileThemeData(
         iconColor: accent,
@@ -653,14 +650,15 @@ class AppTheme {
         circularTrackColor: visuals.track,
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: visuals.card,
-        selectedColor: visuals.accentSoft,
-        checkmarkColor: scheme.onSurface,
-        side: BorderSide(color: border),
-        labelStyle: text.labelLarge?.copyWith(color: scheme.onSurface),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.control),
-        ),
+        backgroundColor: Colors.transparent,
+        selectedColor: accent,
+        checkmarkColor: visuals.onAccent,
+        showCheckmark: false,
+        side: BorderSide.none,
+        labelStyle: text.labelLarge?.copyWith(color: scheme.onSurfaceVariant),
+        secondaryLabelStyle: text.labelLarge?.copyWith(color: visuals.onAccent),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        shape: const StadiumBorder(),
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(

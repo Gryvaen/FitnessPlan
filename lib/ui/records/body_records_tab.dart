@@ -11,10 +11,7 @@ import '../theme/sport_chrome.dart';
 import '../widgets/form_options.dart';
 
 class _WeightLogDraft {
-  const _WeightLogDraft({
-    required this.weightKg,
-    this.bodyFatPct,
-  });
+  const _WeightLogDraft({required this.weightKg, this.bodyFatPct});
 
   final double weightKg;
   final double? bodyFatPct;
@@ -35,12 +32,15 @@ class BodyRecordsTab extends ConsumerStatefulWidget {
 }
 
 class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
+  int _period = 30;
+
   Future<void> addWeight() async {
     final l10n = context.l10n;
     final profile = ref.read(profileProvider);
     final memory = ref.read(formMemoryRepositoryProvider);
-    final extras =
-        memory.hasWeightExtrasMemory ? memory.loadWeightExtras() : null;
+    final extras = memory.hasWeightExtrasMemory
+        ? memory.loadWeightExtras()
+        : null;
     final draft = await showDialog<_WeightLogDraft>(
       context: context,
       builder: (ctx) => _WeightLogDialog(
@@ -57,7 +57,9 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
     if (draft == null || !mounted) return;
 
     try {
-      await ref.read(weightRepositoryProvider).add(
+      await ref
+          .read(weightRepositoryProvider)
+          .add(
             date: DateTime.now(),
             weightKg: draft.weightKg,
             bodyFatPct: draft.bodyFatPct,
@@ -77,18 +79,18 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.saveFailed('$e'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.saveFailed('$e'))));
     }
   }
 
   Future<void> _confirmDelete(WeightLog log) async {
     if (!AppDates.isLocalToday(log.date)) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.pastDayReadOnly)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.pastDayReadOnly)));
       return;
     }
     final l10n = context.l10n;
@@ -115,9 +117,9 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
       await ref.read(weightRepositoryProvider).delete(log.id);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.deleteFailed('$e'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.deleteFailed('$e'))));
     }
   }
 
@@ -137,14 +139,26 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
 
     return logsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text(l10n.loadFailed('$e'))),
+      error: (e, _) =>
+          SportLoadError(onRetry: () => ref.invalidate(weightLogsProvider)),
       data: (logs) {
+        final ordered = [...logs]..sort((a, b) => a.date.compareTo(b.date));
+        final latest = ordered.lastOrNull;
+        final previous = ordered.length > 1
+            ? ordered[ordered.length - 2]
+            : null;
+        final cutoff = AppDates.todayLocal().subtract(
+          Duration(days: _period - 1),
+        );
+        final visible = ordered
+            .where((log) => _period == 0 || !log.date.isBefore(cutoff))
+            .toList();
         final weightSeries = [
-          for (final log in logs)
+          for (final log in visible)
             _SeriesPoint(date: log.date, value: log.weightKg),
         ];
         final bodyFatSeries = [
-          for (final log in logs)
+          for (final log in visible)
             if (log.bodyFatPct != null)
               _SeriesPoint(date: log.date, value: log.bodyFatPct!),
         ];
@@ -157,6 +171,28 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
             listBottomInset(context, hasFab: false),
           ),
           children: [
+            if (latest != null) ...[
+              Text(
+                '${latest.weightKg.toStringAsFixed(1)} kg',
+                style: Theme.of(context).textTheme.headlineLarge,
+              ),
+              if (previous != null)
+                Text(
+                  '${latest.weightKg - previous.weightKg >= 0 ? '+' : ''}${(latest.weightKg - previous.weightKg).toStringAsFixed(1)} kg · ${l10n.sincePreviousRecord}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+            ],
+            const SizedBox(height: 16),
+            SportTabs<int>(
+              items: {
+                7: l10n.localeName.startsWith('zh') ? '7天' : '7 days',
+                30: l10n.localeName.startsWith('zh') ? '30天' : '30 days',
+                0: l10n.filterAll,
+              },
+              selected: _period,
+              onSelected: (v) => setState(() => _period = v),
+            ),
+            const SizedBox(height: 20),
             _SeriesChart(
               title: l10n.chartWeightTitle,
               points: weightSeries,
@@ -196,7 +232,7 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
                   ),
                 ),
               ),
-            ...logs.reversed.map(
+            ...visible.reversed.map(
               (log) => SportListTile(
                 key: ValueKey(log.id),
                 title: Text(
@@ -361,10 +397,7 @@ class _WeightLogDialogState extends State<_WeightLogDialog> {
   void _submit() {
     Navigator.pop(
       context,
-      _WeightLogDraft(
-        weightKg: _weightKg,
-        bodyFatPct: _bodyFatPct,
-      ),
+      _WeightLogDraft(weightKg: _weightKg, bodyFatPct: _bodyFatPct),
     );
   }
 
@@ -405,10 +438,7 @@ class _WeightLogDialogState extends State<_WeightLogDialog> {
           onPressed: () => Navigator.pop(context),
           child: Text(l10n.cancel),
         ),
-        FilledButton(
-          onPressed: _submit,
-          child: Text(l10n.save),
-        ),
+        FilledButton(onPressed: _submit, child: Text(l10n.save)),
       ],
     );
   }

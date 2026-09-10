@@ -31,22 +31,8 @@ class TodayPage extends ConsumerStatefulWidget {
 }
 
 class _TodayPageState extends ConsumerState<TodayPage> {
-  // Both blocks start collapsed and are independent of each other; they
-  // reset whenever the selected day changes.
-  bool _workoutExpanded = false;
-  bool _mealsExpanded = false;
-
   @override
   Widget build(BuildContext context) {
-    ref.listen<DateTime>(selectedDayProvider, (prev, next) {
-      if (prev != next && (_workoutExpanded || _mealsExpanded)) {
-        setState(() {
-          _workoutExpanded = false;
-          _mealsExpanded = false;
-        });
-      }
-    });
-
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context);
     final profile = ref.watch(profileProvider);
@@ -76,7 +62,6 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     final waterMl = ref.watch(waterMlProvider).value ?? 0;
     final waterGoal = ref.watch(waterGoalProvider);
     final steps = ref.watch(stepsForSelectedDayProvider).value ?? 0;
-    final dietComplete = ref.watch(dayDietCompleteProvider(day)).value;
 
     final onPlateau =
         profile.goal == FitnessGoal.cut &&
@@ -448,23 +433,17 @@ class _TodayPageState extends ConsumerState<TodayPage> {
           const SizedBox(height: AppSpacing.section),
           SportSectionBand(
             padding: const EdgeInsets.fromLTRB(
-              AppSpacing.card,
+              0,
               4,
               AppSpacing.compact,
               AppSpacing.compact,
             ),
-            child: TodayWorkoutCard(
-              day: day,
-              sectionPrefix: sectionPrefix,
-              expanded: _workoutExpanded,
-              onToggle: () =>
-                  setState(() => _workoutExpanded = !_workoutExpanded),
-            ),
+            child: TodayWorkoutCard(day: day, sectionPrefix: sectionPrefix),
           ),
           const SizedBox(height: AppSpacing.section),
           SportSectionBand(
             padding: const EdgeInsets.fromLTRB(
-              AppSpacing.card,
+              0,
               4,
               AppSpacing.compact,
               AppSpacing.compact,
@@ -480,11 +459,6 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                           mealsAsync.value!.length,
                           '${intake.calories.round()}',
                         ),
-                  expanded: _mealsExpanded,
-                  onToggle: () =>
-                      setState(() => _mealsExpanded = !_mealsExpanded),
-                  expandLabel: l10n.expandSection,
-                  collapseLabel: l10n.collapseSection,
                   addLabel: isSelectedToday ? l10n.logMeal : null,
                   onAdd: isSelectedToday
                       ? () => context.push('/log-meal')
@@ -508,14 +482,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                     ),
                   ],
                 ),
-                if (_mealsExpanded) ...[
-                  if (isSelectedToday)
-                    _DietCompleteRow(
-                      value: dietComplete,
-                      onChanged: (v) => ref
-                          .read(dietStrategyRepositoryProvider)
-                          .setDayComplete(day, v),
-                    ),
+                ...[
                   const SizedBox(height: 4),
                   mealsAsync.when(
                     loading: () =>
@@ -528,6 +495,11 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                       meals: meals,
                       isSelectedToday: isSelectedToday,
                     ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => showDailyMeals(context, day),
+                    icon: const Icon(Icons.arrow_forward, size: 18),
+                    label: Text(l10n.viewDayRecords),
                   ),
                 ],
               ],
@@ -759,7 +731,13 @@ class _DietCompleteRow extends StatelessWidget {
 }
 
 class _MealGroups extends StatelessWidget {
-  const _MealGroups({required this.meals, required this.isSelectedToday});
+  const _MealGroups({
+    required this.meals,
+    required this.isSelectedToday,
+    this.summary = true,
+  });
+
+  final bool summary;
 
   final List<MealEntry> meals;
   final bool isSelectedToday;
@@ -785,12 +763,31 @@ class _MealGroups extends StatelessWidget {
       if (group.isEmpty) continue;
       final calories = group.fold<double>(0, (sum, m) => sum + m.calories);
       groups.add(
-        _MealTypeGroupTile(
-          title: type.label(l10n),
-          subtitle: '${group.length} · ${calories.round()}',
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            for (final m in group)
-              _MealEntryTile(entry: m, canDismiss: isSelectedToday),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(type.label(l10n), style: theme.textTheme.titleSmall),
+              subtitle: summary
+                  ? Text(
+                      group.map((m) => m.foodName).join(' · '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  : null,
+              trailing: Text(
+                '${calories.round()} kcal',
+                style: theme.textTheme.bodySmall,
+              ),
+              onTap: summary
+                  ? () => showDailyMeals(context, meals.first.date)
+                  : null,
+            ),
+            if (!summary)
+              for (final m in group)
+                _MealEntryTile(entry: m, canDismiss: isSelectedToday),
+            const Divider(),
           ],
         ),
       );
@@ -798,46 +795,6 @@ class _MealGroups extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(right: AppSpacing.compact),
       child: Column(children: groups),
-    );
-  }
-}
-
-class _MealTypeGroupTile extends StatefulWidget {
-  const _MealTypeGroupTile({
-    required this.title,
-    required this.subtitle,
-    required this.children,
-  });
-
-  final String title;
-  final String subtitle;
-  final List<Widget> children;
-
-  @override
-  State<_MealTypeGroupTile> createState() => _MealTypeGroupTileState();
-}
-
-class _MealTypeGroupTileState extends State<_MealTypeGroupTile> {
-  var _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    return ExpansionTile(
-      tilePadding: EdgeInsets.zero,
-      childrenPadding: EdgeInsets.zero,
-      initiallyExpanded: false,
-      onExpansionChanged: (expanded) => setState(() => _expanded = expanded),
-      title: Text(widget.title, style: theme.textTheme.titleSmall),
-      subtitle: Text(widget.subtitle, style: theme.textTheme.meta),
-      trailing: AnimatedRotation(
-        turns: _expanded ? 0.5 : 0,
-        duration: kThemeAnimationDuration,
-        child: Icon(Icons.expand_more, color: scheme.onSurfaceVariant),
-      ),
-      children: widget.children,
     );
   }
 }
@@ -982,11 +939,21 @@ class _StepsStatusLabel extends ConsumerWidget {
           onTap: canOpen ? () => _showStepsDetailSheet(context) : null,
           borderRadius: BorderRadius.circular(12),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(stepsLabel, style: textStyle),
+                Icon(Icons.directions_walk, size: 18, color: mutedColor),
+                const SizedBox(width: 4),
+                Text(
+                  status == StepsSyncStatus.denied
+                      ? l10n.stepsPermissionNeeded
+                      : status == StepsSyncStatus.failed ||
+                            status == StepsSyncStatus.empty
+                      ? l10n.stepsNotSynced
+                      : stepsLabel,
+                  style: textStyle,
+                ),
                 const SizedBox(width: 4),
                 if (showSpinner)
                   SizedBox(
@@ -1233,3 +1200,51 @@ class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
     );
   }
 }
+
+Future<void> showDailyMeals(BuildContext context, DateTime day) =>
+    showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => FractionallySizedBox(
+        heightFactor: .9,
+        child: Consumer(
+          builder: (context, ref, _) {
+            final editable = AppDates.isLocalToday(day);
+            final meals = ref.watch(mealsForDayProvider(day));
+            return SafeArea(
+              child: ListView(
+                padding: const EdgeInsets.all(20),
+                children: [
+                  TodaySectionHeader(
+                    title: context.l10n.viewDayRecords,
+                    addLabel: editable ? context.l10n.logMeal : null,
+                    onAdd: editable ? () => context.push('/log-meal') : null,
+                  ),
+                  Text(AppDates.ymd(day, Localizations.localeOf(context))),
+                  if (editable)
+                    _DietCompleteRow(
+                      value: ref.watch(dayDietCompleteProvider(day)).value,
+                      onChanged: (v) => ref
+                          .read(dietStrategyRepositoryProvider)
+                          .setDayComplete(day, v),
+                    ),
+                  meals.when(
+                    loading: () => const LinearProgressIndicator(),
+                    error: (e, _) => SportLoadError(
+                      onRetry: () => ref.invalidate(mealsForDayProvider(day)),
+                    ),
+                    data: (data) => _MealGroups(
+                      meals: data,
+                      isSelectedToday: editable,
+                      summary: false,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );

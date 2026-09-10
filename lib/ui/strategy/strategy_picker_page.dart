@@ -96,12 +96,6 @@ class _StrategyOption extends StatelessWidget {
   final bool enabled;
   final VoidCallback onTap;
 
-  IconData get _icon => switch (kind) {
-    DietStrategyKind.balanced => Icons.horizontal_rule_rounded,
-    DietStrategyKind.carbCycle => Icons.stacked_line_chart,
-    DietStrategyKind.carbTaper => Icons.stairs_outlined,
-  };
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -111,14 +105,8 @@ class _StrategyOption extends StatelessWidget {
       button: true,
       selected: current,
       child: Material(
-        color: visuals.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          side: BorderSide(
-            color: current ? visuals.accent : visuals.cardBorder,
-            width: current ? 1.5 : 1,
-          ),
-        ),
+        color: Colors.transparent,
+        shape: Border(bottom: BorderSide(color: visuals.divider)),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: enabled ? onTap : null,
@@ -133,7 +121,12 @@ class _StrategyOption extends StatelessWidget {
                     color: visuals.accentSoft,
                     borderRadius: BorderRadius.circular(AppRadius.control),
                   ),
-                  child: Icon(_icon, color: visuals.accent),
+                  child: Icon(
+                    current
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_off,
+                    color: visuals.accent,
+                  ),
                 ),
                 const SizedBox(width: AppSpacing.section),
                 Expanded(

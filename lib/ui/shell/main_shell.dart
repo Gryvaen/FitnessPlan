@@ -48,7 +48,6 @@ class _MainShellState extends ConsumerState<MainShell>
   Widget build(BuildContext context) {
     ref.watch(stepsSyncProvider);
     final l10n = context.l10n;
-    final visuals = AppThemeVisuals.of(context);
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
     final selected = widget.navigationShell.currentIndex;
 
@@ -83,46 +82,18 @@ class _MainShellState extends ConsumerState<MainShell>
             child: SportPillShell(
               child: SizedBox(
                 height: 52,
-                child: Stack(
+                child: Row(
                   children: [
-                    // Shared indicator sliding between the equally divided slots.
-                    AnimatedAlign(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeOutCubic,
-                      alignment: Alignment(
-                        items.length == 1
-                            ? 0
-                            : -1 + selected * 2 / (items.length - 1),
-                        0,
-                      ),
-                      child: FractionallySizedBox(
-                        widthFactor: 1 / items.length,
-                        child: Center(
-                          child: Container(
-                            width: 56,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: visuals.navIndicator,
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                          ),
+                    for (var i = 0; i < items.length; i++)
+                      Expanded(
+                        child: _PillNavItem(
+                          selected: selected == i,
+                          icon: items[i].icon,
+                          selectedIcon: items[i].selectedIcon,
+                          tooltip: items[i].label,
+                          onTap: () => _onTap(i),
                         ),
                       ),
-                    ),
-                    Row(
-                      children: [
-                        for (var i = 0; i < items.length; i++)
-                          Expanded(
-                            child: _PillNavItem(
-                              selected: selected == i,
-                              icon: items[i].icon,
-                              selectedIcon: items[i].selectedIcon,
-                              tooltip: items[i].label,
-                              onTap: () => _onTap(i),
-                            ),
-                          ),
-                      ],
-                    ),
                   ],
                 ),
               ),
@@ -152,7 +123,7 @@ class _PillNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final visuals = AppThemeVisuals.of(context);
+    final accent = AppThemeVisuals.of(context).accent;
     const pillRadius = BorderRadius.all(Radius.circular(18));
 
     return Tooltip(
@@ -178,9 +149,7 @@ class _PillNavItem extends StatelessWidget {
                     selected ? selectedIcon : icon,
                     key: ValueKey(selected),
                     size: 24,
-                    color: selected
-                        ? visuals.onNavIndicator
-                        : scheme.onSurfaceVariant,
+                    color: selected ? accent : scheme.onSurfaceVariant,
                   ),
                 ),
               ),

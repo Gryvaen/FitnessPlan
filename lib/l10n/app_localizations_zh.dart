@@ -2013,4 +2013,64 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get scheduledStrategyCancelled => '已取消预约切换';
+
+  @override
+  String get tabPlans => '计划';
+
+  @override
+  String get tabHistory => '历史';
+
+  @override
+  String get tabRecent => '最近';
+
+  @override
+  String get filterAll => '全部';
+
+  @override
+  String get currentPlan => '当前计划';
+
+  @override
+  String get otherPlans => '其他计划';
+
+  @override
+  String get exerciseSchedule => '动作安排';
+
+  @override
+  String get startRecording => '开始记录';
+
+  @override
+  String get continueRecording => '继续记录';
+
+  @override
+  String get viewDayRecords => '查看全天记录';
+
+  @override
+  String get viewWorkoutDetails => '查看训练详情';
+
+  @override
+  String get dailyJournal => '每日笔记';
+
+  @override
+  String get journalSubtitle => '记录训练、饮食与身体感受';
+
+  @override
+  String get journalPrompt => '写下今天的感受…';
+
+  @override
+  String get loadRecordsFailed => '暂时无法加载记录';
+
+  @override
+  String get discardChangesTitle => '放弃未保存的修改？';
+
+  @override
+  String get sincePreviousRecord => '相比上次记录';
+
+  @override
+  String get stepsPermissionNeeded => '未授权';
+
+  @override
+  String get stepsNotSynced => '未同步';
+
+  @override
+  String get appTagline => '记录饮食训练与变化';
 }

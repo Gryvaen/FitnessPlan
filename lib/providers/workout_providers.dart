@@ -11,9 +11,9 @@ final exercisesProvider = StreamProvider<List<Exercise>>((ref) {
 
 final workoutPlansProvider =
     StreamProvider.autoDispose<List<WorkoutPlanSummary>>((ref) {
-  final repo = ref.watch(workoutRepositoryProvider);
-  return repo.watchPlans().asyncMap((_) => repo.listPlanSummaries());
-});
+      final repo = ref.watch(workoutRepositoryProvider);
+      return repo.watchPlans().asyncMap((_) => repo.listPlanSummaries());
+    });
 
 final todayWorkoutProvider = StreamProvider<DayWorkoutSnapshot>((ref) {
   final day = ref.watch(selectedDayProvider);
@@ -22,5 +22,10 @@ final todayWorkoutProvider = StreamProvider<DayWorkoutSnapshot>((ref) {
 
 final workoutHistoryProvider =
     FutureProvider.autoDispose<List<WorkoutHistoryDay>>((ref) {
-  return ref.watch(workoutRepositoryProvider).recentHistory();
-});
+      return ref.watch(workoutRepositoryProvider).recentHistory();
+    });
+
+final dayWorkoutProvider = StreamProvider.autoDispose
+    .family<DayWorkoutSnapshot, DateTime>((ref, day) {
+      return ref.watch(workoutRepositoryProvider).watchDayWorkout(day);
+    });

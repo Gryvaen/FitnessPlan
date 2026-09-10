@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -10,7 +8,7 @@ import '../theme/app_theme.dart';
 
 enum _SaveStatus { idle, dirty, saving, saved }
 
-/// Full-screen memo-style daily note editor with debounced autosave.
+/// Full-screen memo-style daily note editor with explicit save and an unsaved-change guard.
 class NoteEditPage extends ConsumerStatefulWidget {
   const NoteEditPage({super.key, this.date});
 
@@ -22,14 +20,13 @@ class NoteEditPage extends ConsumerStatefulWidget {
 }
 
 class _NoteEditPageState extends ConsumerState<NoteEditPage> {
-  static const _debounce = Duration(milliseconds: 800);
-
   late final DateTime _day;
   late final TextEditingController _ctrl;
   var _loading = true;
   var _status = _SaveStatus.idle;
   DateTime? _savedAt;
-  Timer? _timer;
+  bool _allowPop = false;
+  bool _loadFailed = false;
   String _lastSaved = '';
 
   @override
@@ -43,36 +40,41 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
   }
 
   Future<void> _load() async {
-    final note = await ref.read(noteRepositoryProvider).getByDate(_day);
-    if (!mounted) return;
-    final text = note?.content ?? '';
-    _ctrl.text = text;
-    _lastSaved = text.trim();
-    setState(() {
-      _loading = false;
-      _savedAt = note?.updatedAt;
-      _status = note == null ? _SaveStatus.idle : _SaveStatus.saved;
-    });
+    try {
+      final note = await ref.read(noteRepositoryProvider).getByDate(_day);
+      if (!mounted) return;
+      final text = note?.content ?? '';
+      _lastSaved = text.trim();
+      _ctrl.text = text;
+      setState(() {
+        _loading = false;
+        _loadFailed = false;
+        _savedAt = note?.updatedAt;
+        _status = note == null ? _SaveStatus.idle : _SaveStatus.saved;
+      });
+    } catch (_) {
+      if (mounted)
+        setState(() {
+          _loading = false;
+          _loadFailed = true;
+        });
+    }
   }
 
   void _onChanged() {
     if (!AppDates.isLocalToday(_day)) return;
     final trimmed = _ctrl.text.trim();
     if (trimmed == _lastSaved) {
-      _timer?.cancel();
       if (_status == _SaveStatus.dirty) {
         setState(() => _status = _SaveStatus.saved);
       }
       return;
     }
     setState(() => _status = _SaveStatus.dirty);
-    _timer?.cancel();
-    _timer = Timer(_debounce, _persist);
   }
 
   Future<void> _persist() async {
-    if (!AppDates.isLocalToday(_day)) return;
-    _timer?.cancel();
+    if (!AppDates.isLocalToday(_day) || _status == _SaveStatus.saving) return;
     final text = _ctrl.text;
     final trimmed = text.trim();
     if (trimmed == _lastSaved) {
@@ -81,10 +83,9 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
     }
     setState(() => _status = _SaveStatus.saving);
     try {
-      await ref.read(noteRepositoryProvider).saveOrClear(
-            date: _day,
-            content: text,
-          );
+      await ref
+          .read(noteRepositoryProvider)
+          .saveOrClear(date: _day, content: text);
       if (!mounted) return;
       _lastSaved = trimmed;
       setState(() {
@@ -94,19 +95,14 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _status = _SaveStatus.dirty);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.saveFailed('$e'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.saveFailed('$e'))));
     }
   }
 
   String _titleForDay(AppLocalizations l10n, Locale locale) {
-    return AppDates.relativeDayTitle(
-      _day,
-      AppDates.todayLocal(),
-      l10n,
-      locale,
-    );
+    return AppDates.relativeDayTitle(_day, AppDates.todayLocal(), l10n, locale);
   }
 
   String _statusLabel(AppLocalizations l10n) {
@@ -126,7 +122,6 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
 
   @override
   void dispose() {
-    _timer?.cancel();
     _ctrl.removeListener(_onChanged);
     _ctrl.dispose();
     super.dispose();
@@ -141,74 +136,108 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
     final bodyStyle = theme.textTheme.bodyLarge?.copyWith(height: 1.55);
     final editable = AppDates.isLocalToday(_day);
 
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      backgroundColor: scheme.surfaceContainerLowest,
-      appBar: AppBar(
-        backgroundColor: scheme.surfaceContainerLowest,
-        surfaceTintColor: Colors.transparent,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(_titleForDay(l10n, locale)),
-            Text(
-              _statusLabel(l10n),
-              style: theme.textTheme.meta?.copyWith(fontSize: 12),
-            ),
+    return PopScope(
+      canPop:
+          _allowPop ||
+          (_status != _SaveStatus.dirty && _status != _SaveStatus.saving),
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop || _status == _SaveStatus.saving) return;
+        final discard = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(l10n.discardChangesTitle),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(l10n.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(l10n.delete),
+              ),
+            ],
+          ),
+        );
+        if (discard == true && mounted) {
+          setState(() => _allowPop = true);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) Navigator.pop(context);
+          });
+        }
+      },
+      child: Scaffold(
+        resizeToAvoidBottomInset: true,
+        backgroundColor: scheme.surface,
+        appBar: AppBar(
+          backgroundColor: scheme.surface,
+          surfaceTintColor: Colors.transparent,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(_titleForDay(l10n, locale)),
+              Text(
+                _statusLabel(l10n),
+                style: theme.textTheme.meta?.copyWith(fontSize: 12),
+              ),
+            ],
+          ),
+          actions: [
+            if (editable)
+              TextButton(
+                onPressed: _loading || _status == _SaveStatus.saving
+                    ? null
+                    : _persist,
+                child: Text(l10n.save),
+              ),
           ],
         ),
-        actions: [
-          if (editable)
-            TextButton(
-              onPressed: _loading || _status == _SaveStatus.saving
-                  ? null
-                  : _persist,
-              child: Text(l10n.save),
-            ),
-        ],
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : Theme(
-              data: theme.copyWith(
-                inputDecorationTheme: const InputDecorationTheme(
-                  filled: false,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.formPage,
-                  8,
-                  AppSpacing.formPage,
-                  AppSpacing.formPage,
-                ),
-                child: TextField(
-                  controller: _ctrl,
-                  readOnly: !editable,
-                  expands: true,
-                  maxLines: null,
-                  minLines: null,
-                  textAlignVertical: TextAlignVertical.top,
-                  style: bodyStyle,
-                  cursorColor: scheme.primary,
-                  decoration: InputDecoration(
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _loadFailed
+            ? Center(
+                child: TextButton(onPressed: _load, child: Text(l10n.retry)),
+              )
+            : Theme(
+                data: theme.copyWith(
+                  inputDecorationTheme: const InputDecorationTheme(
                     filled: false,
-                    hintText: editable ? l10n.noteHint : null,
-                    hintStyle: bodyStyle?.copyWith(
-                      color: scheme.onSurfaceVariant.withValues(alpha: 0.55),
-                    ),
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
                   ),
                 ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.formPage,
+                    8,
+                    AppSpacing.formPage,
+                    AppSpacing.formPage,
+                  ),
+                  child: TextField(
+                    controller: _ctrl,
+                    readOnly: !editable || _status == _SaveStatus.saving,
+                    expands: true,
+                    maxLines: null,
+                    minLines: null,
+                    textAlignVertical: TextAlignVertical.top,
+                    style: bodyStyle,
+                    cursorColor: scheme.primary,
+                    decoration: InputDecoration(
+                      filled: false,
+                      hintText: editable ? l10n.noteHint : null,
+                      hintStyle: bodyStyle?.copyWith(
+                        color: scheme.onSurfaceVariant.withValues(alpha: 0.55),
+                      ),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                ),
               ),
-            ),
+      ),
     );
   }
 }

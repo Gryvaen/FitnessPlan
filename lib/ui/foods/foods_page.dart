@@ -22,23 +22,38 @@ class _QueryNotifier extends Notifier<String> {
 
 final _categoryCountsProvider =
     FutureProvider.autoDispose<List<FoodCategoryCount>>((ref) async {
-  await ref.watch(foodsSeedProvider.future);
-  return ref.watch(foodRepositoryProvider).categoryCounts();
-});
+      await ref.watch(foodsSeedProvider.future);
+      return ref.watch(foodRepositoryProvider).categoryCounts();
+    });
 
-final _foodSearchProvider =
-    FutureProvider.autoDispose<List<FoodItem>>((ref) async {
+final _foodSearchProvider = FutureProvider.autoDispose<List<FoodItem>>((
+  ref,
+) async {
   await ref.watch(foodsSeedProvider.future);
   final q = ref.watch(_foodQueryProvider).trim();
   if (q.isEmpty) return const [];
   return ref.watch(foodRepositoryProvider).search(q);
 });
 
-class FoodsPage extends ConsumerWidget {
+final _recentFoodsProvider = FutureProvider.autoDispose<List<FoodItem>>((
+  ref,
+) async {
+  ref.watch(todayMealsProvider);
+  await ref.watch(foodsSeedProvider.future);
+  return ref.watch(foodRepositoryProvider).recentFoods();
+});
+
+class FoodsPage extends ConsumerStatefulWidget {
   const FoodsPage({super.key});
+  @override
+  ConsumerState<FoodsPage> createState() => _FoodsPageState();
+}
+
+class _FoodsPageState extends ConsumerState<FoodsPage> {
+  int _tab = 0;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = context.l10n;
     final searching = ref.watch(_foodQueryProvider).trim().isNotEmpty;
 
@@ -75,8 +90,21 @@ class FoodsPage extends ConsumerWidget {
               onChanged: (v) => ref.read(_foodQueryProvider.notifier).set(v),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: SportTabs<int>(
+              items: {0: l10n.tabRecent, 1: l10n.favorites, 2: l10n.categories},
+              selected: _tab,
+              onSelected: (v) => setState(() => _tab = v),
+            ),
+          ),
+          const SizedBox(height: 8),
           Expanded(
-            child: searching ? const _FoodSearchList() : const _FoodBrowse(),
+            child: searching
+                ? const _FoodSearchList()
+                : _tab == 2
+                ? const _FoodBrowse()
+                : _FoodCollection(favorites: _tab == 1),
           ),
         ],
       ),
@@ -128,7 +156,9 @@ class _FoodBrowse extends ConsumerWidget {
             else
               for (final c in categories)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.listPage),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.listPage,
+                  ),
                   child: SportListTile(
                     title: Text(
                       c.category.localizedCategory(l10n),
@@ -167,7 +197,14 @@ class _FoodSearchList extends ConsumerWidget {
       error: (e, _) => Center(child: Text(l10n.loadFailed('$e'))),
       data: (foods) {
         if (foods.isEmpty) {
-          return Center(child: Text(l10n.noFoodFound, style: theme.textTheme.meta));
+          return SingleChildScrollView(
+            child: SportEmptyState(
+              title: l10n.noFoodFound,
+              icon: Icons.search,
+              actionLabel: l10n.custom,
+              onAction: () => context.push('/foods/custom'),
+            ),
+          );
         }
         return ListView.builder(
           padding: EdgeInsets.only(
@@ -177,7 +214,9 @@ class _FoodSearchList extends ConsumerWidget {
           itemBuilder: (context, i) {
             final f = foods[i];
             return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.listPage),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.listPage,
+              ),
               child: SportListTile(
                 key: ValueKey(f.id),
                 title: Text(f.name, style: theme.textTheme.bodyLarge),
@@ -191,6 +230,61 @@ class _FoodSearchList extends ConsumerWidget {
           },
         );
       },
+    );
+  }
+}
+
+class _FoodCollection extends ConsumerWidget {
+  const _FoodCollection({required this.favorites});
+  final bool favorites;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final data = favorites
+        ? ref.watch(favoriteFoodsProvider)
+        : ref.watch(_recentFoodsProvider);
+    return data.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => SportLoadError(
+        onRetry: () {
+          if (favorites) {
+            ref.invalidate(favoriteFoodsProvider);
+          } else {
+            ref.invalidate(_recentFoodsProvider);
+          }
+        },
+      ),
+      data: (foods) => foods.isEmpty
+          ? (favorites
+                ? SportEmptyState(
+                    title: context.l10n.noFavorites,
+                    icon: Icons.star_outline,
+                  )
+                : const _FoodBrowse())
+          : ListView.builder(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                0,
+                20,
+                listBottomInset(context, hasFab: false),
+              ),
+              itemCount: foods.length,
+              itemBuilder: (context, index) {
+                final food = foods[index];
+                return SportListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    favorites ? Icons.star_outline : Icons.restaurant_outlined,
+                  ),
+                  title: Text(food.name),
+                  subtitle: Text(food.category.localizedCategory(context.l10n)),
+                  trailing: Text(
+                    '${food.kcalPer100.round()} kcal/100g',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  onTap: () => context.push('/foods/${food.id}'),
+                );
+              },
+            ),
     );
   }
 }

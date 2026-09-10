@@ -21,14 +21,12 @@ class TodayWorkoutCard extends ConsumerWidget {
     super.key,
     required this.day,
     required this.sectionPrefix,
-    required this.expanded,
-    required this.onToggle,
+    this.showDetails = false,
   });
 
   final DateTime day;
   final String sectionPrefix;
-  final bool expanded;
-  final VoidCallback onToggle;
+  final bool showDetails;
 
   String _groupTitle(DayWorkoutGroup group, AppLocalizations l10n) {
     final name = group.workout.planName?.trim();
@@ -253,10 +251,6 @@ class TodayWorkoutCard extends ConsumerWidget {
     return TodaySectionHeader(
       title: l10n.sectionWorkout(sectionPrefix),
       summary: summary,
-      expanded: expanded,
-      onToggle: onToggle,
-      expandLabel: l10n.expandSection,
-      collapseLabel: l10n.collapseSection,
       addLabel: canAdd ? l10n.addTodayWorkout : null,
       onAdd: canAdd ? () => _pickPlan(context, ref) : null,
       trailing: [
@@ -335,7 +329,7 @@ class TodayWorkoutCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final async = ref.watch(todayWorkoutProvider);
+    final async = ref.watch(dayWorkoutProvider(day));
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final editable = AppDates.isLocalToday(day);
@@ -352,11 +346,10 @@ class TodayWorkoutCard extends ConsumerWidget {
             canSaveAsPlan: false,
             summary: null,
           ),
-          if (expanded)
-            const SizedBox(
-              height: 48,
-              child: Center(child: CircularProgressIndicator()),
-            ),
+          const SizedBox(
+            height: 48,
+            child: Center(child: CircularProgressIndicator()),
+          ),
         ],
       ),
       error: (e, _) => Text(l10n.workoutLoadFailed('$e')),
@@ -373,16 +366,15 @@ class TodayWorkoutCard extends ConsumerWidget {
                 canSaveAsPlan: editable,
                 summary: l10n.noWorkoutShort,
               ),
-              if (expanded)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  child: Center(
-                    child: Text(
-                      editable ? l10n.noWorkoutTodo : l10n.pastDayReadOnly,
-                      style: theme.textTheme.meta,
-                    ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Center(
+                  child: Text(
+                    editable ? l10n.noWorkoutTodo : l10n.pastDayReadOnly,
+                    style: theme.textTheme.meta,
                   ),
                 ),
+              ),
             ],
           );
         }
@@ -401,7 +393,32 @@ class TodayWorkoutCard extends ConsumerWidget {
               canSaveAsPlan: true,
               summary: '$done/$total',
             ),
-            if (expanded) ...[
+            if (!showDetails) ...[
+              for (final group in snapshot.groups.take(2))
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(_groupTitle(group, l10n)),
+                  subtitle: Text(
+                    l10n.workoutProgressHint(
+                      group.doneCount,
+                      group.items.length,
+                    ),
+                  ),
+                  trailing: const Icon(Icons.arrow_forward, size: 18),
+                  onTap: () => showDayWorkoutDetails(context, day),
+                ),
+              SportProgressBar(
+                value: total == 0 ? 0 : done / total,
+                minHeight: 4,
+              ),
+              TextButton(
+                onPressed: () => showDayWorkoutDetails(context, day),
+                child: Text(
+                  editable ? l10n.continueRecording : l10n.viewWorkoutDetails,
+                ),
+              ),
+            ],
+            if (showDetails) ...[
               const SizedBox(height: 4),
               for (final group in snapshot.groups)
                 _DayWorkoutGroupTile(
@@ -434,7 +451,7 @@ class TodayWorkoutCard extends ConsumerWidget {
   }
 }
 
-class _DayWorkoutGroupTile extends StatefulWidget {
+class _DayWorkoutGroupTile extends StatelessWidget {
   const _DayWorkoutGroupTile({
     required this.title,
     required this.done,
@@ -443,57 +460,56 @@ class _DayWorkoutGroupTile extends StatefulWidget {
     required this.canRemove,
     required this.onRemove,
   });
-
   final String title;
   final int done;
   final int total;
   final List<Widget> children;
   final bool canRemove;
   final VoidCallback onRemove;
-
   @override
-  State<_DayWorkoutGroupTile> createState() => _DayWorkoutGroupTileState();
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      ListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Text(title),
+        subtitle: Text('$done/$total'),
+        trailing: canRemove
+            ? IconButton(
+                tooltip: context.l10n.removeDayWorkout,
+                onPressed: onRemove,
+                icon: const Icon(Icons.delete_outline),
+              )
+            : null,
+      ),
+      ...children,
+      const Divider(),
+    ],
+  );
 }
 
-class _DayWorkoutGroupTileState extends State<_DayWorkoutGroupTile> {
-  var _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final l10n = context.l10n;
-
-    return ExpansionTile(
-      tilePadding: EdgeInsets.zero,
-      childrenPadding: EdgeInsets.zero,
-      initiallyExpanded: false,
-      onExpansionChanged: (expanded) => setState(() => _expanded = expanded),
-      title: Text(widget.title, style: theme.textTheme.titleSmall),
-      subtitle: Text(
-        '${widget.done}/${widget.total}',
-        style: theme.textTheme.meta,
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (widget.canRemove)
-            IconButton(
-              tooltip: l10n.removeDayWorkout,
-              onPressed: widget.onRemove,
-              icon: const Icon(Icons.delete_outline),
+Future<void> showDayWorkoutDetails(BuildContext context, DateTime day) =>
+    showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => FractionallySizedBox(
+        heightFactor: .9,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: TodayWorkoutCard(
+              day: day,
+              sectionPrefix: AppDates.isLocalToday(day)
+                  ? context.l10n.today
+                  : context.l10n.sectionThatDay,
+              showDetails: true,
             ),
-          AnimatedRotation(
-            turns: _expanded ? 0.5 : 0,
-            duration: kThemeAnimationDuration,
-            child: Icon(Icons.expand_more, color: scheme.onSurfaceVariant),
           ),
-        ],
+        ),
       ),
-      children: widget.children,
     );
-  }
-}
 
 class _WorkoutItemTile extends ConsumerWidget {
   const _WorkoutItemTile({
