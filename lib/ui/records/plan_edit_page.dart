@@ -334,35 +334,24 @@ class _PlanRowSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: AppDropdown<int>(
-                label: l10n.targetSets,
-                value: FormOptions.snapInt(
-                  FormOptions.targetSets,
-                  row.targetSets,
-                ),
-                items: FormOptions.targetSets,
-                onChanged: (v) {
-                  row.targetSets = v;
-                  onChanged();
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: AppDropdown<int>(
-                label: targetLabel,
-                value: FormOptions.snapInt(targetOptions, row.targetReps),
-                items: targetOptions,
-                onChanged: (v) {
-                  row.targetReps = v;
-                  onChanged();
-                },
-              ),
-            ),
-          ],
+        AppDropdown<int>(
+          label: l10n.targetSets,
+          value: FormOptions.snapInt(FormOptions.targetSets, row.targetSets),
+          items: FormOptions.targetSets,
+          onChanged: (v) {
+            row.targetSets = v;
+            onChanged();
+          },
+        ),
+        const SizedBox(height: 12),
+        AppDropdown<int>(
+          label: targetLabel,
+          value: FormOptions.snapInt(targetOptions, row.targetReps),
+          items: targetOptions,
+          onChanged: (v) {
+            row.targetReps = v;
+            onChanged();
+          },
         ),
       ],
     );
