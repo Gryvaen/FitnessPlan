@@ -5,8 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../data/repositories/app_update_repository.dart';
-import '../../domain/diet_plan.dart';
-import '../../domain/models.dart';
+import '../../domain/calorie_calculator.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../strategy/strategy_labels.dart';
@@ -188,345 +187,182 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     });
 
     final plan = ref.read(profileRepositoryProvider).buildPlan(profile);
-    // Today's resolved target: follows the active fat-loss strategy when one
-    // is in effect, otherwise the plain profile target.
-    final todayTarget = ref.watch(todayTargetProvider).value;
-    final shownTargets = todayTarget?.toMacroTargets() ?? profile.targets;
-    final strategyDeficit = todayTarget?.source == TargetSource.strategy
-        ? todayTarget?.plannedDeficit
-        : null;
     final theme = Theme.of(context);
     final l10n = context.l10n;
-    final visuals = AppThemeVisuals.of(context);
-    final onHero = visuals.onHero;
-    final onHeroMuted = visuals.onHeroMuted;
     final isAndroid = defaultTargetPlatform == TargetPlatform.android;
     final versionLabel = _packageInfo?.version;
 
     return AppChromeScaffold(
-      appBar: AppBar(
-        title: Row(
+      body: SafeArea(
+        bottom: false,
+        child: ListView(
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.listPage,
+            8,
+            AppSpacing.listPage,
+            listBottomInset(context, hasFab: false),
+          ),
           children: [
-            Text(l10n.me),
-            if (versionLabel != null) ...[
-              const SizedBox(width: 8),
-              Text(
-                versionLabel,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+            PageTitle(title: l10n.me),
+            SportListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: CircleAvatar(
+                radius: 24,
+                backgroundColor: theme.colorScheme.primaryContainer,
+                child: Icon(
+                  Icons.person_outline,
+                  color: theme.colorScheme.onPrimaryContainer,
                 ),
               ),
-            ],
-            const SizedBox(width: 4),
-            _DayNightToggle(
-              isDark: theme.brightness == Brightness.dark,
-              onToggle: () {
-                final current = ref.read(themeProvider);
-                ref.read(themeProvider.notifier).select(current.toggled);
-              },
-            ),
-          ],
-        ),
-        actions: [
-          if (isAndroid)
-            IconButton(
-              onPressed: update.isBusy ? null : _checkForUpdate,
-              tooltip: update.phase == AppUpdatePhase.downloading
-                  ? (update.progress > 0
-                        ? '${(update.progress * 100).toStringAsFixed(0)}%'
-                        : l10n.connecting)
-                  : l10n.checkUpdate,
-              icon: _UpdateDownloadIcon(status: update),
-            ),
-          IconButton(
-            onPressed: _clearData,
-            tooltip: l10n.clearData,
-            icon: const Icon(Icons.delete_outline),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(
-          AppSpacing.formPage,
-          AppSpacing.formPage,
-          AppSpacing.formPage,
-          listBottomInset(context, hasFab: false),
-        ),
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 24),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: theme.colorScheme.primaryContainer,
-                  child: Icon(
-                    Icons.person_outline,
-                    size: 30,
-                    color: theme.colorScheme.onPrimaryContainer,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.myProfile,
-                        style: theme.textTheme.headlineSmall,
-                      ),
-                      Text(
-                        profile.goal.label(l10n),
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          TextButton.icon(
-            icon: const Icon(Icons.info_outline, size: 18),
-            label: Text(l10n.dailyQuota),
-            onPressed: () => showModalBottomSheet<void>(
-              context: context,
-              useRootNavigator: true,
-              isScrollControlled: true,
-              showDragHandle: true,
-              builder: (_) => SafeArea(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: SportHeroCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 6,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            Text(
-                              l10n.dailyQuota,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: onHero,
-                              ),
-                            ),
-                            if (todayTarget != null &&
-                                todayTarget.source == TargetSource.strategy)
-                              SoftChip(
-                                label: targetChipLabel(
-                                  todayTarget,
-                                  profile,
-                                  l10n,
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              '${shownTargets.calories}',
-                              style: theme.textTheme.statValue?.copyWith(
-                                color: onHero,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'kcal',
-                              style: theme.textTheme.statUnit?.copyWith(
-                                color: onHeroMuted,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'P ${shownTargets.proteinG.toStringAsFixed(0)} · '
-                          'C ${shownTargets.carbG.toStringAsFixed(0)} · '
-                          'F ${shownTargets.fatG.toStringAsFixed(0)}',
-                          style: theme.textTheme.meta?.copyWith(
-                            color: onHeroMuted,
-                          ),
-                        ),
-                        if (strategyDeficit != null) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            l10n.dailyDeficitLine('${strategyDeficit.round()}'),
-                            style: theme.textTheme.meta?.copyWith(
-                              color: onHeroMuted,
-                            ),
-                          ),
-                        ] else if (profile.goal == FitnessGoal.cut &&
-                            profile.dailyDeficit != null) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            '${l10n.deficitLine('${profile.dailyDeficit!.round()}')}'
-                            '${profile.weeklyLossKg != null ? l10n.weeklyLossLine(profile.weeklyLossKg!.toStringAsFixed(1)) : ''}'
-                            '${profile.goalWeeks != null ? l10n.aboutNWeeks(profile.goalWeeks!) : ''}',
-                            style: theme.textTheme.meta?.copyWith(
-                              color: onHeroMuted,
-                            ),
-                          ),
-                        ],
-                        if (strategyDeficit == null &&
-                            profile.calorieAdjustment > 0) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            l10n.plateauAdjLine('${profile.calorieAdjustment}'),
-                            style: theme.textTheme.meta?.copyWith(
-                              color: onHeroMuted,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 8),
-                        Theme(
-                          data: theme.copyWith(
-                            colorScheme: theme.colorScheme.copyWith(
-                              onSurface: onHero,
-                              onSurfaceVariant: onHeroMuted,
-                            ),
-                            dividerColor: onHero.withValues(alpha: 0.2),
-                            textTheme: theme.textTheme.apply(
-                              bodyColor: onHero,
-                              displayColor: onHero,
-                            ),
-                          ),
-                          child: ExpansionTile(
-                            tilePadding: EdgeInsets.zero,
-                            iconColor: onHero,
-                            collapsedIconColor: onHeroMuted,
-                            title: Text(
-                              l10n.calcMethod,
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                color: onHero,
-                              ),
-                            ),
-                            children: [
-                              CalorieBreakdown(plan: plan, compact: true),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              title: Text(
+                l10n.profileGreeting,
+                style: theme.textTheme.titleMedium,
               ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.section),
-          SportSectionBand(
-            padding: EdgeInsets.zero,
-            showBottomRule: true,
-            child: ListTile(
-              leading: const Icon(Icons.person_outline),
-              title: Text(l10n.myProfile),
-              subtitle: Text(
-                l10n.profileSubtitle(
-                  profile.sex.label(l10n),
-                  profile.age,
-                  '${profile.heightCm.round()}',
-                  profile.weightKg.toStringAsFixed(1),
-                  profile.goal.label(l10n),
-                ),
-                style: theme.textTheme.meta,
-              ),
+              subtitle: Text(l10n.profileTagline, style: theme.textTheme.meta),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push('/profile/edit'),
             ),
-          ),
-          const SizedBox(height: AppSpacing.field),
-          SportSectionBand(
-            padding: EdgeInsets.zero,
-            showBottomRule: true,
-            child: ListTile(
-              leading: const Icon(Icons.track_changes_outlined),
-              title: Text(l10n.nutritionTargets),
-              subtitle: Text(
-                _nutritionSubtitle(ref, l10n),
-                style: theme.textTheme.meta,
+            _MenuRow(
+              icon: Icons.person_outline,
+              title: l10n.myProfile,
+              subtitle: l10n.profileSubtitle(
+                profile.sex.label(l10n),
+                profile.age,
+                '${profile.heightCm.round()}',
+                profile.weightKg.toStringAsFixed(1),
+                profile.goal.label(l10n),
               ),
-              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/profile/edit'),
+            ),
+            _MenuRow(
+              icon: Icons.track_changes_outlined,
+              title: l10n.nutritionTargets,
+              subtitle: _nutritionSubtitle(ref, l10n),
               onTap: () => context.push('/profile/nutrition'),
             ),
-          ),
-          const SizedBox(height: AppSpacing.field),
-          SportSectionBand(
-            padding: EdgeInsets.zero,
-            showBottomRule: true,
-            child: ListTile(
-              leading: const Icon(Icons.notifications_outlined),
-              title: Text(l10n.reminders),
-              subtitle: Text(
-                l10n.remindersSubtitle,
-                style: theme.textTheme.meta,
-              ),
-              trailing: const Icon(Icons.chevron_right),
+            _MenuRow(
+              icon: Icons.notifications_outlined,
+              title: l10n.reminders,
+              subtitle: l10n.remindersSubtitle,
               onTap: () => context.push('/profile/reminders'),
             ),
-          ),
-          const SizedBox(height: AppSpacing.field),
-          SportSectionBand(
-            padding: EdgeInsets.zero,
-            showBottomRule: true,
-            child: ListTile(
-              leading: const Icon(Icons.palette_outlined),
-              title: Text(l10n.theme),
-              subtitle: Text(
-                ref.watch(themeProvider).label(l10n),
-                style: theme.textTheme.meta,
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push('/profile/theme'),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.field),
-          SportSectionBand(
-            padding: EdgeInsets.zero,
-            showBottomRule: true,
-            child: ListTile(
-              leading: const Icon(Icons.handyman_outlined),
-              title: Text(l10n.toolbox),
-              subtitle: Text(l10n.toolboxSubtitle, style: theme.textTheme.meta),
-              trailing: const Icon(Icons.chevron_right),
+            _MenuRow(
+              icon: Icons.handyman_outlined,
+              title: l10n.toolbox,
+              subtitle: l10n.toolboxSubtitle,
               onTap: () => context.push('/profile/tools'),
             ),
+            _MenuRow(
+              icon: Icons.palette_outlined,
+              title: l10n.theme,
+              subtitle: ref.watch(themeProvider).label(l10n),
+              onTap: () => context.push('/profile/theme'),
+            ),
+            if (isAndroid)
+              SportListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.system_update_outlined),
+                title: Text(l10n.checkUpdate),
+                trailing: update.isBusy
+                    ? _UpdateDownloadIcon(status: update)
+                    : const Icon(Icons.chevron_right),
+                onTap: update.isBusy ? null : _checkForUpdate,
+              ),
+            SportListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.info_outline),
+              title: Text(l10n.about),
+              subtitle: versionLabel == null
+                  ? null
+                  : Text(
+                      l10n.appVersionLabel(versionLabel),
+                      style: theme.textTheme.meta,
+                    ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showAbout(context, plan, versionLabel),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAbout(BuildContext context, CaloriePlan plan, String? version) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSpacing.formPage),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.appTitle, style: theme.textTheme.titleLarge),
+              if (version != null)
+                Text(
+                  l10n.appVersionLabel(version),
+                  style: theme.textTheme.bodySmall,
+                ),
+              const SizedBox(height: AppSpacing.section),
+              Text(l10n.calcMethod, style: theme.textTheme.titleSmall),
+              const SizedBox(height: AppSpacing.compact),
+              CalorieBreakdown(plan: plan, compact: true),
+              const SizedBox(height: AppSpacing.section),
+              SportListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  Icons.delete_outline,
+                  color: theme.colorScheme.error,
+                ),
+                title: Text(
+                  l10n.clearData,
+                  style: TextStyle(color: theme.colorScheme.error),
+                ),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _clearData();
+                },
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-/// White / black circle next to Me title: tap to switch day ↔ night.
-class _DayNightToggle extends StatelessWidget {
-  const _DayNightToggle({required this.isDark, required this.onToggle});
+/// A profile menu row: icon badge + title + subtitle + chevron.
+class _MenuRow extends StatelessWidget {
+  const _MenuRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
 
-  final bool isDark;
-  final VoidCallback onToggle;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return IconButton(
-      onPressed: onToggle,
-      tooltip: isDark ? l10n.themeDay : l10n.themeNight,
-      icon: Container(
-        width: 18,
-        height: 18,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: isDark ? Colors.white : Colors.black,
-          border: Border.all(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.35)
-                : Colors.white.withValues(alpha: 0.55),
-            width: 1,
-          ),
+    return SportListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon),
+      title: Text(title),
+      subtitle: Text(
+        subtitle,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
     );
   }
 }

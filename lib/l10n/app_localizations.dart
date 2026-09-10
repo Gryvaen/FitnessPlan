@@ -3903,6 +3903,30 @@ abstract class AppLocalizations {
   /// **'Add records'**
   String get addRecords;
 
+  /// No description provided for @about.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get about;
+
+  /// No description provided for @profileGreeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Fitness buddy'**
+  String get profileGreeting;
+
+  /// No description provided for @profileTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep going — a better you is coming'**
+  String get profileTagline;
+
+  /// No description provided for @appVersionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version}'**
+  String appVersionLabel(String version);
+
   /// No description provided for @weekdayColumn.
   ///
   /// In en, this message translates to:

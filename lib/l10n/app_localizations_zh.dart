@@ -2172,6 +2172,20 @@ class AppLocalizationsZh extends AppLocalizations {
   String get addRecords => '补充记录';
 
   @override
+  String get about => '关于';
+
+  @override
+  String get profileGreeting => '健身小伙伴';
+
+  @override
+  String get profileTagline => '坚持，让更好的自己出现';
+
+  @override
+  String appVersionLabel(String version) {
+    return '版本 $version';
+  }
+
+  @override
   String get weekdayColumn => '日期';
 
   @override

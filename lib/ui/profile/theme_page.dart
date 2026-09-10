@@ -20,19 +20,26 @@ class ThemePage extends ConsumerWidget {
     return AppChromeScaffold(
       appBar: AppBar(title: Text(l10n.theme)),
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.formPage),
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.formPage,
+          AppSpacing.compact,
+          AppSpacing.formPage,
+          listBottomInset(context, hasFab: false),
+        ),
         children: [
-          for (var i = 0; i < presets.length; i++) ...[
+          for (final id in presets)
             _ThemeOption(
-              id: presets[i],
-              selected: selected == presets[i],
-              onTap: () => ref.read(themeProvider.notifier).select(presets[i]),
+              id: id,
+              selected: selected == id,
+              onTap: () => ref.read(themeProvider.notifier).select(id),
             ),
-            if (i != presets.length - 1)
-              const SizedBox(height: AppSpacing.field),
-          ],
           const SizedBox(height: AppSpacing.section),
-          Text(l10n.themeNote, style: theme.textTheme.bodySmall),
+          Text(
+            l10n.themeNote,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );
@@ -54,32 +61,31 @@ class _ThemeOption extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
-    final visuals = AppThemeVisuals.of(context);
-    final preview = AppTheme.visualsFor(id);
-    final scheme = AppTheme.schemeFor(id);
+    final v = AppThemeVisuals.of(context);
+    final swatch = AppTheme.visualsFor(id).accent;
 
     return Semantics(
       selected: selected,
       button: true,
       label: id.label(l10n),
       child: Material(
-        color: visuals.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          side: BorderSide(
-            color: selected ? visuals.accent : visuals.cardBorder,
-            width: selected ? 1.5 : 1,
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
+        color: Colors.transparent,
+        shape: Border(bottom: BorderSide(color: v.divider)),
         child: InkWell(
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.section),
+            padding: const EdgeInsets.symmetric(vertical: 14),
             child: Row(
               children: [
-                _MiniPreview(scheme: scheme, visuals: preview),
-                const SizedBox(width: AppSpacing.section),
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: swatch,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.card),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -88,104 +94,26 @@ class _ThemeOption extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         id.description(l10n),
-                        style: theme.textTheme.bodySmall,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: AppSpacing.compact),
                 Icon(
-                  selected ? Icons.check_circle : Icons.circle_outlined,
+                  selected
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_off,
                   color: selected
-                      ? visuals.accent
-                      : theme.colorScheme.outlineVariant,
+                      ? v.accent
+                      : theme.colorScheme.onSurfaceVariant,
                 ),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Tiny mock of the Today card in the target theme.
-class _MiniPreview extends StatelessWidget {
-  const _MiniPreview({required this.scheme, required this.visuals});
-
-  final ColorScheme scheme;
-  final AppThemeVisuals visuals;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 72,
-      height: 56,
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: visuals.cardBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: visuals.heroCard,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: visuals.cardBorder),
-              ),
-              child: Row(
-                children: [
-                  const SizedBox(width: 6),
-                  Container(
-                    width: 14,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: visuals.onHero.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: visuals.accent, width: 2),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              for (final c in [
-                AppColors.protein,
-                AppColors.carb,
-                AppColors.fat,
-                AppColors.water,
-              ]) ...[
-                Expanded(
-                  child: Container(
-                    height: 3,
-                    decoration: BoxDecoration(
-                      color: c,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                if (c != AppColors.water) const SizedBox(width: 2),
-              ],
-            ],
-          ),
-        ],
       ),
     );
   }

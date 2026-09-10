@@ -8,6 +8,7 @@ import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../../data/repositories/water_repository.dart';
 import '../theme/app_theme.dart';
+import '../theme/sport_chrome.dart';
 import '../widgets/form_options.dart';
 
 class ProfileEditPage extends ConsumerStatefulWidget {
@@ -45,11 +46,14 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         p.heightCm.round(),
       );
       _weightKg = FormOptions.snapDouble(FormOptions.weightsKg(), p.weightKg);
-      final fallbackTarget =
-          (p.weightKg - 5).clamp(30.0, p.weightKg - 0.5).toDouble();
+      final fallbackTarget = (p.weightKg - 5)
+          .clamp(30.0, p.weightKg - 0.5)
+          .toDouble();
       final targetOpts = FormOptions.targetWeightsKg(_weightKg);
       _targetWeightKg = FormOptions.snapDouble(
-        targetOpts.isEmpty ? FormOptions.weightsKg(min: 30, max: 40) : targetOpts,
+        targetOpts.isEmpty
+            ? FormOptions.weightsKg(min: 30, max: 40)
+            : targetOpts,
         p.targetWeightKg ?? fallbackTarget,
       );
       _weeklyLossKg = FormOptions.snapDouble(
@@ -112,7 +116,9 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         target = targetOptions.last;
       }
 
-      await ref.read(profileProvider.notifier).save(
+      await ref
+          .read(profileProvider.notifier)
+          .save(
             sex: _sex,
             age: _age,
             heightCm: _heightCm.toDouble(),
@@ -132,9 +138,9 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
       return true;
     } catch (e) {
       if (!mounted) return false;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.saveFailed('$e'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.saveFailed('$e'))));
       return false;
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -186,14 +192,11 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
           padding: const EdgeInsets.all(AppSpacing.formPage),
           children: [
             Text(l10n.sex, style: Theme.of(context).textTheme.fieldLabel),
-            const SizedBox(height: 8),
-            SegmentedButton<Sex>(
-              segments: [
-                ButtonSegment(value: Sex.male, label: Text(l10n.male)),
-                ButtonSegment(value: Sex.female, label: Text(l10n.female)),
-              ],
-              selected: {_sex},
-              onSelectionChanged: (s) => _edit(() => _sex = s.first),
+            const SizedBox(height: 4),
+            SportTabs<Sex>(
+              items: {Sex.male: l10n.male, Sex.female: l10n.female},
+              selected: _sex,
+              onSelected: (v) => _edit(() => _sex = v),
             ),
             const SizedBox(height: AppSpacing.section),
             AppDropdown<int>(

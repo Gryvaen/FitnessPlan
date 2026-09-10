@@ -2218,6 +2218,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addRecords => 'Add records';
 
   @override
+  String get about => 'About';
+
+  @override
+  String get profileGreeting => 'Fitness buddy';
+
+  @override
+  String get profileTagline => 'Keep going — a better you is coming';
+
+  @override
+  String appVersionLabel(String version) {
+    return 'Version $version';
+  }
+
+  @override
   String get weekdayColumn => 'Day';
 
   @override
