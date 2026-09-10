@@ -2293,6 +2293,59 @@ class AppLocalizationsEn extends AppLocalizations {
   String get language => 'Language';
 
   @override
+  String get profileSectionBasics => 'Basics';
+
+  @override
+  String get profileSectionGoal => 'Goal';
+
+  @override
+  String get profileSectionOther => 'Other';
+
+  @override
+  String get profileSectionBasicsHint =>
+      'Used to estimate your metabolism and metrics.';
+
+  @override
+  String get profileSectionGoalHint =>
+      'Turns those numbers into your daily calorie and macro targets.';
+
+  @override
+  String get profileFieldSexHint =>
+      'Sets which BMR and body-fat formula is used.';
+
+  @override
+  String get profileFieldAgeHint =>
+      'Lowers the resting metabolic estimate as it rises.';
+
+  @override
+  String get profileFieldHeightHint =>
+      'Feeds BMI, lean body mass and ideal-weight figures.';
+
+  @override
+  String get profileFieldWeightHint =>
+      'The baseline for every calorie and macro target.';
+
+  @override
+  String get profileFieldActivityHint =>
+      'Scales BMR into your total daily energy (TDEE).';
+
+  @override
+  String get profileFieldGoalHint =>
+      'Chooses the calorie surplus or deficit and the protein target.';
+
+  @override
+  String get profileFieldTargetWeightHint =>
+      'The end point of the cut; used to estimate how many weeks it takes.';
+
+  @override
+  String get profileFieldWeeklyChangeHint =>
+      '0.2–0.5 kg per week is sustainable; faster tends to cost muscle.';
+
+  @override
+  String get profileFieldWaterHint =>
+      'The goal the water cup on the Today screen fills toward.';
+
+  @override
   String get basalMetabolicRate => 'Basal metabolic rate (BMR)';
 
   @override

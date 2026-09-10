@@ -4047,6 +4047,90 @@ abstract class AppLocalizations {
   /// **'Language'**
   String get language;
 
+  /// No description provided for @profileSectionBasics.
+  ///
+  /// In en, this message translates to:
+  /// **'Basics'**
+  String get profileSectionBasics;
+
+  /// No description provided for @profileSectionGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal'**
+  String get profileSectionGoal;
+
+  /// No description provided for @profileSectionOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get profileSectionOther;
+
+  /// No description provided for @profileSectionBasicsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Used to estimate your metabolism and metrics.'**
+  String get profileSectionBasicsHint;
+
+  /// No description provided for @profileSectionGoalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turns those numbers into your daily calorie and macro targets.'**
+  String get profileSectionGoalHint;
+
+  /// No description provided for @profileFieldSexHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets which BMR and body-fat formula is used.'**
+  String get profileFieldSexHint;
+
+  /// No description provided for @profileFieldAgeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Lowers the resting metabolic estimate as it rises.'**
+  String get profileFieldAgeHint;
+
+  /// No description provided for @profileFieldHeightHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Feeds BMI, lean body mass and ideal-weight figures.'**
+  String get profileFieldHeightHint;
+
+  /// No description provided for @profileFieldWeightHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The baseline for every calorie and macro target.'**
+  String get profileFieldWeightHint;
+
+  /// No description provided for @profileFieldActivityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scales BMR into your total daily energy (TDEE).'**
+  String get profileFieldActivityHint;
+
+  /// No description provided for @profileFieldGoalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Chooses the calorie surplus or deficit and the protein target.'**
+  String get profileFieldGoalHint;
+
+  /// No description provided for @profileFieldTargetWeightHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The end point of the cut; used to estimate how many weeks it takes.'**
+  String get profileFieldTargetWeightHint;
+
+  /// No description provided for @profileFieldWeeklyChangeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'0.2–0.5 kg per week is sustainable; faster tends to cost muscle.'**
+  String get profileFieldWeeklyChangeHint;
+
+  /// No description provided for @profileFieldWaterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The goal the water cup on the Today screen fills toward.'**
+  String get profileFieldWaterHint;
+
   /// No description provided for @basalMetabolicRate.
   ///
   /// In en, this message translates to:

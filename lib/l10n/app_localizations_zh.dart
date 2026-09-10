@@ -2246,6 +2246,48 @@ class AppLocalizationsZh extends AppLocalizations {
   String get language => '语言';
 
   @override
+  String get profileSectionBasics => '基础信息';
+
+  @override
+  String get profileSectionGoal => '目标设置';
+
+  @override
+  String get profileSectionOther => '其他';
+
+  @override
+  String get profileSectionBasicsHint => '用于估算你的代谢和身体指标。';
+
+  @override
+  String get profileSectionGoalHint => '把这些数字换算成每日热量与宏量营养目标。';
+
+  @override
+  String get profileFieldSexHint => '决定使用哪套基础代谢与体脂公式。';
+
+  @override
+  String get profileFieldAgeHint => '年龄越大，静息代谢估算越低。';
+
+  @override
+  String get profileFieldHeightHint => '参与 BMI、去脂体重、理想体重的计算。';
+
+  @override
+  String get profileFieldWeightHint => '所有热量与宏量营养目标的基准。';
+
+  @override
+  String get profileFieldActivityHint => '把基础代谢换算成每日总消耗（TDEE）。';
+
+  @override
+  String get profileFieldGoalHint => '决定热量盈余或缺口，以及蛋白质目标。';
+
+  @override
+  String get profileFieldTargetWeightHint => '减脂计划的终点，用于估算大约需要几周。';
+
+  @override
+  String get profileFieldWeeklyChangeHint => '建议每周 0.2–0.5 kg；过快容易掉肌肉。';
+
+  @override
+  String get profileFieldWaterHint => '首页水杯要注满的目标水量。';
+
+  @override
   String get basalMetabolicRate => '基础代谢（BMR）';
 
   @override

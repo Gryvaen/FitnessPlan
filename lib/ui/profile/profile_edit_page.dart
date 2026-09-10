@@ -6,7 +6,6 @@ import '../../domain/calorie_calculator.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
-import '../../data/repositories/water_repository.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/form_options.dart';
@@ -189,8 +188,17 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
           ],
         ),
         body: ListView(
-          padding: const EdgeInsets.all(AppSpacing.formPage),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.formPage,
+            AppSpacing.compact,
+            AppSpacing.formPage,
+            AppSpacing.formPage,
+          ),
           children: [
+            _Section(
+              title: l10n.profileSectionBasics,
+              hint: l10n.profileSectionBasicsHint,
+            ),
             Text(l10n.sex, style: Theme.of(context).textTheme.fieldLabel),
             const SizedBox(height: 4),
             SportTabs<Sex>(
@@ -198,12 +206,21 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
               selected: _sex,
               onSelected: (v) => _edit(() => _sex = v),
             ),
-            const SizedBox(height: AppSpacing.section),
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                l10n.profileFieldSexHint,
+                style: Theme.of(context).textTheme.meta,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.field),
             AppDropdown<int>(
               label: l10n.age,
               value: FormOptions.snapInt(FormOptions.ages(), _age),
               items: FormOptions.ages(),
               suffixText: l10n.ageUnit,
+              helperText: l10n.profileFieldAgeHint,
               onChanged: (v) => _edit(() => _age = v),
             ),
             const SizedBox(height: AppSpacing.field),
@@ -212,6 +229,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
               value: FormOptions.snapInt(FormOptions.heightsCm(), _heightCm),
               items: FormOptions.heightsCm(),
               suffixText: 'cm',
+              helperText: l10n.profileFieldHeightHint,
               onChanged: (v) => _edit(() => _heightCm = v),
             ),
             const SizedBox(height: AppSpacing.field),
@@ -221,6 +239,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
               items: FormOptions.weightsKg(),
               suffixText: 'kg',
               itemLabel: formatKg,
+              helperText: l10n.profileFieldWeightHint,
               onChanged: (v) => _edit(() {
                 _weightKg = v;
                 final opts = FormOptions.targetWeightsKg(v);
@@ -230,29 +249,36 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
               }),
             ),
             const SizedBox(height: AppSpacing.section),
+            _Section(
+              title: l10n.profileSectionGoal,
+              hint: l10n.profileSectionGoalHint,
+            ),
             AppDropdown<ActivityLevel>(
               label: l10n.activityLevel,
               value: _activity,
               items: ActivityLevel.values,
               itemLabel: (e) => e.label(l10n),
+              helperText: l10n.profileFieldActivityHint,
               onChanged: (v) => _edit(() => _activity = v),
             ),
-            const SizedBox(height: AppSpacing.section),
+            const SizedBox(height: AppSpacing.field),
             AppDropdown<FitnessGoal>(
               label: l10n.goal,
               value: _goal,
               items: FitnessGoal.values,
               itemLabel: (e) => e.label(l10n),
+              helperText: l10n.profileFieldGoalHint,
               onChanged: (v) => _edit(() => _goal = v),
             ),
             if (_goal == FitnessGoal.cut) ...[
-              const SizedBox(height: AppSpacing.section),
+              const SizedBox(height: AppSpacing.field),
               AppDropdown<double>(
                 label: l10n.targetWeight,
                 value: targetValue,
                 items: targetOptions,
                 suffixText: 'kg',
                 itemLabel: formatKg,
+                helperText: l10n.profileFieldTargetWeightHint,
                 onChanged: (v) => _edit(() => _targetWeightKg = v),
               ),
               const SizedBox(height: AppSpacing.field),
@@ -264,18 +290,21 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                 ),
                 items: FormOptions.weeklyLossKg,
                 suffixText: 'kg',
-                helperText: weeksHint ?? l10n.weeklyLossHint,
+                helperText: weeksHint == null
+                    ? l10n.profileFieldWeeklyChangeHint
+                    : '$weeksHint · ${l10n.profileFieldWeeklyChangeHint}',
                 itemLabel: (v) => v.toStringAsFixed(1),
                 onChanged: (v) => _edit(() => _weeklyLossKg = v),
               ),
             ],
             const SizedBox(height: AppSpacing.section),
+            _Section(title: l10n.profileSectionOther),
             AppOptionalDropdown<int>(
               label: l10n.dailyWaterGoal,
               value: _waterGoalMl,
               items: FormOptions.waterGoalMl,
               suffixText: 'ml',
-              helperText: l10n.waterDefaultHint(kDefaultWaterGoalMl),
+              helperText: l10n.profileFieldWaterHint,
               onChanged: (v) => _edit(() => _waterGoalMl = v),
             ),
             const SizedBox(height: AppSpacing.section),
@@ -285,6 +314,38 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Section heading + an optional one-line explanation of what the fields
+/// below feed into.
+class _Section extends StatelessWidget {
+  const _Section({required this.title, this.hint});
+
+  final String title;
+  final String? hint;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.field),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: theme.textTheme.titleMedium),
+          if (hint != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              hint!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
