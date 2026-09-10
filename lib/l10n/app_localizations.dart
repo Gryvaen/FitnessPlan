@@ -914,6 +914,12 @@ abstract class AppLocalizations {
   /// **'No logs that day (view only)'**
   String get emptyMealsThatDay;
 
+  /// No description provided for @noMealsThatDay.
+  ///
+  /// In en, this message translates to:
+  /// **'No meals logged that day'**
+  String get noMealsThatDay;
+
   /// No description provided for @emptyWeightLogs.
   ///
   /// In en, this message translates to:

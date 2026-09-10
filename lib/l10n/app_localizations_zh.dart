@@ -417,6 +417,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get emptyMealsThatDay => '当日无记录（仅可查看）';
 
   @override
+  String get noMealsThatDay => '当日无饮食记录';
+
+  @override
   String get emptyWeightLogs => '还没有记录，点加号添加';
 
   @override

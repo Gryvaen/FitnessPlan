@@ -7,7 +7,6 @@ import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
-import '../theme/sport_chrome.dart';
 import '../widgets/form_options.dart';
 
 class ProfileEditPage extends ConsumerStatefulWidget {
@@ -191,20 +190,13 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
               title: l10n.profileSectionBasics,
               hint: l10n.profileSectionBasicsHint,
             ),
-            Text(l10n.sex, style: Theme.of(context).textTheme.fieldLabel),
-            const SizedBox(height: 4),
-            SportTabs<Sex>(
-              items: {Sex.male: l10n.male, Sex.female: l10n.female},
-              selected: _sex,
-              onSelected: (v) => _edit(() => _sex = v),
-            ),
-            const SizedBox(height: 6),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Text(
-                l10n.profileFieldSexHint,
-                style: Theme.of(context).textTheme.meta,
-              ),
+            AppDropdown<Sex>(
+              label: l10n.sex,
+              value: _sex,
+              items: Sex.values,
+              itemLabel: (s) => s.label(l10n),
+              helperText: l10n.profileFieldSexHint,
+              onChanged: (v) => _edit(() => _sex = v),
             ),
             const SizedBox(height: AppSpacing.field),
             AppDropdown<int>(

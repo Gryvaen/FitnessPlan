@@ -7,7 +7,6 @@ import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
-import '../theme/sport_chrome.dart';
 import '../widgets/form_options.dart';
 
 class OnboardingPage extends ConsumerStatefulWidget {
@@ -201,14 +200,14 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     style: theme.textTheme.headlineSmall,
                   ),
                   const SizedBox(height: AppSpacing.section),
-                  Text(l10n.sex, style: theme.textTheme.fieldLabel),
-                  const SizedBox(height: 4),
-                  SportTabs<Sex>(
-                    items: {Sex.male: l10n.male, Sex.female: l10n.female},
-                    selected: _sex,
-                    onSelected: (v) => setState(() => _sex = v),
+                  AppDropdown<Sex>(
+                    label: l10n.sex,
+                    value: _sex,
+                    items: Sex.values,
+                    itemLabel: (s) => s.label(l10n),
+                    onChanged: (v) => setState(() => _sex = v),
                   ),
-                  const SizedBox(height: AppSpacing.section),
+                  const SizedBox(height: AppSpacing.field),
                   AppDropdown<int>(
                     label: l10n.age,
                     value: FormOptions.snapInt(FormOptions.ages(), _age),

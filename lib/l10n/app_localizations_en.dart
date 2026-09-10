@@ -417,6 +417,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emptyMealsThatDay => 'No logs that day (view only)';
 
   @override
+  String get noMealsThatDay => 'No meals logged that day';
+
+  @override
   String get emptyWeightLogs => 'No logs yet — tap + to add';
 
   @override

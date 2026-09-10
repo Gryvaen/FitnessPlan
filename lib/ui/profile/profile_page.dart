@@ -103,7 +103,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         ],
       ),
     );
-    controller.dispose();
+    // Dialog route / IME may still hold dependents for a frame after pop.
+    WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
     if (name == null) return;
     await ref.read(userNameProvider.notifier).set(name);
   }

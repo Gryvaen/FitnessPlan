@@ -136,6 +136,7 @@
   "yesterdayNoLogs": "昨日无记录",
   "emptyMealsToday": "还没有记录，点加号记一笔",
   "emptyMealsThatDay": "当日无记录（仅可查看）",
+  "noMealsThatDay": "当日无饮食记录",
   "emptyWeightLogs": "还没有记录，点加号添加",
   "pastDayReadOnly": "过去的日子只能查看，不能编辑",
   "chartWeightTitle": "体重 (kg)",

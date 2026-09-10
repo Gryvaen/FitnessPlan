@@ -469,8 +469,10 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                             icon: Icons.restaurant_outlined,
                             title: isSelectedToday
                                 ? l10n.noMealsTitle
-                                : l10n.emptyMealsThatDay,
-                            message: isSelectedToday ? l10n.noMealsHint : null,
+                                : l10n.noMealsThatDay,
+                            message: isSelectedToday
+                                ? l10n.noMealsHint
+                                : l10n.pastDayReadOnly,
                           )
                         : Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
