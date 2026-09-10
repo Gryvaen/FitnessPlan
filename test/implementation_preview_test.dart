@@ -253,13 +253,19 @@ void main() {
   testWidgets('english core screens', (tester) async {
     await _pump(tester, h);
 
-    await _shot(tester, 'en-01-today-collapsed.png');
+    await _shot(tester, 'en-01-today.png');
 
-    await tester.tap(find.text('Today workout'));
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.tap(find.text('Today logs'));
-    await tester.pump(const Duration(milliseconds: 300));
-    await _shot(tester, 'en-02-today-expanded.png');
+    await tester.tap(find.byIcon(Icons.calendar_today_outlined).first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await _shot(tester, 'en-04-date-picker.png');
+    if (find.text('Cancel').evaluate().isNotEmpty) {
+      await tester.tap(find.text('Cancel'));
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    await _scrollPage(tester);
+    await _shot(tester, 'en-01b-today-bottom.png');
 
     h.container
         .read(selectedDayProvider.notifier)
@@ -269,14 +275,6 @@ void main() {
 
     h.container.read(selectedDayProvider.notifier).goToToday();
     await tester.pump(const Duration(milliseconds: 400));
-    await tester.tap(find.byIcon(Icons.calendar_today_outlined));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    await _shot(tester, 'en-04-date-picker.png');
-    if (find.text('Cancel').evaluate().isNotEmpty) {
-      await tester.tap(find.text('Cancel'));
-      await tester.pump(const Duration(milliseconds: 300));
-    }
 
     await _go(tester, h, '/log-meal');
     await _shot(tester, 'en-05-log-meal-flow.png');
@@ -320,6 +318,10 @@ void main() {
     await _go(tester, h, '/records');
     await tester.pump(const Duration(milliseconds: 400));
     await _shot(tester, 'en-14-records.png');
+
+    await _go(tester, h, '/profile/tools');
+    await tester.pump(const Duration(milliseconds: 400));
+    await _shot(tester, 'en-15-tools.png');
   });
 
   testWidgets('four themes on today', (tester) async {
@@ -340,13 +342,9 @@ void main() {
   testWidgets('chinese core screens', (tester) async {
     await _pump(tester, h, locale: const Locale('zh'));
 
-    await _shot(tester, 'zh-01-today-collapsed.png');
-
-    await tester.tap(find.text('今日训练'));
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.tap(find.text('今日记录'));
-    await tester.pump(const Duration(milliseconds: 300));
-    await _shot(tester, 'zh-02-today-expanded.png');
+    await _shot(tester, 'zh-01-today.png');
+    await _scrollPage(tester);
+    await _shot(tester, 'zh-01b-today-bottom.png');
 
     h.container
         .read(selectedDayProvider.notifier)
