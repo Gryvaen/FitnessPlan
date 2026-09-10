@@ -270,7 +270,7 @@ class _FitnessAppState extends ConsumerState<FitnessApp> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(workoutReminderProvider.notifier).syncSchedule();
+      ref.read(remindersProvider.notifier).syncSchedule();
     });
   }
 

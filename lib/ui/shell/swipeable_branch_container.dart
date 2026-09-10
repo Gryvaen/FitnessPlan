@@ -44,8 +44,8 @@ class _SwipeableBranchContainerState extends State<SwipeableBranchContainer> {
           curve: Curves.easeOutCubic,
         )
         .whenComplete(() {
-      if (mounted) _animatingFromNav = false;
-    });
+          if (mounted) _animatingFromNav = false;
+        });
   }
 
   @override

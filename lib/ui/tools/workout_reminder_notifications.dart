@@ -1,21 +1,22 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../data/repositories/reminders_repository.dart';
 import 'rest_timer_notifications.dart';
 
-/// Daily workout reminder via native AlarmManager (Android) or
-/// [FlutterLocalNotificationsPlugin] (iOS / macOS).
+/// Daily reminders (workout / water / meal-log / weigh-in) via native
+/// AlarmManager (Android) or [FlutterLocalNotificationsPlugin] (iOS / macOS).
 ///
-/// Schedules the next [daysAhead] one-shot notifications (not a repeating
-/// alarm) so each day's body can reflect whether the previous day had sets.
-abstract final class WorkoutReminderNotifications {
+/// Schedules the next [daysAhead] one-shot notifications per enabled kind so
+/// the workout reminder's body can reflect whether the previous day had sets.
+abstract final class ReminderNotifications {
   static const _channelId = 'workout_reminder_v2';
-  static const _channelName = 'Workout reminder';
-  static const _channelDesc = 'Daily reminders to train';
-  static const _baseNotificationId = 72001;
+  static const _channelName = 'Reminders';
+  static const _channelDesc = 'Daily reminders';
   static const daysAhead = 7;
   static const _nativeChannel = MethodChannel('fitness_plan/workout_reminder');
 
@@ -26,8 +27,6 @@ abstract final class WorkoutReminderNotifications {
 
   static Future<void> ensureInitialized() async {
     if (_initialized) return;
-    // Rest timer may already have initialized timezones + plugin; safe to
-    // call again for this plugin instance and create our channel.
     await RestTimerNotifications.ensureInitialized();
     tz_data.initializeTimeZones();
 
@@ -42,7 +41,6 @@ abstract final class WorkoutReminderNotifications {
         android: android,
         iOS: darwin,
         macOS: darwin,
-        // Required by the plugin when running the desktop build on Linux.
         linux: LinuxInitializationSettings(defaultActionName: 'Open'),
       ),
     );
@@ -65,9 +63,17 @@ abstract final class WorkoutReminderNotifications {
     _initialized = true;
   }
 
-  /// Requests notification permission (reuses rest-timer permission flow).
   static Future<bool> requestPermissions() =>
       RestTimerNotifications.requestPermissions();
+
+  static Future<bool> permissionGranted() async {
+    if (kIsWeb) return false;
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final status = await Permission.notification.status;
+      return status.isGranted || status.isLimited;
+    }
+    return true;
+  }
 
   static Future<void> cancelAll() async {
     await ensureInitialized();
@@ -78,28 +84,26 @@ abstract final class WorkoutReminderNotifications {
         // Fall through to plugin cancel for older installs.
       }
     }
-    for (var i = 0; i < daysAhead; i++) {
-      await _plugin.cancel(id: _baseNotificationId + i);
+    for (final kind in ReminderKind.values) {
+      for (var i = 0; i < daysAhead; i++) {
+        await _plugin.cancel(id: kind.idBase + i);
+      }
     }
   }
 
-  /// Cancels existing reminders and schedules the next [daysAhead] days.
-  ///
-  /// [hasWorkoutOnDay] receives a local calendar day and returns whether any
-  /// set was logged that day. [title], [bodyNormal], [bodyEncourage] are
-  /// localized by the caller.
-  static Future<void> reschedule({
-    required bool enabled,
-    required int hour,
-    required int minute,
+  /// Cancels every reminder and re-schedules the next [daysAhead] days for each
+  /// enabled kind. [hasWorkoutOnDay] receives a local calendar day; [titleFor]
+  /// / [bodyFor] return localized copy (bodyFor gets `workedOut` for the
+  /// workout kind).
+  static Future<void> rescheduleAll({
+    required Map<ReminderKind, ReminderSetting> settings,
     required Future<bool> Function(DateTime day) hasWorkoutOnDay,
-    required String title,
-    required String bodyNormal,
-    required String bodyEncourage,
+    required String Function(ReminderKind kind) titleFor,
+    required String Function(ReminderKind kind, {required bool workedOut})
+    bodyFor,
   }) async {
     await ensureInitialized();
     await cancelAll();
-    if (!enabled) return;
     if (kIsWeb) return;
     if (defaultTargetPlatform != TargetPlatform.android &&
         defaultTargetPlatform != TargetPlatform.iOS &&
@@ -108,31 +112,37 @@ abstract final class WorkoutReminderNotifications {
     }
 
     final now = DateTime.now();
-    var fireDay = DateTime(now.year, now.month, now.day, hour, minute);
-    if (!fireDay.isAfter(now)) {
-      fireDay = fireDay.add(const Duration(days: 1));
-    }
-
     final items = <_ScheduledReminder>[];
-    for (var i = 0; i < daysAhead; i++) {
-      final whenLocal = fireDay.add(Duration(days: i));
-      final previousDay = DateTime(
-        whenLocal.year,
-        whenLocal.month,
-        whenLocal.day,
-      ).subtract(const Duration(days: 1));
-      final workedOut = await hasWorkoutOnDay(previousDay);
-      final body = workedOut ? bodyNormal : bodyEncourage;
-      final remaining = whenLocal.difference(now);
-      if (remaining.inSeconds < 1) continue;
-      items.add(
-        _ScheduledReminder(
-          id: _baseNotificationId + i,
-          whenLocal: whenLocal,
-          title: title,
-          body: body,
-        ),
-      );
+
+    for (final entry in settings.entries) {
+      final kind = entry.key;
+      final s = entry.value;
+      if (!s.enabled) continue;
+
+      var fireDay = DateTime(now.year, now.month, now.day, s.hour, s.minute);
+      if (!fireDay.isAfter(now)) fireDay = fireDay.add(const Duration(days: 1));
+
+      for (var i = 0; i < daysAhead; i++) {
+        final whenLocal = fireDay.add(Duration(days: i));
+        if (whenLocal.difference(now).inSeconds < 1) continue;
+        var workedOut = true;
+        if (kind == ReminderKind.workout) {
+          final prev = DateTime(
+            whenLocal.year,
+            whenLocal.month,
+            whenLocal.day,
+          ).subtract(const Duration(days: 1));
+          workedOut = await hasWorkoutOnDay(prev);
+        }
+        items.add(
+          _ScheduledReminder(
+            id: kind.idBase + i,
+            whenLocal: whenLocal,
+            title: titleFor(kind),
+            body: bodyFor(kind, workedOut: workedOut),
+          ),
+        );
+      }
     }
     if (items.isEmpty) return;
 
@@ -140,7 +150,6 @@ abstract final class WorkoutReminderNotifications {
       await _scheduleAndroidNative(items);
       return;
     }
-
     await _schedulePlugin(items, now);
   }
 
@@ -227,9 +236,7 @@ abstract final class WorkoutReminderNotifications {
         lastError = e;
       }
     }
-    if (lastError != null) {
-      throw lastError;
-    }
+    if (lastError != null) throw lastError;
   }
 }
 

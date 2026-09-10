@@ -32,11 +32,14 @@ class WeightRepository {
       exerciseMinutes: Value(exerciseMinutes),
     );
     if (existing != null) {
-      await (_db.update(_db.weightLogs)..where((t) => t.id.equals(existing.id)))
-          .write(companion);
+      await (_db.update(
+        _db.weightLogs,
+      )..where((t) => t.id.equals(existing.id))).write(companion);
       return existing.id;
     }
-    return _db.into(_db.weightLogs).insert(
+    return _db
+        .into(_db.weightLogs)
+        .insert(
           WeightLogsCompanion.insert(
             date: day,
             weightKg: weightKg,
@@ -48,14 +51,15 @@ class WeightRepository {
 
   Future<WeightLog?> getByDate(DateTime date) async {
     final day = CalendarDay.dayOnly(date);
-    return (_db.select(_db.weightLogs)
-          ..where((t) => t.date.equals(day)))
-        .getSingleOrNull();
+    return (_db.select(
+      _db.weightLogs,
+    )..where((t) => t.date.equals(day))).getSingleOrNull();
   }
 
   Future<WeightLog?> byId(int id) {
-    return (_db.select(_db.weightLogs)..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
+    return (_db.select(
+      _db.weightLogs,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
   /// Updates [bodyFatPct] on an existing day log. Returns false if none.

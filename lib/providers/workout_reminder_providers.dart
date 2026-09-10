@@ -1,65 +1,88 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/repositories/workout_reminder_repository.dart';
+import '../data/repositories/reminders_repository.dart';
 import '../l10n/app_localizations.dart';
 import '../ui/tools/workout_reminder_notifications.dart';
 import 'core_providers.dart';
 
-final workoutReminderProvider =
-    NotifierProvider<WorkoutReminderNotifier, WorkoutReminderSettings>(
-  WorkoutReminderNotifier.new,
-);
+final remindersProvider =
+    NotifierProvider<RemindersNotifier, Map<ReminderKind, ReminderSetting>>(
+      RemindersNotifier.new,
+    );
 
-class WorkoutReminderNotifier extends Notifier<WorkoutReminderSettings> {
+class RemindersNotifier extends Notifier<Map<ReminderKind, ReminderSetting>> {
   @override
-  WorkoutReminderSettings build() {
-    return ref.read(workoutReminderRepositoryProvider).load();
+  Map<ReminderKind, ReminderSetting> build() {
+    return ref.read(remindersRepositoryProvider).loadAll();
   }
 
-  Future<void> setEnabled(bool enabled) async {
-    final previous = state;
-    await ref.read(workoutReminderRepositoryProvider).setEnabled(enabled);
-    state = state.copyWith(enabled: enabled);
-    try {
-      await syncSchedule();
-    } catch (e) {
-      await ref.read(workoutReminderRepositoryProvider).setEnabled(previous.enabled);
-      state = previous;
-      rethrow;
-    }
-  }
+  ReminderSetting settingFor(ReminderKind kind) =>
+      state[kind] ??
+      ReminderSetting(
+        enabled: false,
+        hour: kind.defaultTime.hour,
+        minute: kind.defaultTime.minute,
+      );
 
-  Future<void> setTime({required int hour, required int minute}) async {
+  Future<void> setEnabled(ReminderKind kind, bool enabled) async {
     final previous = state;
-    await ref
-        .read(workoutReminderRepositoryProvider)
-        .setTime(hour: hour, minute: minute);
-    state = state.copyWith(hour: hour, minute: minute);
+    await ref.read(remindersRepositoryProvider).setEnabled(kind, enabled);
+    state = {...state, kind: settingFor(kind).copyWith(enabled: enabled)};
     try {
       await syncSchedule();
     } catch (e) {
       await ref
-          .read(workoutReminderRepositoryProvider)
-          .setTime(hour: previous.hour, minute: previous.minute);
+          .read(remindersRepositoryProvider)
+          .setEnabled(kind, previous[kind]?.enabled ?? false);
       state = previous;
       rethrow;
     }
   }
 
-  /// Recompute and schedule the next 7 daily reminders from current prefs + DB.
+  Future<void> setTime(
+    ReminderKind kind, {
+    required int hour,
+    required int minute,
+  }) async {
+    final previous = state;
+    await ref
+        .read(remindersRepositoryProvider)
+        .setTime(kind, hour: hour, minute: minute);
+    state = {
+      ...state,
+      kind: settingFor(kind).copyWith(hour: hour, minute: minute),
+    };
+    try {
+      await syncSchedule();
+    } catch (e) {
+      state = previous;
+      rethrow;
+    }
+  }
+
+  /// Recompute and schedule the next days for every enabled reminder kind.
   Future<void> syncSchedule([AppLocalizations? l10n]) async {
-    final settings = state;
     final loc = l10n ?? _platformL10n();
     final workoutRepo = ref.read(workoutRepositoryProvider);
-    await WorkoutReminderNotifications.reschedule(
-      enabled: settings.enabled,
-      hour: settings.hour,
-      minute: settings.minute,
+    await ReminderNotifications.rescheduleAll(
+      settings: state,
       hasWorkoutOnDay: workoutRepo.hasAnySetOn,
-      title: loc.workoutReminderTitle,
-      bodyNormal: loc.workoutReminderBodyNormal,
-      bodyEncourage: loc.workoutReminderBodyEncourage,
+      titleFor: (kind) => switch (kind) {
+        ReminderKind.workout => loc.workoutReminderTitle,
+        ReminderKind.water => loc.reminderWaterTitle,
+        ReminderKind.meal => loc.reminderMealTitle,
+        ReminderKind.weighIn => loc.reminderWeighInTitle,
+      },
+      bodyFor: (kind, {required workedOut}) => switch (kind) {
+        ReminderKind.workout =>
+          workedOut
+              ? loc.workoutReminderBodyNormal
+              : loc.workoutReminderBodyEncourage,
+        ReminderKind.water => loc.reminderWaterBody,
+        ReminderKind.meal => loc.reminderMealBody,
+        ReminderKind.weighIn => loc.reminderWeighInBody,
+      },
     );
   }
 

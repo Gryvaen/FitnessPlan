@@ -1794,7 +1794,7 @@ abstract class AppLocalizations {
   /// No description provided for @remindersSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Daily workout reminder'**
+  /// **'Workout, water, meals and weigh-in'**
   String get remindersSubtitle;
 
   /// No description provided for @workoutReminderTile.
@@ -1820,6 +1820,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Notification permission denied; daily reminder stays off.'**
   String get workoutReminderPermissionDenied;
+
+  /// No description provided for @reminderWaterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drink water'**
+  String get reminderWaterTitle;
+
+  /// No description provided for @reminderWaterBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Time for a glass of water.'**
+  String get reminderWaterBody;
+
+  /// No description provided for @reminderMealTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log your meals'**
+  String get reminderMealTitle;
+
+  /// No description provided for @reminderMealBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t forget to record what you ate today.'**
+  String get reminderMealBody;
+
+  /// No description provided for @reminderWeighInTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Weigh-in'**
+  String get reminderWeighInTitle;
+
+  /// No description provided for @reminderWeighInBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Step on the scale and log your weight.'**
+  String get reminderWeighInBody;
+
+  /// No description provided for @reminderKindWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout'**
+  String get reminderKindWorkout;
+
+  /// No description provided for @reminderKindWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Drink water'**
+  String get reminderKindWater;
+
+  /// No description provided for @reminderKindMeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Log meals'**
+  String get reminderKindMeal;
+
+  /// No description provided for @reminderKindWeighIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Weigh-in'**
+  String get reminderKindWeighIn;
+
+  /// No description provided for @reminderKindWorkoutDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A daily nudge to train'**
+  String get reminderKindWorkoutDesc;
+
+  /// No description provided for @reminderKindWaterDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A reminder to hydrate'**
+  String get reminderKindWaterDesc;
+
+  /// No description provided for @reminderKindMealDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A nudge to record your food'**
+  String get reminderKindMealDesc;
+
+  /// No description provided for @reminderKindWeighInDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A morning reminder to weigh in'**
+  String get reminderKindWeighInDesc;
+
+  /// No description provided for @reminderDailyAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Every day at {time}'**
+  String reminderDailyAt(String time);
+
+  /// No description provided for @reminderOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get reminderOff;
+
+  /// No description provided for @notificationPermissionRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification permission'**
+  String get notificationPermissionRow;
+
+  /// No description provided for @notificationPermissionOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowed'**
+  String get notificationPermissionOn;
+
+  /// No description provided for @notificationPermissionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow notifications so reminders are delivered.'**
+  String get notificationPermissionHint;
 
   /// No description provided for @customDuration.
   ///
@@ -3914,6 +4028,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Language'**
   String get language;
+
+  /// No description provided for @basalMetabolicRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Basal metabolic rate (BMR)'**
+  String get basalMetabolicRate;
+
+  /// No description provided for @totalDailyEnergy.
+  ///
+  /// In en, this message translates to:
+  /// **'Total daily energy (TDEE)'**
+  String get totalDailyEnergy;
+
+  /// No description provided for @bmrMethodMifflin.
+  ///
+  /// In en, this message translates to:
+  /// **'Mifflin-St Jeor'**
+  String get bmrMethodMifflin;
+
+  /// No description provided for @bmrMethodKatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Katch-McArdle · uses body fat'**
+  String get bmrMethodKatch;
+
+  /// No description provided for @bmrKatchFormula.
+  ///
+  /// In en, this message translates to:
+  /// **'370 + 21.6 × {lbm} kg lean mass = {bmr} kcal'**
+  String bmrKatchFormula(String lbm, String bmr);
+
+  /// No description provided for @bmrMifflinFormula.
+  ///
+  /// In en, this message translates to:
+  /// **'10·{w} + 6.25·{h} − 5·{age} {sexTerm} = {bmr} kcal'**
+  String bmrMifflinFormula(
+    String w,
+    String h,
+    int age,
+    String sexTerm,
+    String bmr,
+  );
+
+  /// No description provided for @tdeeFormula.
+  ///
+  /// In en, this message translates to:
+  /// **'{bmr} kcal × {factor} ({activity}) = {tdee} kcal'**
+  String tdeeFormula(String bmr, String factor, String activity, String tdee);
+
+  /// No description provided for @metricsFromProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'From your profile · {sex} · {age} yr · {activity}'**
+  String metricsFromProfile(String sex, int age, String activity);
+
+  /// No description provided for @metricsFromProfileShort.
+  ///
+  /// In en, this message translates to:
+  /// **'From your profile · {sex} · {age} yr'**
+  String metricsFromProfileShort(String sex, int age);
 
   /// No description provided for @toolboxTagline.
   ///

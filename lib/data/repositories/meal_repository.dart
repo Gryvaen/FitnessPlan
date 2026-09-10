@@ -5,10 +5,7 @@ import '../../domain/models.dart';
 import '../db.dart';
 
 class CopyDayResult {
-  const CopyDayResult({
-    required this.copied,
-    required this.skippedMissingFood,
-  });
+  const CopyDayResult({required this.copied, required this.skippedMissingFood});
 
   final int copied;
   final int skippedMissingFood;
@@ -67,7 +64,9 @@ class MealRepository {
   }) async {
     CalendarDay.ensureEditableDay(date);
     final intake = _intakeFor(food, grams);
-    return _db.into(_db.mealEntries).insert(
+    return _db
+        .into(_db.mealEntries)
+        .insert(
           MealEntriesCompanion.insert(
             date: _dayStart(date),
             mealType: mealType.name,
@@ -87,9 +86,9 @@ class MealRepository {
         );
   }
 
-  Future<MealEntry?> byId(int id) => (_db.select(_db.mealEntries)
-        ..where((t) => t.id.equals(id)))
-      .getSingleOrNull();
+  Future<MealEntry?> byId(int id) => (_db.select(
+    _db.mealEntries,
+  )..where((t) => t.id.equals(id))).getSingleOrNull();
 
   Future<void> update({
     required int id,
@@ -102,22 +101,22 @@ class MealRepository {
     CalendarDay.ensureEditableDay(existing.date);
     final intake = _intakeFor(food, grams);
     await (_db.update(_db.mealEntries)..where((t) => t.id.equals(id))).write(
-          MealEntriesCompanion(
-            mealType: Value(mealType.name),
-            foodId: Value(food.id),
-            foodName: Value(food.name),
-            grams: Value(grams),
-            calories: Value(intake.calories),
-            proteinG: Value(intake.proteinG),
-            carbG: Value(intake.carbG),
-            fatG: Value(intake.fatG),
-            alcoholG: Value(intake.alcoholG),
-            fiberG: Value(intake.fiberG),
-            sodiumMg: Value(intake.sodiumMg),
-            sugarG: Value(intake.sugarG),
-            saturatedFatG: Value(intake.saturatedFatG),
-          ),
-        );
+      MealEntriesCompanion(
+        mealType: Value(mealType.name),
+        foodId: Value(food.id),
+        foodName: Value(food.name),
+        grams: Value(grams),
+        calories: Value(intake.calories),
+        proteinG: Value(intake.proteinG),
+        carbG: Value(intake.carbG),
+        fatG: Value(intake.fatG),
+        alcoholG: Value(intake.alcoholG),
+        fiberG: Value(intake.fiberG),
+        sodiumMg: Value(intake.sodiumMg),
+        sugarG: Value(intake.sugarG),
+        saturatedFatG: Value(intake.saturatedFatG),
+      ),
+    );
   }
 
   Future<void> delete(int id) async {
@@ -142,9 +141,9 @@ class MealRepository {
     var copied = 0;
     var skipped = 0;
     for (final entry in filtered.reversed) {
-      final food = await (_db.select(_db.foodItems)
-            ..where((t) => t.id.equals(entry.foodId)))
-          .getSingleOrNull();
+      final food = await (_db.select(
+        _db.foodItems,
+      )..where((t) => t.id.equals(entry.foodId))).getSingleOrNull();
       if (food == null) {
         skipped++;
         continue;
@@ -187,9 +186,9 @@ class MealRepository {
   ) async {
     final s = _dayStart(start);
     final e = _dayEnd(end);
-    final rows = await (_db.select(_db.mealEntries)
-          ..where((t) => t.date.isBetweenValues(s, e)))
-        .get();
+    final rows = await (_db.select(
+      _db.mealEntries,
+    )..where((t) => t.date.isBetweenValues(s, e))).get();
     final map = <DateTime, double>{};
     for (final r in rows) {
       final key = _dayStart(r.date);

@@ -887,7 +887,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reminders => 'Reminders';
 
   @override
-  String get remindersSubtitle => 'Daily workout reminder';
+  String get remindersSubtitle => 'Workout, water, meals and weigh-in';
 
   @override
   String get workoutReminderTile => 'Daily workout reminder';
@@ -904,6 +904,66 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get workoutReminderPermissionDenied =>
       'Notification permission denied; daily reminder stays off.';
+
+  @override
+  String get reminderWaterTitle => 'Drink water';
+
+  @override
+  String get reminderWaterBody => 'Time for a glass of water.';
+
+  @override
+  String get reminderMealTitle => 'Log your meals';
+
+  @override
+  String get reminderMealBody => 'Don\'t forget to record what you ate today.';
+
+  @override
+  String get reminderWeighInTitle => 'Weigh-in';
+
+  @override
+  String get reminderWeighInBody => 'Step on the scale and log your weight.';
+
+  @override
+  String get reminderKindWorkout => 'Workout';
+
+  @override
+  String get reminderKindWater => 'Drink water';
+
+  @override
+  String get reminderKindMeal => 'Log meals';
+
+  @override
+  String get reminderKindWeighIn => 'Weigh-in';
+
+  @override
+  String get reminderKindWorkoutDesc => 'A daily nudge to train';
+
+  @override
+  String get reminderKindWaterDesc => 'A reminder to hydrate';
+
+  @override
+  String get reminderKindMealDesc => 'A nudge to record your food';
+
+  @override
+  String get reminderKindWeighInDesc => 'A morning reminder to weigh in';
+
+  @override
+  String reminderDailyAt(String time) {
+    return 'Every day at $time';
+  }
+
+  @override
+  String get reminderOff => 'Off';
+
+  @override
+  String get notificationPermissionRow => 'Notification permission';
+
+  @override
+  String get notificationPermissionOn => 'Allowed';
+
+  @override
+  String get notificationPermissionHint =>
+      'Allow notifications so reminders are delivered.';
 
   @override
   String get customDuration => 'Custom (0:30–10:00)';
@@ -2222,6 +2282,49 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get language => 'Language';
+
+  @override
+  String get basalMetabolicRate => 'Basal metabolic rate (BMR)';
+
+  @override
+  String get totalDailyEnergy => 'Total daily energy (TDEE)';
+
+  @override
+  String get bmrMethodMifflin => 'Mifflin-St Jeor';
+
+  @override
+  String get bmrMethodKatch => 'Katch-McArdle · uses body fat';
+
+  @override
+  String bmrKatchFormula(String lbm, String bmr) {
+    return '370 + 21.6 × $lbm kg lean mass = $bmr kcal';
+  }
+
+  @override
+  String bmrMifflinFormula(
+    String w,
+    String h,
+    int age,
+    String sexTerm,
+    String bmr,
+  ) {
+    return '10·$w + 6.25·$h − 5·$age $sexTerm = $bmr kcal';
+  }
+
+  @override
+  String tdeeFormula(String bmr, String factor, String activity, String tdee) {
+    return '$bmr kcal × $factor ($activity) = $tdee kcal';
+  }
+
+  @override
+  String metricsFromProfile(String sex, int age, String activity) {
+    return 'From your profile · $sex · $age yr · $activity';
+  }
+
+  @override
+  String metricsFromProfileShort(String sex, int age) {
+    return 'From your profile · $sex · $age yr';
+  }
 
   @override
   String get toolboxTagline => 'Handy tools for your healthy routine';

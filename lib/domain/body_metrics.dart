@@ -3,12 +3,7 @@ import 'dart:math' as math;
 import 'models.dart';
 
 /// BMI classification (WHO adult cut-offs, simplified labels).
-enum BmiCategory {
-  underweight,
-  normal,
-  overweight,
-  obese;
-}
+enum BmiCategory { underweight, normal, overweight, obese }
 
 /// Pure body-composition helpers for the toolbox (no persistence).
 abstract final class BodyMetrics {
@@ -67,21 +62,39 @@ abstract final class BodyMetrics {
     if (sex == Sex.male) {
       final diff = waistCm - neckCm;
       if (diff <= 0) return null;
-      density = 1.0324 -
-          0.19077 * _log10(diff) +
-          0.15456 * _log10(heightCm);
+      density = 1.0324 - 0.19077 * _log10(diff) + 0.15456 * _log10(heightCm);
     } else {
       final hip = hipCm;
       if (hip == null || hip <= 0) return null;
       final sum = waistCm + hip - neckCm;
       if (sum <= 0) return null;
-      density = 1.29579 -
-          0.35004 * _log10(sum) +
-          0.22100 * _log10(heightCm);
+      density = 1.29579 - 0.35004 * _log10(sum) + 0.22100 * _log10(heightCm);
     }
     if (density <= 0) return null;
     final pct = 495 / density - 450;
     return pct.clamp(2.0, 60.0);
+  }
+
+  /// Mifflin-St Jeor basal metabolic rate (kcal/day).
+  static double bmrMifflin({
+    required Sex sex,
+    required double weightKg,
+    required double heightCm,
+    required int age,
+  }) {
+    final base = 10 * weightKg + 6.25 * heightCm - 5 * age;
+    return sex == Sex.male ? base + 5 : base - 161;
+  }
+
+  /// Katch-McArdle BMR (kcal/day) from lean body mass — more accurate than
+  /// Mifflin when body-fat % is known. Null when [bodyFatPct] is out of range.
+  static double? bmrKatchMcArdle({
+    required double weightKg,
+    required double bodyFatPct,
+  }) {
+    final lbm = fatFreeMassKg(weightKg: weightKg, bodyFatPct: bodyFatPct);
+    if (lbm == null) return null;
+    return 370 + 21.6 * lbm;
   }
 
   /// Fat-free mass (kg). Returns null when [bodyFatPct] is not in (0, 100).
@@ -133,9 +146,4 @@ abstract final class BodyMetrics {
 }
 
 /// Coarse FFMI reading bands (adult male reference).
-enum FfmiBand {
-  average,
-  trained,
-  advanced,
-  elite;
-}
+enum FfmiBand { average, trained, advanced, elite }

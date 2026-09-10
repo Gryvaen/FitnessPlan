@@ -17,6 +17,8 @@ class BodyMetricsPage extends ConsumerStatefulWidget {
 
 class _BodyMetricsPageState extends ConsumerState<BodyMetricsPage> {
   late Sex _sex;
+  late int _age;
+  late ActivityLevel _activity;
   late double _heightCm;
   late double _weightKg;
   late double _waistCm;
@@ -30,6 +32,8 @@ class _BodyMetricsPageState extends ConsumerState<BodyMetricsPage> {
     super.initState();
     final p = ref.read(profileProvider)!;
     _sex = p.sex;
+    _age = p.age;
+    _activity = p.activity;
     _heightCm = FormOptions.snapDouble(
       FormOptions.heightsCm().map((e) => e.toDouble()).toList(),
       p.heightCm,
@@ -85,21 +89,37 @@ class _BodyMetricsPageState extends ConsumerState<BodyMetricsPage> {
     final inchesOver5ft = (heightIn - 60).clamp(0.0, double.infinity);
     final ref = BodyMetrics.whtrReference.toString();
 
+    final bmrMifflin = BodyMetrics.bmrMifflin(
+      sex: _sex,
+      weightKg: _weightKg,
+      heightCm: _heightCm,
+      age: _age,
+    );
+    final bmrKatch = BodyMetrics.bmrKatchMcArdle(
+      weightKg: _weightKg,
+      bodyFatPct: _bodyFatPct,
+    );
+    final bmrUsed = bmrKatch ?? bmrMifflin;
+    final tdee = bmrUsed * _activity.factor;
+
     return Scaffold(
       appBar: AppBar(title: Text(l10n.toolBodyMetrics)),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.formPage),
         children: [
           Text(l10n.metricsLocalOnly, style: theme.textTheme.meta),
-          const SizedBox(height: AppSpacing.section),
-          AppDropdown<Sex>(
-            label: l10n.sex,
-            value: _sex,
-            items: Sex.values,
-            itemLabel: (s) => s.label(l10n),
-            onChanged: (v) => setState(() => _sex = v),
+          const SizedBox(height: 4),
+          Text(
+            l10n.metricsFromProfile(
+              _sex.label(l10n),
+              _age,
+              _activity.label(l10n),
+            ),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
-          const SizedBox(height: AppSpacing.field),
+          const SizedBox(height: AppSpacing.section),
           AppDropdown<double>(
             label: l10n.height,
             value: _heightCm,
@@ -143,6 +163,38 @@ class _BodyMetricsPageState extends ConsumerState<BodyMetricsPage> {
               _weightKg.toStringAsFixed(1),
               heightM.toStringAsFixed(2),
               bmi.toStringAsFixed(1),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.field),
+          _ResultCard(
+            title: l10n.basalMetabolicRate,
+            value: bmrUsed.round().toString(),
+            unit: bmrKatch != null
+                ? l10n.bmrMethodKatch
+                : l10n.bmrMethodMifflin,
+            formula: bmrKatch != null
+                ? l10n.bmrKatchFormula(
+                    (_weightKg * (1 - _bodyFatPct / 100)).toStringAsFixed(1),
+                    bmrKatch.round().toString(),
+                  )
+                : l10n.bmrMifflinFormula(
+                    _weightKg.toStringAsFixed(1),
+                    _heightCm.round().toString(),
+                    _age,
+                    _sex == Sex.male ? '+ 5' : '− 161',
+                    bmrMifflin.round().toString(),
+                  ),
+          ),
+          const SizedBox(height: AppSpacing.field),
+          _ResultCard(
+            title: l10n.totalDailyEnergy,
+            value: tdee.round().toString(),
+            unit: 'kcal/d',
+            formula: l10n.tdeeFormula(
+              bmrUsed.round().toString(),
+              _activity.factor.toStringAsFixed(3),
+              _activity.label(l10n),
+              tdee.round().toString(),
             ),
           ),
           const SizedBox(height: AppSpacing.field),

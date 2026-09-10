@@ -7,11 +7,7 @@ import '../theme/app_theme.dart';
 
 /// Shared transparent calorie formula breakdown.
 class CalorieBreakdown extends StatelessWidget {
-  const CalorieBreakdown({
-    super.key,
-    required this.plan,
-    this.compact = false,
-  });
+  const CalorieBreakdown({super.key, required this.plan, this.compact = false});
 
   final CaloriePlan plan;
   final bool compact;

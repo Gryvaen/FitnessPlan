@@ -15,7 +15,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
   await RestTimerNotifications.ensureInitialized();
-  await WorkoutReminderNotifications.ensureInitialized();
+  await ReminderNotifications.ensureInitialized();
 
   runApp(
     ProviderScope(

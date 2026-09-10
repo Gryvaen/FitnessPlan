@@ -16,11 +16,13 @@ class ProfileRepository {
     final raw = _prefs.getString(_key);
     if (raw == null) return null;
     try {
-      var profile =
-          UserProfile.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      var profile = UserProfile.fromJson(
+        jsonDecode(raw) as Map<String, dynamic>,
+      );
       profile = _migrateWeeklyLoss(profile);
 
-      final needsRebuild = profile.bmr == null ||
+      final needsRebuild =
+          profile.bmr == null ||
           profile.tdee == null ||
           (profile.weeklyLossKg == null && profile.goal == FitnessGoal.cut);
       if (needsRebuild) {
@@ -51,7 +53,9 @@ class ProfileRepository {
       return profile.copyWith(weeklyLossKg: clamped);
     }
     if (profile.goal == FitnessGoal.cut) {
-      return profile.copyWith(weeklyLossKg: CalorieCalculator.defaultWeeklyLoss);
+      return profile.copyWith(
+        weeklyLossKg: CalorieCalculator.defaultWeeklyLoss,
+      );
     }
     return profile;
   }
@@ -132,8 +136,10 @@ class ProfileRepository {
     UserProfile current,
     int additionalKcal,
   ) async {
-    final next = (current.calorieAdjustment + additionalKcal)
-        .clamp(0, CalorieCalculator.maxCalorieAdjustment);
+    final next = (current.calorieAdjustment + additionalKcal).clamp(
+      0,
+      CalorieCalculator.maxCalorieAdjustment,
+    );
     return saveFromInputs(
       sex: current.sex,
       age: current.age,

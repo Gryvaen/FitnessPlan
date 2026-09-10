@@ -11,18 +11,9 @@ enum ActivityLevel {
   final double factor;
 }
 
-enum FitnessGoal {
-  cut,
-  maintain,
-  bulk;
-}
+enum FitnessGoal { cut, maintain, bulk }
 
-enum MealType {
-  breakfast,
-  lunch,
-  dinner,
-  snack;
-}
+enum MealType { breakfast, lunch, dinner, snack }
 
 enum ExerciseUnit {
   reps,
@@ -50,18 +41,18 @@ class MacroTargets {
   final double fatG;
 
   factory MacroTargets.fromJson(Map<String, dynamic> json) => MacroTargets(
-        calories: json['calories'] as int,
-        proteinG: (json['proteinG'] as num).toDouble(),
-        carbG: (json['carbG'] as num).toDouble(),
-        fatG: (json['fatG'] as num).toDouble(),
-      );
+    calories: json['calories'] as int,
+    proteinG: (json['proteinG'] as num).toDouble(),
+    carbG: (json['carbG'] as num).toDouble(),
+    fatG: (json['fatG'] as num).toDouble(),
+  );
 
   Map<String, dynamic> toJson() => {
-        'calories': calories,
-        'proteinG': proteinG,
-        'carbG': carbG,
-        'fatG': fatG,
-      };
+    'calories': calories,
+    'proteinG': proteinG,
+    'carbG': carbG,
+    'fatG': fatG,
+  };
 }
 
 class UserProfile {
@@ -166,45 +157,45 @@ class UserProfile {
   }
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
-        sex: Sex.values.byName(json['sex'] as String),
-        age: json['age'] as int,
-        heightCm: (json['heightCm'] as num).toDouble(),
-        weightKg: (json['weightKg'] as num).toDouble(),
-        activity: ActivityLevel.values.byName(json['activity'] as String),
-        goal: FitnessGoal.values.byName(json['goal'] as String),
-        targets: MacroTargets.fromJson(json['targets'] as Map<String, dynamic>),
-        targetWeightKg: (json['targetWeightKg'] as num?)?.toDouble(),
-        goalWeeks: json['goalWeeks'] as int?,
-        weeklyLossKg: (json['weeklyLossKg'] as num?)?.toDouble(),
-        calorieAdjustment: json['calorieAdjustment'] as int? ?? 0,
-        bmr: (json['bmr'] as num?)?.toDouble(),
-        tdee: (json['tdee'] as num?)?.toDouble(),
-        dailyDeficit: (json['dailyDeficit'] as num?)?.toDouble(),
-        calorieFloorApplied: json['calorieFloorApplied'] as bool? ?? false,
-        // Legacy saved profiles may still carry adjustedWeeks; ignore it.
-        missingCutInputs: json['missingCutInputs'] as bool? ?? false,
-        calorieStandardSince: _dayFromJson(json['calorieStandardSince']),
-      );
+    sex: Sex.values.byName(json['sex'] as String),
+    age: json['age'] as int,
+    heightCm: (json['heightCm'] as num).toDouble(),
+    weightKg: (json['weightKg'] as num).toDouble(),
+    activity: ActivityLevel.values.byName(json['activity'] as String),
+    goal: FitnessGoal.values.byName(json['goal'] as String),
+    targets: MacroTargets.fromJson(json['targets'] as Map<String, dynamic>),
+    targetWeightKg: (json['targetWeightKg'] as num?)?.toDouble(),
+    goalWeeks: json['goalWeeks'] as int?,
+    weeklyLossKg: (json['weeklyLossKg'] as num?)?.toDouble(),
+    calorieAdjustment: json['calorieAdjustment'] as int? ?? 0,
+    bmr: (json['bmr'] as num?)?.toDouble(),
+    tdee: (json['tdee'] as num?)?.toDouble(),
+    dailyDeficit: (json['dailyDeficit'] as num?)?.toDouble(),
+    calorieFloorApplied: json['calorieFloorApplied'] as bool? ?? false,
+    // Legacy saved profiles may still carry adjustedWeeks; ignore it.
+    missingCutInputs: json['missingCutInputs'] as bool? ?? false,
+    calorieStandardSince: _dayFromJson(json['calorieStandardSince']),
+  );
 
   Map<String, dynamic> toJson() => {
-        'sex': sex.name,
-        'age': age,
-        'heightCm': heightCm,
-        'weightKg': weightKg,
-        'activity': activity.name,
-        'goal': goal.name,
-        'targets': targets.toJson(),
-        'targetWeightKg': targetWeightKg,
-        'goalWeeks': goalWeeks,
-        'weeklyLossKg': weeklyLossKg,
-        'calorieAdjustment': calorieAdjustment,
-        'bmr': bmr,
-        'tdee': tdee,
-        'dailyDeficit': dailyDeficit,
-        'calorieFloorApplied': calorieFloorApplied,
-        'missingCutInputs': missingCutInputs,
-        'calorieStandardSince': _dayToJson(calorieStandardSince),
-      };
+    'sex': sex.name,
+    'age': age,
+    'heightCm': heightCm,
+    'weightKg': weightKg,
+    'activity': activity.name,
+    'goal': goal.name,
+    'targets': targets.toJson(),
+    'targetWeightKg': targetWeightKg,
+    'goalWeeks': goalWeeks,
+    'weeklyLossKg': weeklyLossKg,
+    'calorieAdjustment': calorieAdjustment,
+    'bmr': bmr,
+    'tdee': tdee,
+    'dailyDeficit': dailyDeficit,
+    'calorieFloorApplied': calorieFloorApplied,
+    'missingCutInputs': missingCutInputs,
+    'calorieStandardSince': _dayToJson(calorieStandardSince),
+  };
 }
 
 class MacroIntake {
@@ -234,16 +225,16 @@ class MacroIntake {
   double get alcoholKcal => alcoholG * 7;
 
   MacroIntake operator +(MacroIntake other) => MacroIntake(
-        calories: calories + other.calories,
-        proteinG: proteinG + other.proteinG,
-        carbG: carbG + other.carbG,
-        fatG: fatG + other.fatG,
-        alcoholG: alcoholG + other.alcoholG,
-        fiberG: fiberG + other.fiberG,
-        sodiumMg: sodiumMg + other.sodiumMg,
-        sugarG: sugarG + other.sugarG,
-        saturatedFatG: saturatedFatG + other.saturatedFatG,
-      );
+    calories: calories + other.calories,
+    proteinG: proteinG + other.proteinG,
+    carbG: carbG + other.carbG,
+    fatG: fatG + other.fatG,
+    alcoholG: alcoholG + other.alcoholG,
+    fiberG: fiberG + other.fiberG,
+    sodiumMg: sodiumMg + other.sodiumMg,
+    sugarG: sugarG + other.sugarG,
+    saturatedFatG: saturatedFatG + other.saturatedFatG,
+  );
 
   static MacroIntake fromGrams({
     required double grams,

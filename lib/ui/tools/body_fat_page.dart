@@ -6,7 +6,6 @@ import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
-import '../theme/sport_chrome.dart';
 import '../widgets/form_options.dart';
 
 class BodyFatPage extends ConsumerStatefulWidget {
@@ -18,6 +17,7 @@ class BodyFatPage extends ConsumerStatefulWidget {
 
 class _BodyFatPageState extends ConsumerState<BodyFatPage> {
   late Sex _sex;
+  late int _age;
   late double _heightCm;
   late double _neckCm;
   late double _waistCm;
@@ -33,6 +33,7 @@ class _BodyFatPageState extends ConsumerState<BodyFatPage> {
     super.initState();
     final p = ref.read(profileProvider)!;
     _sex = p.sex;
+    _age = p.age;
     _heightCm = FormOptions.snapDouble(
       FormOptions.heightsCm().map((e) => e.toDouble()).toList(),
       p.heightCm,
@@ -80,7 +81,6 @@ class _BodyFatPageState extends ConsumerState<BodyFatPage> {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final pct = _pct;
-    final heights = FormOptions.heightsCm().map((e) => e.toDouble()).toList();
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.toolBodyFat)),
@@ -88,24 +88,14 @@ class _BodyFatPageState extends ConsumerState<BodyFatPage> {
         padding: const EdgeInsets.all(AppSpacing.formPage),
         children: [
           Text(l10n.bfDisclaimer, style: theme.textTheme.meta),
-          const SizedBox(height: AppSpacing.section),
-          Text(l10n.sex, style: theme.textTheme.fieldLabel),
           const SizedBox(height: 4),
-          SportTabs<Sex>(
-            items: {Sex.male: l10n.male, Sex.female: l10n.female},
-            selected: _sex,
-            onSelected: (v) => setState(() => _sex = v),
+          Text(
+            l10n.metricsFromProfileShort(_sex.label(l10n), _age),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
-          const SizedBox(height: AppSpacing.field),
-          AppDropdown<double>(
-            label: l10n.height,
-            value: _heightCm,
-            items: heights,
-            suffixText: 'cm',
-            itemLabel: (v) => v.round().toString(),
-            onChanged: (v) => setState(() => _heightCm = v),
-          ),
-          const SizedBox(height: AppSpacing.field),
+          const SizedBox(height: AppSpacing.section),
           AppDropdown<double>(
             label: l10n.neck,
             value: _neckCm,

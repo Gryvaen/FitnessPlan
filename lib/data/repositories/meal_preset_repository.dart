@@ -11,9 +11,9 @@ class MealPresetRepository {
   final MealRepository _meals;
 
   Future<List<MealPreset>> listPresets() {
-    return (_db.select(_db.mealPresets)
-          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
-        .get();
+    return (_db.select(
+      _db.mealPresets,
+    )..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).get();
   }
 
   Future<List<MealPresetItem>> itemsFor(int presetId) {
@@ -32,14 +32,18 @@ class MealPresetRepository {
     if (entries.isEmpty) throw ArgumentError('没有可保存的记录');
 
     return _db.transaction(() async {
-      final presetId = await _db.into(_db.mealPresets).insert(
+      final presetId = await _db
+          .into(_db.mealPresets)
+          .insert(
             MealPresetsCompanion.insert(
               name: trimmed,
               createdAt: DateTime.now(),
             ),
           );
       for (final e in entries) {
-        await _db.into(_db.mealPresetItems).insert(
+        await _db
+            .into(_db.mealPresetItems)
+            .insert(
               MealPresetItemsCompanion.insert(
                 presetId: presetId,
                 foodId: e.foodId,
@@ -61,9 +65,9 @@ class MealPresetRepository {
     var copied = 0;
     var skipped = 0;
     for (final item in items) {
-      final food = await (_db.select(_db.foodItems)
-            ..where((t) => t.id.equals(item.foodId)))
-          .getSingleOrNull();
+      final food = await (_db.select(
+        _db.foodItems,
+      )..where((t) => t.id.equals(item.foodId))).getSingleOrNull();
       if (food == null) {
         skipped++;
         continue;
@@ -80,8 +84,9 @@ class MealPresetRepository {
   }
 
   Future<void> deletePreset(int id) async {
-    await (_db.delete(_db.mealPresetItems)..where((t) => t.presetId.equals(id)))
-        .go();
+    await (_db.delete(
+      _db.mealPresetItems,
+    )..where((t) => t.presetId.equals(id))).go();
     await (_db.delete(_db.mealPresets)..where((t) => t.id.equals(id))).go();
   }
 

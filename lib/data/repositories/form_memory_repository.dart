@@ -3,20 +3,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/models.dart';
 
 class MealFormDefaults {
-  const MealFormDefaults({
-    required this.mealType,
-    required this.grams,
-  });
+  const MealFormDefaults({required this.mealType, required this.grams});
 
   final MealType mealType;
   final double grams;
 }
 
 class WeightFormExtras {
-  const WeightFormExtras({
-    this.bodyFatPct,
-    this.exerciseMinutes,
-  });
+  const WeightFormExtras({this.bodyFatPct, this.exerciseMinutes});
 
   final double? bodyFatPct;
   final int? exerciseMinutes;

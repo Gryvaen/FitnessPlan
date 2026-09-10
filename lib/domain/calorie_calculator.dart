@@ -107,12 +107,7 @@ class CalorieCalculator {
     required int age,
     required ActivityLevel activity,
   }) {
-    return bmr(
-          sex: sex,
-          weightKg: weightKg,
-          heightCm: heightCm,
-          age: age,
-        ) *
+    return bmr(sex: sex, weightKg: weightKg, heightCm: heightCm, age: age) *
         activity.factor;
   }
 
@@ -184,8 +179,7 @@ class CalorieCalculator {
         }
         requestedWeekly ??= defaultWeeklyLoss;
 
-        final validCut =
-            effectiveTarget != null && effectiveTarget < weightKg;
+        final validCut = effectiveTarget != null && effectiveTarget < weightKg;
         if (!validCut) {
           missingCutInputs = true;
           eat = tdeeValue * 0.8;
@@ -235,7 +229,8 @@ class CalorieCalculator {
             estimatedWeeks = null;
           }
 
-          final rateWasLimited = safetyApplied &&
+          final rateWasLimited =
+              safetyApplied &&
               dailyDeficit > 0 &&
               (effectiveWeekly < intendedWeekly - 0.001);
           if (rateWasLimited) {
@@ -248,7 +243,9 @@ class CalorieCalculator {
                 }),
               );
             }
-          } else if (!notes.any((n) => n.id == CalorieNoteId.weeklyLossTooHigh)) {
+          } else if (!notes.any(
+            (n) => n.id == CalorieNoteId.weeklyLossTooHigh,
+          )) {
             notes.add(
               CalorieNote(CalorieNoteId.estimateWeeks, {
                 'kcalPerKg': kcalPerKgFat.toInt().toString(),
@@ -269,11 +266,7 @@ class CalorieCalculator {
     final adj = calorieAdjustment.clamp(0, maxCalorieAdjustment);
     if (adj > 0) {
       eat = (eat - adj).clamp(0.0, double.infinity);
-      notes.add(
-        CalorieNote(CalorieNoteId.plateauAdj, {
-          'adj': adj.toString(),
-        }),
-      );
+      notes.add(CalorieNote(CalorieNoteId.plateauAdj, {'adj': adj.toString()}));
     }
 
     final targets = _macrosFor(
@@ -298,8 +291,7 @@ class CalorieCalculator {
       targetWeightKg: goal == FitnessGoal.cut ? effectiveTarget : null,
       goalWeeks: goal == FitnessGoal.cut ? estimatedWeeks : null,
       weeklyLossKg: goal == FitnessGoal.cut ? effectiveWeekly : null,
-      requestedWeeklyLossKg:
-          goal == FitnessGoal.cut ? requestedWeekly : null,
+      requestedWeeklyLossKg: goal == FitnessGoal.cut ? requestedWeekly : null,
       kgToLose: kgToLose,
       requestedDeficit: requestedDeficit,
       calorieAdjustment: adj,

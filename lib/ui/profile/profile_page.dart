@@ -66,7 +66,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         ref.read(dietStrategyRepositoryProvider).clearAll(),
       ]);
       await ref.read(profileProvider.notifier).clear();
-      await ref.read(workoutReminderProvider.notifier).syncSchedule();
+      await ref.read(remindersProvider.notifier).syncSchedule();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(

@@ -3,5 +3,4 @@ double actualDailyDeficit({
   required double plannedDeficit,
   required double targetCalories,
   required double intakeCalories,
-}) =>
-    plannedDeficit + (targetCalories - intakeCalories);
+}) => plannedDeficit + (targetCalories - intakeCalories);

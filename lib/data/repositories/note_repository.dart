@@ -11,26 +11,25 @@ class NoteRepository {
   DateTime _dayStart(DateTime d) => CalendarDay.dayOnly(d);
 
   Stream<List<DailyNote>> watchAll() {
-    return (_db.select(_db.dailyNotes)
-          ..orderBy([(t) => OrderingTerm.desc(t.date)]))
-        .watch();
+    return (_db.select(
+      _db.dailyNotes,
+    )..orderBy([(t) => OrderingTerm.desc(t.date)])).watch();
   }
 
   Future<DailyNote?> getByDate(DateTime day) {
     final start = _dayStart(day);
-    return (_db.select(_db.dailyNotes)..where((t) => t.date.equals(start)))
-        .getSingleOrNull();
+    return (_db.select(
+      _db.dailyNotes,
+    )..where((t) => t.date.equals(start))).getSingleOrNull();
   }
 
   Future<DailyNote?> byId(int id) {
-    return (_db.select(_db.dailyNotes)..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
+    return (_db.select(
+      _db.dailyNotes,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
-  Future<int> upsert({
-    required DateTime date,
-    required String content,
-  }) async {
+  Future<int> upsert({required DateTime date, required String content}) async {
     CalendarDay.ensureEditableDay(date);
     final trimmed = content.trim();
     if (trimmed.isEmpty) throw ArgumentError('便签内容不能为空');
@@ -39,16 +38,16 @@ class NoteRepository {
     final now = DateTime.now();
     final existing = await getByDate(day);
     if (existing != null) {
-      await (_db.update(_db.dailyNotes)..where((t) => t.id.equals(existing.id)))
-          .write(
-            DailyNotesCompanion(
-              content: Value(trimmed),
-              updatedAt: Value(now),
-            ),
-          );
+      await (_db.update(
+        _db.dailyNotes,
+      )..where((t) => t.id.equals(existing.id))).write(
+        DailyNotesCompanion(content: Value(trimmed), updatedAt: Value(now)),
+      );
       return existing.id;
     }
-    return _db.into(_db.dailyNotes).insert(
+    return _db
+        .into(_db.dailyNotes)
+        .insert(
           DailyNotesCompanion.insert(
             date: day,
             content: trimmed,

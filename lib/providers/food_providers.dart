@@ -11,7 +11,9 @@ final favoriteFoodsProvider = StreamProvider<List<FoodItem>>((ref) {
   return ref.watch(foodRepositoryProvider).watchFavorites();
 });
 
-final foodFavoriteProvider =
-    FutureProvider.autoDispose.family<bool, int>((ref, foodId) async {
+final foodFavoriteProvider = FutureProvider.autoDispose.family<bool, int>((
+  ref,
+  foodId,
+) async {
   return ref.watch(foodRepositoryProvider).isFavorite(foodId);
 });

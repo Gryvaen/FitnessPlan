@@ -34,9 +34,9 @@ class WaterRepository {
 
   Future<int> mlForDay(DateTime day) async {
     final key = _dayStart(day);
-    final row = await (_db.select(_db.waterLogs)
-          ..where((t) => t.date.equals(key)))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.waterLogs,
+    )..where((t) => t.date.equals(key))).getSingleOrNull();
     return row?.ml ?? 0;
   }
 
@@ -51,13 +51,13 @@ class WaterRepository {
     CalendarDay.ensureEditableDay(day);
     final key = _dayStart(day);
     final value = ml < 0 ? 0 : ml;
-    final existing = await (_db.select(_db.waterLogs)
-          ..where((t) => t.date.equals(key)))
-        .getSingleOrNull();
+    final existing = await (_db.select(
+      _db.waterLogs,
+    )..where((t) => t.date.equals(key))).getSingleOrNull();
     if (existing == null) {
-      await _db.into(_db.waterLogs).insert(
-            WaterLogsCompanion.insert(date: key, ml: value),
-          );
+      await _db
+          .into(_db.waterLogs)
+          .insert(WaterLogsCompanion.insert(date: key, ml: value));
     } else {
       await (_db.update(_db.waterLogs)..where((t) => t.id.equals(existing.id)))
           .write(WaterLogsCompanion(ml: Value(value)));

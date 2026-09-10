@@ -261,9 +261,7 @@ class _DisciplineFreedomLoadingPageState
             fit: StackFit.expand,
             children: [
               ColoredBox(color: colors.background),
-              RepaintBoundary(
-                child: _InkRainbowBloom(bloom: _inkBloom),
-              ),
+              RepaintBoundary(child: _InkRainbowBloom(bloom: _inkBloom)),
               SafeArea(
                 child: LayoutBuilder(
                   builder: (context, constraints) {
@@ -1120,9 +1118,9 @@ class _ClimbPathCache {
             if (prevDir != null) {
               final plen = prevDir.distance;
               if (plen > 1e-6) {
-                final align = ((v.dx * prevDir.dx + v.dy * prevDir.dy) /
-                        (len * plen))
-                    .clamp(-1.0, 1.0);
+                final align =
+                    ((v.dx * prevDir.dx + v.dy * prevDir.dy) / (len * plen))
+                        .clamp(-1.0, 1.0);
                 final turn = (1 - align) * 0.5;
                 rugged = (rugged + turn * 0.85).clamp(0.0, 1.0);
               }
@@ -1167,19 +1165,11 @@ Path _buildClimbPath(Size size, double topInset) {
       size.width * .76,
       y(.38),
     )
-    ..quadraticBezierTo(
-      size.width * .89,
-      y(.43),
-      size.width - 3,
-      y(.12),
-    );
+    ..quadraticBezierTo(size.width * .89, y(.43), size.width - 3, y(.12));
 }
 
 class _MiniClimberPainter extends CustomPainter {
-  const _MiniClimberPainter({
-    required this.phase,
-    required this.color,
-  });
+  const _MiniClimberPainter({required this.phase, required this.color});
 
   static const double lineWidth = 1.8;
 

@@ -19,8 +19,9 @@ class Plateau {
     final end = now ?? DateTime.now();
     final start = end.subtract(Duration(days: windowDays));
 
-    final inWindow =
-        sorted.where((e) => !e.date.isBefore(start) && !e.date.isAfter(end));
+    final inWindow = sorted.where(
+      (e) => !e.date.isBefore(start) && !e.date.isAfter(end),
+    );
     final list = inWindow.toList();
     if (list.length < 2) return false;
 

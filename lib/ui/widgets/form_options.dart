@@ -10,11 +10,13 @@ import '../theme/app_theme.dart';
 class FormOptions {
   const FormOptions._();
 
-  static List<int> ages({int min = 12, int max = 80}) =>
-      [for (var i = min; i <= max; i++) i];
+  static List<int> ages({int min = 12, int max = 80}) => [
+    for (var i = min; i <= max; i++) i,
+  ];
 
-  static List<int> heightsCm({int min = 140, int max = 210}) =>
-      [for (var i = min; i <= max; i++) i];
+  static List<int> heightsCm({int min = 140, int max = 210}) => [
+    for (var i = min; i <= max; i++) i,
+  ];
 
   static List<double> weightsKg({
     double min = 40,
@@ -295,9 +297,9 @@ class _CupertinoWheelSheetState<T> extends State<_CupertinoWheelSheet<T>> {
                       widget.title,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            decoration: TextDecoration.none,
-                            color: labelColor,
-                          ),
+                        decoration: TextDecoration.none,
+                        color: labelColor,
+                      ),
                     ),
                   ),
                   CupertinoButton(
@@ -306,8 +308,8 @@ class _CupertinoWheelSheetState<T> extends State<_CupertinoWheelSheet<T>> {
                     child: Text(
                       l10n.done,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            decoration: TextDecoration.none,
-                          ),
+                        decoration: TextDecoration.none,
+                      ),
                     ),
                   ),
                 ],
@@ -330,9 +332,9 @@ class _CupertinoWheelSheetState<T> extends State<_CupertinoWheelSheet<T>> {
                       child: Text(
                         widget.itemLabel(item),
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              decoration: TextDecoration.none,
-                              color: labelColor,
-                            ),
+                          decoration: TextDecoration.none,
+                          color: labelColor,
+                        ),
                       ),
                     ),
                 ],
@@ -459,9 +461,7 @@ class AppOptionalDropdown<T extends Object> extends StatelessWidget {
 }
 
 class _OptionalEntry<T extends Object> {
-  const _OptionalEntry.none()
-      : value = null,
-        isNone = true;
+  const _OptionalEntry.none() : value = null, isNone = true;
   const _OptionalEntry.value(this.value) : isNone = false;
 
   final T? value;
@@ -514,10 +514,7 @@ class _PickerField extends StatelessWidget {
                       children: [
                         Text(label, style: theme.textTheme.fieldLabel),
                         const SizedBox(height: 4),
-                        Text(
-                          displayText,
-                          style: theme.textTheme.titleMedium,
-                        ),
+                        Text(displayText, style: theme.textTheme.titleMedium),
                       ],
                     ),
                   ),

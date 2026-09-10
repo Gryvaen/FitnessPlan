@@ -876,7 +876,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reminders => '提醒';
 
   @override
-  String get remindersSubtitle => '每日运动提醒';
+  String get remindersSubtitle => '训练、喝水、饮食、体重';
 
   @override
   String get workoutReminderTile => '每日运动提醒';
@@ -891,6 +891,65 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get workoutReminderPermissionDenied => '未授予通知权限，无法开启每日提醒。';
+
+  @override
+  String get reminderWaterTitle => '喝水提醒';
+
+  @override
+  String get reminderWaterBody => '该喝一杯水了。';
+
+  @override
+  String get reminderMealTitle => '记录饮食';
+
+  @override
+  String get reminderMealBody => '别忘了记录今天吃了什么。';
+
+  @override
+  String get reminderWeighInTitle => '称体重';
+
+  @override
+  String get reminderWeighInBody => '上秤称一下，记录今天的体重。';
+
+  @override
+  String get reminderKindWorkout => '训练提醒';
+
+  @override
+  String get reminderKindWater => '喝水提醒';
+
+  @override
+  String get reminderKindMeal => '饮食记录';
+
+  @override
+  String get reminderKindWeighIn => '体重提醒';
+
+  @override
+  String get reminderKindWorkoutDesc => '每天提醒你去训练';
+
+  @override
+  String get reminderKindWaterDesc => '提醒你及时补水';
+
+  @override
+  String get reminderKindMealDesc => '提醒你记录饮食';
+
+  @override
+  String get reminderKindWeighInDesc => '早晨提醒你称体重';
+
+  @override
+  String reminderDailyAt(String time) {
+    return '每天 $time';
+  }
+
+  @override
+  String get reminderOff => '已关闭';
+
+  @override
+  String get notificationPermissionRow => '通知权限';
+
+  @override
+  String get notificationPermissionOn => '已开启';
+
+  @override
+  String get notificationPermissionHint => '允许发送通知，以确保提醒正常送达。';
 
   @override
   String get customDuration => '自定义（0:30–10:00）';
@@ -2176,6 +2235,49 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get language => '语言';
+
+  @override
+  String get basalMetabolicRate => '基础代谢（BMR）';
+
+  @override
+  String get totalDailyEnergy => '每日总消耗（TDEE）';
+
+  @override
+  String get bmrMethodMifflin => 'Mifflin-St Jeor';
+
+  @override
+  String get bmrMethodKatch => 'Katch-McArdle · 使用体脂率';
+
+  @override
+  String bmrKatchFormula(String lbm, String bmr) {
+    return '370 + 21.6 × 去脂体重 $lbm kg = $bmr kcal';
+  }
+
+  @override
+  String bmrMifflinFormula(
+    String w,
+    String h,
+    int age,
+    String sexTerm,
+    String bmr,
+  ) {
+    return '10·$w + 6.25·$h − 5·$age $sexTerm = $bmr kcal';
+  }
+
+  @override
+  String tdeeFormula(String bmr, String factor, String activity, String tdee) {
+    return '$bmr kcal × $factor（$activity）= $tdee kcal';
+  }
+
+  @override
+  String metricsFromProfile(String sex, int age, String activity) {
+    return '来自档案 · $sex · $age 岁 · $activity';
+  }
+
+  @override
+  String metricsFromProfileShort(String sex, int age) {
+    return '来自档案 · $sex · $age 岁';
+  }
 
   @override
   String get toolboxTagline => '实用工具 · 辅助你的健康生活';
