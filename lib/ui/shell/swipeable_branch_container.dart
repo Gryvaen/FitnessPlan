@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-/// Hosts StatefulShellRoute branch navigators in a [PageView] so tabs can be
-/// switched by horizontal swipe, while staying in sync with bottom-nav taps.
+/// Hosts StatefulShellRoute branch navigators in a [PageView] and animates
+/// between them. It does not take horizontal drags itself — branch switching is
+/// driven by bottom-nav taps and by each branch's [SwipeTabView] handing off a
+/// swipe past its first / last tab — so a drag can never skip the inner tabs.
 class SwipeableBranchContainer extends StatefulWidget {
   const SwipeableBranchContainer({
     super.key,
@@ -64,7 +66,7 @@ class _SwipeableBranchContainerState extends State<SwipeableBranchContainer> {
   Widget build(BuildContext context) {
     return PageView(
       controller: _controller,
-      physics: const ClampingScrollPhysics(),
+      physics: const NeverScrollableScrollPhysics(),
       onPageChanged: _onPageChanged,
       children: widget.children,
     );

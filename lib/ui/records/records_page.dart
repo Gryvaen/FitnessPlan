@@ -71,6 +71,7 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
             const SizedBox(height: AppSpacing.compact),
             Expanded(
               child: SwipeTabView(
+                branchIndex: 2,
                 index: _segment.index,
                 onIndexChanged: (i) =>
                     setState(() => _segment = RecordsSegment.values[i]),

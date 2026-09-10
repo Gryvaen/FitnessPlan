@@ -134,6 +134,7 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                       },
                     )
                   : SwipeTabView(
+                      branchIndex: 1,
                       index: _tab.index,
                       onIndexChanged: (i) =>
                           setState(() => _tab = _FoodsTab.values[i]),

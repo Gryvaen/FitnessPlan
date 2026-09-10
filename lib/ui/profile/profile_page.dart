@@ -8,6 +8,7 @@ import '../../data/repositories/app_update_repository.dart';
 import '../../domain/calorie_calculator.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../shell/swipe_tab_view.dart';
 import '../strategy/strategy_labels.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
@@ -227,158 +228,168 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final versionLabel = _packageInfo?.version;
 
     return AppChromeScaffold(
-      body: SafeArea(
-        bottom: false,
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.listPage,
-            8,
-            AppSpacing.listPage,
-            listBottomInset(context, hasFab: false),
-          ),
-          children: [
-            Padding(
-              // Align the title with the rows below and with the 食物 / 记录
-              // pages: the ListView already supplies the 20px side inset.
-              padding: const EdgeInsets.only(bottom: AppSpacing.section),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(l10n.me, style: theme.textTheme.headlineSmall),
-                  if (versionLabel != null) ...[
-                    const SizedBox(width: 8),
-                    Text(
-                      'v$versionLabel',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                  const Spacer(),
-                  IconButton(
-                    tooltip: l10n.language,
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () => ref
-                        .read(localeProvider.notifier)
-                        .toggle(Localizations.localeOf(context)),
-                    icon: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.translate, size: 18),
-                        const SizedBox(width: 2),
+      body: SwipeTabView(
+        branchIndex: 3,
+        index: 0,
+        onIndexChanged: (_) {},
+        children: [
+          SafeArea(
+            bottom: false,
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.listPage,
+                8,
+                AppSpacing.listPage,
+                listBottomInset(context, hasFab: false),
+              ),
+              children: [
+                Padding(
+                  // Align the title with the rows below and with the 食物 / 记录
+                  // pages: the ListView already supplies the 20px side inset.
+                  padding: const EdgeInsets.only(bottom: AppSpacing.section),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(l10n.me, style: theme.textTheme.headlineSmall),
+                      if (versionLabel != null) ...[
+                        const SizedBox(width: 8),
                         Text(
-                          Localizations.localeOf(context).languageCode == 'zh'
-                              ? 'EN'
-                              : '中',
-                          style: theme.textTheme.labelLarge,
+                          'v$versionLabel',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ],
-                    ),
+                      const Spacer(),
+                      IconButton(
+                        tooltip: l10n.language,
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () => ref
+                            .read(localeProvider.notifier)
+                            .toggle(Localizations.localeOf(context)),
+                        icon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.translate, size: 18),
+                            const SizedBox(width: 2),
+                            Text(
+                              Localizations.localeOf(context).languageCode ==
+                                      'zh'
+                                  ? 'EN'
+                                  : '中',
+                              style: theme.textTheme.labelLarge,
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: l10n.theme,
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () {
+                          final current = ref.read(themeProvider);
+                          ref
+                              .read(themeProvider.notifier)
+                              .select(current.toggled);
+                        },
+                        icon: Icon(
+                          ref.watch(themeProvider).isDark
+                              ? Icons.dark_mode_outlined
+                              : Icons.light_mode_outlined,
+                          size: 20,
+                        ),
+                      ),
+                      if (isAndroid)
+                        IconButton(
+                          tooltip: update.phase == AppUpdatePhase.downloading
+                              ? (update.progress > 0
+                                    ? '${(update.progress * 100).toStringAsFixed(0)}%'
+                                    : l10n.connecting)
+                              : l10n.checkUpdate,
+                          onPressed: update.isBusy ? null : _checkForUpdate,
+                          icon: _UpdateDownloadIcon(status: update),
+                        ),
+                    ],
                   ),
-                  IconButton(
-                    tooltip: l10n.theme,
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () {
-                      final current = ref.read(themeProvider);
-                      ref.read(themeProvider.notifier).select(current.toggled);
-                    },
-                    icon: Icon(
-                      ref.watch(themeProvider).isDark
-                          ? Icons.dark_mode_outlined
-                          : Icons.light_mode_outlined,
-                      size: 20,
-                    ),
-                  ),
-                  if (isAndroid)
-                    IconButton(
-                      tooltip: update.phase == AppUpdatePhase.downloading
-                          ? (update.progress > 0
-                                ? '${(update.progress * 100).toStringAsFixed(0)}%'
-                                : l10n.connecting)
-                          : l10n.checkUpdate,
-                      onPressed: update.isBusy ? null : _checkForUpdate,
-                      icon: _UpdateDownloadIcon(status: update),
-                    ),
-                ],
-              ),
-            ),
-            SportListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: CircleAvatar(
-                radius: 24,
-                backgroundColor: theme.colorScheme.primaryContainer,
-                child: Icon(
-                  Icons.person_outline,
-                  color: theme.colorScheme.onPrimaryContainer,
                 ),
-              ),
-              title: Text(
-                ref.watch(userNameProvider) ?? l10n.profileGreeting,
-                style: theme.textTheme.titleMedium,
-              ),
-              subtitle: Text(
-                l10n.profileSubtitle(
-                  profile.sex.label(l10n),
-                  profile.age,
-                  '${profile.heightCm.round()}',
-                  profile.weightKg.toStringAsFixed(1),
-                  profile.goal.label(l10n),
-                ),
-                style: theme.textTheme.meta,
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    tooltip: l10n.editName,
-                    visualDensity: VisualDensity.compact,
-                    icon: const Icon(Icons.edit_outlined, size: 18),
-                    onPressed: _renameUser,
-                  ),
-                  const Icon(Icons.chevron_right),
-                ],
-              ),
-              onTap: () => context.push('/profile/edit'),
-            ),
-            _MenuRow(
-              icon: Icons.track_changes_outlined,
-              title: l10n.nutritionTargets,
-              subtitle: _nutritionSubtitle(ref, l10n),
-              onTap: () => context.push('/profile/nutrition'),
-            ),
-            _MenuRow(
-              icon: Icons.notifications_outlined,
-              title: l10n.reminders,
-              subtitle: l10n.remindersSubtitle,
-              onTap: () => context.push('/profile/reminders'),
-            ),
-            _MenuRow(
-              icon: Icons.handyman_outlined,
-              title: l10n.toolbox,
-              subtitle: l10n.toolboxSubtitle,
-              onTap: () => context.push('/profile/tools'),
-            ),
-            _MenuRow(
-              icon: Icons.palette_outlined,
-              title: l10n.theme,
-              subtitle: ref.watch(themeProvider).label(l10n),
-              onTap: () => context.push('/profile/theme'),
-            ),
-            SportListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.info_outline),
-              title: Text(l10n.about),
-              subtitle: versionLabel == null
-                  ? null
-                  : Text(
-                      l10n.appVersionLabel(versionLabel),
-                      style: theme.textTheme.meta,
+                SportListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    radius: 24,
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                    child: Icon(
+                      Icons.person_outline,
+                      color: theme.colorScheme.onPrimaryContainer,
                     ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => _showAbout(context, plan, versionLabel),
+                  ),
+                  title: Text(
+                    ref.watch(userNameProvider) ?? l10n.profileGreeting,
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  subtitle: Text(
+                    l10n.profileSubtitle(
+                      profile.sex.label(l10n),
+                      profile.age,
+                      '${profile.heightCm.round()}',
+                      profile.weightKg.toStringAsFixed(1),
+                      profile.goal.label(l10n),
+                    ),
+                    style: theme.textTheme.meta,
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: l10n.editName,
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Icons.edit_outlined, size: 18),
+                        onPressed: _renameUser,
+                      ),
+                      const Icon(Icons.chevron_right),
+                    ],
+                  ),
+                  onTap: () => context.push('/profile/edit'),
+                ),
+                _MenuRow(
+                  icon: Icons.track_changes_outlined,
+                  title: l10n.nutritionTargets,
+                  subtitle: _nutritionSubtitle(ref, l10n),
+                  onTap: () => context.push('/profile/nutrition'),
+                ),
+                _MenuRow(
+                  icon: Icons.notifications_outlined,
+                  title: l10n.reminders,
+                  subtitle: l10n.remindersSubtitle,
+                  onTap: () => context.push('/profile/reminders'),
+                ),
+                _MenuRow(
+                  icon: Icons.handyman_outlined,
+                  title: l10n.toolbox,
+                  subtitle: l10n.toolboxSubtitle,
+                  onTap: () => context.push('/profile/tools'),
+                ),
+                _MenuRow(
+                  icon: Icons.palette_outlined,
+                  title: l10n.theme,
+                  subtitle: ref.watch(themeProvider).label(l10n),
+                  onTap: () => context.push('/profile/theme'),
+                ),
+                SportListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.info_outline),
+                  title: Text(l10n.about),
+                  subtitle: versionLabel == null
+                      ? null
+                      : Text(
+                          l10n.appVersionLabel(versionLabel),
+                          style: theme.textTheme.meta,
+                        ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showAbout(context, plan, versionLabel),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

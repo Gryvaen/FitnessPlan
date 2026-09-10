@@ -7,24 +7,24 @@ class ShellSwipe extends InheritedWidget {
     super.key,
     required this.currentBranch,
     required this.branchCount,
-    required this.goToBranch,
+    required this.enterEdge,
+    required this.onNudge,
     required super.child,
   });
 
   final int currentBranch;
   final int branchCount;
-  final ValueChanged<int> goToBranch;
 
-  /// Move [delta] branches from the current one, clamped to the valid range.
-  /// Returns whether a switch actually happened.
-  bool nudge(int delta) {
-    final target = currentBranch + delta;
-    if (target < 0 || target >= branchCount || target == currentBranch) {
-      return false;
-    }
-    goToBranch(target);
-    return true;
-  }
+  /// How the current branch was last entered: `1` = by swiping forward (land on
+  /// its first tab), `-1` = by swiping back (land on its last tab), `0` = a tap
+  /// or a settled state (keep whatever tab it was on).
+  final int enterEdge;
+
+  /// Move [delta] branches (±1) from the current one. Returns whether a switch
+  /// actually happened (false at the ends).
+  final bool Function(int delta) onNudge;
+
+  bool nudge(int delta) => onNudge(delta);
 
   static ShellSwipe? maybeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<ShellSwipe>();
@@ -32,23 +32,30 @@ class ShellSwipe extends InheritedWidget {
   @override
   bool updateShouldNotify(ShellSwipe oldWidget) =>
       currentBranch != oldWidget.currentBranch ||
-      branchCount != oldWidget.branchCount;
+      branchCount != oldWidget.branchCount ||
+      enterEdge != oldWidget.enterEdge;
 }
 
-/// A horizontally swipeable set of tab panels that chains into the bottom-nav
-/// branches: swiping past the first / last panel switches to the previous /
-/// next branch via [ShellSwipe].
+/// The swipeable panel host for one bottom-nav branch.
 ///
-/// [index] is the externally-owned selected tab (kept in sync with the tab
-/// strip and deep links); [onIndexChanged] fires when a swipe changes it.
+/// Branches with sub-tabs (Records, Foods) pass every tab as a child; branches
+/// without (Today, Me) pass a single child. Either way a horizontal drag is
+/// owned here — never by an ancestor PageView — so one continuous left/right
+/// motion always steps through the inner tabs first and only then, past the
+/// first / last tab, hands off to the previous / next branch. Fast or slow, a
+/// drag never skips a step.
 class SwipeTabView extends StatefulWidget {
   const SwipeTabView({
     super.key,
+    required this.branchIndex,
     required this.index,
     required this.onIndexChanged,
     required this.children,
   });
 
+  /// This branch's bottom-nav index, matched against [ShellSwipe.currentBranch]
+  /// so only the freshly-entered branch reacts to [ShellSwipe.enterEdge].
+  final int branchIndex;
   final int index;
   final ValueChanged<int> onIndexChanged;
   final List<Widget> children;
@@ -68,7 +75,13 @@ class _SwipeTabViewState extends State<SwipeTabView> {
   double _overscroll = 0;
   bool _handedOff = false;
 
-  static const _handoffThreshold = 48.0;
+  static const _handoffThreshold = 44.0;
+
+  /// Always accept the drag (so a single-child pager still reports overscroll)
+  /// and clamp hard at the edges (no bounce) so that overscroll is ours to read.
+  static const _physics = PageScrollPhysics(
+    parent: AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+  );
 
   @override
   void initState() {
@@ -106,7 +119,7 @@ class _SwipeTabViewState extends State<SwipeTabView> {
   }
 
   bool _onScroll(ScrollNotification n) {
-    // Only the PageView's own scroll activity (depth 0, horizontal). Ignore
+    // Only this pager's own scroll activity (depth 0, horizontal). Ignore
     // nested horizontal scrollers inside a panel, e.g. a chip row.
     if (n.depth != 0 || n.metrics.axis != Axis.horizontal) return false;
     if (n is ScrollStartNotification) {
@@ -128,13 +141,25 @@ class _SwipeTabViewState extends State<SwipeTabView> {
 
   @override
   Widget build(BuildContext context) {
+    // Just landed on this branch by swiping — continue from its entry edge.
+    final shell = ShellSwipe.maybeOf(context);
+    if (shell != null &&
+        shell.enterEdge != 0 &&
+        shell.currentBranch == widget.branchIndex &&
+        widget.children.length > 1) {
+      final target = shell.enterEdge > 0 ? 0 : widget.children.length - 1;
+      if (widget.index != target) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && widget.index != target) widget.onIndexChanged(target);
+        });
+      }
+    }
+
     return NotificationListener<ScrollNotification>(
       onNotification: _onScroll,
       child: PageView.builder(
         controller: _controller,
-        // Page snapping, but a hard (non-bouncing) edge so a drag past the
-        // first / last panel reports overscroll we can hand to the shell.
-        physics: const PageScrollPhysics(parent: ClampingScrollPhysics()),
+        physics: _physics,
         onPageChanged: _onPageChanged,
         itemCount: widget.children.length,
         itemBuilder: (_, i) => widget.children[i],

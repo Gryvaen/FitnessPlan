@@ -38,11 +38,27 @@ class _MainShellState extends ConsumerState<MainShell>
     }
   }
 
+  /// `1` forward, `-1` back, `0` after a tap or once settled. Tells the branch
+  /// we're moving to which edge tab to continue from.
+  int _enterEdge = 0;
+
   void _onTap(int index) {
+    if (_enterEdge != 0) setState(() => _enterEdge = 0);
     widget.navigationShell.goBranch(
       index,
       initialLocation: index == widget.navigationShell.currentIndex,
     );
+  }
+
+  bool _nudge(int delta) {
+    final target = widget.navigationShell.currentIndex + delta;
+    if (target < 0 || target >= 4) return false;
+    setState(() => _enterEdge = delta > 0 ? 1 : -1);
+    widget.navigationShell.goBranch(target);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _enterEdge != 0) setState(() => _enterEdge = 0);
+    });
+    return true;
   }
 
   @override
@@ -74,7 +90,8 @@ class _MainShellState extends ConsumerState<MainShell>
     return ShellSwipe(
       currentBranch: selected,
       branchCount: items.length,
-      goToBranch: _onTap,
+      enterEdge: _enterEdge,
+      onNudge: _nudge,
       child: Stack(
         fit: StackFit.expand,
         children: [
