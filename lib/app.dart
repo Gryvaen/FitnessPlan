@@ -286,8 +286,10 @@ class _FitnessAppState extends ConsumerState<FitnessApp> {
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     final themeId = ref.watch(themeProvider);
+    final locale = ref.watch(localeProvider);
     return MaterialApp.router(
       onGenerateTitle: (context) => context.l10n.appTitle,
+      locale: locale,
       localeResolutionCallback: (locale, supported) {
         // Follow system language; fall back to English when unsupported.
         if (locale == null) return const Locale('en');

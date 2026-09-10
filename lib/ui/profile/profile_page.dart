@@ -203,7 +203,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             listBottomInset(context, hasFab: false),
           ),
           children: [
-            PageTitle(title: l10n.me),
+            PageTitle(
+              title: l10n.me,
+              action: TextButton.icon(
+                onPressed: () => ref
+                    .read(localeProvider.notifier)
+                    .toggle(Localizations.localeOf(context)),
+                icon: const Icon(Icons.translate, size: 18),
+                label: Text(
+                  Localizations.localeOf(context).languageCode == 'zh'
+                      ? 'EN'
+                      : '中',
+                ),
+              ),
+            ),
             SportListTile(
               contentPadding: EdgeInsets.zero,
               leading: CircleAvatar(
@@ -218,20 +231,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 l10n.profileGreeting,
                 style: theme.textTheme.titleMedium,
               ),
-              subtitle: Text(l10n.profileTagline, style: theme.textTheme.meta),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push('/profile/edit'),
-            ),
-            _MenuRow(
-              icon: Icons.person_outline,
-              title: l10n.myProfile,
-              subtitle: l10n.profileSubtitle(
-                profile.sex.label(l10n),
-                profile.age,
-                '${profile.heightCm.round()}',
-                profile.weightKg.toStringAsFixed(1),
-                profile.goal.label(l10n),
+              subtitle: Text(
+                l10n.profileSubtitle(
+                  profile.sex.label(l10n),
+                  profile.age,
+                  '${profile.heightCm.round()}',
+                  profile.weightKg.toStringAsFixed(1),
+                  profile.goal.label(l10n),
+                ),
+                style: theme.textTheme.meta,
               ),
+              trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push('/profile/edit'),
             ),
             _MenuRow(

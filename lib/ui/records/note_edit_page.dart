@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -8,7 +10,7 @@ import '../theme/app_theme.dart';
 
 enum _SaveStatus { idle, dirty, saving, saved }
 
-/// Full-screen memo-style daily note editor with explicit save and an unsaved-change guard.
+/// Full-screen memo-style daily note editor with debounced autosave.
 class NoteEditPage extends ConsumerStatefulWidget {
   const NoteEditPage({super.key, this.date});
 
@@ -20,12 +22,14 @@ class NoteEditPage extends ConsumerStatefulWidget {
 }
 
 class _NoteEditPageState extends ConsumerState<NoteEditPage> {
+  static const _debounce = Duration(milliseconds: 800);
+
   late final DateTime _day;
   late final TextEditingController _ctrl;
+  Timer? _timer;
   var _loading = true;
   var _status = _SaveStatus.idle;
   DateTime? _savedAt;
-  bool _allowPop = false;
   bool _loadFailed = false;
   String _lastSaved = '';
 
@@ -66,15 +70,19 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
     if (!AppDates.isLocalToday(_day)) return;
     final trimmed = _ctrl.text.trim();
     if (trimmed == _lastSaved) {
+      _timer?.cancel();
       if (_status == _SaveStatus.dirty) {
         setState(() => _status = _SaveStatus.saved);
       }
       return;
     }
     setState(() => _status = _SaveStatus.dirty);
+    _timer?.cancel();
+    _timer = Timer(_debounce, _persist);
   }
 
   Future<void> _persist() async {
+    _timer?.cancel();
     if (!AppDates.isLocalToday(_day) || _status == _SaveStatus.saving) return;
     final text = _ctrl.text;
     final trimmed = text.trim();
@@ -119,6 +127,7 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
 
   @override
   void dispose() {
+    _timer?.cancel();
     _ctrl.removeListener(_onChanged);
     _ctrl.dispose();
     super.dispose();
@@ -134,33 +143,14 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
     final editable = AppDates.isLocalToday(_day);
 
     return PopScope(
-      canPop:
-          _allowPop ||
-          (_status != _SaveStatus.dirty && _status != _SaveStatus.saving),
+      canPop: !editable || _status != _SaveStatus.saving,
       onPopInvokedWithResult: (didPop, result) async {
-        if (didPop || _status == _SaveStatus.saving) return;
-        final discard = await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: Text(l10n.discardChangesTitle),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: Text(l10n.cancel),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: Text(l10n.discard),
-              ),
-            ],
-          ),
-        );
-        if (discard == true && mounted) {
-          setState(() => _allowPop = true);
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) Navigator.pop(context);
-          });
-        }
+        if (didPop || !editable) return;
+        // Autosave already keeps the note current; flush any pending edit.
+        final navigator = Navigator.of(context);
+        _timer?.cancel();
+        await _persist();
+        if (mounted) navigator.pop();
       },
       child: Scaffold(
         resizeToAvoidBottomInset: true,
@@ -171,10 +161,14 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
           actions: [
             if (editable)
               TextButton(
-                onPressed: _loading || _status == _SaveStatus.saving
+                onPressed: _loading
                     ? null
-                    : _persist,
-                child: Text(l10n.save),
+                    : () async {
+                        _timer?.cancel();
+                        await _persist();
+                        if (context.mounted) Navigator.of(context).pop();
+                      },
+                child: Text(l10n.done),
               ),
           ],
         ),
