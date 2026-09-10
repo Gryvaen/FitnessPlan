@@ -256,13 +256,13 @@ void main() {
     );
     await _pump(tester, '/profile/nutrition');
     _expectNoLayoutErrors(tester);
-    final button = tester.widget<FilledButton>(
+    final row = tester.widget<ListTile>(
       find.ancestor(
         of: find.text('Choose strategy'),
-        matching: find.byType(FilledButton),
+        matching: find.byType(ListTile),
       ),
     );
-    expect(button.onPressed, isNull);
+    expect(row.onTap, isNull);
     expect(find.textContaining('adults (18+)'), findsOneWidget);
   });
 
@@ -274,13 +274,13 @@ void main() {
     await _setUp(profile: _profile(goal: FitnessGoal.maintain));
     await _pump(tester, '/profile/nutrition');
     _expectNoLayoutErrors(tester);
-    final button = tester.widget<FilledButton>(
+    final row = tester.widget<ListTile>(
       find.ancestor(
         of: find.text('Choose strategy'),
-        matching: find.byType(FilledButton),
+        matching: find.byType(ListTile),
       ),
     );
-    expect(button.onPressed, isNull);
+    expect(row.onTap, isNull);
     expect(find.text('Only available with the cut goal.'), findsOneWidget);
   });
 }

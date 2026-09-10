@@ -196,35 +196,20 @@ void main() {
     );
   });
 
-  group('collapsible blocks', () {
-    testWidgets('both blocks collapsed by default and expand independently', (
+  group('open sections', () {
+    testWidgets('workout and meal empty states render inline by default', (
       tester,
     ) async {
       await _pump(tester, h);
-
-      expect(find.text('No workout for today'), findsNothing);
-      expect(find.text("Today's food log is complete"), findsNothing);
-
-      await tester.tap(find.text('Today workout'));
-      await _settle(tester);
-      expect(find.text('No workout for today'), findsOneWidget);
-      expect(find.text("Today's food log is complete"), findsNothing);
-
-      await tester.tap(await _show(tester, find.text('Today logs')));
-      await _settle(tester);
-      expect(find.text('No workout for today'), findsOneWidget);
-      expect(find.text("Today's food log is complete"), findsOneWidget);
-
-      await tester.tap(await _show(tester, find.text('Today workout')));
-      await _settle(tester);
-      expect(find.text('No workout for today'), findsNothing);
-      expect(find.text("Today's food log is complete"), findsOneWidget);
+      // No expand/collapse: the workout empty state shows straight away.
+      expect(find.text('No workout planned yet'), findsOneWidget);
+      // The meals empty state sits lower down the page.
+      await _show(tester, find.text('No meals logged yet'));
+      expect(find.text('No meals logged yet'), findsOneWidget);
       _expectNoOverflow(tester);
     });
 
-    testWidgets('plain plus on logs opens the log flow without expanding', (
-      tester,
-    ) async {
+    testWidgets('plain plus on logs opens the log flow', (tester) async {
       await _pump(tester, h);
 
       final plus = await _show(tester, _semantic('Log meal'));
@@ -238,26 +223,28 @@ void main() {
         find.ancestor(of: plus, matching: find.byType(FloatingActionButton)),
         findsNothing,
       );
-      // Still has an adequate hit target.
       final size = tester.getSize(plus);
       expect(size.width, greaterThanOrEqualTo(44));
       expect(size.height, greaterThanOrEqualTo(44));
 
-      await tester.tap(plus);
+      await tester.ensureVisible(plus);
       await _settle(tester);
+      await tester.tap(
+        find.descendant(of: plus, matching: find.byType(InkResponse)),
+      );
+      await _settle(tester);
+      await tester.pump(const Duration(milliseconds: 400));
       expect(find.text('LOG_MEAL_PAGE'), findsOneWidget);
-      expect(find.text("Today's food log is complete"), findsNothing);
     });
 
-    testWidgets('plain plus on workout does not toggle the block', (
-      tester,
-    ) async {
+    testWidgets('plain plus on workout opens the plan picker', (tester) async {
       await _pump(tester, h);
       final plus = _semantic("Add today's workout");
       expect(plus, findsOneWidget);
       await tester.tap(plus);
       await tester.pump(const Duration(milliseconds: 500));
-      expect(find.text('No workout for today'), findsNothing);
+      // The empty state stays put (the picker is a sheet / dialog).
+      expect(find.text('No workout planned yet'), findsOneWidget);
     });
   });
 
