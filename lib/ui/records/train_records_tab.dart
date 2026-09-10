@@ -245,8 +245,6 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                     return SportEmptyState(
                       title: l10n.emptyPlans,
                       icon: Icons.fitness_center,
-                      actionLabel: l10n.fabNewPlan,
-                      onAction: () => context.push('/records/plan'),
                     );
                   }
                   final plan =
@@ -462,8 +460,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                   if (visible.isEmpty) {
                     return SportEmptyState(
                       title: l10n.noExercises,
-                      actionLabel: l10n.addExercise,
-                      onAction: () => _addExercise(context, ref),
+                      icon: Icons.fitness_center,
                     );
                   }
                   return Column(

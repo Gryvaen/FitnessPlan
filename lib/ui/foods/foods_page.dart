@@ -141,9 +141,6 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                   watch: (ref) => ref.watch(_recentFoodsProvider),
                   emptyIcon: Icons.history,
                   emptyTitle: l10n.noRecentFoods,
-                  emptyActionLabel: l10n.categories,
-                  onEmptyAction: () =>
-                      setState(() => _tab = _FoodsTab.categories),
                 ),
               },
             ),
@@ -160,15 +157,11 @@ class _FoodListView extends ConsumerWidget {
     required this.watch,
     required this.emptyIcon,
     required this.emptyTitle,
-    this.emptyActionLabel,
-    this.onEmptyAction,
   });
 
   final AsyncValue<List<FoodItem>> Function(WidgetRef ref) watch;
   final IconData emptyIcon;
   final String emptyTitle;
-  final String? emptyActionLabel;
-  final VoidCallback? onEmptyAction;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -179,12 +172,7 @@ class _FoodListView extends ConsumerWidget {
       data: (foods) {
         if (foods.isEmpty) {
           return SingleChildScrollView(
-            child: SportEmptyState(
-              icon: emptyIcon,
-              title: emptyTitle,
-              actionLabel: emptyActionLabel,
-              onAction: onEmptyAction,
-            ),
+            child: SportEmptyState(icon: emptyIcon, title: emptyTitle),
           );
         }
         return ListView.builder(

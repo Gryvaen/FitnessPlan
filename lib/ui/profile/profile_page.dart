@@ -203,18 +203,58 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             listBottomInset(context, hasFab: false),
           ),
           children: [
-            PageTitle(
-              title: l10n.me,
-              action: TextButton.icon(
-                onPressed: () => ref
-                    .read(localeProvider.notifier)
-                    .toggle(Localizations.localeOf(context)),
-                icon: const Icon(Icons.translate, size: 18),
-                label: Text(
-                  Localizations.localeOf(context).languageCode == 'zh'
-                      ? 'EN'
-                      : '中',
-                ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.listPage,
+                8,
+                AppSpacing.listPage,
+                AppSpacing.section,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(l10n.me, style: theme.textTheme.headlineSmall),
+                  if (versionLabel != null) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      'v$versionLabel',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                  const Spacer(),
+                  IconButton(
+                    tooltip: l10n.language,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => ref
+                        .read(localeProvider.notifier)
+                        .toggle(Localizations.localeOf(context)),
+                    icon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.translate, size: 18),
+                        const SizedBox(width: 2),
+                        Text(
+                          Localizations.localeOf(context).languageCode == 'zh'
+                              ? 'EN'
+                              : '中',
+                          style: theme.textTheme.labelLarge,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isAndroid)
+                    IconButton(
+                      tooltip: update.phase == AppUpdatePhase.downloading
+                          ? (update.progress > 0
+                                ? '${(update.progress * 100).toStringAsFixed(0)}%'
+                                : l10n.connecting)
+                          : l10n.checkUpdate,
+                      onPressed: update.isBusy ? null : _checkForUpdate,
+                      icon: _UpdateDownloadIcon(status: update),
+                    ),
+                ],
               ),
             ),
             SportListTile(
@@ -268,16 +308,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               subtitle: ref.watch(themeProvider).label(l10n),
               onTap: () => context.push('/profile/theme'),
             ),
-            if (isAndroid)
-              SportListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.system_update_outlined),
-                title: Text(l10n.checkUpdate),
-                trailing: update.isBusy
-                    ? _UpdateDownloadIcon(status: update)
-                    : const Icon(Icons.chevron_right),
-                onTap: update.isBusy ? null : _checkForUpdate,
-              ),
             SportListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.info_outline),

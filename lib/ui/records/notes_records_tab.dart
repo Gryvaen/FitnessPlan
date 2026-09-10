@@ -89,8 +89,6 @@ class NotesRecordsTab extends ConsumerWidget {
               SportEmptyState(
                 title: l10n.notesEmptyHint,
                 icon: Icons.edit_note,
-                actionLabel: l10n.fabWriteNote,
-                onAction: () => context.push(noteEditPath(now)),
               ),
             ],
           );
