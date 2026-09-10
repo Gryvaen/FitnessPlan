@@ -86,6 +86,7 @@ class SwipeTabView extends StatefulWidget {
     super.key,
     this.branchIndex,
     this.tabIndex,
+    this.alwaysEnterFirst = false,
     required this.index,
     required this.onIndexChanged,
     required this.children,
@@ -93,6 +94,12 @@ class SwipeTabView extends StatefulWidget {
 
   final int? branchIndex;
   final int? tabIndex;
+
+  /// When entered by a hand-off, always land on the first panel rather than the
+  /// last one for a backward swipe — for tab strips that are a filter, not a
+  /// sequence worth reverse-paging through (e.g. 7 days / 30 days / all).
+  final bool alwaysEnterFirst;
+
   final int index;
   final ValueChanged<int> onIndexChanged;
   final List<Widget> children;
@@ -235,15 +242,17 @@ class _SwipeTabViewState extends State<SwipeTabView> {
   Widget build(BuildContext context) {
     final incoming = _incomingEdge();
     if (incoming != 0 && widget.children.length > 1) {
-      final target = incoming > 0 ? 0 : widget.children.length - 1;
+      final toFirst = incoming > 0 || widget.alwaysEnterFirst;
+      final target = toFirst ? 0 : widget.children.length - 1;
+      final childEdge = toFirst ? 1 : -1;
       if (widget.index != target) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && widget.index != target) widget.onIndexChanged(target);
         });
       }
-      if (_childEdge != incoming) {
+      if (_childEdge != childEdge) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) setState(() => _childEdge = incoming);
+          if (mounted) setState(() => _childEdge = childEdge);
         });
       }
       WidgetsBinding.instance.addPostFrameCallback((_) {
