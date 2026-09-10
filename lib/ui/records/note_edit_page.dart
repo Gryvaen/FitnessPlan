@@ -215,7 +215,11 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
                         ),
                         child: TextField(
                           controller: _ctrl,
-                          readOnly: !editable || _status == _SaveStatus.saving,
+                          // Never toggle readOnly mid-session: flipping it while
+                          // an autosave runs tears down and rebuilds the input
+                          // connection, so the keyboard flickers shut on every
+                          // debounced save.
+                          readOnly: !editable,
                           expands: true,
                           maxLines: null,
                           minLines: null,
