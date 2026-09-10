@@ -86,7 +86,6 @@ class SwipeTabView extends StatefulWidget {
     super.key,
     this.branchIndex,
     this.tabIndex,
-    this.alwaysEnterFirst = false,
     required this.index,
     required this.onIndexChanged,
     required this.children,
@@ -94,12 +93,6 @@ class SwipeTabView extends StatefulWidget {
 
   final int? branchIndex;
   final int? tabIndex;
-
-  /// When entered by a hand-off, always land on the first panel rather than the
-  /// last one for a backward swipe — for tab strips that are a filter, not a
-  /// sequence worth reverse-paging through (e.g. 7 days / 30 days / all).
-  final bool alwaysEnterFirst;
-
   final int index;
   final ValueChanged<int> onIndexChanged;
   final List<Widget> children;
@@ -115,7 +108,8 @@ class _SwipeTabViewState extends State<SwipeTabView> {
   /// [onPageChanged] is not echoed back out.
   bool _syncing = false;
 
-  /// Edge signal handed down to whichever child panel is now active.
+  /// Set when this pager was just entered by a hand-off, so the now-active child
+  /// panel knows to reset to its own first tab too.
   int _childEdge = 0;
 
   double _overscroll = 0;
@@ -188,7 +182,7 @@ class _SwipeTabViewState extends State<SwipeTabView> {
           widget.onIndexChanged(target);
           setState(() {
             _syncing = false;
-            _childEdge = delta > 0 ? 1 : -1;
+            _childEdge = 1;
           });
         });
     return true;
@@ -242,17 +236,17 @@ class _SwipeTabViewState extends State<SwipeTabView> {
   Widget build(BuildContext context) {
     final incoming = _incomingEdge();
     if (incoming != 0 && widget.children.length > 1) {
-      final toFirst = incoming > 0 || widget.alwaysEnterFirst;
-      final target = toFirst ? 0 : widget.children.length - 1;
-      final childEdge = toFirst ? 1 : -1;
+      // Entering a tab group always lands on its first tab; forward paging
+      // still walks through every tab one step at a time.
+      const target = 0;
       if (widget.index != target) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && widget.index != target) widget.onIndexChanged(target);
         });
       }
-      if (_childEdge != childEdge) {
+      if (_childEdge == 0) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) setState(() => _childEdge = childEdge);
+          if (mounted) setState(() => _childEdge = 1);
         });
       }
       WidgetsBinding.instance.addPostFrameCallback((_) {
