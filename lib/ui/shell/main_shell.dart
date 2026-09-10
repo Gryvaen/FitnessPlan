@@ -6,6 +6,7 @@ import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
+import 'swipe_tab_view.dart';
 
 class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key, required this.navigationShell});
@@ -70,37 +71,42 @@ class _MainShellState extends ConsumerState<MainShell>
       (icon: Icons.person_outline, selectedIcon: Icons.person, label: l10n.me),
     ];
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        ColoredBox(color: Theme.of(context).colorScheme.surface),
-        Scaffold(
-          backgroundColor: Colors.transparent,
-          body: widget.navigationShell,
-          bottomNavigationBar: Padding(
-            padding: EdgeInsets.fromLTRB(20, 4, 20, 8 + bottomInset),
-            child: SportPillShell(
-              child: SizedBox(
-                height: 52,
-                child: Row(
-                  children: [
-                    for (var i = 0; i < items.length; i++)
-                      Expanded(
-                        child: _PillNavItem(
-                          selected: selected == i,
-                          icon: items[i].icon,
-                          selectedIcon: items[i].selectedIcon,
-                          tooltip: items[i].label,
-                          onTap: () => _onTap(i),
+    return ShellSwipe(
+      currentBranch: selected,
+      branchCount: items.length,
+      goToBranch: _onTap,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ColoredBox(color: Theme.of(context).colorScheme.surface),
+          Scaffold(
+            backgroundColor: Colors.transparent,
+            body: widget.navigationShell,
+            bottomNavigationBar: Padding(
+              padding: EdgeInsets.fromLTRB(20, 4, 20, 8 + bottomInset),
+              child: SportPillShell(
+                child: SizedBox(
+                  height: 52,
+                  child: Row(
+                    children: [
+                      for (var i = 0; i < items.length; i++)
+                        Expanded(
+                          child: _PillNavItem(
+                            selected: selected == i,
+                            icon: items[i].icon,
+                            selectedIcon: items[i].selectedIcon,
+                            tooltip: items[i].label,
+                            onTap: () => _onTap(i),
+                          ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

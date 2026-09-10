@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/app_localizations_ext.dart';
+import '../shell/swipe_tab_view.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import 'body_records_tab.dart';
@@ -69,11 +70,16 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
             ),
             const SizedBox(height: AppSpacing.compact),
             Expanded(
-              child: switch (_segment) {
-                RecordsSegment.body => const BodyRecordsTab(),
-                RecordsSegment.train => const TrainRecordsTab(),
-                RecordsSegment.notes => const NotesRecordsTab(),
-              },
+              child: SwipeTabView(
+                index: _segment.index,
+                onIndexChanged: (i) =>
+                    setState(() => _segment = RecordsSegment.values[i]),
+                children: const [
+                  BodyRecordsTab(),
+                  TrainRecordsTab(),
+                  NotesRecordsTab(),
+                ],
+              ),
             ),
           ],
         ),

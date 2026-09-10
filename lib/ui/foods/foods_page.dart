@@ -6,6 +6,7 @@ import '../../data/db.dart';
 import '../../data/repositories/food_repository.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../shell/swipe_tab_view.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import 'food_category_art.dart';
@@ -125,25 +126,31 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
             ],
             const SizedBox(height: AppSpacing.compact),
             Expanded(
-              child: switch ((searching, _tab)) {
-                (true, _) => _FoodSearchList(
-                  onClearQuery: () {
-                    _searchController.clear();
-                    _setQuery('');
-                  },
-                ),
-                (false, _FoodsTab.categories) => const _FoodCategoryList(),
-                (false, _FoodsTab.favorites) => _FoodListView(
-                  watch: (ref) => ref.watch(favoriteFoodsProvider),
-                  emptyIcon: Icons.star_outline,
-                  emptyTitle: l10n.noFavorites,
-                ),
-                (false, _FoodsTab.recent) => _FoodListView(
-                  watch: (ref) => ref.watch(_recentFoodsProvider),
-                  emptyIcon: Icons.history,
-                  emptyTitle: l10n.noRecentFoods,
-                ),
-              },
+              child: searching
+                  ? _FoodSearchList(
+                      onClearQuery: () {
+                        _searchController.clear();
+                        _setQuery('');
+                      },
+                    )
+                  : SwipeTabView(
+                      index: _tab.index,
+                      onIndexChanged: (i) =>
+                          setState(() => _tab = _FoodsTab.values[i]),
+                      children: [
+                        _FoodListView(
+                          watch: (ref) => ref.watch(_recentFoodsProvider),
+                          emptyIcon: Icons.history,
+                          emptyTitle: l10n.noRecentFoods,
+                        ),
+                        _FoodListView(
+                          watch: (ref) => ref.watch(favoriteFoodsProvider),
+                          emptyIcon: Icons.star_outline,
+                          emptyTitle: l10n.noFavorites,
+                        ),
+                        const _FoodCategoryList(),
+                      ],
+                    ),
             ),
           ],
         ),
