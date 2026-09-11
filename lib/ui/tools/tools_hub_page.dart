@@ -58,6 +58,12 @@ class ToolsHubPage extends StatelessWidget {
             subtitle: l10n.toolCalculatorSub,
             onTap: () => context.push('/profile/tools/calculator'),
           ),
+          _ToolRow(
+            icon: Icons.swap_vert_circle_outlined,
+            title: l10n.toolEnergyConvert,
+            subtitle: l10n.toolEnergyConvertSub,
+            onTap: () => context.push('/profile/tools/energy-convert'),
+          ),
           const SizedBox(height: AppSpacing.section),
           Text(
             l10n.toolsDisclaimer,

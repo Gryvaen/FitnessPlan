@@ -347,8 +347,8 @@ void main() {
     });
   });
 
-  group('migration v16 → v17', () {
-    test('adds tables without touching existing rows', () async {
+  group('migration v16 → latest', () {
+    test('adds tables/columns without touching existing rows', () async {
       final dir = await Directory.systemTemp.createTemp('fp_mig_');
       final file = File('${dir.path}/legacy.sqlite');
       // Minimal v16 fixture: a few legacy tables with data.
@@ -369,11 +369,50 @@ CREATE TABLE water_logs (
   ml INTEGER NOT NULL,
   UNIQUE (date)
 )''');
+      await legacy.runCustom('''
+CREATE TABLE food_items (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  category TEXT NOT NULL,
+  kcal_per100 REAL NOT NULL,
+  protein_per100 REAL NOT NULL,
+  carb_per100 REAL NOT NULL,
+  fat_per100 REAL NOT NULL,
+  alcohol_per100 REAL NOT NULL DEFAULT 0.0,
+  fiber_per100 REAL NOT NULL DEFAULT 0.0,
+  sodium_mg_per100 REAL NOT NULL DEFAULT 0.0,
+  sugar_per100 REAL NOT NULL DEFAULT 0.0,
+  saturated_fat_per100 REAL NOT NULL DEFAULT 0.0,
+  is_custom BOOLEAN NOT NULL DEFAULT 0,
+  UNIQUE (name)
+)''');
+      await legacy.runCustom('''
+CREATE TABLE meal_entries (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  date INTEGER NOT NULL,
+  meal_type TEXT NOT NULL,
+  food_id INTEGER NOT NULL,
+  food_name TEXT NOT NULL,
+  grams REAL NOT NULL,
+  calories REAL NOT NULL,
+  protein_g REAL NOT NULL,
+  carb_g REAL NOT NULL,
+  fat_g REAL NOT NULL,
+  alcohol_g REAL NOT NULL DEFAULT 0.0,
+  fiber_g REAL NOT NULL DEFAULT 0.0,
+  sodium_mg REAL NOT NULL DEFAULT 0.0,
+  sugar_g REAL NOT NULL DEFAULT 0.0,
+  saturated_fat_g REAL NOT NULL DEFAULT 0.0
+)''');
       await legacy.runCustom(
         'INSERT INTO weight_logs (date, weight_kg) VALUES (1700000000, 80.5)',
       );
       await legacy.runCustom(
         'INSERT INTO water_logs (date, ml) VALUES (1700000000, 1250)',
+      );
+      await legacy.runCustom(
+        "INSERT INTO food_items (name, category, kcal_per100, protein_per100, carb_per100, fat_per100) "
+        "VALUES ('米饭', '主食', 116, 2.6, 25.9, 0.3)",
       );
       await legacy.runCustom('PRAGMA user_version = 16');
       await legacy.close();
@@ -387,6 +426,9 @@ CREATE TABLE water_logs (
       expect(weights.single.weightKg, 80.5);
       final water = await migrated.select(migrated.waterLogs).get();
       expect(water.single.ml, 1250);
+      final foods = await migrated.select(migrated.foodItems).get();
+      expect(foods.single.name, '米饭');
+      expect(foods.single.calciumMgPer100, 0.0);
       // New tables exist and are empty.
       expect(await migrated.select(migrated.dietStrategyPlans).get(), isEmpty);
       expect(
@@ -400,7 +442,7 @@ CREATE TABLE water_logs (
       final version = await migrated
           .customSelect('PRAGMA user_version')
           .getSingle();
-      expect(version.data.values.first, 17);
+      expect(version.data.values.first, migrated.schemaVersion);
     });
   });
 }

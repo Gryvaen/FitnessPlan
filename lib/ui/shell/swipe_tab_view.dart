@@ -31,11 +31,20 @@ class ShellSwipe extends InheritedWidget {
 /// Published by every [SwipeTabView] so a nested one can hand a swipe off to its
 /// enclosing pager once it hits its own first / last tab.
 class _TabHandoff extends InheritedWidget {
-  const _TabHandoff({required this.step, required super.child});
+  const _TabHandoff({
+    required this.step,
+    required this.onActiveChildDelta,
+    required super.child,
+  });
 
   /// Ask the enclosing pager to move by [delta]; it pages itself, or forwards
   /// the hand-off further out. Returns whether anything moved.
   final bool Function(int delta) step;
+
+  /// A nested [SwipeTabView] reports +1 while mounted on top of us, -1 when
+  /// it goes away, so we can give up our own drag gesture to it — see
+  /// [_SwipeTabViewState._activeNestedChildren].
+  final void Function(int delta) onActiveChildDelta;
 
   static _TabHandoff? read(BuildContext context) =>
       context.getInheritedWidgetOfExactType<_TabHandoff>();
@@ -85,6 +94,18 @@ class _SwipeTabViewState extends State<SwipeTabView> {
   double _overscroll = 0;
   bool _handedOff = false;
 
+  /// How many nested [SwipeTabView]s are currently mounted on top of us. A
+  /// horizontal drag anywhere on screen enters every overlapping [PageView]'s
+  /// gesture arena at once, so with both us and a nested pager draggable, a
+  /// fast/hard swipe can occasionally resolve to the wrong (outer) one and
+  /// skip the nested level entirely. While a child is mounted we give up our
+  /// own drag physics so only the innermost pager is ever gesture-driven;
+  /// hand-off still moves us via [_stepSelf]/`animateToPage`, which works
+  /// regardless of physics.
+  int _activeNestedChildren = 0;
+
+  _TabHandoff? _parentHandoff;
+
   static const _handoffThreshold = 44.0;
   static const _physics = PageScrollPhysics(
     parent: AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
@@ -95,6 +116,21 @@ class _SwipeTabViewState extends State<SwipeTabView> {
     super.initState();
     _settledPage = widget.index;
     _controller = PageController(initialPage: widget.index);
+    _parentHandoff = _TabHandoff.read(context);
+    // Deferred: we're built from inside the parent's own build (its
+    // PageView.builder itemBuilder), so calling setState on it here would
+    // hit "setState() called during build".
+    final parent = _parentHandoff;
+    if (parent != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        parent.onActiveChildDelta(1);
+      });
+    }
+  }
+
+  void _onActiveChildDelta(int delta) {
+    if (!mounted) return;
+    setState(() => _activeNestedChildren += delta);
   }
 
   @override
@@ -120,6 +156,13 @@ class _SwipeTabViewState extends State<SwipeTabView> {
 
   @override
   void dispose() {
+    // Same deferral as initState — a page swap can dispose this mid-build.
+    final parent = _parentHandoff;
+    if (parent != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        parent.onActiveChildDelta(-1);
+      });
+    }
     _controller.dispose();
     super.dispose();
   }
@@ -182,11 +225,14 @@ class _SwipeTabViewState extends State<SwipeTabView> {
   Widget build(BuildContext context) {
     return _TabHandoff(
       step: _stepSelf,
+      onActiveChildDelta: _onActiveChildDelta,
       child: NotificationListener<ScrollNotification>(
         onNotification: _onScroll,
         child: PageView.builder(
           controller: _controller,
-          physics: _physics,
+          physics: _activeNestedChildren > 0
+              ? const NeverScrollableScrollPhysics()
+              : _physics,
           onPageChanged: _onPageChanged,
           itemCount: widget.children.length,
           itemBuilder: (_, i) => widget.children[i],

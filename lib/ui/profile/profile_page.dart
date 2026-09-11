@@ -298,6 +298,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           size: 20,
                         ),
                       ),
+                      IconButton(
+                        tooltip: l10n.toolEnergyConvert,
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () =>
+                            context.push('/profile/tools/energy-convert'),
+                        icon: const Icon(
+                          Icons.swap_vert_circle_outlined,
+                          size: 20,
+                        ),
+                      ),
                       if (isAndroid)
                         IconButton(
                           tooltip: update.phase == AppUpdatePhase.downloading

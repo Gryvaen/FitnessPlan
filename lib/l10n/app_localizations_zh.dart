@@ -545,6 +545,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get saturatedFat => '饱和脂肪';
 
   @override
+  String get calcium => '钙';
+
+  @override
   String get fiberG => '膳食纤维 (g)';
 
   @override
@@ -557,6 +560,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get saturatedFatG => '饱和脂肪 (g)';
 
   @override
+  String get calciumMg => '钙 (mg)';
+
+  @override
   String get fiberGOptional => '膳食纤维 (g，可选)';
 
   @override
@@ -567,6 +573,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get saturatedFatGOptional => '饱和脂肪 (g，可选)';
+
+  @override
+  String get calciumMgOptional => '钙 (mg，可选)';
 
   @override
   String get stepsStatusConnected => '已同步系统步数';
@@ -774,6 +783,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get toolCalculatorSub => '四则运算';
+
+  @override
+  String get toolEnergyConvert => '千卡/千焦换算';
+
+  @override
+  String get toolEnergyConvertSub => '热量单位 kcal 与 kJ 互相换算';
 
   @override
   String get toolsDisclaimer => '结果默认不写入档案或饮食记录。';

@@ -53,6 +53,7 @@ class MealRepository {
       sodiumMgPer100: food.sodiumMgPer100,
       sugarPer100: food.sugarPer100,
       saturatedFatPer100: food.saturatedFatPer100,
+      calciumMgPer100: food.calciumMgPer100,
     );
   }
 
@@ -82,6 +83,7 @@ class MealRepository {
             sodiumMg: Value(intake.sodiumMg),
             sugarG: Value(intake.sugarG),
             saturatedFatG: Value(intake.saturatedFatG),
+            calciumMg: Value(intake.calciumMg),
           ),
         );
   }
@@ -115,6 +117,7 @@ class MealRepository {
         sodiumMg: Value(intake.sodiumMg),
         sugarG: Value(intake.sugarG),
         saturatedFatG: Value(intake.saturatedFatG),
+        calciumMg: Value(intake.calciumMg),
       ),
     );
   }
@@ -175,6 +178,7 @@ class MealRepository {
             sodiumMg: e.sodiumMg,
             sugarG: e.sugarG,
             saturatedFatG: e.saturatedFatG,
+            calciumMg: e.calciumMg,
           ),
     );
   }

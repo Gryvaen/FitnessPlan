@@ -135,6 +135,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
       sodiumMgPer100: food.sodiumMgPer100,
       sugarPer100: food.sugarPer100,
       saturatedFatPer100: food.saturatedFatPer100,
+      calciumMgPer100: food.calciumMgPer100,
     );
   }
 
@@ -380,6 +381,8 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                           '${l10n.fiber} ${preview.fiberG.toStringAsFixed(1)}',
                         if (preview.sodiumMg > 0)
                           '${l10n.sodium} ${preview.sodiumMg.toStringAsFixed(0)}mg',
+                        if (preview.calciumMg > 0)
+                          '${l10n.calcium} ${preview.calciumMg.toStringAsFixed(0)}mg',
                         if (preview.alcoholG > 0)
                           '${l10n.alcohol} ${preview.alcoholG.toStringAsFixed(1)}',
                       ].join(' · '),

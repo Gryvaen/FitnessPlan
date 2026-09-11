@@ -412,6 +412,8 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
       (l10n.fiber, '${food.fiberPer100.toStringAsFixed(1)} g'),
     if (food.sodiumMgPer100 > 0)
       (l10n.sodium, '${food.sodiumMgPer100.toStringAsFixed(0)} mg'),
+    if (food.calciumMgPer100 > 0)
+      (l10n.calcium, '${food.calciumMgPer100.toStringAsFixed(0)} mg'),
     if (food.alcoholPer100 > 0)
       (l10n.alcohol, '${food.alcoholPer100.toStringAsFixed(1)} g'),
   ];

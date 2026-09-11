@@ -545,6 +545,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saturatedFat => 'Saturated fat';
 
   @override
+  String get calcium => 'Calcium';
+
+  @override
   String get fiberG => 'Fiber (g)';
 
   @override
@@ -557,6 +560,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saturatedFatG => 'Saturated fat (g)';
 
   @override
+  String get calciumMg => 'Calcium (mg)';
+
+  @override
   String get fiberGOptional => 'Fiber (g, optional)';
 
   @override
@@ -567,6 +573,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saturatedFatGOptional => 'Saturated fat (g, optional)';
+
+  @override
+  String get calciumMgOptional => 'Calcium (mg, optional)';
 
   @override
   String get stepsStatusConnected => 'System steps synced';
@@ -778,6 +787,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get toolCalculatorSub => 'Basic arithmetic';
+
+  @override
+  String get toolEnergyConvert => 'kcal / kJ convert';
+
+  @override
+  String get toolEnergyConvertSub => 'Convert energy between kcal and kJ';
 
   @override
   String get toolsDisclaimer =>

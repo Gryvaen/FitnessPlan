@@ -76,6 +76,7 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
       sodiumMgPer100: food.sodiumMgPer100,
       sugarPer100: food.sugarPer100,
       saturatedFatPer100: food.saturatedFatPer100,
+      calciumMgPer100: food.calciumMgPer100,
     );
   }
 
@@ -232,6 +233,11 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
                       if (intake.sodiumMg > 0.5)
                         Text(
                           '${l10n.sodium} ${intake.sodiumMg.toStringAsFixed(0)} mg',
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      if (intake.calciumMg > 0.5)
+                        Text(
+                          '${l10n.calcium} ${intake.calciumMg.toStringAsFixed(0)} mg',
                           style: theme.textTheme.bodyMedium,
                         ),
                       if (intake.alcoholG > 0.05)

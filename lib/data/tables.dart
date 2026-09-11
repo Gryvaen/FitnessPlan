@@ -25,6 +25,9 @@ class FoodItems extends Table {
   RealColumn get saturatedFatPer100 =>
       real().withDefault(const Constant(0.0))();
 
+  /// Calcium mg/100g.
+  RealColumn get calciumMgPer100 => real().withDefault(const Constant(0.0))();
+
   /// User-created foods survive seed sync deletion.
   BoolColumn get isCustom => boolean().withDefault(const Constant(false))();
 
@@ -77,6 +80,7 @@ class MealEntries extends Table {
   RealColumn get sodiumMg => real().withDefault(const Constant(0.0))();
   RealColumn get sugarG => real().withDefault(const Constant(0.0))();
   RealColumn get saturatedFatG => real().withDefault(const Constant(0.0))();
+  RealColumn get calciumMg => real().withDefault(const Constant(0.0))();
 }
 
 class MealPresets extends Table {

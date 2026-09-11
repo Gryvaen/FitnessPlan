@@ -1166,6 +1166,12 @@ abstract class AppLocalizations {
   /// **'Saturated fat'**
   String get saturatedFat;
 
+  /// No description provided for @calcium.
+  ///
+  /// In en, this message translates to:
+  /// **'Calcium'**
+  String get calcium;
+
   /// No description provided for @fiberG.
   ///
   /// In en, this message translates to:
@@ -1190,6 +1196,12 @@ abstract class AppLocalizations {
   /// **'Saturated fat (g)'**
   String get saturatedFatG;
 
+  /// No description provided for @calciumMg.
+  ///
+  /// In en, this message translates to:
+  /// **'Calcium (mg)'**
+  String get calciumMg;
+
   /// No description provided for @fiberGOptional.
   ///
   /// In en, this message translates to:
@@ -1213,6 +1225,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Saturated fat (g, optional)'**
   String get saturatedFatGOptional;
+
+  /// No description provided for @calciumMgOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Calcium (mg, optional)'**
+  String get calciumMgOptional;
 
   /// No description provided for @stepsStatusConnected.
   ///
@@ -1621,6 +1639,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Basic arithmetic'**
   String get toolCalculatorSub;
+
+  /// No description provided for @toolEnergyConvert.
+  ///
+  /// In en, this message translates to:
+  /// **'kcal / kJ convert'**
+  String get toolEnergyConvert;
+
+  /// No description provided for @toolEnergyConvertSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert energy between kcal and kJ'**
+  String get toolEnergyConvertSub;
 
   /// No description provided for @toolsDisclaimer.
   ///

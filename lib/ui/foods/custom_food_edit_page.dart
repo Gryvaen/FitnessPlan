@@ -28,6 +28,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
   final _sodium = TextEditingController(text: '0');
   final _sugar = TextEditingController(text: '0');
   final _saturatedFat = TextEditingController(text: '0');
+  final _calcium = TextEditingController(text: '0');
   bool _loading = false;
   bool _ready = false;
 
@@ -60,6 +61,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
     _sodium.text = _fmt(food.sodiumMgPer100);
     _sugar.text = _fmt(food.sugarPer100);
     _saturatedFat.text = _fmt(food.saturatedFatPer100);
+    _calcium.text = _fmt(food.calciumMgPer100);
     setState(() => _ready = true);
   }
 
@@ -80,6 +82,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
     _sodium.dispose();
     _sugar.dispose();
     _saturatedFat.dispose();
+    _calcium.dispose();
     super.dispose();
   }
 
@@ -101,6 +104,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
           sodiumMgPer100: _parse(_sodium),
           sugarPer100: _parse(_sugar),
           saturatedFatPer100: _parse(_saturatedFat),
+          calciumMgPer100: _parse(_calcium),
         );
         if (mounted) {
           ScaffoldMessenger.of(
@@ -120,6 +124,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
           sodiumMgPer100: _parse(_sodium),
           sugarPer100: _parse(_sugar),
           saturatedFatPer100: _parse(_saturatedFat),
+          calciumMgPer100: _parse(_calcium),
         );
         if (mounted) {
           ScaffoldMessenger.of(
@@ -171,6 +176,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
           _numField(_sugar, l10n.sugarGOptional),
           _numField(_fiber, l10n.fiberGOptional),
           _numField(_sodium, l10n.sodiumMgOptional),
+          _numField(_calcium, l10n.calciumMgOptional),
           _numField(_alcohol, l10n.alcoholGOptional),
           const SizedBox(height: AppSpacing.section),
           FilledButton(

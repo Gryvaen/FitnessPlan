@@ -75,6 +75,10 @@ class FoodRepository {
             0.0;
         final sugar = (m['sugar'] as num?)?.toDouble() ?? 0.0;
         final saturatedFat = (m['saturated_fat'] as num?)?.toDouble() ?? 0.0;
+        final calciumMg =
+            (m['calcium_mg'] as num?)?.toDouble() ??
+            (m['calcium'] as num?)?.toDouble() ??
+            0.0;
         batch.insert(
           _db.foodItems,
           FoodItemsCompanion.insert(
@@ -89,6 +93,7 @@ class FoodRepository {
             sodiumMgPer100: Value(sodiumMg),
             sugarPer100: Value(sugar),
             saturatedFatPer100: Value(saturatedFat),
+            calciumMgPer100: Value(calciumMg),
             isCustom: const Value(false),
           ),
           onConflict: DoUpdate(
@@ -103,6 +108,7 @@ class FoodRepository {
               sodiumMgPer100: Value(sodiumMg),
               sugarPer100: Value(sugar),
               saturatedFatPer100: Value(saturatedFat),
+              calciumMgPer100: Value(calciumMg),
               // Never flip a custom row back to seed via name collision handling
               // after insert — conflict target is name; customs use unique names.
               isCustom: const Value(false),
@@ -230,6 +236,7 @@ LIMIT ?
     double sodiumMgPer100 = 0,
     double sugarPer100 = 0,
     double saturatedFatPer100 = 0,
+    double calciumMgPer100 = 0,
   }) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) {
@@ -254,6 +261,7 @@ LIMIT ?
             sodiumMgPer100: Value(sodiumMgPer100),
             sugarPer100: Value(sugarPer100),
             saturatedFatPer100: Value(saturatedFatPer100),
+            calciumMgPer100: Value(calciumMgPer100),
             isCustom: const Value(true),
           ),
         );
@@ -271,6 +279,7 @@ LIMIT ?
     double sodiumMgPer100 = 0,
     double sugarPer100 = 0,
     double saturatedFatPer100 = 0,
+    double calciumMgPer100 = 0,
   }) async {
     final food = await byId(id);
     if (food == null || !food.isCustom) {
@@ -297,6 +306,7 @@ LIMIT ?
         sodiumMgPer100: Value(sodiumMgPer100),
         sugarPer100: Value(sugarPer100),
         saturatedFatPer100: Value(saturatedFatPer100),
+        calciumMgPer100: Value(calciumMgPer100),
         isCustom: const Value(true),
       ),
     );

@@ -61,6 +61,9 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
       saturatedFatPer100: entry.grams > 0
           ? entry.saturatedFatG / entry.grams * 100
           : 0,
+      calciumMgPer100: entry.grams > 0
+          ? entry.calciumMg / entry.grams * 100
+          : 0,
       isCustom: false,
     );
 
@@ -86,6 +89,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
       sodiumMgPer100: food.sodiumMgPer100,
       sugarPer100: food.sugarPer100,
       saturatedFatPer100: food.saturatedFatPer100,
+      calciumMgPer100: food.calciumMgPer100,
     );
   }
 
@@ -313,6 +317,12 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
             _MacroRow(
               label: l10n.sodium,
               value: '${preview.sodiumMg.toStringAsFixed(0)} mg',
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          if (preview.calciumMg > 0)
+            _MacroRow(
+              label: l10n.calcium,
+              value: '${preview.calciumMg.toStringAsFixed(0)} mg',
               color: theme.colorScheme.onSurfaceVariant,
             ),
           if (preview.alcoholG > 0)

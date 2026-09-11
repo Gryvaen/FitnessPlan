@@ -49,6 +49,26 @@ void main() {
       expect(picked?.name, 'FitnessPlan-1.1.0-android-arm64-v8a.apk');
     });
 
+    test('keeps an x86_64 installation on the x86_64 channel', () {
+      // Flutter's ABI_VERSION offset for x86_64 is 4xxx (3xxx was x86,
+      // dropped in flutter/flutter#169884) — not 3xxx.
+      final picked = AppUpdateLogic.pickApkAsset(
+        const [
+          ReleaseAsset(
+            name: 'FitnessPlan-1.1.0-android.apk',
+            downloadUrl: 'https://example.com/universal.apk',
+          ),
+          ReleaseAsset(
+            name: 'FitnessPlan-1.1.0-android-x86_64.apk',
+            downloadUrl: 'https://example.com/x64.apk',
+          ),
+        ],
+        version: '1.1.0',
+        localBuildNumber: '4008',
+      );
+      expect(picked?.name, 'FitnessPlan-1.1.0-android-x86_64.apk');
+    });
+
     test('keeps a universal installation on the universal channel', () {
       final picked = AppUpdateLogic.pickApkAsset(
         const [

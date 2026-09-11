@@ -67,9 +67,12 @@ abstract final class AppUpdateLogic {
   /// Selects the APK from the same version-code channel as the installed app.
   ///
   /// Flutter adds an ABI prefix to split APK version codes (1xxx for
-  /// armeabi-v7a, 2xxx for arm64-v8a and 3xxx for x86_64). Switching from a
-  /// split APK to a universal APK would therefore look like a downgrade to
-  /// Android even when its version name is newer.
+  /// armeabi-v7a, 2xxx for arm64-v8a and 4xxx for x86_64 — 3xxx was x86,
+  /// removed from Flutter's ABI_VERSION map; see
+  /// packages/flutter_tools/gradle FlutterPluginConstants.kt). Switching from
+  /// a split APK to a universal APK would therefore look like a downgrade to
+  /// Android even when its version name is newer, and Android's installer
+  /// then refuses it as "already installed".
   static ReleaseAsset? pickApkAsset(
     List<ReleaseAsset> assets, {
     required String version,
@@ -79,7 +82,7 @@ abstract final class AppUpdateLogic {
     final channel = switch (buildNumber ~/ 1000) {
       1 => 'armeabi-v7a',
       2 => 'arm64-v8a',
-      3 => 'x86_64',
+      4 => 'x86_64',
       _ => null,
     };
     final normalized = normalizeVersion(version);
