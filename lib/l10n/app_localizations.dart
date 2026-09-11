@@ -1532,6 +1532,12 @@ abstract class AppLocalizations {
   /// **'Calories (kcal)'**
   String get kcalField;
 
+  /// No description provided for @kjField.
+  ///
+  /// In en, this message translates to:
+  /// **'Calories (kJ)'**
+  String get kjField;
+
   /// No description provided for @proteinG.
   ///
   /// In en, this message translates to:

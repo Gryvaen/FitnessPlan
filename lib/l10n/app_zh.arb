@@ -246,6 +246,7 @@
   "addCustomFood": "添加自定义食材",
   "per100gNutrition": "每 100 克营养",
   "kcalField": "热量 (kcal)",
+  "kjField": "热量 (kJ)",
   "proteinG": "蛋白质 (g)",
   "carbG": "碳水 (g)",
   "fatG": "脂肪 (g)",

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../domain/energy_units.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
@@ -20,6 +21,8 @@ class CustomFoodEditPage extends ConsumerStatefulWidget {
 class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
   final _name = TextEditingController();
   final _kcal = TextEditingController(text: '0');
+  final _kj = TextEditingController(text: '0');
+  bool _updatingEnergy = false;
   final _protein = TextEditingController(text: '0');
   final _carb = TextEditingController(text: '0');
   final _fat = TextEditingController(text: '0');
@@ -53,6 +56,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
     }
     _name.text = food.name;
     _kcal.text = _fmt(food.kcalPer100);
+    _kj.text = _fmt(food.kcalPer100 * kKcalToKj);
     _protein.text = _fmt(food.proteinPer100);
     _carb.text = _fmt(food.carbPer100);
     _fat.text = _fmt(food.fatPer100);
@@ -70,10 +74,27 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
 
   double _parse(TextEditingController c) => double.tryParse(c.text.trim()) ?? 0;
 
+  void _onKcalChanged(String text) {
+    if (_updatingEnergy) return;
+    final v = double.tryParse(text.trim());
+    _updatingEnergy = true;
+    _kj.text = v == null ? '' : _fmt(v * kKcalToKj);
+    _updatingEnergy = false;
+  }
+
+  void _onKjChanged(String text) {
+    if (_updatingEnergy) return;
+    final v = double.tryParse(text.trim());
+    _updatingEnergy = true;
+    _kcal.text = v == null ? '' : _fmt(v / kKcalToKj);
+    _updatingEnergy = false;
+  }
+
   @override
   void dispose() {
     _name.dispose();
     _kcal.dispose();
+    _kj.dispose();
     _protein.dispose();
     _carb.dispose();
     _fat.dispose();
@@ -168,7 +189,22 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
             style: Theme.of(context).textTheme.titleSmall,
           ),
           const SizedBox(height: 8),
-          _numField(_kcal, l10n.kcalField),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _numField(
+                  _kcal,
+                  l10n.kcalField,
+                  onChanged: _onKcalChanged,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.field),
+              Expanded(
+                child: _numField(_kj, l10n.kjField, onChanged: _onKjChanged),
+              ),
+            ],
+          ),
           _numField(_protein, l10n.proteinG),
           _numField(_carb, l10n.carbG),
           _numField(_fat, l10n.fatG),
@@ -188,7 +224,11 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
     );
   }
 
-  Widget _numField(TextEditingController c, String label) {
+  Widget _numField(
+    TextEditingController c,
+    String label, {
+    ValueChanged<String>? onChanged,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.field),
       child: Focus(
@@ -209,6 +249,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
             if (c.text.trim().isEmpty) {
               c.text = '0';
               c.selection = TextSelection.collapsed(offset: c.text.length);
+              onChanged?.call(c.text);
             }
           }
         },
@@ -219,6 +260,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
           ],
+          onChanged: onChanged,
         ),
       ),
     );

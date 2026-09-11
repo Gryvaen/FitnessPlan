@@ -53,6 +53,70 @@ class _TabHandoff extends InheritedWidget {
   bool updateShouldNotify(_TabHandoff oldWidget) => false;
 }
 
+/// Registers with the nearest ancestor [_TabHandoff] (if any) for the
+/// lifetime of the mixing-in [State], so that ancestor gives up its own
+/// drag physics while this object is mounted. Both directions are deferred
+/// via post-frame callback: registering happens while a descendant is
+/// still being built inside its parent's own build, and unregistering can
+/// happen mid-rebuild when a page is swapped out — calling `setState` on
+/// the parent synchronously in either case would hit "setState() called
+/// during build".
+mixin _ParentDragHandoff<T extends StatefulWidget> on State<T> {
+  _TabHandoff? _parentHandoff;
+
+  void _registerWithParent() {
+    _parentHandoff = _TabHandoff.read(context);
+    final parent = _parentHandoff;
+    if (parent != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        parent.onActiveChildDelta(1);
+      });
+    }
+  }
+
+  void _unregisterFromParent() {
+    final parent = _parentHandoff;
+    if (parent != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        parent.onActiveChildDelta(-1);
+      });
+    }
+  }
+}
+
+/// Wraps content with its own horizontal-drag gesture — e.g. a
+/// [Dismissible] list row — so the nearest ancestor [SwipeTabView] gives up
+/// its own page-swipe physics while this is mounted. Without this, both
+/// widgets compete for the same drag and the ancestor pager tends to win,
+/// making the wrapped content's own swipe gesture (e.g. swipe-to-delete)
+/// unresponsive in that direction.
+class SwipeGestureBarrier extends StatefulWidget {
+  const SwipeGestureBarrier({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  State<SwipeGestureBarrier> createState() => _SwipeGestureBarrierState();
+}
+
+class _SwipeGestureBarrierState extends State<SwipeGestureBarrier>
+    with _ParentDragHandoff<SwipeGestureBarrier> {
+  @override
+  void initState() {
+    super.initState();
+    _registerWithParent();
+  }
+
+  @override
+  void dispose() {
+    _unregisterFromParent();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
 /// A swipeable set of tab panels that chains outward: a horizontal drag pages
 /// through the panels here first, and only once dragged past the first / last
 /// panel does it hand off — to an enclosing [SwipeTabView] if there is one,
@@ -80,7 +144,8 @@ class SwipeTabView extends StatefulWidget {
   State<SwipeTabView> createState() => _SwipeTabViewState();
 }
 
-class _SwipeTabViewState extends State<SwipeTabView> {
+class _SwipeTabViewState extends State<SwipeTabView>
+    with _ParentDragHandoff<SwipeTabView> {
   late final PageController _controller;
 
   /// True while the controller is driven programmatically so the resulting
@@ -104,8 +169,6 @@ class _SwipeTabViewState extends State<SwipeTabView> {
   /// regardless of physics.
   int _activeNestedChildren = 0;
 
-  _TabHandoff? _parentHandoff;
-
   static const _handoffThreshold = 44.0;
   static const _physics = PageScrollPhysics(
     parent: AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
@@ -116,16 +179,7 @@ class _SwipeTabViewState extends State<SwipeTabView> {
     super.initState();
     _settledPage = widget.index;
     _controller = PageController(initialPage: widget.index);
-    _parentHandoff = _TabHandoff.read(context);
-    // Deferred: we're built from inside the parent's own build (its
-    // PageView.builder itemBuilder), so calling setState on it here would
-    // hit "setState() called during build".
-    final parent = _parentHandoff;
-    if (parent != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        parent.onActiveChildDelta(1);
-      });
-    }
+    _registerWithParent();
   }
 
   void _onActiveChildDelta(int delta) {
@@ -156,13 +210,7 @@ class _SwipeTabViewState extends State<SwipeTabView> {
 
   @override
   void dispose() {
-    // Same deferral as initState — a page swap can dispose this mid-build.
-    final parent = _parentHandoff;
-    if (parent != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        parent.onActiveChildDelta(-1);
-      });
-    }
+    _unregisterFromParent();
     _controller.dispose();
     super.dispose();
   }

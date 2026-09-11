@@ -731,6 +731,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get kcalField => '热量 (kcal)';
 
   @override
+  String get kjField => '热量 (kJ)';
+
+  @override
   String get proteinG => '蛋白质 (g)';
 
   @override

@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../domain/energy_units.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../theme/app_theme.dart';
-
-/// 1 kcal = 4.184 kJ (thermochemical calorie, as used for food energy).
-const double kKcalToKj = 4.184;
 
 /// Bidirectional kcal ⇄ kJ converter: editing either field updates the other.
 class EnergyUnitConvertPage extends StatefulWidget {

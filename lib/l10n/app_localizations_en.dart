@@ -734,6 +734,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get kcalField => 'Calories (kcal)';
 
   @override
+  String get kjField => 'Calories (kJ)';
+
+  @override
   String get proteinG => 'Protein (g)';
 
   @override

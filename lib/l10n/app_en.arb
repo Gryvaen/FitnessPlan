@@ -246,6 +246,7 @@
   "addCustomFood": "Add custom food",
   "per100gNutrition": "Per 100 g nutrition",
   "kcalField": "Calories (kcal)",
+  "kjField": "Calories (kJ)",
   "proteinG": "Protein (g)",
   "carbG": "Carbs (g)",
   "fatG": "Fat (g)",

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../data/db.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../shell/swipe_tab_view.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 
@@ -207,39 +208,45 @@ class NotesRecordsTab extends ConsumerWidget {
 
                   if (!isToday) return tile;
 
-                  return Dismissible(
-                    key: ValueKey(note.id),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 16),
-                      color: scheme.error,
-                      child: const Icon(Icons.delete, color: Colors.white),
+                  // A Dismissible's own left-swipe drag competes with the
+                  // ancestor Records SwipeTabView's page-swipe drag; without
+                  // this barrier the pager tends to win, and swiping left
+                  // here stops doing anything.
+                  return SwipeGestureBarrier(
+                    child: Dismissible(
+                      key: ValueKey(note.id),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 16),
+                        color: scheme.error,
+                        child: const Icon(Icons.delete, color: Colors.white),
+                      ),
+                      confirmDismiss: (_) async {
+                        return await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: Text(l10n.deleteNote),
+                                content: Text(l10n.confirmDeleteNote(title)),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx, false),
+                                    child: Text(l10n.cancel),
+                                  ),
+                                  FilledButton(
+                                    onPressed: () => Navigator.pop(ctx, true),
+                                    child: Text(l10n.delete),
+                                  ),
+                                ],
+                              ),
+                            ) ==
+                            true;
+                      },
+                      onDismissed: (_) {
+                        ref.read(noteRepositoryProvider).delete(note.id);
+                      },
+                      child: tile,
                     ),
-                    confirmDismiss: (_) async {
-                      return await showDialog<bool>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: Text(l10n.deleteNote),
-                              content: Text(l10n.confirmDeleteNote(title)),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  child: Text(l10n.cancel),
-                                ),
-                                FilledButton(
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  child: Text(l10n.delete),
-                                ),
-                              ],
-                            ),
-                          ) ==
-                          true;
-                    },
-                    onDismissed: (_) {
-                      ref.read(noteRepositoryProvider).delete(note.id);
-                    },
-                    child: tile,
                   );
                 },
               ),
