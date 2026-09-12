@@ -1,7 +1,7 @@
 name: diet
 description: 纯本地健身饮食助手 — 热量配额、食材库与饮食记账
 publish_to: 'none'
-version: 2.0.18+33
+version: 2.0.19+34
 
 environment:
   sdk: ^3.12.2
@@ -39,6 +39,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/food_seed.json
+    - assets/cultivation/
   fonts:
     - family: LXGWWenKai
       fonts:

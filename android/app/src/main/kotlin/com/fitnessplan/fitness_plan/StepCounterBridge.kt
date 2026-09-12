@@ -14,6 +14,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
+import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.util.Calendar
 import java.util.concurrent.atomic.AtomicBoolean
@@ -42,6 +43,7 @@ object StepCounterBridge {
     private const val KEY_LAST_TIME = "last_time"
     private const val KEY_TODAY = "today"
     private const val KEY_BASELINE_SOURCE = "baseline_source"
+    private const val HISTORY_PREFIX = "history_"
     private const val MIDNIGHT_REQUEST = 71011
     private const val SENSOR_TIMEOUT_MS = 6000L
     private const val LATE_EVENING_MS = 6 * 60 * 60 * 1000L
@@ -49,14 +51,44 @@ object StepCounterBridge {
     /** How stale a prior sample may be and still seed today's reconstruction. */
     private const val RECONSTRUCT_WINDOW_MS = 3L * 24 * 60 * 60 * 1000
 
-    fun handle(context: Context, method: String, result: MethodChannel.Result) {
-        when (method) {
+    fun handle(context: Context, call: MethodCall, result: MethodChannel.Result) {
+        when (call.method) {
             "readTodaySteps" -> readTodayStepsAsync(context, result)
             "isAvailable" -> result.success(stepSensor(context) != null)
             "openHealthConnectSettings" -> result.success(openHealthConnectSettings(context))
             "diagnostics" -> diagnosticsAsync(context, result)
+            "readRecentSteps" -> {
+                val days = call.argument<Int>("days") ?: 14
+                result.success(readRecentStepsMap(context, days))
+            }
             else -> result.notImplemented()
         }
+    }
+
+    /** Archived per-day totals the day boundary has already closed out, keyed
+     *  by local date ("yyyy-MM-dd"). This is the only place history survives
+     *  once [KEY_TODAY] resets for a new day. */
+    private fun archiveCompletedDay(
+        prefs: android.content.SharedPreferences,
+        date: String?,
+        steps: Int,
+    ) {
+        if (date == null) return
+        prefs.edit().putInt(HISTORY_PREFIX + date, steps.coerceAtLeast(0)).apply()
+    }
+
+    private fun readRecentStepsMap(context: Context, days: Int): Map<String, Int> {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val out = mutableMapOf<String, Int>()
+        val cal = Calendar.getInstance()
+        val limit = days.coerceIn(1, 60)
+        for (i in 0 until limit) {
+            val key = localDateKey(cal.timeInMillis)
+            val steps = prefs.getInt(HISTORY_PREFIX + key, -1)
+            if (steps >= 0) out[key] = steps
+            cal.add(Calendar.DAY_OF_YEAR, -1)
+        }
+        return out
     }
 
     fun snapshotMidnightBaseline(context: Context) {
@@ -64,6 +96,10 @@ object StepCounterBridge {
             if (cumulative == null) return@readCumulative
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             val today = localDateKey()
+            val outgoingDate = prefs.getString(KEY_DATE, null)
+            if (outgoingDate != null && outgoingDate != today) {
+                archiveCompletedDay(prefs, outgoingDate, prefs.getInt(KEY_TODAY, 0))
+            }
             prefs.edit()
                 .putString(KEY_DATE, today)
                 .putLong(KEY_BASELINE, cumulative)
@@ -206,6 +242,9 @@ object StepCounterBridge {
         val bootToday = isBootToday()
 
         if (storedDate != todayKey) {
+            if (storedDate != null) {
+                archiveCompletedDay(prefs, storedDate, todaySteps)
+            }
             val midnight = todayStartMillis()
             val haveSample = last in 0L..cumulative && lastTime in 1 until now
             val sampleAgeMs = if (haveSample) now - lastTime else Long.MAX_VALUE

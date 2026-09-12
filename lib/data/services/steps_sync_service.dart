@@ -147,33 +147,44 @@ class StepsSyncService {
       var readsFailed = 0;
       var todayFromHealth = 0;
 
-      if (authorized) {
-        final today = CalendarDay.todayLocal();
-        final now = DateTime.now();
-        for (var i = 0; i < limitDays; i++) {
-          final day = CalendarDay.dayOnly(today.subtract(Duration(days: i)));
-          final end = i == 0
-              ? now
-              : day
-                    .add(const Duration(days: 1))
-                    .subtract(const Duration(milliseconds: 1));
+      // Health Connect may have no data at all for a device (OEM never syncs
+      // into it), so past days rely on the native sensor's own day-boundary
+      // archive too. Merge both sources and never regress what's stored.
+      final sensorHistory = await _readSensorHistory(limitDays);
+      final today = CalendarDay.todayLocal();
+      final now = DateTime.now();
+      for (var i = 0; i < limitDays; i++) {
+        final day = CalendarDay.dayOnly(today.subtract(Duration(days: i)));
+        final end = i == 0
+            ? now
+            : day.add(const Duration(days: 1)).subtract(const Duration(milliseconds: 1));
+        var healthValue = 0;
+        if (authorized) {
           try {
-            final value = await _readStepsForInterval(day, end);
-            // Today is written once below, after reconciling every source.
-            if (i == 0) {
-              todayFromHealth = value;
-            } else {
-              await _repo.setStepsForDay(day, value);
-            }
+            healthValue = await _readStepsForInterval(day, end);
             readsOk++;
           } catch (_) {
             readsFailed++;
           }
         }
+        // Today is written once below, after reconciling every source.
+        if (i == 0) {
+          todayFromHealth = healthValue;
+          continue;
+        }
+        final fromSensor = sensorHistory[day] ?? 0;
+        final existing = await _repo.stepsForDay(day);
+        final merged = [
+          healthValue,
+          fromSensor,
+          existing,
+        ].reduce((a, b) => a > b ? a : b);
+        if (merged > existing) {
+          await _repo.setStepsForDay(day, merged);
+        }
       }
 
       final sensorToday = await _readSensorToday();
-      final today = CalendarDay.todayLocal();
       if (sensorToday == null && !authorized) {
         return StepsSyncStatus.denied;
       }
@@ -208,6 +219,12 @@ class StepsSyncService {
     final sensor = _stepSensor;
     if (sensor == null || !AndroidStepSensor.isSupported) return null;
     return sensor.readTodaySteps();
+  }
+
+  Future<Map<DateTime, int>> _readSensorHistory(int limitDays) async {
+    final sensor = _stepSensor;
+    if (sensor == null || !AndroidStepSensor.isSupported) return const {};
+    return sensor.readHistory(days: limitDays);
   }
 
   /// Aggregate first; if 0, sum individual STEPS samples (some OEM HC builds).

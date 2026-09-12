@@ -14,6 +14,9 @@ import 'ui/meals/daily_meals_page.dart';
 import 'ui/meals/log_meal_page.dart';
 import 'ui/meals/meal_detail_page.dart';
 import 'ui/onboarding/onboarding_page.dart';
+import 'ui/profile/cultivation_history_page.dart';
+import 'ui/profile/cultivation_page.dart';
+import 'ui/profile/realm_guide_page.dart';
 import 'ui/profile/profile_edit_page.dart';
 import 'ui/profile/profile_page.dart';
 import 'ui/profile/theme_page.dart';
@@ -39,7 +42,12 @@ import 'ui/tools/tools_hub_page.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
-  ref.listen(profileProvider, (_, _) => refresh.value++);
+  // Only the null <-> non-null transition matters to `redirect` below; a
+  // refresh on every profile edit races the router against in-flight pops
+  // (e.g. saving in ProfileEditPage), silently stranding them on the page.
+  ref.listen(profileProvider, (previous, next) {
+    if ((previous == null) != (next == null)) refresh.value++;
+  });
   ref.onDispose(refresh.dispose);
 
   return GoRouter(
@@ -161,6 +169,21 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'edit',
                     builder: (context, state) => const ProfileEditPage(),
+                  ),
+                  GoRoute(
+                    path: 'cultivation',
+                    builder: (context, state) => const CultivationPage(),
+                    routes: [
+                      GoRoute(
+                        path: 'realm-guide',
+                        builder: (context, state) => const RealmGuidePage(),
+                      ),
+                      GoRoute(
+                        path: 'history',
+                        builder: (context, state) =>
+                            const CultivationHistoryPage(),
+                      ),
+                    ],
                   ),
                   GoRoute(
                     path: 'reminders',

@@ -74,7 +74,7 @@ class MainActivity : FlutterFragmentActivity() {
                     }
                     "isStepServiceEnabled" ->
                         result.success(StepCounterService.isEnabled(applicationContext))
-                    else -> StepCounterBridge.handle(this, call.method, result)
+                    else -> StepCounterBridge.handle(this, call, result)
                 }
             }
 
