@@ -112,7 +112,7 @@ mixin _ParentDragHandoff<T extends StatefulWidget> on State<T> {
 /// stays mounted): a [Dismissible] row inside a scrolling list stays mounted
 /// for as long as it's scrolled into view, so registering for its whole
 /// mounted lifetime — as [SwipeTabView] itself does for a genuinely nested
-/// pager, which *is* only mounted while its tab is active — would leave the
+/// pager, whose registration is scoped to its containing page — would leave the
 /// ancestor's page-swipe permanently disabled (dead) any time such a row is
 /// simply visible, not just while it's being dragged.
 class SwipeGestureBarrier extends StatefulWidget {
@@ -201,15 +201,21 @@ class _SwipeTabViewState extends State<SwipeTabView>
   double _overscroll = 0;
   bool _handedOff = false;
 
-  /// How many nested [SwipeTabView]s are currently mounted on top of us. A
+  /// Mounted nested gesture owners, counted separately for each page. A
   /// horizontal drag anywhere on screen enters every overlapping [PageView]'s
   /// gesture arena at once, so with both us and a nested pager draggable, a
   /// fast/hard swipe can occasionally resolve to the wrong (outer) one and
-  /// skip the nested level entirely. While a child is mounted we give up our
-  /// own drag physics so only the innermost pager is ever gesture-driven;
+  /// skip the nested level entirely. Once scrolling settles, only children
+  /// on the visible page can take our drag physics, so an incoming or cached
+  /// offscreen page cannot interrupt navigation. The innermost pager then
+  /// owns subsequent gestures;
   /// hand-off still moves us via [_stepSelf]/`animateToPage`, which works
   /// regardless of physics.
-  int _activeNestedChildren = 0;
+  final Map<int, int> _activeNestedChildren = {};
+
+  // An incoming page can mount a nested pager during our drag. Finish the
+  // current scroll before giving that pager ownership of subsequent gestures.
+  bool _scrollInProgress = false;
 
   static const _handoffThreshold = 44.0;
   static const _physics = PageScrollPhysics(
@@ -224,9 +230,15 @@ class _SwipeTabViewState extends State<SwipeTabView>
     _registerWithParent();
   }
 
-  void _onActiveChildDelta(int delta) {
+  void _onActiveChildDelta(int page, int delta) {
     if (!mounted) return;
-    setState(() => _activeNestedChildren += delta);
+    setState(() {
+      _activeNestedChildren.update(
+        page,
+        (count) => count + delta,
+        ifAbsent: () => delta,
+      );
+    });
   }
 
   @override
@@ -298,6 +310,7 @@ class _SwipeTabViewState extends State<SwipeTabView>
     // nested horizontal scrollers inside a panel, e.g. a chip row.
     if (n.depth != 0 || n.metrics.axis != Axis.horizontal) return false;
     if (n is ScrollStartNotification) {
+      _scrollInProgress = true;
       _overscroll = 0;
       _handedOff = false;
     } else if (n is OverscrollNotification && n.dragDetails != null) {
@@ -307,25 +320,31 @@ class _SwipeTabViewState extends State<SwipeTabView>
       }
     } else if (n is ScrollEndNotification) {
       _overscroll = 0;
+      _scrollInProgress = false;
+      // Scroll notifications can arrive during layout.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
     }
     return false;
   }
 
   @override
   Widget build(BuildContext context) {
-    return _TabHandoff(
-      step: _stepSelf,
-      onActiveChildDelta: _onActiveChildDelta,
-      child: NotificationListener<ScrollNotification>(
-        onNotification: _onScroll,
-        child: PageView.builder(
-          controller: _controller,
-          physics: _activeNestedChildren > 0
-              ? const NeverScrollableScrollPhysics()
-              : _physics,
-          onPageChanged: _onPageChanged,
-          itemCount: widget.children.length,
-          itemBuilder: (_, i) => widget.children[i],
+    return NotificationListener<ScrollNotification>(
+      onNotification: _onScroll,
+      child: PageView.builder(
+        controller: _controller,
+        physics:
+            !_scrollInProgress && (_activeNestedChildren[_settledPage] ?? 0) > 0
+            ? const NeverScrollableScrollPhysics()
+            : _physics,
+        onPageChanged: _onPageChanged,
+        itemCount: widget.children.length,
+        itemBuilder: (_, i) => _TabHandoff(
+          step: _stepSelf,
+          onActiveChildDelta: (delta) => _onActiveChildDelta(i, delta),
+          child: widget.children[i],
         ),
       ),
     );
