@@ -14,4 +14,5 @@
     <string name="step_service_channel_description">Keeps a step count running in the background</string>
     <string name="step_service_notification_title">Counting your steps</string>
     <string name="step_service_notification_body">Tap to see today\'s total</string>
+    <string name="reminder_alarm_channel">Daily reminder alarms</string>
 </resources>

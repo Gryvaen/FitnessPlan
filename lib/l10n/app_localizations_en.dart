@@ -519,7 +519,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noExercisesInPlan => 'No exercises';
 
   @override
-  String get workoutHistory => 'Workout history';
+  String get workoutHistory => 'Recent workouts';
 
   @override
   String get stepHistory => 'Daily steps';

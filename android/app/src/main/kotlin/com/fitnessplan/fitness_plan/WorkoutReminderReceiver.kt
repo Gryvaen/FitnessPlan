@@ -10,11 +10,31 @@ import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
+import androidx.core.content.ContextCompat
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 
 class WorkoutReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        try {
+            WorkoutReminderScheduler.scheduleNext(context, intent)
+        } catch (e: RuntimeException) {
+            Log.w("ReminderAlarm", "Cannot renew next reminder", e)
+        }
+        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
+        val alarmChannel = context.getSystemService(NotificationManager::class.java)
+            .getNotificationChannel(ReminderAlarmService.CHANNEL_ID)
+        if (alarmChannel?.importance == NotificationManager.IMPORTANCE_NONE) return
+        try {
+            ContextCompat.startForegroundService(context,
+                Intent(context, ReminderAlarmService::class.java).putExtras(intent))
+            return
+        } catch (e: RuntimeException) {
+            // Restricted background launch: still deliver a visible fallback.
+            Log.w("ReminderAlarm", "Alarm service blocked; posting notification", e)
+        }
+
         val notificationId = intent.getIntExtra(
             WorkoutReminderScheduler.EXTRA_NOTIFICATION_ID,
             DEFAULT_NOTIFICATION_ID,
@@ -46,7 +66,7 @@ class WorkoutReminderReceiver : BroadcastReceiver() {
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
-            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
@@ -88,10 +108,10 @@ class WorkoutReminderReceiver : BroadcastReceiver() {
                 val uri = if (soundUri != null) {
                     Uri.parse(soundUri)
                 } else {
-                    RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                    RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
                 }
                 val attributes = AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                    .setUsage(AudioAttributes.USAGE_ALARM)
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                     .build()
                 setSound(uri, attributes)

@@ -7,6 +7,7 @@ import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import 'workout_reminder_notifications.dart';
+import 'reminder_status_labels.dart';
 
 /// Reminder settings: an independent on/off + time + repeat-days for each
 /// reminder kind, plus the notification-permission status (board 06.03).
@@ -20,6 +21,8 @@ class RemindersHubPage extends ConsumerStatefulWidget {
 class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
     with WidgetsBindingObserver {
   bool? _granted;
+  bool _exact = true;
+  bool _fullScreen = true;
   bool _showOemHint = false;
   bool _ignoringBatteryOpt = true;
 
@@ -41,12 +44,23 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // The user typically flips these in a system settings screen and comes
     // straight back — re-check so the hint clears itself once granted.
-    if (state == AppLifecycleState.resumed) _refreshOemStatus();
+    if (state == AppLifecycleState.resumed) {
+      _refreshOemStatus();
+      _refreshPermission();
+    }
   }
 
   Future<void> _refreshPermission() async {
     final ok = await ReminderNotifications.permissionGranted();
-    if (mounted) setState(() => _granted = ok);
+    final status = await ReminderNotifications.alarmStatus();
+    if (!mounted) return;
+    final newlyGranted = (!_exact && status.exact) || (_granted == false && ok);
+    setState(() {
+      _granted = ok;
+      _exact = status.exact;
+      _fullScreen = status.fullScreen;
+    });
+    if (newlyGranted) await ref.read(remindersProvider.notifier).syncSchedule();
   }
 
   Future<void> _refreshOemStatus() async {
@@ -61,7 +75,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
   }
 
   Future<void> _toggle(ReminderKind kind, bool wantOn) async {
-    if (wantOn && !(_granted ?? true)) {
+    if (wantOn && (!(_granted ?? false) || !_exact || !_fullScreen)) {
       await ReminderNotifications.requestPermissions();
       await _refreshPermission();
     }
@@ -153,6 +167,27 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
                 await _refreshPermission();
               },
             ),
+          if (!_exact || !_fullScreen)
+            SportListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.alarm),
+              title: Text(l10n.alarmAccessTitle),
+              subtitle: Text(
+                !_exact ? l10n.exactAlarmMissing : l10n.fullScreenAlarmMissing,
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                await ReminderNotifications.requestPermissions();
+                await _refreshPermission();
+              },
+            ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+              l10n.alarmBehaviorHint,
+              style: theme.textTheme.bodySmall,
+            ),
+          ),
           if (_showOemHint)
             _OemReliabilityHint(ignoringBatteryOpt: _ignoringBatteryOpt),
           for (final kind in ReminderKind.values)

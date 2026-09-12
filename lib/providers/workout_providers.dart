@@ -21,8 +21,8 @@ final todayWorkoutProvider = StreamProvider<DayWorkoutSnapshot>((ref) {
 });
 
 final workoutHistoryProvider =
-    FutureProvider.autoDispose<List<WorkoutHistoryDay>>((ref) {
-      return ref.watch(workoutRepositoryProvider).recentHistory();
+    StreamProvider.autoDispose<List<WorkoutHistoryDay>>((ref) {
+      return ref.watch(workoutRepositoryProvider).watchRecentHistory();
     });
 
 final dayWorkoutProvider = StreamProvider.autoDispose

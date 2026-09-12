@@ -1121,7 +1121,7 @@ abstract class AppLocalizations {
   /// No description provided for @workoutHistory.
   ///
   /// In en, this message translates to:
-  /// **'Workout history'**
+  /// **'Recent workouts'**
   String get workoutHistory;
 
   /// No description provided for @stepHistory.

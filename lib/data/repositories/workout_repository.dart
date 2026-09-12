@@ -57,10 +57,15 @@ class DayWorkoutSnapshot {
 }
 
 class WorkoutHistoryDay {
-  const WorkoutHistoryDay({required this.date, required this.sets});
+  const WorkoutHistoryDay({
+    required this.date,
+    required this.sets,
+    this.completedItems = const [],
+  });
 
   final DateTime date;
   final List<WorkoutSetLog> sets;
+  final List<DayWorkoutItem> completedItems;
 }
 
 class WorkoutPlanSummary {
@@ -694,23 +699,54 @@ class WorkoutRepository {
     });
   }
 
+  SimpleSelectStatement<$WorkoutSetLogsTable, WorkoutSetLog> _historyQuery() =>
+      _db.select(_db.workoutSetLogs)..orderBy([
+        (t) => OrderingTerm.desc(t.date),
+        (t) => OrderingTerm.asc(t.exerciseName),
+        (t) => OrderingTerm.asc(t.setIndex),
+      ]);
+
+  Stream<List<WorkoutHistoryDay>> watchRecentHistory({
+    int limitDays = 14,
+  }) => _db
+      .customSelect(
+        'SELECT date FROM workout_set_logs UNION '
+        'SELECT day_workouts.date FROM day_workouts '
+        'JOIN day_workout_items ON day_workout_items.day_workout_id = day_workouts.id '
+        'WHERE day_workout_items.done = 1',
+        readsFrom: {_db.workoutSetLogs, _db.dayWorkouts, _db.dayWorkoutItems},
+      )
+      .watch()
+      .asyncMap((_) => recentHistory(limitDays: limitDays));
+
   Future<List<WorkoutHistoryDay>> recentHistory({int limitDays = 14}) async {
-    final logs =
-        await (_db.select(_db.workoutSetLogs)..orderBy([
-              (t) => OrderingTerm.desc(t.date),
-              (t) => OrderingTerm.asc(t.exerciseName),
-              (t) => OrderingTerm.asc(t.setIndex),
-            ]))
-            .get();
+    final logs = await _historyQuery().get();
+    final completed = await (_db.select(_db.dayWorkoutItems).join([
+      innerJoin(
+        _db.dayWorkouts,
+        _db.dayWorkouts.id.equalsExp(_db.dayWorkoutItems.dayWorkoutId),
+      ),
+    ])..where(_db.dayWorkoutItems.done.equals(true))).get();
     final byDay = <DateTime, List<WorkoutSetLog>>{};
+    final doneByDay = <DateTime, List<DayWorkoutItem>>{};
     for (final log in logs) {
-      final day = _dayStart(log.date);
-      byDay.putIfAbsent(day, () => []).add(log);
+      byDay.putIfAbsent(_dayStart(log.date), () => []).add(log);
     }
-    final days = byDay.keys.toList()..sort((a, b) => b.compareTo(a));
+    for (final row in completed) {
+      final day = _dayStart(row.readTable(_db.dayWorkouts).date);
+      doneByDay
+          .putIfAbsent(day, () => [])
+          .add(row.readTable(_db.dayWorkoutItems));
+    }
+    final days = {...byDay.keys, ...doneByDay.keys}.toList()
+      ..sort((a, b) => b.compareTo(a));
     return [
       for (final d in days.take(limitDays))
-        WorkoutHistoryDay(date: d, sets: byDay[d]!),
+        WorkoutHistoryDay(
+          date: d,
+          sets: byDay[d] ?? [],
+          completedItems: doneByDay[d] ?? [],
+        ),
     ];
   }
 

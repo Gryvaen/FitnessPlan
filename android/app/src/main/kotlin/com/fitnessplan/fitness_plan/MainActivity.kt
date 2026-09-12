@@ -75,6 +75,14 @@ class MainActivity : FlutterFragmentActivity() {
                         WorkoutReminderScheduler.cancelAll(this)
                         result.success(null)
                     }
+                    "alarmStatus" -> {
+                        val alarms = getSystemService(android.app.AlarmManager::class.java)
+                        val notifications = getSystemService(android.app.NotificationManager::class.java)
+                        result.success(mapOf(
+                            "exact" to (android.os.Build.VERSION.SDK_INT < 31 || alarms.canScheduleExactAlarms()),
+                            "fullScreen" to (android.os.Build.VERSION.SDK_INT < 34 || notifications.canUseFullScreenIntent()),
+                        ))
+                    }
                     "isAggressiveOem" -> result.success(DeviceReliability.isAggressiveOem())
                     "manufacturer" -> result.success(DeviceReliability.manufacturer())
                     "isIgnoringBatteryOptimizations" ->
@@ -99,12 +107,12 @@ class MainActivity : FlutterFragmentActivity() {
                         val currentUri = call.argument<String>("currentUri")
                         pendingRingtoneResult = result
                         val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
-                            putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION)
+                            putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
                             putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
                             putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
                             putExtra(
                                 RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI,
-                                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
+                                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
                             )
                             if (currentUri != null) {
                                 putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, Uri.parse(currentUri))

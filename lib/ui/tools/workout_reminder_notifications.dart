@@ -49,6 +49,23 @@ abstract final class ReminderNotifications {
     _initialized = true;
   }
 
+  static Future<({bool exact, bool fullScreen})> alarmStatus() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      return (exact: true, fullScreen: true);
+    }
+    try {
+      final status = await _nativeChannel.invokeMapMethod<String, Object?>(
+        'alarmStatus',
+      );
+      return (
+        exact: status?['exact'] == true,
+        fullScreen: status?['fullScreen'] == true,
+      );
+    } catch (_) {
+      return (exact: false, fullScreen: false);
+    }
+  }
+
   static Future<bool> requestPermissions() =>
       RestTimerNotifications.requestPermissions();
 
@@ -176,10 +193,18 @@ abstract final class ReminderNotifications {
       await repository.setLastChannelId(kind, channelId);
 
       var fireDay = DateTime(now.year, now.month, now.day, s.hour, s.minute);
-      if (!fireDay.isAfter(now)) fireDay = fireDay.add(const Duration(days: 1));
+      if (!fireDay.isAfter(now)) {
+        fireDay = DateTime(now.year, now.month, now.day + 1, s.hour, s.minute);
+      }
 
       for (var i = 0; i < daysAhead; i++) {
-        final whenLocal = fireDay.add(Duration(days: i));
+        final whenLocal = DateTime(
+          fireDay.year,
+          fireDay.month,
+          fireDay.day + i,
+          s.hour,
+          s.minute,
+        );
         if (whenLocal.difference(now).inSeconds < 1) continue;
         if (!s.firesOn(whenLocal.weekday)) continue;
         var workedOut = true;

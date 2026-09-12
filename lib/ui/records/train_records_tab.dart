@@ -28,23 +28,11 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   String? _category;
   bool _starting = false;
 
-  /// Groups a day's set logs by exercise name, preserving first-seen order.
-  Map<String, List<WorkoutSetLog>> _groupSets(List<WorkoutSetLog> sets) {
-    final out = <String, List<WorkoutSetLog>>{};
-    for (final s in sets) {
-      out.putIfAbsent(s.exerciseName, () => []).add(s);
-    }
-    return out;
-  }
-
-  String _repsSummary(List<WorkoutSetLog> sets, AppLocalizations l10n) {
-    final values = [
-      for (final s in sets)
-        s.reps != null ? '${s.reps}' : '${s.durationSec ?? 0}s',
-    ];
-    if (values.isEmpty) return '';
-    if (values.every((v) => v == values.first)) return values.first;
-    return values.join('/');
+  int _dayExerciseCount(WorkoutHistoryDay day) {
+    return {
+      for (final item in day.completedItems) item.exerciseName,
+      for (final set in day.sets) set.exerciseName,
+    }.length;
   }
 
   void _showStepHistory(
@@ -72,6 +60,43 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                 leading: const Icon(Icons.directions_walk),
                 title: Text(AppDates.md(day.date, locale)),
                 trailing: Text(context.l10n.nSteps(day.steps)),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showWorkoutHistory(
+    BuildContext context,
+    List<WorkoutHistoryDay> days,
+    Locale locale,
+  ) {
+    final l10n = context.l10n;
+    showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          shrinkWrap: true,
+          children: [
+            Text(
+              l10n.workoutHistory,
+              style: Theme.of(sheetContext).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            for (final day in days)
+              SportListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.fitness_center),
+                title: Text(AppDates.md(day.date, locale)),
+                trailing: Text(l10n.nExercises(_dayExerciseCount(day))),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  showDayWorkoutDetails(context, day.date);
+                },
               ),
           ],
         ),
@@ -370,7 +395,6 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
 
   Widget _historyPanel(BuildContext context) {
     final l10n = context.l10n;
-    final theme = Theme.of(context);
     final locale = Localizations.localeOf(context);
     return ListView(
       padding: EdgeInsets.fromLTRB(
@@ -405,42 +429,23 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
               error: (e, _) => SportLoadError(
                 onRetry: () => ref.invalidate(workoutHistoryProvider),
               ),
-              data: (days) => days.isEmpty
-                  ? SportEmptyState(
-                      title: l10n.noSetLogs,
-                      icon: Icons.fitness_center,
-                    )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        for (final day in days) ...[
-                          Padding(
-                            padding: const EdgeInsets.only(top: 20, bottom: 8),
-                            child: Text(
-                              AppDates.mdWithWeekday(day.date, locale),
-                              style: theme.textTheme.titleMedium,
-                            ),
-                          ),
-                          for (final entry in _groupSets(day.sets).entries)
-                            SportListTile(
-                              contentPadding: EdgeInsets.zero,
-                              title: Text(entry.key),
-                              subtitle: Text(
-                                l10n.setsWithReps(
-                                  entry.value.length,
-                                  _repsSummary(entry.value, l10n),
-                                ),
-                              ),
-                              trailing: const Icon(
-                                Icons.chevron_right,
-                                size: 18,
-                              ),
-                              onTap: () =>
-                                  showDayWorkoutDetails(context, day.date),
-                            ),
-                        ],
-                      ],
-                    ),
+              data: (days) {
+                if (days.isEmpty) {
+                  return SportEmptyState(
+                    title: l10n.noSetLogs,
+                    icon: Icons.fitness_center,
+                  );
+                }
+                final latest = days.first;
+                return SportListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.fitness_center),
+                  title: Text(l10n.workoutHistory),
+                  subtitle: Text(AppDates.md(latest.date, locale)),
+                  trailing: Text(l10n.nExercises(_dayExerciseCount(latest))),
+                  onTap: () => _showWorkoutHistory(context, days, locale),
+                );
+              },
             ),
       ],
     );

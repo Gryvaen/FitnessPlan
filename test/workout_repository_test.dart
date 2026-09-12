@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -34,6 +36,78 @@ void main() {
 
   tearDown(() async {
     await db.close();
+  });
+
+  test(
+    'recent history updates after adding and removing sets without reopening',
+    () async {
+      final events = StreamIterator(repo.watchRecentHistory());
+      try {
+        expect(await events.moveNext(), isTrue);
+        expect(events.current, isEmpty);
+        final exercise = await addTestExercise(repo, name: 'Squat');
+        final today = DateTime.now();
+        await repo.logSet(
+          day: today,
+          exerciseId: exercise.id,
+          exerciseName: exercise.name,
+          reps: 8,
+        );
+        expect(await events.moveNext(), isTrue);
+        expect(events.current.single.sets.single.reps, 8);
+        await repo.logSet(
+          day: today,
+          exerciseId: exercise.id,
+          exerciseName: exercise.name,
+          reps: 10,
+        );
+        expect(await events.moveNext(), isTrue);
+        expect(events.current.single.sets, hasLength(2));
+        await db.delete(db.workoutSetLogs).go();
+        expect(await events.moveNext(), isTrue);
+        expect(events.current, isEmpty);
+      } finally {
+        await events.cancel();
+      }
+    },
+  );
+
+  test('completed training is in history even without set logs', () async {
+    final exercise = await addTestExercise(repo, name: 'Walkout');
+    final plan = await repo.createPlan(
+      name: 'Today',
+      items: [
+        PlanDraftItem(
+          exerciseId: exercise.id,
+          exerciseName: exercise.name,
+          targetSets: 3,
+          targetReps: 8,
+        ),
+      ],
+    );
+    final day = CalendarDay.todayLocal();
+    await repo.applyPlanToDay(planId: plan, day: day);
+    final item = (await repo.daySnapshot(day)).items.single.item;
+    final events = StreamIterator(repo.watchRecentHistory());
+    try {
+      expect(await events.moveNext(), isTrue);
+      expect(
+        events.current,
+        isEmpty,
+      ); // A plan alone is not completed training.
+      await repo.setItemDone(item.id, true);
+      expect(await events.moveNext(), isTrue);
+      expect(events.current.single.sets, isEmpty);
+      expect(
+        events.current.single.completedItems.single.exerciseName,
+        'Walkout',
+      );
+      await repo.setItemDone(item.id, false);
+      expect(await events.moveNext(), isTrue);
+      expect(events.current, isEmpty);
+    } finally {
+      await events.cancel();
+    }
   });
 
   test('fresh database has no pre-seeded exercises', () async {

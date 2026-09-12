@@ -170,7 +170,7 @@
   "emptyPlans": "还没有计划，点加号新建",
   "deletePlan": "删除计划",
   "noExercisesInPlan": "无动作",
-  "workoutHistory": "训练历史",
+  "workoutHistory": "最近训练",
   "stepHistory": "运动步数",
   "steps": "步数",
   "nSteps": "{n} 步",
