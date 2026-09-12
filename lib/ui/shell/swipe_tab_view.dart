@@ -86,10 +86,19 @@ mixin _ParentDragHandoff<T extends StatefulWidget> on State<T> {
 
 /// Wraps content with its own horizontal-drag gesture — e.g. a
 /// [Dismissible] list row — so the nearest ancestor [SwipeTabView] gives up
-/// its own page-swipe physics while this is mounted. Without this, both
-/// widgets compete for the same drag and the ancestor pager tends to win,
-/// making the wrapped content's own swipe gesture (e.g. swipe-to-delete)
-/// unresponsive in that direction.
+/// its own page-swipe physics while a touch is down on this widget. Without
+/// this, both widgets compete for the same drag and the ancestor pager tends
+/// to win, making the wrapped content's own swipe gesture (e.g.
+/// swipe-to-delete) unresponsive in that direction.
+///
+/// The hand-off is scoped to an actual pointer being down on this widget
+/// (not to how long it stays mounted): a [Dismissible] row inside a
+/// scrolling list stays mounted for as long as it's scrolled into view, so
+/// registering for its whole mounted lifetime — as [SwipeTabView] itself
+/// does for a genuinely nested pager, which *is* only mounted while its tab
+/// is active — would leave the ancestor's page-swipe permanently disabled
+/// (dead) any time such a row is simply visible, not just while it's being
+/// dragged.
 class SwipeGestureBarrier extends StatefulWidget {
   const SwipeGestureBarrier({super.key, required this.child});
 
@@ -101,20 +110,36 @@ class SwipeGestureBarrier extends StatefulWidget {
 
 class _SwipeGestureBarrierState extends State<SwipeGestureBarrier>
     with _ParentDragHandoff<SwipeGestureBarrier> {
-  @override
-  void initState() {
-    super.initState();
+  bool _held = false;
+
+  void _hold() {
+    if (_held) return;
+    _held = true;
     _registerWithParent();
+  }
+
+  void _release() {
+    if (!_held) return;
+    _held = false;
+    _unregisterFromParent();
   }
 
   @override
   void dispose() {
-    _unregisterFromParent();
+    _release();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) {
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) => _hold(),
+      onPointerUp: (_) => _release(),
+      onPointerCancel: (_) => _release(),
+      child: widget.child,
+    );
+  }
 }
 
 /// A swipeable set of tab panels that chains outward: a horizontal drag pages
