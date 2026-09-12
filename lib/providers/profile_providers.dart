@@ -7,21 +7,6 @@ final profileProvider = NotifierProvider<ProfileNotifier, UserProfile?>(
   ProfileNotifier.new,
 );
 
-/// User-chosen display name; null means "use the default greeting".
-final userNameProvider = NotifierProvider<UserNameNotifier, String?>(
-  UserNameNotifier.new,
-);
-
-class UserNameNotifier extends Notifier<String?> {
-  @override
-  String? build() => ref.read(profileRepositoryProvider).loadName();
-
-  Future<void> set(String? name) async {
-    await ref.read(profileRepositoryProvider).saveName(name);
-    state = ref.read(profileRepositoryProvider).loadName();
-  }
-}
-
 class ProfileNotifier extends Notifier<UserProfile?> {
   @override
   UserProfile? build() {

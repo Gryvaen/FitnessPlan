@@ -39,6 +39,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/food_seed.json
+    - assets/cultivation/
   fonts:
     - family: LXGWWenKai
       fonts:

@@ -196,21 +196,6 @@ class ProfileRepository {
     );
   }
 
-  /// User-chosen display name; null / empty means "use the default greeting".
-  String? loadName() {
-    final v = _prefs.getString(_nameKey)?.trim();
-    return (v == null || v.isEmpty) ? null : v;
-  }
-
-  Future<void> saveName(String? name) async {
-    final trimmed = name?.trim() ?? '';
-    if (trimmed.isEmpty) {
-      await _prefs.remove(_nameKey);
-    } else {
-      await _prefs.setString(_nameKey, trimmed);
-    }
-  }
-
   Future<void> clear() async {
     await _prefs.remove(_key);
     await _prefs.remove(_nameKey);

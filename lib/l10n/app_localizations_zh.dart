@@ -2415,12 +2415,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get goalBulkDesc => '增加肌肉量，提升力量与体能';
 
   @override
-  String get profileGreeting => '健身小伙伴';
-
-  @override
-  String get editName => '修改昵称';
-
-  @override
   String get profileTagline => '坚持，让更好的自己出现';
 
   @override
@@ -2463,4 +2457,146 @@ class AppLocalizationsZh extends AppLocalizations {
   String addMealNamed(String meal) {
     return '添加$meal';
   }
+
+  @override
+  String get cultivationPageTitle => '境界修行';
+
+  @override
+  String get cultivationHeroLabel => '我的境界';
+
+  @override
+  String get cultivationLockedTitle => '境界修行尚未开启';
+
+  @override
+  String get cultivationLockedBody =>
+      '修为体系仅在「减脂」目标下计入——每减少 7,700 kcal 热量缺口，都会化作你的道行。去设置减脂目标，开启你的修仙之旅。';
+
+  @override
+  String get cultivationLockedCta => '设置减脂目标';
+
+  @override
+  String get cultivationMaxCaption => '已至化神 · 圆满境';
+
+  @override
+  String cultivationMaxSubcaption(String kg) {
+    return '已减 $kg kg 及以上 · 最高境界';
+  }
+
+  @override
+  String cultivationNextLayerCaption(String kcal) {
+    return '距下一层还差 $kcal kcal';
+  }
+
+  @override
+  String cultivationNextRealmCaption(String kcal, String realm) {
+    return '距$realm还差 $kcal kcal';
+  }
+
+  @override
+  String cultivationLostCaption(String kg) {
+    return '已减 $kg kg';
+  }
+
+  @override
+  String cultivationStepsContribution(String kcal) {
+    return '步数贡献 $kcal kcal';
+  }
+
+  @override
+  String cultivationDietContribution(String kcal) {
+    return '饮食盈余 $kcal kcal';
+  }
+
+  @override
+  String cultivationLayerBadge(String realm, String layer) {
+    return '$realm · $layer层';
+  }
+
+  @override
+  String get cultivationRealmQiRefining => '练气期';
+
+  @override
+  String get cultivationRealmFoundation => '筑基期';
+
+  @override
+  String get cultivationRealmCoreFormation => '结丹期';
+
+  @override
+  String get cultivationRealmNascentSoul => '元婴期';
+
+  @override
+  String get cultivationRealmDivineTransformation => '化神期';
+
+  @override
+  String get cultivationSideHistory => '修行记录';
+
+  @override
+  String get cultivationSideRealmGuide => '境界体系';
+
+  @override
+  String get myProfileTitle => '我的资料';
+
+  @override
+  String get realmGuideTitle => '境界体系';
+
+  @override
+  String get realmGuideIntro =>
+      '每减少 7,700 kcal 热量缺口 ≈ 瘦 1 kg。累计减重达到下方各境界标注的总量即可突破至更高境界，每个大境界再分 9 层小境界。';
+
+  @override
+  String realmGuideRangeLine(String floor, String ceil, String kcal) {
+    return '$floor – $ceil kg · 每层 $kcal kcal';
+  }
+
+  @override
+  String realmGuideMaxRangeLine(String floor) {
+    return '≥ $floor kg · 圆满无需再突破';
+  }
+
+  @override
+  String realmGuideNextThresh(String realm, String kg) {
+    return '→ $realm ${kg}kg';
+  }
+
+  @override
+  String get realmGuideTagDone => '已突破';
+
+  @override
+  String realmGuideTagCurrent(String layer) {
+    return '当前 · $layer层';
+  }
+
+  @override
+  String get realmGuideTagLocked => '未解锁';
+
+  @override
+  String get realmGuideTagLockedMax => '未解锁 · 最高境界';
+
+  @override
+  String get realmGuideFootnoteTitle => 'kcal 来源：';
+
+  @override
+  String get realmGuideFootnoteBody =>
+      '① 步数 × 0.04 kcal/步；② 当日饮食热量盈余，仅当日记录餐次 ≥ 2 次（早/中/晚/加餐任意两类）时计入。';
+
+  @override
+  String get realmGuideFootnoteNote => '该玩法当前仅对选择「减脂」策略的用户开放。';
+
+  @override
+  String get cultivationHistoryTitle => '修行记录';
+
+  @override
+  String get cultivationHistoryEmpty => '还没有修行记录';
+
+  @override
+  String get cultivationHistoryTodayLabel => '今天';
+
+  @override
+  String get cultivationHistoryStepsLabel => '步数贡献';
+
+  @override
+  String get cultivationHistoryDietLabel => '饮食盈余';
+
+  @override
+  String get cultivationHistoryTotalLabel => '合计';
 }

@@ -13,6 +13,7 @@ import '../strategy/strategy_labels.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/calorie_breakdown.dart';
+import 'cultivation_labels.dart';
 import 'theme_page.dart';
 
 /// 「我的」入口页：只读配额摘要 + 进入「我的档案」编辑。
@@ -74,40 +75,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         context,
       ).showSnackBar(SnackBar(content: Text(context.l10n.clearFailed('$e'))));
     }
-  }
-
-  Future<void> _renameUser() async {
-    final l10n = context.l10n;
-    final controller = TextEditingController(
-      text: ref.read(userNameProvider) ?? '',
-    );
-    final name = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.editName),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLength: 24,
-          decoration: InputDecoration(hintText: l10n.profileGreeting),
-          onSubmitted: (v) => Navigator.pop(ctx, v),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, controller.text),
-            child: Text(l10n.save),
-          ),
-        ],
-      ),
-    );
-    // Dialog route / IME may still hold dependents for a frame after pop.
-    WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
-    if (name == null) return;
-    await ref.read(userNameProvider.notifier).set(name);
   }
 
   String _nutritionSubtitle(WidgetRef ref, AppLocalizations l10n) {
@@ -298,16 +265,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           size: 20,
                         ),
                       ),
-                      IconButton(
-                        tooltip: l10n.toolEnergyConvert,
-                        visualDensity: VisualDensity.compact,
-                        onPressed: () =>
-                            context.push('/profile/tools/energy-convert'),
-                        icon: const Icon(
-                          Icons.swap_vert_circle_outlined,
-                          size: 20,
-                        ),
-                      ),
                       if (isAndroid)
                         IconButton(
                           tooltip: update.phase == AppUpdatePhase.downloading
@@ -321,18 +278,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ],
                   ),
                 ),
+                const _CultivationHeroCard(),
+                const SizedBox(height: AppSpacing.section),
                 SportListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: CircleAvatar(
-                    radius: 24,
-                    backgroundColor: theme.colorScheme.primaryContainer,
-                    child: Icon(
-                      Icons.person_outline,
-                      color: theme.colorScheme.onPrimaryContainer,
-                    ),
-                  ),
+                  leading: const Icon(Icons.person_outline),
                   title: Text(
-                    ref.watch(userNameProvider) ?? l10n.profileGreeting,
+                    l10n.myProfileTitle,
                     style: theme.textTheme.titleMedium,
                   ),
                   subtitle: Text(
@@ -345,18 +297,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ),
                     style: theme.textTheme.meta,
                   ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        tooltip: l10n.editName,
-                        visualDensity: VisualDensity.compact,
-                        icon: const Icon(Icons.edit_outlined, size: 18),
-                        onPressed: _renameUser,
-                      ),
-                      const Icon(Icons.chevron_right),
-                    ],
-                  ),
+                  trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push('/profile/edit'),
                 ),
                 _MenuRow(
@@ -443,6 +384,116 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   Navigator.of(context).pop();
                   _clearData();
                 },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Entry into the cultivation-realm mini-game. Shows live realm/layer
+/// progress once the user is eligible ([cultivationEligibleProvider]);
+/// otherwise a generic invite that still routes to the locked explainer.
+class _CultivationHeroCard extends ConsumerWidget {
+  const _CultivationHeroCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final v = AppThemeVisuals.of(context);
+    final l10n = context.l10n;
+    final eligible = ref.watch(cultivationEligibleProvider);
+    final progress = eligible ? ref.watch(cultivationProgressProvider) : null;
+
+    return Material(
+      color: v.card,
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        onTap: () => context.push('/profile/cultivation'),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.card),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(color: v.cardBorder),
+          ),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(32),
+                child: progress == null
+                    ? Container(
+                        width: 64,
+                        height: 64,
+                        color: v.accentSoft,
+                        child: Icon(Icons.self_improvement, color: v.accent),
+                      )
+                    : Image.asset(
+                        progress.realm.artAsset(progress.layer),
+                        width: 64,
+                        height: 64,
+                        fit: BoxFit.cover,
+                        alignment: const Alignment(0, -0.4),
+                      ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.cultivationHeroLabel,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      progress == null
+                          ? l10n.cultivationLockedTitle
+                          : l10n.cultivationLayerBadge(
+                              progress.realm.label(l10n),
+                              '${progress.layer}',
+                            ),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: progress?.realm.textColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (progress != null && !progress.isMax) ...[
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(3),
+                        child: SizedBox(
+                          height: 4,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              ColoredBox(color: v.track),
+                              FractionallySizedBox(
+                                alignment: AlignmentDirectional.centerStart,
+                                widthFactor: progress.layerProgress.clamp(
+                                  0.0,
+                                  1.0,
+                                ),
+                                child: ColoredBox(
+                                  color: progress.realm.textColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.chevron_right,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ],
           ),

@@ -2474,12 +2474,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goalBulkDesc => 'Add muscle, build strength';
 
   @override
-  String get profileGreeting => 'Fitness buddy';
-
-  @override
-  String get editName => 'Edit name';
-
-  @override
   String get profileTagline => 'Keep going — a better you is coming';
 
   @override
@@ -2522,4 +2516,147 @@ class AppLocalizationsEn extends AppLocalizations {
   String addMealNamed(String meal) {
     return 'Add $meal';
   }
+
+  @override
+  String get cultivationPageTitle => 'Cultivation';
+
+  @override
+  String get cultivationHeroLabel => 'My Realm';
+
+  @override
+  String get cultivationLockedTitle => 'Cultivation not yet unlocked';
+
+  @override
+  String get cultivationLockedBody =>
+      'Cultivation only tracks progress under the \"Cut\" goal — every 7,700 kcal deficit becomes a step on your path. Switch to a cut goal to begin.';
+
+  @override
+  String get cultivationLockedCta => 'Switch to cut goal';
+
+  @override
+  String get cultivationMaxCaption => 'Divine Transformation · Perfected';
+
+  @override
+  String cultivationMaxSubcaption(String kg) {
+    return '$kg kg lost or more · highest realm';
+  }
+
+  @override
+  String cultivationNextLayerCaption(String kcal) {
+    return '$kcal kcal to the next layer';
+  }
+
+  @override
+  String cultivationNextRealmCaption(String kcal, String realm) {
+    return '$kcal kcal to $realm';
+  }
+
+  @override
+  String cultivationLostCaption(String kg) {
+    return '$kg kg lost';
+  }
+
+  @override
+  String cultivationStepsContribution(String kcal) {
+    return 'Steps +$kcal kcal';
+  }
+
+  @override
+  String cultivationDietContribution(String kcal) {
+    return 'Diet surplus +$kcal kcal';
+  }
+
+  @override
+  String cultivationLayerBadge(String realm, String layer) {
+    return '$realm · Layer $layer';
+  }
+
+  @override
+  String get cultivationRealmQiRefining => 'Qi Refining';
+
+  @override
+  String get cultivationRealmFoundation => 'Foundation';
+
+  @override
+  String get cultivationRealmCoreFormation => 'Core Formation';
+
+  @override
+  String get cultivationRealmNascentSoul => 'Nascent Soul';
+
+  @override
+  String get cultivationRealmDivineTransformation => 'Divine Transformation';
+
+  @override
+  String get cultivationSideHistory => 'History';
+
+  @override
+  String get cultivationSideRealmGuide => 'Realm guide';
+
+  @override
+  String get myProfileTitle => 'My profile';
+
+  @override
+  String get realmGuideTitle => 'Realm system';
+
+  @override
+  String get realmGuideIntro =>
+      'Every 7,700 kcal deficit ≈ 1 kg lost. Reach the cumulative weight-loss threshold shown for each realm to break through to the next — each realm is further divided into 9 layers.';
+
+  @override
+  String realmGuideRangeLine(String floor, String ceil, String kcal) {
+    return '$floor–$ceil kg · $kcal kcal per layer';
+  }
+
+  @override
+  String realmGuideMaxRangeLine(String floor) {
+    return '≥ $floor kg · Fulfilled — no further breakthrough';
+  }
+
+  @override
+  String realmGuideNextThresh(String realm, String kg) {
+    return '→ $realm ${kg}kg';
+  }
+
+  @override
+  String get realmGuideTagDone => 'Passed';
+
+  @override
+  String realmGuideTagCurrent(String layer) {
+    return 'Current · Layer $layer';
+  }
+
+  @override
+  String get realmGuideTagLocked => 'Locked';
+
+  @override
+  String get realmGuideTagLockedMax => 'Locked · Highest realm';
+
+  @override
+  String get realmGuideFootnoteTitle => 'kcal sources:';
+
+  @override
+  String get realmGuideFootnoteBody =>
+      '① Steps × 0.04 kcal/step; ② daily calorie surplus, counted only when at least 2 distinct meal types are logged that day (breakfast/lunch/dinner/snack).';
+
+  @override
+  String get realmGuideFootnoteNote =>
+      'This feature is currently only available to users on the \"Cut\" goal.';
+
+  @override
+  String get cultivationHistoryTitle => 'Cultivation log';
+
+  @override
+  String get cultivationHistoryEmpty => 'No records yet';
+
+  @override
+  String get cultivationHistoryTodayLabel => 'Today';
+
+  @override
+  String get cultivationHistoryStepsLabel => 'Steps';
+
+  @override
+  String get cultivationHistoryDietLabel => 'Diet surplus';
+
+  @override
+  String get cultivationHistoryTotalLabel => 'Total';
 }

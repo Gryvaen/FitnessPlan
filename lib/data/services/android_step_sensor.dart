@@ -34,6 +34,36 @@ class AndroidStepSensor {
     }
   }
 
+  /// Archived per-day totals the native day-boundary tracker already closed
+  /// out (keyed by local calendar day). This is the only way to recover
+  /// steps for days before today when Health Connect has no data for them.
+  Future<Map<DateTime, int>> readHistory({int days = 14}) async {
+    if (!isSupported) return const {};
+    try {
+      final raw = await _channel.invokeMethod<Map<Object?, Object?>>(
+        'readRecentSteps',
+        {'days': days},
+      );
+      if (raw == null) return const {};
+      final out = <DateTime, int>{};
+      for (final entry in raw.entries) {
+        final key = entry.key;
+        final value = entry.value;
+        if (key is! String || value == null) continue;
+        final parts = key.split('-');
+        if (parts.length != 3) continue;
+        final y = int.tryParse(parts[0]);
+        final m = int.tryParse(parts[1]);
+        final d = int.tryParse(parts[2]);
+        if (y == null || m == null || d == null) continue;
+        out[DateTime(y, m, d)] = (value as num).toInt();
+      }
+      return out;
+    } catch (_) {
+      return const {};
+    }
+  }
+
   /// Whether the always-on background step-counting foreground service is on.
   Future<bool> isServiceEnabled() async {
     if (!isSupported) return false;

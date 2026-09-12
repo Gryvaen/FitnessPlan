@@ -4353,18 +4353,6 @@ abstract class AppLocalizations {
   /// **'Add muscle, build strength'**
   String get goalBulkDesc;
 
-  /// No description provided for @profileGreeting.
-  ///
-  /// In en, this message translates to:
-  /// **'Fitness buddy'**
-  String get profileGreeting;
-
-  /// No description provided for @editName.
-  ///
-  /// In en, this message translates to:
-  /// **'Edit name'**
-  String get editName;
-
   /// No description provided for @profileTagline.
   ///
   /// In en, this message translates to:
@@ -4436,6 +4424,240 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add {meal}'**
   String addMealNamed(String meal);
+
+  /// No description provided for @cultivationPageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cultivation'**
+  String get cultivationPageTitle;
+
+  /// No description provided for @cultivationHeroLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'My Realm'**
+  String get cultivationHeroLabel;
+
+  /// No description provided for @cultivationLockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cultivation not yet unlocked'**
+  String get cultivationLockedTitle;
+
+  /// No description provided for @cultivationLockedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Cultivation only tracks progress under the \"Cut\" goal — every 7,700 kcal deficit becomes a step on your path. Switch to a cut goal to begin.'**
+  String get cultivationLockedBody;
+
+  /// No description provided for @cultivationLockedCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to cut goal'**
+  String get cultivationLockedCta;
+
+  /// No description provided for @cultivationMaxCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Divine Transformation · Perfected'**
+  String get cultivationMaxCaption;
+
+  /// No description provided for @cultivationMaxSubcaption.
+  ///
+  /// In en, this message translates to:
+  /// **'{kg} kg lost or more · highest realm'**
+  String cultivationMaxSubcaption(String kg);
+
+  /// No description provided for @cultivationNextLayerCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'{kcal} kcal to the next layer'**
+  String cultivationNextLayerCaption(String kcal);
+
+  /// No description provided for @cultivationNextRealmCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'{kcal} kcal to {realm}'**
+  String cultivationNextRealmCaption(String kcal, String realm);
+
+  /// No description provided for @cultivationLostCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'{kg} kg lost'**
+  String cultivationLostCaption(String kg);
+
+  /// No description provided for @cultivationStepsContribution.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps +{kcal} kcal'**
+  String cultivationStepsContribution(String kcal);
+
+  /// No description provided for @cultivationDietContribution.
+  ///
+  /// In en, this message translates to:
+  /// **'Diet surplus +{kcal} kcal'**
+  String cultivationDietContribution(String kcal);
+
+  /// No description provided for @cultivationLayerBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'{realm} · Layer {layer}'**
+  String cultivationLayerBadge(String realm, String layer);
+
+  /// No description provided for @cultivationRealmQiRefining.
+  ///
+  /// In en, this message translates to:
+  /// **'Qi Refining'**
+  String get cultivationRealmQiRefining;
+
+  /// No description provided for @cultivationRealmFoundation.
+  ///
+  /// In en, this message translates to:
+  /// **'Foundation'**
+  String get cultivationRealmFoundation;
+
+  /// No description provided for @cultivationRealmCoreFormation.
+  ///
+  /// In en, this message translates to:
+  /// **'Core Formation'**
+  String get cultivationRealmCoreFormation;
+
+  /// No description provided for @cultivationRealmNascentSoul.
+  ///
+  /// In en, this message translates to:
+  /// **'Nascent Soul'**
+  String get cultivationRealmNascentSoul;
+
+  /// No description provided for @cultivationRealmDivineTransformation.
+  ///
+  /// In en, this message translates to:
+  /// **'Divine Transformation'**
+  String get cultivationRealmDivineTransformation;
+
+  /// No description provided for @cultivationSideHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get cultivationSideHistory;
+
+  /// No description provided for @cultivationSideRealmGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Realm guide'**
+  String get cultivationSideRealmGuide;
+
+  /// No description provided for @myProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My profile'**
+  String get myProfileTitle;
+
+  /// No description provided for @realmGuideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Realm system'**
+  String get realmGuideTitle;
+
+  /// No description provided for @realmGuideIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Every 7,700 kcal deficit ≈ 1 kg lost. Reach the cumulative weight-loss threshold shown for each realm to break through to the next — each realm is further divided into 9 layers.'**
+  String get realmGuideIntro;
+
+  /// No description provided for @realmGuideRangeLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{floor}–{ceil} kg · {kcal} kcal per layer'**
+  String realmGuideRangeLine(String floor, String ceil, String kcal);
+
+  /// No description provided for @realmGuideMaxRangeLine.
+  ///
+  /// In en, this message translates to:
+  /// **'≥ {floor} kg · Fulfilled — no further breakthrough'**
+  String realmGuideMaxRangeLine(String floor);
+
+  /// No description provided for @realmGuideNextThresh.
+  ///
+  /// In en, this message translates to:
+  /// **'→ {realm} {kg}kg'**
+  String realmGuideNextThresh(String realm, String kg);
+
+  /// No description provided for @realmGuideTagDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Passed'**
+  String get realmGuideTagDone;
+
+  /// No description provided for @realmGuideTagCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current · Layer {layer}'**
+  String realmGuideTagCurrent(String layer);
+
+  /// No description provided for @realmGuideTagLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked'**
+  String get realmGuideTagLocked;
+
+  /// No description provided for @realmGuideTagLockedMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked · Highest realm'**
+  String get realmGuideTagLockedMax;
+
+  /// No description provided for @realmGuideFootnoteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'kcal sources:'**
+  String get realmGuideFootnoteTitle;
+
+  /// No description provided for @realmGuideFootnoteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'① Steps × 0.04 kcal/step; ② daily calorie surplus, counted only when at least 2 distinct meal types are logged that day (breakfast/lunch/dinner/snack).'**
+  String get realmGuideFootnoteBody;
+
+  /// No description provided for @realmGuideFootnoteNote.
+  ///
+  /// In en, this message translates to:
+  /// **'This feature is currently only available to users on the \"Cut\" goal.'**
+  String get realmGuideFootnoteNote;
+
+  /// No description provided for @cultivationHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cultivation log'**
+  String get cultivationHistoryTitle;
+
+  /// No description provided for @cultivationHistoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No records yet'**
+  String get cultivationHistoryEmpty;
+
+  /// No description provided for @cultivationHistoryTodayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get cultivationHistoryTodayLabel;
+
+  /// No description provided for @cultivationHistoryStepsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps'**
+  String get cultivationHistoryStepsLabel;
+
+  /// No description provided for @cultivationHistoryDietLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Diet surplus'**
+  String get cultivationHistoryDietLabel;
+
+  /// No description provided for @cultivationHistoryTotalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get cultivationHistoryTotalLabel;
 }
 
 class _AppLocalizationsDelegate
