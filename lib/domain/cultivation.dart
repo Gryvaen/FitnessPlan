@@ -34,7 +34,8 @@ enum CultivationRealm {
   }
 
   /// 本境界内每一层对应的减重量（kg）。化神期无意义，返回 null。
-  double? get perLayerKg => isMax ? null : (ceilKg - floorKg) / kCultivationLayers;
+  double? get perLayerKg =>
+      isMax ? null : (ceilKg - floorKg) / kCultivationLayers;
 
   /// 本境界内每一层对应的 kcal 缺口。化神期无意义，返回 null。
   double? get perLayerKcal {

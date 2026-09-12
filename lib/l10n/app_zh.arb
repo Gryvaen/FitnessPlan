@@ -406,6 +406,7 @@
   "macrosSection": "4. 三大营养素",
   "notesSection": "说明",
   "actualDeficitFormula": "实际缺口 = 计划 {planned} + 剩余热量",
+  "actualDeficitForDay": "{day}实际缺口 {kcal} kcal",
   "legendColors": "颜色",
   "legendPastOk": "过去 · 达标",
   "legendPastBad": "过去 · 未达标",
@@ -1118,6 +1119,16 @@
   "@actualDeficitFormula": {
     "placeholders": {
       "planned": {
+        "type": "String"
+      }
+    }
+  },
+  "@actualDeficitForDay": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "kcal": {
         "type": "String"
       }
     }
@@ -2086,7 +2097,7 @@
   "cultivationNextRealmCaption": "距{realm}还差 {kcal} kcal",
   "cultivationLostCaption": "已减 {kg} kg",
   "cultivationStepsContribution": "步数贡献 {kcal} kcal",
-  "cultivationDietContribution": "饮食盈余 {kcal} kcal",
+  "cultivationDietContribution": "饮食 {kcal} kcal",
   "cultivationLayerBadge": "{realm} · {layer}层",
   "cultivationRealmQiRefining": "练气期",
   "cultivationRealmFoundation": "筑基期",
@@ -2106,12 +2117,12 @@
   "realmGuideTagLocked": "未解锁",
   "realmGuideTagLockedMax": "未解锁 · 最高境界",
   "realmGuideFootnoteTitle": "kcal 来源：",
-  "realmGuideFootnoteBody": "① 步数 × 0.04 kcal/步；② 当日饮食热量盈余，仅当日记录餐次 ≥ 2 次（早/中/晚/加餐任意两类）时计入。",
+  "realmGuideFootnoteBody": "① 步数 × 0.04 kcal/步；② 饮食，仅当日记录餐次 ≥ 2 次（早/中/晚/加餐任意两类）时计入——按当日 TDEE − 目标热量计入固定代谢缺口（与「记录」日历上显示的每日缺口算法一致），吃得比目标更少还有额外结余；但若当日饮食总热量超过 TDEE，超出部分（总热量 − TDEE）将作为修为倒退被扣除。",
   "realmGuideFootnoteNote": "该玩法当前仅对选择「减脂」策略的用户开放。",
   "cultivationHistoryTitle": "修行记录",
   "cultivationHistoryEmpty": "还没有修行记录",
   "cultivationHistoryTodayLabel": "今天",
   "cultivationHistoryStepsLabel": "步数贡献",
-  "cultivationHistoryDietLabel": "饮食盈余",
+  "cultivationHistoryDietLabel": "饮食",
   "cultivationHistoryTotalLabel": "合计"
 }

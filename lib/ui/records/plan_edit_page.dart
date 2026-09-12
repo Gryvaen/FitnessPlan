@@ -311,7 +311,8 @@ class _PlanRowSection extends StatelessWidget {
             Expanded(
               child: _ExercisePicker(
                 label: l10n.exercise,
-                displayText: selected?.name ??
+                displayText:
+                    selected?.name ??
                     row.missingExerciseName ??
                     l10n.selectOneExercise,
                 selectedId: selected?.id,
@@ -420,8 +421,7 @@ class _ExercisePickerSheet extends StatelessWidget {
       for (final c in kExerciseCategoryOrder)
         if (byCategory[c]?.isNotEmpty ?? false) c,
       for (final c in byCategory.keys)
-        if (!kExerciseCategoryOrder.contains(c) && byCategory[c]!.isNotEmpty)
-          c,
+        if (!kExerciseCategoryOrder.contains(c) && byCategory[c]!.isNotEmpty) c,
     ];
     return DraggableScrollableSheet(
       initialChildSize: 0.7,

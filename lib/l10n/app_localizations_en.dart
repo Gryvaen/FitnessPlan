@@ -1097,6 +1097,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String actualDeficitForDay(String day, String kcal) {
+    return '$day actual deficit $kcal kcal';
+  }
+
+  @override
   String get legendColors => 'Colors';
 
   @override
@@ -2570,12 +2575,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cultivationStepsContribution(String kcal) {
-    return 'Steps +$kcal kcal';
+    return 'Steps $kcal kcal';
   }
 
   @override
   String cultivationDietContribution(String kcal) {
-    return 'Diet surplus +$kcal kcal';
+    return 'Diet $kcal kcal';
   }
 
   @override
@@ -2648,7 +2653,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get realmGuideFootnoteBody =>
-      '① Steps × 0.04 kcal/step; ② daily calorie surplus, counted only when at least 2 distinct meal types are logged that day (breakfast/lunch/dinner/snack).';
+      '① Steps × 0.04 kcal/step; ② diet, counted only when at least 2 distinct meal types are logged that day (breakfast/lunch/dinner/snack) — your planned deficit (today\'s TDEE − target calories, same figure shown on the calendar) counts every such day, plus extra when you eat under target; but if your total intake for the day exceeds TDEE, the excess (intake − TDEE) is deducted as a setback.';
 
   @override
   String get realmGuideFootnoteNote =>
@@ -2667,7 +2672,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cultivationHistoryStepsLabel => 'Steps';
 
   @override
-  String get cultivationHistoryDietLabel => 'Diet surplus';
+  String get cultivationHistoryDietLabel => 'Diet';
 
   @override
   String get cultivationHistoryTotalLabel => 'Total';

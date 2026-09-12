@@ -414,6 +414,17 @@
       }
     }
   },
+  "actualDeficitForDay": "{day} actual deficit {kcal} kcal",
+  "@actualDeficitForDay": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
   "legendColors": "Colors",
   "legendPastOk": "Past · met",
   "legendPastBad": "Past · missed",
@@ -2131,9 +2142,9 @@
   "@cultivationNextRealmCaption": {"placeholders": {"kcal": {"type": "String"}, "realm": {"type": "String"}}},
   "cultivationLostCaption": "{kg} kg lost",
   "@cultivationLostCaption": {"placeholders": {"kg": {"type": "String"}}},
-  "cultivationStepsContribution": "Steps +{kcal} kcal",
+  "cultivationStepsContribution": "Steps {kcal} kcal",
   "@cultivationStepsContribution": {"placeholders": {"kcal": {"type": "String"}}},
-  "cultivationDietContribution": "Diet surplus +{kcal} kcal",
+  "cultivationDietContribution": "Diet {kcal} kcal",
   "@cultivationDietContribution": {"placeholders": {"kcal": {"type": "String"}}},
   "cultivationLayerBadge": "{realm} · Layer {layer}",
   "@cultivationLayerBadge": {"placeholders": {"realm": {"type": "String"}, "layer": {"type": "String"}}},
@@ -2159,12 +2170,12 @@
   "realmGuideTagLocked": "Locked",
   "realmGuideTagLockedMax": "Locked · Highest realm",
   "realmGuideFootnoteTitle": "kcal sources:",
-  "realmGuideFootnoteBody": "① Steps × 0.04 kcal/step; ② daily calorie surplus, counted only when at least 2 distinct meal types are logged that day (breakfast/lunch/dinner/snack).",
+  "realmGuideFootnoteBody": "① Steps × 0.04 kcal/step; ② diet, counted only when at least 2 distinct meal types are logged that day (breakfast/lunch/dinner/snack) — your planned deficit (today's TDEE − target calories, same figure shown on the calendar) counts every such day, plus extra when you eat under target; but if your total intake for the day exceeds TDEE, the excess (intake − TDEE) is deducted as a setback.",
   "realmGuideFootnoteNote": "This feature is currently only available to users on the \"Cut\" goal.",
   "cultivationHistoryTitle": "Cultivation log",
   "cultivationHistoryEmpty": "No records yet",
   "cultivationHistoryTodayLabel": "Today",
   "cultivationHistoryStepsLabel": "Steps",
-  "cultivationHistoryDietLabel": "Diet surplus",
+  "cultivationHistoryDietLabel": "Diet",
   "cultivationHistoryTotalLabel": "Total"
 }

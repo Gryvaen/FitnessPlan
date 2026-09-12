@@ -99,9 +99,7 @@ class _EnergyUnitConvertPageState extends State<EnergyUnitConvertPage> {
         border: const OutlineInputBorder(),
       ),
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-      ],
+      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
       style: Theme.of(context).textTheme.headlineSmall,
       onChanged: onChanged,
     );

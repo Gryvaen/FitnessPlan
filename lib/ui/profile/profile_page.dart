@@ -93,8 +93,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     final messenger = ScaffoldMessenger.of(context);
     final l10n = context.l10n;
-    final local = _packageInfo?.version ?? '0.0.0';
-    final localBuildNumber = _packageInfo?.buildNumber ?? '0';
+    // Re-fetch rather than trust the cached _packageInfo: this page's state
+    // outlives an in-place update install (the 我的 tab is kept alive by the
+    // StatefulShellRoute), so a stale cached version number kept re-offering
+    // an update that had already been installed as still available.
+    final info = await PackageInfo.fromPlatform();
+    if (!mounted) return;
+    setState(() => _packageInfo = info);
+    final local = info.version;
+    final localBuildNumber = info.buildNumber;
     final notifier = ref.read(appUpdateProvider.notifier);
 
     try {

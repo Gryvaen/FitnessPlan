@@ -176,6 +176,21 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
     final showNext = _visibleMonth.isBefore(lastMonth);
     final weekdayHeaders = _weekdayHeaders(locale);
 
+    // The selected day's real (logged) deficit, shown up top; falls back to
+    // the plain formula line until that day actually has a meal log.
+    final selectedTarget = _targetsByDay[_selected];
+    final selectedIntake = _caloriesByDay[_selected];
+    final selectedActual =
+        (selectedIntake != null &&
+            selectedTarget != null &&
+            !_selected.isAfter(today))
+        ? actualDailyDeficit(
+            plannedDeficit: selectedTarget.plannedDeficit ?? widget.plannedDeficit,
+            targetCalories: selectedTarget.calories,
+            intakeCalories: selectedIntake,
+          )
+        : null;
+
     return AlertDialog(
       titlePadding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
       contentPadding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
@@ -205,7 +220,19 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                l10n.actualDeficitFormula('${widget.plannedDeficit.round()}'),
+                selectedActual == null
+                    ? l10n.actualDeficitFormula(
+                        '${widget.plannedDeficit.round()}',
+                      )
+                    : l10n.actualDeficitForDay(
+                        AppDates.relativeDayTitle(
+                          _selected,
+                          today,
+                          l10n,
+                          locale,
+                        ),
+                        '${selectedActual.round()}',
+                      ),
                 style: theme.textTheme.labelSmall,
                 textAlign: TextAlign.center,
               ),
@@ -421,23 +448,22 @@ class _DayCell extends StatelessWidget {
     final t = target;
     final beforeStandard = since != null && date.isBefore(since);
     final showStandardBar = since != null && date == since;
-    // Only days with meal logs and a known target show a deficit; empty
-    // days stay uncolored.
-    final plannedDeficit = t?.plannedDeficit ?? 0.0;
-    final showDeficit =
+    // Only days with meal logs and a known target show remaining calories;
+    // empty days stay uncolored. The cell shows what's left of the day's
+    // own target (target − intake); the plan-wide actual deficit — which
+    // folds in the planned deficit too — is shown up top for the selected
+    // day instead (see [_DeficitDatePickerDialogState.build]).
+    final showRemaining =
         selectable && hasLog && t != null && (isPast || isToday);
-    final actual = showDeficit
-        ? actualDailyDeficit(
-            plannedDeficit: plannedDeficit,
-            targetCalories: t.calories,
-            intakeCalories: intake ?? 0,
-          )
-        : null;
+    final remaining = showRemaining ? (t.calories - (intake ?? 0)) : null;
     // Finalize green/red only for days whose target is a real record (not a
-    // legacy estimate) and on/after the latest calorie standard.
+    // legacy estimate) and on/after the latest calorie standard. Meeting the
+    // planned deficit is equivalent to non-negative remaining calories
+    // (actual = plannedDeficit + remaining), so no need for the combined
+    // figure here.
     final legacy = t?.isLegacyEstimate ?? false;
-    final useVerdict = actual != null && isPast && !beforeStandard && !legacy;
-    final met = actual != null && actual >= plannedDeficit;
+    final useVerdict = remaining != null && isPast && !beforeStandard && !legacy;
+    final met = remaining != null && remaining >= 0;
 
     Color? bg;
     Color fg = theme.colorScheme.onSurface;
@@ -446,7 +472,7 @@ class _DayCell extends StatelessWidget {
     } else if (useVerdict) {
       bg = (met ? okColor : badColor).withValues(alpha: 0.22);
       fg = met ? okColor : badColor;
-    } else if (actual != null) {
+    } else if (remaining != null) {
       // Today, or past day before standard change: neutral number.
       fg = theme.colorScheme.onSurfaceVariant;
       if (selected && isToday) {
@@ -489,10 +515,10 @@ class _DayCell extends StatelessWidget {
                     color: fg,
                   ),
                 ),
-                if (actual != null) ...[
+                if (remaining != null) ...[
                   const SizedBox(height: 1),
                   Text(
-                    '${actual.round()}',
+                    '${remaining.round()}',
                     style: theme.textTheme.labelSmall?.copyWith(
                       height: 1.1,
                       fontWeight: FontWeight.w600,

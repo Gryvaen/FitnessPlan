@@ -8,8 +8,9 @@ import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import 'cultivation_labels.dart';
 
-/// 「修行记录」：过往每日为境界修行贡献的 kcal 来源（步数 + 饮食盈余）一览，
-/// 从 [CultivationPage] 的侧边「修行记录」图标进入。
+/// 「修行记录」：过往每日为境界修行贡献的 kcal 来源（步数 + 饮食，饮食一项
+/// 可能为负——见 [cultivationDietKcalForDayProvider]）一览，从
+/// [CultivationPage] 的侧边「修行记录」图标进入。
 class CultivationHistoryPage extends ConsumerWidget {
   const CultivationHistoryPage({super.key});
 
@@ -75,9 +76,11 @@ class _DayRow extends StatelessWidget {
               Text(dateLabel, style: theme.textTheme.titleMedium),
               const Spacer(),
               Text(
-                '${l10n.cultivationHistoryTotalLabel} ${formatKcal(record.totalKcal)} kcal',
+                '${l10n.cultivationHistoryTotalLabel} ${formatSignedKcal(record.totalKcal)} kcal',
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.primary,
+                  color: record.totalKcal < 0
+                      ? theme.colorScheme.error
+                      : theme.colorScheme.primary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -93,7 +96,7 @@ class _DayRow extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                '${l10n.cultivationHistoryStepsLabel} ${formatKcal(record.stepsKcal)} kcal',
+                '${l10n.cultivationHistoryStepsLabel} ${formatSignedKcal(record.stepsKcal)} kcal',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -106,9 +109,11 @@ class _DayRow extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                '${l10n.cultivationHistoryDietLabel} ${formatKcal(record.dietKcal)} kcal',
+                '${l10n.cultivationHistoryDietLabel} ${formatSignedKcal(record.dietKcal)} kcal',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: record.dietKcal < 0
+                      ? theme.colorScheme.error
+                      : theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ],

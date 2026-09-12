@@ -2187,6 +2187,12 @@ abstract class AppLocalizations {
   /// **'Actual deficit = plan {planned} + remaining calories'**
   String actualDeficitFormula(String planned);
 
+  /// No description provided for @actualDeficitForDay.
+  ///
+  /// In en, this message translates to:
+  /// **'{day} actual deficit {kcal} kcal'**
+  String actualDeficitForDay(String day, String kcal);
+
   /// No description provided for @legendColors.
   ///
   /// In en, this message translates to:
@@ -4512,13 +4518,13 @@ abstract class AppLocalizations {
   /// No description provided for @cultivationStepsContribution.
   ///
   /// In en, this message translates to:
-  /// **'Steps +{kcal} kcal'**
+  /// **'Steps {kcal} kcal'**
   String cultivationStepsContribution(String kcal);
 
   /// No description provided for @cultivationDietContribution.
   ///
   /// In en, this message translates to:
-  /// **'Diet surplus +{kcal} kcal'**
+  /// **'Diet {kcal} kcal'**
   String cultivationDietContribution(String kcal);
 
   /// No description provided for @cultivationLayerBadge.
@@ -4638,7 +4644,7 @@ abstract class AppLocalizations {
   /// No description provided for @realmGuideFootnoteBody.
   ///
   /// In en, this message translates to:
-  /// **'① Steps × 0.04 kcal/step; ② daily calorie surplus, counted only when at least 2 distinct meal types are logged that day (breakfast/lunch/dinner/snack).'**
+  /// **'① Steps × 0.04 kcal/step; ② diet, counted only when at least 2 distinct meal types are logged that day (breakfast/lunch/dinner/snack) — your planned deficit (today\'s TDEE − target calories, same figure shown on the calendar) counts every such day, plus extra when you eat under target; but if your total intake for the day exceeds TDEE, the excess (intake − TDEE) is deducted as a setback.'**
   String get realmGuideFootnoteBody;
 
   /// No description provided for @realmGuideFootnoteNote.
@@ -4674,7 +4680,7 @@ abstract class AppLocalizations {
   /// No description provided for @cultivationHistoryDietLabel.
   ///
   /// In en, this message translates to:
-  /// **'Diet surplus'**
+  /// **'Diet'**
   String get cultivationHistoryDietLabel;
 
   /// No description provided for @cultivationHistoryTotalLabel.

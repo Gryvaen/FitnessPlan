@@ -46,7 +46,7 @@ class _CultivationHomeState extends ConsumerState<_CultivationHome> {
     final stepsKcal = stepsToKcal(
       ref.watch(cultivationStepsTodayProvider).value ?? 0,
     );
-    final dietKcal = ref.watch(cultivationDietSurplusTodayProvider);
+    final dietKcal = ref.watch(cultivationDietKcalTodayProvider);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -331,7 +331,9 @@ class _RealmPanel extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    l10n.cultivationStepsContribution(formatKcal(stepsKcal)),
+                    l10n.cultivationStepsContribution(
+                      formatSignedKcal(stepsKcal),
+                    ),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: const Color(0xFF1B2A24).withValues(alpha: 0.65),
                     ),
@@ -344,7 +346,9 @@ class _RealmPanel extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    l10n.cultivationDietContribution(formatKcal(dietKcal)),
+                    l10n.cultivationDietContribution(
+                      formatSignedKcal(dietKcal),
+                    ),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: const Color(0xFF1B2A24).withValues(alpha: 0.65),
                     ),

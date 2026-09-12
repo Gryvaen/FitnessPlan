@@ -9,11 +9,17 @@
 
 - 录入性别、年龄、身高、体重、活动量与目标（减脂 / 维持 / 增肌）
 - Mifflin–St Jeor 算法：BMR → TDEE → 每日热量与碳水 / 蛋白质 / 脂肪
-- 约三千八百余条中文名食材营养数据（每 100g）
-- 记一笔饮食，自动扣减当日剩余配额
+- 减脂策略：循环碳水 / 碳水递减等策略配置，按日给出目标
+- 约三千八百余条中文名食材营养数据（每 100g），记一笔饮食自动扣减当日剩余配额
 - 按日查看历史饮食与配额（含缺口日历选择）；支持历史日补记
-- 体重记录与折线图；减脂平台期提示
-- 食材收藏与最近吃过
+- 体重记录与折线图；体脂率与身体围度；减脂平台期提示
+- 训练记录：动作库、训练计划、组数 / 次数记录
+- 每日步数（Health Connect / HealthKit，安卓无权限时回退到传感器计步，支持历史补齐）
+- 随记
+- 提醒：训练 / 饮水 / 饮食 / 称重，各自独立的提醒时间与重复星期
+- 工具箱：体脂率、身体围度、计算器、千卡 / 千焦换算、食物单位换算、休息计时器
+- 多套主题配色；中 / 英文界面
+- App 内检查更新（GitHub Release）
 - 全部数据本地保存，无需登录、无云端
 
 ## 技术栈
@@ -24,6 +30,9 @@
 - **Drift (SQLite)** — 本地数据库
 - **fl_chart** — 体重曲线
 - **SharedPreferences** — 用户配置
+- **health** + 原生传感器桥接 — 步数同步
+- **flutter_local_notifications** + **permission_handler** — 提醒推送
+- **package_info_plus** + **http** + **open_filex** — App 内检查 / 下载 / 安装更新
 
 ## 要求
 
@@ -78,14 +87,17 @@ export ANDROID_SDK_ROOT="$HOME/Android/Sdk"
 ```
 lib/
   domain/          # 热量算法与领域模型
-  data/            # Drift DB、仓库
+  data/            # Drift DB、仓库、原生服务桥接（步数、提醒）
   providers/       # Riverpod providers
   ui/              # 页面与组件
     today/         # 今日配额
     meals/         # 饮食记录
     foods/         # 食材库
-    weight/        # 体重
-    profile/       # 个人资料
+    records/       # 体重 / 训练 / 随记
+    strategy/      # 减脂策略
+    tools/         # 工具箱、提醒设置
+    theme/         # 主题与共享 UI 组件
+    profile/       # 个人资料、我的
     onboarding/    # 首次引导
 assets/
   food_seed.json   # 食材种子数据
@@ -134,7 +146,8 @@ flutter build ipa --release
 
 ## 许可证
 
-本项目采用 [MIT License](LICENSE)。
+个人 / 非商业使用免费；商业使用需另行付费授权，请通过 GitHub Issues 联系。
+详见 [LICENSE](LICENSE)。
 
 ---
 
@@ -151,11 +164,17 @@ A fully offline Flutter fitness & nutrition app. It calculates daily calorie and
 
 - Enter sex, age, height, weight, activity level, and goal (cut / maintain / bulk)
 - Mifflin–St Jeor: BMR → TDEE → daily calories and carbs / protein / fat
-- ~3800+ Chinese-named foods with nutrition data (per 100g)
-- Log meals and automatically deduct from today’s remaining budget
-- Browse past days’ meals and budgets (with a deficit date picker); backfill past days
-- Weight logs with a line chart; plateau hints when cutting
-- Food favorites & recently eaten
+- Fat-loss strategies: carb cycling / carb tapering, with day-by-day targets
+- ~3800+ Chinese-named foods with nutrition data (per 100g); log a meal to auto-deduct from today's budget
+- Browse past days' meals and budgets (with a deficit date picker); backfill past days
+- Weight logs with a line chart; body fat % and body measurements; plateau hints when cutting
+- Workout tracking: exercise library, training plans, set/rep logging
+- Daily steps (Health Connect / HealthKit, falling back to the device sensor on Android when permission isn't granted), with history backfill
+- Freeform notes
+- Reminders: workout / water / meal / weigh-in, each with its own time and repeat days
+- Toolbox: body fat, body measurements, calculator, kcal/kJ conversion, food unit conversion, rest timer
+- Multiple color themes; Chinese / English UI
+- In-app update check (GitHub Releases)
 - Fully local storage — no accounts, no cloud
 
 ## Tech Stack
@@ -166,6 +185,9 @@ A fully offline Flutter fitness & nutrition app. It calculates daily calorie and
 - **Drift (SQLite)** — local database
 - **fl_chart** — weight charts
 - **SharedPreferences** — profile settings
+- **health** + a native sensor bridge — step sync
+- **flutter_local_notifications** + **permission_handler** — reminder notifications
+- **package_info_plus** + **http** + **open_filex** — in-app update check / download / install
 
 ## Requirements
 
@@ -213,14 +235,17 @@ Adjust paths to match your machine.
 ```
 lib/
   domain/          # calorie math & domain models
-  data/            # database & repositories
+  data/            # database, repositories, native service bridges (steps, reminders)
   providers/       # Riverpod providers
   ui/              # screens & widgets
     today/         # today’s budget
     meals/         # meal logging
     foods/         # food library
-    weight/        # weight
-    profile/       # profile
+    records/       # weight / workouts / notes
+    strategy/      # fat-loss strategies
+    tools/         # toolbox, reminder settings
+    theme/         # theming & shared UI widgets
+    profile/       # profile, "me" tab
     onboarding/    # onboarding
 assets/
   food_seed.json   # food seed data
@@ -263,5 +288,6 @@ If this project helps you, please [donate via Alipay](docs/donate.md).
 
 ## License
 
-Released under the [MIT License](LICENSE).
+Free for personal / non-commercial use. Commercial use requires a paid
+license — contact via GitHub Issues. See [LICENSE](LICENSE) for details.
 

@@ -35,34 +35,45 @@ final cultivationStepsTodayProvider = StreamProvider<int>((ref) {
       .watchStepsForDay(CalendarDay.todayLocal());
 });
 
-/// 指定日期的饮食盈余 kcal：目标热量 − 实际摄入，仅当日记录餐次 ≥ 2 类（早/
-/// 中/晚/加餐任意两类）时计入，且只计正值（吃得比目标少，才有"盈余"贡献修为）。
-final cultivationDietSurplusForDayProvider = Provider.autoDispose
+/// 指定日期的饮食 kcal 贡献，仅当日记录餐次 ≥ 2 类（早/中/晚/加餐任意两类）
+/// 时计入；否则记为 0（未认真记录的日子不计）。由三部分叠加，可能为负：
+///
+/// 1. 固定代谢缺口 = 当日 TDEE − 当日目标热量（与「记录」日历上显示的每日
+///    缺口算法一致）——只要当天处于减脂目标下，就按计划产生这部分缺口。
+/// 2. 额外结余 = 目标热量 − 实际摄入，仅当吃得比目标更少时为正（吃得比目标
+///    多、但仍未超过 TDEE 时不额外加分，也不扣分）。
+/// 3. 超标倒退 = 实际摄入 − TDEE，当实际摄入超过 TDEE（当日代谢总量）时，
+///    这部分作为倒退从修为中扣除。
+final cultivationDietKcalForDayProvider = Provider.autoDispose
     .family<double, DateTime>((ref, day) {
       final meals = ref.watch(mealsForDayProvider(day)).value ?? const [];
       final loggedTypes = meals.map((e) => e.mealType).toSet();
       if (loggedTypes.length < 2) return 0;
 
       final target = ref.watch(dailyTargetProvider(day)).value;
-      if (target == null) return 0;
+      final tdee = target?.estimatedTdee;
+      if (target == null || tdee == null) return 0;
 
       final intake = meals.fold<double>(0, (sum, e) => sum + e.calories);
-      final surplus = target.calories - intake;
-      return surplus < 0 ? 0 : surplus;
+      final plannedDeficit = tdee - target.calories;
+      final extraSurplus = target.calories - intake;
+      final bonus = extraSurplus > 0 ? extraSurplus : 0.0;
+      final overTdee = intake - tdee;
+      final penalty = overTdee > 0 ? overTdee : 0.0;
+      return plannedDeficit + bonus - penalty;
     });
 
-/// 今日饮食盈余 kcal，恒为本地今天，独立于「记录」页当前浏览到的日期。
-final cultivationDietSurplusTodayProvider = Provider<double>((ref) {
-  return ref.watch(
-    cultivationDietSurplusForDayProvider(CalendarDay.todayLocal()),
-  );
+/// 今日饮食 kcal 贡献，恒为本地今天，独立于「记录」页当前浏览到的日期。
+final cultivationDietKcalTodayProvider = Provider<double>((ref) {
+  return ref.watch(cultivationDietKcalForDayProvider(CalendarDay.todayLocal()));
 });
 
-/// 今日为境界修行贡献的 kcal（步数 + 饮食盈余）。
+/// 今日为境界修行贡献的 kcal（步数 + 饮食）；饮食一项可能为负（见
+/// [cultivationDietKcalForDayProvider]），故本值整体也可能为负。
 final cultivationTodayKcalProvider = Provider<double>((ref) {
   final steps = ref.watch(cultivationStepsTodayProvider).value ?? 0;
-  final dietSurplus = ref.watch(cultivationDietSurplusTodayProvider);
-  return stepsToKcal(steps) + dietSurplus;
+  final dietKcal = ref.watch(cultivationDietKcalTodayProvider);
+  return stepsToKcal(steps) + dietKcal;
 });
 
 class CultivationDayRecord {
@@ -76,11 +87,13 @@ class CultivationDayRecord {
   final double stepsKcal;
   final double dietKcal;
 
+  /// 当日总贡献，可能为负（饮食超过 TDEE 的倒退超过了步数 + 代谢缺口）。
   double get totalKcal => stepsKcal + dietKcal;
 }
 
-/// 近 14 天的境界修行 kcal 明细（步数 + 饮食盈余），最新一天在前，与步数同步
-/// 窗口一致（见 [recentStepsProvider]）。
+/// 近 14 天的境界修行 kcal 明细（步数 + 饮食，见
+/// [cultivationDietKcalForDayProvider]），最新一天在前，与步数同步窗口一致
+/// （见 [recentStepsProvider]）。
 final cultivationHistoryProvider =
     Provider.autoDispose<List<CultivationDayRecord>>((ref) {
       final stepDays = ref.watch(recentStepsProvider).value ?? const [];
@@ -90,7 +103,7 @@ final cultivationHistoryProvider =
             date: stepDay.date,
             stepsKcal: stepsToKcal(stepDay.steps),
             dietKcal: ref.watch(
-              cultivationDietSurplusForDayProvider(stepDay.date),
+              cultivationDietKcalForDayProvider(stepDay.date),
             ),
           ),
       ];

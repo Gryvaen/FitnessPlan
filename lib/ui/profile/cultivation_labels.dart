@@ -44,5 +44,14 @@ final _kcalFormat = NumberFormat.decimalPattern();
 /// 四舍五入到整数并加千分位分隔符，例如 2,276。
 String formatKcal(double kcal) => _kcalFormat.format(kcal.round());
 
+/// 同 [formatKcal]，但正值显式加上「+」——今日贡献值可能为负（饮食超过
+/// TDEE 的倒退），需要让正负一眼可辨。负值 / 0 本就带着自己的符号，不再处理。
+String formatSignedKcal(double kcal) {
+  final rounded = kcal.round();
+  return rounded > 0
+      ? '+${_kcalFormat.format(rounded)}'
+      : _kcalFormat.format(rounded);
+}
+
 /// 保留一位小数，例如 6.8。
 String formatKg(double kg) => kg.toStringAsFixed(1);

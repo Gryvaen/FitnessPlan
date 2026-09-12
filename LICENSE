@@ -1,16 +1,31 @@
-MIT License
+FitnessPlan Noncommercial + Commercial License
 
 Copyright (c) 2026 Gryvaen
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This software is dual-licensed as follows.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. Personal / Non-Commercial Use — free of charge
+
+   Permission is hereby granted, free of charge, to any person obtaining a
+   copy of this software and associated documentation files (the
+   "Software"), to use, copy, modify, merge, publish, and distribute copies
+   of the Software, for personal, educational, or otherwise non-commercial
+   purposes, subject to the following conditions:
+
+   The above copyright notice and this permission notice shall be included
+   in all copies or substantial portions of the Software.
+
+   "Non-commercial" means use that is not intended for or directed toward
+   commercial advantage or monetary compensation. It does not include,
+   for example: selling the Software or a derivative of it; bundling it
+   into a paid product, app, or service; using it to provide a paid
+   service to third parties; or any other revenue-generating use.
+
+2. Commercial Use — requires a paid license
+
+   Any commercial use of the Software, in whole or in part, requires a
+   separate commercial license from the copyright holder. To obtain one,
+   contact: https://github.com/Gryvaen/FitnessPlan/issues
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,

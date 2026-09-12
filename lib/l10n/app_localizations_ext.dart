@@ -158,6 +158,23 @@ abstract final class AppDates {
     if (day.year == t.year) return mdWithWeekday(day, locale);
     return ymdWithWeekday(day, locale);
   }
+
+  /// Same as [relativeDayTitle], but "今天" / "昨天" get the specific date
+  /// appended too (e.g. "今天 9月12日") instead of standing alone.
+  static String relativeDayTitleWithDate(
+    DateTime d,
+    DateTime today,
+    AppLocalizations l10n,
+    Locale locale,
+  ) {
+    final day = dayOnly(d);
+    final t = dayOnly(today);
+    if (day == t) return '${l10n.todayWord} ${md(day, locale)}';
+    if (day == t.subtract(const Duration(days: 1))) {
+      return '${l10n.yesterday} ${md(day, locale)}';
+    }
+    return relativeDayTitle(d, today, l10n, locale);
+  }
 }
 
 extension FoodCategoryL10n on String {

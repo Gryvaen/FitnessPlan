@@ -1083,6 +1083,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String actualDeficitForDay(String day, String kcal) {
+    return '$day实际缺口 $kcal kcal';
+  }
+
+  @override
   String get legendColors => '颜色';
 
   @override
@@ -2516,7 +2521,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String cultivationDietContribution(String kcal) {
-    return '饮食盈余 $kcal kcal';
+    return '饮食 $kcal kcal';
   }
 
   @override
@@ -2589,7 +2594,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get realmGuideFootnoteBody =>
-      '① 步数 × 0.04 kcal/步；② 当日饮食热量盈余，仅当日记录餐次 ≥ 2 次（早/中/晚/加餐任意两类）时计入。';
+      '① 步数 × 0.04 kcal/步；② 饮食，仅当日记录餐次 ≥ 2 次（早/中/晚/加餐任意两类）时计入——按当日 TDEE − 目标热量计入固定代谢缺口（与「记录」日历上显示的每日缺口算法一致），吃得比目标更少还有额外结余；但若当日饮食总热量超过 TDEE，超出部分（总热量 − TDEE）将作为修为倒退被扣除。';
 
   @override
   String get realmGuideFootnoteNote => '该玩法当前仅对选择「减脂」策略的用户开放。';
@@ -2607,7 +2612,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cultivationHistoryStepsLabel => '步数贡献';
 
   @override
-  String get cultivationHistoryDietLabel => '饮食盈余';
+  String get cultivationHistoryDietLabel => '饮食';
 
   @override
   String get cultivationHistoryTotalLabel => '合计';

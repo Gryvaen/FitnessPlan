@@ -128,11 +128,21 @@ void _expectNoOverflow(WidgetTester tester) {
 }
 
 /// Scrolls the page until [finder] is built and visible, then returns it.
+///
+/// The page body is a horizontal [PageView] (from `SwipeTabView`) wrapping a
+/// vertical `ListView`, so `find.byType(Scrollable).first` can bind to the
+/// outer pager instead of the list — harmless while everything fits on
+/// screen without scrolling, but it silently stops finding anything the
+/// moment the page actually needs a vertical scroll. Target the down-axis
+/// Scrollable explicitly instead.
 Future<Finder> _show(WidgetTester tester, Finder finder) async {
+  final verticalScrollable = find.byWidgetPredicate(
+    (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
+  );
   await tester.scrollUntilVisible(
     finder,
     120,
-    scrollable: find.byType(Scrollable).first,
+    scrollable: verticalScrollable.first,
   );
   await _settle(tester);
   return finder;

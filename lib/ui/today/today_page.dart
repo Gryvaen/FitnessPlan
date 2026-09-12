@@ -7,6 +7,7 @@ import '../../data/db.dart';
 import '../../domain/calorie_calculator.dart';
 import '../../domain/diet_plan.dart';
 import '../../domain/diet_strategy.dart';
+import '../../domain/goal_quotes.dart';
 import '../../domain/models.dart';
 import '../../domain/plateau.dart';
 import '../../data/services/steps_sync_service.dart';
@@ -128,12 +129,18 @@ class _TodayPageState extends ConsumerState<TodayPage> {
               ),
               children: [
                 _TodayHeader(
-                  title: isSelectedToday
-                      ? l10n.todayWord
-                      : AppDates.relativeDayTitle(day, today, l10n, locale),
-                  dateLabel:
-                      '${AppDates.md(day, locale)} · '
-                      '${AppDates.weekdayShort(day, locale)}',
+                  title: AppDates.relativeDayTitleWithDate(
+                    day,
+                    today,
+                    l10n,
+                    locale,
+                  ),
+                  // Each calendar day keeps its own quote (goalQuoteForDay is
+                  // a pure function of day + goal, so it's stable whenever
+                  // that day is viewed again) — the title already carries
+                  // the specific date, so the subtitle no longer needs to
+                  // fall back to a plain date for non-today days.
+                  dateLabel: goalQuoteForDay(profile.goal, day),
                   canGoPrev: canGoPrev,
                   canGoNext: canGoNext,
                   onPrev: () => ref
@@ -143,6 +150,11 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                       .read(selectedDayProvider.notifier)
                       .shiftDay(1, earliest: earliest),
                   onCalendar: openDatePicker,
+                  onGoToToday: isSelectedToday
+                      ? null
+                      : () => ref
+                            .read(selectedDayProvider.notifier)
+                            .goToToday(),
                 ),
                 if (profile.goal == FitnessGoal.cut &&
                     plan.missingCutInputs) ...[
@@ -1090,6 +1102,7 @@ class _TodayHeader extends StatelessWidget {
     required this.onPrev,
     required this.onNext,
     required this.onCalendar,
+    this.onGoToToday,
   });
 
   final String title;
@@ -1099,6 +1112,10 @@ class _TodayHeader extends StatelessWidget {
   final VoidCallback onPrev;
   final VoidCallback onNext;
   final VoidCallback onCalendar;
+
+  /// Long-press on the calendar icon jumps straight back to today; null
+  /// (long-press disabled) when already viewing today.
+  final VoidCallback? onGoToToday;
 
   @override
   Widget build(BuildContext context) {
@@ -1137,6 +1154,12 @@ class _TodayHeader extends StatelessWidget {
             tooltip: l10n.selectDate,
             visualDensity: VisualDensity.compact,
             onPressed: onCalendar,
+            onLongPress: onGoToToday == null
+                ? null
+                : () {
+                    HapticFeedback.selectionClick();
+                    onGoToToday!();
+                  },
             icon: const Icon(Icons.calendar_today_outlined),
           ),
           IconButton(

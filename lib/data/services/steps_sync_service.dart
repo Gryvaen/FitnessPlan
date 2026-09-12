@@ -157,7 +157,9 @@ class StepsSyncService {
         final day = CalendarDay.dayOnly(today.subtract(Duration(days: i)));
         final end = i == 0
             ? now
-            : day.add(const Duration(days: 1)).subtract(const Duration(milliseconds: 1));
+            : day
+                  .add(const Duration(days: 1))
+                  .subtract(const Duration(milliseconds: 1));
         var healthValue = 0;
         if (authorized) {
           try {
