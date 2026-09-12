@@ -3993,6 +3993,18 @@ abstract class AppLocalizations {
   /// **'No recent foods yet'**
   String get noRecentFoods;
 
+  /// No description provided for @removeFromRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from recent'**
+  String get removeFromRecent;
+
+  /// No description provided for @confirmRemoveFromRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name} from your recent foods? Logging it again will bring it back.'**
+  String confirmRemoveFromRecent(String name);
+
   /// No description provided for @editKeywords.
   ///
   /// In en, this message translates to:

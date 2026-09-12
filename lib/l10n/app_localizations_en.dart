@@ -2258,6 +2258,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noRecentFoods => 'No recent foods yet';
 
   @override
+  String get removeFromRecent => 'Remove from recent';
+
+  @override
+  String confirmRemoveFromRecent(String name) {
+    return 'Remove $name from your recent foods? Logging it again will bring it back.';
+  }
+
+  @override
   String get editKeywords => 'Edit keywords';
 
   @override

@@ -1333,6 +1333,214 @@ class FavoriteFoodsCompanion extends UpdateCompanion<FavoriteFood> {
   }
 }
 
+class $HiddenRecentFoodsTable extends HiddenRecentFoods
+    with TableInfo<$HiddenRecentFoodsTable, HiddenRecentFood> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $HiddenRecentFoodsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _foodIdMeta = const VerificationMeta('foodId');
+  @override
+  late final GeneratedColumn<int> foodId = GeneratedColumn<int>(
+    'food_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _hiddenAtEntryIdMeta = const VerificationMeta(
+    'hiddenAtEntryId',
+  );
+  @override
+  late final GeneratedColumn<int> hiddenAtEntryId = GeneratedColumn<int>(
+    'hidden_at_entry_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [foodId, hiddenAtEntryId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'hidden_recent_foods';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<HiddenRecentFood> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('food_id')) {
+      context.handle(
+        _foodIdMeta,
+        foodId.isAcceptableOrUnknown(data['food_id']!, _foodIdMeta),
+      );
+    }
+    if (data.containsKey('hidden_at_entry_id')) {
+      context.handle(
+        _hiddenAtEntryIdMeta,
+        hiddenAtEntryId.isAcceptableOrUnknown(
+          data['hidden_at_entry_id']!,
+          _hiddenAtEntryIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_hiddenAtEntryIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {foodId};
+  @override
+  HiddenRecentFood map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return HiddenRecentFood(
+      foodId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}food_id'],
+      )!,
+      hiddenAtEntryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}hidden_at_entry_id'],
+      )!,
+    );
+  }
+
+  @override
+  $HiddenRecentFoodsTable createAlias(String alias) {
+    return $HiddenRecentFoodsTable(attachedDatabase, alias);
+  }
+}
+
+class HiddenRecentFood extends DataClass
+    implements Insertable<HiddenRecentFood> {
+  final int foodId;
+  final int hiddenAtEntryId;
+  const HiddenRecentFood({required this.foodId, required this.hiddenAtEntryId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['food_id'] = Variable<int>(foodId);
+    map['hidden_at_entry_id'] = Variable<int>(hiddenAtEntryId);
+    return map;
+  }
+
+  HiddenRecentFoodsCompanion toCompanion(bool nullToAbsent) {
+    return HiddenRecentFoodsCompanion(
+      foodId: Value(foodId),
+      hiddenAtEntryId: Value(hiddenAtEntryId),
+    );
+  }
+
+  factory HiddenRecentFood.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return HiddenRecentFood(
+      foodId: serializer.fromJson<int>(json['foodId']),
+      hiddenAtEntryId: serializer.fromJson<int>(json['hiddenAtEntryId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'foodId': serializer.toJson<int>(foodId),
+      'hiddenAtEntryId': serializer.toJson<int>(hiddenAtEntryId),
+    };
+  }
+
+  HiddenRecentFood copyWith({int? foodId, int? hiddenAtEntryId}) =>
+      HiddenRecentFood(
+        foodId: foodId ?? this.foodId,
+        hiddenAtEntryId: hiddenAtEntryId ?? this.hiddenAtEntryId,
+      );
+  HiddenRecentFood copyWithCompanion(HiddenRecentFoodsCompanion data) {
+    return HiddenRecentFood(
+      foodId: data.foodId.present ? data.foodId.value : this.foodId,
+      hiddenAtEntryId: data.hiddenAtEntryId.present
+          ? data.hiddenAtEntryId.value
+          : this.hiddenAtEntryId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HiddenRecentFood(')
+          ..write('foodId: $foodId, ')
+          ..write('hiddenAtEntryId: $hiddenAtEntryId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(foodId, hiddenAtEntryId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is HiddenRecentFood &&
+          other.foodId == this.foodId &&
+          other.hiddenAtEntryId == this.hiddenAtEntryId);
+}
+
+class HiddenRecentFoodsCompanion extends UpdateCompanion<HiddenRecentFood> {
+  final Value<int> foodId;
+  final Value<int> hiddenAtEntryId;
+  const HiddenRecentFoodsCompanion({
+    this.foodId = const Value.absent(),
+    this.hiddenAtEntryId = const Value.absent(),
+  });
+  HiddenRecentFoodsCompanion.insert({
+    this.foodId = const Value.absent(),
+    required int hiddenAtEntryId,
+  }) : hiddenAtEntryId = Value(hiddenAtEntryId);
+  static Insertable<HiddenRecentFood> custom({
+    Expression<int>? foodId,
+    Expression<int>? hiddenAtEntryId,
+  }) {
+    return RawValuesInsertable({
+      if (foodId != null) 'food_id': foodId,
+      if (hiddenAtEntryId != null) 'hidden_at_entry_id': hiddenAtEntryId,
+    });
+  }
+
+  HiddenRecentFoodsCompanion copyWith({
+    Value<int>? foodId,
+    Value<int>? hiddenAtEntryId,
+  }) {
+    return HiddenRecentFoodsCompanion(
+      foodId: foodId ?? this.foodId,
+      hiddenAtEntryId: hiddenAtEntryId ?? this.hiddenAtEntryId,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (foodId.present) {
+      map['food_id'] = Variable<int>(foodId.value);
+    }
+    if (hiddenAtEntryId.present) {
+      map['hidden_at_entry_id'] = Variable<int>(hiddenAtEntryId.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HiddenRecentFoodsCompanion(')
+          ..write('foodId: $foodId, ')
+          ..write('hiddenAtEntryId: $hiddenAtEntryId')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $WeightLogsTable extends WeightLogs
     with TableInfo<$WeightLogsTable, WeightLog> {
   @override
@@ -8815,6 +9023,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $FoodItemsTable foodItems = $FoodItemsTable(this);
   late final $FoodServingsTable foodServings = $FoodServingsTable(this);
   late final $FavoriteFoodsTable favoriteFoods = $FavoriteFoodsTable(this);
+  late final $HiddenRecentFoodsTable hiddenRecentFoods =
+      $HiddenRecentFoodsTable(this);
   late final $WeightLogsTable weightLogs = $WeightLogsTable(this);
   late final $MealEntriesTable mealEntries = $MealEntriesTable(this);
   late final $MealPresetsTable mealPresets = $MealPresetsTable(this);
@@ -8849,6 +9059,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     foodItems,
     foodServings,
     favoriteFoods,
+    hiddenRecentFoods,
     weightLogs,
     mealEntries,
     mealPresets,
@@ -9554,6 +9765,158 @@ typedef $$FavoriteFoodsTableProcessedTableManager =
         BaseReferences<_$AppDatabase, $FavoriteFoodsTable, FavoriteFood>,
       ),
       FavoriteFood,
+      PrefetchHooks Function()
+    >;
+typedef $$HiddenRecentFoodsTableCreateCompanionBuilder =
+    HiddenRecentFoodsCompanion Function({
+      Value<int> foodId,
+      required int hiddenAtEntryId,
+    });
+typedef $$HiddenRecentFoodsTableUpdateCompanionBuilder =
+    HiddenRecentFoodsCompanion Function({
+      Value<int> foodId,
+      Value<int> hiddenAtEntryId,
+    });
+
+class $$HiddenRecentFoodsTableFilterComposer
+    extends Composer<_$AppDatabase, $HiddenRecentFoodsTable> {
+  $$HiddenRecentFoodsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get foodId => $composableBuilder(
+    column: $table.foodId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get hiddenAtEntryId => $composableBuilder(
+    column: $table.hiddenAtEntryId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$HiddenRecentFoodsTableOrderingComposer
+    extends Composer<_$AppDatabase, $HiddenRecentFoodsTable> {
+  $$HiddenRecentFoodsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get foodId => $composableBuilder(
+    column: $table.foodId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get hiddenAtEntryId => $composableBuilder(
+    column: $table.hiddenAtEntryId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$HiddenRecentFoodsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $HiddenRecentFoodsTable> {
+  $$HiddenRecentFoodsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get foodId =>
+      $composableBuilder(column: $table.foodId, builder: (column) => column);
+
+  GeneratedColumn<int> get hiddenAtEntryId => $composableBuilder(
+    column: $table.hiddenAtEntryId,
+    builder: (column) => column,
+  );
+}
+
+class $$HiddenRecentFoodsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $HiddenRecentFoodsTable,
+          HiddenRecentFood,
+          $$HiddenRecentFoodsTableFilterComposer,
+          $$HiddenRecentFoodsTableOrderingComposer,
+          $$HiddenRecentFoodsTableAnnotationComposer,
+          $$HiddenRecentFoodsTableCreateCompanionBuilder,
+          $$HiddenRecentFoodsTableUpdateCompanionBuilder,
+          (
+            HiddenRecentFood,
+            BaseReferences<
+              _$AppDatabase,
+              $HiddenRecentFoodsTable,
+              HiddenRecentFood
+            >,
+          ),
+          HiddenRecentFood,
+          PrefetchHooks Function()
+        > {
+  $$HiddenRecentFoodsTableTableManager(
+    _$AppDatabase db,
+    $HiddenRecentFoodsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$HiddenRecentFoodsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$HiddenRecentFoodsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$HiddenRecentFoodsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> foodId = const Value.absent(),
+                Value<int> hiddenAtEntryId = const Value.absent(),
+              }) => HiddenRecentFoodsCompanion(
+                foodId: foodId,
+                hiddenAtEntryId: hiddenAtEntryId,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> foodId = const Value.absent(),
+                required int hiddenAtEntryId,
+              }) => HiddenRecentFoodsCompanion.insert(
+                foodId: foodId,
+                hiddenAtEntryId: hiddenAtEntryId,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$HiddenRecentFoodsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $HiddenRecentFoodsTable,
+      HiddenRecentFood,
+      $$HiddenRecentFoodsTableFilterComposer,
+      $$HiddenRecentFoodsTableOrderingComposer,
+      $$HiddenRecentFoodsTableAnnotationComposer,
+      $$HiddenRecentFoodsTableCreateCompanionBuilder,
+      $$HiddenRecentFoodsTableUpdateCompanionBuilder,
+      (
+        HiddenRecentFood,
+        BaseReferences<
+          _$AppDatabase,
+          $HiddenRecentFoodsTable,
+          HiddenRecentFood
+        >,
+      ),
+      HiddenRecentFood,
       PrefetchHooks Function()
     >;
 typedef $$WeightLogsTableCreateCompanionBuilder =
@@ -13506,6 +13869,8 @@ class $AppDatabaseManager {
       $$FoodServingsTableTableManager(_db, _db.foodServings);
   $$FavoriteFoodsTableTableManager get favoriteFoods =>
       $$FavoriteFoodsTableTableManager(_db, _db.favoriteFoods);
+  $$HiddenRecentFoodsTableTableManager get hiddenRecentFoods =>
+      $$HiddenRecentFoodsTableTableManager(_db, _db.hiddenRecentFoods);
   $$WeightLogsTableTableManager get weightLogs =>
       $$WeightLogsTableTableManager(_db, _db.weightLogs);
   $$MealEntriesTableTableManager get mealEntries =>

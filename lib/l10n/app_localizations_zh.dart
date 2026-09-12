@@ -2213,6 +2213,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noRecentFoods => '还没有最近记录的食物';
 
   @override
+  String get removeFromRecent => '移出最近';
+
+  @override
+  String confirmRemoveFromRecent(String name) {
+    return '确定将 $name 移出最近记录？再次记录后会重新出现。';
+  }
+
+  @override
   String get editKeywords => '修改关键词';
 
   @override

@@ -208,21 +208,46 @@ class FoodRepository {
   }
 
   /// Recently logged foods (most recent first), de-duplicated by food id.
+  /// Excludes anything swiped off the list via [hideFromRecent] — unless
+  /// it's been logged again since, which naturally un-hides it.
   Future<List<FoodItem>> recentFoods({int limit = 20}) async {
     final rows = await _db
         .customSelect(
           '''
-SELECT food_id FROM meal_entries
-GROUP BY food_id
-ORDER BY MAX(id) DESC
+SELECT meal_entries.food_id AS food_id FROM meal_entries
+LEFT JOIN hidden_recent_foods
+  ON hidden_recent_foods.food_id = meal_entries.food_id
+GROUP BY meal_entries.food_id
+HAVING hidden_recent_foods.food_id IS NULL
+    OR MAX(meal_entries.id) > hidden_recent_foods.hidden_at_entry_id
+ORDER BY MAX(meal_entries.id) DESC
 LIMIT ?
 ''',
           variables: [Variable.withInt(limit)],
-          readsFrom: {_db.mealEntries},
+          readsFrom: {_db.mealEntries, _db.hiddenRecentFoods},
         )
         .get();
     final ids = rows.map((r) => r.read<int>('food_id')).toList();
     return _byIds(ids);
+  }
+
+  /// Swipes [foodId] off the 最近 (Recent) list without touching its past
+  /// meal entries or (if favorited) its favorite status.
+  Future<void> hideFromRecent(int foodId) async {
+    final latest =
+        await (_db.selectOnly(_db.mealEntries)
+              ..addColumns([_db.mealEntries.id.max()])
+              ..where(_db.mealEntries.foodId.equals(foodId)))
+            .getSingleOrNull();
+    final latestId = latest?.read(_db.mealEntries.id.max()) ?? 0;
+    await _db
+        .into(_db.hiddenRecentFoods)
+        .insertOnConflictUpdate(
+          HiddenRecentFoodsCompanion.insert(
+            foodId: Value(foodId),
+            hiddenAtEntryId: latestId,
+          ),
+        );
   }
 
   Future<int> createCustom({
@@ -408,6 +433,9 @@ LIMIT ?
   }
 
   Future<void> clearFavorites() => _db.delete(_db.favoriteFoods).go();
+
+  Future<void> clearHiddenRecentFoods() =>
+      _db.delete(_db.hiddenRecentFoods).go();
 }
 
 class FoodCategoryCount {

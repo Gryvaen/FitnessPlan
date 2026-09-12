@@ -61,6 +61,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         ref.read(workoutRepositoryProvider).clearAll(),
         ref.read(noteRepositoryProvider).clearAll(),
         ref.read(foodRepositoryProvider).clearFavorites(),
+        ref.read(foodRepositoryProvider).clearHiddenRecentFoods(),
         ref.read(formMemoryRepositoryProvider).clear(),
         ref.read(mealPresetRepositoryProvider).clearAll(),
         ref.read(waterRepositoryProvider).clearAll(),

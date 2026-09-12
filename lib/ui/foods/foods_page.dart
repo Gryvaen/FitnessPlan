@@ -143,6 +143,12 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                           watch: (ref) => ref.watch(_recentFoodsProvider),
                           emptyIcon: Icons.history,
                           emptyTitle: l10n.noRecentFoods,
+                          onSwipeDelete: (ref, food) async {
+                            await ref
+                                .read(foodRepositoryProvider)
+                                .hideFromRecent(food.id);
+                            ref.invalidate(_recentFoodsProvider);
+                          },
                         ),
                         _FoodListView(
                           watch: (ref) => ref.watch(favoriteFoodsProvider),
@@ -161,16 +167,20 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
 }
 
 /// A simple food list (recent / favorites) with a shared empty state.
+/// [onSwipeDelete], when given, lets a row be swiped left to remove — only
+/// meaningful on 最近 (Recent), which [_FoodRow] renders as a [Dismissible].
 class _FoodListView extends ConsumerWidget {
   const _FoodListView({
     required this.watch,
     required this.emptyIcon,
     required this.emptyTitle,
+    this.onSwipeDelete,
   });
 
   final AsyncValue<List<FoodItem>> Function(WidgetRef ref) watch;
   final IconData emptyIcon;
   final String emptyTitle;
+  final Future<void> Function(WidgetRef ref, FoodItem food)? onSwipeDelete;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -192,7 +202,12 @@ class _FoodListView extends ConsumerWidget {
             listBottomInset(context, hasFab: false),
           ),
           itemCount: foods.length,
-          itemBuilder: (context, i) => _FoodRow(food: foods[i]),
+          itemBuilder: (context, i) => _FoodRow(
+            food: foods[i],
+            onSwipeDelete: onSwipeDelete == null
+                ? null
+                : () => onSwipeDelete!(ref, foods[i]),
+          ),
         );
       },
     );
@@ -200,16 +215,16 @@ class _FoodListView extends ConsumerWidget {
 }
 
 class _FoodRow extends StatelessWidget {
-  const _FoodRow({required this.food});
+  const _FoodRow({required this.food, this.onSwipeDelete});
 
   final FoodItem food;
+  final VoidCallback? onSwipeDelete;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
-    return SportListTile(
-      key: ValueKey(food.id),
+    final tile = SportListTile(
       contentPadding: EdgeInsets.zero,
       title: Text(food.name, style: theme.textTheme.bodyLarge),
       subtitle: Text(
@@ -221,6 +236,43 @@ class _FoodRow extends StatelessWidget {
         style: theme.textTheme.bodySmall,
       ),
       onTap: () => context.push('/foods/${food.id}'),
+    );
+    if (onSwipeDelete == null) {
+      return KeyedSubtree(key: ValueKey(food.id), child: tile);
+    }
+    return SwipeGestureBarrier(
+      child: Dismissible(
+        key: ValueKey(food.id),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 16),
+          color: theme.colorScheme.error,
+          child: const Icon(Icons.delete, color: Colors.white),
+        ),
+        confirmDismiss: (_) async {
+          return await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: Text(l10n.removeFromRecent),
+                  content: Text(l10n.confirmRemoveFromRecent(food.name)),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: Text(l10n.cancel),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: Text(l10n.delete),
+                    ),
+                  ],
+                ),
+              ) ==
+              true;
+        },
+        onDismissed: (_) => onSwipeDelete!(),
+        child: tile,
+      ),
     );
   }
 }

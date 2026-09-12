@@ -14,6 +14,7 @@ part 'db.g.dart';
     FoodItems,
     FoodServings,
     FavoriteFoods,
+    HiddenRecentFoods,
     WeightLogs,
     MealEntries,
     MealPresets,
@@ -39,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 18;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -167,6 +168,9 @@ CREATE TABLE day_workouts_new (
       if (from < 18) {
         await _addColumnIfMissing(m, foodItems, foodItems.calciumMgPer100);
         await _addColumnIfMissing(m, mealEntries, mealEntries.calciumMg);
+      }
+      if (from < 19) {
+        await m.createTable(hiddenRecentFoods);
       }
     },
   );

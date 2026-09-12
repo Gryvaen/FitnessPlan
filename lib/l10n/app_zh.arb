@@ -2008,6 +2008,8 @@
   "mealNotLogged": "未记录",
   "mealsRecordSection": "饮食记录",
   "noRecentFoods": "还没有最近记录的食物",
+  "removeFromRecent": "移出最近",
+  "confirmRemoveFromRecent": "确定将 {name} 移出最近记录？再次记录后会重新出现。",
   "editKeywords": "修改关键词",
   "createFood": "新建食物",
   "charCount": "已输入 {n} 字",

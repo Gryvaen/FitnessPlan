@@ -54,6 +54,19 @@ class FavoriteFoods extends Table {
   Set<Column> get primaryKey => {foodId};
 }
 
+/// A food swiped off the 最近 (Recent) list. [hiddenAtEntryId] snapshots the
+/// newest `meal_entries.id` for that food at hide time — logging it again
+/// afterward naturally un-hides it (the recents query only excludes a food
+/// while no meal entry newer than the hide exists), so "removed" reads as
+/// "not recent anymore", not "never show again".
+class HiddenRecentFoods extends Table {
+  IntColumn get foodId => integer()();
+  IntColumn get hiddenAtEntryId => integer()();
+
+  @override
+  Set<Column> get primaryKey => {foodId};
+}
+
 class WeightLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get date => dateTime()();
