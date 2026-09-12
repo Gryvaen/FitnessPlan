@@ -7,6 +7,7 @@ import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
+import '../theme/sport_chrome.dart';
 import '../widgets/form_options.dart';
 
 class ProfileEditPage extends ConsumerStatefulWidget {
@@ -179,117 +180,147 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
       child: Scaffold(
         appBar: AppBar(title: Text(l10n.myProfile)),
         body: ListView(
-          padding: const EdgeInsets.fromLTRB(
+          padding: EdgeInsets.fromLTRB(
             AppSpacing.formPage,
             AppSpacing.compact,
             AppSpacing.formPage,
-            AppSpacing.formPage,
+            listBottomInset(context, hasFab: false),
           ),
           children: [
-            _Section(
-              title: l10n.profileSectionBasics,
-              hint: l10n.profileSectionBasicsHint,
-            ),
-            AppDropdown<Sex>(
-              label: l10n.sex,
-              value: _sex,
-              items: Sex.values,
-              itemLabel: (s) => s.label(l10n),
-              helperText: l10n.profileFieldSexHint,
-              onChanged: (v) => _edit(() => _sex = v),
-            ),
-            const SizedBox(height: AppSpacing.field),
-            AppDropdown<int>(
-              label: l10n.age,
-              value: FormOptions.snapInt(FormOptions.ages(), _age),
-              items: FormOptions.ages(),
-              suffixText: l10n.ageUnit,
-              helperText: l10n.profileFieldAgeHint,
-              onChanged: (v) => _edit(() => _age = v),
-            ),
-            const SizedBox(height: AppSpacing.field),
-            AppDropdown<int>(
-              label: l10n.height,
-              value: FormOptions.snapInt(FormOptions.heightsCm(), _heightCm),
-              items: FormOptions.heightsCm(),
-              suffixText: 'cm',
-              helperText: l10n.profileFieldHeightHint,
-              onChanged: (v) => _edit(() => _heightCm = v),
-            ),
-            const SizedBox(height: AppSpacing.field),
-            AppDropdown<double>(
-              label: l10n.currentWeight,
-              value: FormOptions.snapDouble(FormOptions.weightsKg(), _weightKg),
-              items: FormOptions.weightsKg(),
-              suffixText: 'kg',
-              itemLabel: formatKg,
-              helperText: l10n.profileFieldWeightHint,
-              onChanged: (v) => _edit(() {
-                _weightKg = v;
-                final opts = FormOptions.targetWeightsKg(v);
-                if (opts.isNotEmpty && _targetWeightKg >= v) {
-                  _targetWeightKg = opts.last;
-                }
-              }),
+            SportSurfaceCard(
+              padding: const EdgeInsets.all(AppSpacing.card),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _Section(
+                    title: l10n.profileSectionBasics,
+                    hint: l10n.profileSectionBasicsHint,
+                  ),
+                  AppDropdown<Sex>(
+                    label: l10n.sex,
+                    value: _sex,
+                    items: Sex.values,
+                    itemLabel: (s) => s.label(l10n),
+                    helperText: l10n.profileFieldSexHint,
+                    onChanged: (v) => _edit(() => _sex = v),
+                  ),
+                  const SizedBox(height: AppSpacing.field),
+                  AppDropdown<int>(
+                    label: l10n.age,
+                    value: FormOptions.snapInt(FormOptions.ages(), _age),
+                    items: FormOptions.ages(),
+                    suffixText: l10n.ageUnit,
+                    helperText: l10n.profileFieldAgeHint,
+                    onChanged: (v) => _edit(() => _age = v),
+                  ),
+                  const SizedBox(height: AppSpacing.field),
+                  AppDropdown<int>(
+                    label: l10n.height,
+                    value: FormOptions.snapInt(
+                      FormOptions.heightsCm(),
+                      _heightCm,
+                    ),
+                    items: FormOptions.heightsCm(),
+                    suffixText: 'cm',
+                    helperText: l10n.profileFieldHeightHint,
+                    onChanged: (v) => _edit(() => _heightCm = v),
+                  ),
+                  const SizedBox(height: AppSpacing.field),
+                  AppDropdown<double>(
+                    label: l10n.currentWeight,
+                    value: FormOptions.snapDouble(
+                      FormOptions.weightsKg(),
+                      _weightKg,
+                    ),
+                    items: FormOptions.weightsKg(),
+                    suffixText: 'kg',
+                    itemLabel: formatKg,
+                    helperText: l10n.profileFieldWeightHint,
+                    onChanged: (v) => _edit(() {
+                      _weightKg = v;
+                      final opts = FormOptions.targetWeightsKg(v);
+                      if (opts.isNotEmpty && _targetWeightKg >= v) {
+                        _targetWeightKg = opts.last;
+                      }
+                    }),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: AppSpacing.section),
-            _Section(
-              title: l10n.profileSectionGoal,
-              hint: l10n.profileSectionGoalHint,
-            ),
-            AppDropdown<ActivityLevel>(
-              label: l10n.activityLevel,
-              value: _activity,
-              items: ActivityLevel.values,
-              itemLabel: (e) => e.label(l10n),
-              helperText: l10n.profileFieldActivityHint,
-              onChanged: (v) => _edit(() => _activity = v),
-            ),
-            const SizedBox(height: AppSpacing.field),
-            AppDropdown<FitnessGoal>(
-              label: l10n.goal,
-              value: _goal,
-              items: FitnessGoal.values,
-              itemLabel: (e) => e.label(l10n),
-              helperText: l10n.profileFieldGoalHint,
-              onChanged: (v) => _edit(() => _goal = v),
-            ),
-            if (_goal == FitnessGoal.cut) ...[
-              const SizedBox(height: AppSpacing.field),
-              AppDropdown<double>(
-                label: l10n.targetWeight,
-                value: targetValue,
-                items: targetOptions,
-                suffixText: 'kg',
-                itemLabel: formatKg,
-                helperText: l10n.profileFieldTargetWeightHint,
-                onChanged: (v) => _edit(() => _targetWeightKg = v),
+            SportSurfaceCard(
+              padding: const EdgeInsets.all(AppSpacing.card),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _Section(
+                    title: l10n.profileSectionGoal,
+                    hint: l10n.profileSectionGoalHint,
+                  ),
+                  AppDropdown<ActivityLevel>(
+                    label: l10n.activityLevel,
+                    value: _activity,
+                    items: ActivityLevel.values,
+                    itemLabel: (e) => e.label(l10n),
+                    helperText: l10n.profileFieldActivityHint,
+                    onChanged: (v) => _edit(() => _activity = v),
+                  ),
+                  const SizedBox(height: AppSpacing.field),
+                  AppDropdown<FitnessGoal>(
+                    label: l10n.goal,
+                    value: _goal,
+                    items: FitnessGoal.values,
+                    itemLabel: (e) => e.label(l10n),
+                    helperText: l10n.profileFieldGoalHint,
+                    onChanged: (v) => _edit(() => _goal = v),
+                  ),
+                  if (_goal == FitnessGoal.cut) ...[
+                    const SizedBox(height: AppSpacing.field),
+                    AppDropdown<double>(
+                      label: l10n.targetWeight,
+                      value: targetValue,
+                      items: targetOptions,
+                      suffixText: 'kg',
+                      itemLabel: formatKg,
+                      helperText: l10n.profileFieldTargetWeightHint,
+                      onChanged: (v) => _edit(() => _targetWeightKg = v),
+                    ),
+                    const SizedBox(height: AppSpacing.field),
+                    AppDropdown<double>(
+                      label: l10n.weeklyLossTarget,
+                      value: FormOptions.snapDouble(
+                        FormOptions.weeklyLossKg,
+                        _weeklyLossKg,
+                      ),
+                      items: FormOptions.weeklyLossKg,
+                      suffixText: 'kg',
+                      helperText: weeksHint == null
+                          ? l10n.profileFieldWeeklyChangeHint
+                          : '$weeksHint · ${l10n.profileFieldWeeklyChangeHint}',
+                      itemLabel: (v) => v.toStringAsFixed(1),
+                      onChanged: (v) => _edit(() => _weeklyLossKg = v),
+                    ),
+                  ],
+                ],
               ),
-              const SizedBox(height: AppSpacing.field),
-              AppDropdown<double>(
-                label: l10n.weeklyLossTarget,
-                value: FormOptions.snapDouble(
-                  FormOptions.weeklyLossKg,
-                  _weeklyLossKg,
-                ),
-                items: FormOptions.weeklyLossKg,
-                suffixText: 'kg',
-                helperText: weeksHint == null
-                    ? l10n.profileFieldWeeklyChangeHint
-                    : '$weeksHint · ${l10n.profileFieldWeeklyChangeHint}',
-                itemLabel: (v) => v.toStringAsFixed(1),
-                onChanged: (v) => _edit(() => _weeklyLossKg = v),
-              ),
-            ],
+            ),
             const SizedBox(height: AppSpacing.section),
-            _Section(title: l10n.profileSectionOther),
-            AppOptionalDropdown<int>(
-              label: l10n.dailyWaterGoal,
-              value: _waterGoalMl,
-              items: FormOptions.waterGoalMl,
-              suffixText: 'ml',
-              helperText: l10n.profileFieldWaterHint,
-              onChanged: (v) => _edit(() => _waterGoalMl = v),
+            SportSurfaceCard(
+              padding: const EdgeInsets.all(AppSpacing.card),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _Section(title: l10n.profileSectionOther),
+                  AppOptionalDropdown<int>(
+                    label: l10n.dailyWaterGoal,
+                    value: _waterGoalMl,
+                    items: FormOptions.waterGoalMl,
+                    suffixText: 'ml',
+                    helperText: l10n.profileFieldWaterHint,
+                    onChanged: (v) => _edit(() => _waterGoalMl = v),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: AppSpacing.section),
             FilledButton(
