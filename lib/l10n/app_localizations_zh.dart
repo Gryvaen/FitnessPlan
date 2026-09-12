@@ -1001,6 +1001,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get notificationPermissionHint => '允许发送通知，以确保提醒正常送达。';
 
   @override
+  String get reminderOemHintTitle => '你的手机可能会限制提醒';
+
+  @override
+  String get reminderOemHintBody =>
+      '部分手机品牌会限制后台运行，导致提醒无法响铃、振动，甚至完全不触发。建议关闭本应用的电池优化，并在系统设置中允许「自启动」/后台运行。';
+
+  @override
+  String get reminderOemHintBatteryButton => '关闭电池优化';
+
+  @override
+  String get reminderOemHintAutostartButton => '自启动设置';
+
+  @override
   String get customDuration => '自定义（0:30–10:00）';
 
   @override
@@ -1642,31 +1655,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get themeSubtitle => '外观配色';
 
   @override
-  String get themeGraphite => '石墨';
-
-  @override
-  String get themeFresh => '清新绿';
-
-  @override
-  String get themeAurora => '极光';
-
-  @override
-  String get themeWarm => '暖阳';
-
-  @override
-  String get themeFreshDesc => '浅底白卡，深绿主色';
-
-  @override
-  String get themeAuroraDesc => '深海蓝底，青绿强调与局部光感';
-
-  @override
-  String get themeWarmDesc => '奶油底，暖橙主色，深棕文字';
-
-  @override
-  String get themeGraphiteDesc => '哑光深灰，银色强调';
-
-  @override
-  String get themeNote => '四套主题共用同一布局，营养素颜色保持一致；所选主题重启后保留。';
+  String get themeGraphite => '石墨灰';
 
   @override
   String get expandSection => '展开';
@@ -2616,4 +2605,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cultivationHistoryTotalLabel => '合计';
+
+  @override
+  String get cultivationHistoryWorkoutLabel => '训练';
+
+  @override
+  String cultivationHistoryWorkoutProgress(String done, String total) {
+    return '$done/$total';
+  }
 }

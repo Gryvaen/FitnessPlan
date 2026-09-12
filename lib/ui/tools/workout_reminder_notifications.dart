@@ -61,6 +61,61 @@ abstract final class ReminderNotifications {
     return true;
   }
 
+  /// True on a manufacturer skin (ColorOS/MIUI/EMUI/OriginOS/Flyme/…) known
+  /// to silently drop or mute scheduled alarms unless the user separately
+  /// grants "auto-start" / exempts the app from battery optimization —
+  /// neither of which any public API can request outright, only surface a
+  /// settings screen for. See [DeviceReliability] on the native side.
+  static Future<bool> isAggressiveOem() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      return false;
+    }
+    try {
+      return await _nativeChannel.invokeMethod<bool>('isAggressiveOem') ??
+          false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<bool> isIgnoringBatteryOptimizations() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      return true;
+    }
+    try {
+      return await _nativeChannel.invokeMethod<bool>(
+            'isIgnoringBatteryOptimizations',
+          ) ??
+          true;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  /// Opens the system dialog to exempt this app from battery optimization.
+  static Future<void> requestIgnoreBatteryOptimizations() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    try {
+      await _nativeChannel.invokeMethod<void>(
+        'requestIgnoreBatteryOptimizations',
+      );
+    } catch (_) {
+      // No matching system screen on this build — nothing else to do.
+    }
+  }
+
+  /// Best-effort deep link into the OEM's own "auto-start" / "allow
+  /// background running" screen; falls back to the app's system details
+  /// page when the manufacturer's own screen can't be resolved.
+  static Future<void> openAutoStartSettings() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    try {
+      await _nativeChannel.invokeMethod<void>('openAutoStartSettings');
+    } catch (_) {
+      // Nothing to fall back to from here.
+    }
+  }
+
   static Future<void> cancelAll() async {
     await ensureInitialized();
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {

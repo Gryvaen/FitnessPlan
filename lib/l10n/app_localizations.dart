@@ -2031,6 +2031,30 @@ abstract class AppLocalizations {
   /// **'Allow notifications so reminders are delivered.'**
   String get notificationPermissionHint;
 
+  /// No description provided for @reminderOemHintTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your phone may restrict reminders'**
+  String get reminderOemHintTitle;
+
+  /// No description provided for @reminderOemHintBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Some phone brands restrict background apps, which can silence or block reminders from ringing, vibrating, or firing at all. It helps to disable battery optimization for this app and allow \"auto-start\" / background running in system settings.'**
+  String get reminderOemHintBody;
+
+  /// No description provided for @reminderOemHintBatteryButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable battery optimization'**
+  String get reminderOemHintBatteryButton;
+
+  /// No description provided for @reminderOemHintAutostartButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-start settings'**
+  String get reminderOemHintAutostartButton;
+
   /// No description provided for @customDuration.
   ///
   /// In en, this message translates to:
@@ -3002,54 +3026,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Graphite'**
   String get themeGraphite;
-
-  /// No description provided for @themeFresh.
-  ///
-  /// In en, this message translates to:
-  /// **'Fresh Green'**
-  String get themeFresh;
-
-  /// No description provided for @themeAurora.
-  ///
-  /// In en, this message translates to:
-  /// **'Aurora'**
-  String get themeAurora;
-
-  /// No description provided for @themeWarm.
-  ///
-  /// In en, this message translates to:
-  /// **'Warm Sun'**
-  String get themeWarm;
-
-  /// No description provided for @themeFreshDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Light background, white cards, deep green accent'**
-  String get themeFreshDesc;
-
-  /// No description provided for @themeAuroraDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Deep sea blue with teal highlights'**
-  String get themeAuroraDesc;
-
-  /// No description provided for @themeWarmDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Cream background with warm orange'**
-  String get themeWarmDesc;
-
-  /// No description provided for @themeGraphiteDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Matte dark grey with silver accents'**
-  String get themeGraphiteDesc;
-
-  /// No description provided for @themeNote.
-  ///
-  /// In en, this message translates to:
-  /// **'All four themes share one layout and nutrient colors stay the same. Your choice is kept after restart.'**
-  String get themeNote;
 
   /// No description provided for @expandSection.
   ///
@@ -4688,6 +4664,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Total'**
   String get cultivationHistoryTotalLabel;
+
+  /// No description provided for @cultivationHistoryWorkoutLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Training'**
+  String get cultivationHistoryWorkoutLabel;
+
+  /// No description provided for @cultivationHistoryWorkoutProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{done}/{total}'**
+  String cultivationHistoryWorkoutProgress(String done, String total);
 }
 
 class _AppLocalizationsDelegate

@@ -379,6 +379,10 @@
   "notificationPermissionRow": "通知权限",
   "notificationPermissionOn": "已开启",
   "notificationPermissionHint": "允许发送通知，以确保提醒正常送达。",
+  "reminderOemHintTitle": "你的手机可能会限制提醒",
+  "reminderOemHintBody": "部分手机品牌会限制后台运行，导致提醒无法响铃、振动，甚至完全不触发。建议关闭本应用的电池优化，并在系统设置中允许「自启动」/后台运行。",
+  "reminderOemHintBatteryButton": "关闭电池优化",
+  "reminderOemHintAutostartButton": "自启动设置",
   "customDuration": "自定义（0:30–10:00）",
   "notifChannelName": "休息计时器",
   "notifChannelDesc": "组间休息结束提醒",
@@ -1842,15 +1846,6 @@
       }
     }
   },
-  "themeFresh": "清新绿",
-  "themeAurora": "极光",
-  "themeWarm": "暖阳",
-  "themeGraphite": "石墨",
-  "themeFreshDesc": "浅底白卡，深绿主色",
-  "themeAuroraDesc": "深海蓝底，青绿强调与局部光感",
-  "themeWarmDesc": "奶油底，暖橙主色，深棕文字",
-  "themeGraphiteDesc": "哑光深灰，银色强调",
-  "themeNote": "四套主题共用同一布局，营养素颜色保持一致；所选主题重启后保留。",
   "expandSection": "展开",
   "collapseSection": "收起",
   "noWorkoutShort": "未安排",
@@ -2124,5 +2119,7 @@
   "cultivationHistoryTodayLabel": "今天",
   "cultivationHistoryStepsLabel": "步数贡献",
   "cultivationHistoryDietLabel": "饮食",
-  "cultivationHistoryTotalLabel": "合计"
+  "cultivationHistoryTotalLabel": "合计",
+  "cultivationHistoryWorkoutLabel": "训练",
+  "cultivationHistoryWorkoutProgress": "{done}/{total}"
 }

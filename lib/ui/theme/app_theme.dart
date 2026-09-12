@@ -212,35 +212,35 @@ class AppThemeVisuals extends ThemeExtension<AppThemeVisuals> {
   }
 }
 
-/// The four selectable themes. Storage keeps the enum name; legacy ids from
-/// earlier releases are mapped in [fromStorage] so existing users keep a
-/// theme close to what they had chosen.
+/// The two selectable themes — deliberately just black and white: a
+/// monochrome, professional light theme and its matte-dark counterpart.
+/// Storage keeps the enum name; legacy ids from earlier releases (when
+/// there were four colorful presets) are mapped in [fromStorage] so
+/// existing users land on whichever of the two remaining themes is closer
+/// (light presets → [fresh], dark presets → [graphite]).
 enum AppThemeId {
-  /// 清新绿 — default for new users.
+  /// 简约白 — monochrome light theme; default for new users.
   fresh,
 
-  /// 极光 — deep sea blue with teal accents.
-  aurora,
-
-  /// 暖阳 — cream with warm orange.
-  warm,
-
-  /// 石墨 — matte dark grey with silver accents.
+  /// 石墨黑 — matte dark grey with silver accents.
   graphite;
 
   static const defaultId = fresh;
 
   /// Presets shown on the Theme page, in display order.
-  static const presets = [fresh, aurora, warm, graphite];
+  static const presets = [fresh, graphite];
 
-  /// Legacy ids → current themes (kept for users who already picked one).
+  /// Legacy ids → current themes (kept for users who already picked one
+  /// before the picker was reduced to just black and white).
   static const legacyMap = <String, AppThemeId>{
     'day': fresh,
     'forest': fresh,
+    'warm': fresh,
+    'sunrise': fresh,
     'night': graphite,
     'graphite': graphite,
-    'midnight': aurora,
-    'sunrise': warm,
+    'midnight': graphite,
+    'aurora': graphite,
   };
 
   static AppThemeId fromStorage(String? raw) {
@@ -251,15 +251,10 @@ enum AppThemeId {
     return legacyMap[raw] ?? defaultId;
   }
 
-  bool get isDark => this == aurora || this == graphite;
+  bool get isDark => this == graphite;
 
   /// Light ↔ dark counterpart used by the quick day/night toggle.
-  AppThemeId get toggled => switch (this) {
-    fresh => graphite,
-    graphite => fresh,
-    warm => aurora,
-    aurora => warm,
-  };
+  AppThemeId get toggled => isDark ? fresh : graphite;
 
   /// Primary swatch for simple previews.
   Color get previewColor => AppTheme.visualsFor(this).accent;
@@ -300,110 +295,42 @@ class AppTheme {
 
   static ColorScheme schemeFor(AppThemeId id) {
     return switch (id) {
+      // Monochrome, professional light theme: near-black ink on white/grey
+      // surfaces — no hue anywhere except the universal error red.
       AppThemeId.fresh => const ColorScheme(
         brightness: Brightness.light,
-        primary: Color(0xFF246B50),
+        primary: Color(0xFF1C1C1E),
         onPrimary: Color(0xFFFFFFFF),
-        primaryContainer: Color(0xFFDCEDE4),
-        onPrimaryContainer: Color(0xFF12382A),
-        secondary: Color(0xFF3E8E6E),
+        primaryContainer: Color(0xFFE5E5E7),
+        onPrimaryContainer: Color(0xFF1C1C1E),
+        secondary: Color(0xFF3A3A3C),
         onSecondary: Color(0xFFFFFFFF),
-        secondaryContainer: Color(0xFFE4F0EA),
-        onSecondaryContainer: Color(0xFF12382A),
-        tertiary: Color(0xFF3E8E6E),
+        secondaryContainer: Color(0xFFEDEDEF),
+        onSecondaryContainer: Color(0xFF1C1C1E),
+        tertiary: Color(0xFF3A3A3C),
         onTertiary: Color(0xFFFFFFFF),
-        tertiaryContainer: Color(0xFFE4F0EA),
-        onTertiaryContainer: Color(0xFF12382A),
-        error: Color(0xFFC2413B),
+        tertiaryContainer: Color(0xFFEDEDEF),
+        onTertiaryContainer: Color(0xFF1C1C1E),
+        error: Color(0xFFB3261E),
         onError: Color(0xFFFFFFFF),
-        errorContainer: Color(0xFFFBE0DD),
+        errorContainer: Color(0xFFF8DEDB),
         onErrorContainer: Color(0xFF5A1612),
-        surface: Color(0xFFF6F8F5),
-        onSurface: Color(0xFF1B2A24),
-        onSurfaceVariant: Color(0xFF5C6B65),
+        surface: Color(0xFFFFFFFF),
+        onSurface: Color(0xFF1C1C1E),
+        onSurfaceVariant: Color(0xFF6E6E73),
         surfaceContainerLowest: Color(0xFFFFFFFF),
-        surfaceContainerLow: Color(0xFFF1F4F1),
-        surfaceContainer: Color(0xFFECF1EE),
-        surfaceContainerHigh: Color(0xFFE6ECE8),
-        surfaceContainerHighest: Color(0xFFE0E7E2),
-        outline: Color(0xFFC9D3CD),
-        outlineVariant: Color(0xFFE3E8E4),
-        inverseSurface: Color(0xFF2E3A35),
-        onInverseSurface: Color(0xFFF1F4F1),
-        inversePrimary: Color(0xFF8ED0B6),
+        surfaceContainerLow: Color(0xFFF7F7F8),
+        surfaceContainer: Color(0xFFF2F2F3),
+        surfaceContainerHigh: Color(0xFFECECED),
+        surfaceContainerHighest: Color(0xFFE5E5E7),
+        outline: Color(0xFFD1D1D6),
+        outlineVariant: Color(0xFFE5E5E7),
+        inverseSurface: Color(0xFF2C2C2E),
+        onInverseSurface: Color(0xFFF2F2F3),
+        inversePrimary: Color(0xFFAEAEB2),
         shadow: Color(0xFF000000),
         scrim: Color(0xFF000000),
-        surfaceTint: Color(0xFF246B50),
-      ),
-      AppThemeId.aurora => const ColorScheme(
-        brightness: Brightness.dark,
-        primary: Color(0xFF34D3C2),
-        onPrimary: Color(0xFF05261F),
-        primaryContainer: Color(0xFF16404A),
-        onPrimaryContainer: Color(0xFFBFF3EC),
-        secondary: Color(0xFF62B6E9),
-        onSecondary: Color(0xFF07253A),
-        secondaryContainer: Color(0xFF173A55),
-        onSecondaryContainer: Color(0xFFCFE9FA),
-        tertiary: Color(0xFF9DE0D6),
-        onTertiary: Color(0xFF05261F),
-        tertiaryContainer: Color(0xFF16404A),
-        onTertiaryContainer: Color(0xFFBFF3EC),
-        error: Color(0xFFFF8A80),
-        onError: Color(0xFF3B0000),
-        errorContainer: Color(0xFF5C1F1B),
-        onErrorContainer: Color(0xFFFFDAD6),
-        surface: Color(0xFF0A1A2B),
-        onSurface: Color(0xFFE8F3F6),
-        onSurfaceVariant: Color(0xFFA3B7C1),
-        surfaceContainerLowest: Color(0xFF0F2439),
-        surfaceContainerLow: Color(0xFF122A41),
-        surfaceContainer: Color(0xFF16304A),
-        surfaceContainerHigh: Color(0xFF1B3752),
-        surfaceContainerHighest: Color(0xFF213E5B),
-        outline: Color(0xFF3B5670),
-        outlineVariant: Color(0xFF22384F),
-        inverseSurface: Color(0xFFE8F3F6),
-        onInverseSurface: Color(0xFF0A1A2B),
-        inversePrimary: Color(0xFF1C7F74),
-        shadow: Color(0xFF000000),
-        scrim: Color(0xFF000000),
-        surfaceTint: Color(0xFF34D3C2),
-      ),
-      AppThemeId.warm => const ColorScheme(
-        brightness: Brightness.light,
-        primary: Color(0xFFD96F2E),
-        onPrimary: Color(0xFFFFFFFF),
-        primaryContainer: Color(0xFFFCE3D0),
-        onPrimaryContainer: Color(0xFF5A2E12),
-        secondary: Color(0xFFC9932F),
-        onSecondary: Color(0xFFFFFFFF),
-        secondaryContainer: Color(0xFFFBEBD2),
-        onSecondaryContainer: Color(0xFF5A2E12),
-        tertiary: Color(0xFFB8552A),
-        onTertiary: Color(0xFFFFFFFF),
-        tertiaryContainer: Color(0xFFFCE3D0),
-        onTertiaryContainer: Color(0xFF5A2E12),
-        error: Color(0xFFC24A3B),
-        onError: Color(0xFFFFFFFF),
-        errorContainer: Color(0xFFFBE0DD),
-        onErrorContainer: Color(0xFF5A1612),
-        surface: Color(0xFFFBF5EC),
-        onSurface: Color(0xFF3B2A1F),
-        onSurfaceVariant: Color(0xFF7C6A5D),
-        surfaceContainerLowest: Color(0xFFFFFDF9),
-        surfaceContainerLow: Color(0xFFF8F0E5),
-        surfaceContainer: Color(0xFFF4EADF),
-        surfaceContainerHigh: Color(0xFFF0E4D6),
-        surfaceContainerHighest: Color(0xFFEBDDCD),
-        outline: Color(0xFFDCCDBE),
-        outlineVariant: Color(0xFFEFE3D6),
-        inverseSurface: Color(0xFF3B2A1F),
-        onInverseSurface: Color(0xFFFBF5EC),
-        inversePrimary: Color(0xFFF7B48E),
-        shadow: Color(0xFF000000),
-        scrim: Color(0xFF000000),
-        surfaceTint: Color(0xFFD96F2E),
+        surfaceTint: Color(0xFF1C1C1E),
       ),
       AppThemeId.graphite => const ColorScheme(
         brightness: Brightness.dark,
@@ -447,83 +374,29 @@ class AppTheme {
     return switch (id) {
       AppThemeId.fresh => const AppThemeVisuals(
         card: Color(0xFFFFFFFF),
-        cardBorder: Color(0xFFE3E8E4),
-        cardShadow: Color(0x14203A2E),
+        cardBorder: Color(0xFFE5E5E7),
+        cardShadow: Color(0x14000000),
         heroCard: Color(0xFFFFFFFF),
         heroGlow: Color(0x00000000),
-        onHero: Color(0xFF1B2A24),
-        onHeroMuted: Color(0xFF5C6B65),
-        accent: Color(0xFF246B50),
+        onHero: Color(0xFF1C1C1E),
+        onHeroMuted: Color(0xFF6E6E73),
+        accent: Color(0xFF1C1C1E),
         onAccent: Color(0xFFFFFFFF),
-        accentSoft: Color(0xFFE4F0EA),
-        divider: Color(0xFFE3E8E4),
-        track: Color(0xFFE6ECE8),
+        accentSoft: Color(0xFFEDEDEF),
+        divider: Color(0xFFE5E5E7),
+        track: Color(0xFFECECED),
         navShell: Color(0xFFFFFFFF),
-        navBorder: Color(0xFFE3E8E4),
-        navIndicator: Color(0xFF246B50),
+        navBorder: Color(0xFFE5E5E7),
+        navIndicator: Color(0xFF1C1C1E),
         onNavIndicator: Color(0xFFFFFFFF),
-        waterFill: Color(0x9977CBB0),
-        waterFillDeep: Color(0xCC4FB894),
-        waterStroke: Color(0xFF246B50),
-        cupGlass: Color(0x14246B50),
+        waterFill: Color(0x991C1C1E),
+        waterFillDeep: Color(0xCC3A3A3C),
+        waterStroke: Color(0xFF1C1C1E),
+        cupGlass: Color(0x141C1C1E),
         previewColors: [
-          Color(0xFF246B50),
-          Color(0xFFF6F8F5),
-          Color(0xFF77CBB0),
-        ],
-      ),
-      AppThemeId.aurora => const AppThemeVisuals(
-        card: Color(0xFF0F2439),
-        cardBorder: Color(0xFF22384F),
-        cardShadow: Color(0x33000000),
-        heroCard: Color(0xFF0D2237),
-        heroGlow: Color(0x5534D3C2),
-        onHero: Color(0xFFE8F3F6),
-        onHeroMuted: Color(0xFFA3B7C1),
-        accent: Color(0xFF34D3C2),
-        onAccent: Color(0xFF05261F),
-        accentSoft: Color(0xFF16404A),
-        divider: Color(0xFF22384F),
-        track: Color(0xFF1B3752),
-        navShell: Color(0xFF0F2439),
-        navBorder: Color(0xFF22384F),
-        navIndicator: Color(0xFF34D3C2),
-        onNavIndicator: Color(0xFF05261F),
-        waterFill: Color(0xA634D3C2),
-        waterFillDeep: Color(0xD91FB3A6),
-        waterStroke: Color(0xFF9DE0D6),
-        cupGlass: Color(0x1A9DE0D6),
-        previewColors: [
-          Color(0xFF0A1A2B),
-          Color(0xFF34D3C2),
-          Color(0xFF62B6E9),
-        ],
-      ),
-      AppThemeId.warm => const AppThemeVisuals(
-        card: Color(0xFFFFFDF9),
-        cardBorder: Color(0xFFEFE3D6),
-        cardShadow: Color(0x143B2A1F),
-        heroCard: Color(0xFFFFFDF9),
-        heroGlow: Color(0x00000000),
-        onHero: Color(0xFF3B2A1F),
-        onHeroMuted: Color(0xFF7C6A5D),
-        accent: Color(0xFFD96F2E),
-        onAccent: Color(0xFFFFFFFF),
-        accentSoft: Color(0xFFFCE3D0),
-        divider: Color(0xFFEFE3D6),
-        track: Color(0xFFF0E4D6),
-        navShell: Color(0xFFFFFDF9),
-        navBorder: Color(0xFFEFE3D6),
-        navIndicator: Color(0xFFD96F2E),
-        onNavIndicator: Color(0xFFFFFFFF),
-        waterFill: Color(0x99F2A968),
-        waterFillDeep: Color(0xCCE38A3E),
-        waterStroke: Color(0xFFB8552A),
-        cupGlass: Color(0x14D96F2E),
-        previewColors: [
-          Color(0xFFD96F2E),
-          Color(0xFFFBF5EC),
-          Color(0xFFF2A968),
+          Color(0xFF1C1C1E),
+          Color(0xFFFFFFFF),
+          Color(0xFF6E6E73),
         ],
       ),
       AppThemeId.graphite => const AppThemeVisuals(

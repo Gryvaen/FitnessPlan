@@ -380,6 +380,10 @@
   "notificationPermissionRow": "Notification permission",
   "notificationPermissionOn": "Allowed",
   "notificationPermissionHint": "Allow notifications so reminders are delivered.",
+  "reminderOemHintTitle": "Your phone may restrict reminders",
+  "reminderOemHintBody": "Some phone brands restrict background apps, which can silence or block reminders from ringing, vibrating, or firing at all. It helps to disable battery optimization for this app and allow \"auto-start\" / background running in system settings.",
+  "reminderOemHintBatteryButton": "Disable battery optimization",
+  "reminderOemHintAutostartButton": "Auto-start settings",
   "customDuration": "Custom (0:30–10:00)",
   "notifChannelName": "Rest timer",
   "notifChannelDesc": "Between-set rest alerts",
@@ -1836,15 +1840,6 @@
       }
     }
   },
-  "themeFresh": "Fresh Green",
-  "themeAurora": "Aurora",
-  "themeWarm": "Warm Sun",
-  "themeGraphite": "Graphite",
-  "themeFreshDesc": "Light background, white cards, deep green accent",
-  "themeAuroraDesc": "Deep sea blue with teal highlights",
-  "themeWarmDesc": "Cream background with warm orange",
-  "themeGraphiteDesc": "Matte dark grey with silver accents",
-  "themeNote": "All four themes share one layout and nutrient colors stay the same. Your choice is kept after restart.",
   "expandSection": "Expand",
   "collapseSection": "Collapse",
   "noWorkoutShort": "None planned",
@@ -2177,5 +2172,8 @@
   "cultivationHistoryTodayLabel": "Today",
   "cultivationHistoryStepsLabel": "Steps",
   "cultivationHistoryDietLabel": "Diet",
-  "cultivationHistoryTotalLabel": "Total"
+  "cultivationHistoryTotalLabel": "Total",
+  "cultivationHistoryWorkoutLabel": "Training",
+  "cultivationHistoryWorkoutProgress": "{done}/{total}",
+  "@cultivationHistoryWorkoutProgress": {"placeholders": {"done": {"type": "String"}, "total": {"type": "String"}}}
 }

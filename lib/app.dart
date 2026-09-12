@@ -19,7 +19,6 @@ import 'ui/profile/cultivation_page.dart';
 import 'ui/profile/realm_guide_page.dart';
 import 'ui/profile/profile_edit_page.dart';
 import 'ui/profile/profile_page.dart';
-import 'ui/profile/theme_page.dart';
 import 'ui/records/note_edit_page.dart';
 import 'ui/records/plan_edit_page.dart';
 import 'ui/records/records_page.dart';
@@ -188,10 +187,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'reminders',
                     builder: (context, state) => const RemindersHubPage(),
-                  ),
-                  GoRoute(
-                    path: 'theme',
-                    builder: (context, state) => const ThemePage(),
                   ),
                   GoRoute(
                     path: 'nutrition',

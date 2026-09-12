@@ -14,7 +14,6 @@ import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/calorie_breakdown.dart';
 import 'cultivation_labels.dart';
-import 'theme_page.dart';
 
 /// 「我的」入口页：只读配额摘要 + 进入「我的档案」编辑。
 class ProfilePage extends ConsumerStatefulWidget {
@@ -324,12 +323,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   title: l10n.toolbox,
                   subtitle: l10n.toolboxSubtitle,
                   onTap: () => context.push('/profile/tools'),
-                ),
-                _MenuRow(
-                  icon: Icons.palette_outlined,
-                  title: l10n.theme,
-                  subtitle: ref.watch(themeProvider).label(l10n),
-                  onTap: () => context.push('/profile/theme'),
                 ),
                 SportListTile(
                   contentPadding: EdgeInsets.zero,

@@ -1015,6 +1015,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'Allow notifications so reminders are delivered.';
 
   @override
+  String get reminderOemHintTitle => 'Your phone may restrict reminders';
+
+  @override
+  String get reminderOemHintBody =>
+      'Some phone brands restrict background apps, which can silence or block reminders from ringing, vibrating, or firing at all. It helps to disable battery optimization for this app and allow \"auto-start\" / background running in system settings.';
+
+  @override
+  String get reminderOemHintBatteryButton => 'Disable battery optimization';
+
+  @override
+  String get reminderOemHintAutostartButton => 'Auto-start settings';
+
+  @override
   String get customDuration => 'Custom (0:30–10:00)';
 
   @override
@@ -1664,32 +1677,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get themeGraphite => 'Graphite';
-
-  @override
-  String get themeFresh => 'Fresh Green';
-
-  @override
-  String get themeAurora => 'Aurora';
-
-  @override
-  String get themeWarm => 'Warm Sun';
-
-  @override
-  String get themeFreshDesc =>
-      'Light background, white cards, deep green accent';
-
-  @override
-  String get themeAuroraDesc => 'Deep sea blue with teal highlights';
-
-  @override
-  String get themeWarmDesc => 'Cream background with warm orange';
-
-  @override
-  String get themeGraphiteDesc => 'Matte dark grey with silver accents';
-
-  @override
-  String get themeNote =>
-      'All four themes share one layout and nutrient colors stay the same. Your choice is kept after restart.';
 
   @override
   String get expandSection => 'Expand';
@@ -2676,4 +2663,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cultivationHistoryTotalLabel => 'Total';
+
+  @override
+  String get cultivationHistoryWorkoutLabel => 'Training';
+
+  @override
+  String cultivationHistoryWorkoutProgress(String done, String total) {
+    return '$done/$total';
+  }
 }

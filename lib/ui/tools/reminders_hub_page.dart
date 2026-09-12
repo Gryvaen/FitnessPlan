@@ -17,18 +17,47 @@ class RemindersHubPage extends ConsumerStatefulWidget {
   ConsumerState<RemindersHubPage> createState() => _RemindersHubPageState();
 }
 
-class _RemindersHubPageState extends ConsumerState<RemindersHubPage> {
+class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
+    with WidgetsBindingObserver {
   bool? _granted;
+  bool _showOemHint = false;
+  bool _ignoringBatteryOpt = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _refreshPermission();
+    _refreshOemStatus();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // The user typically flips these in a system settings screen and comes
+    // straight back — re-check so the hint clears itself once granted.
+    if (state == AppLifecycleState.resumed) _refreshOemStatus();
   }
 
   Future<void> _refreshPermission() async {
     final ok = await ReminderNotifications.permissionGranted();
     if (mounted) setState(() => _granted = ok);
+  }
+
+  Future<void> _refreshOemStatus() async {
+    final aggressive = await ReminderNotifications.isAggressiveOem();
+    final ignoring =
+        await ReminderNotifications.isIgnoringBatteryOptimizations();
+    if (!mounted) return;
+    setState(() {
+      _showOemHint = aggressive;
+      _ignoringBatteryOpt = ignoring;
+    });
   }
 
   Future<void> _toggle(ReminderKind kind, bool wantOn) async {
@@ -124,6 +153,8 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage> {
                 await _refreshPermission();
               },
             ),
+          if (_showOemHint)
+            _OemReliabilityHint(ignoringBatteryOpt: _ignoringBatteryOpt),
           for (final kind in ReminderKind.values)
             _ReminderTile(
               icon: _icon(kind),
@@ -423,6 +454,74 @@ class _DayToggle extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Nudges the user toward the OS-level settings screens ([ReminderNotifications]
+/// can only *open*, never grant outright) a manufacturer known for aggressive
+/// background restrictions needs before a reminder can reliably ring/vibrate.
+class _OemReliabilityHint extends StatelessWidget {
+  const _OemReliabilityHint({required this.ignoringBatteryOpt});
+
+  final bool ignoringBatteryOpt;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.card),
+      padding: const EdgeInsets.all(AppSpacing.card),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.battery_alert_outlined,
+                size: 18,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  l10n.reminderOemHintTitle,
+                  style: theme.textTheme.titleSmall,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            l10n.reminderOemHintBody,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (!ignoringBatteryOpt)
+                OutlinedButton(
+                  onPressed:
+                      ReminderNotifications.requestIgnoreBatteryOptimizations,
+                  child: Text(l10n.reminderOemHintBatteryButton),
+                ),
+              OutlinedButton(
+                onPressed: ReminderNotifications.openAutoStartSettings,
+                child: Text(l10n.reminderOemHintAutostartButton),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

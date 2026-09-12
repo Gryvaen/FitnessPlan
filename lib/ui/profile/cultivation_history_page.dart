@@ -118,8 +118,46 @@ class _DayRow extends StatelessWidget {
               ),
             ],
           ),
+          if (!record.workout.isEmpty) ...[
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.fitness_center_outlined,
+                  size: 16,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 2,
+                    children: [
+                      for (final group in record.workout.groups)
+                        if (group.items.isNotEmpty)
+                          Text(
+                            '${_groupName(group.workout.planName, l10n)} '
+                            '${l10n.cultivationHistoryWorkoutProgress('${group.doneCount}', '${group.items.length}')}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  String _groupName(String? planName, AppLocalizations l10n) {
+    final trimmed = planName?.trim();
+    return trimmed == null || trimmed.isEmpty
+        ? l10n.untitledWorkoutGroup
+        : trimmed;
   }
 }

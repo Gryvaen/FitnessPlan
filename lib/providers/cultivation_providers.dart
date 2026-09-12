@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/repositories/workout_repository.dart';
 import '../domain/calendar_day.dart';
 import '../domain/cultivation.dart';
 import '../domain/models.dart';
@@ -8,6 +9,7 @@ import 'meal_providers.dart';
 import 'profile_providers.dart';
 import 'step_providers.dart';
 import 'weight_providers.dart';
+import 'workout_providers.dart';
 
 /// 境界修行玩法当前只对选择「减脂」目标的用户开放。
 final cultivationEligibleProvider = Provider<bool>((ref) {
@@ -81,19 +83,24 @@ class CultivationDayRecord {
     required this.date,
     required this.stepsKcal,
     required this.dietKcal,
+    required this.workout,
   });
 
   final DateTime date;
   final double stepsKcal;
   final double dietKcal;
 
+  /// That day's planned/logged training, if any — shown alongside the kcal
+  /// breakdown so 修行记录 doubles as a training-plan history, not just steps.
+  final DayWorkoutSnapshot workout;
+
   /// 当日总贡献，可能为负（饮食超过 TDEE 的倒退超过了步数 + 代谢缺口）。
   double get totalKcal => stepsKcal + dietKcal;
 }
 
 /// 近 14 天的境界修行 kcal 明细（步数 + 饮食，见
-/// [cultivationDietKcalForDayProvider]），最新一天在前，与步数同步窗口一致
-/// （见 [recentStepsProvider]）。
+/// [cultivationDietKcalForDayProvider]）与当日训练计划，最新一天在前，与
+/// 步数同步窗口一致（见 [recentStepsProvider]）。
 final cultivationHistoryProvider =
     Provider.autoDispose<List<CultivationDayRecord>>((ref) {
       final stepDays = ref.watch(recentStepsProvider).value ?? const [];
@@ -105,6 +112,9 @@ final cultivationHistoryProvider =
             dietKcal: ref.watch(
               cultivationDietKcalForDayProvider(stepDay.date),
             ),
+            workout:
+                ref.watch(dayWorkoutProvider(stepDay.date)).value ??
+                const DayWorkoutSnapshot(),
           ),
       ];
     });

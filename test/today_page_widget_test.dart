@@ -327,14 +327,16 @@ void main() {
     });
 
     test('selecting a theme persists across a fresh container', () async {
-      await h.container.read(themeProvider.notifier).select(AppThemeId.warm);
+      await h.container
+          .read(themeProvider.notifier)
+          .select(AppThemeId.graphite);
       final again = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(h.prefs),
           databaseProvider.overrideWithValue(h.db),
         ],
       );
-      expect(again.read(themeProvider), AppThemeId.warm);
+      expect(again.read(themeProvider), AppThemeId.graphite);
       again.dispose();
     });
   });

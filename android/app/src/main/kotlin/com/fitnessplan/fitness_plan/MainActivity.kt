@@ -75,6 +75,26 @@ class MainActivity : FlutterFragmentActivity() {
                         WorkoutReminderScheduler.cancelAll(this)
                         result.success(null)
                     }
+                    "isAggressiveOem" -> result.success(DeviceReliability.isAggressiveOem())
+                    "manufacturer" -> result.success(DeviceReliability.manufacturer())
+                    "isIgnoringBatteryOptimizations" ->
+                        result.success(DeviceReliability.isIgnoringBatteryOptimizations(this))
+                    "requestIgnoreBatteryOptimizations" -> {
+                        try {
+                            startActivity(DeviceReliability.batteryOptimizationIntent(this))
+                            result.success(true)
+                        } catch (e: Exception) {
+                            result.error("unavailable", e.message, null)
+                        }
+                    }
+                    "openAutoStartSettings" -> {
+                        try {
+                            startActivity(DeviceReliability.autoStartIntent(this))
+                            result.success(true)
+                        } catch (e: Exception) {
+                            result.error("unavailable", e.message, null)
+                        }
+                    }
                     "pickRingtone" -> {
                         val currentUri = call.argument<String>("currentUri")
                         pendingRingtoneResult = result
