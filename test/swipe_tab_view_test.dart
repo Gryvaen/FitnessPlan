@@ -3,6 +3,151 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('three levels hand off only after a separate edge gesture', (
+    tester,
+  ) async {
+    var outer = 0;
+    var middle = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) => Scaffold(
+            body: SwipeTabView(
+              index: outer,
+              onIndexChanged: (i) => setState(() => outer = i),
+              children: [
+                SwipeTabView(
+                  index: middle,
+                  onIndexChanged: (i) => setState(() => middle = i),
+                  children: const [
+                    _RememberingGroup(name: 'Inner'),
+                    Center(child: Text('Middle next')),
+                  ],
+                ),
+                const Center(child: Text('Outer next')),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    for (var inner = 1; inner <= 2; inner++) {
+      await tester.flingFrom(
+        const Offset(400, 350),
+        const Offset(-2400, 0),
+        20000,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Inner page $inner').hitTestable(), findsOneWidget);
+      expect(middle, 0);
+      expect(outer, 0);
+    }
+    await tester.flingFrom(
+      const Offset(400, 350),
+      const Offset(-2400, 0),
+      20000,
+    );
+    await tester.pumpAndSettle();
+    expect(middle, 1);
+    expect(outer, 0);
+    await tester.flingFrom(
+      const Offset(400, 350),
+      const Offset(-2400, 0),
+      20000,
+    );
+    await tester.pumpAndSettle();
+    expect(outer, 1);
+  });
+
+  testWidgets('row swipe remains local and blank-area swipe still pages', (
+    tester,
+  ) async {
+    var selected = 0;
+    var confirmations = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) => Scaffold(
+            body: SwipeTabView(
+              index: selected,
+              onIndexChanged: (i) => setState(() => selected = i),
+              children: [
+                Column(
+                  children: [
+                    SwipeGestureBarrier(
+                      child: Dismissible(
+                        key: const ValueKey('note'),
+                        direction: DismissDirection.endToStart,
+                        confirmDismiss: (_) async {
+                          confirmations++;
+                          return false;
+                        },
+                        child: const SizedBox(
+                          height: 100,
+                          width: double.infinity,
+                          child: Text('Note row'),
+                        ),
+                      ),
+                    ),
+                    const Expanded(child: SizedBox.expand()),
+                  ],
+                ),
+                const Center(child: Text('Next')),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.dragFrom(const Offset(700, 50), const Offset(-600, 0));
+    await tester.pumpAndSettle();
+    expect(confirmations, 1);
+    expect(selected, 0);
+    await tester.flingFrom(const Offset(400, 350), const Offset(-300, 0), 6000);
+    await tester.pumpAndSettle();
+    expect(selected, 1);
+  });
+
+  for (final direction in [-1.0, 1.0]) {
+    testWidgets(
+      'a single extreme swipe advances only the deepest adjacent tab $direction',
+      (tester) async {
+        var outer = 0;
+        await tester.pumpWidget(
+          MaterialApp(
+            home: StatefulBuilder(
+              builder: (context, setState) => Scaffold(
+                body: SwipeTabView(
+                  index: outer,
+                  onIndexChanged: (i) => setState(() => outer = i),
+                  children: const [
+                    _RememberingGroup(name: 'Body'),
+                    Text('Outer next'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        if (direction > 0) {
+          await tester.tap(find.text('Body tab 2'));
+          await tester.pumpAndSettle();
+        }
+        await tester.flingFrom(
+          const Offset(400, 350),
+          Offset(2400 * direction, 0),
+          20000,
+        );
+        await tester.pumpAndSettle();
+        expect(outer, 0);
+        expect(find.text('Body page 1').hitTestable(), findsOneWidget);
+      },
+    );
+  }
+
   for (final speed in [100.0, 2000.0, 6000.0]) {
     for (final direction in [-1.0, 1.0]) {
       testWidgets('edge swipe at $speed px/s in direction $direction', (

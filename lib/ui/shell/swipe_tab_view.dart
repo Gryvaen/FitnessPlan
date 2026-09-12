@@ -56,7 +56,7 @@ class _TabHandoff extends InheritedWidget {
 
 /// Registers with the nearest ancestor [_TabHandoff] (if any) for the
 /// lifetime of the mixing-in [State], so that ancestor gives up its own
-/// drag physics while this object is mounted. Both directions are deferred
+/// drag recognizer while this object is mounted. Both directions are deferred
 /// via post-frame callback: registering happens while a descendant is
 /// still being built inside its parent's own build, and unregistering can
 /// happen mid-rebuild when a page is swapped out — calling `setState` on
@@ -85,37 +85,10 @@ mixin _ParentDragHandoff<T extends StatefulWidget> on State<T> {
   }
 }
 
-/// Wraps content with its own horizontal-drag gesture — e.g. a
-/// [Dismissible] list row — so the nearest ancestor [SwipeTabView] gives up
-/// its own page-swipe physics for the duration of a touch on this widget.
-/// Without this, both widgets compete for the same drag and the ancestor
-/// pager tends to win, making the wrapped content's own swipe gesture (e.g.
-/// swipe-to-delete) unresponsive.
-///
-/// Registering must happen on the raw [PointerDownEvent] — before any
-/// movement, and applied synchronously rather than deferred to a later
-/// frame — because Flutter resolves which widget's drag recognizer wins a
-/// gesture arena at the *start* of the gesture (after a small movement
-/// threshold of its own). [SwipeTabView]'s [_ParentDragHandoff] mixin
-/// defers its parent-registration via `addPostFrameCallback`, which is
-/// correct for *that* use (registering during another widget's build/
-/// dispose, where a synchronous `setState` would be illegal) but is too
-/// late here: by the time a deferred registration — let alone one that
-/// first waits for a few pixels of leftward movement, as an earlier version
-/// of this widget did — takes effect, the ancestor pager's own recognizer
-/// has typically already claimed the arena for this pointer, and toggling
-/// its `physics` afterward can't retroactively hand back a gesture already
-/// in flight. Calling straight through to [_TabHandoff.onActiveChildDelta]
-/// on pointer-down is safe to do synchronously (it's a pointer callback,
-/// not a build), and reliably wins the race.
-///
-/// Scoped to an actual pointer being down on this widget (not to how long it
-/// stays mounted): a [Dismissible] row inside a scrolling list stays mounted
-/// for as long as it's scrolled into view, so registering for its whole
-/// mounted lifetime — as [SwipeTabView] itself does for a genuinely nested
-/// pager, whose registration is scoped to its containing page — would leave the
-/// ancestor's page-swipe permanently disabled (dead) any time such a row is
-/// simply visible, not just while it's being dragged.
+/// Gives a row with its own horizontal gesture (such as swipe-to-delete)
+/// ownership while a pointer is down. Registration is synchronous, before
+/// the first movement can resolve the gesture arena. Merely keeping the row
+/// mounted must not disable navigation elsewhere on the page.
 class SwipeGestureBarrier extends StatefulWidget {
   const SwipeGestureBarrier({super.key, required this.child});
 
@@ -204,37 +177,20 @@ class _SwipeTabViewState extends State<SwipeTabView>
   late int _settledPage;
 
   VelocityTracker? _dragVelocity;
-  late int _dragStartPage;
-  double _overscroll = 0;
-  bool _handedOff = false;
+  double _dragDistance = 0;
+  bool _acceptDrag = false;
 
-  /// Mounted nested gesture owners, counted separately for each page. A
-  /// horizontal drag anywhere on screen enters every overlapping [PageView]'s
-  /// gesture arena at once, so with both us and a nested pager draggable, a
-  /// fast/hard swipe can occasionally resolve to the wrong (outer) one and
-  /// skip the nested level entirely. Once scrolling settles, only children
-  /// on the visible page can take our drag physics, so an incoming or cached
-  /// offscreen page cannot interrupt navigation. The innermost pager then
-  /// owns subsequent gestures;
-  /// hand-off still moves us via [_stepSelf]/`animateToPage`, which works
-  /// regardless of physics.
+  // Only the innermost visible pager owns a recognizer. PageView itself is
+  // never draggable, including during animations, so velocity cannot make
+  // an ancestor win the gesture or carry momentum across multiple pages.
   final Map<int, int> _activeNestedChildren = {};
-
-  // An incoming page can mount a nested pager during our drag. Finish the
-  // current scroll before giving that pager ownership of subsequent gestures.
-  bool _scrollInProgress = false;
-
-  static const _handoffThreshold = 44.0;
-  static const _handoffFlingVelocity = 400.0;
-  static const _physics = PageScrollPhysics(
-    parent: AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
-  );
+  static const _swipeDistance = 44.0;
+  static const _swipeVelocity = 400.0;
 
   @override
   void initState() {
     super.initState();
     _settledPage = widget.index;
-    _dragStartPage = widget.index;
     _controller = PageController(initialPage: widget.index);
     _registerWithParent();
   }
@@ -317,90 +273,57 @@ class _SwipeTabViewState extends State<SwipeTabView>
     return false;
   }
 
-  bool _onScroll(ScrollNotification n) {
-    // Only this pager's own scroll activity (depth 0, horizontal). Ignore
-    // nested horizontal scrollers inside a panel, e.g. a chip row.
-    if (n.depth != 0 || n.metrics.axis != Axis.horizontal) return false;
-    if (n is ScrollStartNotification) {
-      _scrollInProgress = true;
-      _dragStartPage = _settledPage;
-      _dragVelocity = VelocityTracker.withKind(PointerDeviceKind.touch);
-      final details = n.dragDetails;
-      if (details?.sourceTimeStamp != null) {
-        _dragVelocity!.addPosition(
-          details!.sourceTimeStamp!,
-          details.globalPosition,
-        );
-      }
-      _overscroll = 0;
-      _handedOff = false;
-    } else if (n is ScrollUpdateNotification && n.dragDetails != null) {
-      final details = n.dragDetails!;
-      if (details.sourceTimeStamp != null) {
-        _dragVelocity?.addPosition(
-          details.sourceTimeStamp!,
-          details.globalPosition,
-        );
-      }
-    } else if (n is OverscrollNotification && n.dragDetails != null) {
-      final details = n.dragDetails!;
-      if (details.sourceTimeStamp != null) {
-        _dragVelocity?.addPosition(
-          details.sourceTimeStamp!,
-          details.globalPosition,
-        );
-      }
-      _overscroll += n.overscroll;
-      if (!_handedOff &&
-          _settledPage == _dragStartPage &&
-          _overscroll.abs() >= _handoffThreshold) {
-        if (_handoffUp(_overscroll > 0 ? 1 : -1)) _handedOff = true;
-      }
-    } else if (n is ScrollEndNotification) {
-      // A short flick can reach an edge without accumulating 44 px. Match
-      // paging's velocity-based intent, but only for an outward edge drag.
-      // Scrollable may zero the reported velocity below its own minimum
-      // fling distance; estimate from the accepted drag samples in that case.
-      final velocity = n.dragDetails == null
-          ? 0.0
-          : _dragVelocity?.getVelocity().pixelsPerSecond.dx ?? 0.0;
-      final scrollVelocity = n.metrics.axisDirection == AxisDirection.left
-          ? velocity
-          : -velocity;
-      final outwardFling =
-          _overscroll != 0 &&
-          scrollVelocity.abs() >= _handoffFlingVelocity &&
-          scrollVelocity.sign == _overscroll.sign;
-      if (!_handedOff &&
-          _settledPage == _dragStartPage &&
-          n.metrics.atEdge &&
-          outwardFling) {
-        final delta = _overscroll > 0 ? 1 : -1;
-        _handedOff = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _handoffUp(delta);
-        });
-      }
-      _overscroll = 0;
-      _scrollInProgress = false;
-      // Scroll notifications can arrive during layout.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() {});
-      });
+  void _onDragStart(DragStartDetails details) {
+    _acceptDrag = !_syncing;
+    _dragDistance = 0;
+    _dragVelocity = VelocityTracker.withKind(PointerDeviceKind.touch);
+    if (details.sourceTimeStamp != null) {
+      _dragVelocity!.addPosition(
+        details.sourceTimeStamp!,
+        details.globalPosition,
+      );
     }
-    return false;
+  }
+
+  void _onDragUpdate(DragUpdateDetails details) {
+    if (!_acceptDrag) return;
+    _dragDistance += details.primaryDelta ?? 0;
+    if (details.sourceTimeStamp != null) {
+      _dragVelocity?.addPosition(
+        details.sourceTimeStamp!,
+        details.globalPosition,
+      );
+    }
+  }
+
+  void _onDragEnd(DragEndDetails details) {
+    if (!_acceptDrag) return;
+    _acceptDrag = false;
+    final velocity = _dragVelocity?.getVelocity().pixelsPerSecond.dx ?? 0;
+    final intent = velocity.abs() >= _swipeVelocity ? velocity : _dragDistance;
+    if (_dragDistance.abs() < _swipeDistance &&
+        velocity.abs() < _swipeVelocity) {
+      return;
+    }
+    var delta = intent < 0 ? 1 : -1;
+    if (Directionality.of(context) == TextDirection.rtl) delta = -delta;
+    // Exactly one step: _stepSelf forwards only if this gesture started on
+    // the boundary. The animation has no user-driven ballistic continuation.
+    _stepSelf(delta);
   }
 
   @override
   Widget build(BuildContext context) {
-    return NotificationListener<ScrollNotification>(
-      onNotification: _onScroll,
+    final ownsDrag = (_activeNestedChildren[_settledPage] ?? 0) == 0;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onHorizontalDragStart: ownsDrag ? _onDragStart : null,
+      onHorizontalDragUpdate: ownsDrag ? _onDragUpdate : null,
+      onHorizontalDragEnd: ownsDrag ? _onDragEnd : null,
+      onHorizontalDragCancel: ownsDrag ? () => _acceptDrag = false : null,
       child: PageView.builder(
         controller: _controller,
-        physics:
-            !_scrollInProgress && (_activeNestedChildren[_settledPage] ?? 0) > 0
-            ? const NeverScrollableScrollPhysics()
-            : _physics,
+        physics: const NeverScrollableScrollPhysics(),
         onPageChanged: _onPageChanged,
         itemCount: widget.children.length,
         itemBuilder: (_, i) => _TabHandoff(
