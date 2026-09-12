@@ -72,6 +72,7 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
             Expanded(
               child: SwipeTabView(
                 branchIndex: 2,
+                keepPagesAlive: true,
                 index: _segment.index,
                 onIndexChanged: (i) =>
                     setState(() => _segment = RecordsSegment.values[i]),

@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 /// Exposes the bottom-nav branch switch to descendants so the outermost tab
@@ -172,12 +173,16 @@ class SwipeTabView extends StatefulWidget {
   const SwipeTabView({
     super.key,
     this.branchIndex,
+    this.keepPagesAlive = false,
     required this.index,
     required this.onIndexChanged,
     required this.children,
   });
 
   final int? branchIndex;
+
+  /// Retain visited panels, including their locally selected nested tabs.
+  final bool keepPagesAlive;
   final int index;
   final ValueChanged<int> onIndexChanged;
   final List<Widget> children;
@@ -198,6 +203,8 @@ class _SwipeTabViewState extends State<SwipeTabView>
   /// position even mid-animation.
   late int _settledPage;
 
+  VelocityTracker? _dragVelocity;
+  late int _dragStartPage;
   double _overscroll = 0;
   bool _handedOff = false;
 
@@ -218,6 +225,7 @@ class _SwipeTabViewState extends State<SwipeTabView>
   bool _scrollInProgress = false;
 
   static const _handoffThreshold = 44.0;
+  static const _handoffFlingVelocity = 400.0;
   static const _physics = PageScrollPhysics(
     parent: AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
   );
@@ -226,6 +234,7 @@ class _SwipeTabViewState extends State<SwipeTabView>
   void initState() {
     super.initState();
     _settledPage = widget.index;
+    _dragStartPage = widget.index;
     _controller = PageController(initialPage: widget.index);
     _registerWithParent();
   }
@@ -277,6 +286,9 @@ class _SwipeTabViewState extends State<SwipeTabView>
 
   /// Try to page this view by [delta]; forward the hand-off out if we can't.
   bool _stepSelf(int delta) {
+    // Consume another handoff while the previous one is still animating.
+    // Otherwise its completion can overwrite a newer destination.
+    if (_syncing) return true;
     final target = _settledPage + delta;
     if (target < 0 || target >= widget.children.length) {
       return _handoffUp(delta);
@@ -311,14 +323,64 @@ class _SwipeTabViewState extends State<SwipeTabView>
     if (n.depth != 0 || n.metrics.axis != Axis.horizontal) return false;
     if (n is ScrollStartNotification) {
       _scrollInProgress = true;
+      _dragStartPage = _settledPage;
+      _dragVelocity = VelocityTracker.withKind(PointerDeviceKind.touch);
+      final details = n.dragDetails;
+      if (details?.sourceTimeStamp != null) {
+        _dragVelocity!.addPosition(
+          details!.sourceTimeStamp!,
+          details.globalPosition,
+        );
+      }
       _overscroll = 0;
       _handedOff = false;
+    } else if (n is ScrollUpdateNotification && n.dragDetails != null) {
+      final details = n.dragDetails!;
+      if (details.sourceTimeStamp != null) {
+        _dragVelocity?.addPosition(
+          details.sourceTimeStamp!,
+          details.globalPosition,
+        );
+      }
     } else if (n is OverscrollNotification && n.dragDetails != null) {
+      final details = n.dragDetails!;
+      if (details.sourceTimeStamp != null) {
+        _dragVelocity?.addPosition(
+          details.sourceTimeStamp!,
+          details.globalPosition,
+        );
+      }
       _overscroll += n.overscroll;
-      if (!_handedOff && _overscroll.abs() >= _handoffThreshold) {
+      if (!_handedOff &&
+          _settledPage == _dragStartPage &&
+          _overscroll.abs() >= _handoffThreshold) {
         if (_handoffUp(_overscroll > 0 ? 1 : -1)) _handedOff = true;
       }
     } else if (n is ScrollEndNotification) {
+      // A short flick can reach an edge without accumulating 44 px. Match
+      // paging's velocity-based intent, but only for an outward edge drag.
+      // Scrollable may zero the reported velocity below its own minimum
+      // fling distance; estimate from the accepted drag samples in that case.
+      final velocity = n.dragDetails == null
+          ? 0.0
+          : _dragVelocity?.getVelocity().pixelsPerSecond.dx ?? 0.0;
+      final scrollVelocity = n.metrics.axisDirection == AxisDirection.left
+          ? velocity
+          : -velocity;
+      final outwardFling =
+          _overscroll != 0 &&
+          scrollVelocity.abs() >= _handoffFlingVelocity &&
+          scrollVelocity.sign == _overscroll.sign;
+      if (!_handedOff &&
+          _settledPage == _dragStartPage &&
+          n.metrics.atEdge &&
+          outwardFling) {
+        final delta = _overscroll > 0 ? 1 : -1;
+        _handedOff = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _handoffUp(delta);
+        });
+      }
       _overscroll = 0;
       _scrollInProgress = false;
       // Scroll notifications can arrive during layout.
@@ -344,9 +406,33 @@ class _SwipeTabViewState extends State<SwipeTabView>
         itemBuilder: (_, i) => _TabHandoff(
           step: _stepSelf,
           onActiveChildDelta: (delta) => _onActiveChildDelta(i, delta),
-          child: widget.children[i],
+          child: widget.keepPagesAlive
+              ? _RetainedTab(child: widget.children[i])
+              : widget.children[i],
         ),
       ),
     );
+  }
+}
+
+/// Keep only panels that have actually been visited alive; PageView still
+/// builds lazily. Parent handoff registrations remain scoped to each page.
+class _RetainedTab extends StatefulWidget {
+  const _RetainedTab({required this.child});
+  final Widget child;
+
+  @override
+  State<_RetainedTab> createState() => _RetainedTabState();
+}
+
+class _RetainedTabState extends State<_RetainedTab>
+    with AutomaticKeepAliveClientMixin<_RetainedTab> {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }
