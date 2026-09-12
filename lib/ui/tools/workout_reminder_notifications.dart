@@ -14,8 +14,6 @@ import 'rest_timer_notifications.dart';
 /// Schedules the next [daysAhead] one-shot notifications per enabled kind so
 /// the workout reminder's body can reflect whether the previous day had sets.
 abstract final class ReminderNotifications {
-  static const _channelId = 'workout_reminder_v2';
-  static const _channelName = 'Reminders';
   static const _channelDesc = 'Daily reminders';
   static const daysAhead = 7;
   static const _nativeChannel = MethodChannel('fitness_plan/workout_reminder');
@@ -45,21 +43,9 @@ abstract final class ReminderNotifications {
       ),
     );
 
-    final androidPlugin = _plugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
-    await androidPlugin?.createNotificationChannel(
-      const AndroidNotificationChannel(
-        _channelId,
-        _channelName,
-        description: _channelDesc,
-        importance: Importance.high,
-        playSound: true,
-        enableVibration: true,
-      ),
-    );
-
+    // Each reminder's Android channel is created lazily, on first schedule,
+    // with the id/sound/vibration baked in from its current settings — see
+    // [rescheduleAll] and [_ScheduledReminder.channelId].
     _initialized = true;
   }
 
@@ -94,13 +80,20 @@ abstract final class ReminderNotifications {
   /// Cancels every reminder and re-schedules the next [daysAhead] days for each
   /// enabled kind. [hasWorkoutOnDay] receives a local calendar day; [titleFor]
   /// / [bodyFor] return localized copy (bodyFor gets `workedOut` for the
-  /// workout kind).
+  /// workout kind); [channelNameFor] labels the Android notification channel
+  /// (e.g. "Workout reminder") so it's recognizable in system settings.
+  /// [repository] tracks each kind's last-used channel id so a changed tone
+  /// or alert mode — which needs a fresh Android channel, since channels are
+  /// immutable once created — can delete the stale one instead of leaving an
+  /// orphaned duplicate behind.
   static Future<void> rescheduleAll({
     required Map<ReminderKind, ReminderSetting> settings,
     required Future<bool> Function(DateTime day) hasWorkoutOnDay,
     required String Function(ReminderKind kind) titleFor,
+    required String Function(ReminderKind kind) channelNameFor,
     required String Function(ReminderKind kind, {required bool workedOut})
     bodyFor,
+    required RemindersRepository repository,
   }) async {
     await ensureInitialized();
     await cancelAll();
@@ -113,11 +106,19 @@ abstract final class ReminderNotifications {
 
     final now = DateTime.now();
     final items = <_ScheduledReminder>[];
+    final staleChannelIds = <String>{};
 
     for (final entry in settings.entries) {
       final kind = entry.key;
       final s = entry.value;
       if (!s.enabled) continue;
+
+      final channelId = s.channelIdFor(kind);
+      final previous = repository.lastChannelId(kind);
+      if (previous != null && previous != channelId) {
+        staleChannelIds.add(previous);
+      }
+      await repository.setLastChannelId(kind, channelId);
 
       var fireDay = DateTime(now.year, now.month, now.day, s.hour, s.minute);
       if (!fireDay.isAfter(now)) fireDay = fireDay.add(const Duration(days: 1));
@@ -141,6 +142,10 @@ abstract final class ReminderNotifications {
             whenLocal: whenLocal,
             title: titleFor(kind),
             body: bodyFor(kind, workedOut: workedOut),
+            channelId: channelId,
+            channelName: channelNameFor(kind),
+            sound: s.alertMode == ReminderAlertMode.ring,
+            soundUri: s.soundUri,
           ),
         );
       }
@@ -148,16 +153,37 @@ abstract final class ReminderNotifications {
     if (items.isEmpty) return;
 
     if (defaultTargetPlatform == TargetPlatform.android) {
-      final native = await _scheduleAndroidNative(items);
+      final native = await _scheduleAndroidNative(items, staleChannelIds);
       if (native) return;
       // Native AlarmManager path unavailable — fall back to the plugin.
     }
     await _schedulePlugin(items, now);
   }
 
+  /// Opens the system ringtone picker (the same one the Clock app's alarm
+  /// tone picker uses), preselecting [currentUri] when given. Returns null
+  /// if the user cancelled, or on a non-Android platform.
+  static Future<({String uri, String title})?> pickRingtone({
+    String? currentUri,
+  }) async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return null;
+    try {
+      final result = await _nativeChannel.invokeMapMethod<String, Object?>(
+        'pickRingtone',
+        {'currentUri': currentUri},
+      );
+      final uri = result?['uri'] as String?;
+      if (uri == null) return null;
+      return (uri: uri, title: result?['title'] as String? ?? '');
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Returns true when the native AlarmManager path handled the schedule.
   static Future<bool> _scheduleAndroidNative(
     List<_ScheduledReminder> items,
+    Set<String> staleChannelIds,
   ) async {
     final payload = [
       for (final item in items)
@@ -166,10 +192,17 @@ abstract final class ReminderNotifications {
           'triggerAtMillis': item.whenLocal.millisecondsSinceEpoch,
           'title': item.title,
           'body': item.body,
+          'channelId': item.channelId,
+          'channelName': item.channelName,
+          'sound': item.sound,
+          'soundUri': item.soundUri,
         },
     ];
     try {
-      await _nativeChannel.invokeMethod<void>('scheduleAll', {'items': payload});
+      await _nativeChannel.invokeMethod<void>('scheduleAll', {
+        'items': payload,
+        'staleChannelIds': staleChannelIds.toList(),
+      });
       return true;
     } catch (_) {
       return false;
@@ -181,31 +214,34 @@ abstract final class ReminderNotifications {
     DateTime now,
   ) async {
     final utcNow = tz.TZDateTime.now(tz.UTC);
-    final details = NotificationDetails(
-      android: AndroidNotificationDetails(
-        _channelId,
-        _channelName,
-        channelDescription: _channelDesc,
-        importance: Importance.high,
-        priority: Priority.high,
-        playSound: true,
-        enableVibration: true,
-        category: AndroidNotificationCategory.reminder,
-      ),
-      iOS: const DarwinNotificationDetails(
-        presentAlert: true,
-        presentSound: true,
-      ),
-      macOS: const DarwinNotificationDetails(
-        presentAlert: true,
-        presentSound: true,
-      ),
-    );
 
     for (final item in items) {
       final remaining = item.whenLocal.difference(now);
       if (remaining.inSeconds < 1) continue;
       final when = utcNow.add(remaining);
+      final details = NotificationDetails(
+        android: AndroidNotificationDetails(
+          item.channelId,
+          item.channelName,
+          channelDescription: _channelDesc,
+          importance: Importance.high,
+          priority: Priority.high,
+          playSound: item.sound,
+          sound: item.sound && item.soundUri != null
+              ? UriAndroidNotificationSound(item.soundUri!)
+              : null,
+          enableVibration: true,
+          category: AndroidNotificationCategory.reminder,
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentSound: true,
+        ),
+        macOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentSound: true,
+        ),
+      );
       await _zonedScheduleWithFallback(
         id: item.id,
         title: item.title,
@@ -254,10 +290,18 @@ class _ScheduledReminder {
     required this.whenLocal,
     required this.title,
     required this.body,
+    required this.channelId,
+    required this.channelName,
+    required this.sound,
+    required this.soundUri,
   });
 
   final int id;
   final DateTime whenLocal;
   final String title;
   final String body;
+  final String channelId;
+  final String channelName;
+  final bool sound;
+  final String? soundUri;
 }

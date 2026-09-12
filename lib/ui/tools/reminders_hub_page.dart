@@ -61,6 +61,13 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage> {
     ref.read(remindersProvider.notifier).setWeekdays(kind, next);
   }
 
+  void _setAlertMode(ReminderKind kind, ReminderAlertMode mode) {
+    ref.read(remindersProvider.notifier).setAlertMode(kind, mode);
+  }
+
+  Future<void> _pickSound(ReminderKind kind) =>
+      ref.read(remindersProvider.notifier).pickAndSetSound(kind);
+
   String _label(ReminderKind kind, AppLocalizations l10n) => switch (kind) {
     ReminderKind.workout => l10n.reminderKindWorkout,
     ReminderKind.water => l10n.reminderKindWater,
@@ -126,6 +133,8 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage> {
               onToggle: (v) => _toggle(kind, v),
               onPickTime: () => _pickTime(kind),
               onToggleWeekday: (d) => _toggleWeekday(kind, d),
+              onSetAlertMode: (m) => _setAlertMode(kind, m),
+              onPickSound: () => _pickSound(kind),
             ),
           if (granted) ...[
             const SizedBox(height: AppSpacing.section),
@@ -168,6 +177,8 @@ class _ReminderTile extends StatelessWidget {
     required this.onToggle,
     required this.onPickTime,
     required this.onToggleWeekday,
+    required this.onSetAlertMode,
+    required this.onPickSound,
   });
 
   final IconData icon;
@@ -177,6 +188,8 @@ class _ReminderTile extends StatelessWidget {
   final ValueChanged<bool> onToggle;
   final VoidCallback onPickTime;
   final ValueChanged<int> onToggleWeekday;
+  final ValueChanged<ReminderAlertMode> onSetAlertMode;
+  final VoidCallback onPickSound;
 
   String get _timeText =>
       '${setting.hour.toString().padLeft(2, '0')}:'
@@ -246,12 +259,134 @@ class _ReminderTile extends StatelessWidget {
                       ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
+                _AlertModeToggle(
+                  mode: setting.alertMode,
+                  onChanged: onSetAlertMode,
+                ),
+                if (setting.alertMode == ReminderAlertMode.ring)
+                  InkWell(
+                    onTap: onPickSound,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.music_note_outlined, size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            l10n.reminderSoundLabel,
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                          const Spacer(),
+                          Flexible(
+                            child: Text(
+                              setting.soundTitle ?? l10n.reminderSoundDefault,
+                              style: theme.textTheme.bodyMedium,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.end,
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right, size: 18),
+                        ],
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 2),
               ],
             ),
           ),
         ],
       ],
+    );
+  }
+}
+
+class _AlertModeToggle extends StatelessWidget {
+  const _AlertModeToggle({required this.mode, required this.onChanged});
+
+  final ReminderAlertMode mode;
+  final ValueChanged<ReminderAlertMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: _AlertModeButton(
+              icon: Icons.notifications_active_outlined,
+              label: l10n.reminderAlertModeRing,
+              selected: mode == ReminderAlertMode.ring,
+              onTap: () => onChanged(ReminderAlertMode.ring),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _AlertModeButton(
+              icon: Icons.vibration,
+              label: l10n.reminderAlertModeVibrate,
+              selected: mode == ReminderAlertMode.vibrate,
+              onTap: () => onChanged(ReminderAlertMode.vibrate),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AlertModeButton extends StatelessWidget {
+  const _AlertModeButton({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: selected
+          ? scheme.primaryContainer
+          : scheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(AppRadius.control),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: selected
+                    ? scheme.onPrimaryContainer
+                    : scheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: selected
+                      ? scheme.onPrimaryContainer
+                      : scheme.onSurfaceVariant,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

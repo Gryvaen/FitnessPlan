@@ -990,6 +990,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reminderRepeatLabel => 'Repeat';
 
   @override
+  String get reminderAlertModeRing => 'Ring';
+
+  @override
+  String get reminderAlertModeVibrate => 'Vibrate';
+
+  @override
+  String get reminderSoundLabel => 'Sound';
+
+  @override
+  String get reminderSoundDefault => 'System default';
+
+  @override
   String get weekdayLettersMonSun => 'M,T,W,T,F,S,S';
 
   @override

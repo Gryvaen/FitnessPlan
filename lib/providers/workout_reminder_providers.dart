@@ -66,6 +66,35 @@ class RemindersNotifier extends Notifier<Map<ReminderKind, ReminderSetting>> {
     () => ref.read(remindersRepositoryProvider).setWeekdays(kind, weekdays),
   );
 
+  Future<void> setAlertMode(ReminderKind kind, ReminderAlertMode mode) =>
+      _apply(
+        kind,
+        settingFor(kind).copyWith(alertMode: mode),
+        () => ref.read(remindersRepositoryProvider).setAlertMode(kind, mode),
+      );
+
+  /// Pass `uri: null` to reset to the system default notification sound.
+  Future<void> setSound(ReminderKind kind, {String? uri, String? title}) =>
+      _apply(
+        kind,
+        settingFor(kind).copyWith(soundUri: uri, soundTitle: title),
+        () => ref
+            .read(remindersRepositoryProvider)
+            .setSound(kind, uri: uri, title: title),
+      );
+
+  /// Opens the system ringtone picker for [kind]'s current tone and, if the
+  /// user picked one, saves and reschedules. Returns the picked title, or
+  /// null if the user cancelled.
+  Future<String?> pickAndSetSound(ReminderKind kind) async {
+    final picked = await ReminderNotifications.pickRingtone(
+      currentUri: settingFor(kind).soundUri,
+    );
+    if (picked == null) return null;
+    await setSound(kind, uri: picked.uri, title: picked.title);
+    return picked.title;
+  }
+
   /// Recompute and schedule the next days for every enabled reminder kind.
   Future<void> syncSchedule([AppLocalizations? l10n]) async {
     final loc = l10n ?? _platformL10n();
@@ -79,6 +108,12 @@ class RemindersNotifier extends Notifier<Map<ReminderKind, ReminderSetting>> {
         ReminderKind.meal => loc.reminderMealTitle,
         ReminderKind.weighIn => loc.reminderWeighInTitle,
       },
+      channelNameFor: (kind) => switch (kind) {
+        ReminderKind.workout => loc.reminderKindWorkout,
+        ReminderKind.water => loc.reminderKindWater,
+        ReminderKind.meal => loc.reminderKindMeal,
+        ReminderKind.weighIn => loc.reminderKindWeighIn,
+      },
       bodyFor: (kind, {required workedOut}) => switch (kind) {
         ReminderKind.workout =>
           workedOut
@@ -88,6 +123,7 @@ class RemindersNotifier extends Notifier<Map<ReminderKind, ReminderSetting>> {
         ReminderKind.meal => loc.reminderMealBody,
         ReminderKind.weighIn => loc.reminderWeighInBody,
       },
+      repository: ref.read(remindersRepositoryProvider),
     );
   }
 

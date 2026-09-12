@@ -84,21 +84,27 @@ mixin _ParentDragHandoff<T extends StatefulWidget> on State<T> {
   }
 }
 
-/// Wraps content with its own horizontal-drag gesture — e.g. a
-/// [Dismissible] list row — so the nearest ancestor [SwipeTabView] gives up
-/// its own page-swipe physics while a touch is down on this widget. Without
-/// this, both widgets compete for the same drag and the ancestor pager tends
-/// to win, making the wrapped content's own swipe gesture (e.g.
-/// swipe-to-delete) unresponsive in that direction.
+/// Wraps content with its own leftward-drag gesture — e.g. an
+/// [DismissDirection.endToStart] [Dismissible] list row — so the nearest
+/// ancestor [SwipeTabView] gives up its own page-swipe physics once such a
+/// drag is under way. Without this, both widgets compete for the same drag
+/// and the ancestor pager tends to win, making the wrapped content's own
+/// swipe gesture (e.g. swipe-to-delete) unresponsive in that direction.
 ///
-/// The hand-off is scoped to an actual pointer being down on this widget
-/// (not to how long it stays mounted): a [Dismissible] row inside a
-/// scrolling list stays mounted for as long as it's scrolled into view, so
-/// registering for its whole mounted lifetime — as [SwipeTabView] itself
-/// does for a genuinely nested pager, which *is* only mounted while its tab
-/// is active — would leave the ancestor's page-swipe permanently disabled
-/// (dead) any time such a row is simply visible, not just while it's being
-/// dragged.
+/// The hand-off only engages once the drag has moved a few pixels to the
+/// left (not on bare pointer-down, and not for a rightward drag): the
+/// ancestor pager already wins a plain drag against this content by
+/// default, so a rightward drag — e.g. paging back to the previous tab —
+/// needs no help and must be left alone, or it would be swallowed here too
+/// even though the wrapped [Dismissible] never acts on that direction.
+///
+/// Scoped to an actual pointer being down on this widget (not to how long it
+/// stays mounted): a [Dismissible] row inside a scrolling list stays mounted
+/// for as long as it's scrolled into view, so registering for its whole
+/// mounted lifetime — as [SwipeTabView] itself does for a genuinely nested
+/// pager, which *is* only mounted while its tab is active — would leave the
+/// ancestor's page-swipe permanently disabled (dead) any time such a row is
+/// simply visible, not just while it's being dragged.
 class SwipeGestureBarrier extends StatefulWidget {
   const SwipeGestureBarrier({super.key, required this.child});
 
@@ -110,7 +116,11 @@ class SwipeGestureBarrier extends StatefulWidget {
 
 class _SwipeGestureBarrierState extends State<SwipeGestureBarrier>
     with _ParentDragHandoff<SwipeGestureBarrier> {
+  static const _slop = 6.0;
+
   bool _held = false;
+  bool _resolved = false;
+  double _dx = 0;
 
   void _hold() {
     if (_held) return;
@@ -124,6 +134,28 @@ class _SwipeGestureBarrierState extends State<SwipeGestureBarrier>
     _unregisterFromParent();
   }
 
+  void _reset() {
+    _resolved = false;
+    _dx = 0;
+    _release();
+  }
+
+  void _onMove(PointerMoveEvent event) {
+    if (_resolved) return;
+    _dx += event.delta.dx;
+    if (_dx <= -_slop) {
+      // Net leftward: the direction the wrapped Dismissible dismisses in —
+      // take over so it wins the gesture arena.
+      _resolved = true;
+      _hold();
+    } else if (_dx >= _slop) {
+      // Net rightward: not a direction the Dismissible acts on. Stay
+      // unresolved-but-idle so the ancestor pager keeps its own physics and
+      // wins the drag, as it already does by default.
+      _resolved = true;
+    }
+  }
+
   @override
   void dispose() {
     _release();
@@ -134,9 +166,10 @@ class _SwipeGestureBarrierState extends State<SwipeGestureBarrier>
   Widget build(BuildContext context) {
     return Listener(
       behavior: HitTestBehavior.translucent,
-      onPointerDown: (_) => _hold(),
-      onPointerUp: (_) => _release(),
-      onPointerCancel: (_) => _release(),
+      onPointerDown: (_) => _reset(),
+      onPointerMove: _onMove,
+      onPointerUp: (_) => _reset(),
+      onPointerCancel: (_) => _reset(),
       child: widget.child,
     );
   }

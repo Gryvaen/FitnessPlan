@@ -1,6 +1,7 @@
 package com.fitnessplan.fitness_plan
 
 import android.app.AlarmManager
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -15,16 +16,35 @@ object WorkoutReminderScheduler {
     const val EXTRA_NOTIFICATION_ID = "notification_id"
     const val EXTRA_TITLE = "title"
     const val EXTRA_BODY = "body"
+    const val EXTRA_CHANNEL_ID = "channel_id"
+    const val EXTRA_CHANNEL_NAME = "channel_name"
+    const val EXTRA_SOUND = "sound"
+    const val EXTRA_SOUND_URI = "sound_uri"
 
     // One 100-slot id range per reminder kind (workout / water / meal /
     // weigh-in), matching ReminderKind.idBase on the Dart side.
     private val BASE_REQUEST_CODES = intArrayOf(72001, 72101, 72201, 72301)
     private const val SLOTS_PER_KIND = 32
 
-    fun scheduleAll(context: Context, items: List<ReminderItem>) {
+    fun scheduleAll(context: Context, items: List<ReminderItem>, staleChannelIds: List<String> = emptyList()) {
         cancelAll(context)
+        deleteChannels(context, staleChannelIds)
         for (item in items) {
             scheduleOne(context, item)
+        }
+    }
+
+    /**
+     * Deletes notification channels superseded by a changed alert mode or
+     * tone — channels are immutable once created, so a change produces a
+     * new channel id and the old one would otherwise linger as an orphaned
+     * duplicate in system settings.
+     */
+    private fun deleteChannels(context: Context, channelIds: List<String>) {
+        if (channelIds.isEmpty() || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        for (id in channelIds) {
+            manager.deleteNotificationChannel(id)
         }
     }
 
@@ -32,7 +52,9 @@ object WorkoutReminderScheduler {
         val alarmManager = context.getSystemService(AlarmManager::class.java) ?: return
         for (base in BASE_REQUEST_CODES) {
             for (i in 0 until SLOTS_PER_KIND) {
-                alarmManager.cancel(alarmPendingIntent(context, base + i, 0, "", ""))
+                alarmManager.cancel(
+                    alarmPendingIntent(context, base + i, 0, "", "", "", "", false, null),
+                )
             }
         }
     }
@@ -45,6 +67,10 @@ object WorkoutReminderScheduler {
             item.id,
             item.title,
             item.body,
+            item.channelId,
+            item.channelName,
+            item.sound,
+            item.soundUri,
         )
         val showIntent = PendingIntent.getActivity(
             context,
@@ -77,11 +103,19 @@ object WorkoutReminderScheduler {
         notificationId: Int,
         title: String,
         body: String,
+        channelId: String,
+        channelName: String,
+        sound: Boolean,
+        soundUri: String?,
     ): PendingIntent {
         val intent = Intent(context, WorkoutReminderReceiver::class.java).apply {
             putExtra(EXTRA_NOTIFICATION_ID, notificationId)
             putExtra(EXTRA_TITLE, title)
             putExtra(EXTRA_BODY, body)
+            putExtra(EXTRA_CHANNEL_ID, channelId)
+            putExtra(EXTRA_CHANNEL_NAME, channelName)
+            putExtra(EXTRA_SOUND, sound)
+            putExtra(EXTRA_SOUND_URI, soundUri)
         }
         return PendingIntent.getBroadcast(
             context,
@@ -96,5 +130,9 @@ object WorkoutReminderScheduler {
         val triggerAtMillis: Long,
         val title: String,
         val body: String,
+        val channelId: String,
+        val channelName: String,
+        val sound: Boolean,
+        val soundUri: String?,
     )
 }

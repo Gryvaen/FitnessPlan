@@ -1983,6 +1983,30 @@ abstract class AppLocalizations {
   /// **'Repeat'**
   String get reminderRepeatLabel;
 
+  /// No description provided for @reminderAlertModeRing.
+  ///
+  /// In en, this message translates to:
+  /// **'Ring'**
+  String get reminderAlertModeRing;
+
+  /// No description provided for @reminderAlertModeVibrate.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibrate'**
+  String get reminderAlertModeVibrate;
+
+  /// No description provided for @reminderSoundLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound'**
+  String get reminderSoundLabel;
+
+  /// No description provided for @reminderSoundDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'System default'**
+  String get reminderSoundDefault;
+
   /// No description provided for @weekdayLettersMonSun.
   ///
   /// In en, this message translates to:

@@ -977,6 +977,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reminderRepeatLabel => '重复日期';
 
   @override
+  String get reminderAlertModeRing => '响铃';
+
+  @override
+  String get reminderAlertModeVibrate => '振动';
+
+  @override
+  String get reminderSoundLabel => '铃声';
+
+  @override
+  String get reminderSoundDefault => '系统默认';
+
+  @override
   String get weekdayLettersMonSun => '一,二,三,四,五,六,日';
 
   @override

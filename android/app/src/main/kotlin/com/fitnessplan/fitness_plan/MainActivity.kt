@@ -1,10 +1,15 @@
 package com.fitnessplan.fitness_plan
 
+import android.content.Intent
+import android.media.RingtoneManager
+import android.net.Uri
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
+    private var pendingRingtoneResult: MethodChannel.Result? = null
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, RestTimerAlarmScheduler.CHANNEL)
@@ -46,20 +51,52 @@ class MainActivity : FlutterFragmentActivity() {
                             val triggerAtMillis = (map["triggerAtMillis"] as? Number)?.toLong()
                             val title = map["title"] as? String
                             val body = map["body"] as? String
-                            if (id == null || triggerAtMillis == null || title == null || body == null) {
+                            val channelId = map["channelId"] as? String
+                            val channelName = map["channelName"] as? String
+                            val sound = map["sound"] as? Boolean
+                            val soundUri = map["soundUri"] as? String
+                            if (id == null || triggerAtMillis == null || title == null ||
+                                body == null || channelId == null || channelName == null || sound == null
+                            ) {
                                 null
                             } else {
                                 WorkoutReminderScheduler.ReminderItem(
-                                    id, triggerAtMillis, title, body,
+                                    id, triggerAtMillis, title, body, channelId, channelName, sound, soundUri,
                                 )
                             }
                         }
-                        WorkoutReminderScheduler.scheduleAll(this, items)
+                        val staleChannelIds =
+                            (call.argument<List<*>>("staleChannelIds") ?: emptyList<Any?>())
+                                .filterIsInstance<String>()
+                        WorkoutReminderScheduler.scheduleAll(this, items, staleChannelIds)
                         result.success(null)
                     }
                     "cancelAll" -> {
                         WorkoutReminderScheduler.cancelAll(this)
                         result.success(null)
+                    }
+                    "pickRingtone" -> {
+                        val currentUri = call.argument<String>("currentUri")
+                        pendingRingtoneResult = result
+                        val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                            putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION)
+                            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+                            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+                            putExtra(
+                                RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI,
+                                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
+                            )
+                            if (currentUri != null) {
+                                putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, Uri.parse(currentUri))
+                            }
+                        }
+                        try {
+                            @Suppress("DEPRECATION")
+                            startActivityForResult(intent, RINGTONE_PICKER_REQUEST_CODE)
+                        } catch (e: Exception) {
+                            pendingRingtoneResult = null
+                            result.error("picker_unavailable", e.message, null)
+                        }
                     }
                     else -> result.notImplemented()
                 }
@@ -80,5 +117,28 @@ class MainActivity : FlutterFragmentActivity() {
 
         // Re-arm the background counter after a cold start / app update.
         StepCounterService.startIfEnabled(applicationContext)
+    }
+
+    @Suppress("DEPRECATION")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != RINGTONE_PICKER_REQUEST_CODE) return
+        val result = pendingRingtoneResult ?: return
+        pendingRingtoneResult = null
+        val uri = data?.getParcelableExtra<Uri>(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
+        if (uri == null) {
+            result.success(mapOf("uri" to null, "title" to null))
+            return
+        }
+        val title = try {
+            RingtoneManager.getRingtone(this, uri)?.getTitle(this)
+        } catch (_: Exception) {
+            null
+        }
+        result.success(mapOf("uri" to uri.toString(), "title" to title))
+    }
+
+    companion object {
+        private const val RINGTONE_PICKER_REQUEST_CODE = 4271
     }
 }
