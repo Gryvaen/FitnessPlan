@@ -84,19 +84,29 @@ mixin _ParentDragHandoff<T extends StatefulWidget> on State<T> {
   }
 }
 
-/// Wraps content with its own leftward-drag gesture — e.g. an
-/// [DismissDirection.endToStart] [Dismissible] list row — so the nearest
-/// ancestor [SwipeTabView] gives up its own page-swipe physics once such a
-/// drag is under way. Without this, both widgets compete for the same drag
-/// and the ancestor pager tends to win, making the wrapped content's own
-/// swipe gesture (e.g. swipe-to-delete) unresponsive in that direction.
+/// Wraps content with its own horizontal-drag gesture — e.g. a
+/// [Dismissible] list row — so the nearest ancestor [SwipeTabView] gives up
+/// its own page-swipe physics for the duration of a touch on this widget.
+/// Without this, both widgets compete for the same drag and the ancestor
+/// pager tends to win, making the wrapped content's own swipe gesture (e.g.
+/// swipe-to-delete) unresponsive.
 ///
-/// The hand-off only engages once the drag has moved a few pixels to the
-/// left (not on bare pointer-down, and not for a rightward drag): the
-/// ancestor pager already wins a plain drag against this content by
-/// default, so a rightward drag — e.g. paging back to the previous tab —
-/// needs no help and must be left alone, or it would be swallowed here too
-/// even though the wrapped [Dismissible] never acts on that direction.
+/// Registering must happen on the raw [PointerDownEvent] — before any
+/// movement, and applied synchronously rather than deferred to a later
+/// frame — because Flutter resolves which widget's drag recognizer wins a
+/// gesture arena at the *start* of the gesture (after a small movement
+/// threshold of its own). [SwipeTabView]'s [_ParentDragHandoff] mixin
+/// defers its parent-registration via `addPostFrameCallback`, which is
+/// correct for *that* use (registering during another widget's build/
+/// dispose, where a synchronous `setState` would be illegal) but is too
+/// late here: by the time a deferred registration — let alone one that
+/// first waits for a few pixels of leftward movement, as an earlier version
+/// of this widget did — takes effect, the ancestor pager's own recognizer
+/// has typically already claimed the arena for this pointer, and toggling
+/// its `physics` afterward can't retroactively hand back a gesture already
+/// in flight. Calling straight through to [_TabHandoff.onActiveChildDelta]
+/// on pointer-down is safe to do synchronously (it's a pointer callback,
+/// not a build), and reliably wins the race.
 ///
 /// Scoped to an actual pointer being down on this widget (not to how long it
 /// stays mounted): a [Dismissible] row inside a scrolling list stays mounted
@@ -114,46 +124,21 @@ class SwipeGestureBarrier extends StatefulWidget {
   State<SwipeGestureBarrier> createState() => _SwipeGestureBarrierState();
 }
 
-class _SwipeGestureBarrierState extends State<SwipeGestureBarrier>
-    with _ParentDragHandoff<SwipeGestureBarrier> {
-  static const _slop = 6.0;
-
+class _SwipeGestureBarrierState extends State<SwipeGestureBarrier> {
+  _TabHandoff? _parent;
   bool _held = false;
-  bool _resolved = false;
-  double _dx = 0;
 
-  void _hold() {
-    if (_held) return;
+  void _hold(PointerDownEvent _) {
+    _parent = _TabHandoff.read(context);
+    if (_parent == null || _held) return;
     _held = true;
-    _registerWithParent();
+    _parent!.onActiveChildDelta(1);
   }
 
-  void _release() {
+  void _release([PointerEvent? _]) {
     if (!_held) return;
     _held = false;
-    _unregisterFromParent();
-  }
-
-  void _reset() {
-    _resolved = false;
-    _dx = 0;
-    _release();
-  }
-
-  void _onMove(PointerMoveEvent event) {
-    if (_resolved) return;
-    _dx += event.delta.dx;
-    if (_dx <= -_slop) {
-      // Net leftward: the direction the wrapped Dismissible dismisses in —
-      // take over so it wins the gesture arena.
-      _resolved = true;
-      _hold();
-    } else if (_dx >= _slop) {
-      // Net rightward: not a direction the Dismissible acts on. Stay
-      // unresolved-but-idle so the ancestor pager keeps its own physics and
-      // wins the drag, as it already does by default.
-      _resolved = true;
-    }
+    _parent?.onActiveChildDelta(-1);
   }
 
   @override
@@ -166,10 +151,9 @@ class _SwipeGestureBarrierState extends State<SwipeGestureBarrier>
   Widget build(BuildContext context) {
     return Listener(
       behavior: HitTestBehavior.translucent,
-      onPointerDown: (_) => _reset(),
-      onPointerMove: _onMove,
-      onPointerUp: (_) => _reset(),
-      onPointerCancel: (_) => _reset(),
+      onPointerDown: _hold,
+      onPointerUp: _release,
+      onPointerCancel: _release,
       child: widget.child,
     );
   }
