@@ -72,7 +72,7 @@ void main() {
     },
   );
 
-  test('completed training is in history even without set logs', () async {
+  test('checking done records target sets so the day enters history', () async {
     final exercise = await addTestExercise(repo, name: 'Walkout');
     final plan = await repo.createPlan(
       name: 'Today',
@@ -97,17 +97,92 @@ void main() {
       ); // A plan alone is not completed training.
       await repo.setItemDone(item.id, true);
       expect(await events.moveNext(), isTrue);
-      expect(events.current.single.sets, isEmpty);
+      expect(events.current.single.sets, hasLength(3));
       expect(
         events.current.single.completedItems.single.exerciseName,
         'Walkout',
       );
       await repo.setItemDone(item.id, false);
+      // Unchecking clears the done flag but keeps the auto-filled sets, so
+      // the day still counts as history via set logs.
       expect(await events.moveNext(), isTrue);
-      expect(events.current, isEmpty);
+      expect(events.current.single.sets, hasLength(3));
+      expect(events.current.single.completedItems, isEmpty);
     } finally {
       await events.cancel();
     }
+  });
+
+  test('checking done fills completed sets up to the target', () async {
+    final squat = await addTestExercise(repo, name: 'Squat');
+    final plan = await repo.createPlan(
+      name: 'Leg day',
+      items: [
+        PlanDraftItem(
+          exerciseId: squat.id,
+          exerciseName: squat.name,
+          targetSets: 4,
+          targetReps: 8,
+        ),
+      ],
+    );
+    final day = CalendarDay.todayLocal();
+    await repo.applyPlanToDay(planId: plan, day: day);
+    final item = (await repo.daySnapshot(day)).items.single.item;
+
+    await repo.logSet(
+      day: day,
+      exerciseId: squat.id,
+      exerciseName: squat.name,
+      dayWorkoutItemId: item.id,
+      reps: 8,
+    );
+    var snap = await repo.daySnapshot(day);
+    expect(snap.items.single.completedSets, 1);
+    expect(snap.items.single.item.done, isFalse);
+
+    await repo.setItemDone(item.id, true);
+    snap = await repo.daySnapshot(day);
+    expect(snap.items.single.item.done, isTrue);
+    expect(snap.items.single.completedSets, 4);
+    expect(
+      snap.items.single.item.targetReps,
+      8,
+    );
+
+    await repo.setItemDone(item.id, false);
+    snap = await repo.daySnapshot(day);
+    expect(snap.items.single.item.done, isFalse);
+    expect(snap.items.single.completedSets, 4);
+  });
+
+  test('recent calendar history pads empty days within the window', () async {
+    final squat = await addTestExercise(repo, name: 'Squat');
+    final today = CalendarDay.todayLocal();
+    final threeDaysAgo = today.subtract(const Duration(days: 3));
+    await db
+        .into(db.workoutSetLogs)
+        .insert(
+          WorkoutSetLogsCompanion.insert(
+            date: threeDaysAgo,
+            exerciseId: squat.id,
+            exerciseName: squat.name,
+            setIndex: 1,
+            reps: const Value(5),
+          ),
+        );
+
+    final recent = await repo.recentCalendarHistory(limitDays: 14);
+    expect(recent, hasLength(14));
+    expect(recent.first.date, today);
+    expect(recent.first.hasActivity, isFalse);
+    expect(recent[3].date, threeDaysAgo);
+    expect(recent[3].hasActivity, isTrue);
+    expect(recent[3].sets, hasLength(1));
+
+    final all = await repo.recentHistory(limitDays: null);
+    expect(all, hasLength(1));
+    expect(all.single.date, threeDaysAgo);
   });
 
   test('fresh database has no pre-seeded exercises', () async {

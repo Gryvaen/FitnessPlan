@@ -237,10 +237,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get addExercise => '添加动作';
 
   @override
-  String get exerciseNoteLabel => '心得（可选）';
+  String get exerciseNoteLabel => '心得';
 
   @override
-  String get actualWeightLabel => '重量（可选）';
+  String get actualWeightLabel => '重量';
+
+  @override
+  String get optionalHint => '可选';
 
   @override
   String get reps => '次';
@@ -2287,6 +2290,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get allWorkouts => '全部训练';
+
+  @override
+  String get historyEmptyDay => '无';
 
   @override
   String get saveThisSet => '保存本组';

@@ -68,6 +68,8 @@ class WorkoutHistoryDay {
   final List<WorkoutSetLog> sets;
   final List<DayWorkoutItem> completedItems;
   final List<WorkoutHistoryPlanSummary> planSummaries;
+
+  bool get hasActivity => sets.isNotEmpty || completedItems.isNotEmpty;
 }
 
 /// Per-day-workout completion summary (one per [DayWorkout] on that day).
@@ -578,9 +580,50 @@ class WorkoutRepository {
     final day = await _dayForWorkoutItem(dayWorkoutItemId);
     if (day == null) return;
     CalendarDay.ensureEditableDay(day);
-    await (_db.update(_db.dayWorkoutItems)
-          ..where((t) => t.id.equals(dayWorkoutItemId)))
-        .write(DayWorkoutItemsCompanion(done: Value(done)));
+
+    if (!done) {
+      await (_db.update(_db.dayWorkoutItems)
+            ..where((t) => t.id.equals(dayWorkoutItemId)))
+          .write(const DayWorkoutItemsCompanion(done: Value(false)));
+      return;
+    }
+
+    await _db.transaction(() async {
+      final item = await (_db.select(
+        _db.dayWorkoutItems,
+      )..where((t) => t.id.equals(dayWorkoutItemId))).getSingleOrNull();
+      if (item == null) return;
+
+      final existing = await _countSetsForDayItem(dayWorkoutItemId);
+      if (existing < item.targetSets) {
+        final ex = await exerciseById(item.exerciseId);
+        final unit = ExerciseUnit.fromStorage(ex?.unit ?? 'reps');
+        final start = _dayStart(day);
+        for (var i = existing + 1; i <= item.targetSets; i++) {
+          await _db
+              .into(_db.workoutSetLogs)
+              .insert(
+                WorkoutSetLogsCompanion.insert(
+                  date: start,
+                  exerciseId: item.exerciseId,
+                  exerciseName: item.exerciseName,
+                  setIndex: i,
+                  reps: Value(
+                    unit == ExerciseUnit.reps ? item.targetReps : null,
+                  ),
+                  durationSec: Value(
+                    unit == ExerciseUnit.seconds ? item.targetReps : null,
+                  ),
+                  dayWorkoutItemId: Value(dayWorkoutItemId),
+                ),
+              );
+        }
+      }
+
+      await (_db.update(_db.dayWorkoutItems)
+            ..where((t) => t.id.equals(dayWorkoutItemId)))
+          .write(const DayWorkoutItemsCompanion(done: Value(true)));
+    });
   }
 
   /// Removes one day-workout item and its set logs; drops empty day row.
@@ -753,6 +796,21 @@ class WorkoutRepository {
       .watch()
       .asyncMap((_) => recentHistory(limitDays: limitDays));
 
+  /// Continuous local calendar days ending today (newest first).
+  /// Days without sets / completed items are empty placeholders.
+  Stream<List<WorkoutHistoryDay>> watchRecentCalendarHistory({
+    int limitDays = 14,
+  }) => _db
+      .customSelect(
+        'SELECT date FROM workout_set_logs UNION '
+        'SELECT day_workouts.date FROM day_workouts '
+        'JOIN day_workout_items ON day_workout_items.day_workout_id = day_workouts.id '
+        'WHERE day_workout_items.done = 1',
+        readsFrom: {_db.workoutSetLogs, _db.dayWorkouts, _db.dayWorkoutItems},
+      )
+      .watch()
+      .asyncMap((_) => recentCalendarHistory(limitDays: limitDays));
+
   /// [limitDays] caps how many active days to return (newest first).
   /// Pass `null` for the full history.
   Future<List<WorkoutHistoryDay>> recentHistory({int? limitDays = 14}) async {
@@ -807,6 +865,24 @@ class WorkoutRepository {
               ),
           ],
         ),
+    ];
+  }
+
+  Future<List<WorkoutHistoryDay>> recentCalendarHistory({
+    int limitDays = 14,
+  }) async {
+    final active = await recentHistory(limitDays: null);
+    final byDate = <DateTime, WorkoutHistoryDay>{
+      for (final day in active) day.date: day,
+    };
+    final today = CalendarDay.todayLocal();
+    return [
+      for (var i = 0; i < limitDays; i++)
+        byDate[CalendarDay.dayOnly(today.subtract(Duration(days: i)))] ??
+            WorkoutHistoryDay(
+              date: CalendarDay.dayOnly(today.subtract(Duration(days: i))),
+              sets: const [],
+            ),
     ];
   }
 

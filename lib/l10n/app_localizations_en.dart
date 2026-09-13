@@ -237,10 +237,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addExercise => 'Add exercise';
 
   @override
-  String get exerciseNoteLabel => 'Notes (optional)';
+  String get exerciseNoteLabel => 'Notes';
 
   @override
-  String get actualWeightLabel => 'Weight (optional)';
+  String get actualWeightLabel => 'Weight';
+
+  @override
+  String get optionalHint => 'Optional';
 
   @override
   String get reps => 'reps';
@@ -2333,6 +2336,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get allWorkouts => 'All workouts';
+
+  @override
+  String get historyEmptyDay => 'None';
 
   @override
   String get saveThisSet => 'Save';

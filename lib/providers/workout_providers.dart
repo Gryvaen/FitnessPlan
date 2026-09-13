@@ -22,7 +22,7 @@ final todayWorkoutProvider = StreamProvider<DayWorkoutSnapshot>((ref) {
 
 final workoutHistoryProvider =
     StreamProvider.autoDispose<List<WorkoutHistoryDay>>((ref) {
-      return ref.watch(workoutRepositoryProvider).watchRecentHistory();
+      return ref.watch(workoutRepositoryProvider).watchRecentCalendarHistory();
     });
 
 final allWorkoutHistoryProvider =

@@ -557,14 +557,20 @@ abstract class AppLocalizations {
   /// No description provided for @exerciseNoteLabel.
   ///
   /// In en, this message translates to:
-  /// **'Notes (optional)'**
+  /// **'Notes'**
   String get exerciseNoteLabel;
 
   /// No description provided for @actualWeightLabel.
   ///
   /// In en, this message translates to:
-  /// **'Weight (optional)'**
+  /// **'Weight'**
   String get actualWeightLabel;
+
+  /// No description provided for @optionalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get optionalHint;
 
   /// No description provided for @reps.
   ///
@@ -4106,6 +4112,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All workouts'**
   String get allWorkouts;
+
+  /// No description provided for @historyEmptyDay.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get historyEmptyDay;
 
   /// No description provided for @saveThisSet.
   ///

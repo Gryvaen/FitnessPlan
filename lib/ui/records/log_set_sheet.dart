@@ -270,7 +270,7 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
               items: _weightOptions,
               suffixText: _weightUnit.suffix,
               itemLabel: formatKg,
-              noneLabel: l10n.leaveBlank,
+              noneLabel: l10n.optionalHint,
               onChanged: (v) => setState(() => _displayWeight = v),
             ),
             const SizedBox(height: AppSpacing.section),
@@ -278,9 +278,10 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
             const SizedBox(height: AppSpacing.compact),
             TextField(
               controller: _noteCtrl,
-              minLines: 2,
+              minLines: 1,
               maxLines: 4,
               textInputAction: TextInputAction.done,
+              decoration: InputDecoration(hintText: l10n.optionalHint),
             ),
             const SizedBox(height: AppSpacing.section),
             FilledButton(

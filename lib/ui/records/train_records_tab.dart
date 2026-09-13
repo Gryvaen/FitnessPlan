@@ -40,6 +40,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   /// "plan · done/total" per plan worked that day, or a plain exercise
   /// count when the day has no linked plan (e.g. free-form logging).
   String _dayProgressLabel(WorkoutHistoryDay day, AppLocalizations l10n) {
+    if (!day.hasActivity) return l10n.historyEmptyDay;
     if (day.planSummaries.isEmpty) {
       return l10n.nExercises(_dayExerciseCount(day));
     }
@@ -110,10 +111,9 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                 leading: const Icon(Icons.fitness_center),
                 title: Text(AppDates.md(day.date, locale)),
                 trailing: Text(_dayProgressLabel(day, l10n)),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  showDayWorkoutDetails(context, day.date);
-                },
+                onTap: !day.hasActivity
+                    ? null
+                    : () => showDayWorkoutDetails(sheetContext, day.date),
               ),
           ],
         ),
@@ -470,8 +470,12 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
           loading: () => const SizedBox.shrink(),
           error: (e, _) => const SizedBox.shrink(),
           data: (days) {
-            if (days.isEmpty) return const SizedBox.shrink();
-            final latest = days.first;
+            // Recent: 14 calendar days (zeros allowed). All: only days with data.
+            final visible = all
+                ? [for (final d in days) if (d.steps > 0) d]
+                : days;
+            if (visible.isEmpty) return const SizedBox.shrink();
+            final latest = visible.first;
             return SportListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.directions_walk),
@@ -480,7 +484,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
               trailing: Text(l10n.nSteps(latest.steps)),
               onTap: () => _showStepHistory(
                 context,
-                days,
+                visible,
                 locale,
                 title: stepsTitle,
               ),
@@ -499,12 +503,15 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
             },
           ),
           data: (days) {
-            if (days.isEmpty) {
+            // Recent always has 14 calendar rows (empty days show「无」).
+            // All only lists days that actually have activity.
+            if (all && days.isEmpty) {
               return SportEmptyState(
                 title: l10n.noSetLogs,
                 icon: Icons.fitness_center,
               );
             }
+            if (days.isEmpty) return const SizedBox.shrink();
             final latest = days.first;
             return SportListTile(
               contentPadding: EdgeInsets.zero,
