@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/repositories/workout_repository.dart';
 import '../domain/calendar_day.dart';
 import '../domain/cultivation.dart';
+import '../domain/deficit.dart';
 import '../domain/models.dart';
 import 'diet_strategy_providers.dart';
 import 'meal_providers.dart';
@@ -38,14 +39,10 @@ final cultivationStepsTodayProvider = StreamProvider<int>((ref) {
 });
 
 /// 指定日期的饮食 kcal 贡献，仅当日记录餐次 ≥ 2 类（早/中/晚/加餐任意两类）
-/// 时计入；否则记为 0（未认真记录的日子不计）。由三部分叠加，可能为负：
+/// 时计入；否则记为 0（未认真记录的日子不计）。
 ///
-/// 1. 固定代谢缺口 = 当日 TDEE − 当日目标热量（与「记录」日历上显示的每日
-///    缺口算法一致）——只要当天处于减脂目标下，就按计划产生这部分缺口。
-/// 2. 额外结余 = 目标热量 − 实际摄入，仅当吃得比目标更少时为正（吃得比目标
-///    多、但仍未超过 TDEE 时不额外加分，也不扣分）。
-/// 3. 超标倒退 = 实际摄入 − TDEE，当实际摄入超过 TDEE（当日代谢总量）时，
-///    这部分作为倒退从修为中扣除。
+/// 统一公式：饮食贡献 = 当日 TDEE − 当日摄入（可与日历「实际缺口」在
+/// 均衡缺口策略下一致；未选策略时同样按 TDEE − 摄入计，超过 TDEE 为负）。
 final cultivationDietKcalForDayProvider = Provider.autoDispose
     .family<double, DateTime>((ref, day) {
       final meals = ref.watch(mealsForDayProvider(day)).value ?? const [];
@@ -57,12 +54,7 @@ final cultivationDietKcalForDayProvider = Provider.autoDispose
       if (target == null || tdee == null) return 0;
 
       final intake = meals.fold<double>(0, (sum, e) => sum + e.calories);
-      final plannedDeficit = tdee - target.calories;
-      final extraSurplus = target.calories - intake;
-      final bonus = extraSurplus > 0 ? extraSurplus : 0.0;
-      final overTdee = intake - tdee;
-      final penalty = overTdee > 0 ? overTdee : 0.0;
-      return plannedDeficit + bonus - penalty;
+      return cultivationDietContribution(tdee: tdee, intakeCalories: intake);
     });
 
 /// 今日饮食 kcal 贡献，恒为本地今天，独立于「记录」页当前浏览到的日期。
@@ -94,7 +86,7 @@ class CultivationDayRecord {
   /// breakdown so 修行记录 doubles as a training-plan history, not just steps.
   final DayWorkoutSnapshot workout;
 
-  /// 当日总贡献，可能为负（饮食超过 TDEE 的倒退超过了步数 + 代谢缺口）。
+  /// 当日总贡献，可能为负（饮食超过 TDEE 时倒退超过步数贡献）。
   double get totalKcal => stepsKcal + dietKcal;
 }
 

@@ -2241,6 +2241,18 @@ abstract class AppLocalizations {
   /// **'{day} actual deficit {kcal} kcal'**
   String actualDeficitForDay(String day, String kcal);
 
+  /// No description provided for @remainingCaloriesLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining {kcal} kcal'**
+  String remainingCaloriesLine(String kcal);
+
+  /// No description provided for @calendarRemainingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a day with meal logs to see remaining calories'**
+  String get calendarRemainingHint;
+
   /// No description provided for @legendColors.
   ///
   /// In en, this message translates to:
@@ -4617,6 +4629,78 @@ abstract class AppLocalizations {
   /// **'Realm guide'**
   String get cultivationSideRealmGuide;
 
+  /// No description provided for @cultivationSideSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get cultivationSideSettings;
+
+  /// No description provided for @cultivationGoalLockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{goal} cultivation not yet unlocked'**
+  String cultivationGoalLockedTitle(String goal);
+
+  /// No description provided for @cultivationGoalLockedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your current goal is \"{activeGoal}\" — {goal} cultivation only opens for users on the \"{goal}\" goal.'**
+  String cultivationGoalLockedBody(String goal, String activeGoal);
+
+  /// No description provided for @cultivationGoalLockedCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to settings'**
+  String get cultivationGoalLockedCta;
+
+  /// No description provided for @cultivationComingSoonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{goal} cultivation is being crafted'**
+  String cultivationComingSoonTitle(String goal);
+
+  /// No description provided for @cultivationComingSoonBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This path\'s own realm system is still being designed — check back soon.'**
+  String get cultivationComingSoonBody;
+
+  /// No description provided for @cultivationPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a realm'**
+  String get cultivationPickerTitle;
+
+  /// No description provided for @cultivationPickerActiveBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get cultivationPickerActiveBadge;
+
+  /// No description provided for @cultivationPickerLockedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked'**
+  String get cultivationPickerLockedBadge;
+
+  /// No description provided for @cultivationPickerTaglineMaintain.
+  ///
+  /// In en, this message translates to:
+  /// **'A calm mind, day after day'**
+  String get cultivationPickerTaglineMaintain;
+
+  /// No description provided for @cultivationPickerTaglineCut.
+  ///
+  /// In en, this message translates to:
+  /// **'Even a mortal\'s first step is cultivation'**
+  String get cultivationPickerTaglineCut;
+
+  /// No description provided for @cultivationPickerTaglineBulk.
+  ///
+  /// In en, this message translates to:
+  /// **'Forge the body, surpass the self'**
+  String get cultivationPickerTaglineBulk;
+
   /// No description provided for @myProfileTitle.
   ///
   /// In en, this message translates to:
@@ -4686,7 +4770,7 @@ abstract class AppLocalizations {
   /// No description provided for @realmGuideFootnoteBody.
   ///
   /// In en, this message translates to:
-  /// **'① Steps × 0.04 kcal/step; ② diet, counted only when at least 2 distinct meal types are logged that day (breakfast/lunch/dinner/snack) — your planned deficit (today\'s TDEE − target calories, same figure shown on the calendar) counts every such day, plus extra when you eat under target; but if your total intake for the day exceeds TDEE, the excess (intake − TDEE) is deducted as a setback.'**
+  /// **'① Steps × 0.04 kcal/step; ② diet, counted only when at least 2 distinct meal types are logged that day (breakfast/lunch/dinner/snack) — diet contribution = today\'s TDEE − today\'s intake (eating less yields a larger surplus; exceeding TDEE yields a negative setback).'**
   String get realmGuideFootnoteBody;
 
   /// No description provided for @realmGuideFootnoteNote.

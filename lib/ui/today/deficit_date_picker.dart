@@ -178,18 +178,28 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
 
     // The selected day's real (logged) deficit, shown up top; falls back to
     // the plain formula line until that day actually has a meal log.
+    // Fixed planned deficit only applies under 均衡缺口; otherwise the caption
+    // shows remaining calories (target − intake) without a "计划缺口" term.
     final selectedTarget = _targetsByDay[_selected];
     final selectedIntake = _caloriesByDay[_selected];
-    final selectedActual =
-        (selectedIntake != null &&
-            selectedTarget != null &&
-            !_selected.isAfter(today))
+    final dayPlanned =
+        selectedTarget?.fixedPlannedDeficit ??
+        (selectedTarget == null && widget.plannedDeficit > 0
+            ? widget.plannedDeficit
+            : null);
+    final hasLog =
+        selectedIntake != null &&
+        selectedTarget != null &&
+        !_selected.isAfter(today);
+    final selectedActual = !hasLog
+        ? null
+        : dayPlanned != null
         ? actualDailyDeficit(
-            plannedDeficit: selectedTarget.plannedDeficit ?? widget.plannedDeficit,
+            plannedDeficit: dayPlanned,
             targetCalories: selectedTarget.calories,
             intakeCalories: selectedIntake,
           )
-        : null;
+        : selectedTarget.calories - selectedIntake;
 
     return AlertDialog(
       titlePadding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
@@ -221,10 +231,11 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
             children: [
               Text(
                 selectedActual == null
-                    ? l10n.actualDeficitFormula(
-                        '${widget.plannedDeficit.round()}',
-                      )
-                    : l10n.actualDeficitForDay(
+                    ? (dayPlanned != null
+                          ? l10n.actualDeficitFormula('${dayPlanned.round()}')
+                          : l10n.calendarRemainingHint)
+                    : dayPlanned != null
+                    ? l10n.actualDeficitForDay(
                         AppDates.relativeDayTitle(
                           _selected,
                           today,
@@ -232,7 +243,8 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
                           locale,
                         ),
                         '${selectedActual.round()}',
-                      ),
+                      )
+                    : l10n.remainingCaloriesLine('${selectedActual.round()}'),
                 style: theme.textTheme.labelSmall,
                 textAlign: TextAlign.center,
               ),

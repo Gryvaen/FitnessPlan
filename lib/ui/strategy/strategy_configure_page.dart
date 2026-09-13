@@ -232,7 +232,12 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
     final today = CalendarDay.todayLocal();
 
     return AppChromeScaffold(
-      appBar: AppBar(title: Text(widget.kind.label(l10n))),
+      appBar: AppBar(
+        title: Text(widget.kind.label(l10n)),
+        // 策略配置是从 Me 进入的独立操作流，退出时直接回到 Me，
+        // 不再要求用户依次返回「策略选择」和「营养目标」页面。
+        leading: BackButton(onPressed: () => context.go('/profile')),
+      ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           AppSpacing.formPage,

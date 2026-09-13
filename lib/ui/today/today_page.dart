@@ -89,7 +89,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         : AppDates.ymd(day, locale);
     final sectionPrefix = isSelectedToday ? l10n.today : l10n.sectionThatDay;
 
-    final plannedDeficit = dayTarget?.plannedDeficit ?? plan.dailyDeficit;
+    final plannedDeficit = dayTarget?.fixedPlannedDeficit ?? 0;
     final strategyLabel = dayTarget == null
         ? null
         : targetChipLabel(dayTarget, profile, l10n);

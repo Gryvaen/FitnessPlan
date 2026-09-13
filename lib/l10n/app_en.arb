@@ -433,6 +433,15 @@
       }
     }
   },
+  "remainingCaloriesLine": "Remaining {kcal} kcal",
+  "@remainingCaloriesLine": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarRemainingHint": "Select a day with meal logs to see remaining calories",
   "legendColors": "Colors",
   "legendPastOk": "Past · met",
   "legendPastBad": "Past · missed",
@@ -2177,6 +2186,21 @@
   "cultivationRealmDivineTransformation": "Divine Transformation",
   "cultivationSideHistory": "History",
   "cultivationSideRealmGuide": "Realm guide",
+  "cultivationSideSettings": "Settings",
+  "cultivationGoalLockedTitle": "{goal} cultivation not yet unlocked",
+  "@cultivationGoalLockedTitle": {"placeholders": {"goal": {"type": "String"}}},
+  "cultivationGoalLockedBody": "Your current goal is \"{activeGoal}\" — {goal} cultivation only opens for users on the \"{goal}\" goal.",
+  "@cultivationGoalLockedBody": {"placeholders": {"goal": {"type": "String"}, "activeGoal": {"type": "String"}}},
+  "cultivationGoalLockedCta": "Go to settings",
+  "cultivationComingSoonTitle": "{goal} cultivation is being crafted",
+  "@cultivationComingSoonTitle": {"placeholders": {"goal": {"type": "String"}}},
+  "cultivationComingSoonBody": "This path's own realm system is still being designed — check back soon.",
+  "cultivationPickerTitle": "Choose a realm",
+  "cultivationPickerActiveBadge": "Active",
+  "cultivationPickerLockedBadge": "Locked",
+  "cultivationPickerTaglineMaintain": "A calm mind, day after day",
+  "cultivationPickerTaglineCut": "Even a mortal's first step is cultivation",
+  "cultivationPickerTaglineBulk": "Forge the body, surpass the self",
   "myProfileTitle": "My profile",
   "realmGuideTitle": "Realm system",
   "realmGuideIntro": "Every 7,700 kcal deficit ≈ 1 kg lost. Reach the cumulative weight-loss threshold shown for each realm to break through to the next — each realm is further divided into 9 layers.",
@@ -2192,7 +2216,7 @@
   "realmGuideTagLocked": "Locked",
   "realmGuideTagLockedMax": "Locked · Highest realm",
   "realmGuideFootnoteTitle": "kcal sources:",
-  "realmGuideFootnoteBody": "① Steps × 0.04 kcal/step; ② diet, counted only when at least 2 distinct meal types are logged that day (breakfast/lunch/dinner/snack) — your planned deficit (today's TDEE − target calories, same figure shown on the calendar) counts every such day, plus extra when you eat under target; but if your total intake for the day exceeds TDEE, the excess (intake − TDEE) is deducted as a setback.",
+  "realmGuideFootnoteBody": "① Steps × 0.04 kcal/step; ② diet, counted only when at least 2 distinct meal types are logged that day (breakfast/lunch/dinner/snack) — diet contribution = today's TDEE − today's intake (eating less yields a larger surplus; exceeding TDEE yields a negative setback).",
   "realmGuideFootnoteNote": "This feature is currently only available to users on the \"Cut\" goal.",
   "cultivationHistoryTitle": "Cultivation log",
   "cultivationHistoryEmpty": "No records yet",

@@ -92,6 +92,33 @@ void main() {
     );
   });
 
+  test('cultivationDietContribution = TDEE − intake', () {
+    expect(
+      cultivationDietContribution(tdee: 2400, intakeCalories: 2000),
+      400,
+    );
+    // Between target and TDEE still shrinks with intake (no buffered floor).
+    expect(
+      cultivationDietContribution(tdee: 2400, intakeCalories: 2200),
+      200,
+    );
+    expect(
+      cultivationDietContribution(tdee: 2400, intakeCalories: 2600),
+      -200,
+    );
+  });
+
+  test('with zero planned deficit, actualDailyDeficit is remaining only', () {
+    expect(
+      actualDailyDeficit(
+        plannedDeficit: 0,
+        targetCalories: 2000,
+        intakeCalories: 1800,
+      ),
+      200,
+    );
+  });
+
   late AppDatabase db;
   late MealRepository repo;
   late FoodItem rice;

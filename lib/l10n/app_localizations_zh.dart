@@ -1114,6 +1114,14 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String remainingCaloriesLine(String kcal) {
+    return '剩余热量 $kcal kcal';
+  }
+
+  @override
+  String get calendarRemainingHint => '选中有饮食记录的日期可看剩余热量';
+
+  @override
   String get legendColors => '颜色';
 
   @override
@@ -2582,6 +2590,48 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cultivationSideRealmGuide => '境界体系';
 
   @override
+  String get cultivationSideSettings => '境界设置';
+
+  @override
+  String cultivationGoalLockedTitle(String goal) {
+    return '「$goal」境界修行尚未开启';
+  }
+
+  @override
+  String cultivationGoalLockedBody(String goal, String activeGoal) {
+    return '当前你的目标是「$activeGoal」，「$goal」境界修行只对选择「$goal」目标的用户开放。';
+  }
+
+  @override
+  String get cultivationGoalLockedCta => '前往设置';
+
+  @override
+  String cultivationComingSoonTitle(String goal) {
+    return '「$goal」境界修行打磨中';
+  }
+
+  @override
+  String get cultivationComingSoonBody => '这条修行之路专属的境界体系还在设计中，敬请期待。';
+
+  @override
+  String get cultivationPickerTitle => '境界抉择';
+
+  @override
+  String get cultivationPickerActiveBadge => '已开启';
+
+  @override
+  String get cultivationPickerLockedBadge => '未开启';
+
+  @override
+  String get cultivationPickerTaglineMaintain => '心境如水，日日如常';
+
+  @override
+  String get cultivationPickerTaglineCut => '凡人起步，一步一修行';
+
+  @override
+  String get cultivationPickerTaglineBulk => '锻己筑体，突破自我';
+
+  @override
   String get myProfileTitle => '我的资料';
 
   @override
@@ -2625,7 +2675,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get realmGuideFootnoteBody =>
-      '① 步数 × 0.04 kcal/步；② 饮食，仅当日记录餐次 ≥ 2 次（早/中/晚/加餐任意两类）时计入——按当日 TDEE − 目标热量计入固定代谢缺口（与「记录」日历上显示的每日缺口算法一致），吃得比目标更少还有额外结余；但若当日饮食总热量超过 TDEE，超出部分（总热量 − TDEE）将作为修为倒退被扣除。';
+      '① 步数 × 0.04 kcal/步；② 饮食，仅当日记录餐次 ≥ 2 次（早/中/晚/加餐任意两类）时计入——饮食贡献 = 当日 TDEE − 当日摄入（吃得越少结余越多；超过 TDEE 则为负，记为倒退）。';
 
   @override
   String get realmGuideFootnoteNote => '该玩法当前仅对选择「减脂」策略的用户开放。';
