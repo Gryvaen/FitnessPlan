@@ -175,6 +175,9 @@ class WorkoutPlanItems extends Table {
   /// Target reps, or target seconds when the exercise unit is seconds.
   IntColumn get targetReps => integer()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+
+  /// Legacy plan-item annotation; new notes live on [DayWorkoutItems.note].
+  TextColumn get note => text().nullable()();
 }
 
 class DayWorkouts extends Table {
@@ -193,6 +196,15 @@ class DayWorkoutItems extends Table {
   IntColumn get targetReps => integer()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   BoolColumn get done => boolean().withDefault(const Constant(false))();
+
+  /// Optional actual weight (kg) used today for this exercise.
+  RealColumn get actualWeightKg => real().nullable()();
+
+  /// Display unit for [actualWeightKg]: `kg` or `lbs`. Null means kg.
+  TextColumn get actualWeightUnit => text().nullable()();
+
+  /// Optional per-exercise reflection ("心得") for this day.
+  TextColumn get note => text().nullable()();
 }
 
 class WorkoutSetLogs extends Table {

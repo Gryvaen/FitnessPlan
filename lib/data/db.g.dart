@@ -4787,6 +4787,15 @@ class $WorkoutPlanItemsTable extends WorkoutPlanItems
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -4796,6 +4805,7 @@ class $WorkoutPlanItemsTable extends WorkoutPlanItems
     targetSets,
     targetReps,
     sortOrder,
+    note,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4861,6 +4871,12 @@ class $WorkoutPlanItemsTable extends WorkoutPlanItems
         sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
       );
     }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
     return context;
   }
 
@@ -4898,6 +4914,10 @@ class $WorkoutPlanItemsTable extends WorkoutPlanItems
         DriftSqlType.int,
         data['${effectivePrefix}sort_order'],
       )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
     );
   }
 
@@ -4917,6 +4937,9 @@ class WorkoutPlanItem extends DataClass implements Insertable<WorkoutPlanItem> {
   /// Target reps, or target seconds when the exercise unit is seconds.
   final int targetReps;
   final int sortOrder;
+
+  /// Legacy plan-item annotation; new notes live on [DayWorkoutItems.note].
+  final String? note;
   const WorkoutPlanItem({
     required this.id,
     required this.planId,
@@ -4925,6 +4948,7 @@ class WorkoutPlanItem extends DataClass implements Insertable<WorkoutPlanItem> {
     required this.targetSets,
     required this.targetReps,
     required this.sortOrder,
+    this.note,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4936,6 +4960,9 @@ class WorkoutPlanItem extends DataClass implements Insertable<WorkoutPlanItem> {
     map['target_sets'] = Variable<int>(targetSets);
     map['target_reps'] = Variable<int>(targetReps);
     map['sort_order'] = Variable<int>(sortOrder);
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
     return map;
   }
 
@@ -4948,6 +4975,7 @@ class WorkoutPlanItem extends DataClass implements Insertable<WorkoutPlanItem> {
       targetSets: Value(targetSets),
       targetReps: Value(targetReps),
       sortOrder: Value(sortOrder),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
     );
   }
 
@@ -4964,6 +4992,7 @@ class WorkoutPlanItem extends DataClass implements Insertable<WorkoutPlanItem> {
       targetSets: serializer.fromJson<int>(json['targetSets']),
       targetReps: serializer.fromJson<int>(json['targetReps']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      note: serializer.fromJson<String?>(json['note']),
     );
   }
   @override
@@ -4977,6 +5006,7 @@ class WorkoutPlanItem extends DataClass implements Insertable<WorkoutPlanItem> {
       'targetSets': serializer.toJson<int>(targetSets),
       'targetReps': serializer.toJson<int>(targetReps),
       'sortOrder': serializer.toJson<int>(sortOrder),
+      'note': serializer.toJson<String?>(note),
     };
   }
 
@@ -4988,6 +5018,7 @@ class WorkoutPlanItem extends DataClass implements Insertable<WorkoutPlanItem> {
     int? targetSets,
     int? targetReps,
     int? sortOrder,
+    Value<String?> note = const Value.absent(),
   }) => WorkoutPlanItem(
     id: id ?? this.id,
     planId: planId ?? this.planId,
@@ -4996,6 +5027,7 @@ class WorkoutPlanItem extends DataClass implements Insertable<WorkoutPlanItem> {
     targetSets: targetSets ?? this.targetSets,
     targetReps: targetReps ?? this.targetReps,
     sortOrder: sortOrder ?? this.sortOrder,
+    note: note.present ? note.value : this.note,
   );
   WorkoutPlanItem copyWithCompanion(WorkoutPlanItemsCompanion data) {
     return WorkoutPlanItem(
@@ -5014,6 +5046,7 @@ class WorkoutPlanItem extends DataClass implements Insertable<WorkoutPlanItem> {
           ? data.targetReps.value
           : this.targetReps,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      note: data.note.present ? data.note.value : this.note,
     );
   }
 
@@ -5026,7 +5059,8 @@ class WorkoutPlanItem extends DataClass implements Insertable<WorkoutPlanItem> {
           ..write('exerciseName: $exerciseName, ')
           ..write('targetSets: $targetSets, ')
           ..write('targetReps: $targetReps, ')
-          ..write('sortOrder: $sortOrder')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('note: $note')
           ..write(')'))
         .toString();
   }
@@ -5040,6 +5074,7 @@ class WorkoutPlanItem extends DataClass implements Insertable<WorkoutPlanItem> {
     targetSets,
     targetReps,
     sortOrder,
+    note,
   );
   @override
   bool operator ==(Object other) =>
@@ -5051,7 +5086,8 @@ class WorkoutPlanItem extends DataClass implements Insertable<WorkoutPlanItem> {
           other.exerciseName == this.exerciseName &&
           other.targetSets == this.targetSets &&
           other.targetReps == this.targetReps &&
-          other.sortOrder == this.sortOrder);
+          other.sortOrder == this.sortOrder &&
+          other.note == this.note);
 }
 
 class WorkoutPlanItemsCompanion extends UpdateCompanion<WorkoutPlanItem> {
@@ -5062,6 +5098,7 @@ class WorkoutPlanItemsCompanion extends UpdateCompanion<WorkoutPlanItem> {
   final Value<int> targetSets;
   final Value<int> targetReps;
   final Value<int> sortOrder;
+  final Value<String?> note;
   const WorkoutPlanItemsCompanion({
     this.id = const Value.absent(),
     this.planId = const Value.absent(),
@@ -5070,6 +5107,7 @@ class WorkoutPlanItemsCompanion extends UpdateCompanion<WorkoutPlanItem> {
     this.targetSets = const Value.absent(),
     this.targetReps = const Value.absent(),
     this.sortOrder = const Value.absent(),
+    this.note = const Value.absent(),
   });
   WorkoutPlanItemsCompanion.insert({
     this.id = const Value.absent(),
@@ -5079,6 +5117,7 @@ class WorkoutPlanItemsCompanion extends UpdateCompanion<WorkoutPlanItem> {
     required int targetSets,
     required int targetReps,
     this.sortOrder = const Value.absent(),
+    this.note = const Value.absent(),
   }) : planId = Value(planId),
        exerciseId = Value(exerciseId),
        exerciseName = Value(exerciseName),
@@ -5092,6 +5131,7 @@ class WorkoutPlanItemsCompanion extends UpdateCompanion<WorkoutPlanItem> {
     Expression<int>? targetSets,
     Expression<int>? targetReps,
     Expression<int>? sortOrder,
+    Expression<String>? note,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -5101,6 +5141,7 @@ class WorkoutPlanItemsCompanion extends UpdateCompanion<WorkoutPlanItem> {
       if (targetSets != null) 'target_sets': targetSets,
       if (targetReps != null) 'target_reps': targetReps,
       if (sortOrder != null) 'sort_order': sortOrder,
+      if (note != null) 'note': note,
     });
   }
 
@@ -5112,6 +5153,7 @@ class WorkoutPlanItemsCompanion extends UpdateCompanion<WorkoutPlanItem> {
     Value<int>? targetSets,
     Value<int>? targetReps,
     Value<int>? sortOrder,
+    Value<String?>? note,
   }) {
     return WorkoutPlanItemsCompanion(
       id: id ?? this.id,
@@ -5121,6 +5163,7 @@ class WorkoutPlanItemsCompanion extends UpdateCompanion<WorkoutPlanItem> {
       targetSets: targetSets ?? this.targetSets,
       targetReps: targetReps ?? this.targetReps,
       sortOrder: sortOrder ?? this.sortOrder,
+      note: note ?? this.note,
     );
   }
 
@@ -5148,6 +5191,9 @@ class WorkoutPlanItemsCompanion extends UpdateCompanion<WorkoutPlanItem> {
     if (sortOrder.present) {
       map['sort_order'] = Variable<int>(sortOrder.value);
     }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
     return map;
   }
 
@@ -5160,7 +5206,8 @@ class WorkoutPlanItemsCompanion extends UpdateCompanion<WorkoutPlanItem> {
           ..write('exerciseName: $exerciseName, ')
           ..write('targetSets: $targetSets, ')
           ..write('targetReps: $targetReps, ')
-          ..write('sortOrder: $sortOrder')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('note: $note')
           ..write(')'))
         .toString();
   }
@@ -5563,6 +5610,37 @@ class $DayWorkoutItemsTable extends DayWorkoutItems
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _actualWeightKgMeta = const VerificationMeta(
+    'actualWeightKg',
+  );
+  @override
+  late final GeneratedColumn<double> actualWeightKg = GeneratedColumn<double>(
+    'actual_weight_kg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _actualWeightUnitMeta = const VerificationMeta(
+    'actualWeightUnit',
+  );
+  @override
+  late final GeneratedColumn<String> actualWeightUnit = GeneratedColumn<String>(
+    'actual_weight_unit',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -5573,6 +5651,9 @@ class $DayWorkoutItemsTable extends DayWorkoutItems
     targetReps,
     sortOrder,
     done,
+    actualWeightKg,
+    actualWeightUnit,
+    note,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5647,6 +5728,30 @@ class $DayWorkoutItemsTable extends DayWorkoutItems
         done.isAcceptableOrUnknown(data['done']!, _doneMeta),
       );
     }
+    if (data.containsKey('actual_weight_kg')) {
+      context.handle(
+        _actualWeightKgMeta,
+        actualWeightKg.isAcceptableOrUnknown(
+          data['actual_weight_kg']!,
+          _actualWeightKgMeta,
+        ),
+      );
+    }
+    if (data.containsKey('actual_weight_unit')) {
+      context.handle(
+        _actualWeightUnitMeta,
+        actualWeightUnit.isAcceptableOrUnknown(
+          data['actual_weight_unit']!,
+          _actualWeightUnitMeta,
+        ),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
     return context;
   }
 
@@ -5688,6 +5793,18 @@ class $DayWorkoutItemsTable extends DayWorkoutItems
         DriftSqlType.bool,
         data['${effectivePrefix}done'],
       )!,
+      actualWeightKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}actual_weight_kg'],
+      ),
+      actualWeightUnit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}actual_weight_unit'],
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
     );
   }
 
@@ -5706,6 +5823,15 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
   final int targetReps;
   final int sortOrder;
   final bool done;
+
+  /// Optional actual weight (kg) used today for this exercise.
+  final double? actualWeightKg;
+
+  /// Display unit for [actualWeightKg]: `kg` or `lbs`. Null means kg.
+  final String? actualWeightUnit;
+
+  /// Optional per-exercise reflection ("心得") for this day.
+  final String? note;
   const DayWorkoutItem({
     required this.id,
     required this.dayWorkoutId,
@@ -5715,6 +5841,9 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
     required this.targetReps,
     required this.sortOrder,
     required this.done,
+    this.actualWeightKg,
+    this.actualWeightUnit,
+    this.note,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5727,6 +5856,15 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
     map['target_reps'] = Variable<int>(targetReps);
     map['sort_order'] = Variable<int>(sortOrder);
     map['done'] = Variable<bool>(done);
+    if (!nullToAbsent || actualWeightKg != null) {
+      map['actual_weight_kg'] = Variable<double>(actualWeightKg);
+    }
+    if (!nullToAbsent || actualWeightUnit != null) {
+      map['actual_weight_unit'] = Variable<String>(actualWeightUnit);
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
     return map;
   }
 
@@ -5740,6 +5878,13 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
       targetReps: Value(targetReps),
       sortOrder: Value(sortOrder),
       done: Value(done),
+      actualWeightKg: actualWeightKg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(actualWeightKg),
+      actualWeightUnit: actualWeightUnit == null && nullToAbsent
+          ? const Value.absent()
+          : Value(actualWeightUnit),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
     );
   }
 
@@ -5757,6 +5902,9 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
       targetReps: serializer.fromJson<int>(json['targetReps']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       done: serializer.fromJson<bool>(json['done']),
+      actualWeightKg: serializer.fromJson<double?>(json['actualWeightKg']),
+      actualWeightUnit: serializer.fromJson<String?>(json['actualWeightUnit']),
+      note: serializer.fromJson<String?>(json['note']),
     );
   }
   @override
@@ -5771,6 +5919,9 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
       'targetReps': serializer.toJson<int>(targetReps),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'done': serializer.toJson<bool>(done),
+      'actualWeightKg': serializer.toJson<double?>(actualWeightKg),
+      'actualWeightUnit': serializer.toJson<String?>(actualWeightUnit),
+      'note': serializer.toJson<String?>(note),
     };
   }
 
@@ -5783,6 +5934,9 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
     int? targetReps,
     int? sortOrder,
     bool? done,
+    Value<double?> actualWeightKg = const Value.absent(),
+    Value<String?> actualWeightUnit = const Value.absent(),
+    Value<String?> note = const Value.absent(),
   }) => DayWorkoutItem(
     id: id ?? this.id,
     dayWorkoutId: dayWorkoutId ?? this.dayWorkoutId,
@@ -5792,6 +5946,13 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
     targetReps: targetReps ?? this.targetReps,
     sortOrder: sortOrder ?? this.sortOrder,
     done: done ?? this.done,
+    actualWeightKg: actualWeightKg.present
+        ? actualWeightKg.value
+        : this.actualWeightKg,
+    actualWeightUnit: actualWeightUnit.present
+        ? actualWeightUnit.value
+        : this.actualWeightUnit,
+    note: note.present ? note.value : this.note,
   );
   DayWorkoutItem copyWithCompanion(DayWorkoutItemsCompanion data) {
     return DayWorkoutItem(
@@ -5813,6 +5974,13 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
           : this.targetReps,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       done: data.done.present ? data.done.value : this.done,
+      actualWeightKg: data.actualWeightKg.present
+          ? data.actualWeightKg.value
+          : this.actualWeightKg,
+      actualWeightUnit: data.actualWeightUnit.present
+          ? data.actualWeightUnit.value
+          : this.actualWeightUnit,
+      note: data.note.present ? data.note.value : this.note,
     );
   }
 
@@ -5826,7 +5994,10 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
           ..write('targetSets: $targetSets, ')
           ..write('targetReps: $targetReps, ')
           ..write('sortOrder: $sortOrder, ')
-          ..write('done: $done')
+          ..write('done: $done, ')
+          ..write('actualWeightKg: $actualWeightKg, ')
+          ..write('actualWeightUnit: $actualWeightUnit, ')
+          ..write('note: $note')
           ..write(')'))
         .toString();
   }
@@ -5841,6 +6012,9 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
     targetReps,
     sortOrder,
     done,
+    actualWeightKg,
+    actualWeightUnit,
+    note,
   );
   @override
   bool operator ==(Object other) =>
@@ -5853,7 +6027,10 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
           other.targetSets == this.targetSets &&
           other.targetReps == this.targetReps &&
           other.sortOrder == this.sortOrder &&
-          other.done == this.done);
+          other.done == this.done &&
+          other.actualWeightKg == this.actualWeightKg &&
+          other.actualWeightUnit == this.actualWeightUnit &&
+          other.note == this.note);
 }
 
 class DayWorkoutItemsCompanion extends UpdateCompanion<DayWorkoutItem> {
@@ -5865,6 +6042,9 @@ class DayWorkoutItemsCompanion extends UpdateCompanion<DayWorkoutItem> {
   final Value<int> targetReps;
   final Value<int> sortOrder;
   final Value<bool> done;
+  final Value<double?> actualWeightKg;
+  final Value<String?> actualWeightUnit;
+  final Value<String?> note;
   const DayWorkoutItemsCompanion({
     this.id = const Value.absent(),
     this.dayWorkoutId = const Value.absent(),
@@ -5874,6 +6054,9 @@ class DayWorkoutItemsCompanion extends UpdateCompanion<DayWorkoutItem> {
     this.targetReps = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.done = const Value.absent(),
+    this.actualWeightKg = const Value.absent(),
+    this.actualWeightUnit = const Value.absent(),
+    this.note = const Value.absent(),
   });
   DayWorkoutItemsCompanion.insert({
     this.id = const Value.absent(),
@@ -5884,6 +6067,9 @@ class DayWorkoutItemsCompanion extends UpdateCompanion<DayWorkoutItem> {
     required int targetReps,
     this.sortOrder = const Value.absent(),
     this.done = const Value.absent(),
+    this.actualWeightKg = const Value.absent(),
+    this.actualWeightUnit = const Value.absent(),
+    this.note = const Value.absent(),
   }) : dayWorkoutId = Value(dayWorkoutId),
        exerciseId = Value(exerciseId),
        exerciseName = Value(exerciseName),
@@ -5898,6 +6084,9 @@ class DayWorkoutItemsCompanion extends UpdateCompanion<DayWorkoutItem> {
     Expression<int>? targetReps,
     Expression<int>? sortOrder,
     Expression<bool>? done,
+    Expression<double>? actualWeightKg,
+    Expression<String>? actualWeightUnit,
+    Expression<String>? note,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -5908,6 +6097,9 @@ class DayWorkoutItemsCompanion extends UpdateCompanion<DayWorkoutItem> {
       if (targetReps != null) 'target_reps': targetReps,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (done != null) 'done': done,
+      if (actualWeightKg != null) 'actual_weight_kg': actualWeightKg,
+      if (actualWeightUnit != null) 'actual_weight_unit': actualWeightUnit,
+      if (note != null) 'note': note,
     });
   }
 
@@ -5920,6 +6112,9 @@ class DayWorkoutItemsCompanion extends UpdateCompanion<DayWorkoutItem> {
     Value<int>? targetReps,
     Value<int>? sortOrder,
     Value<bool>? done,
+    Value<double?>? actualWeightKg,
+    Value<String?>? actualWeightUnit,
+    Value<String?>? note,
   }) {
     return DayWorkoutItemsCompanion(
       id: id ?? this.id,
@@ -5930,6 +6125,9 @@ class DayWorkoutItemsCompanion extends UpdateCompanion<DayWorkoutItem> {
       targetReps: targetReps ?? this.targetReps,
       sortOrder: sortOrder ?? this.sortOrder,
       done: done ?? this.done,
+      actualWeightKg: actualWeightKg ?? this.actualWeightKg,
+      actualWeightUnit: actualWeightUnit ?? this.actualWeightUnit,
+      note: note ?? this.note,
     );
   }
 
@@ -5960,6 +6158,15 @@ class DayWorkoutItemsCompanion extends UpdateCompanion<DayWorkoutItem> {
     if (done.present) {
       map['done'] = Variable<bool>(done.value);
     }
+    if (actualWeightKg.present) {
+      map['actual_weight_kg'] = Variable<double>(actualWeightKg.value);
+    }
+    if (actualWeightUnit.present) {
+      map['actual_weight_unit'] = Variable<String>(actualWeightUnit.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
     return map;
   }
 
@@ -5973,7 +6180,10 @@ class DayWorkoutItemsCompanion extends UpdateCompanion<DayWorkoutItem> {
           ..write('targetSets: $targetSets, ')
           ..write('targetReps: $targetReps, ')
           ..write('sortOrder: $sortOrder, ')
-          ..write('done: $done')
+          ..write('done: $done, ')
+          ..write('actualWeightKg: $actualWeightKg, ')
+          ..write('actualWeightUnit: $actualWeightUnit, ')
+          ..write('note: $note')
           ..write(')'))
         .toString();
   }
@@ -11661,6 +11871,7 @@ typedef $$WorkoutPlanItemsTableCreateCompanionBuilder =
       required int targetSets,
       required int targetReps,
       Value<int> sortOrder,
+      Value<String?> note,
     });
 typedef $$WorkoutPlanItemsTableUpdateCompanionBuilder =
     WorkoutPlanItemsCompanion Function({
@@ -11671,6 +11882,7 @@ typedef $$WorkoutPlanItemsTableUpdateCompanionBuilder =
       Value<int> targetSets,
       Value<int> targetReps,
       Value<int> sortOrder,
+      Value<String?> note,
     });
 
 class $$WorkoutPlanItemsTableFilterComposer
@@ -11714,6 +11926,11 @@ class $$WorkoutPlanItemsTableFilterComposer
 
   ColumnFilters<int> get sortOrder => $composableBuilder(
     column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -11761,6 +11978,11 @@ class $$WorkoutPlanItemsTableOrderingComposer
     column: $table.sortOrder,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$WorkoutPlanItemsTableAnnotationComposer
@@ -11800,6 +12022,9 @@ class $$WorkoutPlanItemsTableAnnotationComposer
 
   GeneratedColumn<int> get sortOrder =>
       $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
 }
 
 class $$WorkoutPlanItemsTableTableManager
@@ -11846,6 +12071,7 @@ class $$WorkoutPlanItemsTableTableManager
                 Value<int> targetSets = const Value.absent(),
                 Value<int> targetReps = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
+                Value<String?> note = const Value.absent(),
               }) => WorkoutPlanItemsCompanion(
                 id: id,
                 planId: planId,
@@ -11854,6 +12080,7 @@ class $$WorkoutPlanItemsTableTableManager
                 targetSets: targetSets,
                 targetReps: targetReps,
                 sortOrder: sortOrder,
+                note: note,
               ),
           createCompanionCallback:
               ({
@@ -11864,6 +12091,7 @@ class $$WorkoutPlanItemsTableTableManager
                 required int targetSets,
                 required int targetReps,
                 Value<int> sortOrder = const Value.absent(),
+                Value<String?> note = const Value.absent(),
               }) => WorkoutPlanItemsCompanion.insert(
                 id: id,
                 planId: planId,
@@ -11872,6 +12100,7 @@ class $$WorkoutPlanItemsTableTableManager
                 targetSets: targetSets,
                 targetReps: targetReps,
                 sortOrder: sortOrder,
+                note: note,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -12083,6 +12312,9 @@ typedef $$DayWorkoutItemsTableCreateCompanionBuilder =
       required int targetReps,
       Value<int> sortOrder,
       Value<bool> done,
+      Value<double?> actualWeightKg,
+      Value<String?> actualWeightUnit,
+      Value<String?> note,
     });
 typedef $$DayWorkoutItemsTableUpdateCompanionBuilder =
     DayWorkoutItemsCompanion Function({
@@ -12094,6 +12326,9 @@ typedef $$DayWorkoutItemsTableUpdateCompanionBuilder =
       Value<int> targetReps,
       Value<int> sortOrder,
       Value<bool> done,
+      Value<double?> actualWeightKg,
+      Value<String?> actualWeightUnit,
+      Value<String?> note,
     });
 
 class $$DayWorkoutItemsTableFilterComposer
@@ -12142,6 +12377,21 @@ class $$DayWorkoutItemsTableFilterComposer
 
   ColumnFilters<bool> get done => $composableBuilder(
     column: $table.done,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get actualWeightKg => $composableBuilder(
+    column: $table.actualWeightKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get actualWeightUnit => $composableBuilder(
+    column: $table.actualWeightUnit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -12194,6 +12444,21 @@ class $$DayWorkoutItemsTableOrderingComposer
     column: $table.done,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get actualWeightKg => $composableBuilder(
+    column: $table.actualWeightKg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get actualWeightUnit => $composableBuilder(
+    column: $table.actualWeightUnit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DayWorkoutItemsTableAnnotationComposer
@@ -12238,6 +12503,19 @@ class $$DayWorkoutItemsTableAnnotationComposer
 
   GeneratedColumn<bool> get done =>
       $composableBuilder(column: $table.done, builder: (column) => column);
+
+  GeneratedColumn<double> get actualWeightKg => $composableBuilder(
+    column: $table.actualWeightKg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get actualWeightUnit => $composableBuilder(
+    column: $table.actualWeightUnit,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
 }
 
 class $$DayWorkoutItemsTableTableManager
@@ -12285,6 +12563,9 @@ class $$DayWorkoutItemsTableTableManager
                 Value<int> targetReps = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<bool> done = const Value.absent(),
+                Value<double?> actualWeightKg = const Value.absent(),
+                Value<String?> actualWeightUnit = const Value.absent(),
+                Value<String?> note = const Value.absent(),
               }) => DayWorkoutItemsCompanion(
                 id: id,
                 dayWorkoutId: dayWorkoutId,
@@ -12294,6 +12575,9 @@ class $$DayWorkoutItemsTableTableManager
                 targetReps: targetReps,
                 sortOrder: sortOrder,
                 done: done,
+                actualWeightKg: actualWeightKg,
+                actualWeightUnit: actualWeightUnit,
+                note: note,
               ),
           createCompanionCallback:
               ({
@@ -12305,6 +12589,9 @@ class $$DayWorkoutItemsTableTableManager
                 required int targetReps,
                 Value<int> sortOrder = const Value.absent(),
                 Value<bool> done = const Value.absent(),
+                Value<double?> actualWeightKg = const Value.absent(),
+                Value<String?> actualWeightUnit = const Value.absent(),
+                Value<String?> note = const Value.absent(),
               }) => DayWorkoutItemsCompanion.insert(
                 id: id,
                 dayWorkoutId: dayWorkoutId,
@@ -12314,6 +12601,9 @@ class $$DayWorkoutItemsTableTableManager
                 targetReps: targetReps,
                 sortOrder: sortOrder,
                 done: done,
+                actualWeightKg: actualWeightKg,
+                actualWeightUnit: actualWeightUnit,
+                note: note,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

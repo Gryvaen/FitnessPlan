@@ -150,12 +150,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get goal => '目标';
 
   @override
-  String get weeklyLossTarget => '每周目标降重';
-
-  @override
-  String get weeklyLossHint => '推荐 0.3–0.8 kg/周';
-
-  @override
   String get name => '名称';
 
   @override
@@ -241,6 +235,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get addExercise => '添加动作';
+
+  @override
+  String get exerciseNoteLabel => '心得（可选）';
+
+  @override
+  String get actualWeightLabel => '重量（可选）';
 
   @override
   String get reps => '次';
@@ -1001,6 +1001,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get notificationPermissionHint => '允许发送通知，以确保提醒正常送达。';
 
   @override
+  String get reminderRestrictionsSummary => '部分提醒可能被手机限制，点按查看';
+
+  @override
+  String get reminderRestrictionsSheetTitle => '提醒权限';
+
+  @override
   String get reminderOemHintTitle => '你的手机可能会限制提醒';
 
   @override
@@ -1012,6 +1018,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get reminderOemHintAutostartButton => '自启动设置';
+
+  @override
+  String get stepsOemHintBody =>
+      '部分手机品牌会限制后台运行，导致应用退出后步数停止统计。建议关闭本应用的电池优化，以保持后台记录。';
 
   @override
   String get customDuration => '自定义（0:30–10:00）';
@@ -1593,6 +1603,16 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String tempEstimate80(String kcal) {
     return '临时估算：TDEE × 80% = $kcal kcal';
+  }
+
+  @override
+  String cutDefaultsToTdeeLine(String kcal) {
+    return '未设置减脂策略，按 TDEE 计算：$kcal kcal';
+  }
+
+  @override
+  String kcalPerKgFatFact(String kcalPerKg) {
+    return '$kcalPerKg kcal ≈ 1 kg 脂肪。';
   }
 
   @override
@@ -2247,6 +2267,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String planProgress(String planName, int done, int total) {
+    return '$planName · $done/$total';
+  }
+
+  @override
   String get viewWorkoutHistory => '查看训练历史';
 
   @override
@@ -2256,6 +2281,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get recentSteps => '最近步数';
+
+  @override
+  String get allSteps => '全部步数';
+
+  @override
+  String get allWorkouts => '全部训练';
 
   @override
   String get saveThisSet => '保存本组';
@@ -2324,10 +2355,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileFieldGoalHint => '决定热量盈余或缺口，以及蛋白质目标。';
 
   @override
-  String get profileFieldTargetWeightHint => '减脂计划的终点，用于估算大约需要几周。';
-
-  @override
-  String get profileFieldWeeklyChangeHint => '建议每周 0.2–0.5 kg；过快容易掉肌肉。';
+  String get profileFieldTargetWeightHint => '减脂计划的终点。';
 
   @override
   String get profileFieldWaterHint => '首页水杯要注满的目标水量。';

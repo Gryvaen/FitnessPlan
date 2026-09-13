@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 19;
+  int get schemaVersion => 22;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -171,6 +171,24 @@ CREATE TABLE day_workouts_new (
       }
       if (from < 19) {
         await m.createTable(hiddenRecentFoods);
+      }
+      if (from < 20) {
+        await _addColumnIfMissing(m, workoutPlanItems, workoutPlanItems.note);
+        await _addColumnIfMissing(
+          m,
+          dayWorkoutItems,
+          dayWorkoutItems.actualWeightKg,
+        );
+      }
+      if (from < 21) {
+        await _addColumnIfMissing(m, dayWorkoutItems, dayWorkoutItems.note);
+      }
+      if (from < 22) {
+        await _addColumnIfMissing(
+          m,
+          dayWorkoutItems,
+          dayWorkoutItems.actualWeightUnit,
+        );
       }
     },
   );

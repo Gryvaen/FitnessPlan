@@ -87,7 +87,6 @@ class CalorieCalculator {
   static const maxDailyDeficit = 1000.0;
   static const minWeeklyLoss = 0.3;
   static const maxWeeklyLoss = 0.8;
-  static const defaultWeeklyLoss = 0.5;
   static const maxCalorieAdjustment = 300;
 
   double bmr({
@@ -177,14 +176,20 @@ class CalorieCalculator {
             effectiveTarget < weightKg) {
           requestedWeekly = (weightKg - effectiveTarget) / goalWeeks;
         }
-        requestedWeekly ??= defaultWeeklyLoss;
-
         final validCut = effectiveTarget != null && effectiveTarget < weightKg;
         if (!validCut) {
           missingCutInputs = true;
           eat = tdeeValue * 0.8;
           dailyDeficit = tdeeValue - eat;
           notes.add(const CalorieNote(CalorieNoteId.missingTargetWeight));
+        } else if (requestedWeekly == null) {
+          // No explicit/derivable weekly-loss rate — the profile no longer
+          // asks for one, so default to TDEE like `maintain`. Fat-loss
+          // deficits now come solely from an active diet-strategy plan, not
+          // the profile goal.
+          kgToLose = weightKg - effectiveTarget;
+          eat = tdeeValue;
+          dailyDeficit = 0;
         } else {
           final lose = weightKg - effectiveTarget;
           kgToLose = lose;

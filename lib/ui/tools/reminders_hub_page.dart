@@ -138,6 +138,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
     final theme = Theme.of(context);
     final settings = ref.watch(remindersProvider);
     final granted = _granted ?? true;
+    final hasIssue = !granted || !_exact || !_fullScreen || _showOemHint;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.reminders)),
@@ -149,47 +150,37 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
           listBottomInset(context, hasFab: false),
         ),
         children: [
-          if (!granted)
-            SportListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                Icons.notifications_off_outlined,
-                color: theme.colorScheme.error,
+          if (hasIssue)
+            InkWell(
+              borderRadius: BorderRadius.circular(AppRadius.card),
+              onTap: () => _showRestrictionDetails(granted: granted),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        l10n.reminderRestrictionsSummary,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right,
+                      size: 16,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
               ),
-              title: Text(l10n.notificationPermissionRow),
-              subtitle: Text(
-                l10n.notificationPermissionHint,
-                style: theme.textTheme.bodySmall,
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () async {
-                await ReminderNotifications.requestPermissions();
-                await _refreshPermission();
-              },
             ),
-          if (!_exact || !_fullScreen)
-            SportListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.alarm),
-              title: Text(l10n.alarmAccessTitle),
-              subtitle: Text(
-                !_exact ? l10n.exactAlarmMissing : l10n.fullScreenAlarmMissing,
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () async {
-                await ReminderNotifications.requestPermissions();
-                await _refreshPermission();
-              },
-            ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Text(
-              l10n.alarmBehaviorHint,
-              style: theme.textTheme.bodySmall,
-            ),
-          ),
-          if (_showOemHint)
-            _OemReliabilityHint(ignoringBatteryOpt: _ignoringBatteryOpt),
           for (final kind in ReminderKind.values)
             _ReminderTile(
               icon: _icon(kind),
@@ -202,7 +193,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
               onSetAlertMode: (m) => _setAlertMode(kind, m),
               onPickSound: () => _pickSound(kind),
             ),
-          if (granted) ...[
+          if (!hasIssue) ...[
             const SizedBox(height: AppSpacing.section),
             Row(
               children: [
@@ -232,6 +223,77 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
     minute: kind.defaultTime.minute,
     weekdays: const {1, 2, 3, 4, 5, 6, 7},
   );
+
+  void _showRestrictionDetails({required bool granted}) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.formPage,
+            0,
+            AppSpacing.formPage,
+            AppSpacing.section,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.reminderRestrictionsSheetTitle,
+                style: theme.textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              if (!granted)
+                SportListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.notifications_off_outlined),
+                  title: Text(l10n.notificationPermissionRow),
+                  subtitle: Text(l10n.notificationPermissionHint),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    await ReminderNotifications.requestPermissions();
+                    await _refreshPermission();
+                  },
+                ),
+              if (!_exact || !_fullScreen)
+                SportListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.alarm),
+                  title: Text(l10n.alarmAccessTitle),
+                  subtitle: Text(
+                    !_exact
+                        ? l10n.exactAlarmMissing
+                        : l10n.fullScreenAlarmMissing,
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    await ReminderNotifications.requestPermissions();
+                    await _refreshPermission();
+                  },
+                ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  l10n.alarmBehaviorHint,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              if (_showOemHint)
+                _OemReliabilityHint(ignoringBatteryOpt: _ignoringBatteryOpt),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _ReminderTile extends StatelessWidget {

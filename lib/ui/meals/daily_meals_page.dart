@@ -102,6 +102,7 @@ class DailyMealsPage extends ConsumerWidget {
               const SizedBox(height: 4),
               for (final type in MealType.values)
                 _MealTypeSection(
+                  day: day,
                   type: type,
                   entries: meals
                       .where((m) => m.mealType == type.name)
@@ -182,22 +183,115 @@ class _RecordStatusRow extends ConsumerWidget {
   }
 }
 
-class _MealTypeSection extends StatelessWidget {
+class _MealTypeSection extends ConsumerWidget {
   const _MealTypeSection({
+    required this.day,
     required this.type,
     required this.entries,
     required this.editable,
   });
 
+  final DateTime day;
   final MealType type;
   final List<MealEntry> entries;
   final bool editable;
 
+  Future<void> _copyYesterday(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
+    final from = day.subtract(const Duration(days: 1));
+    if (entries.isNotEmpty) {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l10n.copyYesterday),
+          content: Text(l10n.copyYesterdayConfirm),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l10n.append),
+            ),
+          ],
+        ),
+      );
+      if (ok != true) return;
+    }
+    if (!context.mounted) return;
+    final result = await ref
+        .read(mealRepositoryProvider)
+        .copyDay(from: from, to: day, mealType: type);
+    if (!context.mounted) return;
+    final skip = result.skippedMissingFood > 0
+        ? l10n.skippedItems(result.skippedMissingFood)
+        : '';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          result.copied == 0 && result.skippedMissingFood == 0
+              ? l10n.yesterdayNoLogs
+              : l10n.copiedItems(result.copied, skip),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _saveAsPreset(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
+    if (entries.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.noLogsToSave)));
+      return;
+    }
+    final nameCtrl = TextEditingController(text: type.label(l10n));
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.saveAsPreset),
+        content: TextField(
+          controller: nameCtrl,
+          decoration: InputDecoration(labelText: l10n.name),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.save),
+          ),
+        ],
+      ),
+    );
+    final presetName = nameCtrl.text;
+    // Defer dispose until after the dialog route finishes unmounting.
+    WidgetsBinding.instance.addPostFrameCallback((_) => nameCtrl.dispose());
+    if (ok != true) return;
+    try {
+      await ref
+          .read(mealPresetRepositoryProvider)
+          .createFromEntries(name: presetName, entries: entries);
+      ref.invalidate(mealPresetsProvider);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.presetSaved)));
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final kcal = entries.fold<double>(0, (s, m) => s + m.calories);
+    final showMenu = editable || entries.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,6 +308,27 @@ class _MealTypeSection extends StatelessWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
+            if (showMenu)
+              PopupMenuButton<String>(
+                tooltip: l10n.more,
+                padding: EdgeInsets.zero,
+                icon: Icon(
+                  Icons.more_horiz,
+                  size: 18,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                onSelected: (value) => value == 'copy'
+                    ? _copyYesterday(context, ref)
+                    : _saveAsPreset(context, ref),
+                itemBuilder: (context) => [
+                  if (editable)
+                    PopupMenuItem(
+                      value: 'copy',
+                      child: Text(l10n.copyYesterday),
+                    ),
+                  PopupMenuItem(value: 'preset', child: Text(l10n.saveAsPreset)),
+                ],
+              ),
           ],
         ),
         if (entries.isEmpty)

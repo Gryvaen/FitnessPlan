@@ -380,18 +380,6 @@ abstract class AppLocalizations {
   /// **'Goal'**
   String get goal;
 
-  /// No description provided for @weeklyLossTarget.
-  ///
-  /// In en, this message translates to:
-  /// **'Weekly loss target'**
-  String get weeklyLossTarget;
-
-  /// No description provided for @weeklyLossHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Recommended 0.3–0.8 kg/week'**
-  String get weeklyLossHint;
-
   /// No description provided for @name.
   ///
   /// In en, this message translates to:
@@ -565,6 +553,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add exercise'**
   String get addExercise;
+
+  /// No description provided for @exerciseNoteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes (optional)'**
+  String get exerciseNoteLabel;
+
+  /// No description provided for @actualWeightLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight (optional)'**
+  String get actualWeightLabel;
 
   /// No description provided for @reps.
   ///
@@ -2031,6 +2031,18 @@ abstract class AppLocalizations {
   /// **'Allow notifications so reminders are delivered.'**
   String get notificationPermissionHint;
 
+  /// No description provided for @reminderRestrictionsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Some reminders may be restricted by your phone — tap to review'**
+  String get reminderRestrictionsSummary;
+
+  /// No description provided for @reminderRestrictionsSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder permissions'**
+  String get reminderRestrictionsSheetTitle;
+
   /// No description provided for @reminderOemHintTitle.
   ///
   /// In en, this message translates to:
@@ -2054,6 +2066,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Auto-start settings'**
   String get reminderOemHintAutostartButton;
+
+  /// No description provided for @stepsOemHintBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Some phone brands restrict background apps, which can stop step counting once the app is closed. Disabling battery optimization for this app helps it keep counting.'**
+  String get stepsOemHintBody;
 
   /// No description provided for @customDuration.
   ///
@@ -2942,6 +2960,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Temp estimate: TDEE × 80% = {kcal} kcal'**
   String tempEstimate80(String kcal);
+
+  /// No description provided for @cutDefaultsToTdeeLine.
+  ///
+  /// In en, this message translates to:
+  /// **'No fat-loss strategy set — eating at TDEE: {kcal} kcal'**
+  String cutDefaultsToTdeeLine(String kcal);
+
+  /// No description provided for @kcalPerKgFatFact.
+  ///
+  /// In en, this message translates to:
+  /// **'{kcalPerKg} kcal ≈ 1 kg of fat.'**
+  String kcalPerKgFatFact(String kcalPerKg);
 
   /// No description provided for @workoutProgressHint.
   ///
@@ -4041,6 +4071,12 @@ abstract class AppLocalizations {
   /// **'{exercises} exercises · {sets} sets'**
   String planSummary(int exercises, int sets);
 
+  /// No description provided for @planProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{planName} · {done}/{total}'**
+  String planProgress(String planName, int done, int total);
+
   /// No description provided for @viewWorkoutHistory.
   ///
   /// In en, this message translates to:
@@ -4058,6 +4094,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recent steps'**
   String get recentSteps;
+
+  /// No description provided for @allSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'All steps'**
+  String get allSteps;
+
+  /// No description provided for @allWorkouts.
+  ///
+  /// In en, this message translates to:
+  /// **'All workouts'**
+  String get allWorkouts;
 
   /// No description provided for @saveThisSet.
   ///
@@ -4194,14 +4242,8 @@ abstract class AppLocalizations {
   /// No description provided for @profileFieldTargetWeightHint.
   ///
   /// In en, this message translates to:
-  /// **'The end point of the cut; used to estimate how many weeks it takes.'**
+  /// **'The end point of the cut.'**
   String get profileFieldTargetWeightHint;
-
-  /// No description provided for @profileFieldWeeklyChangeHint.
-  ///
-  /// In en, this message translates to:
-  /// **'0.2–0.5 kg per week is sustainable; faster tends to cost muscle.'**
-  String get profileFieldWeeklyChangeHint;
 
   /// No description provided for @profileFieldWaterHint.
   ///

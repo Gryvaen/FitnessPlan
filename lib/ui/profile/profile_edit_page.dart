@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../domain/calorie_calculator.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
@@ -25,7 +24,6 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   late int _heightCm;
   late double _weightKg;
   late double _targetWeightKg;
-  late double _weeklyLossKg;
   int? _waterGoalMl;
   bool _ready = false;
   bool _saving = false;
@@ -54,10 +52,6 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
             ? FormOptions.weightsKg(min: 30, max: 40)
             : targetOpts,
         p.targetWeightKg ?? fallbackTarget,
-      );
-      _weeklyLossKg = FormOptions.snapDouble(
-        FormOptions.weeklyLossKg,
-        p.weeklyLossKg ?? CalorieCalculator.defaultWeeklyLoss,
       );
       final water = ref.read(waterRepositoryProvider).getGoalMlOrNull();
       _waterGoalMl = water == null
@@ -125,7 +119,6 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
             activity: _activity,
             goal: _goal,
             targetWeightKg: _goal == FitnessGoal.cut ? target : null,
-            weeklyLossKg: _goal == FitnessGoal.cut ? _weeklyLossKg : null,
           );
       if (_waterGoalMl == null) {
         await ref.read(waterGoalProvider.notifier).clearGoal();
@@ -159,13 +152,6 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     }
 
     final l10n = context.l10n;
-    final weeksHint = FormOptions.estimatedCutWeeksLabel(
-      l10n: l10n,
-      goal: _goal,
-      weightKg: _weightKg,
-      targetWeightKg: _targetWeightKg,
-      weeklyLossKg: _weeklyLossKg,
-    );
     final targetOptions = FormOptions.cutTargetOptions(_weightKg);
     final targetValue = FormOptions.snapDouble(targetOptions, _targetWeightKg);
 
@@ -284,21 +270,6 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                       itemLabel: formatKg,
                       helperText: l10n.profileFieldTargetWeightHint,
                       onChanged: (v) => _edit(() => _targetWeightKg = v),
-                    ),
-                    const SizedBox(height: AppSpacing.field),
-                    AppDropdown<double>(
-                      label: l10n.weeklyLossTarget,
-                      value: FormOptions.snapDouble(
-                        FormOptions.weeklyLossKg,
-                        _weeklyLossKg,
-                      ),
-                      items: FormOptions.weeklyLossKg,
-                      suffixText: 'kg',
-                      helperText: weeksHint == null
-                          ? l10n.profileFieldWeeklyChangeHint
-                          : '$weeksHint · ${l10n.profileFieldWeeklyChangeHint}',
-                      itemLabel: (v) => v.toStringAsFixed(1),
-                      onChanged: (v) => _edit(() => _weeklyLossKg = v),
                     ),
                   ],
                 ],

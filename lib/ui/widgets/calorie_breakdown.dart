@@ -7,10 +7,20 @@ import '../theme/app_theme.dart';
 
 /// Shared transparent calorie formula breakdown.
 class CalorieBreakdown extends StatelessWidget {
-  const CalorieBreakdown({super.key, required this.plan, this.compact = false});
+  const CalorieBreakdown({
+    super.key,
+    required this.plan,
+    this.compact = false,
+    this.showTargetAndMacros = true,
+  });
 
   final CaloriePlan plan;
   final bool compact;
+
+  /// Whether to render the "目标摄入" (target intake) and "三大营养素"
+  /// (macros) sections. The About sheet hides these, keeping only BMR/TDEE
+  /// and the notes (7700 kcal ≈ 1 kg fat).
+  final bool showTargetAndMacros;
 
   @override
   Widget build(BuildContext context) {
@@ -27,28 +37,30 @@ class CalorieBreakdown extends StatelessWidget {
         'BMR × ${plan.activityFactor} = ${plan.tdee.toStringAsFixed(0)} kcal',
         style: theme.textTheme.bodyMedium,
       ),
-      const SizedBox(height: AppSpacing.field),
-      _sectionTitle(theme, l10n.targetIntakeSection),
-      ..._goalLines(theme, l10n),
-      const SizedBox(height: AppSpacing.field),
-      _sectionTitle(theme, l10n.macrosSection),
-      Text(
-        '${plan.targets.calories} kcal · '
-        'P ${plan.targets.proteinG.toStringAsFixed(0)} · '
-        'C ${plan.targets.carbG.toStringAsFixed(0)} · '
-        'F ${plan.targets.fatG.toStringAsFixed(0)}',
-        style: theme.textTheme.bodyMedium,
-      ),
-      Text(
-        l10n.macroRule(plan.proteinPerKg.toString()),
-        style: theme.textTheme.meta,
-      ),
-      if (plan.calorieAdjustment > 0) ...[
-        const SizedBox(height: 4),
+      if (showTargetAndMacros) ...[
+        const SizedBox(height: AppSpacing.field),
+        _sectionTitle(theme, l10n.targetIntakeSection),
+        ..._goalLines(theme, l10n),
+        const SizedBox(height: AppSpacing.field),
+        _sectionTitle(theme, l10n.macrosSection),
         Text(
-          l10n.includesPlateauAdj('${plan.calorieAdjustment}'),
+          '${plan.targets.calories} kcal · '
+          'P ${plan.targets.proteinG.toStringAsFixed(0)} · '
+          'C ${plan.targets.carbG.toStringAsFixed(0)} · '
+          'F ${plan.targets.fatG.toStringAsFixed(0)}',
+          style: theme.textTheme.bodyMedium,
+        ),
+        Text(
+          l10n.macroRule(plan.proteinPerKg.toString()),
           style: theme.textTheme.meta,
         ),
+        if (plan.calorieAdjustment > 0) ...[
+          const SizedBox(height: 4),
+          Text(
+            l10n.includesPlateauAdj('${plan.calorieAdjustment}'),
+            style: theme.textTheme.meta,
+          ),
+        ],
       ],
     ];
 
@@ -125,10 +137,19 @@ class CalorieBreakdown extends StatelessWidget {
               ),
             ),
           ]);
-        } else {
+        } else if (plan.missingCutInputs) {
           lines.add(
             Text(
               l10n.tempEstimate80('${plan.targets.calories}'),
+              style: theme.textTheme.bodyMedium,
+            ),
+          );
+        } else {
+          // Valid target weight but no active fat-loss deficit rate —
+          // defaults to TDEE (deficits now come from a diet-strategy plan).
+          lines.add(
+            Text(
+              l10n.cutDefaultsToTdeeLine('${plan.targets.calories}'),
               style: theme.textTheme.bodyMedium,
             ),
           );

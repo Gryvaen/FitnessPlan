@@ -369,7 +369,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               const SizedBox(height: AppSpacing.section),
               Text(l10n.calcMethod, style: theme.textTheme.titleSmall),
               const SizedBox(height: AppSpacing.compact),
-              CalorieBreakdown(plan: plan, compact: true),
+              CalorieBreakdown(
+                plan: plan,
+                compact: true,
+                showTargetAndMacros: false,
+              ),
+              const SizedBox(height: AppSpacing.compact),
+              Text(
+                l10n.kcalPerKgFatFact(
+                  CalorieCalculator.kcalPerKgFat.toInt().toString(),
+                ),
+                style: theme.textTheme.bodySmall,
+              ),
               const SizedBox(height: AppSpacing.section),
               SportListTile(
                 contentPadding: EdgeInsets.zero,

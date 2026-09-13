@@ -76,5 +76,25 @@ class StepRepository {
         .asyncMap((_) => recentDays(limitDays: limitDays));
   }
 
+  /// Every logged step day (newest first). Gaps are not zero-filled.
+  Future<List<StepDay>> allLoggedDays() async {
+    final rows =
+        await (_db.select(_db.stepLogs)..orderBy([
+              (t) => OrderingTerm.desc(t.date),
+            ]))
+            .get();
+    return [
+      for (final row in rows)
+        StepDay(date: _dayStart(row.date), steps: row.steps),
+    ];
+  }
+
+  Stream<List<StepDay>> watchAllLoggedDays() {
+    return _db
+        .select(_db.stepLogs)
+        .watch()
+        .asyncMap((_) => allLoggedDays());
+  }
+
   Future<void> clearAll() => _db.delete(_db.stepLogs).go();
 }

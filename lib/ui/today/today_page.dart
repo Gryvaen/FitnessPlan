@@ -18,6 +18,7 @@ import '../shell/swipe_tab_view.dart';
 import '../strategy/strategy_labels.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
+import '../tools/workout_reminder_notifications.dart';
 import 'deficit_date_picker.dart';
 import 'today_section_header.dart';
 import 'today_summary_widgets.dart';
@@ -619,14 +620,14 @@ class _TodayPageState extends ConsumerState<TodayPage> {
           ],
         ),
       );
-      if (ok != true) {
-        nameCtrl.dispose();
-        return;
-      }
+      final presetName = nameCtrl.text;
+      // Defer dispose until after the dialog route finishes unmounting.
+      WidgetsBinding.instance.addPostFrameCallback((_) => nameCtrl.dispose());
+      if (ok != true) return;
       try {
         await ref
             .read(mealPresetRepositoryProvider)
-            .createFromEntries(name: nameCtrl.text, entries: meals);
+            .createFromEntries(name: presetName, entries: meals);
         ref.invalidate(mealPresetsProvider);
         if (!mounted) return;
         ScaffoldMessenger.of(
@@ -637,8 +638,6 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('$e')));
-      } finally {
-        nameCtrl.dispose();
       }
     }
   }
@@ -870,6 +869,21 @@ class _StepsDetailSheet extends ConsumerStatefulWidget {
 class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
   bool _syncing = false;
   Future<Map<String, Object?>>? _diagnostics;
+  bool _showBatteryHint = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshBatteryStatus();
+  }
+
+  Future<void> _refreshBatteryStatus() async {
+    if (!StepServiceNotifier.isAvailable) return;
+    final aggressive = await ReminderNotifications.isAggressiveOem();
+    final ignoring = await ReminderNotifications.isIgnoringBatteryOptimizations();
+    if (!mounted) return;
+    setState(() => _showBatteryHint = aggressive && !ignoring);
+  }
 
   Future<void> _resync() async {
     if (_syncing) return;
@@ -1029,9 +1043,53 @@ class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
                   ),
                   isThreeLine: true,
                   value: ref.watch(stepServiceProvider),
-                  onChanged: (v) =>
-                      ref.read(stepServiceProvider.notifier).setEnabled(v),
+                  onChanged: (v) async {
+                    await ref.read(stepServiceProvider.notifier).setEnabled(v);
+                    if (v) await _refreshBatteryStatus();
+                  },
                 ),
+                if (ref.watch(stepServiceProvider) && _showBatteryHint)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4, bottom: 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.battery_alert_outlined,
+                          size: 16,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.stepsOemHintBody,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              TextButton(
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                onPressed: () async {
+                                  await ReminderNotifications
+                                      .requestIgnoreBatteryOptimizations();
+                                  await _refreshBatteryStatus();
+                                },
+                                child: Text(l10n.reminderOemHintBatteryButton),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
               const SizedBox(height: 8),
               ExpansionTile(

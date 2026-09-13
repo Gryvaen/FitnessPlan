@@ -9,6 +9,7 @@ import '../records/log_set_sheet.dart';
 import '../records/train_records_tab.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
+import '../widgets/form_options.dart';
 import 'today_section_header.dart';
 
 /// Today's planned workout checklist with set logging.
@@ -238,6 +239,7 @@ class TodayWorkoutCard extends ConsumerWidget {
         .read(workoutRepositoryProvider)
         .deleteDayWorkout(group.workout.id);
     ref.invalidate(workoutHistoryProvider);
+    ref.invalidate(allWorkoutHistoryProvider);
   }
 
   Widget _headerRow({
@@ -321,6 +323,7 @@ class TodayWorkoutCard extends ConsumerWidget {
             .read(workoutRepositoryProvider)
             .deleteDayWorkoutItem(progress.item.id);
         ref.invalidate(workoutHistoryProvider);
+        ref.invalidate(allWorkoutHistoryProvider);
       },
       child: _WorkoutItemTile(progress: progress, day: day, editable: true),
     );
@@ -528,6 +531,22 @@ class _WorkoutItemTile extends ConsumerWidget {
     final item = progress.item;
     final unitLabel = progress.unit.label(l10n);
     final theme = Theme.of(context);
+    final note = item.note?.trim();
+    final weightKg = item.actualWeightKg;
+    final weightUnit = GymWeightUnit.parse(item.actualWeightUnit);
+    final progressLine = item.done
+        ? l10n.completed
+        : l10n.setsProgress(
+            progress.completedSets,
+            item.targetSets,
+            '${item.targetReps}',
+            unitLabel,
+          );
+    final metaParts = <String>[
+      progressLine,
+      if (weightKg != null)
+        '${formatKg(FormOptions.fromKg(weightKg, weightUnit))} ${weightUnit.suffix}',
+    ];
 
     return SportListTile(
       leading: Checkbox(
@@ -549,16 +568,22 @@ class _WorkoutItemTile extends ConsumerWidget {
               )
             : theme.textTheme.bodyLarge,
       ),
-      subtitle: Text(
-        item.done
-            ? l10n.completed
-            : l10n.setsProgress(
-                progress.completedSets,
-                item.targetSets,
-                '${item.targetReps}',
-                unitLabel,
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(metaParts.join(' · '), style: theme.textTheme.meta),
+          if (note != null && note.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              note,
+              style: theme.textTheme.meta?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
-        style: theme.textTheme.meta,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
       ),
       enabled: editable,
       onTap: !editable
@@ -574,8 +599,12 @@ class _WorkoutItemTile extends ConsumerWidget {
                 completedSets: progress.completedSets,
                 targetSets: item.targetSets,
                 perSetValue: item.targetReps,
+                initialActualWeightKg: item.actualWeightKg,
+                initialActualWeightUnit: item.actualWeightUnit,
+                initialNote: item.note,
               );
               ref.invalidate(workoutHistoryProvider);
+              ref.invalidate(allWorkoutHistoryProvider);
             },
     );
   }

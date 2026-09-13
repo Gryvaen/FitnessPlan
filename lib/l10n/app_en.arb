@@ -47,8 +47,6 @@
   "targetWeight": "Target weight",
   "activityLevel": "Activity level",
   "goal": "Goal",
-  "weeklyLossTarget": "Weekly loss target",
-  "weeklyLossHint": "Recommended 0.3–0.8 kg/week",
   "name": "Name",
   "mealType": "Meal",
   "grams": "Grams",
@@ -78,6 +76,8 @@
   "targetReps": "Target reps",
   "targetSeconds": "Target seconds",
   "addExercise": "Add exercise",
+  "exerciseNoteLabel": "Notes (optional)",
+  "actualWeightLabel": "Weight (optional)",
   "reps": "reps",
   "seconds": "sec",
   "repsCount": "Reps",
@@ -380,10 +380,13 @@
   "notificationPermissionRow": "Notification permission",
   "notificationPermissionOn": "Allowed",
   "notificationPermissionHint": "Allow notifications so reminders are delivered.",
+  "reminderRestrictionsSummary": "Some reminders may be restricted by your phone — tap to review",
+  "reminderRestrictionsSheetTitle": "Reminder permissions",
   "reminderOemHintTitle": "Your phone may restrict reminders",
   "reminderOemHintBody": "Some phone brands restrict background apps, which can silence or block reminders from ringing, vibrating, or firing at all. It helps to disable battery optimization for this app and allow \"auto-start\" / background running in system settings.",
   "reminderOemHintBatteryButton": "Disable battery optimization",
   "reminderOemHintAutostartButton": "Auto-start settings",
+  "stepsOemHintBody": "Some phone brands restrict background apps, which can stop step counting once the app is closed. Disabling battery optimization for this app helps it keep counting.",
   "customDuration": "Custom (0:30–10:00)",
   "notifChannelName": "Rest timer",
   "notifChannelDesc": "Between-set rest alerts",
@@ -1035,6 +1038,22 @@
   "@tempEstimate80": {
     "placeholders": {
       "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "cutDefaultsToTdeeLine": "No fat-loss strategy set — eating at TDEE: {kcal} kcal",
+  "@cutDefaultsToTdeeLine": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "kcalPerKgFatFact": "{kcalPerKg} kcal ≈ 1 kg of fat.",
+  "@kcalPerKgFatFact": {
+    "placeholders": {
+      "kcalPerKg": {
         "type": "String"
       }
     }
@@ -2048,10 +2067,14 @@
   "@nExercises": {"placeholders": {"n": {"type": "int"}}},
   "planSummary": "{exercises} exercises · {sets} sets",
   "@planSummary": {"placeholders": {"exercises": {"type": "int"}, "sets": {"type": "int"}}},
+  "planProgress": "{planName} · {done}/{total}",
+  "@planProgress": {"placeholders": {"planName": {"type": "String"}, "done": {"type": "int"}, "total": {"type": "int"}}},
   "viewWorkoutHistory": "View workout history",
   "setsWithReps": "{sets} × {reps}",
   "@setsWithReps": {"placeholders": {"sets": {"type": "int"}, "reps": {"type": "String"}}},
   "recentSteps": "Recent steps",
+  "allSteps": "All steps",
+  "allWorkouts": "All workouts",
   "saveThisSet": "Save",
   "adjustStrategy": "Adjust strategy",
   "effectiveDate": "Effective date",
@@ -2075,8 +2098,7 @@
   "profileFieldWeightHint": "The baseline for every calorie and macro target.",
   "profileFieldActivityHint": "Scales BMR into your total daily energy (TDEE).",
   "profileFieldGoalHint": "Chooses the calorie surplus or deficit and the protein target.",
-  "profileFieldTargetWeightHint": "The end point of the cut; used to estimate how many weeks it takes.",
-  "profileFieldWeeklyChangeHint": "0.2–0.5 kg per week is sustainable; faster tends to cost muscle.",
+  "profileFieldTargetWeightHint": "The end point of the cut.",
   "profileFieldWaterHint": "The goal the water cup on the Today screen fills toward.",
   "basalMetabolicRate": "Basal metabolic rate (BMR)",
   "totalDailyEnergy": "Total daily energy (TDEE)",

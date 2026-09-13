@@ -20,18 +20,18 @@ class CustomFoodEditPage extends ConsumerStatefulWidget {
 
 class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
   final _name = TextEditingController();
-  final _kcal = TextEditingController(text: '0');
-  final _kj = TextEditingController(text: '0');
+  final _kcal = TextEditingController();
+  final _kj = TextEditingController();
   bool _updatingEnergy = false;
-  final _protein = TextEditingController(text: '0');
-  final _carb = TextEditingController(text: '0');
-  final _fat = TextEditingController(text: '0');
-  final _alcohol = TextEditingController(text: '0');
-  final _fiber = TextEditingController(text: '0');
-  final _sodium = TextEditingController(text: '0');
-  final _sugar = TextEditingController(text: '0');
-  final _saturatedFat = TextEditingController(text: '0');
-  final _calcium = TextEditingController(text: '0');
+  final _protein = TextEditingController();
+  final _carb = TextEditingController();
+  final _fat = TextEditingController();
+  final _alcohol = TextEditingController();
+  final _fiber = TextEditingController();
+  final _sodium = TextEditingController();
+  final _sugar = TextEditingController();
+  final _saturatedFat = TextEditingController();
+  final _calcium = TextEditingController();
   bool _loading = false;
   bool _ready = false;
 
@@ -55,22 +55,25 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
       return;
     }
     _name.text = food.name;
-    _kcal.text = _fmt(food.kcalPer100);
-    _kj.text = _fmt(food.kcalPer100 * kKcalToKj);
-    _protein.text = _fmt(food.proteinPer100);
-    _carb.text = _fmt(food.carbPer100);
-    _fat.text = _fmt(food.fatPer100);
-    _alcohol.text = _fmt(food.alcoholPer100);
-    _fiber.text = _fmt(food.fiberPer100);
-    _sodium.text = _fmt(food.sodiumMgPer100);
-    _sugar.text = _fmt(food.sugarPer100);
-    _saturatedFat.text = _fmt(food.saturatedFatPer100);
-    _calcium.text = _fmt(food.calciumMgPer100);
+    _kcal.text = _fmtOrEmpty(food.kcalPer100);
+    _kj.text = _fmtOrEmpty(food.kcalPer100 * kKcalToKj);
+    _protein.text = _fmtOrEmpty(food.proteinPer100);
+    _carb.text = _fmtOrEmpty(food.carbPer100);
+    _fat.text = _fmtOrEmpty(food.fatPer100);
+    _alcohol.text = _fmtOrEmpty(food.alcoholPer100);
+    _fiber.text = _fmtOrEmpty(food.fiberPer100);
+    _sodium.text = _fmtOrEmpty(food.sodiumMgPer100);
+    _sugar.text = _fmtOrEmpty(food.sugarPer100);
+    _saturatedFat.text = _fmtOrEmpty(food.saturatedFatPer100);
+    _calcium.text = _fmtOrEmpty(food.calciumMgPer100);
     setState(() => _ready = true);
   }
 
   String _fmt(double v) =>
       v == v.roundToDouble() ? '${v.round()}' : v.toStringAsFixed(1);
+
+  /// 0 显示为空白，与新建时待输入状态一致。
+  String _fmtOrEmpty(double v) => v == 0 ? '' : _fmt(v);
 
   double _parse(TextEditingController c) => double.tryParse(c.text.trim()) ?? 0;
 
@@ -190,7 +193,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
           ),
           const SizedBox(height: 8),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: _numField(
@@ -199,9 +202,19 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
                   onChanged: _onKcalChanged,
                 ),
               ),
-              const SizedBox(width: AppSpacing.field),
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.field),
+                child: Icon(
+                  Icons.swap_horiz,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
               Expanded(
-                child: _numField(_kj, l10n.kjField, onChanged: _onKjChanged),
+                child: _numField(
+                  _kj,
+                  l10n.kjField,
+                  onChanged: _onKjChanged,
+                ),
               ),
             ],
           ),
@@ -233,24 +246,17 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
       padding: const EdgeInsets.only(bottom: AppSpacing.field),
       child: Focus(
         onFocusChange: (hasFocus) {
-          if (hasFocus) {
-            // 聚焦时：把默认的 0 清掉；若已有值则全选方便覆盖输入
-            if (c.text.trim() == '0') {
-              c.text = '';
-              c.selection = const TextSelection.collapsed(offset: 0);
-            } else if (c.text.isNotEmpty) {
-              c.selection = TextSelection(
-                baseOffset: 0,
-                extentOffset: c.text.length,
-              );
-            }
-          } else {
-            // 失焦时：若没输入则显示 0
-            if (c.text.trim().isEmpty) {
-              c.text = '0';
-              c.selection = TextSelection.collapsed(offset: c.text.length);
-              onChanged?.call(c.text);
-            }
+          if (!hasFocus) return;
+          // 聚焦时：把残留的 0 清掉；若已有值则全选方便覆盖输入
+          if (c.text.trim() == '0') {
+            c.text = '';
+            c.selection = const TextSelection.collapsed(offset: 0);
+            onChanged?.call(c.text);
+          } else if (c.text.isNotEmpty) {
+            c.selection = TextSelection(
+              baseOffset: 0,
+              extentOffset: c.text.length,
+            );
           }
         },
         child: TextField(

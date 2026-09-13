@@ -404,6 +404,29 @@ CREATE TABLE meal_entries (
   sugar_g REAL NOT NULL DEFAULT 0.0,
   saturated_fat_g REAL NOT NULL DEFAULT 0.0
 )''');
+      // Present since v1; needed so the v20 ADD COLUMN migrations have a
+      // table to alter, matching every real pre-v20 install.
+      await legacy.runCustom('''
+CREATE TABLE workout_plan_items (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  plan_id INTEGER NOT NULL,
+  exercise_id INTEGER NOT NULL,
+  exercise_name TEXT NOT NULL,
+  target_sets INTEGER NOT NULL,
+  target_reps INTEGER NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0
+)''');
+      await legacy.runCustom('''
+CREATE TABLE day_workout_items (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  day_workout_id INTEGER NOT NULL,
+  exercise_id INTEGER NOT NULL,
+  exercise_name TEXT NOT NULL,
+  target_sets INTEGER NOT NULL,
+  target_reps INTEGER NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  done BOOLEAN NOT NULL DEFAULT 0
+)''');
       await legacy.runCustom(
         'INSERT INTO weight_logs (date, weight_kg) VALUES (1700000000, 80.5)',
       );
@@ -429,6 +452,9 @@ CREATE TABLE meal_entries (
       final foods = await migrated.select(migrated.foodItems).get();
       expect(foods.single.name, '米饭');
       expect(foods.single.calciumMgPer100, 0.0);
+      // v20 additive columns exist (empty tables, so just check they open).
+      expect(await migrated.select(migrated.workoutPlanItems).get(), isEmpty);
+      expect(await migrated.select(migrated.dayWorkoutItems).get(), isEmpty);
       // New tables exist and are empty.
       expect(await migrated.select(migrated.dietStrategyPlans).get(), isEmpty);
       expect(

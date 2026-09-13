@@ -150,12 +150,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goal => 'Goal';
 
   @override
-  String get weeklyLossTarget => 'Weekly loss target';
-
-  @override
-  String get weeklyLossHint => 'Recommended 0.3–0.8 kg/week';
-
-  @override
   String get name => 'Name';
 
   @override
@@ -241,6 +235,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addExercise => 'Add exercise';
+
+  @override
+  String get exerciseNoteLabel => 'Notes (optional)';
+
+  @override
+  String get actualWeightLabel => 'Weight (optional)';
 
   @override
   String get reps => 'reps';
@@ -1015,6 +1015,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Allow notifications so reminders are delivered.';
 
   @override
+  String get reminderRestrictionsSummary =>
+      'Some reminders may be restricted by your phone — tap to review';
+
+  @override
+  String get reminderRestrictionsSheetTitle => 'Reminder permissions';
+
+  @override
   String get reminderOemHintTitle => 'Your phone may restrict reminders';
 
   @override
@@ -1026,6 +1033,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reminderOemHintAutostartButton => 'Auto-start settings';
+
+  @override
+  String get stepsOemHintBody =>
+      'Some phone brands restrict background apps, which can stop step counting once the app is closed. Disabling battery optimization for this app helps it keep counting.';
 
   @override
   String get customDuration => 'Custom (0:30–10:00)';
@@ -1614,6 +1625,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String tempEstimate80(String kcal) {
     return 'Temp estimate: TDEE × 80% = $kcal kcal';
+  }
+
+  @override
+  String cutDefaultsToTdeeLine(String kcal) {
+    return 'No fat-loss strategy set — eating at TDEE: $kcal kcal';
+  }
+
+  @override
+  String kcalPerKgFatFact(String kcalPerKg) {
+    return '$kcalPerKg kcal ≈ 1 kg of fat.';
   }
 
   @override
@@ -2292,6 +2313,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String planProgress(String planName, int done, int total) {
+    return '$planName · $done/$total';
+  }
+
+  @override
   String get viewWorkoutHistory => 'View workout history';
 
   @override
@@ -2301,6 +2327,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recentSteps => 'Recent steps';
+
+  @override
+  String get allSteps => 'All steps';
+
+  @override
+  String get allWorkouts => 'All workouts';
 
   @override
   String get saveThisSet => 'Save';
@@ -2377,12 +2409,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Chooses the calorie surplus or deficit and the protein target.';
 
   @override
-  String get profileFieldTargetWeightHint =>
-      'The end point of the cut; used to estimate how many weeks it takes.';
-
-  @override
-  String get profileFieldWeeklyChangeHint =>
-      '0.2–0.5 kg per week is sustainable; faster tends to cost muscle.';
+  String get profileFieldTargetWeightHint => 'The end point of the cut.';
 
   @override
   String get profileFieldWaterHint =>

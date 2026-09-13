@@ -295,6 +295,11 @@ class _FitnessAppState extends ConsumerState<FitnessApp> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(remindersProvider.notifier).syncSchedule();
+      // Reading this forces StepServiceNotifier.build() to run, which
+      // auto-enables background step tracking on first run (see
+      // StepServiceNotifier._load) instead of waiting for the user to find
+      // the manual toggle in the Today steps sheet.
+      ref.read(stepServiceProvider);
     });
   }
 
@@ -332,6 +337,11 @@ class _FitnessAppState extends ConsumerState<FitnessApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.ofId(themeId),
       routerConfig: router,
+      builder: (context, child) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: child,
+      ),
     );
   }
 }

@@ -32,6 +32,11 @@ final recentStepsProvider = StreamProvider.autoDispose<List<StepDay>>((ref) {
   return ref.watch(stepRepositoryProvider).watchRecentDays(limitDays: 14);
 });
 
+/// Every logged step day (may span well beyond the recent sync window).
+final allStepsProvider = StreamProvider.autoDispose<List<StepDay>>((ref) {
+  return ref.watch(stepRepositoryProvider).watchAllLoggedDays();
+});
+
 /// Last completed sync outcome. Null only before the first attempt finishes.
 final stepsSyncStatusProvider =
     NotifierProvider<StepsSyncStatusNotifier, StepsSyncStatus?>(
@@ -62,6 +67,10 @@ final stepServiceProvider = NotifierProvider<StepServiceNotifier, bool>(
 );
 
 class StepServiceNotifier extends Notifier<bool> {
+  /// Set once the user's choice (on or off) has been persisted, so a fresh
+  /// install only gets auto-enabled once and a later manual "off" sticks.
+  static const _choiceSetKey = 'step_service_user_choice_set';
+
   @override
   bool build() {
     _load();
@@ -72,17 +81,31 @@ class StepServiceNotifier extends Notifier<bool> {
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
   Future<void> _load() async {
-    final on = await ref.read(androidStepSensorProvider).isServiceEnabled();
-    if (ref.mounted) state = on;
+    final sensor = ref.read(androidStepSensorProvider);
+    final on = await sensor.isServiceEnabled();
+    if (!ref.mounted) return;
+    if (on) {
+      state = true;
+      return;
+    }
+    if (!isAvailable) return;
+    final prefs = ref.read(sharedPreferencesProvider);
+    if (prefs.getBool(_choiceSetKey) ?? false) return;
+    // Nobody has explicitly chosen a state yet (fresh install, or an
+    // existing install predating this flag) — default to on, like Huawei
+    // Health, instead of leaving background tracking off until a user finds
+    // this sheet's switch.
+    await setEnabled(true);
   }
 
   Future<void> setEnabled(bool enabled) async {
+    await ref.read(sharedPreferencesProvider).setBool(_choiceSetKey, true);
     if (enabled) {
       final activity = await Permission.activityRecognition.request();
       if (!activity.isGranted) return;
       await Permission.notification.request();
     }
-    state = enabled;
+    if (ref.mounted) state = enabled;
     await ref.read(androidStepSensorProvider).setServiceEnabled(enabled);
     if (enabled) {
       ref.invalidate(stepsSyncProvider);

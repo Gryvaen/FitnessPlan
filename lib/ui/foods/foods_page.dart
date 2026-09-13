@@ -167,8 +167,8 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
 }
 
 /// A simple food list (recent / favorites) with a shared empty state.
-/// [onSwipeDelete], when given, lets a row be swiped left to remove — only
-/// meaningful on 最近 (Recent), which [_FoodRow] renders as a [Dismissible].
+/// [onSwipeDelete], when given, lets a row be long-pressed to remove — only
+/// meaningful on 最近 (Recent).
 class _FoodListView extends ConsumerWidget {
   const _FoodListView({
     required this.watch,
@@ -240,39 +240,31 @@ class _FoodRow extends StatelessWidget {
     if (onSwipeDelete == null) {
       return KeyedSubtree(key: ValueKey(food.id), child: tile);
     }
-    return SwipeGestureBarrier(
-      child: Dismissible(
-        key: ValueKey(food.id),
-        direction: DismissDirection.endToStart,
-        background: Container(
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 16),
-          color: theme.colorScheme.error,
-          child: const Icon(Icons.delete, color: Colors.white),
-        ),
-        confirmDismiss: (_) async {
-          return await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: Text(l10n.removeFromRecent),
-                  content: Text(l10n.confirmRemoveFromRecent(food.name)),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      child: Text(l10n.cancel),
-                    ),
-                    FilledButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: Text(l10n.delete),
-                    ),
-                  ],
-                ),
-              ) ==
-              true;
-        },
-        onDismissed: (_) => onSwipeDelete!(),
-        child: tile,
-      ),
+    return GestureDetector(
+      key: ValueKey(food.id),
+      onLongPress: () async {
+        final confirmed =
+            await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: Text(l10n.removeFromRecent),
+                content: Text(l10n.confirmRemoveFromRecent(food.name)),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: Text(l10n.cancel),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: Text(l10n.delete),
+                  ),
+                ],
+              ),
+            ) ==
+            true;
+        if (confirmed) onSwipeDelete!();
+      },
+      child: tile,
     );
   }
 }

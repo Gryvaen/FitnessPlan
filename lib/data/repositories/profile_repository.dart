@@ -17,15 +17,11 @@ class ProfileRepository {
     final raw = _prefs.getString(_key);
     if (raw == null) return null;
     try {
-      var profile = UserProfile.fromJson(
+      final profile = UserProfile.fromJson(
         jsonDecode(raw) as Map<String, dynamic>,
       );
-      profile = _migrateWeeklyLoss(profile);
 
-      final needsRebuild =
-          profile.bmr == null ||
-          profile.tdee == null ||
-          (profile.weeklyLossKg == null && profile.goal == FitnessGoal.cut);
+      final needsRebuild = profile.bmr == null || profile.tdee == null;
       if (needsRebuild) {
         return _profileFromPlan(
           plan: buildPlan(profile),
@@ -39,26 +35,6 @@ class ProfileRepository {
       // Corrupted JSON: treat as no profile so onboarding can recover.
       return null;
     }
-  }
-
-  UserProfile _migrateWeeklyLoss(UserProfile profile) {
-    if (profile.weeklyLossKg != null) return profile;
-    if (profile.goal == FitnessGoal.cut &&
-        profile.targetWeightKg != null &&
-        profile.goalWeeks != null &&
-        profile.goalWeeks! >= 1 &&
-        profile.targetWeightKg! < profile.weightKg) {
-      final raw =
-          (profile.weightKg - profile.targetWeightKg!) / profile.goalWeeks!;
-      final clamped = CalorieCalculator.clampWeeklyLoss(raw).$1;
-      return profile.copyWith(weeklyLossKg: clamped);
-    }
-    if (profile.goal == FitnessGoal.cut) {
-      return profile.copyWith(
-        weeklyLossKg: CalorieCalculator.defaultWeeklyLoss,
-      );
-    }
-    return profile;
   }
 
   Future<void> save(UserProfile profile) async {

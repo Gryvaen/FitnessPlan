@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../domain/calorie_calculator.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
@@ -20,11 +19,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   Sex _sex = Sex.male;
   ActivityLevel _activity = ActivityLevel.sedentary;
   FitnessGoal _goal = FitnessGoal.cut;
-  int _age = 23;
+  int _age = 21;
   int _heightCm = 183;
   double _weightKg = 70;
   double _targetWeightKg = 65;
-  double _weeklyLossKg = CalorieCalculator.defaultWeeklyLoss;
   bool _saving = false;
 
   final _pager = PageController();
@@ -70,7 +68,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             activity: _activity,
             goal: _goal,
             targetWeightKg: _goal == FitnessGoal.cut ? target : null,
-            weeklyLossKg: _goal == FitnessGoal.cut ? _weeklyLossKg : null,
           );
       if (!mounted) return;
 
@@ -110,13 +107,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final weeksHint = FormOptions.estimatedCutWeeksLabel(
-      l10n: l10n,
-      goal: _goal,
-      weightKg: _weightKg,
-      targetWeightKg: _targetWeightKg,
-      weeklyLossKg: _weeklyLossKg,
-    );
     final targetOptions = FormOptions.cutTargetOptions(_weightKg);
     final targetValue = FormOptions.snapDouble(targetOptions, _targetWeightKg);
 
@@ -309,19 +299,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                       suffixText: 'kg',
                       itemLabel: formatKg,
                       onChanged: (v) => setState(() => _targetWeightKg = v),
-                    ),
-                    const SizedBox(height: AppSpacing.field),
-                    AppDropdown<double>(
-                      label: l10n.weeklyLossTarget,
-                      value: FormOptions.snapDouble(
-                        FormOptions.weeklyLossKg,
-                        _weeklyLossKg,
-                      ),
-                      items: FormOptions.weeklyLossKg,
-                      suffixText: 'kg',
-                      helperText: weeksHint ?? l10n.weeklyLossHint,
-                      itemLabel: (v) => v.toStringAsFixed(1),
-                      onChanged: (v) => setState(() => _weeklyLossKg = v),
                     ),
                   ],
                   const SizedBox(height: 32),

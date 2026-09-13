@@ -133,13 +133,16 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
         ],
       ),
     );
+    final label = labelCtrl.text;
+    // Defer dispose until after the dialog route finishes unmounting.
+    WidgetsBinding.instance.addPostFrameCallback((_) => labelCtrl.dispose());
     if (ok != true || !mounted) return;
     try {
       await ref
           .read(foodRepositoryProvider)
           .addServing(
             foodId: widget.foodId,
-            label: labelCtrl.text,
+            label: label,
             grams: grams,
           );
       await _reload();
@@ -149,8 +152,6 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
           context,
         ).showSnackBar(SnackBar(content: Text('$e')));
       }
-    } finally {
-      labelCtrl.dispose();
     }
   }
 

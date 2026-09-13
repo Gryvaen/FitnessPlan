@@ -1,8 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import '../../domain/calorie_calculator.dart';
-import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../theme/app_theme.dart';
 
@@ -43,22 +41,6 @@ class FormOptions {
     if (opts.isEmpty) return weightsKg(min: 30, max: 40);
     return opts;
   }
-
-  static String? estimatedCutWeeksLabel({
-    required AppLocalizations l10n,
-    required FitnessGoal goal,
-    required double weightKg,
-    required double targetWeightKg,
-    required double weeklyLossKg,
-  }) {
-    if (goal != FitnessGoal.cut) return null;
-    if (targetWeightKg >= weightKg || weeklyLossKg <= 0) return null;
-    final rate = CalorieCalculator.clampWeeklyLoss(weeklyLossKg).$1;
-    final weeks = ((weightKg - targetWeightKg) / rate).ceil();
-    return l10n.estimatedWeeksAtRate(weeks, rate.toStringAsFixed(1));
-  }
-
-  static const weeklyLossKg = <double>[0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
 
   static List<double> bodyFatPct({
     double min = 5,
@@ -102,6 +84,65 @@ class FormOptions {
   ];
 
   static const targetSets = <int>[1, 2, 3, 4, 5, 6, 8, 10];
+
+  /// Gym machine / dumbbell / plate loads (kg), matching common Chinese gym
+  /// increments: 1.25 kg plates, then 2.5 kg steps, then coarser above 100 kg.
+  static List<double> gymLoadKg({double? include}) {
+    final out = <double>[];
+    for (var v = 1.25; v <= 20 + 1e-9; v += 1.25) {
+      out.add(_round2(v));
+    }
+    for (var v = 22.5; v <= 100 + 1e-9; v += 2.5) {
+      out.add(_round2(v));
+    }
+    for (var v = 105.0; v <= 200 + 1e-9; v += 5) {
+      out.add(_round2(v));
+    }
+    return _withInclude(out, include);
+  }
+
+  /// US gym plate / dumbbell loads (lb): 2.5 lb plates, then 5 lb steps.
+  static List<double> gymLoadLbs({double? include}) {
+    final out = <double>[];
+    for (var v = 2.5; v <= 50 + 1e-9; v += 2.5) {
+      out.add(_round2(v));
+    }
+    for (var v = 55.0; v <= 200 + 1e-9; v += 5) {
+      out.add(_round2(v));
+    }
+    for (var v = 210.0; v <= 450 + 1e-9; v += 10) {
+      out.add(_round2(v));
+    }
+    return _withInclude(out, include);
+  }
+
+  static List<double> gymLoadOptions(GymWeightUnit unit, {double? include}) =>
+      unit == GymWeightUnit.lbs
+      ? gymLoadLbs(include: include)
+      : gymLoadKg(include: include);
+
+  static const kgPerLb = 0.45359237;
+
+  static double lbsToKg(double lbs) => _round2(lbs * kgPerLb);
+
+  static double kgToLbs(double kg) => _round2(kg / kgPerLb);
+
+  static double toKg(double value, GymWeightUnit unit) =>
+      unit == GymWeightUnit.lbs ? lbsToKg(value) : _round2(value);
+
+  static double fromKg(double kg, GymWeightUnit unit) =>
+      unit == GymWeightUnit.lbs ? kgToLbs(kg) : _round2(kg);
+
+  static List<double> _withInclude(List<double> out, double? include) {
+    if (include != null) {
+      final rounded = _round2(include);
+      if (rounded > 0 && !out.any((v) => (v - rounded).abs() < 1e-9)) {
+        out.add(rounded);
+        out.sort();
+      }
+    }
+    return out;
+  }
 
   /// Daily water goal options (ml), 500–5000 step 250.
   static const waterGoalMl = <int>[
@@ -215,6 +256,23 @@ String formatKg(double v) {
   return fixed
       .replaceFirst(RegExp(r'0+$'), '')
       .replaceFirst(RegExp(r'\.$'), '');
+}
+
+/// Unit used when logging today's exercise load.
+enum GymWeightUnit {
+  kg,
+  lbs;
+
+  /// Persistable token (`kg` / `lbs`).
+  String get storageKey => this == GymWeightUnit.lbs ? 'lbs' : 'kg';
+
+  /// UI suffix (`KG` / `LBS`).
+  String get suffix => storageKey.toUpperCase();
+
+  static GymWeightUnit parse(String? raw) {
+    final key = raw?.trim().toLowerCase();
+    return key == 'lbs' ? GymWeightUnit.lbs : GymWeightUnit.kg;
+  }
 }
 
 Future<T?> _showCupertinoWheelPicker<T>({
@@ -506,6 +564,7 @@ class _PickerField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final hasLabel = label.trim().isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -521,21 +580,24 @@ class _PickerField extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               child: Row(
                 children: [
-                  Expanded(
-                    flex: 4,
-                    child: Text(
-                      label,
-                      style: theme.textTheme.bodyLarge,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                  if (hasLabel) ...[
+                    Expanded(
+                      flex: 4,
+                      child: Text(
+                        label,
+                        style: theme.textTheme.bodyLarge,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
+                    const SizedBox(width: 12),
+                  ],
                   Flexible(
-                    flex: 5,
+                    flex: hasLabel ? 5 : 1,
+                    fit: hasLabel ? FlexFit.loose : FlexFit.tight,
                     child: Text(
                       displayText,
-                      textAlign: TextAlign.end,
+                      textAlign: hasLabel ? TextAlign.end : TextAlign.start,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleMedium,

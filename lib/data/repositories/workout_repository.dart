@@ -61,11 +61,33 @@ class WorkoutHistoryDay {
     required this.date,
     required this.sets,
     this.completedItems = const [],
+    this.planSummaries = const [],
   });
 
   final DateTime date;
   final List<WorkoutSetLog> sets;
   final List<DayWorkoutItem> completedItems;
+  final List<WorkoutHistoryPlanSummary> planSummaries;
+}
+
+/// Per-day-workout completion summary (one per [DayWorkout] on that day).
+class WorkoutHistoryPlanSummary {
+  const WorkoutHistoryPlanSummary({
+    required this.planName,
+    required this.doneCount,
+    required this.totalCount,
+  });
+
+  final String? planName;
+  final int doneCount;
+  final int totalCount;
+}
+
+class _WorkoutHistoryAgg {
+  _WorkoutHistoryAgg({this.planName});
+  final String? planName;
+  int total = 0;
+  int done = 0;
 }
 
 class WorkoutPlanSummary {
@@ -595,6 +617,9 @@ class WorkoutRepository {
     required int completedSets,
     required int perSetValue,
     required ExerciseUnit unit,
+    double? actualWeightKg,
+    String? actualWeightUnit,
+    String? note,
   }) async {
     CalendarDay.ensureEditableDay(day);
     await _ensureEditableWorkoutItem(dayWorkoutItemId, expectedDay: day);
@@ -602,6 +627,10 @@ class WorkoutRepository {
     if (perSetValue <= 0) throw ArgumentError('次数/秒须大于 0');
 
     final start = _dayStart(day);
+    final trimmedNote = note?.trim();
+    final unitLabel = actualWeightKg == null
+        ? null
+        : (actualWeightUnit?.trim().toLowerCase() == 'lbs' ? 'lbs' : 'kg');
     await _db.transaction(() async {
       final item = await (_db.select(
         _db.dayWorkoutItems,
@@ -614,6 +643,11 @@ class WorkoutRepository {
         DayWorkoutItemsCompanion(
           targetReps: Value(perSetValue),
           done: Value(completedSets >= item.targetSets),
+          actualWeightKg: Value(actualWeightKg),
+          actualWeightUnit: Value(unitLabel),
+          note: Value(
+            (trimmedNote == null || trimmedNote.isEmpty) ? null : trimmedNote,
+          ),
         ),
       );
 
@@ -707,7 +741,7 @@ class WorkoutRepository {
       ]);
 
   Stream<List<WorkoutHistoryDay>> watchRecentHistory({
-    int limitDays = 14,
+    int? limitDays = 14,
   }) => _db
       .customSelect(
         'SELECT date FROM workout_set_logs UNION '
@@ -719,33 +753,59 @@ class WorkoutRepository {
       .watch()
       .asyncMap((_) => recentHistory(limitDays: limitDays));
 
-  Future<List<WorkoutHistoryDay>> recentHistory({int limitDays = 14}) async {
+  /// [limitDays] caps how many active days to return (newest first).
+  /// Pass `null` for the full history.
+  Future<List<WorkoutHistoryDay>> recentHistory({int? limitDays = 14}) async {
     final logs = await _historyQuery().get();
-    final completed = await (_db.select(_db.dayWorkoutItems).join([
+    final allItems = await (_db.select(_db.dayWorkoutItems).join([
       innerJoin(
         _db.dayWorkouts,
         _db.dayWorkouts.id.equalsExp(_db.dayWorkoutItems.dayWorkoutId),
       ),
-    ])..where(_db.dayWorkoutItems.done.equals(true))).get();
+    ])).get();
     final byDay = <DateTime, List<WorkoutSetLog>>{};
     final doneByDay = <DateTime, List<DayWorkoutItem>>{};
+    final workoutsByDay = <DateTime, Map<int, _WorkoutHistoryAgg>>{};
     for (final log in logs) {
       byDay.putIfAbsent(_dayStart(log.date), () => []).add(log);
     }
-    for (final row in completed) {
-      final day = _dayStart(row.readTable(_db.dayWorkouts).date);
-      doneByDay
-          .putIfAbsent(day, () => [])
-          .add(row.readTable(_db.dayWorkoutItems));
+    for (final row in allItems) {
+      final workout = row.readTable(_db.dayWorkouts);
+      final item = row.readTable(_db.dayWorkoutItems);
+      final day = _dayStart(workout.date);
+      if (item.done) {
+        doneByDay.putIfAbsent(day, () => []).add(item);
+      }
+      final agg = workoutsByDay
+          .putIfAbsent(day, () => {})
+          .putIfAbsent(
+            workout.id,
+            () => _WorkoutHistoryAgg(planName: workout.planName),
+          );
+      agg.total++;
+      if (item.done) agg.done++;
     }
+    // A day only counts as history once something actually happened (a set
+    // log, or a completed item) — an applied-but-untouched plan alone
+    // doesn't; `workoutsByDay` is only consulted below to summarize days
+    // that already qualify.
     final days = {...byDay.keys, ...doneByDay.keys}.toList()
       ..sort((a, b) => b.compareTo(a));
+    final selected = limitDays == null ? days : days.take(limitDays);
     return [
-      for (final d in days.take(limitDays))
+      for (final d in selected)
         WorkoutHistoryDay(
           date: d,
           sets: byDay[d] ?? [],
           completedItems: doneByDay[d] ?? [],
+          planSummaries: [
+            for (final agg in (workoutsByDay[d] ?? {}).values)
+              WorkoutHistoryPlanSummary(
+                planName: agg.planName,
+                doneCount: agg.done,
+                totalCount: agg.total,
+              ),
+          ],
         ),
     ];
   }
