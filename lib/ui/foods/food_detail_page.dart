@@ -49,9 +49,8 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
     });
   }
 
-  void _stepGrams(int dir) {
-    final step = _grams < 100 ? 10.0 : 50.0;
-    setState(() => _grams = (_grams + dir * step).clamp(5, 3000));
+  void _stepGrams(double delta) {
+    setState(() => _grams = (_grams + delta).clamp(5, 3000));
   }
 
   Future<void> _addToMeal() async {
@@ -295,8 +294,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
           const SizedBox(height: AppSpacing.compact),
           _GramsStepper(
             grams: _grams,
-            onMinus: () => _stepGrams(-1),
-            onPlus: () => _stepGrams(1),
+            onStep: _stepGrams,
           ),
           if (_servings.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.field),
@@ -307,6 +305,9 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
                 for (final s in _servings)
                   ActionChip(
                     label: Text('${s.label} · ${s.grams.round()} g'),
+                    labelStyle: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                     onPressed: () => setState(() => _grams = s.grams),
                   ),
               ],
@@ -339,7 +340,12 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
           const SizedBox(height: AppSpacing.section),
           Row(
             children: [
-              Text(l10n.commonPortions, style: theme.textTheme.titleSmall),
+              Text(
+                l10n.commonPortions,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               const Spacer(),
               TextButton.icon(
                 onPressed: _addServing,
@@ -354,7 +360,10 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
             for (final s in _servings)
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Text(s.label),
+                title: Text(
+                  s.label,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
                 subtitle: Text(
                   '${s.grams.round()} g',
                   style: theme.textTheme.meta,
@@ -481,20 +490,27 @@ class _MacroRow extends StatelessWidget {
 class _GramsStepper extends StatelessWidget {
   const _GramsStepper({
     required this.grams,
-    required this.onMinus,
-    required this.onPlus,
+    required this.onStep,
   });
 
   final double grams;
-  final VoidCallback onMinus;
-  final VoidCallback onPlus;
+  final ValueChanged<double> onStep;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Row(
       children: [
-        IconButton.outlined(onPressed: onMinus, icon: const Icon(Icons.remove)),
+        _GramStepButton(
+          icon: Icons.remove,
+          iconSize: 28,
+          onPressed: () => onStep(-50),
+        ),
+        _GramStepButton(
+          icon: Icons.remove,
+          iconSize: 18,
+          onPressed: () => onStep(-5),
+        ),
         Expanded(
           child: Text(
             '${grams.round()} g',
@@ -502,8 +518,42 @@ class _GramsStepper extends StatelessWidget {
             style: theme.textTheme.titleLarge,
           ),
         ),
-        IconButton.outlined(onPressed: onPlus, icon: const Icon(Icons.add)),
+        _GramStepButton(
+          icon: Icons.add,
+          iconSize: 18,
+          onPressed: () => onStep(5),
+        ),
+        _GramStepButton(
+          icon: Icons.add,
+          iconSize: 28,
+          onPressed: () => onStep(50),
+        ),
       ],
+    );
+  }
+}
+
+class _GramStepButton extends StatelessWidget {
+  const _GramStepButton({
+    required this.icon,
+    required this.iconSize,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final double iconSize;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton.outlined(
+      onPressed: onPressed,
+      icon: Icon(icon, size: iconSize),
+      style: IconButton.styleFrom(
+        minimumSize: const Size(44, 44),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
+      ),
     );
   }
 }

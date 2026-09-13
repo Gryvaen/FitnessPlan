@@ -397,7 +397,7 @@ class TodayWorkoutCard extends ConsumerWidget {
               summary: '$done/$total',
             ),
             if (!showDetails) ...[
-              for (final group in snapshot.groups.take(2))
+              for (final group in snapshot.groups)
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text(_groupTitle(group, l10n)),
