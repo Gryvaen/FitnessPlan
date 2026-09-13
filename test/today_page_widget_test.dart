@@ -29,8 +29,6 @@ UserProfile _profile() => UserProfile(
     fatG: 60,
   ),
   targetWeightKg: 70,
-  goalWeeks: 10,
-  weeklyLossKg: 0.5,
   bmr: 1700,
   tdee: 2400,
   dailyDeficit: 400,

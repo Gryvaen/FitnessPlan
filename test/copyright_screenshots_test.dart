@@ -38,8 +38,6 @@ UserProfile _sampleProfile() {
       fatG: 56,
     ),
     targetWeightKg: 65,
-    goalWeeks: 10,
-    weeklyLossKg: 0.5,
     bmr: 1733.75,
     tdee: 2687.31,
     dailyDeficit: 550,

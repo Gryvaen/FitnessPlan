@@ -74,9 +74,7 @@ class CalorieBreakdown extends StatelessWidget {
             child: Text(
               note.localize(l10n),
               style: theme.textTheme.meta?.copyWith(
-                color: plan.safetyApplied || plan.missingCutInputs
-                    ? theme.colorScheme.error
-                    : null,
+                color: plan.missingCutInputs ? theme.colorScheme.error : null,
               ),
             ),
           ),
@@ -107,53 +105,28 @@ class CalorieBreakdown extends StatelessWidget {
           ),
         ];
       case FitnessGoal.cut:
+        // No fixed deficit here — a fat-loss deficit only ever comes from an
+        // active diet-strategy plan, so `cut` always eats at TDEE until one
+        // exists. Target weight (if set) is shown purely as progress info.
         final lines = <Widget>[
           Text(plan.goal.label(l10n), style: theme.textTheme.bodyMedium),
         ];
-        if (plan.kgToLose != null &&
-            plan.targetWeightKg != null &&
-            plan.weeklyLossKg != null) {
-          lines.addAll([
+        if (plan.kgToLose != null && plan.targetWeightKg != null) {
+          lines.add(
             Text(
               '${plan.weightKg.toStringAsFixed(1)} → '
               '${plan.targetWeightKg!.toStringAsFixed(1)} kg'
               '${l10n.needLose(plan.kgToLose!.toStringAsFixed(1))}',
               style: theme.textTheme.meta,
             ),
-            Text(
-              '${l10n.weeklyLossLine(plan.weeklyLossKg!.toStringAsFixed(2)).replaceFirst(RegExp(r'^·\s*'), '')}'
-              '${plan.goalWeeks != null ? l10n.aboutNWeeks(plan.goalWeeks!) : ''}',
-              style: theme.textTheme.meta,
-            ),
-            Text(
-              '${l10n.dailyDeficitLine('${plan.dailyDeficit.round()}')}'
-              '${plan.requestedDeficit != null && plan.safetyApplied && (plan.requestedDeficit! - plan.dailyDeficit).abs() > 1 ? l10n.narrowed : ''}',
-              style: theme.textTheme.meta,
-            ),
-            Text(
-              l10n.shouldEat('${plan.targets.calories}'),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ]);
-        } else if (plan.missingCutInputs) {
-          lines.add(
-            Text(
-              l10n.tempEstimate80('${plan.targets.calories}'),
-              style: theme.textTheme.bodyMedium,
-            ),
-          );
-        } else {
-          // Valid target weight but no active fat-loss deficit rate —
-          // defaults to TDEE (deficits now come from a diet-strategy plan).
-          lines.add(
-            Text(
-              l10n.cutDefaultsToTdeeLine('${plan.targets.calories}'),
-              style: theme.textTheme.bodyMedium,
-            ),
           );
         }
+        lines.add(
+          Text(
+            l10n.cutDefaultsToTdeeLine('${plan.targets.calories}'),
+            style: theme.textTheme.bodyMedium,
+          ),
+        );
         return lines;
     }
   }

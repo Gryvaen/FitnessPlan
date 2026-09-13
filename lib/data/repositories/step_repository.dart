@@ -96,5 +96,23 @@ class StepRepository {
         .asyncMap((_) => allLoggedDays());
   }
 
+  /// Active step days only (steps > 0), newest first.
+  /// [limitDays] caps how many to return; `null` means the full history.
+  Future<List<StepDay>> historyDays({int? limitDays}) async {
+    final days = [
+      for (final day in await allLoggedDays())
+        if (day.steps > 0) day,
+    ];
+    if (limitDays == null) return days;
+    return days.take(limitDays).toList();
+  }
+
+  Stream<List<StepDay>> watchHistoryDays({int? limitDays}) {
+    return _db
+        .select(_db.stepLogs)
+        .watch()
+        .asyncMap((_) => historyDays(limitDays: limitDays));
+  }
+
   Future<void> clearAll() => _db.delete(_db.stepLogs).go();
 }

@@ -61,7 +61,6 @@ class ProfileRepository {
     required ActivityLevel activity,
     required FitnessGoal goal,
     double? targetWeightKg,
-    double? weeklyLossKg,
     int calorieAdjustment = 0,
   }) async {
     final old = load();
@@ -73,7 +72,6 @@ class ProfileRepository {
       activity: activity,
       goal: goal,
       targetWeightKg: targetWeightKg,
-      weeklyLossKg: weeklyLossKg,
       calorieAdjustment: calorieAdjustment,
     );
     var profile = _profileFromPlan(
@@ -104,7 +102,6 @@ class ProfileRepository {
       activity: current.activity,
       goal: current.goal,
       targetWeightKg: current.targetWeightKg,
-      weeklyLossKg: current.weeklyLossKg,
       calorieAdjustment: current.calorieAdjustment,
     );
   }
@@ -125,7 +122,6 @@ class ProfileRepository {
       activity: current.activity,
       goal: current.goal,
       targetWeightKg: current.targetWeightKg,
-      weeklyLossKg: current.weeklyLossKg,
       calorieAdjustment: next,
     );
   }
@@ -145,13 +141,10 @@ class ProfileRepository {
       goal: plan.goal,
       targets: plan.targets,
       targetWeightKg: plan.targetWeightKg,
-      goalWeeks: plan.goalWeeks,
-      weeklyLossKg: plan.requestedWeeklyLossKg ?? plan.weeklyLossKg,
       calorieAdjustment: calorieAdjustment,
       bmr: plan.bmr,
       tdee: plan.tdee,
       dailyDeficit: plan.dailyDeficit,
-      calorieFloorApplied: plan.safetyApplied,
       missingCutInputs: plan.missingCutInputs,
       calorieStandardSince: calorieStandardSince,
     );
@@ -166,8 +159,6 @@ class ProfileRepository {
       activity: profile.activity,
       goal: profile.goal,
       targetWeightKg: profile.targetWeightKg,
-      weeklyLossKg: profile.weeklyLossKg,
-      goalWeeks: profile.goalWeeks,
       calorieAdjustment: profile.calorieAdjustment,
     );
   }

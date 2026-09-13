@@ -77,24 +77,6 @@ extension CalorieNoteL10n on CalorieNote {
     switch (id) {
       case CalorieNoteId.missingTargetWeight:
         return l10n.noteMissingTargetWeight;
-      case CalorieNoteId.weeklyLossTooHigh:
-        return l10n.noteWeeklyLossTooHigh(params['rate'] as String);
-      case CalorieNoteId.weeklyLossTooLow:
-        return l10n.noteWeeklyLossTooLow(params['rate'] as String);
-      case CalorieNoteId.deficitCap:
-        return l10n.noteDeficitCap(
-          params['max'] as String,
-          params['weekly'] as String,
-          params['weeks'] as int,
-        );
-      case CalorieNoteId.estimateWeeks:
-        return l10n.noteEstimateWeeks(
-          params['kcalPerKg'] as String,
-          params['weekly'] as String,
-          params['weeks'] as int,
-        );
-      case CalorieNoteId.estimateWeeksShort:
-        return l10n.noteEstimateWeeksShort(params['weeks'] as int);
       case CalorieNoteId.plateauAdj:
         return l10n.notePlateauAdj(params['adj'] as String);
     }

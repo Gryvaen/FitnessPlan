@@ -56,6 +56,38 @@ void main() {
     expect(recent.last.steps, 0);
   });
 
+  test('historyDays keeps only active days and respects limit', () async {
+    final today = CalendarDay.todayLocal();
+    await steps.setStepsForDay(today, 0);
+    await steps.setStepsForDay(today.subtract(const Duration(days: 1)), 500);
+    await steps.setStepsForDay(today.subtract(const Duration(days: 3)), 900);
+    await steps.setStepsForDay(today.subtract(const Duration(days: 20)), 1200);
+
+    expect(await steps.historyDays(limitDays: 14), [
+      isA<StepDay>()
+          .having((d) => d.date, 'date', today.subtract(const Duration(days: 1)))
+          .having((d) => d.steps, 'steps', 500),
+      isA<StepDay>()
+          .having((d) => d.date, 'date', today.subtract(const Duration(days: 3)))
+          .having((d) => d.steps, 'steps', 900),
+      isA<StepDay>()
+          .having(
+            (d) => d.date,
+            'date',
+            today.subtract(const Duration(days: 20)),
+          )
+          .having((d) => d.steps, 'steps', 1200),
+    ]);
+
+    final recent = await steps.historyDays(limitDays: 2);
+    expect(recent, hasLength(2));
+    expect(recent.first.steps, 500);
+    expect(recent.last.steps, 900);
+
+    final all = await steps.historyDays(limitDays: null);
+    expect(all, hasLength(3));
+  });
+
   test('schema 14 creates step_logs table', () async {
     await steps.setStepsForDay(CalendarDay.todayLocal(), 42);
     final row = await (db.select(db.stepLogs)).getSingle();

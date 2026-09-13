@@ -15,7 +15,7 @@ void main() {
     repo = ProfileRepository(prefs);
   });
 
-  Future<UserProfile> seedCut({required double weeklyLossKg}) {
+  Future<UserProfile> seedCut({int calorieAdjustment = 0}) {
     return repo.saveFromInputs(
       sex: Sex.male,
       age: 30,
@@ -24,22 +24,22 @@ void main() {
       activity: ActivityLevel.moderate,
       goal: FitnessGoal.cut,
       targetWeightKg: 70,
-      weeklyLossKg: weeklyLossKg,
+      calorieAdjustment: calorieAdjustment,
     );
   }
 
   test('first save does not set calorieStandardSince', () async {
-    final profile = await seedCut(weeklyLossKg: 0.5);
+    final profile = await seedCut();
     expect(profile.calorieStandardSince, isNull);
     expect(repo.load()?.calorieStandardSince, isNull);
   });
 
-  test('changing weekly loss that alters deficit stamps today', () async {
-    await seedCut(weeklyLossKg: 0.3);
+  test('changing calorie adjustment that alters target stamps today', () async {
+    await seedCut();
     final before = repo.load()!;
     expect(before.calorieStandardSince, isNull);
 
-    final updated = await seedCut(weeklyLossKg: 0.8);
+    final updated = await seedCut(calorieAdjustment: 100);
     expect(updated.targets.calories, isNot(before.targets.calories));
 
     final now = DateTime.now();
@@ -49,12 +49,12 @@ void main() {
   });
 
   test('identical save does not refresh calorieStandardSince', () async {
-    await seedCut(weeklyLossKg: 0.5);
-    final stamped = await seedCut(weeklyLossKg: 0.8);
+    await seedCut();
+    final stamped = await seedCut(calorieAdjustment: 100);
     final stampedDay = stamped.calorieStandardSince;
     expect(stampedDay, isNotNull);
 
-    final again = await seedCut(weeklyLossKg: 0.8);
+    final again = await seedCut(calorieAdjustment: 100);
     expect(again.targets.calories, stamped.targets.calories);
     expect(again.calorieStandardSince, stampedDay);
   });

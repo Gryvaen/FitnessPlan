@@ -1,15 +1,7 @@
 import 'models.dart';
 
 /// Identifiers for calorie-plan notes (localized in UI).
-enum CalorieNoteId {
-  missingTargetWeight,
-  weeklyLossTooHigh,
-  weeklyLossTooLow,
-  deficitCap,
-  estimateWeeks,
-  estimateWeeksShort,
-  plateauAdj,
-}
+enum CalorieNoteId { missingTargetWeight, plateauAdj }
 
 class CalorieNote {
   const CalorieNote(this.id, [this.params = const {}]);
@@ -31,14 +23,9 @@ class CaloriePlan {
     required this.sex,
     required this.dailyDeficit,
     required this.targets,
-    required this.safetyApplied,
     required this.proteinPerKg,
     this.targetWeightKg,
-    this.goalWeeks,
-    this.weeklyLossKg,
-    this.requestedWeeklyLossKg,
     this.kgToLose,
-    this.requestedDeficit,
     this.calorieAdjustment = 0,
     this.missingCutInputs = false,
     this.notes = const [],
@@ -54,14 +41,9 @@ class CaloriePlan {
   final Sex sex;
   final double dailyDeficit;
   final MacroTargets targets;
-  final bool safetyApplied;
   final double proteinPerKg;
   final double? targetWeightKg;
-  final int? goalWeeks;
-  final double? weeklyLossKg;
-  final double? requestedWeeklyLossKg;
   final double? kgToLose;
-  final double? requestedDeficit;
   final int calorieAdjustment;
   final bool missingCutInputs;
   final List<CalorieNote> notes;
@@ -84,9 +66,6 @@ class CalorieCalculator {
 
   static const fatPerKg = 0.8;
   static const kcalPerKgFat = 7700.0;
-  static const maxDailyDeficit = 1000.0;
-  static const minWeeklyLoss = 0.3;
-  static const maxWeeklyLoss = 0.8;
   static const maxCalorieAdjustment = 300;
 
   double bmr({
@@ -116,17 +95,6 @@ class CalorieCalculator {
     return 2.0;
   }
 
-  /// Clamp weekly loss; returns (effectiveRate, wasClamped).
-  static (double, bool) clampWeeklyLoss(double requested) {
-    if (requested > maxWeeklyLoss) {
-      return (maxWeeklyLoss, true);
-    }
-    if (requested < minWeeklyLoss) {
-      return (minWeeklyLoss, true);
-    }
-    return (requested, false);
-  }
-
   CaloriePlan plan({
     required Sex sex,
     required double weightKg,
@@ -135,8 +103,6 @@ class CalorieCalculator {
     required ActivityLevel activity,
     required FitnessGoal goal,
     double? targetWeightKg,
-    double? weeklyLossKg,
-    int? goalWeeks,
     int calorieAdjustment = 0,
   }) {
     final bmrValue = bmr(
@@ -151,14 +117,9 @@ class CalorieCalculator {
 
     double dailyDeficit = 0;
     double eat = tdeeValue;
-    bool safetyApplied = false;
     bool missingCutInputs = false;
     double? kgToLose;
-    double? requestedDeficit;
-    double? effectiveWeekly;
-    double? requestedWeekly;
     double? effectiveTarget;
-    int? estimatedWeeks;
 
     switch (goal) {
       case FitnessGoal.maintain:
@@ -168,103 +129,19 @@ class CalorieCalculator {
         eat = tdeeValue * 1.1;
         dailyDeficit = 0;
       case FitnessGoal.cut:
+        // No fixed calorie deficit here — a fat-loss deficit only ever comes
+        // from an active diet-strategy plan (see DietStrategyRepository).
+        // Absent one, `cut` eats at TDEE just like `maintain`; target weight
+        // is kept purely as a stated goal to show progress against.
+        eat = tdeeValue;
+        dailyDeficit = 0;
         effectiveTarget = targetWeightKg;
-        requestedWeekly = weeklyLossKg;
-        if (requestedWeekly == null &&
-            goalWeeks != null &&
-            effectiveTarget != null &&
-            effectiveTarget < weightKg) {
-          requestedWeekly = (weightKg - effectiveTarget) / goalWeeks;
-        }
         final validCut = effectiveTarget != null && effectiveTarget < weightKg;
         if (!validCut) {
           missingCutInputs = true;
-          eat = tdeeValue * 0.8;
-          dailyDeficit = tdeeValue - eat;
           notes.add(const CalorieNote(CalorieNoteId.missingTargetWeight));
-        } else if (requestedWeekly == null) {
-          // No explicit/derivable weekly-loss rate — the profile no longer
-          // asks for one, so default to TDEE like `maintain`. Fat-loss
-          // deficits now come solely from an active diet-strategy plan, not
-          // the profile goal.
-          kgToLose = weightKg - effectiveTarget;
-          eat = tdeeValue;
-          dailyDeficit = 0;
         } else {
-          final lose = weightKg - effectiveTarget;
-          kgToLose = lose;
-
-          final rawWeekly = requestedWeekly;
-          final clamped = clampWeeklyLoss(requestedWeekly);
-          final intendedWeekly = clamped.$1;
-          final rateClamped = clamped.$2;
-          requestedWeekly = intendedWeekly;
-
-          if (rateClamped && rawWeekly > maxWeeklyLoss) {
-            safetyApplied = true;
-            notes.add(
-              CalorieNote(CalorieNoteId.weeklyLossTooHigh, {
-                'rate': maxWeeklyLoss.toStringAsFixed(1),
-              }),
-            );
-          } else if (rateClamped && rawWeekly < minWeeklyLoss) {
-            notes.add(
-              CalorieNote(CalorieNoteId.weeklyLossTooLow, {
-                'rate': minWeeklyLoss.toStringAsFixed(1),
-              }),
-            );
-          }
-
-          var deficit = intendedWeekly * kcalPerKgFat / 7;
-          requestedDeficit = intendedWeekly * kcalPerKgFat / 7;
-
-          if (deficit > maxDailyDeficit) {
-            deficit = maxDailyDeficit;
-            safetyApplied = true;
-          }
-
-          eat = tdeeValue - deficit;
-          dailyDeficit = deficit;
-
-          if (dailyDeficit > 0) {
-            effectiveWeekly = dailyDeficit * 7 / kcalPerKgFat;
-            estimatedWeeks = (lose / effectiveWeekly).ceil().clamp(1, 520);
-          } else {
-            effectiveWeekly = 0;
-            estimatedWeeks = null;
-          }
-
-          final rateWasLimited =
-              safetyApplied &&
-              dailyDeficit > 0 &&
-              (effectiveWeekly < intendedWeekly - 0.001);
-          if (rateWasLimited) {
-            if (!notes.any((n) => n.id == CalorieNoteId.deficitCap)) {
-              notes.add(
-                CalorieNote(CalorieNoteId.deficitCap, {
-                  'max': maxDailyDeficit.toInt().toString(),
-                  'weekly': effectiveWeekly.toStringAsFixed(2),
-                  'weeks': estimatedWeeks!,
-                }),
-              );
-            }
-          } else if (!notes.any(
-            (n) => n.id == CalorieNoteId.weeklyLossTooHigh,
-          )) {
-            notes.add(
-              CalorieNote(CalorieNoteId.estimateWeeks, {
-                'kcalPerKg': kcalPerKgFat.toInt().toString(),
-                'weekly': effectiveWeekly.toStringAsFixed(1),
-                'weeks': estimatedWeeks!,
-              }),
-            );
-          } else {
-            notes.add(
-              CalorieNote(CalorieNoteId.estimateWeeksShort, {
-                'weeks': estimatedWeeks!,
-              }),
-            );
-          }
+          kgToLose = weightKg - effectiveTarget;
         }
     }
 
@@ -291,14 +168,9 @@ class CalorieCalculator {
       sex: sex,
       dailyDeficit: dailyDeficit,
       targets: targets,
-      safetyApplied: safetyApplied,
       proteinPerKg: proteinRate,
       targetWeightKg: goal == FitnessGoal.cut ? effectiveTarget : null,
-      goalWeeks: goal == FitnessGoal.cut ? estimatedWeeks : null,
-      weeklyLossKg: goal == FitnessGoal.cut ? effectiveWeekly : null,
-      requestedWeeklyLossKg: goal == FitnessGoal.cut ? requestedWeekly : null,
       kgToLose: kgToLose,
-      requestedDeficit: requestedDeficit,
       calorieAdjustment: adj,
       missingCutInputs: missingCutInputs,
       notes: notes,

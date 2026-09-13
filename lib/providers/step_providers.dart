@@ -32,9 +32,9 @@ final recentStepsProvider = StreamProvider.autoDispose<List<StepDay>>((ref) {
   return ref.watch(stepRepositoryProvider).watchRecentDays(limitDays: 14);
 });
 
-/// Every logged step day (may span well beyond the recent sync window).
+/// Every active step day (steps > 0), spanning the full logged history.
 final allStepsProvider = StreamProvider.autoDispose<List<StepDay>>((ref) {
-  return ref.watch(stepRepositoryProvider).watchAllLoggedDays();
+  return ref.watch(stepRepositoryProvider).watchHistoryDays(limitDays: null);
 });
 
 /// Last completed sync outcome. Null only before the first attempt finishes.

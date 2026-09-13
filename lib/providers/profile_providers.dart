@@ -22,7 +22,6 @@ class ProfileNotifier extends Notifier<UserProfile?> {
     required ActivityLevel activity,
     required FitnessGoal goal,
     double? targetWeightKg,
-    double? weeklyLossKg,
     int? calorieAdjustment,
   }) async {
     final existing = state;
@@ -36,7 +35,6 @@ class ProfileNotifier extends Notifier<UserProfile?> {
           activity: activity,
           goal: goal,
           targetWeightKg: targetWeightKg,
-          weeklyLossKg: weeklyLossKg,
           calorieAdjustment:
               calorieAdjustment ?? existing?.calorieAdjustment ?? 0,
         );

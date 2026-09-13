@@ -354,7 +354,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       useRootNavigator: true,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (_) => SafeArea(
+      builder: (sheetContext) => SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSpacing.formPage),
           child: Column(
@@ -393,7 +393,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   style: TextStyle(color: theme.colorScheme.error),
                 ),
                 onTap: () {
-                  Navigator.of(context).pop();
+                  Navigator.of(sheetContext).pop();
                   _clearData();
                 },
               ),

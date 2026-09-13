@@ -7,7 +7,7 @@ void main() {
   const calc = CalorieCalculator();
 
   group('CalorieCalculator', () {
-    test('example male 70kg/183cm/23 moderate BMR and 0.5 kg/week cut', () {
+    test('example male 70kg/183cm/23 moderate cut eats at TDEE', () {
       final bmr = calc.bmr(
         sex: Sex.male,
         weightKg: 70,
@@ -24,14 +24,14 @@ void main() {
         activity: ActivityLevel.moderate,
         goal: FitnessGoal.cut,
         targetWeightKg: 65,
-        weeklyLossKg: 0.5,
       );
 
+      // No fixed deficit — a fat-loss strategy plan is what creates one now.
       expect(plan.tdee, closeTo(1733.75 * 1.55, 0.01));
-      expect(plan.dailyDeficit, closeTo(550, 0.01));
-      expect(plan.weeklyLossKg, 0.5);
-      expect(plan.goalWeeks, 10);
-      expect(plan.targets.calories, (plan.tdee - 550).round());
+      expect(plan.dailyDeficit, 0);
+      expect(plan.targets.calories, plan.tdee.round());
+      expect(plan.kgToLose, closeTo(5, 0.01));
+      expect(plan.missingCutInputs, isFalse);
       expect(plan.proteinPerKg, 2.0);
       expect(plan.targets.proteinG, 140.0);
       expect(plan.targets.fatG, 56.0);
@@ -54,66 +54,7 @@ void main() {
       expect(plan.targets.calories, plan.tdee.round());
     });
 
-    test('request 2 kg/week clamps to 0.8 with note', () {
-      final plan = calc.plan(
-        sex: Sex.male,
-        weightKg: 70,
-        heightCm: 183,
-        age: 23,
-        activity: ActivityLevel.moderate,
-        goal: FitnessGoal.cut,
-        targetWeightKg: 65,
-        weeklyLossKg: 2.0,
-      );
-
-      expect(plan.requestedWeeklyLossKg, CalorieCalculator.maxWeeklyLoss);
-      expect(plan.safetyApplied, isTrue);
-      expect(plan.weeklyLossKg, closeTo(CalorieCalculator.maxWeeklyLoss, 0.01));
-      expect(plan.dailyDeficit, closeTo(0.8 * 7700 / 7, 0.01));
-      expect(plan.goalWeeks, isNotNull);
-      expect(
-        plan.notes.any((n) => n.id == CalorieNoteId.weeklyLossTooHigh),
-        isTrue,
-      );
-    });
-
-    test('legacy goalWeeks migrates to weekly rate inside plan', () {
-      final plan = calc.plan(
-        sex: Sex.male,
-        weightKg: 70,
-        heightCm: 175,
-        age: 30,
-        activity: ActivityLevel.moderate,
-        goal: FitnessGoal.cut,
-        targetWeightKg: 65,
-        goalWeeks: 10,
-      );
-
-      expect(plan.weeklyLossKg, closeTo(0.5, 0.01));
-      expect(plan.dailyDeficit, closeTo(550, 0.01));
-      expect(plan.safetyApplied, isFalse);
-      expect(plan.targets.proteinG, 140.0);
-    });
-
-    test('cut has no calorie floor — uses TDEE minus full deficit', () {
-      final plan = calc.plan(
-        sex: Sex.male,
-        weightKg: 70,
-        heightCm: 175,
-        age: 30,
-        activity: ActivityLevel.sedentary,
-        goal: FitnessGoal.cut,
-        targetWeightKg: 65,
-        weeklyLossKg: 0.5,
-      );
-      expect(plan.dailyDeficit, closeTo(550, 0.01));
-      expect(plan.targets.calories, (plan.tdee - 550).round());
-      expect(plan.weeklyLossKg, closeTo(0.5, 0.01));
-      expect(plan.goalWeeks, 10);
-      expect(plan.safetyApplied, isFalse);
-    });
-
-    test('cut without target falls back to 80% TDEE', () {
+    test('cut without a valid target weight still eats at TDEE, flagged', () {
       final maintain = calc.tdee(
         sex: Sex.female,
         weightKg: 55,
@@ -130,7 +71,12 @@ void main() {
         goal: FitnessGoal.cut,
       );
       expect(plan.missingCutInputs, isTrue);
-      expect(plan.targets.calories, (maintain * 0.8).round());
+      expect(plan.dailyDeficit, 0);
+      expect(plan.targets.calories, maintain.round());
+      expect(
+        plan.notes.any((n) => n.id == CalorieNoteId.missingTargetWeight),
+        isTrue,
+      );
     });
 
     test('calorieAdjustment reduces intake', () {
@@ -142,7 +88,6 @@ void main() {
         activity: ActivityLevel.moderate,
         goal: FitnessGoal.cut,
         targetWeightKg: 65,
-        weeklyLossKg: 0.5,
       );
       final adjusted = calc.plan(
         sex: Sex.male,
@@ -152,7 +97,6 @@ void main() {
         activity: ActivityLevel.moderate,
         goal: FitnessGoal.cut,
         targetWeightKg: 65,
-        weeklyLossKg: 0.5,
         calorieAdjustment: 100,
       );
       expect(adjusted.targets.calories, base.targets.calories - 100);

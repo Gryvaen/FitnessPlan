@@ -65,13 +65,10 @@ class UserProfile {
     required this.goal,
     required this.targets,
     this.targetWeightKg,
-    this.goalWeeks,
-    this.weeklyLossKg,
     this._calorieAdjustment = 0,
     this.bmr,
     this.tdee,
     this.dailyDeficit,
-    this._calorieFloorApplied = false,
     this._missingCutInputs = false,
     this.calorieStandardSince,
   });
@@ -84,20 +81,16 @@ class UserProfile {
   final FitnessGoal goal;
   final MacroTargets targets;
   final double? targetWeightKg;
-  final int? goalWeeks;
-  final double? weeklyLossKg;
   final int? _calorieAdjustment;
   final double? bmr;
   final double? tdee;
   final double? dailyDeficit;
-  final bool? _calorieFloorApplied;
   final bool? _missingCutInputs;
 
   /// Local calendar day when calorie targets / deficit last changed.
   final DateTime? calorieStandardSince;
 
   int get calorieAdjustment => _calorieAdjustment ?? 0;
-  bool get calorieFloorApplied => _calorieFloorApplied ?? false;
   bool get missingCutInputs => _missingCutInputs ?? false;
 
   UserProfile copyWith({
@@ -109,13 +102,10 @@ class UserProfile {
     FitnessGoal? goal,
     MacroTargets? targets,
     double? targetWeightKg,
-    int? goalWeeks,
-    double? weeklyLossKg,
     int? calorieAdjustment,
     double? bmr,
     double? tdee,
     double? dailyDeficit,
-    bool? calorieFloorApplied,
     bool? missingCutInputs,
     DateTime? calorieStandardSince,
   }) {
@@ -128,13 +118,10 @@ class UserProfile {
       goal: goal ?? this.goal,
       targets: targets ?? this.targets,
       targetWeightKg: targetWeightKg ?? this.targetWeightKg,
-      goalWeeks: goalWeeks ?? this.goalWeeks,
-      weeklyLossKg: weeklyLossKg ?? this.weeklyLossKg,
       calorieAdjustment: calorieAdjustment ?? this.calorieAdjustment,
       bmr: bmr ?? this.bmr,
       tdee: tdee ?? this.tdee,
       dailyDeficit: dailyDeficit ?? this.dailyDeficit,
-      calorieFloorApplied: calorieFloorApplied ?? this.calorieFloorApplied,
       missingCutInputs: missingCutInputs ?? this.missingCutInputs,
       calorieStandardSince: calorieStandardSince ?? this.calorieStandardSince,
     );
@@ -165,14 +152,10 @@ class UserProfile {
     goal: FitnessGoal.values.byName(json['goal'] as String),
     targets: MacroTargets.fromJson(json['targets'] as Map<String, dynamic>),
     targetWeightKg: (json['targetWeightKg'] as num?)?.toDouble(),
-    goalWeeks: json['goalWeeks'] as int?,
-    weeklyLossKg: (json['weeklyLossKg'] as num?)?.toDouble(),
     calorieAdjustment: json['calorieAdjustment'] as int? ?? 0,
     bmr: (json['bmr'] as num?)?.toDouble(),
     tdee: (json['tdee'] as num?)?.toDouble(),
     dailyDeficit: (json['dailyDeficit'] as num?)?.toDouble(),
-    calorieFloorApplied: json['calorieFloorApplied'] as bool? ?? false,
-    // Legacy saved profiles may still carry adjustedWeeks; ignore it.
     missingCutInputs: json['missingCutInputs'] as bool? ?? false,
     calorieStandardSince: _dayFromJson(json['calorieStandardSince']),
   );
@@ -186,13 +169,10 @@ class UserProfile {
     'goal': goal.name,
     'targets': targets.toJson(),
     'targetWeightKg': targetWeightKg,
-    'goalWeeks': goalWeeks,
-    'weeklyLossKg': weeklyLossKg,
     'calorieAdjustment': calorieAdjustment,
     'bmr': bmr,
     'tdee': tdee,
     'dailyDeficit': dailyDeficit,
-    'calorieFloorApplied': calorieFloorApplied,
     'missingCutInputs': missingCutInputs,
     'calorieStandardSince': _dayToJson(calorieStandardSince),
   };
