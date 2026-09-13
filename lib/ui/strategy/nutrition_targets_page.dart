@@ -138,12 +138,12 @@ class NutritionTargetsPage extends ConsumerWidget {
                     color: visuals.onHeroMuted,
                   ),
                 ),
-                if (todayTarget?.plannedDeficit != null &&
-                    todayTarget!.plannedDeficit! > 0) ...[
+                if (todayTarget?.fixedPlannedDeficit != null &&
+                    todayTarget!.fixedPlannedDeficit! > 0) ...[
                   const SizedBox(height: 4),
                   Text(
                     l10n.dailyDeficitLine(
-                      '${todayTarget.plannedDeficit!.round()}',
+                      '${todayTarget.fixedPlannedDeficit!.round()}',
                     ),
                     style: theme.textTheme.meta?.copyWith(
                       color: visuals.onHeroMuted,

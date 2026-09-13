@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:diet/domain/diet_plan.dart';
 import 'package:diet/domain/diet_strategy.dart';
 import 'package:diet/domain/models.dart';
 import 'package:diet/domain/strategy_eligibility.dart';
@@ -534,6 +535,48 @@ void main() {
       final next = DateTime(d.year, d.month, d.day + 1);
       expect(StrategyDates.encode(next), '2026-03-30');
       expect(next.difference(d).inHours, anyOf(23, 24, 25));
+    });
+  });
+
+  group('fixedPlannedDeficit', () {
+    DailyNutritionTarget target({
+      required TargetSource source,
+      DietStrategyKind? strategy,
+      double calories = 2000,
+      double? tdee = 2400,
+    }) {
+      return DailyNutritionTarget(
+        date: DateTime(2026, 9, 13),
+        calories: calories,
+        proteinG: 150,
+        carbG: 200,
+        fatG: 60,
+        source: source,
+        estimatedTdee: tdee,
+        strategy: strategy,
+      );
+    }
+
+    test('only balanced strategy exposes fixed planned deficit', () {
+      final balanced = target(
+        source: TargetSource.strategy,
+        strategy: DietStrategyKind.balanced,
+      );
+      expect(balanced.hasFixedPlannedDeficit, isTrue);
+      expect(balanced.fixedPlannedDeficit, closeTo(400, 1e-9));
+
+      final cycle = target(
+        source: TargetSource.strategy,
+        strategy: DietStrategyKind.carbCycle,
+      );
+      expect(cycle.hasFixedPlannedDeficit, isFalse);
+      expect(cycle.fixedPlannedDeficit, isNull);
+      // Raw gap still exists for macros math.
+      expect(cycle.plannedDeficit, closeTo(400, 1e-9));
+
+      final profile = target(source: TargetSource.profile);
+      expect(profile.hasFixedPlannedDeficit, isFalse);
+      expect(profile.fixedPlannedDeficit, isNull);
     });
   });
 }

@@ -14,6 +14,8 @@ import 'ui/meals/daily_meals_page.dart';
 import 'ui/meals/log_meal_page.dart';
 import 'ui/meals/meal_detail_page.dart';
 import 'ui/onboarding/onboarding_page.dart';
+import 'domain/models.dart';
+import 'ui/profile/cultivation_goal_picker_page.dart';
 import 'ui/profile/cultivation_history_page.dart';
 import 'ui/profile/cultivation_page.dart';
 import 'ui/profile/realm_guide_page.dart';
@@ -181,6 +183,19 @@ final routerProvider = Provider<GoRouter>((ref) {
                         path: 'history',
                         builder: (context, state) =>
                             const CultivationHistoryPage(),
+                      ),
+                      GoRoute(
+                        path: 'settings',
+                        builder: (context, state) =>
+                            const CultivationGoalPickerPage(),
+                      ),
+                      GoRoute(
+                        path: 'goal/:goal',
+                        builder: (context, state) => CultivationGoalScreen(
+                          goal: FitnessGoal.values.byName(
+                            state.pathParameters['goal']!,
+                          ),
+                        ),
                       ),
                     ],
                   ),

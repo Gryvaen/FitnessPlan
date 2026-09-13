@@ -1129,6 +1129,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String remainingCaloriesLine(String kcal) {
+    return 'Remaining $kcal kcal';
+  }
+
+  @override
+  String get calendarRemainingHint =>
+      'Select a day with meal logs to see remaining calories';
+
+  @override
   String get legendColors => 'Colors';
 
   @override
@@ -2638,6 +2647,50 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cultivationSideRealmGuide => 'Realm guide';
 
   @override
+  String get cultivationSideSettings => 'Settings';
+
+  @override
+  String cultivationGoalLockedTitle(String goal) {
+    return '$goal cultivation not yet unlocked';
+  }
+
+  @override
+  String cultivationGoalLockedBody(String goal, String activeGoal) {
+    return 'Your current goal is \"$activeGoal\" — $goal cultivation only opens for users on the \"$goal\" goal.';
+  }
+
+  @override
+  String get cultivationGoalLockedCta => 'Go to settings';
+
+  @override
+  String cultivationComingSoonTitle(String goal) {
+    return '$goal cultivation is being crafted';
+  }
+
+  @override
+  String get cultivationComingSoonBody =>
+      'This path\'s own realm system is still being designed — check back soon.';
+
+  @override
+  String get cultivationPickerTitle => 'Choose a realm';
+
+  @override
+  String get cultivationPickerActiveBadge => 'Active';
+
+  @override
+  String get cultivationPickerLockedBadge => 'Locked';
+
+  @override
+  String get cultivationPickerTaglineMaintain => 'A calm mind, day after day';
+
+  @override
+  String get cultivationPickerTaglineCut =>
+      'Even a mortal\'s first step is cultivation';
+
+  @override
+  String get cultivationPickerTaglineBulk => 'Forge the body, surpass the self';
+
+  @override
   String get myProfileTitle => 'My profile';
 
   @override
@@ -2681,7 +2734,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get realmGuideFootnoteBody =>
-      '① Steps × 0.04 kcal/step; ② diet, counted only when at least 2 distinct meal types are logged that day (breakfast/lunch/dinner/snack) — your planned deficit (today\'s TDEE − target calories, same figure shown on the calendar) counts every such day, plus extra when you eat under target; but if your total intake for the day exceeds TDEE, the excess (intake − TDEE) is deducted as a setback.';
+      '① Steps × 0.04 kcal/step; ② diet, counted only when at least 2 distinct meal types are logged that day (breakfast/lunch/dinner/snack) — diet contribution = today\'s TDEE − today\'s intake (eating less yields a larger surplus; exceeding TDEE yields a negative setback).';
 
   @override
   String get realmGuideFootnoteNote =>

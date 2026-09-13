@@ -180,10 +180,25 @@ class DailyNutritionTarget {
   int get caloriesRounded => calories.round();
 
   /// Planned deficit = estimated TDEE − target (null if TDEE unknown).
+  ///
+  /// Prefer [fixedPlannedDeficit] for UI / calendar / 固定缺口 semantics —
+  /// that value is only active under an 均衡缺口 strategy.
   double? get plannedDeficit {
     final t = estimatedTdee;
     if (t == null || !t.isFinite) return null;
     return t - calories;
+  }
+
+  /// True when this day's target is governed by 均衡缺口 (balanced deficit).
+  /// Manual overrides that still carry [strategy] == balanced count too.
+  bool get hasFixedPlannedDeficit => strategy == DietStrategyKind.balanced;
+
+  /// Fixed planned deficit used by calendar / nutrition UI: only when
+  /// [hasFixedPlannedDeficit], otherwise null (do not treat profile/plateau
+  /// or carb-cycle/taper gaps as the 固定缺口).
+  double? get fixedPlannedDeficit {
+    if (!hasFixedPlannedDeficit) return null;
+    return plannedDeficit;
   }
 
   MacroTargets toMacroTargets() => MacroTargets(
