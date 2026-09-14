@@ -101,12 +101,16 @@ class _EditProgressSheet extends StatefulWidget {
 class _EditProgressSheetState extends State<_EditProgressSheet> {
   late int _completedSets;
   late int _perSetValue;
+
+  /// Which unit the value currently in [_weightKg] was last typed in — kept
+  /// only to persist as `actualWeightUnit`; both KG and LBS fields are
+  /// always shown and edited at once (see [_displayFor]/[_onWeightChanged]).
   late GymWeightUnit _weightUnit;
 
-  /// Canonical, unrounded weight in kg — the single source of truth.
-  /// Switching [_weightUnit] never touches this, so displaying it in either
-  /// unit (or converting back and forth) never accumulates rounding drift;
-  /// only the *displayed* number is rounded (see [_displayWeight]).
+  /// Canonical, unrounded weight in kg — the single source of truth both
+  /// fields are derived from. Deriving both displays fresh from this value
+  /// (instead of converting field-to-field) means the KG and LBS fields
+  /// never accumulate rounding drift no matter how often you edit either one.
   double? _weightKg;
   late final _noteCtrl = TextEditingController(text: widget.initialNote ?? '');
   var _saving = false;
@@ -120,18 +124,16 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
       ? FormOptions.targetSeconds
       : FormOptions.targetRepsOrSeconds;
 
-  double? get _rawDisplayWeight =>
-      _weightKg == null ? null : FormOptions.fromKg(_weightKg!, _weightUnit);
+  List<double> _optionsFor(GymWeightUnit unit) => FormOptions.gymLoadOptions(
+    unit,
+    include: _weightKg == null ? null : FormOptions.fromKg(_weightKg!, unit),
+  );
 
-  List<double> get _weightOptions =>
-      FormOptions.gymLoadOptions(_weightUnit, include: _rawDisplayWeight);
-
-  double? get _displayWeight => _rawDisplayWeight == null
-      ? null
-      : FormOptions.snapDouble(_weightOptions, _rawDisplayWeight!);
-
-  GymWeightUnit get _otherUnit =>
-      _weightUnit == GymWeightUnit.kg ? GymWeightUnit.lbs : GymWeightUnit.kg;
+  double? _displayFor(GymWeightUnit unit) {
+    if (_weightKg == null) return null;
+    final raw = FormOptions.fromKg(_weightKg!, unit);
+    return FormOptions.snapDouble(_optionsFor(unit), raw);
+  }
 
   @override
   void initState() {
@@ -154,14 +156,10 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
     super.dispose();
   }
 
-  void _setWeightUnit(GymWeightUnit next) {
-    if (next == _weightUnit) return;
-    setState(() => _weightUnit = next);
-  }
-
-  void _onWeightChanged(double? v) {
+  void _onWeightChanged(GymWeightUnit unit, double? v) {
     setState(() {
-      _weightKg = v == null ? null : FormOptions.toKg(v, _weightUnit);
+      _weightKg = v == null ? null : FormOptions.toKg(v, unit);
+      _weightUnit = unit;
     });
   }
 
@@ -192,6 +190,7 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final valueLabel = widget.unit == ExerciseUnit.seconds
         ? l10n.durationSeconds
         : l10n.repsCount;
@@ -216,97 +215,123 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
               style: theme.textTheme.meta,
             ),
             const SizedBox(height: AppSpacing.section),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: _StepperField(
-                    label: l10n.completedSets,
-                    value: _completedSets,
-                    onMinus: _completedSets > _setOptions.first
-                        ? () => setState(() => _completedSets--)
-                        : null,
-                    onPlus: _completedSets < _setOptions.last
-                        ? () => setState(() => _completedSets++)
-                        : null,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.field),
-                Expanded(
-                  child: _StepperField(
-                    label: valueLabel,
-                    value: _perSetValue,
-                    onMinus: () => setState(
-                      () => _perSetValue = (_perSetValue - 1).clamp(0, 999),
+            _MetricPanel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: _StepperField(
+                            label: l10n.completedSets,
+                            value: _completedSets,
+                            onMinus: _completedSets > _setOptions.first
+                                ? () => setState(() => _completedSets--)
+                                : null,
+                            onPlus: _completedSets < _setOptions.last
+                                ? () => setState(() => _completedSets++)
+                                : null,
+                          ),
+                        ),
+                        VerticalDivider(
+                          width: 1,
+                          thickness: 1,
+                          color: scheme.outlineVariant.withValues(alpha: 0.55),
+                        ),
+                        Expanded(
+                          child: _StepperField(
+                            label: valueLabel,
+                            value: _perSetValue,
+                            onMinus: () => setState(
+                              () =>
+                                  _perSetValue = (_perSetValue - 1).clamp(0, 999),
+                            ),
+                            onPlus: () => setState(
+                              () =>
+                                  _perSetValue = (_perSetValue + 1).clamp(0, 999),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    onPlus: () => setState(
-                      () => _perSetValue = (_perSetValue + 1).clamp(0, 999),
+                  ),
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: scheme.outlineVariant.withValues(alpha: 0.55),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          l10n.actualWeightLabel,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.compact),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: AppOptionalDropdown<double>(
+                                label: '',
+                                value: _displayFor(GymWeightUnit.kg),
+                                items: _optionsFor(GymWeightUnit.kg),
+                                suffixText: GymWeightUnit.kg.suffix,
+                                itemLabel: formatKg,
+                                noneLabel: GymWeightUnit.kg.suffix,
+                                onChanged: (v) =>
+                                    _onWeightChanged(GymWeightUnit.kg, v),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
+                              child: Text(
+                                '|',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: AppOptionalDropdown<double>(
+                                label: '',
+                                value: _displayFor(GymWeightUnit.lbs),
+                                items: _optionsFor(GymWeightUnit.lbs),
+                                suffixText: GymWeightUnit.lbs.suffix,
+                                itemLabel: formatKg,
+                                noneLabel: GymWeightUnit.lbs.suffix,
+                                onChanged: (v) =>
+                                    _onWeightChanged(GymWeightUnit.lbs, v),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.section),
-            _SectionLabel(
-              label: l10n.actualWeightLabel,
-              trailing: SegmentedButton<GymWeightUnit>(
-                style: const ButtonStyle(
-                  visualDensity: VisualDensity.compact,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                segments: const [
-                  ButtonSegment(value: GymWeightUnit.kg, label: Text('KG')),
-                  ButtonSegment(value: GymWeightUnit.lbs, label: Text('LBS')),
                 ],
-                selected: {_weightUnit},
-                onSelectionChanged: (s) => _setWeightUnit(s.first),
               ),
             ),
-            const SizedBox(height: AppSpacing.compact),
-            AppOptionalDropdown<double>(
-              label: '',
-              value: _displayWeight,
-              items: _weightOptions,
-              suffixText: _weightUnit.suffix,
-              itemLabel: formatKg,
-              noneLabel: l10n.optionalHint,
-              onChanged: _onWeightChanged,
-            ),
-            if (_weightKg != null) ...[
-              const SizedBox(height: 6),
-              InkWell(
-                borderRadius: BorderRadius.circular(8),
-                onTap: () => _setWeightUnit(_otherUnit),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.swap_horiz,
-                        size: 14,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '≈ ${formatKg(FormOptions.fromKg(_weightKg!, _otherUnit))} '
-                        '${_otherUnit.suffix}',
-                        style: theme.textTheme.meta,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
             const SizedBox(height: AppSpacing.section),
-            _SectionLabel(label: l10n.exerciseNoteLabel),
-            const SizedBox(height: AppSpacing.compact),
             TextField(
               controller: _noteCtrl,
               minLines: 1,
               maxLines: 4,
               textInputAction: TextInputAction.done,
-              decoration: InputDecoration(hintText: l10n.optionalHint),
+              decoration: InputDecoration(
+                labelText: l10n.exerciseNoteLabel,
+                hintText: l10n.optionalHint,
+              ),
             ),
             const SizedBox(height: AppSpacing.section),
             FilledButton(
@@ -320,32 +345,25 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
   }
 }
 
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel({required this.label, this.trailing});
+/// Shared surface for primary set / reps / weight controls.
+class _MetricPanel extends StatelessWidget {
+  const _MetricPanel({required this.child});
 
-  final String label;
-  final Widget? trailing;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-        ?trailing,
-      ],
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
+      borderRadius: BorderRadius.circular(AppRadius.control),
+      clipBehavior: Clip.antiAlias,
+      child: child,
     );
   }
 }
 
-/// Compact labelled stepper that matches the shared picker field surface.
+/// Compact labelled stepper; background comes from [_MetricPanel].
 class _StepperField extends StatelessWidget {
   const _StepperField({
     required this.label,
@@ -363,41 +381,37 @@ class _StepperField extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    return Material(
-      color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
-      borderRadius: BorderRadius.circular(AppRadius.control),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
             ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                _StepButton(icon: Icons.remove, onPressed: onMinus),
-                Expanded(
-                  child: Text(
-                    '$value',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              _StepButton(icon: Icons.remove, onPressed: onMinus),
+              Expanded(
+                child: Text(
+                  '$value',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                _StepButton(icon: Icons.add, onPressed: onPlus),
-              ],
-            ),
-          ],
-        ),
+              ),
+              _StepButton(icon: Icons.add, onPressed: onPlus),
+            ],
+          ),
+        ],
       ),
     );
   }
