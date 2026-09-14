@@ -69,7 +69,10 @@ class NotesRecordsTab extends ConsumerWidget {
           Text(l10n.journalSubtitle, style: theme.textTheme.bodySmall),
           const SizedBox(height: 12),
           SportInkRow(
-            leading: const Icon(Icons.edit_outlined),
+            leading: const Icon(
+              Icons.edit,
+              color: Color(0xFFC4A035),
+            ),
             title: Text(l10n.journalPrompt),
             trailing: const Icon(Icons.arrow_forward, size: 18),
             onTap: () => context.push(noteEditPath(DateTime.now())),

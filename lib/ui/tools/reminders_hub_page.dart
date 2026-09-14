@@ -132,6 +132,13 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
     ReminderKind.weighIn => Icons.monitor_weight_outlined,
   };
 
+  Color _iconColor(ReminderKind kind) => switch (kind) {
+    ReminderKind.workout => AppColors.protein,
+    ReminderKind.water => AppColors.water,
+    ReminderKind.meal => AppColors.carb,
+    ReminderKind.weighIn => AppColors.fat,
+  };
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -161,7 +168,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
                     Icon(
                       Icons.info_outline,
                       size: 16,
-                      color: theme.colorScheme.onSurfaceVariant,
+                      color: AppColors.warning,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -184,6 +191,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
           for (final kind in ReminderKind.values)
             _ReminderTile(
               icon: _icon(kind),
+              iconColor: _iconColor(kind),
               label: _label(kind, l10n),
               description: _desc(kind, l10n),
               setting: settings[kind] ?? _fallback(kind),
@@ -198,9 +206,9 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
             Row(
               children: [
                 Icon(
-                  Icons.check_circle_outline,
+                  Icons.check,
                   size: 16,
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: AppColors.success,
                 ),
                 const SizedBox(width: 6),
                 Text(
@@ -299,6 +307,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
 class _ReminderTile extends StatelessWidget {
   const _ReminderTile({
     required this.icon,
+    required this.iconColor,
     required this.label,
     required this.description,
     required this.setting,
@@ -310,6 +319,7 @@ class _ReminderTile extends StatelessWidget {
   });
 
   final IconData icon;
+  final Color iconColor;
   final String label;
   final String description;
   final ReminderSetting setting;
@@ -328,19 +338,18 @@ class _ReminderTile extends StatelessWidget {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final labels = l10n.weekdayLettersMonSun.split(',');
+    final muted = theme.colorScheme.onSurfaceVariant;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
-          secondary: Icon(icon),
+          secondary: MenuIconBadge(icon: icon, color: iconColor),
           title: Text(label),
           subtitle: Text(
             setting.enabled ? l10n.reminderDailyAt(_timeText) : description,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            style: theme.textTheme.bodySmall?.copyWith(color: muted),
           ),
           value: setting.enabled,
           onChanged: onToggle,
@@ -357,7 +366,7 @@ class _ReminderTile extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Row(
                       children: [
-                        const Icon(Icons.schedule_outlined, size: 18),
+                        Icon(Icons.schedule_outlined, size: 18, color: muted),
                         const SizedBox(width: 8),
                         Text(
                           l10n.reminderTimeLabel,
@@ -365,7 +374,7 @@ class _ReminderTile extends StatelessWidget {
                         ),
                         const Spacer(),
                         Text(_timeText, style: theme.textTheme.bodyMedium),
-                        const Icon(Icons.chevron_right, size: 18),
+                        Icon(Icons.chevron_right, size: 18, color: muted),
                       ],
                     ),
                   ),
@@ -399,7 +408,7 @@ class _ReminderTile extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: Row(
                         children: [
-                          const Icon(Icons.music_note_outlined, size: 18),
+                          Icon(Icons.music_note_outlined, size: 18, color: muted),
                           const SizedBox(width: 8),
                           Text(
                             l10n.reminderSoundLabel,
@@ -414,7 +423,7 @@ class _ReminderTile extends StatelessWidget {
                               textAlign: TextAlign.end,
                             ),
                           ),
-                          const Icon(Icons.chevron_right, size: 18),
+                          Icon(Icons.chevron_right, size: 18, color: muted),
                         ],
                       ),
                     ),

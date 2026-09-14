@@ -47,7 +47,7 @@ String foodCategoryEmoji(String category) {
   }
 }
 
-/// Circular tinted chip with the category emoji, used as a list `leading`.
+/// Category emoji used as a list `leading` — plain glyph, no circle badge.
 class FoodCategoryAvatar extends StatelessWidget {
   const FoodCategoryAvatar({super.key, required this.category, this.size = 40});
 
@@ -56,17 +56,14 @@ class FoodCategoryAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: size,
       height: size,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        shape: BoxShape.circle,
-      ),
-      child: Text(
-        foodCategoryEmoji(category),
-        style: TextStyle(fontSize: size * 0.5),
+      child: Center(
+        child: Text(
+          foodCategoryEmoji(category),
+          style: TextStyle(fontSize: size * 0.55),
+        ),
       ),
     );
   }

@@ -30,36 +30,42 @@ class ToolsHubPage extends StatelessWidget {
           ),
           _ToolRow(
             icon: Icons.accessibility_new_outlined,
+            color: AppColors.protein,
             title: l10n.toolBodyFat,
             subtitle: l10n.toolBodyFatSub,
             onTap: () => context.push('/profile/tools/body-fat'),
           ),
           _ToolRow(
             icon: Icons.monitor_weight_outlined,
+            color: AppColors.fat,
             title: l10n.toolBodyMetrics,
             subtitle: l10n.toolBodyMetricsSub,
             onTap: () => context.push('/profile/tools/body-metrics'),
           ),
           _ToolRow(
             icon: Icons.restaurant_outlined,
+            color: AppColors.carb,
             title: l10n.toolFoodConvert,
             subtitle: l10n.toolFoodConvertSub,
             onTap: () => context.push('/profile/tools/food-convert'),
           ),
           _ToolRow(
             icon: Icons.timer_outlined,
+            color: AppThemeVisuals.of(context).accent,
             title: l10n.toolRestTimer,
             subtitle: l10n.toolRestTimerSub,
             onTap: () => context.push('/profile/tools/rest-timer'),
           ),
           _ToolRow(
             icon: Icons.calculate_outlined,
+            color: const Color(0xFF5B7C8A),
             title: l10n.toolCalculator,
             subtitle: l10n.toolCalculatorSub,
             onTap: () => context.push('/profile/tools/calculator'),
           ),
           _ToolRow(
-            icon: Icons.swap_vert_circle_outlined,
+            icon: Icons.swap_vert,
+            color: AppColors.water,
             title: l10n.toolEnergyConvert,
             subtitle: l10n.toolEnergyConvertSub,
             onTap: () => context.push('/profile/tools/energy-convert'),
@@ -80,12 +86,14 @@ class ToolsHubPage extends StatelessWidget {
 class _ToolRow extends StatelessWidget {
   const _ToolRow({
     required this.icon,
+    required this.color,
     required this.title,
     required this.subtitle,
     required this.onTap,
   });
 
   final IconData icon;
+  final Color color;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
@@ -94,7 +102,7 @@ class _ToolRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return SportListTile(
       contentPadding: EdgeInsets.zero,
-      leading: Icon(icon),
+      leading: MenuIconBadge(icon: icon, color: color),
       title: Text(title),
       subtitle: Text(
         subtitle,
@@ -102,7 +110,10 @@ class _ToolRow extends StatelessWidget {
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
       onTap: onTap,
     );
   }

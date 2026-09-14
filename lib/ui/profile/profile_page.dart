@@ -17,6 +17,11 @@ import '../theme/sport_chrome.dart';
 import '../widgets/calorie_breakdown.dart';
 import 'cultivation_labels.dart';
 
+/// Me header action tints — distinct from menu-row macro colors.
+const _languageColor = Color(0xFF5B6CDB); // indigo
+const _themeColor = Color(0xFFE8A317); // amber / sun
+const _updateColor = Color(0xFF2E7D32); // download green
+
 /// 「我的」入口页：只读配额摘要 + 进入「我的档案」编辑。
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -392,14 +397,21 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         icon: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.translate, size: 18),
+                            const Icon(
+                              Icons.translate,
+                              size: 18,
+                              color: _languageColor,
+                            ),
                             const SizedBox(width: 2),
                             Text(
                               Localizations.localeOf(context).languageCode ==
                                       'zh'
                                   ? 'EN'
                                   : '中',
-                              style: theme.textTheme.labelLarge,
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                color: _languageColor,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ],
                         ),
@@ -418,6 +430,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               ? Icons.dark_mode_outlined
                               : Icons.light_mode_outlined,
                           size: 20,
+                          color: _themeColor,
                         ),
                       ),
                       if (isAndroid)
@@ -437,7 +450,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 const SizedBox(height: AppSpacing.section),
                 SportListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.person_outline),
+                  leading: MenuIconBadge(
+                    icon: Icons.person_outline,
+                    color: AppThemeVisuals.of(context).accent,
+                  ),
                   title: Text(
                     l10n.myProfile,
                     style: theme.textTheme.titleMedium,
@@ -459,23 +475,29 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   icon: Icons.track_changes_outlined,
                   title: l10n.nutritionTargets,
                   subtitle: _nutritionSubtitle(ref, l10n),
+                  color: AppColors.carb,
                   onTap: () => context.push('/profile/nutrition'),
                 ),
                 _MenuRow(
                   icon: Icons.notifications_outlined,
                   title: l10n.reminders,
                   subtitle: l10n.remindersSubtitle,
+                  color: AppColors.water,
                   onTap: () => context.push('/profile/reminders'),
                 ),
                 _MenuRow(
                   icon: Icons.handyman_outlined,
                   title: l10n.toolbox,
                   subtitle: l10n.toolboxSubtitle,
+                  color: AppColors.fat,
                   onTap: () => context.push('/profile/tools'),
                 ),
                 SportListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.info_outline),
+                  leading: MenuIconBadge(
+                    icon: Icons.info_outline,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   title: Text(l10n.about),
                   subtitle: versionLabel == null
                       ? null
@@ -765,25 +787,27 @@ class _CultivationHeroCard extends ConsumerWidget {
   }
 }
 
-/// A profile menu row: icon badge + title + subtitle + chevron.
+/// A profile menu row: tinted icon badge + title + subtitle + chevron.
 class _MenuRow extends StatelessWidget {
   const _MenuRow({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.onTap,
+    required this.color,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     return SportListTile(
       contentPadding: EdgeInsets.zero,
-      leading: Icon(icon),
+      leading: MenuIconBadge(icon: icon, color: color),
       title: Text(title),
       subtitle: Text(
         subtitle,
@@ -791,7 +815,10 @@ class _MenuRow extends StatelessWidget {
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
       onTap: onTap,
     );
   }
@@ -805,11 +832,11 @@ class _UpdateDownloadIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const color = _updateColor;
     if (status.phase == AppUpdatePhase.idle) {
-      return const Icon(Icons.download_outlined);
+      return const Icon(Icons.download_outlined, color: color);
     }
 
-    final scheme = Theme.of(context).colorScheme;
     final determinate =
         status.phase == AppUpdatePhase.downloading && status.progress > 0;
 
@@ -822,10 +849,10 @@ class _UpdateDownloadIcon extends StatelessWidget {
           CircularProgressIndicator(
             value: determinate ? status.progress.clamp(0.0, 1.0) : null,
             strokeWidth: 2.5,
-            color: scheme.primary,
-            backgroundColor: scheme.primary.withValues(alpha: 0.18),
+            color: color,
+            backgroundColor: color.withValues(alpha: 0.18),
           ),
-          Icon(Icons.download_outlined, size: 16, color: scheme.onSurface),
+          const Icon(Icons.download_outlined, size: 16, color: color),
         ],
       ),
     );
