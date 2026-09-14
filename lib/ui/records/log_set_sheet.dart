@@ -114,6 +114,8 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
   double? _weightKg;
   late final _noteCtrl = TextEditingController(text: widget.initialNote ?? '');
   var _saving = false;
+  var _weightExpanded = false;
+  var _noteExpanded = false;
 
   List<int> get _setOptions {
     final max = widget.targetSets > 10 ? widget.targetSets : 10;
@@ -191,247 +193,351 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final valueLabel = widget.unit == ExerciseUnit.seconds
-        ? l10n.durationSeconds
-        : l10n.repsCount;
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
+    final maxHeight = MediaQuery.sizeOf(context).height * .9;
 
-    return SafeArea(
-      minimum: EdgeInsets.fromLTRB(
-        AppSpacing.formPage,
-        0,
-        AppSpacing.formPage,
-        AppSpacing.formPage + bottom,
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(widget.exerciseName, style: theme.textTheme.titleLarge),
-            const SizedBox(height: 4),
-            Text(
-              l10n.editSetsHint(widget.targetSets, valueLabel),
-              style: theme.textTheme.meta,
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottom),
+      child: SafeArea(
+        top: false,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: (maxHeight - bottom).clamp(0, maxHeight),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.formPage,
             ),
-            const SizedBox(height: AppSpacing.section),
-            _MetricPanel(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  IntrinsicHeight(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(
-                          child: _StepperField(
-                            label: l10n.completedSets,
-                            value: _completedSets,
-                            onMinus: _completedSets > _setOptions.first
-                                ? () => setState(() => _completedSets--)
-                                : null,
-                            onPlus: _completedSets < _setOptions.last
-                                ? () => setState(() => _completedSets++)
-                                : null,
-                          ),
-                        ),
-                        VerticalDivider(
-                          width: 1,
-                          thickness: 1,
-                          color: scheme.outlineVariant.withValues(alpha: 0.55),
-                        ),
-                        Expanded(
-                          child: _StepperField(
-                            label: valueLabel,
-                            value: _perSetValue,
-                            onMinus: () => setState(
-                              () =>
-                                  _perSetValue = (_perSetValue - 1).clamp(0, 999),
-                            ),
-                            onPlus: () => setState(
-                              () =>
-                                  _perSetValue = (_perSetValue + 1).clamp(0, 999),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: scheme.outlineVariant.withValues(alpha: 0.55),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Flexible(
+                  child: SingleChildScrollView(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          l10n.actualWeightLabel,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.labelMedium?.copyWith(
+                          l10n.editTrainingRecord,
+                          style: theme.textTheme.titleSmall?.copyWith(
                             color: scheme.onSurfaceVariant,
                           ),
                         ),
-                        const SizedBox(height: AppSpacing.compact),
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.exerciseName,
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          l10n.trainingSetTarget(widget.targetSets),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          l10n.completedSets,
+                          style: theme.textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 4),
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Expanded(
-                              child: AppOptionalDropdown<double>(
-                                label: '',
-                                value: _displayFor(GymWeightUnit.kg),
-                                items: _optionsFor(GymWeightUnit.kg),
-                                suffixText: GymWeightUnit.kg.suffix,
-                                itemLabel: formatKg,
-                                noneLabel: GymWeightUnit.kg.suffix,
-                                onChanged: (v) =>
-                                    _onWeightChanged(GymWeightUnit.kg, v),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                              ),
-                              child: Text(
-                                '|',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: scheme.onSurfaceVariant,
-                                ),
-                              ),
+                            _StepButton(
+                              large: true,
+                              tooltip: l10n.decreaseCompletedSets,
+                              icon: Icons.remove,
+                              onPressed:
+                                  !_saving && _completedSets > _setOptions.first
+                                  ? () => setState(() => _completedSets--)
+                                  : null,
                             ),
                             Expanded(
-                              child: AppOptionalDropdown<double>(
-                                label: '',
-                                value: _displayFor(GymWeightUnit.lbs),
-                                items: _optionsFor(GymWeightUnit.lbs),
-                                suffixText: GymWeightUnit.lbs.suffix,
-                                itemLabel: formatKg,
-                                noneLabel: GymWeightUnit.lbs.suffix,
-                                onChanged: (v) =>
-                                    _onWeightChanged(GymWeightUnit.lbs, v),
+                              child: Wrap(
+                                alignment: WrapAlignment.center,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 8,
+                                children: [
+                                  Text(
+                                    '$_completedSets',
+                                    style: theme.textTheme.displaySmall
+                                        ?.copyWith(fontWeight: FontWeight.w700),
+                                  ),
+                                  Text(
+                                    l10n.trainingSetDenominator(
+                                      widget.targetSets,
+                                    ),
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(
+                                          color: scheme.onSurfaceVariant,
+                                        ),
+                                  ),
+                                ],
                               ),
+                            ),
+                            _StepButton(
+                              large: true,
+                              tooltip: l10n.increaseCompletedSets,
+                              icon: Icons.add,
+                              onPressed:
+                                  !_saving && _completedSets < _setOptions.last
+                                  ? () => setState(() => _completedSets++)
+                                  : null,
                             ),
                           ],
                         ),
+                        const SizedBox(height: 4),
+                        if (widget.targetSets > 0)
+                          ExcludeSemantics(
+                            child: widget.targetSets <= 10
+                                ? Wrap(
+                                    alignment: WrapAlignment.center,
+                                    spacing: 12,
+                                    runSpacing: 8,
+                                    children: [
+                                      for (
+                                        var i = 0;
+                                        i < widget.targetSets;
+                                        i++
+                                      )
+                                        Container(
+                                          width: 12,
+                                          height: 12,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: i < _completedSets
+                                                ? scheme.primary
+                                                : null,
+                                            border: Border.all(
+                                              color: i < _completedSets
+                                                  ? scheme.primary
+                                                  : scheme.outline,
+                                              width: 1.5,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  )
+                                : LinearProgressIndicator(
+                                    value: (_completedSets / widget.targetSets)
+                                        .clamp(0, 1),
+                                  ),
+                          ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                widget.unit == ExerciseUnit.seconds
+                                    ? l10n.trainingSecondsPerSet
+                                    : l10n.trainingRepsPerSet,
+                                style: theme.textTheme.titleSmall,
+                              ),
+                            ),
+                            _StepButton(
+                              tooltip: l10n.decreasePerSetValue,
+                              icon: Icons.remove,
+                              onPressed: !_saving && _perSetValue > 0
+                                  ? () => setState(() => _perSetValue--)
+                                  : null,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              child: Text(
+                                '$_perSetValue',
+                                style: theme.textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            _StepButton(
+                              tooltip: l10n.increasePerSetValue,
+                              icon: Icons.add,
+                              onPressed: !_saving && _perSetValue < 999
+                                  ? () => setState(() => _perSetValue++)
+                                  : null,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        const Divider(height: 1),
+                        _DisclosureRow(
+                          label: l10n.actualWeightLabel,
+                          expanded: _weightExpanded,
+                          onTap: _saving
+                              ? null
+                              : () => setState(
+                                  () => _weightExpanded = !_weightExpanded,
+                                ),
+                        ),
+                        if (_weightExpanded)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: AbsorbPointer(
+                              absorbing: _saving,
+                              child: Row(
+                                children: [
+                                  for (final unit in GymWeightUnit.values) ...[
+                                    if (unit != GymWeightUnit.values.first)
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                        ),
+                                        child: Icon(
+                                          Icons.swap_horiz,
+                                          size: 20,
+                                          color: scheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    Expanded(
+                                      child: AppOptionalDropdown<double>(
+                                        label: '',
+                                        value: _displayFor(unit),
+                                        items: _optionsFor(unit),
+                                        suffixText: unit.suffix,
+                                        itemLabel: formatKg,
+                                        noneLabel: unit.suffix,
+                                        onChanged: (v) =>
+                                            _onWeightChanged(unit, v),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                        const Divider(height: 1),
+                        _DisclosureRow(
+                          label: l10n.addTrainingNote,
+                          expanded: _noteExpanded,
+                          onTap: _saving
+                              ? null
+                              : () => setState(
+                                  () => _noteExpanded = !_noteExpanded,
+                                ),
+                        ),
+                        if (_noteExpanded)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: TextField(
+                              controller: _noteCtrl,
+                              enabled: !_saving,
+                              minLines: 1,
+                              maxLines: 2,
+                              textInputAction: TextInputAction.done,
+                              decoration: InputDecoration(
+                                hintText: l10n.optionalHint,
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
-                ],
-              ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 8),
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                    ),
+                    onPressed: _saving ? null : _submit,
+                    child: _saving
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: scheme.onPrimary,
+                            ),
+                          )
+                        : Text(l10n.saveTrainingRecord),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: AppSpacing.section),
-            TextField(
-              controller: _noteCtrl,
-              minLines: 1,
-              maxLines: 4,
-              textInputAction: TextInputAction.done,
-              decoration: InputDecoration(
-                labelText: l10n.exerciseNoteLabel,
-                hintText: l10n.optionalHint,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.section),
-            FilledButton(
-              onPressed: _saving ? null : _submit,
-              child: Text(l10n.saveThisSet),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Shared surface for primary set / reps / weight controls.
-class _MetricPanel extends StatelessWidget {
-  const _MetricPanel({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
-      borderRadius: BorderRadius.circular(AppRadius.control),
-      clipBehavior: Clip.antiAlias,
-      child: child,
-    );
-  }
-}
-
-/// Compact labelled stepper; background comes from [_MetricPanel].
-class _StepperField extends StatelessWidget {
-  const _StepperField({
+class _DisclosureRow extends StatelessWidget {
+  const _DisclosureRow({
     required this.label,
-    required this.value,
-    required this.onMinus,
-    required this.onPlus,
+    required this.expanded,
+    required this.onTap,
   });
 
   final String label;
-  final int value;
-  final VoidCallback? onMinus;
-  final VoidCallback? onPlus;
+  final bool expanded;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Row(
+    return Semantics(
+      expanded: expanded,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
             children: [
-              _StepButton(icon: Icons.remove, onPressed: onMinus),
+              Icon(expanded ? Icons.remove : Icons.add, size: 24),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  '$value',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  label,
+                  style: Theme.of(context).textTheme.titleSmall,
                 ),
               ),
-              _StepButton(icon: Icons.add, onPressed: onPlus),
+              Icon(
+                expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+              ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
 class _StepButton extends StatelessWidget {
-  const _StepButton({required this.icon, required this.onPressed});
+  const _StepButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+    this.large = false,
+  });
 
   final IconData icon;
+  final String tooltip;
   final VoidCallback? onPressed;
+  final bool large;
 
   @override
   Widget build(BuildContext context) {
-    return IconButton.outlined(
+    final scheme = Theme.of(context).colorScheme;
+    return IconButton(
+      tooltip: tooltip,
       onPressed: onPressed,
-      icon: Icon(icon, size: 20),
+      icon: Icon(icon, size: large ? 22 : 18),
       style: IconButton.styleFrom(
-        minimumSize: const Size(40, 40),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        visualDensity: VisualDensity.compact,
+        foregroundColor: icon == Icons.add ? scheme.primary : scheme.secondary,
+        minimumSize: Size.square(large ? 40 : 36),
+        maximumSize: Size.square(large ? 40 : 36),
+        padding: const EdgeInsets.all(6),
+        tapTargetSize: MaterialTapTargetSize.padded,
       ),
     );
   }
