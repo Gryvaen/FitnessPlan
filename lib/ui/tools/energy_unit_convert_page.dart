@@ -14,15 +14,9 @@ class EnergyUnitConvertPage extends StatefulWidget {
 }
 
 class _EnergyUnitConvertPageState extends State<EnergyUnitConvertPage> {
-  final _kcal = TextEditingController(text: '100');
+  final _kcal = TextEditingController();
   final _kj = TextEditingController();
   bool _updating = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _kj.text = _fmt(100 * kKcalToKj);
-  }
 
   @override
   void dispose() {
