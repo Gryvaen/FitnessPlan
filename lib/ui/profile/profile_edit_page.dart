@@ -10,7 +10,11 @@ import '../theme/sport_chrome.dart';
 import '../widgets/form_options.dart';
 
 class ProfileEditPage extends ConsumerStatefulWidget {
-  const ProfileEditPage({super.key});
+  const ProfileEditPage({super.key, this.unlockGoal});
+
+  /// 从境界「尚未开启」页进来时携带的目标名（[FitnessGoal.name]）。
+  /// 非空则预选该目标，保存成功后 [go] 到境界主页并清掉中间栈。
+  final String? unlockGoal;
 
   @override
   ConsumerState<ProfileEditPage> createState() => _ProfileEditPageState();
@@ -33,6 +37,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   bool _ready = false;
   bool _saving = false;
   bool _dirty = false;
+  bool _returnToCultivation = false;
 
   @override
   void initState() {
@@ -53,6 +58,18 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
       _waterGoalMl = water == null
           ? null
           : FormOptions.snapInt(FormOptions.waterGoalMl, water);
+      final unlockName = widget.unlockGoal;
+      if (unlockName != null) {
+        final match = FitnessGoal.values.where((g) => g.name == unlockName);
+        if (match.isNotEmpty) {
+          final unlock = match.first;
+          _returnToCultivation = true;
+          if (_goal != unlock) {
+            _goal = unlock;
+            _dirty = true;
+          }
+        }
+      }
       _ready = true;
     }
   }
@@ -90,10 +107,19 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     );
     if (action == 'discard') return true;
     if (action == 'save') {
-      final ok = await _persist();
-      return ok;
+      return await _persist();
     }
     return false;
+  }
+
+  void _leaveAfterSave() {
+    if (_returnToCultivation) {
+      // 清掉 画轴 → 锁定页 → 编辑 中间栈，直接落在当前目标的境界主页；
+      // 境界页返回键已 go('/profile')，再到 Me。
+      context.go('/profile/cultivation');
+    } else {
+      context.pop();
+    }
   }
 
   Future<bool> _persist() async {
@@ -142,7 +168,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
 
   Future<void> _saveAndPop() async {
     final ok = await _persist();
-    if (ok && mounted) context.pop();
+    if (ok && mounted) _leaveAfterSave();
   }
 
   @override
@@ -160,7 +186,12 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         if (didPop) return;
         final allow = await _confirmDiscard();
         if (!allow || !context.mounted) return;
-        context.pop();
+        // 若用户在丢弃确认里选了「保存」，且来自境界解锁流，应跳到境界页。
+        if (_returnToCultivation && !_dirty) {
+          _leaveAfterSave();
+        } else {
+          context.pop();
+        }
       },
       child: Scaffold(
         appBar: AppBar(title: Text(l10n.myProfile)),

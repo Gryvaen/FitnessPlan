@@ -544,7 +544,14 @@ class _CultivationLockedView extends ConsumerWidget {
                   ),
                   const SizedBox(height: 26),
                   FilledButton(
-                    onPressed: () => GoRouter.of(context).push('/profile/edit'),
+                    onPressed: () {
+                      // 预选要解锁的目标；保存后由 ProfileEditPage 直接
+                      // go 到境界主页，避免再一层层退回画轴/锁定页。
+                      final unlock = goal ?? FitnessGoal.cut;
+                      GoRouter.of(context).push(
+                        '/profile/edit?unlockGoal=${unlock.name}',
+                      );
+                    },
                     child: Text(ctaText),
                   ),
                 ],

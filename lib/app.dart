@@ -185,7 +185,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                 routes: [
                   GoRoute(
                     path: 'edit',
-                    builder: (context, state) => const ProfileEditPage(),
+                    builder: (context, state) => ProfileEditPage(
+                      unlockGoal: state.uri.queryParameters['unlockGoal'],
+                    ),
                   ),
                   GoRoute(
                     path: 'cultivation',
