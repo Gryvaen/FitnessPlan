@@ -926,6 +926,12 @@ abstract class AppLocalizations {
   /// **'Copy yesterday'**
   String get copyYesterday;
 
+  /// No description provided for @copyNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy {name}'**
+  String copyNamed(String name);
+
   /// No description provided for @copyYesterdayWorkout.
   ///
   /// In en, this message translates to:
@@ -1944,8 +1950,20 @@ abstract class AppLocalizations {
   /// No description provided for @foodConvertHint.
   ///
   /// In en, this message translates to:
-  /// **'Search a food, or favorite items in the library for quick pick.'**
+  /// **'Search or pick a favorite to add it below — add as many foods as you like to see their combined totals.'**
   String get foodConvertHint;
+
+  /// No description provided for @addedFoodsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Added ({count})'**
+  String addedFoodsTitle(int count);
+
+  /// No description provided for @clearAllFoods.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get clearAllFoods;
 
   /// No description provided for @restNotifyPermissionHint.
   ///
@@ -4808,6 +4826,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{done}/{total}'**
   String cultivationHistoryWorkoutProgress(String done, String total);
+
+  /// No description provided for @editTrainingRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit training record'**
+  String get editTrainingRecord;
+
+  /// No description provided for @saveTrainingRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Save training record'**
+  String get saveTrainingRecord;
+
+  /// No description provided for @addTrainingNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Add note'**
+  String get addTrainingNote;
+
+  /// No description provided for @trainingRepsPerSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Reps per set'**
+  String get trainingRepsPerSet;
+
+  /// No description provided for @trainingSecondsPerSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Seconds per set'**
+  String get trainingSecondsPerSet;
+
+  /// No description provided for @decreaseCompletedSets.
+  ///
+  /// In en, this message translates to:
+  /// **'Decrease completed sets'**
+  String get decreaseCompletedSets;
+
+  /// No description provided for @increaseCompletedSets.
+  ///
+  /// In en, this message translates to:
+  /// **'Increase completed sets'**
+  String get increaseCompletedSets;
+
+  /// No description provided for @decreasePerSetValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Decrease per-set value'**
+  String get decreasePerSetValue;
+
+  /// No description provided for @increasePerSetValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Increase per-set value'**
+  String get increasePerSetValue;
+
+  /// No description provided for @trainingSetTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Today’s target · {sets} sets'**
+  String trainingSetTarget(int sets);
+
+  /// No description provided for @trainingSetDenominator.
+  ///
+  /// In en, this message translates to:
+  /// **'/ {sets} sets'**
+  String trainingSetDenominator(int sets);
 }
 
 class _AppLocalizationsDelegate

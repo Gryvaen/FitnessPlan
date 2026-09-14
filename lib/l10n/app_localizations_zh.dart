@@ -429,6 +429,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get copyYesterday => '复制昨日';
 
   @override
+  String copyNamed(String name) {
+    return '复制$name';
+  }
+
+  @override
   String get copyYesterdayWorkout => '复制昨日训练';
 
   @override
@@ -963,7 +968,15 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get foodConvertHint => '搜索并选择食材，或在食材库收藏常用项后在此快速选用。';
+  String get foodConvertHint => '搜索或从收藏中选择食材加入下方列表，可添加任意多种食材查看合计。';
+
+  @override
+  String addedFoodsTitle(int count) {
+    return '已添加（$count）';
+  }
+
+  @override
+  String get clearAllFoods => '全部清空';
 
   @override
   String get restNotifyPermissionHint => '未授予通知权限时，锁屏可能不会提醒；前台倒计时仍可用。';
@@ -2693,5 +2706,42 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String cultivationHistoryWorkoutProgress(String done, String total) {
     return '$done/$total';
+  }
+
+  @override
+  String get editTrainingRecord => '编辑训练记录';
+
+  @override
+  String get saveTrainingRecord => '保存训练记录';
+
+  @override
+  String get addTrainingNote => '添加备注';
+
+  @override
+  String get trainingRepsPerSet => '每组次数';
+
+  @override
+  String get trainingSecondsPerSet => '每组时长（秒）';
+
+  @override
+  String get decreaseCompletedSets => '减少完成组数';
+
+  @override
+  String get increaseCompletedSets => '增加完成组数';
+
+  @override
+  String get decreasePerSetValue => '减少每组数值';
+
+  @override
+  String get increasePerSetValue => '增加每组数值';
+
+  @override
+  String trainingSetTarget(int sets) {
+    return '今日目标 · $sets 组';
+  }
+
+  @override
+  String trainingSetDenominator(int sets) {
+    return '/ $sets 组';
   }
 }

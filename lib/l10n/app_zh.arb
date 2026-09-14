@@ -159,6 +159,7 @@
   "planSaved": "训练计划已保存",
   "noWorkoutToSave": "当日无训练可保存",
   "copyYesterday": "复制昨日",
+  "copyNamed": "复制{name}",
   "copyYesterdayWorkout": "复制昨日训练",
   "copyYesterdayWorkoutConfirm": "今日已有训练计划，将追加昨日训练，确定？",
   "copiedWorkoutItems": "已复制 {n} 个动作",
@@ -380,7 +381,9 @@
       "normFfmi": { "type": "String" }
     }
   },
-  "foodConvertHint": "搜索并选择食材，或在食材库收藏常用项后在此快速选用。",
+  "foodConvertHint": "搜索或从收藏中选择食材加入下方列表，可添加任意多种食材查看合计。",
+  "addedFoodsTitle": "已添加（{count}）",
+  "clearAllFoods": "全部清空",
   "restNotifyPermissionHint": "未授予通知权限时，锁屏可能不会提醒；前台倒计时仍可用。",
   "restDoneSnack": "休息结束，开始下一组",
   "restTimerIntro": "组间休息倒计时。授权通知后，锁屏或切到后台也会提醒。",
@@ -2163,5 +2166,30 @@
   "cultivationHistoryDietLabel": "饮食",
   "cultivationHistoryTotalLabel": "合计",
   "cultivationHistoryWorkoutLabel": "训练",
-  "cultivationHistoryWorkoutProgress": "{done}/{total}"
+  "cultivationHistoryWorkoutProgress": "{done}/{total}",
+  "editTrainingRecord": "编辑训练记录",
+  "saveTrainingRecord": "保存训练记录",
+  "addTrainingNote": "添加备注",
+  "trainingRepsPerSet": "每组次数",
+  "trainingSecondsPerSet": "每组时长（秒）",
+  "decreaseCompletedSets": "减少完成组数",
+  "increaseCompletedSets": "增加完成组数",
+  "decreasePerSetValue": "减少每组数值",
+  "increasePerSetValue": "增加每组数值",
+  "trainingSetTarget": "今日目标 · {sets} 组",
+  "@trainingSetTarget": {
+    "placeholders": {
+      "sets": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSetDenominator": "/ {sets} 组",
+  "@trainingSetDenominator": {
+    "placeholders": {
+      "sets": {
+        "type": "int"
+      }
+    }
+  }
 }

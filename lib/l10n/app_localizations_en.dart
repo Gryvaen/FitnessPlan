@@ -431,6 +431,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get copyYesterday => 'Copy yesterday';
 
   @override
+  String copyNamed(String name) {
+    return 'Copy $name';
+  }
+
+  @override
   String get copyYesterdayWorkout => 'Copy yesterday\'s workout';
 
   @override
@@ -975,7 +980,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get foodConvertHint =>
-      'Search a food, or favorite items in the library for quick pick.';
+      'Search or pick a favorite to add it below — add as many foods as you like to see their combined totals.';
+
+  @override
+  String addedFoodsTitle(int count) {
+    return 'Added ($count)';
+  }
+
+  @override
+  String get clearAllFoods => 'Clear all';
 
   @override
   String get restNotifyPermissionHint =>
@@ -2752,5 +2765,42 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String cultivationHistoryWorkoutProgress(String done, String total) {
     return '$done/$total';
+  }
+
+  @override
+  String get editTrainingRecord => 'Edit training record';
+
+  @override
+  String get saveTrainingRecord => 'Save training record';
+
+  @override
+  String get addTrainingNote => 'Add note';
+
+  @override
+  String get trainingRepsPerSet => 'Reps per set';
+
+  @override
+  String get trainingSecondsPerSet => 'Seconds per set';
+
+  @override
+  String get decreaseCompletedSets => 'Decrease completed sets';
+
+  @override
+  String get increaseCompletedSets => 'Increase completed sets';
+
+  @override
+  String get decreasePerSetValue => 'Decrease per-set value';
+
+  @override
+  String get increasePerSetValue => 'Increase per-set value';
+
+  @override
+  String trainingSetTarget(int sets) {
+    return 'Today’s target · $sets sets';
+  }
+
+  @override
+  String trainingSetDenominator(int sets) {
+    return '/ $sets sets';
   }
 }

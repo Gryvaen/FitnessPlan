@@ -159,6 +159,8 @@
   "planSaved": "Workout plan saved",
   "noWorkoutToSave": "Nothing to save for this day",
   "copyYesterday": "Copy yesterday",
+  "copyNamed": "Copy {name}",
+  "@copyNamed": {"placeholders": {"name": {"type": "String"}}},
   "copyYesterdayWorkout": "Copy yesterday's workout",
   "copyYesterdayWorkoutConfirm": "Today already has a workout plan; append yesterday's?",
   "copiedWorkoutItems": "Copied {n} exercises",
@@ -383,7 +385,10 @@
       "normFfmi": { "type": "String" }
     }
   },
-  "foodConvertHint": "Search a food, or favorite items in the library for quick pick.",
+  "foodConvertHint": "Search or pick a favorite to add it below — add as many foods as you like to see their combined totals.",
+  "addedFoodsTitle": "Added ({count})",
+  "@addedFoodsTitle": {"placeholders": {"count": {"type": "int"}}},
+  "clearAllFoods": "Clear all",
   "restNotifyPermissionHint": "Without notification permission, lock-screen alerts may not fire; foreground timer still works.",
   "restDoneSnack": "Rest over — next set",
   "restTimerIntro": "Between-set countdown. With notifications, alerts work on lock screen / background.",
@@ -2238,5 +2243,30 @@
   "cultivationHistoryTotalLabel": "Total",
   "cultivationHistoryWorkoutLabel": "Training",
   "cultivationHistoryWorkoutProgress": "{done}/{total}",
-  "@cultivationHistoryWorkoutProgress": {"placeholders": {"done": {"type": "String"}, "total": {"type": "String"}}}
+  "@cultivationHistoryWorkoutProgress": {"placeholders": {"done": {"type": "String"}, "total": {"type": "String"}}},
+  "editTrainingRecord": "Edit training record",
+  "saveTrainingRecord": "Save training record",
+  "addTrainingNote": "Add note",
+  "trainingRepsPerSet": "Reps per set",
+  "trainingSecondsPerSet": "Seconds per set",
+  "decreaseCompletedSets": "Decrease completed sets",
+  "increaseCompletedSets": "Increase completed sets",
+  "decreasePerSetValue": "Decrease per-set value",
+  "increasePerSetValue": "Increase per-set value",
+  "trainingSetTarget": "Today’s target · {sets} sets",
+  "@trainingSetTarget": {
+    "placeholders": {
+      "sets": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSetDenominator": "/ {sets} sets",
+  "@trainingSetDenominator": {
+    "placeholders": {
+      "sets": {
+        "type": "int"
+      }
+    }
+  }
 }
