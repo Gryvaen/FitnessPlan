@@ -71,12 +71,7 @@ class CalorieBreakdown extends StatelessWidget {
         children.add(
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
-            child: Text(
-              note.localize(l10n),
-              style: theme.textTheme.meta?.copyWith(
-                color: plan.missingCutInputs ? theme.colorScheme.error : null,
-              ),
-            ),
+            child: Text(note.localize(l10n), style: theme.textTheme.meta),
           ),
         );
       }

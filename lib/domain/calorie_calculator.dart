@@ -1,7 +1,7 @@
 import 'models.dart';
 
 /// Identifiers for calorie-plan notes (localized in UI).
-enum CalorieNoteId { missingTargetWeight, plateauAdj }
+enum CalorieNoteId { plateauAdj }
 
 class CalorieNote {
   const CalorieNote(this.id, [this.params = const {}]);
@@ -27,7 +27,6 @@ class CaloriePlan {
     this.targetWeightKg,
     this.kgToLose,
     this.calorieAdjustment = 0,
-    this.missingCutInputs = false,
     this.notes = const [],
   });
 
@@ -45,7 +44,6 @@ class CaloriePlan {
   final double? targetWeightKg;
   final double? kgToLose;
   final int calorieAdjustment;
-  final bool missingCutInputs;
   final List<CalorieNote> notes;
 
   String get bmrSubstituted {
@@ -117,7 +115,6 @@ class CalorieCalculator {
 
     double dailyDeficit = 0;
     double eat = tdeeValue;
-    bool missingCutInputs = false;
     double? kgToLose;
     double? effectiveTarget;
 
@@ -131,17 +128,18 @@ class CalorieCalculator {
       case FitnessGoal.cut:
         // No fixed calorie deficit here — a fat-loss deficit only ever comes
         // from an active diet-strategy plan (see DietStrategyRepository).
-        // Absent one, `cut` eats at TDEE just like `maintain`; target weight
-        // is kept purely as a stated goal to show progress against.
+        // `cut` eats at TDEE just like `maintain`; target weight (if the
+        // profile happens to carry one from before it stopped being an
+        // editable field) is shown purely as a stated goal to show progress
+        // against — its absence isn't an error, so there's nothing to flag.
         eat = tdeeValue;
         dailyDeficit = 0;
         effectiveTarget = targetWeightKg;
         final validCut = effectiveTarget != null && effectiveTarget < weightKg;
-        if (!validCut) {
-          missingCutInputs = true;
-          notes.add(const CalorieNote(CalorieNoteId.missingTargetWeight));
-        } else {
+        if (validCut) {
           kgToLose = weightKg - effectiveTarget;
+        } else {
+          effectiveTarget = null;
         }
     }
 
@@ -172,7 +170,6 @@ class CalorieCalculator {
       targetWeightKg: goal == FitnessGoal.cut ? effectiveTarget : null,
       kgToLose: kgToLose,
       calorieAdjustment: adj,
-      missingCutInputs: missingCutInputs,
       notes: notes,
     );
   }

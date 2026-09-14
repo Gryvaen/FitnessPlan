@@ -31,7 +31,6 @@ void main() {
       expect(plan.dailyDeficit, 0);
       expect(plan.targets.calories, plan.tdee.round());
       expect(plan.kgToLose, closeTo(5, 0.01));
-      expect(plan.missingCutInputs, isFalse);
       expect(plan.proteinPerKg, 2.0);
       expect(plan.targets.proteinG, 140.0);
       expect(plan.targets.fatG, 56.0);
@@ -54,7 +53,7 @@ void main() {
       expect(plan.targets.calories, plan.tdee.round());
     });
 
-    test('cut without a valid target weight still eats at TDEE, flagged', () {
+    test('cut without a target weight still eats at TDEE', () {
       final maintain = calc.tdee(
         sex: Sex.female,
         weightKg: 55,
@@ -70,13 +69,12 @@ void main() {
         activity: ActivityLevel.light,
         goal: FitnessGoal.cut,
       );
-      expect(plan.missingCutInputs, isTrue);
+      // No target weight is a normal state (it's no longer a collected
+      // input), not an error — just no kgToLose to show.
+      expect(plan.kgToLose, isNull);
+      expect(plan.targetWeightKg, isNull);
       expect(plan.dailyDeficit, 0);
       expect(plan.targets.calories, maintain.round());
-      expect(
-        plan.notes.any((n) => n.id == CalorieNoteId.missingTargetWeight),
-        isTrue,
-      );
     });
 
     test('calorieAdjustment reduces intake', () {

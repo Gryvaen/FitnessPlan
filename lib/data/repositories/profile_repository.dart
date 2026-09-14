@@ -145,7 +145,6 @@ class ProfileRepository {
       bmr: plan.bmr,
       tdee: plan.tdee,
       dailyDeficit: plan.dailyDeficit,
-      missingCutInputs: plan.missingCutInputs,
       calorieStandardSince: calorieStandardSince,
     );
   }

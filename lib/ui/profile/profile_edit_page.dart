@@ -23,7 +23,12 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   late int _age;
   late int _heightCm;
   late double _weightKg;
-  late double _targetWeightKg;
+
+  /// Preserved as-is from the loaded profile — no longer user-editable here
+  /// (see the removed 目标体重 field), but kept so an existing value isn't
+  /// silently wiped on save; it's purely informational (progress display),
+  /// never affects the calculated calorie target.
+  double? _targetWeightKg;
   int? _waterGoalMl;
   bool _ready = false;
   bool _saving = false;
@@ -43,16 +48,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         p.heightCm.round(),
       );
       _weightKg = FormOptions.snapDouble(FormOptions.weightsKg(), p.weightKg);
-      final fallbackTarget = (p.weightKg - 5)
-          .clamp(30.0, p.weightKg - 0.5)
-          .toDouble();
-      final targetOpts = FormOptions.targetWeightsKg(_weightKg);
-      _targetWeightKg = FormOptions.snapDouble(
-        targetOpts.isEmpty
-            ? FormOptions.weightsKg(min: 30, max: 40)
-            : targetOpts,
-        p.targetWeightKg ?? fallbackTarget,
-      );
+      _targetWeightKg = p.targetWeightKg;
       final water = ref.read(waterRepositoryProvider).getGoalMlOrNull();
       _waterGoalMl = water == null
           ? null
@@ -103,11 +99,16 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   Future<bool> _persist() async {
     setState(() => _saving = true);
     try {
-      final targetOptions = FormOptions.cutTargetOptions(_weightKg);
-      var target = FormOptions.snapDouble(targetOptions, _targetWeightKg);
-      if (target >= _weightKg && targetOptions.isNotEmpty) {
-        target = targetOptions.last;
-      }
+      // 目标体重 is no longer editable here — carry the existing value
+      // through as-is (dropping it if it's stopped making sense against a
+      // new current weight), never invent or reset one.
+      final preservedTarget = _targetWeightKg;
+      final target =
+          (_goal == FitnessGoal.cut &&
+              preservedTarget != null &&
+              preservedTarget < _weightKg)
+          ? preservedTarget
+          : null;
 
       await ref
           .read(profileProvider.notifier)
@@ -118,7 +119,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
             weightKg: _weightKg,
             activity: _activity,
             goal: _goal,
-            targetWeightKg: _goal == FitnessGoal.cut ? target : null,
+            targetWeightKg: target,
           );
       if (_waterGoalMl == null) {
         await ref.read(waterGoalProvider.notifier).clearGoal();
@@ -152,8 +153,6 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     }
 
     final l10n = context.l10n;
-    final targetOptions = FormOptions.cutTargetOptions(_weightKg);
-    final targetValue = FormOptions.snapDouble(targetOptions, _targetWeightKg);
 
     return PopScope(
       canPop: !_dirty,
@@ -222,13 +221,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                     suffixText: 'kg',
                     itemLabel: formatKg,
                     helperText: l10n.profileFieldWeightHint,
-                    onChanged: (v) => _edit(() {
-                      _weightKg = v;
-                      final opts = FormOptions.targetWeightsKg(v);
-                      if (opts.isNotEmpty && _targetWeightKg >= v) {
-                        _targetWeightKg = opts.last;
-                      }
-                    }),
+                    onChanged: (v) => _edit(() => _weightKg = v),
                   ),
                 ],
               ),
@@ -260,18 +253,6 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                     helperText: l10n.profileFieldGoalHint,
                     onChanged: (v) => _edit(() => _goal = v),
                   ),
-                  if (_goal == FitnessGoal.cut) ...[
-                    const SizedBox(height: AppSpacing.field),
-                    AppDropdown<double>(
-                      label: l10n.targetWeight,
-                      value: targetValue,
-                      items: targetOptions,
-                      suffixText: 'kg',
-                      itemLabel: formatKg,
-                      helperText: l10n.profileFieldTargetWeightHint,
-                      onChanged: (v) => _edit(() => _targetWeightKg = v),
-                    ),
-                  ],
                 ],
               ),
             ),

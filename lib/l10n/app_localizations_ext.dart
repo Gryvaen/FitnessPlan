@@ -75,8 +75,6 @@ extension SexL10n on Sex {
 extension CalorieNoteL10n on CalorieNote {
   String localize(AppLocalizations l10n) {
     switch (id) {
-      case CalorieNoteId.missingTargetWeight:
-        return l10n.noteMissingTargetWeight;
       case CalorieNoteId.plateauAdj:
         return l10n.notePlateauAdj(params['adj'] as String);
     }
