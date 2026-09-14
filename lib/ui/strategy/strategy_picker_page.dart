@@ -36,20 +36,20 @@ class StrategyPickerPage extends ConsumerWidget {
           Text(l10n.strategyPickerIntro, style: theme.textTheme.bodyMedium),
           const SizedBox(height: AppSpacing.card),
           if (blocking.isNotEmpty) ...[
-            SportSurfaceCard(
-              tint: theme.colorScheme.error,
-              padding: const EdgeInsets.all(AppSpacing.card),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (final i in blocking)
-                    Text(i.message(l10n), style: theme.textTheme.bodySmall),
-                ],
+            for (final i in blocking)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.compact),
+                child: Text(
+                  i.message(l10n),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                ),
               ),
-            ),
+            Divider(height: 1, color: visuals.divider),
             const SizedBox(height: AppSpacing.card),
           ],
-          for (final kind in DietStrategyKind.values) ...[
+          for (final kind in DietStrategyKind.values)
             _StrategyOption(
               kind: kind,
               current: active?.kind == kind,
@@ -59,8 +59,6 @@ class StrategyPickerPage extends ConsumerWidget {
                 '/profile/nutrition/strategy/configure?kind=${kind.name}',
               ),
             ),
-            const SizedBox(height: AppSpacing.field),
-          ],
           const SizedBox(height: AppSpacing.compact),
           Text(
             l10n.strategyScopeNote,
@@ -101,6 +99,7 @@ class _StrategyOption extends StatelessWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final visuals = AppThemeVisuals.of(context);
+    final scheme = theme.colorScheme;
     return Semantics(
       button: true,
       selected: current,
@@ -111,14 +110,14 @@ class _StrategyOption extends StatelessWidget {
         child: InkWell(
           onTap: enabled ? onTap : null,
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.card),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.card),
             child: Row(
               children: [
                 Icon(
                   current ? Icons.radio_button_checked : Icons.radio_button_off,
                   color: enabled
-                      ? visuals.accent
-                      : theme.colorScheme.onSurfaceVariant,
+                      ? (current ? visuals.accent : scheme.onSurfaceVariant)
+                      : scheme.onSurfaceVariant.withValues(alpha: 0.45),
                 ),
                 const SizedBox(width: AppSpacing.card),
                 Expanded(
@@ -130,7 +129,9 @@ class _StrategyOption extends StatelessWidget {
                           Flexible(
                             child: Text(
                               kind.label(l10n),
-                              style: theme.textTheme.titleMedium,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: current ? visuals.accent : null,
+                              ),
                             ),
                           ),
                           if (isDefault) ...[
@@ -141,8 +142,8 @@ class _StrategyOption extends StatelessWidget {
                             const SizedBox(width: 6),
                             SoftChip(
                               label: l10n.currentWord,
-                              color: visuals.accent,
-                              foreground: visuals.onAccent,
+                              color: visuals.accentSoft,
+                              foreground: visuals.accent,
                             ),
                           ],
                         ],
@@ -159,7 +160,7 @@ class _StrategyOption extends StatelessWidget {
                 Icon(
                   Icons.chevron_right,
                   color: enabled
-                      ? theme.colorScheme.onSurfaceVariant
+                      ? scheme.onSurfaceVariant
                       : theme.disabledColor,
                 ),
               ],

@@ -6,7 +6,7 @@ import '../../l10n/app_localizations_ext.dart';
 import '../theme/app_theme.dart';
 import 'strategy_labels.dart';
 
-/// Cycle table: date · carb-day type pill · target kcal + P/C/F, for one
+/// Cycle table: date · carb-day type · target kcal + P/C/F, for one
 /// full cycle starting at [cycleStart]. Each day's type is hand-assigned by
 /// the user (see [CarbCycleSchedule.cycleDayType]) — when
 /// [onScheduleChanged] is set, tapping a row cycles its type.
@@ -144,10 +144,12 @@ class _DayRow extends StatelessWidget {
   final int fatG;
   final VoidCallback? onTap;
 
-  Color _pillColor(AppThemeVisuals v, ColorScheme scheme) => switch (type) {
+  Color _typeColor() => switch (type) {
     CarbDayType.high => AppColors.carb,
-    CarbDayType.mid => v.accent,
-    CarbDayType.low => scheme.onSurfaceVariant,
+    // Mid / train-leaning: cool teal-grey, not competing with brand primary.
+    CarbDayType.mid => const Color(0xFF5B7C8A),
+    // Low: warm muted grey.
+    CarbDayType.low => const Color(0xFF8A7B6B),
   };
 
   @override
@@ -156,7 +158,7 @@ class _DayRow extends StatelessWidget {
     final scheme = theme.colorScheme;
     final v = AppThemeVisuals.of(context);
     final l10n = context.l10n;
-    final pill = _pillColor(v, scheme);
+    final typeColor = _typeColor();
 
     return Material(
       color: Colors.transparent,
@@ -181,23 +183,11 @@ class _DayRow extends StatelessWidget {
                   ),
                   Expanded(
                     flex: 4,
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: pill.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          type.label(l10n),
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: pill,
-                          ),
-                        ),
+                    child: Text(
+                      type.label(l10n),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: typeColor,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -210,9 +200,9 @@ class _DayRow extends StatelessWidget {
                     ),
                   ),
                   if (onTap != null)
-                    const Padding(
-                      padding: EdgeInsets.only(left: 4),
-                      child: Icon(Icons.autorenew, size: 16),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Icon(Icons.autorenew, size: 16, color: typeColor),
                     ),
                 ],
               ),

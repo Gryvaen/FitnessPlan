@@ -208,7 +208,8 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
         : StrategyRules.taperObservationDays;
   }
 
-  /// Deficit slider in kcal within the selectable band; percent shown below.
+  /// Deficit slider in kcal within the selectable band; percent tracks the
+  /// thumb horizontally so it stays under the current value.
   Widget _buildDeficitSlider(
     AppLocalizations l10n,
     ThemeData theme,
@@ -222,6 +223,10 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
     final minKcal = tdee * minFrac;
     final maxKcal = tdee * maxFrac;
     final deficitKcal = (tdee * _deficit).clamp(minKcal, maxKcal);
+    final trackT = maxKcal > minKcal
+        ? ((deficitKcal - minKcal) / (maxKcal - minKcal)).clamp(0.0, 1.0)
+        : 0.0;
+    final percentText = l10n.deficitFractionPercent((_deficit * 100).round());
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -236,12 +241,23 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
             _syncEnergyFromDeficit();
           }),
         ),
-        Text(
-          l10n.energyBoundsHint(minKcal.round(), maxKcal.round()),
-          style: theme.textTheme.bodySmall,
+        Builder(
+          builder: (context) {
+            // Match Material Slider track insets (half overlay width).
+            final overlay = SliderTheme.of(context).overlayShape ??
+                const RoundSliderOverlayShape();
+            final pad = overlay.getPreferredSize(true, false).width / 2;
+            return Padding(
+              padding: EdgeInsets.symmetric(horizontal: pad),
+              child: Align(
+                alignment: Alignment(2 * trackT - 1, 0),
+                child: Text(percentText, style: theme.textTheme.bodySmall),
+              ),
+            );
+          },
         ),
         Text(
-          l10n.deficitFractionPercent((_deficit * 100).round()),
+          l10n.energyBoundsHint(minKcal.round(), maxKcal.round()),
           style: theme.textTheme.bodySmall,
         ),
       ],
@@ -734,12 +750,9 @@ class _TaperLadder extends StatelessWidget {
       children: [
         for (final s in stages)
           Container(
-            margin: const EdgeInsets.only(bottom: 6),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: 10),
             decoration: BoxDecoration(
-              color: s.stage == 0 ? visuals.accentSoft : visuals.card,
-              borderRadius: BorderRadius.circular(AppRadius.control),
-              border: Border.all(color: visuals.cardBorder),
+              border: Border(bottom: BorderSide(color: visuals.divider)),
             ),
             child: Row(
               children: [
@@ -747,7 +760,9 @@ class _TaperLadder extends StatelessWidget {
                   width: 64,
                   child: Text(
                     l10n.taperStageLabel(s.stage),
-                    style: theme.textTheme.labelLarge,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: s.stage == 0 ? visuals.accent : null,
+                    ),
                   ),
                 ),
                 Expanded(
@@ -757,10 +772,16 @@ class _TaperLadder extends StatelessWidget {
                   ),
                 ),
                 if (s.stage == 0)
-                  Text(l10n.currentStage, style: theme.textTheme.labelSmall),
+                  Text(
+                    l10n.currentStage,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: visuals.accent,
+                    ),
+                  ),
               ],
             ),
           ),
+        const SizedBox(height: AppSpacing.compact),
         Text(
           l10n.taperFloorLine(
             baseline.minEnergy.round(),

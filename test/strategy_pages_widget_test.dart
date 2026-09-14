@@ -144,7 +144,8 @@ void main() {
   testWidgets('nutrition targets page renders without a plan', (tester) async {
     await _pump(tester, '/profile/nutrition');
     _expectNoLayoutErrors(tester);
-    expect(find.text('Choose strategy'), findsOneWidget);
+    expect(find.text('Fat-loss strategy'), findsOneWidget);
+    expect(find.text('No strategy'), findsOneWidget);
     expect(find.text('Stop strategy'), findsNothing);
   });
 
@@ -302,15 +303,15 @@ void main() {
     );
     await _pump(tester, '/profile/nutrition');
     _expectNoLayoutErrors(tester);
-    // "Choose strategy" renders as a header-row TextButton (no active plan
-    // yet) — it should be disabled while eligibility is blocked.
-    final button = tester.widget<TextButton>(
+    // Strategy row is a list tile (aligned with TDEE); it stays non-tappable
+    // while eligibility is blocked.
+    final tile = tester.widget<ListTile>(
       find.ancestor(
-        of: find.text('Choose strategy'),
-        matching: find.byType(TextButton),
+        of: find.text('Fat-loss strategy'),
+        matching: find.byType(ListTile),
       ),
     );
-    expect(button.onPressed, isNull);
+    expect(tile.onTap, isNull);
     expect(find.textContaining('adults (18+)'), findsOneWidget);
   });
 
@@ -327,15 +328,13 @@ void main() {
     // 减脂/Cut to see the (blocked) strategy section this test is about.
     await tester.tap(find.text('Cut'));
     await tester.pumpAndSettle();
-    // "Choose strategy" renders as a header-row TextButton (no active plan
-    // yet) — it should be disabled while eligibility is blocked.
-    final button = tester.widget<TextButton>(
+    final tile = tester.widget<ListTile>(
       find.ancestor(
-        of: find.text('Choose strategy'),
-        matching: find.byType(TextButton),
+        of: find.text('Fat-loss strategy'),
+        matching: find.byType(ListTile),
       ),
     );
-    expect(button.onPressed, isNull);
+    expect(tile.onTap, isNull);
     expect(find.text('Only available with the cut goal.'), findsOneWidget);
   });
 }

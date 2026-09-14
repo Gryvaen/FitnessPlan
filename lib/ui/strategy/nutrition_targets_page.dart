@@ -59,6 +59,7 @@ class _NutritionTargetsPageState extends ConsumerState<NutritionTargetsPage> {
           ),
           Expanded(
             child: SwipeTabView(
+              keepPagesAlive: true,
               index: _goalOrder.indexOf(_tab),
               onIndexChanged: (i) => setState(() => _tab = _goalOrder[i]),
               children: [
@@ -211,99 +212,75 @@ class _CutNutritionTargets extends ConsumerWidget {
         listBottomInset(context, hasFab: false),
       ),
       children: [
-        // ------------------------------------------------ strategy card
-        SportSurfaceCard(
-          padding: const EdgeInsets.all(AppSpacing.card),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.local_fire_department_outlined,
-                    size: 20,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      l10n.dietStrategy,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleMedium,
-                    ),
-                  ),
-                  TextButton(
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                    onPressed: blocking.isEmpty
-                        ? () => context.push('/profile/nutrition/strategy')
-                        : null,
-                    child: Text(
-                      active == null
-                          ? l10n.chooseStrategy
-                          : l10n.changeStrategy,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.field),
-              _StrategyDescription(
-                active: active,
-                profile: profile,
-                locale: locale,
-                activeStartsLater: activeStartsLater,
-              ),
-              if (active?.kind == DietStrategyKind.carbCycle)
-                SportListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.calendar_month_outlined),
-                  title: Text(l10n.adjustSchedule),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push(
-                    '/profile/nutrition/strategy/configure?kind=carbCycle',
-                  ),
-                ),
-              if (active?.kind == DietStrategyKind.carbTaper)
-                SportListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.fact_check_outlined),
-                  title: Text(l10n.taperReview),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/profile/nutrition/taper'),
-                ),
-              if (active != null)
-                SportListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.stop_circle_outlined),
-                  title: Text(
-                    activeStartsLater
-                        ? l10n.cancelScheduledStrategy
-                        : l10n.stopStrategy,
-                  ),
-                  onTap: () => _stop(context, ref, pending: activeStartsLater),
-                ),
-              if (blocking.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.compact),
-                for (final i in blocking)
-                  Text(
-                    i.message(l10n),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-              ],
-            ],
+        // ------------------------------------------------ strategy
+        SportListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(
+            Icons.local_fire_department_outlined,
+            color: Color(0xFFF97316),
           ),
+          title: Text(l10n.dietStrategy, style: theme.textTheme.titleSmall),
+          subtitle: Text(
+            active == null
+                ? l10n.noStrategyShort
+                : '${l10n.strategySelectedShort} · ${active.kind.label(l10n)}',
+            style: theme.textTheme.bodySmall,
+          ),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: blocking.isEmpty
+              ? () => context.push('/profile/nutrition/strategy')
+              : null,
         ),
-        const SizedBox(height: AppSpacing.section),
+        _StrategyDescription(
+          active: active,
+          locale: locale,
+          activeStartsLater: activeStartsLater,
+        ),
+        if (active?.kind == DietStrategyKind.carbCycle)
+          SportListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.calendar_month_outlined),
+            title: Text(l10n.adjustSchedule),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(
+              '/profile/nutrition/strategy/configure?kind=carbCycle',
+            ),
+          ),
+        if (active?.kind == DietStrategyKind.carbTaper)
+          SportListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.fact_check_outlined),
+            title: Text(l10n.taperReview),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/profile/nutrition/taper'),
+          ),
+        if (active != null)
+          SportListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.stop_outlined),
+            title: Text(
+              activeStartsLater
+                  ? l10n.cancelScheduledStrategy
+                  : l10n.stopStrategy,
+            ),
+            onTap: () => _stop(context, ref, pending: activeStartsLater),
+          ),
+        if (blocking.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.compact),
+          for (final i in blocking)
+            Text(
+              i.message(l10n),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+        ],
         // ------------------------------------------------ basis
         SportListTile(
+          contentPadding: EdgeInsets.zero,
           leading: Icon(
             Icons.calculate_outlined,
-            color: scheme.onSurfaceVariant,
+            color: AppThemeVisuals.of(context).accent,
           ),
           title: Text(l10n.tdeeCalcMethod, style: theme.textTheme.titleSmall),
           subtitle: Text(
@@ -362,13 +339,11 @@ class _CutNutritionTargets extends ConsumerWidget {
 class _StrategyDescription extends StatefulWidget {
   const _StrategyDescription({
     required this.active,
-    required this.profile,
     required this.locale,
     required this.activeStartsLater,
   });
 
   final DietStrategyPlan? active;
-  final UserProfile profile;
   final Locale locale;
   final bool activeStartsLater;
 
@@ -385,87 +360,83 @@ class _StrategyDescriptionState extends State<_StrategyDescription> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final active = widget.active;
-    final summary = active == null
-        ? l10n.noStrategyShort
-        : '${l10n.strategySelectedShort} · ${active.kind.label(l10n)}';
+    if (active == null) return const SizedBox.shrink();
 
+    // Summary lives on the parent SportListTile; this block only expands
+    // the longer plan details.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InkWell(
           onTap: () => setState(() => _expanded = !_expanded),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  summary,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: scheme.onSurfaceVariant,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    active.kind.description(l10n),
+                    maxLines: _expanded ? null : 2,
+                    overflow: _expanded
+                        ? TextOverflow.visible
+                        : TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
-              ),
-              Icon(
-                _expanded ? Icons.expand_less : Icons.expand_more,
-                size: 20,
-                color: scheme.onSurfaceVariant,
-              ),
-            ],
+                Icon(
+                  _expanded ? Icons.expand_less : Icons.expand_more,
+                  size: 20,
+                  color: scheme.onSurfaceVariant,
+                ),
+              ],
+            ),
           ),
         ),
         if (_expanded) ...[
-          const SizedBox(height: AppSpacing.field),
-          if (active == null)
-            Text(
-              widget.profile.goal == FitnessGoal.cut
-                  ? l10n.noStrategyYet
-                  : l10n.strategyOnlyForCut,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
-            )
-          else ...[
-            Text(active.kind.label(l10n), style: theme.textTheme.titleSmall),
-            const SizedBox(height: 2),
-            Text(
-              widget.activeStartsLater
-                  ? l10n.planStartsOn(
-                      AppDates.md(active.effectiveFrom, widget.locale),
-                    )
-                  : l10n.planActiveSince(
-                      AppDates.md(active.effectiveFrom, widget.locale),
-                      active.version,
-                    ),
-              style: theme.textTheme.bodySmall,
+          Text(active.kind.label(l10n), style: theme.textTheme.titleSmall),
+          const SizedBox(height: 2),
+          Text(
+            widget.activeStartsLater
+                ? l10n.planStartsOn(
+                    AppDates.md(active.effectiveFrom, widget.locale),
+                  )
+                : l10n.planActiveSince(
+                    AppDates.md(active.effectiveFrom, widget.locale),
+                    active.version,
+                  ),
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            active.kind == DietStrategyKind.carbCycle
+                ? l10n.carbCyclePlanSummaryLine(
+                    active.referenceWeightKg.toStringAsFixed(1),
+                    '${active.schedule?.cycleLengthDays ?? 0}',
+                    '${active.baseEnergy.round()}',
+                  )
+                : l10n.planBaselineLine(
+                    active.referenceWeightKg.toStringAsFixed(1),
+                    '${active.estimatedTdee.round()}',
+                    '${active.baseEnergy.round()}',
+                  ),
+            style: theme.textTheme.bodySmall,
+          ),
+          if (active.kind == DietStrategyKind.carbCycle &&
+              active.carbCyclePlan != null) ...[
+            const SizedBox(height: AppSpacing.section),
+            CarbCycleView(
+              key: ValueKey('active-${active.id}'),
+              plan: active.carbCyclePlan!,
+              cycleStart: active.effectiveFrom,
             ),
-            const SizedBox(height: 4),
-            Text(
-              active.kind == DietStrategyKind.carbCycle
-                  ? l10n.carbCyclePlanSummaryLine(
-                      active.referenceWeightKg.toStringAsFixed(1),
-                      '${active.schedule?.cycleLengthDays ?? 0}',
-                      '${active.baseEnergy.round()}',
-                    )
-                  : l10n.planBaselineLine(
-                      active.referenceWeightKg.toStringAsFixed(1),
-                      '${active.estimatedTdee.round()}',
-                      '${active.baseEnergy.round()}',
-                    ),
-              style: theme.textTheme.bodySmall,
-            ),
-            if (active.kind == DietStrategyKind.carbCycle &&
-                active.carbCyclePlan != null) ...[
-              const SizedBox(height: AppSpacing.section),
-              CarbCycleView(
-                key: ValueKey('active-${active.id}'),
-                plan: active.carbCyclePlan!,
-                cycleStart: active.effectiveFrom,
-              ),
-            ],
-            if (active.kind == DietStrategyKind.carbTaper) ...[
-              const SizedBox(height: AppSpacing.compact),
-              _TaperSummary(plan: active),
-            ],
           ],
+          if (active.kind == DietStrategyKind.carbTaper) ...[
+            const SizedBox(height: AppSpacing.compact),
+            _TaperSummary(plan: active),
+          ],
+          const SizedBox(height: AppSpacing.field),
         ],
       ],
     );
