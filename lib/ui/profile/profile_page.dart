@@ -1,8 +1,10 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../data/repositories/app_update_repository.dart';
 import '../../domain/calorie_calculator.dart';
@@ -74,6 +76,152 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(context.l10n.clearFailed('$e'))));
+    }
+  }
+
+  Future<void> _exportData() async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    final destination = await showModalBottomSheet<_ExportDestination>(
+      context: context,
+      useRootNavigator: true,
+      showDragHandle: true,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.formPage,
+              0,
+              AppSpacing.formPage,
+              AppSpacing.formPage,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.exportData, style: theme.textTheme.titleMedium),
+                const SizedBox(height: AppSpacing.compact),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    Icons.folder_open_outlined,
+                    color: theme.colorScheme.primary,
+                  ),
+                  title: Text(l10n.exportToFolder),
+                  subtitle: Text(l10n.exportToFolderHint),
+                  onTap: () =>
+                      Navigator.pop(ctx, _ExportDestination.folder),
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    Icons.share_outlined,
+                    color: theme.colorScheme.primary,
+                  ),
+                  title: Text(l10n.exportViaShare),
+                  subtitle: Text(l10n.exportViaShareHint),
+                  onTap: () =>
+                      Navigator.pop(ctx, _ExportDestination.share),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (destination == null || !mounted) return;
+
+    try {
+      final repo = ref.read(dataBackupRepositoryProvider);
+      if (destination == _ExportDestination.folder) {
+        // Android SAF paths from getDirectoryPath are not writable via dart:io.
+        // saveFile(bytes:) writes through the system picker instead.
+        final payload = await repo.buildBackup();
+        final savedPath = await FilePicker.platform.saveFile(
+          dialogTitle: l10n.exportData,
+          fileName: payload.fileName,
+          bytes: payload.bytes,
+          type: FileType.custom,
+          allowedExtensions: const ['json'],
+        );
+        if (savedPath == null || !mounted) return;
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.exportDataSavedTo(savedPath))),
+        );
+      } else {
+        final file = await repo.writeBackupToTemp();
+        await SharePlus.instance.share(
+          ShareParams(
+            files: [XFile(file.path, mimeType: 'application/json')],
+            subject: l10n.exportData,
+          ),
+        );
+        if (!mounted) return;
+        messenger.showSnackBar(SnackBar(content: Text(l10n.exportDataDone)));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.exportDataFailed('$e'))),
+      );
+    }
+  }
+
+  Future<void> _importData() async {
+    final l10n = context.l10n;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.importData),
+        content: Text(l10n.importDataBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.importData),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        dialogTitle: l10n.importData,
+        type: FileType.custom,
+        allowedExtensions: const ['json'],
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty || !mounted) return;
+
+      final file = result.files.single;
+      final bytes = file.bytes;
+      if (bytes == null || bytes.isEmpty) {
+        throw const FormatException('invalid_backup');
+      }
+
+      await ref.read(dataBackupRepositoryProvider).importFromBytes(bytes);
+      ref.invalidate(databaseProvider);
+      ref.invalidate(themeProvider);
+      ref.invalidate(localeProvider);
+      ref.invalidate(remindersProvider);
+      ref.read(profileProvider.notifier).reload();
+      await ref.read(remindersProvider.notifier).syncSchedule();
+
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(l10n.importDataDone)));
+    } catch (e) {
+      // DB may already be closed; force a fresh connection so the app recovers.
+      ref.invalidate(databaseProvider);
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.importDataFailed('$e'))),
+      );
     }
   }
 
@@ -291,7 +439,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.person_outline),
                   title: Text(
-                    l10n.myProfileTitle,
+                    l10n.myProfile,
                     style: theme.textTheme.titleMedium,
                   ),
                   subtitle: Text(
@@ -347,58 +495,160 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   void _showAbout(BuildContext context, CaloriePlan plan, String? version) {
-    final l10n = context.l10n;
-    final theme = Theme.of(context);
     showModalBottomSheet<void>(
       context: context,
       useRootNavigator: true,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.formPage),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(l10n.appTitle, style: theme.textTheme.titleLarge),
-              if (version != null)
-                Text(
-                  l10n.appVersionLabel(version),
-                  style: theme.textTheme.bodySmall,
+      builder: (sheetContext) => _AboutSheet(
+        plan: plan,
+        version: version,
+        onExport: () {
+          Navigator.of(sheetContext).pop();
+          _exportData();
+        },
+        onImport: () {
+          Navigator.of(sheetContext).pop();
+          _importData();
+        },
+        onClear: () {
+          Navigator.of(sheetContext).pop();
+          _clearData();
+        },
+      ),
+    );
+  }
+}
+
+enum _ExportDestination { folder, share }
+
+class _AboutSheet extends StatelessWidget {
+  const _AboutSheet({
+    required this.plan,
+    required this.version,
+    required this.onExport,
+    required this.onImport,
+    required this.onClear,
+  });
+
+  final CaloriePlan plan;
+  final String? version;
+  final VoidCallback onExport;
+  final VoidCallback onImport;
+  final VoidCallback onClear;
+
+  static const _exportGreen = Color(0xFF2E7D32);
+  static const _importBlue = Color(0xFF1565C0);
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.formPage,
+          0,
+          AppSpacing.formPage,
+          AppSpacing.formPage,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l10n.appTitle, style: theme.textTheme.titleLarge),
+                      if (version != null)
+                        Text(
+                          l10n.appVersionLabel(version!),
+                          style: theme.textTheme.bodySmall,
+                        ),
+                    ],
+                  ),
                 ),
-              const SizedBox(height: AppSpacing.section),
-              Text(l10n.calcMethod, style: theme.textTheme.titleSmall),
-              const SizedBox(height: AppSpacing.compact),
-              CalorieBreakdown(
-                plan: plan,
-                compact: true,
-                showTargetAndMacros: false,
+                TextButton.icon(
+                  onPressed: onClear,
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                  icon: Icon(
+                    Icons.delete_outline,
+                    color: theme.colorScheme.error,
+                  ),
+                  label: Text(
+                    l10n.clearData,
+                    style: TextStyle(
+                      color: theme.colorScheme.error,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.section),
+            Divider(height: 1, color: AppThemeVisuals.of(context).divider),
+            const SizedBox(height: AppSpacing.section),
+            Text(l10n.calcMethod, style: theme.textTheme.titleSmall),
+            const SizedBox(height: AppSpacing.compact),
+            CalorieBreakdown(
+              plan: plan,
+              compact: true,
+              showTargetAndMacros: false,
+            ),
+            const SizedBox(height: AppSpacing.compact),
+            Text(
+              l10n.kcalPerKgFatFact(
+                CalorieCalculator.kcalPerKgFat.toInt().toString(),
               ),
-              const SizedBox(height: AppSpacing.compact),
-              Text(
-                l10n.kcalPerKgFatFact(
-                  CalorieCalculator.kcalPerKgFat.toInt().toString(),
+              style: theme.textTheme.bodySmall,
+            ),
+            const SizedBox(height: AppSpacing.section),
+            Divider(height: 1, color: AppThemeVisuals.of(context).divider),
+            const SizedBox(height: AppSpacing.compact),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: onExport,
+                    icon: const Icon(
+                      Icons.upload_outlined,
+                      color: _exportGreen,
+                    ),
+                    label: Text(
+                      l10n.exportData,
+                      style: const TextStyle(
+                        color: _exportGreen,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ),
-                style: theme.textTheme.bodySmall,
-              ),
-              const SizedBox(height: AppSpacing.section),
-              SportListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(
-                  Icons.delete_outline,
-                  color: theme.colorScheme.error,
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: onImport,
+                    icon: const Icon(
+                      Icons.download_outlined,
+                      color: _importBlue,
+                    ),
+                    label: Text(
+                      l10n.importData,
+                      style: const TextStyle(
+                        color: _importBlue,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ),
-                title: Text(
-                  l10n.clearData,
-                  style: TextStyle(color: theme.colorScheme.error),
-                ),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _clearData();
-                },
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ),
       ),
     );

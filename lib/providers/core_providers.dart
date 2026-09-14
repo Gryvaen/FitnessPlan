@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/db.dart';
 import '../data/repositories/app_update_repository.dart';
 import '../data/repositories/calculator_history_repository.dart';
+import '../data/repositories/data_backup_repository.dart';
 import '../data/repositories/diet_strategy_repository.dart';
 import '../data/repositories/food_repository.dart';
 import '../data/repositories/form_memory_repository.dart';
@@ -23,7 +24,12 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
 
 final databaseProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase();
-  ref.onDispose(db.close);
+  ref.onDispose(() {
+    // Import may already have closed this connection before invalidating.
+    try {
+      db.close();
+    } catch (_) {}
+  });
   return db;
 });
 
@@ -88,4 +94,11 @@ final noteRepositoryProvider = Provider<NoteRepository>((ref) {
 
 final appUpdateRepositoryProvider = Provider<AppUpdateRepository>((ref) {
   return AppUpdateRepository();
+});
+
+final dataBackupRepositoryProvider = Provider<DataBackupRepository>((ref) {
+  return DataBackupRepository(
+    ref.watch(databaseProvider),
+    ref.watch(sharedPreferencesProvider),
+  );
 });
