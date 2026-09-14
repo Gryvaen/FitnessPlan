@@ -13,7 +13,24 @@ enum ActivityLevel {
 
 enum FitnessGoal { cut, maintain, bulk }
 
-enum MealType { breakfast, lunch, dinner, snack }
+enum MealType {
+  breakfast,
+  lunch,
+  dinner,
+  snack;
+
+  /// Picks a meal slot from local wall-clock time for the generic "log meal"
+  /// affordance (section + buttons), so breakfast/lunch/dinner/snack follow
+  /// the clock instead of the last remembered choice.
+  static MealType suggestedFor(DateTime now) {
+    final minutes = now.hour * 60 + now.minute;
+    // 05:00–10:29 breakfast · 10:30–14:29 lunch · 17:00–20:59 dinner · else snack
+    if (minutes >= 5 * 60 && minutes < 10 * 60 + 30) return breakfast;
+    if (minutes >= 10 * 60 + 30 && minutes < 14 * 60 + 30) return lunch;
+    if (minutes >= 17 * 60 && minutes < 21 * 60) return dinner;
+    return snack;
+  }
+}
 
 enum ExerciseUnit {
   reps,
@@ -69,7 +86,6 @@ class UserProfile {
     this.bmr,
     this.tdee,
     this.dailyDeficit,
-    this._missingCutInputs = false,
     this.calorieStandardSince,
   });
 
@@ -85,13 +101,11 @@ class UserProfile {
   final double? bmr;
   final double? tdee;
   final double? dailyDeficit;
-  final bool? _missingCutInputs;
 
   /// Local calendar day when calorie targets / deficit last changed.
   final DateTime? calorieStandardSince;
 
   int get calorieAdjustment => _calorieAdjustment ?? 0;
-  bool get missingCutInputs => _missingCutInputs ?? false;
 
   UserProfile copyWith({
     Sex? sex,
@@ -106,7 +120,6 @@ class UserProfile {
     double? bmr,
     double? tdee,
     double? dailyDeficit,
-    bool? missingCutInputs,
     DateTime? calorieStandardSince,
   }) {
     return UserProfile(
@@ -122,7 +135,6 @@ class UserProfile {
       bmr: bmr ?? this.bmr,
       tdee: tdee ?? this.tdee,
       dailyDeficit: dailyDeficit ?? this.dailyDeficit,
-      missingCutInputs: missingCutInputs ?? this.missingCutInputs,
       calorieStandardSince: calorieStandardSince ?? this.calorieStandardSince,
     );
   }
@@ -156,7 +168,6 @@ class UserProfile {
     bmr: (json['bmr'] as num?)?.toDouble(),
     tdee: (json['tdee'] as num?)?.toDouble(),
     dailyDeficit: (json['dailyDeficit'] as num?)?.toDouble(),
-    missingCutInputs: json['missingCutInputs'] as bool? ?? false,
     calorieStandardSince: _dayFromJson(json['calorieStandardSince']),
   );
 
@@ -173,7 +184,6 @@ class UserProfile {
     'bmr': bmr,
     'tdee': tdee,
     'dailyDeficit': dailyDeficit,
-    'missingCutInputs': missingCutInputs,
     'calorieStandardSince': _dayToJson(calorieStandardSince),
   };
 }

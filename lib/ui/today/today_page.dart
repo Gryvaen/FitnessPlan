@@ -57,7 +57,6 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     // text sits on the ordinary surface colours.
     final onHero = scheme.onSurface;
     final onHeroMuted = scheme.onSurfaceVariant;
-    final plan = ref.read(profileRepositoryProvider).buildPlan(profile);
 
     // Single per-date target source; fall back to the profile target only
     // while the first resolution is in flight.
@@ -157,34 +156,6 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                             .read(selectedDayProvider.notifier)
                             .goToToday(),
                 ),
-                if (profile.goal == FitnessGoal.cut &&
-                    plan.missingCutInputs) ...[
-                  SportSurfaceCard(
-                    tint: scheme.error,
-                    child: Material(
-                      type: MaterialType.transparency,
-                      child: ListTile(
-                        leading: Icon(
-                          Icons.warning_amber_rounded,
-                          color: scheme.error,
-                        ),
-                        title: Text(
-                          l10n.cutPlanIncomplete,
-                          style: theme.textTheme.titleSmall,
-                        ),
-                        subtitle: Text(
-                          l10n.cutPlanIncompleteHint,
-                          style: theme.textTheme.meta,
-                        ),
-                        trailing: TextButton(
-                          onPressed: () => context.go('/profile/edit'),
-                          child: Text(l10n.goFillIn),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.section),
-                ],
                 if (onPlateau) ...[
                   SportSurfaceCard(
                     tint: scheme.tertiary,
@@ -455,82 +426,126 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                     AppSpacing.compact,
                     AppSpacing.compact,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      TodaySectionHeader(
-                        title: l10n.sectionLogs(sectionPrefix),
-                        summary: mealsAsync.value == null
-                            ? null
-                            : l10n.mealsSummary(
-                                mealsAsync.value!.length,
-                                '${intake.calories.round()}',
-                              ),
-                        addLabel: isSelectedToday ? l10n.logMeal : null,
-                        onAdd: isSelectedToday
-                            ? () => context.push('/log-meal')
-                            : null,
-                        trailing: [
-                          PopupMenuButton<String>(
-                            tooltip: l10n.more,
-                            onSelected: (value) => _onMealMenu(
-                              value,
-                              day,
-                              isSelectedToday,
-                              dayLabel,
-                            ),
-                            itemBuilder: (context) => [
-                              if (isSelectedToday)
-                                PopupMenuItem(
-                                  value: 'copy',
-                                  child: Text(l10n.copyYesterday),
+                  child: Builder(
+                    builder: (context) {
+                      final meals = mealsAsync.value ?? const <MealEntry>[];
+                      final yesterdayMeals = isSelectedToday
+                          ? (ref
+                                    .watch(
+                                      mealsForDayProvider(
+                                        day.subtract(const Duration(days: 1)),
+                                      ),
+                                    )
+                                    .value ??
+                                const <MealEntry>[])
+                          : const <MealEntry>[];
+                      final yesterdayMealTypes = [
+                        for (final t in MealType.values)
+                          if (yesterdayMeals.any((m) => m.mealType == t.name))
+                            t,
+                      ];
+                      final canCopyYesterday =
+                          isSelectedToday && yesterdayMealTypes.isNotEmpty;
+                      final canSaveAsPreset = meals.isNotEmpty;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TodaySectionHeader(
+                            title: l10n.sectionLogs(sectionPrefix),
+                            summary: mealsAsync.value == null
+                                ? null
+                                : l10n.mealsSummary(
+                                    meals.length,
+                                    '${intake.calories.round()}',
+                                  ),
+                            addLabel: isSelectedToday ? l10n.logMeal : null,
+                            onAdd: isSelectedToday
+                                ? () => context.push(
+                                    '/log-meal?mealType=${MealType.suggestedFor(DateTime.now()).name}',
+                                  )
+                                : null,
+                            trailing: [
+                              if (canCopyYesterday)
+                                PopupMenuButton<MealType>(
+                                  tooltip: l10n.copyYesterday,
+                                  icon: const Icon(Icons.more_horiz),
+                                  onSelected: (type) =>
+                                      copyMealTypeFromYesterday(
+                                        context: context,
+                                        ref: ref,
+                                        day: day,
+                                        mealType: type,
+                                      ),
+                                  itemBuilder: (context) => [
+                                    for (final t in yesterdayMealTypes)
+                                      PopupMenuItem(
+                                        value: t,
+                                        child: Text(t.label(l10n)),
+                                      ),
+                                  ],
                                 ),
-                              PopupMenuItem(
-                                value: 'preset',
-                                child: Text(l10n.saveAsPreset),
-                              ),
+                              if (canSaveAsPreset)
+                                PopupMenuButton<String>(
+                                  tooltip: l10n.more,
+                                  onSelected: (value) => _onMealMenu(
+                                    value,
+                                    day,
+                                    isSelectedToday,
+                                    dayLabel,
+                                  ),
+                                  itemBuilder: (context) => [
+                                    PopupMenuItem(
+                                      value: 'preset',
+                                      child: Text(l10n.saveAsPreset),
+                                    ),
+                                  ],
+                                ),
                             ],
                           ),
+                          const SizedBox(height: 4),
+                          mealsAsync.when(
+                            loading: () => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                            error: (e, _) => Text(
+                              l10n.loadFailed('$e'),
+                              style: theme.textTheme.meta,
+                            ),
+                            data: (meals) => meals.isEmpty
+                                ? SportEmptyState(
+                                    icon: Icons.restaurant_outlined,
+                                    title: isSelectedToday
+                                        ? l10n.noMealsTitle
+                                        : l10n.noMealsThatDay,
+                                    message: isSelectedToday
+                                        ? l10n.noMealsHint
+                                        : l10n.pastDayReadOnly,
+                                  )
+                                : Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      _MealGroups(
+                                        meals: meals,
+                                        onOpen: () =>
+                                            context.push(dailyMealsPath(day)),
+                                      ),
+                                      Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: TextButton(
+                                          onPressed: () => context.push(
+                                            dailyMealsPath(day),
+                                          ),
+                                          child: Text(l10n.viewDayRecords),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                          ),
                         ],
-                      ),
-                      const SizedBox(height: 4),
-                      mealsAsync.when(
-                        loading: () =>
-                            const Center(child: CircularProgressIndicator()),
-                        error: (e, _) => Text(
-                          l10n.loadFailed('$e'),
-                          style: theme.textTheme.meta,
-                        ),
-                        data: (meals) => meals.isEmpty
-                            ? SportEmptyState(
-                                icon: Icons.restaurant_outlined,
-                                title: isSelectedToday
-                                    ? l10n.noMealsTitle
-                                    : l10n.noMealsThatDay,
-                                message: isSelectedToday
-                                    ? l10n.noMealsHint
-                                    : l10n.pastDayReadOnly,
-                              )
-                            : Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _MealGroups(
-                                    meals: meals,
-                                    onOpen: () =>
-                                        context.push(dailyMealsPath(day)),
-                                  ),
-                                  Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: TextButton(
-                                      onPressed: () =>
-                                          context.push(dailyMealsPath(day)),
-                                      child: Text(l10n.viewDayRecords),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
               ],

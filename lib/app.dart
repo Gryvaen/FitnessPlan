@@ -105,7 +105,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                     builder: (context, state) {
                       final idStr = state.uri.queryParameters['id'];
                       final id = idStr == null ? null : int.tryParse(idStr);
-                      return CustomFoodEditPage(foodId: id);
+                      final returnId =
+                          state.uri.queryParameters['returnId'] == '1';
+                      return CustomFoodEditPage(
+                        foodId: id,
+                        popWithIdOnCreate: returnId,
+                      );
                     },
                   ),
                   GoRoute(
@@ -135,7 +140,18 @@ final routerProvider = Provider<GoRouter>((ref) {
                     'notes' => RecordsSegment.notes,
                     _ => RecordsSegment.body,
                   };
-                  return RecordsPage(initialSegment: segment);
+                  final sub = state.uri.queryParameters['sub'];
+                  final trainTab = switch (sub) {
+                    'plans' => 0,
+                    'history' => 1,
+                    'library' => 2,
+                    _ => null,
+                  };
+                  return RecordsPage(
+                    key: ValueKey('records-${tab ?? ''}-${sub ?? ''}'),
+                    initialSegment: segment,
+                    initialTrainTab: trainTab,
+                  );
                 },
                 routes: [
                   GoRoute(
@@ -270,7 +286,32 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final idStr = state.uri.queryParameters['foodId'];
           final id = idStr == null ? null : int.tryParse(idStr);
-          return LogMealPage(initialFoodId: id);
+          final mealTypeRaw = state.uri.queryParameters['mealType'];
+          MealType? mealType;
+          if (mealTypeRaw != null) {
+            for (final t in MealType.values) {
+              if (t.name == mealTypeRaw) {
+                mealType = t;
+                break;
+              }
+            }
+          }
+          return LogMealPage(initialFoodId: id, initialMealType: mealType);
+        },
+      ),
+      // Root-level twin of /foods/custom. Pushing a shell route (e.g. from
+      // /log-meal) would remount StatefulShellRoute on the root navigator and
+      // trip Navigator's duplicate page-key assert.
+      GoRoute(
+        path: '/custom-food',
+        builder: (context, state) {
+          final idStr = state.uri.queryParameters['id'];
+          final id = idStr == null ? null : int.tryParse(idStr);
+          final returnId = state.uri.queryParameters['returnId'] == '1';
+          return CustomFoodEditPage(
+            foodId: id,
+            popWithIdOnCreate: returnId,
+          );
         },
       ),
       GoRoute(

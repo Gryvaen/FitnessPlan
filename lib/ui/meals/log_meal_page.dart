@@ -11,9 +11,10 @@ import '../theme/macro_color.dart';
 import '../widgets/form_options.dart';
 
 class LogMealPage extends ConsumerStatefulWidget {
-  const LogMealPage({super.key, this.initialFoodId});
+  const LogMealPage({super.key, this.initialFoodId, this.initialMealType});
 
   final int? initialFoodId;
+  final MealType? initialMealType;
 
   @override
   ConsumerState<LogMealPage> createState() => _LogMealPageState();
@@ -54,7 +55,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     final memory = ref.read(formMemoryRepositoryProvider).loadMealDefaults();
     if (mounted) {
       setState(() {
-        _mealType = memory.mealType;
+        _mealType = widget.initialMealType ?? memory.mealType;
         _grams = FormOptions.snapDouble(FormOptions.mealGrams(), memory.grams);
       });
     }
@@ -97,6 +98,16 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     return ref
         .read(formMemoryRepositoryProvider)
         .saveMealDefaults(mealType: _mealType, grams: _grams);
+  }
+
+  Future<void> _openCustomFood() async {
+    // Must stay on a root route: /log-meal is outside the shell, and pushing
+    // /foods/custom would remount StatefulShellRoute (duplicate page key).
+    final id = await context.push<int>('/custom-food?returnId=1');
+    if (id == null || !mounted) return;
+    final food = await ref.read(foodRepositoryProvider).byId(id);
+    if (!mounted || food == null) return;
+    await _selectFood(food);
   }
 
   Future<void> _search(String q) async {
@@ -301,7 +312,16 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         : AppDates.md(day, locale);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.logMealTitle(dayLabel))),
+      appBar: AppBar(
+        title: Text(l10n.logMealTitle(dayLabel)),
+        actions: [
+          IconButton(
+            tooltip: l10n.addCustomFood,
+            icon: const Text('✏️', style: TextStyle(fontSize: 20)),
+            onPressed: _openCustomFood,
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Padding(

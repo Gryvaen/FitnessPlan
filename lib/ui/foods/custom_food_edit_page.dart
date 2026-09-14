@@ -10,9 +10,17 @@ import '../theme/app_theme.dart';
 
 /// Create or edit a user-defined food (per 100g macros).
 class CustomFoodEditPage extends ConsumerStatefulWidget {
-  const CustomFoodEditPage({super.key, this.foodId});
+  const CustomFoodEditPage({
+    super.key,
+    this.foodId,
+    this.popWithIdOnCreate = false,
+  });
 
   final int? foodId;
+
+  /// When true (e.g. opened from 记一笔), pop with the new food id instead of
+  /// navigating to the food detail page.
+  final bool popWithIdOnCreate;
 
   @override
   ConsumerState<CustomFoodEditPage> createState() => _CustomFoodEditPageState();
@@ -154,7 +162,11 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(l10n.customFoodAdded)));
-          context.pushReplacement('/foods/$id');
+          if (widget.popWithIdOnCreate) {
+            context.pop(id);
+          } else {
+            context.pushReplacement('/foods/$id');
+          }
         }
       }
     } catch (e) {

@@ -17,9 +17,9 @@ String dailyMealsPath(DateTime day) {
   return '/day-meals?date=$key';
 }
 
-/// Full per-day food log: record-status header + every meal type with its
-/// entries (or an "add" affordance when a type has none). History dates are
-/// read-only and use their stored records.
+/// Full per-day food log: every meal type with its entries (or an "add"
+/// affordance when a type has none). History dates are read-only and use
+/// their stored records.
 class DailyMealsPage extends ConsumerWidget {
   const DailyMealsPage({super.key, required this.date});
 
@@ -82,8 +82,6 @@ class DailyMealsPage extends ConsumerWidget {
               listBottomInset(context, hasFab: false),
             ),
             children: [
-              _RecordStatusRow(day: day, editable: editable),
-              const SizedBox(height: AppSpacing.section),
               Row(
                 children: [
                   Expanded(
@@ -102,13 +100,15 @@ class DailyMealsPage extends ConsumerWidget {
                       visualDensity: VisualDensity.compact,
                       icon: const Icon(Icons.content_copy, size: 18),
                       onPressed: () =>
-                          _copyYesterdayMealType(context, ref, day, yesterdayMeals),
+                          copyYesterdayMealType(context, ref, day, yesterdayMeals),
                     ),
                   if (editable)
                     PlainIconAction(
                       icon: Icons.add,
                       label: l10n.logMeal,
-                      onPressed: () => context.push('/log-meal'),
+                      onPressed: () => context.push(
+                        '/log-meal?mealType=${MealType.suggestedFor(DateTime.now()).name}',
+                      ),
                     ),
                 ],
               ),
@@ -121,6 +121,8 @@ class DailyMealsPage extends ConsumerWidget {
                       .where((m) => m.mealType == type.name)
                       .toList(growable: false),
                   editable: editable,
+                  canCopyYesterday: editable &&
+                      yesterdayMeals.any((m) => m.mealType == type.name),
                 ),
             ],
           );
@@ -133,7 +135,7 @@ class DailyMealsPage extends ConsumerWidget {
 /// Lets the user pick one of yesterday's logged meal types and copy just
 /// that one onto [day] — a shortcut for the same [MealRepository.copyDay]
 /// call already offered per-section, without opening each section's menu.
-Future<void> _copyYesterdayMealType(
+Future<void> copyYesterdayMealType(
   BuildContext context,
   WidgetRef ref,
   DateTime day,
@@ -164,9 +166,25 @@ Future<void> _copyYesterdayMealType(
     ),
   );
   if (chosen == null || !context.mounted) return;
+  await copyMealTypeFromYesterday(
+    context: context,
+    ref: ref,
+    day: day,
+    mealType: chosen,
+  );
+}
+
+/// Copies a single [mealType] from yesterday onto [day].
+Future<void> copyMealTypeFromYesterday({
+  required BuildContext context,
+  required WidgetRef ref,
+  required DateTime day,
+  required MealType mealType,
+}) async {
+  final l10n = context.l10n;
   final from = day.subtract(const Duration(days: 1));
   final existingToday = await ref.read(mealRepositoryProvider).forDay(day);
-  final hasToday = existingToday.any((m) => m.mealType == chosen.name);
+  final hasToday = existingToday.any((m) => m.mealType == mealType.name);
   if (hasToday) {
     if (!context.mounted) return;
     final ok = await showDialog<bool>(
@@ -191,7 +209,7 @@ Future<void> _copyYesterdayMealType(
   if (!context.mounted) return;
   final result = await ref
       .read(mealRepositoryProvider)
-      .copyDay(from: from, to: day, mealType: chosen);
+      .copyDay(from: from, to: day, mealType: mealType);
   if (!context.mounted) return;
   final skip = result.skippedMissingFood > 0
       ? l10n.skippedItems(result.skippedMissingFood)
@@ -207,84 +225,20 @@ Future<void> _copyYesterdayMealType(
   );
 }
 
-class _RecordStatusRow extends ConsumerWidget {
-  const _RecordStatusRow({required this.day, required this.editable});
-
-  final DateTime day;
-  final bool editable;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = context.l10n;
-    final theme = Theme.of(context);
-    final complete = ref.watch(dayDietCompleteProvider(day)).value ?? false;
-    final color = complete
-        ? theme.colorScheme.primary
-        : theme.colorScheme.onSurfaceVariant;
-
-    void toggle() =>
-        ref.read(dietStrategyRepositoryProvider).setDayComplete(day, !complete);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(l10n.recordStatusLabel, style: theme.textTheme.bodyMedium),
-                Text(l10n.dietCompleteHint, style: theme.textTheme.bodySmall),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          if (editable)
-            TextButton.icon(
-              onPressed: toggle,
-              icon: Icon(
-                complete ? Icons.check_circle : Icons.circle_outlined,
-                size: 18,
-                color: color,
-              ),
-              label: Text(
-                complete ? l10n.recordComplete : l10n.recordIncomplete,
-              ),
-            )
-          else
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  complete ? Icons.check_circle : Icons.circle_outlined,
-                  size: 18,
-                  color: color,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  complete ? l10n.recordComplete : l10n.recordIncomplete,
-                  style: theme.textTheme.bodyMedium?.copyWith(color: color),
-                ),
-              ],
-            ),
-        ],
-      ),
-    );
-  }
-}
-
 class _MealTypeSection extends ConsumerWidget {
   const _MealTypeSection({
     required this.day,
     required this.type,
     required this.entries,
     required this.editable,
+    required this.canCopyYesterday,
   });
 
   final DateTime day;
   final MealType type;
   final List<MealEntry> entries;
   final bool editable;
+  final bool canCopyYesterday;
 
   Future<void> _copyYesterday(BuildContext context, WidgetRef ref) async {
     final l10n = context.l10n;
@@ -404,7 +358,9 @@ class _MealTypeSection extends ConsumerWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final kcal = entries.fold<double>(0, (s, m) => s + m.calories);
-    final showMenu = editable || entries.isNotEmpty;
+    final canSaveAsPreset = entries.isNotEmpty;
+    final canClear = editable && entries.isNotEmpty;
+    final showMenu = canCopyYesterday || canSaveAsPreset || canClear;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -444,13 +400,17 @@ class _MealTypeSection extends ConsumerWidget {
                   _ => _saveAsPreset(context, ref),
                 },
                 itemBuilder: (context) => [
-                  if (editable)
+                  if (canCopyYesterday)
                     PopupMenuItem(
                       value: 'copy',
                       child: Text(l10n.copyYesterday),
                     ),
-                  PopupMenuItem(value: 'preset', child: Text(l10n.saveAsPreset)),
-                  if (editable && entries.isNotEmpty)
+                  if (canSaveAsPreset)
+                    PopupMenuItem(
+                      value: 'preset',
+                      child: Text(l10n.saveAsPreset),
+                    ),
+                  if (canClear)
                     PopupMenuItem(
                       value: 'clear',
                       child: Text(l10n.clearThisMeal),
