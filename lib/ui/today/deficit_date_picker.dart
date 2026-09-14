@@ -256,7 +256,7 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
                   _LegendDot(color: _badRed, label: l10n.legendPastBad),
                   _LegendDot(
                     color: theme.colorScheme.onSurfaceVariant,
-                    label: l10n.legendTodayOngoing,
+                    label: l10n.todayWord,
                   ),
                 ],
               ),
@@ -523,7 +523,9 @@ class _DayCell extends StatelessWidget {
                 Text(
                   '${date.day}',
                   style: theme.textTheme.labelMedium?.copyWith(
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    fontWeight: selected || isToday
+                        ? FontWeight.w700
+                        : FontWeight.w500,
                     color: fg,
                   ),
                 ),

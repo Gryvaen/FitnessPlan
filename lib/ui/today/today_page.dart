@@ -17,6 +17,7 @@ import '../meals/daily_meals_page.dart';
 import '../shell/swipe_tab_view.dart';
 import '../strategy/strategy_labels.dart';
 import '../theme/app_theme.dart';
+import '../theme/macro_color.dart';
 import '../theme/sport_chrome.dart';
 import '../tools/workout_reminder_notifications.dart';
 import 'deficit_date_picker.dart';
@@ -286,10 +287,8 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                             over: remainCal < 0,
                             size: 88,
                             strokeWidth: 8,
-                            color: visuals.accent,
                             trackColor: visuals.track,
                             centerLabel: l10n.eatenWord,
-                            labelColor: onHero,
                             metaColor: onHeroMuted,
                           ),
                           const SizedBox(width: 12),
@@ -481,7 +480,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                                     for (final t in yesterdayMealTypes)
                                       PopupMenuItem(
                                         value: t,
-                                        child: Text(t.label(l10n)),
+                                        child: Text(l10n.copyNamed(t.label(l10n))),
                                       ),
                                   ],
                                 ),
@@ -678,8 +677,15 @@ class _RemainingBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
     final over = remain < 0;
+    final fraction = target <= 0 || !target.isFinite || !eaten.isFinite
+        ? 0.0
+        : eaten / target;
+    final valueColor = intakeProgressColor(
+      over: over,
+      fraction: fraction,
+      fallback: onHero,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -698,7 +704,7 @@ class _RemainingBlock extends StatelessWidget {
               fontWeight: FontWeight.w700,
               letterSpacing: -0.8,
               height: 1.05,
-              color: over ? scheme.error : onHero,
+              color: valueColor,
             ),
           ),
         ),
@@ -758,6 +764,12 @@ class _MealGroups extends StatelessWidget {
       final group = meals.where((m) => m.mealType == type.name).toList();
       if (group.isEmpty) continue;
       final calories = group.fold<double>(0, (sum, m) => sum + m.calories);
+      final accent = switch (type) {
+        MealType.breakfast => AppColors.fat,
+        MealType.lunch => AppColors.carb,
+        MealType.dinner => AppColors.protein,
+        MealType.snack => AppColors.water,
+      };
       groups.add(
         InkWell(
           onTap: onOpen,
@@ -765,16 +777,47 @@ class _MealGroups extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Row(
               children: [
+                Container(
+                  width: 3,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: accent,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 10),
                 Text(type.label(l10n), style: theme.textTheme.titleSmall),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    group.map((m) => m.foodName).join(' · '),
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        for (var i = 0; i < group.length; i++) ...[
+                          if (i > 0)
+                            TextSpan(
+                              text: ' · ',
+                              style: TextStyle(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          TextSpan(
+                            text: group[i].foodName,
+                            style: TextStyle(
+                              color:
+                                  dominantMacroColor(
+                                    carbG: group[i].carbG,
+                                    proteinG: group[i].proteinG,
+                                    fatG: group[i].fatG,
+                                  ) ??
+                                  theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                    style: theme.textTheme.bodySmall,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -826,6 +869,9 @@ class _StepsStatusLabel extends ConsumerWidget {
       StepsSyncStatus.failed || StepsSyncStatus.empty => l10n.stepsNotSynced,
       _ => stepsLabel,
     };
+    final iconColor = status == StepsSyncStatus.connected
+        ? AppColors.success
+        : mutedColor;
 
     return Tooltip(
       message: canOpen
@@ -841,7 +887,7 @@ class _StepsStatusLabel extends ConsumerWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.directions_walk, size: 18, color: mutedColor),
+                Icon(Icons.directions_walk, size: 18, color: iconColor),
                 const SizedBox(width: 4),
                 Text(label, style: textStyle),
                 if (showSpinner) ...[
@@ -938,7 +984,7 @@ class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
     final (statusText, statusIcon, statusColor) = switch (status) {
       StepsSyncStatus.connected => (
         l10n.stepsStatusConnected,
-        Icons.check_circle_outline,
+        Icons.check,
         Colors.green,
       ),
       StepsSyncStatus.empty => (
@@ -1233,13 +1279,54 @@ class _TodayHeader extends StatelessWidget {
                     HapticFeedback.selectionClick();
                     onGoToToday!();
                   },
-            icon: const Icon(Icons.calendar_today_outlined),
+            icon: _TodayWeekdayCalendarIcon(
+              weekdayLetter: l10n.weekdayLettersMonSun
+                  .split(',')[DateTime.now().weekday - 1],
+              color: AppThemeVisuals.of(context).accent,
+            ),
           ),
           IconButton(
             tooltip: l10n.nextDay,
             visualDensity: VisualDensity.compact,
             onPressed: canGoNext ? onNext : null,
             icon: const Icon(Icons.chevron_right),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Calendar outline with today's weekday letter drawn in the icon body.
+class _TodayWeekdayCalendarIcon extends StatelessWidget {
+  const _TodayWeekdayCalendarIcon({
+    required this.weekdayLetter,
+    required this.color,
+  });
+
+  final String weekdayLetter;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 24,
+      height: 24,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Icon(Icons.calendar_today_outlined, size: 24, color: color),
+          Padding(
+            padding: const EdgeInsets.only(top: 5),
+            child: Text(
+              weekdayLetter,
+              style: TextStyle(
+                color: color,
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                height: 1,
+              ),
+            ),
           ),
         ],
       ),

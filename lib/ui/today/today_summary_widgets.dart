@@ -6,6 +6,10 @@ import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 
 /// Intake progress ring with a percentage in the centre.
+///
+/// The arc paints a multi-hue [SweepGradient] so earlier and later stages
+/// show together as intake grows (azure → iris → orchid → mint). When
+/// [over], the tip turns coral warning.
 class CalorieRing extends StatelessWidget {
   const CalorieRing({
     super.key,
@@ -26,6 +30,8 @@ class CalorieRing extends StatelessWidget {
   final bool over;
   final double size;
   final double strokeWidth;
+
+  /// Optional solid override — skips the spectrum gradient when set.
   final Color? color;
   final Color? trackColor;
 
@@ -45,8 +51,14 @@ class CalorieRing extends StatelessWidget {
     final visuals = AppThemeVisuals.of(context);
     final f = fraction;
     final progress = f.clamp(0.0, 1.0);
-    final ringColor = over ? scheme.error : (color ?? visuals.accent);
-    final centerColor = over ? scheme.error : (labelColor ?? scheme.onSurface);
+    final tipColor =
+        color ??
+        intakeProgressColor(
+          over: over,
+          fraction: f,
+          fallback: scheme.onSurface,
+        );
+    final centerColor = labelColor ?? tipColor;
     final percent = (f * 100).round();
 
     return SizedBox(
@@ -55,7 +67,8 @@ class CalorieRing extends StatelessWidget {
       child: CustomPaint(
         painter: _RingPainter(
           progress: progress,
-          color: ringColor,
+          over: over,
+          solidColor: color,
           trackColor: trackColor ?? visuals.track,
           strokeWidth: strokeWidth,
         ),
@@ -93,13 +106,15 @@ class CalorieRing extends StatelessWidget {
 class _RingPainter extends CustomPainter {
   _RingPainter({
     required this.progress,
-    required this.color,
+    required this.over,
+    required this.solidColor,
     required this.trackColor,
     required this.strokeWidth,
   });
 
   final double progress;
-  final Color color;
+  final bool over;
+  final Color? solidColor;
   final Color trackColor;
   final double strokeWidth;
 
@@ -113,22 +128,39 @@ class _RingPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
+
+    canvas.drawArc(rect, -math.pi / 2, 2 * math.pi, false, track);
+    if (progress <= 0) return;
+
     final arc = Paint()
-      ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
 
-    canvas.drawArc(rect, -math.pi / 2, 2 * math.pi, false, track);
-    if (progress > 0) {
-      canvas.drawArc(rect, -math.pi / 2, 2 * math.pi * progress, false, arc);
+    if (solidColor != null) {
+      arc.color = solidColor!;
+    } else {
+      final colors = over
+          ? <Color>[
+              ...calorieRingSpectrum.sublist(0, calorieRingSpectrum.length - 1),
+              AppColors.warning,
+            ]
+          : calorieRingSpectrum;
+      arc.shader = SweepGradient(
+        colors: colors,
+        stops: calorieRingStops,
+        transform: const GradientRotation(-math.pi / 2),
+      ).createShader(rect);
     }
+
+    canvas.drawArc(rect, -math.pi / 2, 2 * math.pi * progress, false, arc);
   }
 
   @override
   bool shouldRepaint(covariant _RingPainter oldDelegate) =>
       oldDelegate.progress != progress ||
-      oldDelegate.color != color ||
+      oldDelegate.over != over ||
+      oldDelegate.solidColor != solidColor ||
       oldDelegate.trackColor != trackColor ||
       oldDelegate.strokeWidth != strokeWidth;
 }
@@ -173,7 +205,7 @@ class MacroColumn extends StatelessWidget {
     final safeTarget = target.isFinite ? target : 0.0;
     final ratio = safeTarget <= 0 ? 0.0 : safeCurrent / safeTarget;
     final over = ratio > 1.0 + 1e-9;
-    final barColor = over && capProgress ? scheme.error : color;
+    final barColor = over && capProgress ? AppColors.warning : color;
     final valueText = safeCurrent.toStringAsFixed(decimals);
     final targetText = safeTarget.toStringAsFixed(decimals);
 
@@ -217,7 +249,7 @@ class MacroColumn extends StatelessWidget {
                   text: valueText,
                   style: TextStyle(
                     color: over
-                        ? scheme.error
+                        ? AppColors.warning
                         : (labelColor ?? scheme.onSurface),
                   ),
                 ),

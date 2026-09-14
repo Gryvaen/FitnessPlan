@@ -324,7 +324,7 @@ class TodayWorkoutCard extends ConsumerWidget {
               for (final group in yesterdayGroups)
                 PopupMenuItem(
                   value: group.workout.id,
-                  child: Text(_groupTitle(group, l10n)),
+                  child: Text(l10n.copyNamed(_groupTitle(group, l10n))),
                 ),
             ],
           ),
@@ -656,6 +656,11 @@ class _WorkoutItemTile extends ConsumerWidget {
     return SportListTile(
       leading: Checkbox(
         value: item.done,
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.success;
+          return null;
+        }),
+        checkColor: Colors.white,
         onChanged: editable
             ? (v) {
                 ref
@@ -680,7 +685,15 @@ class _WorkoutItemTile extends ConsumerWidget {
             TextSpan(
               style: metaStyle,
               children: [
-                TextSpan(text: progressLine),
+                TextSpan(
+                  text: progressLine,
+                  style: item.done
+                      ? metaStyle?.copyWith(
+                          color: AppColors.success,
+                          fontWeight: FontWeight.w600,
+                        )
+                      : null,
+                ),
                 if (weightSpans != null) ...[
                   const TextSpan(text: ' · '),
                   ...weightSpans,
