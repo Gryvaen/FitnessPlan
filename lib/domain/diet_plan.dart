@@ -40,7 +40,7 @@ class DietStrategyPlan {
     required this.fatPerKg,
     required this.baseEnergy,
     required this.schedule,
-    required this.carbAmplitudeG,
+    required this.carbCycleRates,
     required this.taperStage,
     required this.observationStart,
     required this.observationDays,
@@ -69,9 +69,11 @@ class DietStrategyPlan {
   /// E0 confirmed for this version.
   final double baseEnergy;
 
-  /// Carb-cycle schedule (Mon..Sun); null for other strategies.
+  /// Carb-cycle schedule (day-count based); null for other strategies.
   final CarbCycleSchedule? schedule;
-  final double? carbAmplitudeG;
+
+  /// Low/high-day multipliers; null for other strategies.
+  final CarbCycleRates? carbCycleRates;
 
   /// Carb-taper stage j (0 = base).
   final int taperStage;
@@ -96,8 +98,15 @@ class DietStrategyPlan {
 
   CarbCyclePlan? get carbCyclePlan {
     final s = schedule;
-    if (kind != DietStrategyKind.carbCycle || s == null) return null;
-    return CarbCyclePlanner.compute(baseline, s, amplitudeG: carbAmplitudeG);
+    final r = carbCycleRates;
+    if (kind != DietStrategyKind.carbCycle || s == null || r == null) {
+      return null;
+    }
+    return CarbCyclePlanner.compute(
+      referenceWeightKg: referenceWeightKg,
+      rates: r,
+      schedule: s,
+    );
   }
 
   bool covers(DateTime day) {
@@ -116,7 +125,12 @@ class DietStrategyPlan {
       case DietStrategyKind.carbCycle:
         final plan = carbCyclePlan;
         if (plan == null) return baseline.balancedDay;
-        return plan.forDate(day);
+        final index = StrategyDates.cycleIndexOf(
+          day,
+          effectiveFrom,
+          plan.schedule.cycleLengthDays,
+        );
+        return plan.dayAt(index);
       case DietStrategyKind.carbTaper:
         return CarbTaperStage.of(baseline, taperStage).day;
     }

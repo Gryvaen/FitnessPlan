@@ -11,7 +11,7 @@ import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
-import 'carb_cycle_week_view.dart';
+import 'carb_cycle_view.dart';
 import 'strategy_labels.dart';
 
 /// Parameter editor + preview + apply for one strategy kind.
@@ -35,11 +35,42 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
   double _deficit = StrategyRules.defaultDeficitFraction;
   double _proteinPerKg = StrategyRules.defaultProteinPerKg;
   double _fatPerKg = StrategyRules.defaultFatPerKg;
-  CarbCycleSchedule _schedule = CarbCycleSchedule.allMid();
+
+  int _cycleLengthDays = StrategyRules.defaultCycleLengthDays;
+  CarbCycleSchedule _schedule = CarbCycleSchedule.defaultFor(
+    StrategyRules.defaultCycleLengthDays,
+  );
+  double _lowProteinPerKg = StrategyRules.defaultLowProteinPerKg;
+  double _lowCarbPerKg = StrategyRules.defaultLowCarbPerKg;
+  double _lowFatPerKg = StrategyRules.defaultLowFatPerKg;
+  double _highProteinPerKg = StrategyRules.defaultHighProteinPerKg;
+  double _highCarbPerKg = StrategyRules.defaultHighCarbPerKg;
+  double _highFatPerKg = StrategyRules.defaultHighFatPerKg;
+
   bool _startToday = false;
   bool _initialised = false;
   bool _saving = false;
-  CarbCycleSchedule? _suggested;
+
+  CarbCycleRates get _carbCycleRates => CarbCycleRates(
+    lowProteinPerKg: _lowProteinPerKg,
+    lowCarbPerKg: _lowCarbPerKg,
+    lowFatPerKg: _lowFatPerKg,
+    highProteinPerKg: _highProteinPerKg,
+    highCarbPerKg: _highCarbPerKg,
+    highFatPerKg: _highFatPerKg,
+  );
+
+  /// Effective high-day carb rate after the mid-day compensation in
+  /// [CarbCyclePlanner.compute], or null when it doesn't differ from the
+  /// raw [_highCarbPerKg] the user set (no mid days, or no high day).
+  double? _effectiveHighCarbPerKg(CarbCyclePlan? plan) {
+    if (plan == null || _weight <= 0) return null;
+    final high = plan.dayFor(CarbDayType.high);
+    if (high == null) return null;
+    final effective = high.carbG / _weight;
+    if ((effective - _highCarbPerKg).abs() < 0.005) return null;
+    return effective;
+  }
 
   @override
   void initState() {
@@ -72,15 +103,31 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
       );
       _proteinPerKg = active.proteinPerKg;
       _fatPerKg = active.fatPerKg;
-      if (active.kind == DietStrategyKind.carbCycle &&
-          active.schedule != null) {
-        _schedule = active.schedule!;
+      if (active.kind == DietStrategyKind.carbCycle) {
+        final s = active.schedule;
+        if (s != null) {
+          _cycleLengthDays = s.cycleLengthDays;
+          _schedule = s;
+        }
+        final r = active.carbCycleRates;
+        if (r != null) {
+          _lowProteinPerKg = r.lowProteinPerKg;
+          _lowCarbPerKg = r.lowCarbPerKg;
+          _lowFatPerKg = r.lowFatPerKg;
+          _highProteinPerKg = r.highProteinPerKg;
+          _highCarbPerKg = r.highCarbPerKg;
+          _highFatPerKg = r.highFatPerKg;
+        }
       }
     }
     _syncEnergyFromDeficit();
   }
 
-  double get _weight => double.tryParse(_weightCtrl.text.trim()) ?? 0;
+  /// Carb cycling always reads the reference weight straight from the
+  /// profile (no manual override); other strategies use the editable field.
+  double get _weight => _isCarbCycle
+      ? (ref.read(profileProvider)?.weightKg ?? 0)
+      : double.tryParse(_weightCtrl.text.trim()) ?? 0;
   double get _tdee => double.tryParse(_tdeeCtrl.text.trim()) ?? 0;
   double get _energy => double.tryParse(_energyCtrl.text.trim()) ?? 0;
 
@@ -112,29 +159,35 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
     fatPerKg: _fatPerKg,
   );
 
-  DateTime get _nextCycleStart {
-    final today = CalendarDay.todayLocal();
-    return widget.kind == DietStrategyKind.carbCycle
-        ? StrategyDates.nextCycleStart(today)
-        : today.add(const Duration(days: 1));
-  }
+  DateTime get _tomorrow =>
+      CalendarDay.todayLocal().add(const Duration(days: 1));
 
-  DateTime get _effectiveFrom =>
-      _startToday ? CalendarDay.todayLocal() : _nextCycleStart;
+  DateTime get _effectiveFrom => _startToday ? CalendarDay.todayLocal() : _tomorrow;
+
+  bool get _isCarbCycle => widget.kind == DietStrategyKind.carbCycle;
 
   DietStrategyPlanDraft _draft({int? legacyCalories}) {
+    final isCarbCycle = _isCarbCycle;
     return DietStrategyPlanDraft(
       kind: widget.kind,
       effectiveFrom: _effectiveFrom,
       referenceWeightKg: _weight,
-      estimatedTdee: _tdee,
-      baseEnergy: _energy,
-      proteinPerKg: _proteinPerKg,
-      fatPerKg: _fatPerKg,
-      schedule: widget.kind == DietStrategyKind.carbCycle ? _schedule : null,
-      carbAmplitudeG: widget.kind == DietStrategyKind.carbCycle
-          ? CarbCyclePlanner.defaultAmplitude(_baseline)
-          : null,
+      estimatedTdee: isCarbCycle
+          ? (ref.read(profileProvider)?.tdee ?? 0)
+          : _tdee,
+      baseEnergy: isCarbCycle
+          ? CarbCyclePlanner.compute(
+              referenceWeightKg: _weight,
+              rates: _carbCycleRates,
+              schedule: _schedule,
+            ).cycleAverageEnergy
+          : _energy,
+      proteinPerKg: isCarbCycle
+          ? StrategyRules.defaultProteinPerKg
+          : _proteinPerKg,
+      fatPerKg: isCarbCycle ? StrategyRules.defaultFatPerKg : _fatPerKg,
+      schedule: isCarbCycle ? _schedule : null,
+      carbCycleRates: isCarbCycle ? _carbCycleRates : null,
       taperStage: 0,
       observationStart: widget.kind == DietStrategyKind.carbTaper
           ? _effectiveFrom
@@ -155,19 +208,44 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
         : StrategyRules.taperObservationDays;
   }
 
-  Future<void> _suggestSchedule() async {
-    final today = CalendarDay.todayLocal();
-    const weeks = 4;
-    final counts = await ref
-        .read(workoutRepositoryProvider)
-        .trainingWeekdayCounts(
-          today.subtract(const Duration(days: weeks * 7 - 1)),
-          today,
-        );
-    if (!mounted) return;
-    setState(() {
-      _suggested = CarbCyclePlanner.suggestFromTraining(counts, weeks: weeks);
-    });
+  /// Deficit slider in kcal within the selectable band; percent shown below.
+  Widget _buildDeficitSlider(
+    AppLocalizations l10n,
+    ThemeData theme,
+    double tdee,
+  ) {
+    // Interior of the 10%–20% band. Endpoints are excluded so whole-kcal
+    // rounding does not push the stored fraction just outside
+    // [minDeficitFraction, maxDeficitFraction].
+    const minFrac = 0.11;
+    const maxFrac = 0.19;
+    final minKcal = tdee * minFrac;
+    final maxKcal = tdee * maxFrac;
+    final deficitKcal = (tdee * _deficit).clamp(minKcal, maxKcal);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Slider(
+          value: deficitKcal,
+          min: minKcal,
+          max: maxKcal,
+          divisions: 8,
+          label: '${deficitKcal.round()} kcal',
+          onChanged: (v) => setState(() {
+            _deficit = v / tdee;
+            _syncEnergyFromDeficit();
+          }),
+        ),
+        Text(
+          l10n.energyBoundsHint(minKcal.round(), maxKcal.round()),
+          style: theme.textTheme.bodySmall,
+        ),
+        Text(
+          l10n.deficitFractionPercent((_deficit * 100).round()),
+          style: theme.textTheme.bodySmall,
+        ),
+      ],
+    );
   }
 
   Future<void> _apply() async {
@@ -214,22 +292,15 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
     final draft = _draft();
     final issues = <StrategyIssue>{...eligibility, ...draft.validate()};
     CarbCyclePlan? cyclePlan;
-    if (widget.kind == DietStrategyKind.carbCycle) {
+    if (_isCarbCycle) {
       cyclePlan = CarbCyclePlanner.compute(
-        baseline,
-        _schedule,
-        amplitudeG: draft.carbAmplitudeG,
+        referenceWeightKg: _weight,
+        rates: _carbCycleRates,
+        schedule: _schedule,
       );
-      if (cyclePlan.amplitudeNegligible) {
-        issues.add(StrategyIssue.amplitudeNegligible);
-      }
     }
-    final blocking = issues
-        .where((i) => i != StrategyIssue.amplitudeNegligible)
-        .toList();
-    final canApply = blocking.isEmpty && !_saving;
+    final canApply = issues.isEmpty && !_saving;
     final effective = _effectiveFrom;
-    final today = CalendarDay.todayLocal();
 
     return AppChromeScaffold(
       appBar: AppBar(
@@ -252,158 +323,209 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
           ),
           const SizedBox(height: AppSpacing.card),
           // ------------------------------------------------ parameters
-          Text(l10n.strategyParameters, style: theme.textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.section),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _weightCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: InputDecoration(
-                    labelText: l10n.referenceWeightKg,
-                    suffixText: 'kg',
-                  ),
-                  onChanged: (_) => setState(() {}),
-                ),
+          if (!_isCarbCycle) ...[
+            Text(l10n.strategyParameters, style: theme.textTheme.titleMedium),
+            const SizedBox(height: AppSpacing.section),
+          ],
+          if (_isCarbCycle) ...[
+            Text(
+              l10n.cycleLengthLabel,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
               ),
-              const SizedBox(width: AppSpacing.field),
-              Expanded(
-                child: TextField(
-                  controller: _tdeeCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: l10n.estimatedTdee,
-                    suffixText: 'kcal',
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final n in StrategyRules.cycleLengthDaysOptions)
+                  ChoiceChip(
+                    label: Text(l10n.cycleLengthDaysOption(n)),
+                    selected: _cycleLengthDays == n,
+                    onSelected: (_) => setState(() {
+                      _cycleLengthDays = n;
+                      _schedule = CarbCycleSchedule.defaultFor(n);
+                    }),
                   ),
-                  onChanged: (_) => setState(_syncEnergyFromDeficit),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.field),
-          Text(
-            l10n.deficitFractionLabel((_deficit * 100).round()),
-            style: theme.textTheme.fieldLabel,
-          ),
-          Slider(
-            value: _deficit.clamp(
-              StrategyRules.minDeficitFraction,
-              StrategyRules.maxDeficitFraction,
+              ],
             ),
-            min: StrategyRules.minDeficitFraction,
-            max: StrategyRules.maxDeficitFraction,
-            divisions: 10,
-            label: '${(_deficit * 100).round()}%',
-            onChanged: (v) => setState(() {
-              _deficit = v;
-              _syncEnergyFromDeficit();
-            }),
-          ),
-          TextField(
-            controller: _energyCtrl,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: l10n.averageTargetEnergy,
-              suffixText: 'kcal',
-              helperText: baseline.tdee > 0
-                  ? l10n.energyBoundsHint(
-                      baseline.minEnergy.round(),
-                      baseline.maxEnergy.round(),
-                    )
-                  : null,
+            const SizedBox(height: AppSpacing.compact),
+            Text(l10n.lowCarbDayRatesTitle, style: theme.textTheme.titleSmall),
+            const SizedBox(height: 4),
+            _StepperRow(
+              label: l10n.proteinPerKgLabel,
+              value: _lowProteinPerKg,
+              min: StrategyRules.lowProteinPerKgMin,
+              max: StrategyRules.lowProteinPerKgMax,
+              step: 0.1,
+              unit: 'g/kg',
+              onChanged: (v) => setState(() => _lowProteinPerKg = v),
             ),
-            onChanged: _onEnergyEdited,
-          ),
-          const SizedBox(height: AppSpacing.field),
-          _StepperRow(
-            label: l10n.proteinPerKgLabel,
-            value: _proteinPerKg,
-            min: 1.4,
-            max: 2.2,
-            step: 0.1,
-            unit: 'g/kg',
-            onChanged: (v) => setState(() => _proteinPerKg = v),
-          ),
-          _StepperRow(
-            label: l10n.fatPerKgLabel,
-            value: _fatPerKg,
-            min: 0.6,
-            max: 1.0,
-            step: 0.1,
-            unit: 'g/kg',
-            onChanged: (v) => setState(() => _fatPerKg = v),
-          ),
-          const SizedBox(height: AppSpacing.section),
-          // ------------------------------------------------ baseline
-          Text(l10n.dailyBaselineTitle, style: theme.textTheme.titleSmall),
-          const SizedBox(height: 6),
-          Text(
-            '${baseline.energy.round()} kcal · '
-            'P ${baseline.proteinG.toStringAsFixed(0)} · '
-            'C ${baseline.carbG.isFinite ? baseline.carbG.toStringAsFixed(0) : '–'} · '
-            'F ${baseline.fatG.toStringAsFixed(0)} g',
-            style: theme.textTheme.bodyLarge,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            l10n.dailyDeficitLine('${baseline.dailyDeficit.round()}'),
-            style: theme.textTheme.bodySmall,
-          ),
-          // ------------------------------------------------ kind-specific
-          if (cyclePlan != null) ...[
-            const SizedBox(height: AppSpacing.card),
+            _StepperRow(
+              label: l10n.carbPerKgLabel,
+              value: _lowCarbPerKg,
+              min: StrategyRules.lowCarbPerKgMin,
+              max: StrategyRules.lowCarbPerKgMax,
+              step: 0.1,
+              unit: 'g/kg',
+              onChanged: (v) => setState(() => _lowCarbPerKg = v),
+            ),
+            _StepperRow(
+              label: l10n.fatPerKgLabel,
+              value: _lowFatPerKg,
+              min: StrategyRules.lowFatPerKgMin,
+              max: StrategyRules.lowFatPerKgMax,
+              step: 0.1,
+              unit: 'g/kg',
+              onChanged: (v) => setState(() => _lowFatPerKg = v),
+            ),
+            const SizedBox(height: AppSpacing.compact),
+            Text(
+              l10n.highCarbDayRatesTitle,
+              style: theme.textTheme.titleSmall,
+            ),
+            const SizedBox(height: 4),
+            _StepperRow(
+              label: l10n.proteinPerKgLabel,
+              value: _highProteinPerKg,
+              min: StrategyRules.highProteinPerKgMin,
+              max: StrategyRules.highProteinPerKgMax,
+              step: 0.1,
+              unit: 'g/kg',
+              onChanged: (v) => setState(() => _highProteinPerKg = v),
+            ),
+            Builder(
+              builder: (context) {
+                final effective = _effectiveHighCarbPerKg(cyclePlan);
+                final shown = effective ?? _highCarbPerKg;
+                return _StepperRow(
+                  label: l10n.carbPerKgLabel,
+                  modifiedTooltip: effective != null
+                      ? l10n.carbCycleAdjustedTooltip
+                      : null,
+                  value: shown,
+                  min: StrategyRules.highCarbPerKgMin,
+                  max: StrategyRules.highCarbPerKgMax,
+                  step: 0.1,
+                  unit: 'g/kg',
+                  // The stepper moves whatever it's showing (the
+                  // compensated rate) by ±step; apply that same delta to
+                  // the underlying user-set rate so repeated taps don't
+                  // compound the mid-day compensation.
+                  onChanged: (v) => setState(() {
+                    _highCarbPerKg = (_highCarbPerKg + (v - shown)).clamp(
+                      StrategyRules.highCarbPerKgMin,
+                      StrategyRules.highCarbPerKgMax,
+                    );
+                  }),
+                );
+              },
+            ),
+            _StepperRow(
+              label: l10n.fatPerKgLabel,
+              value: _highFatPerKg,
+              min: StrategyRules.highFatPerKgMin,
+              max: StrategyRules.highFatPerKgMax,
+              step: 0.1,
+              unit: 'g/kg',
+              onChanged: (v) => setState(() => _highFatPerKg = v),
+            ),
+          ] else ...[
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    l10n.weeklySchedule,
-                    style: theme.textTheme.titleMedium,
+                  child: TextField(
+                    controller: _weightCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: l10n.referenceWeightKg,
+                      suffixText: 'kg',
+                    ),
+                    onChanged: (_) => setState(() {}),
                   ),
                 ),
-                TextButton.icon(
-                  onPressed: _suggestSchedule,
-                  icon: const Icon(Icons.fitness_center_outlined, size: 18),
-                  label: Text(l10n.suggestFromTraining),
+                const SizedBox(width: AppSpacing.field),
+                Expanded(
+                  child: TextField(
+                    controller: _tdeeCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: l10n.estimatedTdee,
+                      suffixText: 'kcal',
+                    ),
+                    onChanged: (_) => setState(_syncEnergyFromDeficit),
+                  ),
                 ),
               ],
             ),
-            if (_suggested != null && _suggested!.code != _schedule.code) ...[
-              SportSurfaceCard(
-                tint: scheme.tertiary,
-                padding: const EdgeInsets.all(AppSpacing.section),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        l10n.trainingSuggestionBody(
-                          _suggested!.count(CarbDayType.high),
-                          _suggested!.count(CarbDayType.low),
-                        ),
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => setState(() {
-                        _schedule = _suggested!;
-                      }),
-                      child: Text(l10n.applySuggestion),
-                    ),
-                  ],
-                ),
+            const SizedBox(height: AppSpacing.field),
+            Text(
+              l10n.deficitFractionLabel,
+              style: theme.textTheme.fieldLabel,
+            ),
+            if (baseline.tdee > 0)
+              _buildDeficitSlider(l10n, theme, baseline.tdee),
+            TextField(
+              controller: _energyCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: l10n.averageTargetEnergy,
+                suffixText: 'kcal',
               ),
-              const SizedBox(height: AppSpacing.compact),
-            ],
+              onChanged: _onEnergyEdited,
+            ),
+            const SizedBox(height: AppSpacing.field),
+            _StepperRow(
+              label: l10n.proteinPerKgLabel,
+              value: _proteinPerKg,
+              min: 1.4,
+              max: 2.2,
+              step: 0.1,
+              unit: 'g/kg',
+              onChanged: (v) => setState(() => _proteinPerKg = v),
+            ),
+            _StepperRow(
+              label: l10n.fatPerKgLabel,
+              value: _fatPerKg,
+              min: 0.6,
+              max: 1.0,
+              step: 0.1,
+              unit: 'g/kg',
+              onChanged: (v) => setState(() => _fatPerKg = v),
+            ),
+            const SizedBox(height: AppSpacing.section),
+            // ------------------------------------------------ baseline
+            Text(l10n.dailyBaselineTitle, style: theme.textTheme.titleSmall),
+            const SizedBox(height: 6),
+            Text(
+              '${baseline.energy.round()} kcal · '
+              'P ${baseline.proteinG.toStringAsFixed(0)} · '
+              'C ${baseline.carbG.isFinite ? baseline.carbG.toStringAsFixed(0) : '–'} · '
+              'F ${baseline.fatG.toStringAsFixed(0)} g',
+              style: theme.textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              l10n.dailyDeficitLine('${baseline.dailyDeficit.round()}'),
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
+          // ------------------------------------------------ kind-specific
+          if (cyclePlan != null) ...[
+            const SizedBox(height: AppSpacing.card),
+            Text(l10n.cycleSchedule, style: theme.textTheme.titleMedium),
             const SizedBox(height: AppSpacing.compact),
-            CarbCycleWeekView(
+            CarbCycleView(
               key: ValueKey(
-                '${_schedule.code}-${baseline.energy.round()}-${baseline.carbG.round()}',
+                '${_schedule.code}-${_carbCycleRates.lowCarbPerKg}-'
+                '${_carbCycleRates.highCarbPerKg}-${_weight.round()}',
               ),
               plan: cyclePlan,
+              cycleStart: effective,
               onScheduleChanged: (s) => setState(() => _schedule = s),
-              initialSelected: (effective.weekday - 1).clamp(0, 6),
+              referenceWeightFromProfile: true,
             ),
           ],
           if (widget.kind == DietStrategyKind.carbTaper) ...[
@@ -411,17 +533,13 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
             Text(l10n.taperLadderTitle, style: theme.textTheme.titleMedium),
             const SizedBox(height: AppSpacing.compact),
             _TaperLadder(baseline: baseline),
-            const SizedBox(height: 6),
-            Text(l10n.taperLadderHint, style: theme.textTheme.bodySmall),
           ],
           // ------------------------------------------------ effective date
           const SizedBox(height: AppSpacing.card),
           Text(l10n.effectiveDate, style: theme.textTheme.titleMedium),
           const SizedBox(height: AppSpacing.compact),
           _EffectiveDateOption(
-            label: widget.kind == DietStrategyKind.carbCycle
-                ? l10n.startNextCycle(AppDates.md(_nextCycleStart, locale))
-                : l10n.startTomorrow(AppDates.md(_nextCycleStart, locale)),
+            label: l10n.startTomorrow(AppDates.md(_tomorrow, locale)),
             selected: !_startToday,
             onTap: () => setState(() => _startToday = false),
           ),
@@ -430,34 +548,6 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
             selected: _startToday,
             onTap: () => setState(() => _startToday = true),
           ),
-          if (_startToday &&
-              widget.kind == DietStrategyKind.carbCycle &&
-              cyclePlan != null) ...[
-            const SizedBox(height: AppSpacing.compact),
-            Builder(
-              builder: (context) {
-                final cycleEnd = StrategyDates.cycleStartOf(
-                  today,
-                ).add(const Duration(days: 6));
-                var partial = 0.0;
-                for (
-                  var d = today;
-                  !d.isAfter(cycleEnd);
-                  d = d.add(const Duration(days: 1))
-                ) {
-                  partial += cyclePlan!.forDate(d).energy;
-                }
-                return Text(
-                  l10n.midCycleNotice(
-                    AppDates.md(today, locale),
-                    AppDates.md(cycleEnd, locale),
-                    '${partial.round()}',
-                  ),
-                  style: theme.textTheme.bodySmall,
-                );
-              },
-            ),
-          ],
           // ------------------------------------------------ issues
           if (issues.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.card),
@@ -467,23 +557,13 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      issue == StrategyIssue.amplitudeNegligible
-                          ? Icons.info_outline
-                          : Icons.error_outline,
-                      size: 18,
-                      color: issue == StrategyIssue.amplitudeNegligible
-                          ? scheme.onSurfaceVariant
-                          : scheme.error,
-                    ),
+                    Icon(Icons.error_outline, size: 18, color: scheme.error),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         issue.message(l10n),
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: issue == StrategyIssue.amplitudeNegligible
-                              ? scheme.onSurfaceVariant
-                              : scheme.error,
+                          color: scheme.error,
                         ),
                       ),
                     ),
@@ -550,6 +630,7 @@ class _StepperRow extends StatelessWidget {
     required this.step,
     required this.unit,
     required this.onChanged,
+    this.modifiedTooltip,
   });
 
   final String label;
@@ -560,13 +641,42 @@ class _StepperRow extends StatelessWidget {
   final String unit;
   final ValueChanged<double> onChanged;
 
+  /// When set, shows a small "auto-adjusted" badge after the label instead
+  /// of a text marker; the string is the badge's tooltip.
+  final String? modifiedTooltip;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     double snap(double v) => (v * 10).round() / 10;
     return Row(
       children: [
-        Expanded(child: Text(label, style: theme.textTheme.bodyMedium)),
+        Expanded(
+          child: Row(
+            children: [
+              Flexible(
+                child: Text(
+                  label,
+                  style: theme.textTheme.bodyMedium,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (modifiedTooltip case final tooltip?)
+                Padding(
+                  padding: const EdgeInsets.only(left: 6),
+                  child: Tooltip(
+                    message: tooltip,
+                    triggerMode: TooltipTriggerMode.tap,
+                    child: Icon(
+                      Icons.auto_fix_high,
+                      size: 15,
+                      color: theme.colorScheme.tertiary,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
         IconButton(
           tooltip: '−$step',
           onPressed: value - step >= min - 1e-9

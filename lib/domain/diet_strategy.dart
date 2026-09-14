@@ -1,8 +1,12 @@
 /// Fat-loss strategy calculations (pure functions, no Flutter imports).
 ///
-/// Rules follow `design-handoff/fat-loss-strategy.md`. All parameters are
-/// product defaults for a self-service tool aimed at generally healthy
-/// adults; they are not clinically validated prescriptions.
+/// Balanced/taper rules follow `design-handoff/fat-loss-strategy.md`. Carb
+/// cycling was reworked to a day-count cycle (3-5 days, one high-carb day,
+/// optional mid-carb day) driven directly by reference-weight multipliers —
+/// see [CarbCycleSchedule] and [CarbCycleRates] — and no longer follows that
+/// doc's weekday/deficit-amplitude model. All parameters are product
+/// defaults for a self-service tool aimed at generally healthy adults; they
+/// are not clinically validated prescriptions.
 library;
 
 import 'dart:math' as math;
@@ -12,10 +16,12 @@ enum DietStrategyKind {
   /// Same energy / macros every day.
   balanced,
 
-  /// Weekly budget redistributed by carbohydrate across high / mid / low days.
+  /// A repeating N-day cycle with high / mid / low-carb days; energy comes
+  /// directly from reference-weight multipliers, not a shared budget.
   carbCycle,
 
-  /// Step-wise carbohydrate reduction gated by explicit review.
+  /// Step-wise carbohydrate reduction; the user picks the stage — the app
+  /// only calculates what each stage's kcal/carbs would be.
   carbTaper;
 
   static DietStrategyKind fromStorage(String? raw) {
@@ -26,17 +32,14 @@ enum DietStrategyKind {
   }
 }
 
-/// Relative day type within a carb-cycle week (relative to *this* plan,
+/// Relative day type within a carb-cycle plan (relative to *this* plan,
 /// not a nutritional low-carb classification).
 enum CarbDayType {
-  low(-1, 'L'),
-  mid(0, 'M'),
-  high(1, 'H');
+  low('L'),
+  mid('M'),
+  high('H');
 
-  const CarbDayType(this.score, this.code);
-
-  /// s_i in the algorithm.
-  final int score;
+  const CarbDayType(this.code);
 
   /// Single-letter code used for compact schedule storage.
   final String code;
@@ -73,15 +76,33 @@ abstract final class StrategyRules {
   /// Minimum daily carbohydrate for the regular template (g).
   static const minCarbG = 130.0;
 
-  /// Default carb-cycle amplitude cap (g).
-  static const maxCarbAmplitudeG = 50.0;
+  /// Carb-cycle length choices (days per cycle).
+  static const cycleLengthDaysOptions = [3, 4, 5];
+  static const defaultCycleLengthDays = 4;
 
-  /// Amplitude relative cap: 0.25 × C0.
-  static const carbAmplitudeFraction = 0.25;
+  /// Carb-cycle low-day multiplier ranges (g per kg reference weight).
+  static const lowProteinPerKgMin = 1.8;
+  static const lowProteinPerKgMax = 2.0;
+  static const lowCarbPerKgMin = 1.0;
+  static const lowCarbPerKgMax = 1.5;
+  static const lowFatPerKgMin = 0.8;
+  static const lowFatPerKgMax = 1.0;
 
-  /// Below this effective amplitude the weekly variation is treated as
-  /// unusable and the UI should suggest balanced instead.
-  static const negligibleAmplitudeG = 5.0;
+  /// Carb-cycle high-day multiplier ranges (g per kg reference weight).
+  static const highProteinPerKgMin = 1.2;
+  static const highProteinPerKgMax = 1.8;
+  static const highCarbPerKgMin = 3.5;
+  static const highCarbPerKgMax = 5.0;
+  static const highFatPerKgMin = 0.3;
+  static const highFatPerKgMax = 0.8;
+
+  /// Default multipliers: floor of each range above.
+  static const defaultLowProteinPerKg = lowProteinPerKgMin;
+  static const defaultLowCarbPerKg = lowCarbPerKgMin;
+  static const defaultLowFatPerKg = lowFatPerKgMin;
+  static const defaultHighProteinPerKg = highProteinPerKgMin;
+  static const defaultHighCarbPerKg = highCarbPerKgMin;
+  static const defaultHighFatPerKg = highFatPerKgMin;
 
   /// Carb-taper step: 25 g carbohydrate ≙ 100 kcal.
   static const taperStepCarbG = 25.0;
@@ -92,16 +113,6 @@ abstract final class StrategyRules {
 
   /// Longer observation after carb cycling / large carb changes.
   static const taperObservationDaysAfterCarbShift = 21;
-
-  /// Review data thresholds.
-  static const reviewWindowDays = 14;
-  static const reviewMinWeightDays = 10;
-  static const reviewMinWeightDaysPerHalf = 4;
-  static const reviewMinCompleteDietDays = 10;
-
-  /// Weekly weight-change observation band (fraction of body weight).
-  static const weeklyLossLowerBound = 0.0025;
-  static const weeklyLossUpperBound = 0.0075;
 
   /// Minimum age for the self-service strategy flow.
   static const minAdultAge = 18;
@@ -122,7 +133,8 @@ enum StrategyIssue {
   energyAboveTdee,
   carbBelowMinimum,
   invalidSchedule,
-  amplitudeNegligible,
+  invalidCarbCycleRate,
+  carbCycleHighDayCarbDepleted,
   underage,
   goalNotCut,
 }
@@ -357,21 +369,61 @@ class DayMacroTarget {
   );
 }
 
-/// Seven-day carb-cycle schedule (index 0 = Monday … 6 = Sunday).
+/// Carb-cycle schedule: a repeating N-day pattern (N = 3, 4 or 5), anchored
+/// to the plan's `effectiveFrom` date rather than the calendar weekday.
+/// There is always exactly one high-carb day, and mid-carb days never
+/// outnumber low-carb days. The user assigns each non-high day by hand (see
+/// [cycleDayType]); the high day can only be moved between the first and
+/// last position of the cycle (also via [cycleDayType]), never removed or
+/// turned into mid/low directly.
 class CarbCycleSchedule {
   CarbCycleSchedule(List<CarbDayType> days) : days = List.unmodifiable(days) {
-    if (days.length != 7) {
-      throw ArgumentError.value(days.length, 'days', 'must contain 7 days');
+    if (days.length < 3 || days.length > 5) {
+      throw ArgumentError.value(
+        days.length,
+        'days',
+        'cycle length must be 3, 4 or 5 days',
+      );
+    }
+    final highCount = days.where((d) => d == CarbDayType.high).length;
+    if (highCount != 1) {
+      throw ArgumentError.value(
+        highCount,
+        'days',
+        'a carb cycle has exactly one high-carb day',
+      );
+    }
+    final midCount = days.where((d) => d == CarbDayType.mid).length;
+    final lowCount = days.where((d) => d == CarbDayType.low).length;
+    if (midCount > lowCount) {
+      throw ArgumentError.value(
+        midCount,
+        'days',
+        'mid-carb days must not exceed low-carb days',
+      );
     }
   }
 
-  /// All days mid; the default when no training schedule is known.
-  factory CarbCycleSchedule.allMid() =>
-      CarbCycleSchedule(List.filled(7, CarbDayType.mid));
+  /// Starting point for a fresh cycle of [cycleLengthDays] days: low days
+  /// first, one high day on the last position. The user then hand-assigns
+  /// any mid-carb days via [cycleDayType].
+  factory CarbCycleSchedule.defaultFor(int cycleLengthDays) {
+    if (!StrategyRules.cycleLengthDaysOptions.contains(cycleLengthDays)) {
+      throw ArgumentError.value(
+        cycleLengthDays,
+        'cycleLengthDays',
+        'must be 3, 4 or 5',
+      );
+    }
+    return CarbCycleSchedule([
+      ...List.filled(cycleLengthDays - 1, CarbDayType.low),
+      CarbDayType.high,
+    ]);
+  }
 
-  /// Decode a 7-letter H/M/L string; invalid input → null.
+  /// Decode a 3-5 letter H/M/L code; invalid input → null.
   static CarbCycleSchedule? tryParse(String? code) {
-    if (code == null || code.length != 7) return null;
+    if (code == null || code.length < 3 || code.length > 5) return null;
     final list = <CarbDayType>[];
     for (final ch in code.split('')) {
       CarbDayType? t;
@@ -381,197 +433,318 @@ class CarbCycleSchedule {
       if (t == null) return null;
       list.add(t);
     }
-    return CarbCycleSchedule(list);
+    try {
+      return CarbCycleSchedule(list);
+    } on ArgumentError {
+      return null;
+    }
   }
 
   final List<CarbDayType> days;
 
+  int get cycleLengthDays => days.length;
+
   String get code => days.map((d) => d.code).join();
-
-  /// Day type for a calendar date via `DateTime.weekday` (Mon=1..Sun=7).
-  CarbDayType forDate(DateTime date) => days[date.weekday - 1];
-
-  bool get allSame => days.every((d) => d == days.first);
 
   int count(CarbDayType type) => days.where((d) => d == type).length;
 
-  CarbCycleSchedule withDay(int index, CarbDayType type) {
-    final copy = [...days];
-    copy[index] = type;
-    return CarbCycleSchedule(copy);
+  /// Day type at a 0-based position within the cycle (wraps automatically).
+  CarbDayType dayAt(int cycleIndex) => days[cycleIndex % days.length];
+
+  /// Taps day [index]:
+  /// - If it's the high day, moves it to the other end of the cycle (index
+  ///   0 ↔ the last index) and sets the day it left to low. This always
+  ///   stays valid: whatever type sat at the target end is replaced by
+  ///   high (mid count can only go down), and the vacated end becomes low
+  ///   (low count can only go up) — mid ≤ low can never break.
+  /// - Otherwise toggles that day between low and mid, skipping the
+  ///   low → mid transition when it would push mid above low (returns the
+  ///   unchanged schedule in that case; mid → low is always valid).
+  CarbCycleSchedule cycleDayType(int index) {
+    if (days[index] == CarbDayType.high) {
+      final last = days.length - 1;
+      final target = index == 0 ? last : 0;
+      final next = [...days];
+      next[index] = CarbDayType.low;
+      next[target] = CarbDayType.high;
+      return CarbCycleSchedule(next);
+    }
+    final next = [...days];
+    if (days[index] == CarbDayType.low) {
+      next[index] = CarbDayType.mid;
+      if (!_isValid(next)) return this;
+    } else {
+      next[index] = CarbDayType.low;
+    }
+    return CarbCycleSchedule(next);
+  }
+
+  static bool _isValid(List<CarbDayType> days) {
+    final mid = days.where((d) => d == CarbDayType.mid).length;
+    final low = days.where((d) => d == CarbDayType.low).length;
+    return mid <= low;
   }
 }
 
-/// Result of distributing a weekly budget across a schedule.
+/// Reference-weight multipliers (g per kg) for the low- and high-carb days
+/// of a carb-cycle plan. The mid-carb day is not set directly — its rates
+/// are the average of the low- and high-day rates for each macro.
+class CarbCycleRates {
+  const CarbCycleRates({
+    required this.lowProteinPerKg,
+    required this.lowCarbPerKg,
+    required this.lowFatPerKg,
+    required this.highProteinPerKg,
+    required this.highCarbPerKg,
+    required this.highFatPerKg,
+  });
+
+  factory CarbCycleRates.defaults() => const CarbCycleRates(
+    lowProteinPerKg: StrategyRules.defaultLowProteinPerKg,
+    lowCarbPerKg: StrategyRules.defaultLowCarbPerKg,
+    lowFatPerKg: StrategyRules.defaultLowFatPerKg,
+    highProteinPerKg: StrategyRules.defaultHighProteinPerKg,
+    highCarbPerKg: StrategyRules.defaultHighCarbPerKg,
+    highFatPerKg: StrategyRules.defaultHighFatPerKg,
+  );
+
+  final double lowProteinPerKg;
+  final double lowCarbPerKg;
+  final double lowFatPerKg;
+  final double highProteinPerKg;
+  final double highCarbPerKg;
+  final double highFatPerKg;
+
+  /// Mid-day rate for one macro: the weighted average of the low rate over
+  /// (cycleLengthDays − 1) days and the high rate over 1 day — i.e. the
+  /// per-day average of the canonical "1 high + rest low" cycle of this
+  /// length. This keeps the mid day's energy equal to what the cycle's
+  /// average would be without any mid days, independent of how many mid
+  /// days actually end up in the schedule.
+  double _midPerKgFor(int cycleLengthDays, double lowRate, double highRate) =>
+      ((cycleLengthDays - 1) * lowRate + highRate) / cycleLengthDays;
+
+  double midProteinPerKgFor(int cycleLengthDays) =>
+      _midPerKgFor(cycleLengthDays, lowProteinPerKg, highProteinPerKg);
+  double midCarbPerKgFor(int cycleLengthDays) =>
+      _midPerKgFor(cycleLengthDays, lowCarbPerKg, highCarbPerKg);
+  double midFatPerKgFor(int cycleLengthDays) =>
+      _midPerKgFor(cycleLengthDays, lowFatPerKg, highFatPerKg);
+
+  static bool _inRange(double v, double lo, double hi) =>
+      v.isFinite && v >= lo - 1e-9 && v <= hi + 1e-9;
+
+  List<StrategyIssue> validate() {
+    final ok =
+        _inRange(
+          lowProteinPerKg,
+          StrategyRules.lowProteinPerKgMin,
+          StrategyRules.lowProteinPerKgMax,
+        ) &&
+        _inRange(
+          lowCarbPerKg,
+          StrategyRules.lowCarbPerKgMin,
+          StrategyRules.lowCarbPerKgMax,
+        ) &&
+        _inRange(
+          lowFatPerKg,
+          StrategyRules.lowFatPerKgMin,
+          StrategyRules.lowFatPerKgMax,
+        ) &&
+        _inRange(
+          highProteinPerKg,
+          StrategyRules.highProteinPerKgMin,
+          StrategyRules.highProteinPerKgMax,
+        ) &&
+        _inRange(
+          highCarbPerKg,
+          StrategyRules.highCarbPerKgMin,
+          StrategyRules.highCarbPerKgMax,
+        ) &&
+        _inRange(
+          highFatPerKg,
+          StrategyRules.highFatPerKgMin,
+          StrategyRules.highFatPerKgMax,
+        );
+    return ok ? const [] : const [StrategyIssue.invalidCarbCycleRate];
+  }
+}
+
+/// One cycle's worth of day targets, computed directly from reference
+/// weight × per-macro multipliers (no deficit / TDEE involved).
 class CarbCyclePlan {
   const CarbCyclePlan({
-    required this.baseline,
+    required this.referenceWeightKg,
+    required this.rates,
     required this.schedule,
     required this.days,
-    required this.requestedAmplitudeG,
-    required this.alpha,
     required this.issues,
   });
 
-  final StrategyBaseline baseline;
+  final double referenceWeightKg;
+  final CarbCycleRates rates;
   final CarbCycleSchedule schedule;
 
-  /// Seven full-precision day targets (Mon..Sun).
+  /// Full-precision day targets, in schedule/cycle order.
   final List<DayMacroTarget> days;
 
-  /// A (g) before boundary shrink.
-  final double requestedAmplitudeG;
-
-  /// α ∈ [0,1] common shrink factor.
-  final double alpha;
   final List<StrategyIssue> issues;
 
-  double get effectiveAmplitudeG => requestedAmplitudeG * alpha;
+  bool get usable => issues.isEmpty;
 
-  /// Σ E_i (should equal 7 × E0).
-  double get weeklyEnergy => days.fold(0.0, (s, d) => s + d.energy);
+  /// Σ E_i across one cycle.
+  double get cycleEnergy => days.fold(0.0, (s, d) => s + d.energy);
 
-  double get weeklyAverage => weeklyEnergy / 7;
+  double get cycleAverageEnergy => cycleEnergy / days.length;
 
-  bool get shrunk => alpha < 1 - 1e-9;
+  DayMacroTarget dayAt(int cycleIndex) => days[cycleIndex % days.length];
 
-  bool get amplitudeNegligible =>
-      issues.contains(StrategyIssue.amplitudeNegligible);
-
-  bool get usable => !issues.any((i) => i != StrategyIssue.amplitudeNegligible);
-
-  DayMacroTarget forDate(DateTime date) => days[date.weekday - 1];
-
-  /// Energy of the (first) day with [type], or null if absent.
-  double? energyFor(CarbDayType type) {
+  /// The (first) day with [type], or null if the schedule doesn't include
+  /// it (e.g. no high day after the user cycled it away).
+  DayMacroTarget? dayFor(CarbDayType type) {
     for (final d in days) {
-      if (d.dayType == type) return d.energy;
+      if (d.dayType == type) return d;
     }
     return null;
   }
 
-  /// Integer kcal per day using largest-remainder so that
-  /// Σ = round(7 × E0); carbs recomputed from the integer energy.
+  /// Energy of the (first) day with [type], or null if absent.
+  double? energyFor(CarbDayType type) => dayFor(type)?.energy;
+
+  /// Integer-gram macros per day; energy is recomputed from the rounded
+  /// grams so 4P + 4C + 9F still matches exactly.
   List<DayMacroTarget> integerDays() {
-    final total = (7 * baseline.energy).round();
-    final floors = days.map((d) => d.energy.floor()).toList();
-    var remaining = total - floors.fold<int>(0, (s, v) => s + v);
-    final order = List<int>.generate(7, (i) => i)
-      ..sort(
-        (a, b) =>
-            (days[b].energy - floors[b]).compareTo(days[a].energy - floors[a]),
-      );
-    var k = 0;
-    while (remaining > 0 && k < 7) {
-      floors[order[k]] += 1;
-      remaining--;
-      k++;
-    }
-    while (remaining < 0 && k < 7) {
-      floors[order[6 - k]] -= 1;
-      remaining++;
-      k++;
-    }
     return [
-      for (var i = 0; i < 7; i++)
-        days[i].copyWith(
-          energy: floors[i].toDouble(),
-          carbG: baseline.carbForEnergy(floors[i].toDouble()),
+      for (final d in days)
+        DayMacroTarget(
+          proteinG: d.proteinG.roundToDouble(),
+          carbG: d.carbG.roundToDouble(),
+          fatG: d.fatG.roundToDouble(),
+          energy:
+              d.proteinG.roundToDouble() * StrategyRules.kcalPerGramProtein +
+              d.carbG.roundToDouble() * StrategyRules.kcalPerGramCarb +
+              d.fatG.roundToDouble() * StrategyRules.kcalPerGramFat,
+          dayType: d.dayType,
         ),
     ];
   }
 }
 
-/// Carb-cycle distribution keeping the weekly budget and P/F fixed.
+/// Computes a [CarbCyclePlan] from reference weight, multipliers and
+/// schedule — no shared weekly budget, no deficit/TDEE input.
+///
+/// Mid-day macros are the weighted average of the low/high rates over one
+/// cycle of this length (see [CarbCycleRates.midCarbPerKgFor]), so a mid
+/// day's energy always equals the cycle's average energy *before* any low
+/// day was turned into a mid day. Introducing mid days would otherwise push
+/// the cycle's average energy up (a mid day burns more than the low day it
+/// replaced), so — to hold that average steady — the single high day's
+/// carbohydrate (only; protein and fat stay at the user-set rate) is
+/// reduced by the same total amount the mid days added. Low-day macros are
+/// never touched.
 abstract final class CarbCyclePlanner {
-  /// Default amplitude A = min(50, 0.25 × C0).
-  static double defaultAmplitude(StrategyBaseline b) => math.max(
-    0,
-    math.min(
-      StrategyRules.maxCarbAmplitudeG,
-      StrategyRules.carbAmplitudeFraction * b.carbG,
-    ),
-  );
-
-  /// Suggest a schedule from how often each weekday (1=Mon..7=Sun) had a
-  /// planned workout over [weeks] observed weeks: trained in at least half
-  /// of the weeks → high, never trained → low, otherwise mid. This is a
-  /// suggestion that the user confirms; it never applies itself.
-  static CarbCycleSchedule suggestFromTraining(
-    Map<int, int> weekdayCounts, {
-    required int weeks,
+  static CarbCyclePlan compute({
+    required double referenceWeightKg,
+    required CarbCycleRates rates,
+    required CarbCycleSchedule schedule,
   }) {
-    if (weeks <= 0) return CarbCycleSchedule.allMid();
-    final days = <CarbDayType>[];
-    for (var wd = 1; wd <= 7; wd++) {
-      final c = weekdayCounts[wd] ?? 0;
-      if (c <= 0) {
-        days.add(CarbDayType.low);
-      } else if (c * 2 >= weeks) {
-        days.add(CarbDayType.high);
-      } else {
-        days.add(CarbDayType.mid);
+    final issues = <StrategyIssue>[];
+    if (!_finitePositive(referenceWeightKg)) {
+      issues.add(StrategyIssue.invalidWeight);
+    }
+    issues.addAll(rates.validate());
+    final w = _finitePositive(referenceWeightKg) ? referenceWeightKg : 0.0;
+    final n = schedule.cycleLengthDays;
+    final midDays = schedule.count(CarbDayType.mid);
+
+    final low = _macroDay(
+      w,
+      rates.lowProteinPerKg,
+      rates.lowCarbPerKg,
+      rates.lowFatPerKg,
+      CarbDayType.low,
+    );
+    final mid = _macroDay(
+      w,
+      rates.midProteinPerKgFor(n),
+      rates.midCarbPerKgFor(n),
+      rates.midFatPerKgFor(n),
+      CarbDayType.mid,
+    );
+
+    // Original (unadjusted) high day, and the compensated one actually used
+    // when mid days are present.
+    final highOriginal = _macroDay(
+      w,
+      rates.highProteinPerKg,
+      rates.highCarbPerKg,
+      rates.highFatPerKg,
+      CarbDayType.high,
+    );
+    var high = highOriginal;
+    if (midDays > 0) {
+      // Total extra energy the mid days add relative to the low days they
+      // replaced, spread evenly over the cycle: (midDays/n) × (E_high − E_low).
+      final deltaEnergy = (midDays / n) * (highOriginal.energy - low.energy);
+      final deltaCarbG = deltaEnergy / StrategyRules.kcalPerGramCarb;
+      final adjustedCarbG = highOriginal.carbG - deltaCarbG;
+      if (adjustedCarbG < -1e-6) {
+        issues.add(StrategyIssue.carbCycleHighDayCarbDepleted);
       }
-    }
-    return CarbCycleSchedule(days);
-  }
-
-  static CarbCyclePlan compute(
-    StrategyBaseline baseline,
-    CarbCycleSchedule schedule, {
-    double? amplitudeG,
-  }) {
-    final issues = <StrategyIssue>[...baseline.issues];
-    var a = amplitudeG ?? defaultAmplitude(baseline);
-    if (!a.isFinite || a < 0) {
-      issues.add(StrategyIssue.invalidSchedule);
-      a = 0;
-    }
-    final scores = schedule.days.map((d) => d.score).toList();
-    final mean = scores.fold<int>(0, (s, v) => s + v) / 7;
-    final deltas = [
-      for (final s in scores) StrategyRules.kcalPerGramCarb * a * (s - mean),
-    ];
-
-    var alpha = 1.0;
-    if (baseline.feasible) {
-      for (final dE in deltas) {
-        if (dE > 1e-9) {
-          alpha = math.min(alpha, (baseline.maxEnergy - baseline.energy) / dE);
-        } else if (dE < -1e-9) {
-          alpha = math.min(alpha, (baseline.minEnergy - baseline.energy) / dE);
-        }
-      }
-      alpha = alpha.clamp(0.0, 1.0);
-      if (!alpha.isFinite) alpha = 0;
-    } else {
-      alpha = 0;
-    }
-
-    final days = <DayMacroTarget>[];
-    for (var i = 0; i < 7; i++) {
-      final e = baseline.energy + alpha * deltas[i];
-      days.add(
-        DayMacroTarget(
-          energy: e,
-          proteinG: baseline.proteinG,
-          carbG: baseline.carbForEnergy(e),
-          fatG: baseline.fatG,
-          dayType: schedule.days[i],
-        ),
+      final carbG = math.max(0.0, adjustedCarbG);
+      high = DayMacroTarget(
+        energy:
+            highOriginal.proteinG * StrategyRules.kcalPerGramProtein +
+            carbG * StrategyRules.kcalPerGramCarb +
+            highOriginal.fatG * StrategyRules.kcalPerGramFat,
+        proteinG: highOriginal.proteinG,
+        carbG: carbG,
+        fatG: highOriginal.fatG,
+        dayType: CarbDayType.high,
       );
     }
-    final effective = a * alpha;
-    if (!schedule.allSame && effective < StrategyRules.negligibleAmplitudeG) {
-      issues.add(StrategyIssue.amplitudeNegligible);
+
+    final byType = {
+      CarbDayType.low: low,
+      CarbDayType.mid: mid,
+      CarbDayType.high: high,
+    };
+    final days = [for (final type in schedule.days) byType[type]!];
+    if (days.isNotEmpty) {
+      final minEnergy = days.map((d) => d.energy).reduce(math.min);
+      if (minEnergy.isFinite &&
+          minEnergy < StrategyRules.absoluteEnergyFloorKcal - 1e-6) {
+        issues.add(StrategyIssue.energyBelowFloor);
+      }
     }
     return CarbCyclePlan(
-      baseline: baseline,
+      referenceWeightKg: w,
+      rates: rates,
       schedule: schedule,
       days: days,
-      requestedAmplitudeG: a,
-      alpha: alpha,
       issues: List.unmodifiable(issues),
+    );
+  }
+
+  static DayMacroTarget _macroDay(
+    double referenceWeightKg,
+    double proteinPerKg,
+    double carbPerKg,
+    double fatPerKg,
+    CarbDayType type,
+  ) {
+    final p = referenceWeightKg * proteinPerKg;
+    final c = referenceWeightKg * carbPerKg;
+    final f = referenceWeightKg * fatPerKg;
+    return DayMacroTarget(
+      energy:
+          p * StrategyRules.kcalPerGramProtein +
+          c * StrategyRules.kcalPerGramCarb +
+          f * StrategyRules.kcalPerGramFat,
+      proteinG: p,
+      carbG: c,
+      fatG: f,
+      dayType: type,
     );
   }
 }
@@ -623,181 +796,20 @@ abstract final class CarbTaperPlanner {
   }
 }
 
-/// Review outcome for the carb taper.
-enum TaperReviewStatus {
-  /// Observation window not yet complete.
-  observing,
-
-  /// Fewer than the required weighed days (total or per half).
-  insufficientWeightData,
-
-  /// Fewer than the required user-confirmed complete diet days.
-  insufficientDietData,
-
-  /// Weekly rate inside the target band → keep the current stage.
-  hold,
-
-  /// Weekly rate below the band with credible data → a step-down
-  /// candidate exists (still requires explicit confirmation).
-  stepDownCandidate,
-
-  /// Weekly rate below the band but the next stage would breach limits.
-  floorReached,
-
-  /// Weekly rate above the band → stop lowering and review.
-  rateTooHigh,
-}
-
-class TaperReviewInput {
-  const TaperReviewInput({
-    required this.today,
-    required this.observationStart,
-    required this.requiredObservationDays,
-    required this.dailyWeights,
-    required this.completeDietDays,
-  });
-
-  /// Local calendar day (time stripped).
-  final DateTime today;
-
-  /// Local calendar day the current stage started.
-  final DateTime observationStart;
-  final int requiredObservationDays;
-
-  /// One value per local day (multiple weigh-ins already aggregated).
-  final Map<DateTime, double> dailyWeights;
-
-  /// Local days the user explicitly confirmed as complete.
-  final Set<DateTime> completeDietDays;
-}
-
-class TaperReviewResult {
-  const TaperReviewResult({
-    required this.status,
-    required this.daysObserved,
-    required this.daysRequired,
-    required this.nextReviewDate,
-    required this.weightDays,
-    required this.earlyWeightDays,
-    required this.lateWeightDays,
-    required this.completeDietDays,
-    required this.weeklyRate,
-    required this.nextStageFeasible,
-  });
-
-  final TaperReviewStatus status;
-  final int daysObserved;
-  final int daysRequired;
-
-  /// Earliest date a review can be completed (observation end).
-  final DateTime nextReviewDate;
-  final int weightDays;
-  final int earlyWeightDays;
-  final int lateWeightDays;
-  final int completeDietDays;
-
-  /// r = (mean(early 7) − mean(late 7)) / mean(early 7); null when unknown.
-  final double? weeklyRate;
-  final bool nextStageFeasible;
-
-  bool get canStepDown => status == TaperReviewStatus.stepDownCandidate;
-}
-
-abstract final class TaperReviewer {
-  static DateTime _day(DateTime d) => DateTime(d.year, d.month, d.day);
-
-  static TaperReviewResult evaluate(
-    TaperReviewInput input, {
-    required bool nextStageFeasible,
-  }) {
-    final today = _day(input.today);
-    final start = _day(input.observationStart);
-    final observed = today.difference(start).inDays;
-    final required = input.requiredObservationDays;
-    final nextReview = start.add(Duration(days: required));
-
-    // Window: last 14 days inclusive of today.
-    final window = StrategyRules.reviewWindowDays;
-    final windowStart = today.subtract(Duration(days: window - 1));
-    final lateStart = today.subtract(const Duration(days: 6));
-
-    final early = <double>[];
-    final late = <double>[];
-    for (final entry in input.dailyWeights.entries) {
-      final d = _day(entry.key);
-      final w = entry.value;
-      if (!w.isFinite || w <= 0) continue;
-      if (d.isBefore(windowStart) || d.isAfter(today)) continue;
-      if (d.isBefore(lateStart)) {
-        early.add(w);
-      } else {
-        late.add(w);
-      }
-    }
-    var dietDays = 0;
-    for (final d0 in input.completeDietDays) {
-      final d = _day(d0);
-      if (!d.isBefore(windowStart) && !d.isAfter(today)) dietDays++;
-    }
-    final weightDays = early.length + late.length;
-
-    double? rate;
-    if (early.isNotEmpty && late.isNotEmpty) {
-      final e = early.reduce((a, b) => a + b) / early.length;
-      final l = late.reduce((a, b) => a + b) / late.length;
-      if (e > 0) rate = (e - l) / e;
-    }
-
-    TaperReviewStatus status;
-    if (observed < required) {
-      status = TaperReviewStatus.observing;
-    } else if (weightDays < StrategyRules.reviewMinWeightDays ||
-        early.length < StrategyRules.reviewMinWeightDaysPerHalf ||
-        late.length < StrategyRules.reviewMinWeightDaysPerHalf ||
-        rate == null) {
-      status = TaperReviewStatus.insufficientWeightData;
-    } else if (dietDays < StrategyRules.reviewMinCompleteDietDays) {
-      status = TaperReviewStatus.insufficientDietData;
-    } else if (rate > StrategyRules.weeklyLossUpperBound) {
-      status = TaperReviewStatus.rateTooHigh;
-    } else if (rate >= StrategyRules.weeklyLossLowerBound) {
-      status = TaperReviewStatus.hold;
-    } else if (nextStageFeasible) {
-      status = TaperReviewStatus.stepDownCandidate;
-    } else {
-      status = TaperReviewStatus.floorReached;
-    }
-
-    return TaperReviewResult(
-      status: status,
-      daysObserved: observed < 0 ? 0 : observed,
-      daysRequired: required,
-      nextReviewDate: nextReview,
-      weightDays: weightDays,
-      earlyWeightDays: early.length,
-      lateWeightDays: late.length,
-      completeDietDays: dietDays,
-      weeklyRate: rate,
-      nextStageFeasible: nextStageFeasible,
-    );
-  }
-}
-
-/// Cycle-date helpers (local calendar; Monday starts a cycle).
+/// Cycle-date helpers (local calendar).
 abstract final class StrategyDates {
   static DateTime dayOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
-  /// First Monday strictly after [today].
-  static DateTime nextCycleStart(DateTime today) {
-    final t = dayOnly(today);
-    final daysUntil = 8 - t.weekday; // Mon(1)→7, Sun(7)→1
-    return t.add(Duration(days: daysUntil));
-  }
-
-  /// Monday of the week containing [date].
-  static DateTime cycleStartOf(DateTime date) {
-    final d = dayOnly(date);
-    return d.subtract(Duration(days: d.weekday - 1));
+  /// 0-based position of [date] within a [cycleLengthDays]-day cycle
+  /// anchored at [cycleStart] (cycle day 0 = [cycleStart]).
+  static int cycleIndexOf(
+    DateTime date,
+    DateTime cycleStart,
+    int cycleLengthDays,
+  ) {
+    final diff = dayOnly(date).difference(dayOnly(cycleStart)).inDays;
+    final idx = diff % cycleLengthDays;
+    return idx < 0 ? idx + cycleLengthDays : idx;
   }
 
   static String encode(DateTime d) {

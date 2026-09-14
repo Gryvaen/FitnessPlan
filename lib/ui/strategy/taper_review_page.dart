@@ -11,9 +11,10 @@ import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import 'strategy_labels.dart';
 
-/// Carb-taper review: current stage, observation progress, data
-/// completeness and the hold / step-down decision. Nothing changes without
-/// an explicit confirmation here.
+/// Carb-taper stage control: every reachable stage's kcal/carbs, tap any of
+/// them to switch. No observation window, no automatic review — the app
+/// only calculates the numbers; when (or whether) to move stages is
+/// entirely the user's call.
 class TaperReviewPage extends ConsumerStatefulWidget {
   const TaperReviewPage({super.key});
 
@@ -24,13 +25,32 @@ class TaperReviewPage extends ConsumerStatefulWidget {
 class _TaperReviewPageState extends ConsumerState<TaperReviewPage> {
   bool _busy = false;
 
-  /// New version from tomorrow with [stage]; observation restarts.
-  Future<void> _confirmStage(
-    DietStrategyPlan plan,
-    int stage,
-    String reason,
-  ) async {
+  Future<void> _switchStage(DietStrategyPlan plan, int stage) async {
     final l10n = context.l10n;
+    final target = CarbTaperStage.of(plan.baseline, stage);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.enterStage(stage)),
+        content: Text(
+          l10n.confirmNextStageBody(
+            target.day.energy.round(),
+            target.day.carbG.toStringAsFixed(0),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.confirm),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
     setState(() => _busy = true);
     try {
       final tomorrow = CalendarDay.todayLocal().add(const Duration(days: 1));
@@ -45,11 +65,10 @@ class _TaperReviewPageState extends ConsumerState<TaperReviewPage> {
         taperStage: stage,
         observationStart: tomorrow,
         observationDays: StrategyRules.taperObservationDays,
-        reason: reason,
+        reason: 'manualStageChange',
         legacyCalories: plan.legacyCalories,
       );
       await ref.read(dietStrategyRepositoryProvider).createPlan(draft);
-      ref.invalidate(taperReviewProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -64,43 +83,13 @@ class _TaperReviewPageState extends ConsumerState<TaperReviewPage> {
     }
   }
 
-  Future<void> _ask(
-    DietStrategyPlan plan,
-    int stage,
-    String title,
-    String body,
-    String reason,
-  ) async {
-    final l10n = context.l10n;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(title),
-        content: Text(body),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.confirm),
-          ),
-        ],
-      ),
-    );
-    if (ok == true) await _confirmStage(plan, stage, reason);
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context);
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
     final visuals = AppThemeVisuals.of(context);
     final plan = ref.watch(activeDietPlanProvider).value;
-    final reviewAsync = ref.watch(taperReviewProvider);
 
     if (plan == null || plan.kind != DietStrategyKind.carbTaper) {
       return AppChromeScaffold(
@@ -116,8 +105,6 @@ class _TaperReviewPageState extends ConsumerState<TaperReviewPage> {
 
     final baseline = plan.baseline;
     final current = CarbTaperStage.of(baseline, plan.taperStage);
-    final next = CarbTaperPlanner.nextStage(baseline, plan.taperStage);
-    final review = reviewAsync.value;
 
     return AppChromeScaffold(
       appBar: AppBar(title: Text(l10n.taperReview)),
@@ -182,160 +169,12 @@ class _TaperReviewPageState extends ConsumerState<TaperReviewPage> {
             ),
           ),
           const SizedBox(height: AppSpacing.section),
-          if (review == null)
-            const Center(child: CircularProgressIndicator())
-          else ...[
-            SportSurfaceCard(
-              padding: const EdgeInsets.all(AppSpacing.card),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(l10n.observation, style: theme.textTheme.titleMedium),
-                  const SizedBox(height: AppSpacing.compact),
-                  SportProgressBar(
-                    value: review.daysRequired <= 0
-                        ? 1
-                        : review.daysObserved / review.daysRequired,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    l10n.observationProgress(
-                      review.daysObserved.clamp(0, review.daysRequired),
-                      review.daysRequired,
-                    ),
-                    style: theme.textTheme.bodySmall,
-                  ),
-                  Text(
-                    l10n.nextReviewDate(
-                      AppDates.md(review.nextReviewDate, locale),
-                    ),
-                    style: theme.textTheme.bodySmall,
-                  ),
-                  const Divider(height: 20),
-                  _DataRow(
-                    label: l10n.weighInDays,
-                    value:
-                        '${review.weightDays} / ${StrategyRules.reviewWindowDays}',
-                    ok:
-                        review.weightDays >=
-                            StrategyRules.reviewMinWeightDays &&
-                        review.earlyWeightDays >=
-                            StrategyRules.reviewMinWeightDaysPerHalf &&
-                        review.lateWeightDays >=
-                            StrategyRules.reviewMinWeightDaysPerHalf,
-                    hint: l10n.weighInDaysHint(
-                      StrategyRules.reviewMinWeightDays,
-                      StrategyRules.reviewMinWeightDaysPerHalf,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  _DataRow(
-                    label: l10n.completeDietDays,
-                    value:
-                        '${review.completeDietDays} / ${StrategyRules.reviewWindowDays}',
-                    ok:
-                        review.completeDietDays >=
-                        StrategyRules.reviewMinCompleteDietDays,
-                    hint: l10n.completeDietDaysHint(
-                      StrategyRules.reviewMinCompleteDietDays,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  _DataRow(
-                    label: l10n.weeklyRate,
-                    value: review.weeklyRate == null
-                        ? '–'
-                        : '${(review.weeklyRate! * 100).toStringAsFixed(2)}%',
-                    ok: review.weeklyRate != null,
-                    hint: l10n.weeklyRateHint(
-                      (StrategyRules.weeklyLossLowerBound * 100)
-                          .toStringAsFixed(2),
-                      (StrategyRules.weeklyLossUpperBound * 100)
-                          .toStringAsFixed(2),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.section),
-            SportSurfaceCard(
-              tint: switch (review.status) {
-                TaperReviewStatus.stepDownCandidate => visuals.accent,
-                TaperReviewStatus.rateTooHigh => scheme.error,
-                _ => null,
-              },
-              padding: const EdgeInsets.all(AppSpacing.card),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(l10n.suggestion, style: theme.textTheme.titleMedium),
-                  const SizedBox(height: 6),
-                  Text(
-                    review.status.label(l10n),
-                    style: theme.textTheme.titleSmall,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _statusBody(review, next, l10n),
-                    style: theme.textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: AppSpacing.section),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      if (review.canStepDown && next != null)
-                        FilledButton(
-                          onPressed: _busy
-                              ? null
-                              : () => _ask(
-                                  plan,
-                                  next.stage,
-                                  l10n.confirmNextStage,
-                                  l10n.confirmNextStageBody(
-                                    next.day.energy.round(),
-                                    next.day.carbG.toStringAsFixed(0),
-                                  ),
-                                  'stepDownConfirmed',
-                                ),
-                          child: Text(l10n.enterStage(next.stage)),
-                        ),
-                      if (review.status == TaperReviewStatus.hold ||
-                          review.status ==
-                              TaperReviewStatus.stepDownCandidate ||
-                          review.status == TaperReviewStatus.floorReached)
-                        OutlinedButton(
-                          onPressed: _busy
-                              ? null
-                              : () => _ask(
-                                  plan,
-                                  plan.taperStage,
-                                  l10n.keepStage,
-                                  l10n.keepStageBody,
-                                  'holdConfirmed',
-                                ),
-                          child: Text(l10n.keepStage),
-                        ),
-                      if (review.status == TaperReviewStatus.rateTooHigh &&
-                          plan.taperStage > 0)
-                        OutlinedButton(
-                          onPressed: _busy
-                              ? null
-                              : () => _ask(
-                                  plan,
-                                  plan.taperStage - 1,
-                                  l10n.backOneStage,
-                                  l10n.backOneStageBody,
-                                  'stepUpConfirmed',
-                                ),
-                          child: Text(l10n.backOneStage),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+          _StageLadder(
+            baseline: baseline,
+            currentStage: plan.taperStage,
+            busy: _busy,
+            onSelect: (stage) => _switchStage(plan, stage),
+          ),
           const SizedBox(height: AppSpacing.section),
           Text(l10n.taperRulesBody, style: theme.textTheme.bodySmall),
           const SizedBox(height: 6),
@@ -344,72 +183,102 @@ class _TaperReviewPageState extends ConsumerState<TaperReviewPage> {
       ),
     );
   }
-
-  String _statusBody(
-    TaperReviewResult r,
-    CarbTaperStage? next,
-    AppLocalizations l10n,
-  ) {
-    switch (r.status) {
-      case TaperReviewStatus.observing:
-        return l10n.taperObservingBody(r.daysRequired - r.daysObserved);
-      case TaperReviewStatus.insufficientWeightData:
-        return l10n.taperInsufficientWeightBody;
-      case TaperReviewStatus.insufficientDietData:
-        return l10n.taperInsufficientDietBody;
-      case TaperReviewStatus.hold:
-        return l10n.taperHoldBody;
-      case TaperReviewStatus.stepDownCandidate:
-        return next == null
-            ? l10n.taperFloorBody
-            : l10n.taperStepDownBody(
-                next.day.energy.round(),
-                next.day.carbG.toStringAsFixed(0),
-              );
-      case TaperReviewStatus.floorReached:
-        return l10n.taperFloorBody;
-      case TaperReviewStatus.rateTooHigh:
-        return l10n.taperTooFastBody;
-    }
-  }
 }
 
-class _DataRow extends StatelessWidget {
-  const _DataRow({
-    required this.label,
-    required this.value,
-    required this.ok,
-    required this.hint,
+/// Every reachable stage down to the floor; tap one (other than the current
+/// stage) to switch to it.
+class _StageLadder extends StatelessWidget {
+  const _StageLadder({
+    required this.baseline,
+    required this.currentStage,
+    required this.busy,
+    required this.onSelect,
   });
 
-  final String label;
-  final String value;
-  final bool ok;
-  final String hint;
+  final StrategyBaseline baseline;
+  final int currentStage;
+  final bool busy;
+  final ValueChanged<int> onSelect;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final visuals = AppThemeVisuals.of(context);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final stages = <CarbTaperStage>[];
+    for (var j = 0; j < 12; j++) {
+      final s = CarbTaperStage.of(baseline, j);
+      if (!s.feasible) break;
+      stages.add(s);
+    }
+    if (stages.isEmpty) {
+      return Text(
+        StrategyIssue.energyBelowFloor.message(l10n),
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.error,
+        ),
+      );
+    }
+    return Column(
       children: [
-        Icon(
-          ok ? Icons.check_circle_outline : Icons.radio_button_unchecked,
-          size: 18,
-          color: ok ? visuals.accent : theme.colorScheme.onSurfaceVariant,
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: theme.textTheme.bodyMedium),
-              Text(hint, style: theme.textTheme.bodySmall),
-            ],
+        for (final s in stages)
+          Container(
+            margin: const EdgeInsets.only(bottom: 6),
+            decoration: BoxDecoration(
+              color: s.stage == currentStage
+                  ? visuals.accentSoft
+                  : visuals.card,
+              borderRadius: BorderRadius.circular(AppRadius.control),
+              border: Border.all(color: visuals.cardBorder),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: busy || s.stage == currentStage
+                    ? null
+                    : () => onSelect(s.stage),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 64,
+                        child: Text(
+                          l10n.taperStageLabel(s.stage),
+                          style: theme.textTheme.labelLarge,
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          '${s.day.energy.round()} kcal · '
+                          'C ${s.day.carbG.toStringAsFixed(0)} g',
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ),
+                      if (s.stage == currentStage)
+                        Text(
+                          l10n.currentStage,
+                          style: theme.textTheme.labelSmall,
+                        )
+                      else
+                        const Icon(Icons.chevron_right, size: 18),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
+        Text(
+          l10n.taperFloorLine(
+            baseline.minEnergy.round(),
+            StrategyRules.minCarbG.round(),
+          ),
+          style: theme.textTheme.bodySmall,
         ),
-        Text(value, style: theme.textTheme.titleSmall),
       ],
     );
   }

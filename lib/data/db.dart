@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 22;
+  int get schemaVersion => 23;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -188,6 +188,42 @@ CREATE TABLE day_workouts_new (
           m,
           dayWorkoutItems,
           dayWorkoutItems.actualWeightUnit,
+        );
+      }
+      if (from < 23) {
+        // Carb cycling switched from a deficit-scaled weekly amplitude to
+        // direct weight × macro multipliers; old carb-cycle plans (7-day
+        // schedule + carb_amplitude_g) are not migrated, only new columns
+        // are added. `carb_amplitude_g` stays but is no longer written.
+        await _addColumnIfMissing(
+          m,
+          dietStrategyPlans,
+          dietStrategyPlans.lowProteinPerKg,
+        );
+        await _addColumnIfMissing(
+          m,
+          dietStrategyPlans,
+          dietStrategyPlans.lowCarbPerKg,
+        );
+        await _addColumnIfMissing(
+          m,
+          dietStrategyPlans,
+          dietStrategyPlans.lowFatPerKg,
+        );
+        await _addColumnIfMissing(
+          m,
+          dietStrategyPlans,
+          dietStrategyPlans.highProteinPerKg,
+        );
+        await _addColumnIfMissing(
+          m,
+          dietStrategyPlans,
+          dietStrategyPlans.highCarbPerKg,
+        );
+        await _addColumnIfMissing(
+          m,
+          dietStrategyPlans,
+          dietStrategyPlans.highFatPerKg,
         );
       }
     },

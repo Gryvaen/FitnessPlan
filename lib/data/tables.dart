@@ -236,9 +236,19 @@ class DietStrategyPlans extends Table {
   RealColumn get fatPerKg => real()();
   RealColumn get baseEnergy => real()();
 
-  /// 7-letter H/M/L code (Mon..Sun) for carb cycling.
+  /// 3-5 letter H/M/L code for carb cycling (day-count cycle, not weekday).
   TextColumn get schedule => text().nullable()();
+
+  /// Deprecated (was the deficit-based amplitude); no longer written.
   RealColumn get carbAmplitudeG => real().nullable()();
+
+  /// Carb-cycle low/high-day multipliers (g per kg reference weight).
+  RealColumn get lowProteinPerKg => real().nullable()();
+  RealColumn get lowCarbPerKg => real().nullable()();
+  RealColumn get lowFatPerKg => real().nullable()();
+  RealColumn get highProteinPerKg => real().nullable()();
+  RealColumn get highCarbPerKg => real().nullable()();
+  RealColumn get highFatPerKg => real().nullable()();
   IntColumn get taperStage => integer().withDefault(const Constant(0))();
   TextColumn get observationStart => text().nullable()();
   IntColumn get observationDays => integer().withDefault(const Constant(14))();

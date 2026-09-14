@@ -117,10 +117,10 @@ Future<void> _pump(WidgetTester tester, String location) async {
   await tester.pump(const Duration(seconds: 1));
 }
 
-Future<Finder> _show(WidgetTester tester, Finder finder) async {
+Future<Finder> _show(WidgetTester tester, Finder finder, {double delta = 120}) async {
   await tester.scrollUntilVisible(
     finder,
-    120,
+    delta,
     scrollable: find.byType(Scrollable).first,
   );
   await _settle(tester);
@@ -164,7 +164,45 @@ void main() {
   ) async {
     await _pump(tester, '/profile/nutrition/strategy/configure?kind=carbCycle');
     _expectNoLayoutErrors(tester);
-    expect(find.text('7-day schedule'), findsOneWidget);
+    expect(await _show(tester, find.text('Cycle schedule')), findsOneWidget);
+
+    // Tap day 1 (low -> mid) and confirm the high-day carb stepper itself
+    // switches to the compensated effective rate, with a "[Modified]"
+    // marker on its label (not a separate note line).
+    await tester.tap(
+      await _show(tester, find.byKey(const ValueKey('cycleDay-1'))),
+    );
+    await _settle(tester);
+    // 4-day cycle, 1 mid day (defaultFor(4) + toggling day 1): the high
+    // day's carbs are trimmed by (1/4) × (E_high − E_low) / 4 to hold the
+    // cycle average steady, using the default low/high rates. This is a
+    // per-kg calculation, so the reference weight (75, from the fixture
+    // profile below) cancels out.
+    const elowPerKg =
+        4 * StrategyRules.defaultLowProteinPerKg +
+        4 * StrategyRules.defaultLowCarbPerKg +
+        9 * StrategyRules.defaultLowFatPerKg;
+    const ehighPerKg =
+        4 * StrategyRules.defaultHighProteinPerKg +
+        4 * StrategyRules.defaultHighCarbPerKg +
+        9 * StrategyRules.defaultHighFatPerKg;
+    const deltaCarbPerKg = (1 / 4) * (ehighPerKg - elowPerKg) / 4;
+    const effective = StrategyRules.defaultHighCarbPerKg - deltaCarbPerKg;
+    // Scroll back up: the stepper sits in the parameters section, above the
+    // schedule table we just scrolled down to tap. The label stays plain
+    // ("Carb per kg"); the adjustment shows as an icon badge, not text.
+    expect(
+      await _show(
+        tester,
+        find.byTooltip('Automatically adjusted to balance mid-carb days'),
+        delta: -120,
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text('${effective.toStringAsFixed(1)} g/kg'),
+      findsOneWidget,
+    );
 
     await tester.tap(await _show(tester, find.text('Start today')));
     await _settle(tester);
@@ -180,23 +218,28 @@ void main() {
     expect(active!.kind, DietStrategyKind.carbCycle);
     expect(active.effectiveFrom, CalendarDay.todayLocal());
 
-    // Budget conservation across the next full planned week (a mid-cycle
-    // start leaves the already-passed days of this week untouched).
+    // Every day's macros are internally consistent (4P + 4C + 9F = kcal),
+    // and the schedule repeats on the configured cycle length.
     final today = CalendarDay.todayLocal();
-    final monday = today.add(Duration(days: 8 - today.weekday));
-    double sum = 0;
-    for (var i = 0; i < 7; i++) {
+    final cycleLength = active.schedule!.cycleLengthDays;
+    for (var i = 0; i < cycleLength * 2; i++) {
       final t = (await repo.targetForDay(
-        monday.add(Duration(days: i)),
+        today.add(Duration(days: i)),
         profile,
       ))!;
-      sum += t.calories;
       expect(
         (4 * t.proteinG + 4 * t.carbG + 9 * t.fatG - t.calories).abs(),
         lessThan(1.0),
       );
     }
-    expect((sum - 7 * active.baseEnergy).abs(), lessThan(1.0));
+    // Cycle last day is the high-carb day by default.
+    expect(
+      (await repo.targetForDay(
+        today.add(Duration(days: cycleLength - 1)),
+        profile,
+      ))!.dayType,
+      CarbDayType.high,
+    );
 
     // Back on the targets page after apply; then the Today hero shows the
     // plan chip and the plan's numbers instead of the profile target.
@@ -210,7 +253,9 @@ void main() {
     expect(find.text('${todayTarget.caloriesRounded}'), findsWidgets);
   });
 
-  testWidgets('taper review page shows the observing state', (tester) async {
+  testWidgets('taper review page lets the user switch stages freely', (
+    tester,
+  ) async {
     final repo = _container.read(dietStrategyRepositoryProvider);
     await repo.createPlan(
       DietStrategyPlanDraft(
@@ -225,8 +270,11 @@ void main() {
     );
     await _pump(tester, '/profile/nutrition/taper');
     _expectNoLayoutErrors(tester);
-    expect(find.text('Observing'), findsWidgets);
+    // No observation/review gating — every reachable stage is listed and
+    // immediately tappable (other than the current one).
     expect(find.textContaining('Stage 0'), findsWidgets);
+    expect(find.textContaining('Stage 1'), findsWidgets);
+    expect(find.byIcon(Icons.chevron_right), findsWidgets);
   });
 
   testWidgets('underage profile cannot start a fat-loss strategy', (
@@ -254,13 +302,15 @@ void main() {
     );
     await _pump(tester, '/profile/nutrition');
     _expectNoLayoutErrors(tester);
-    final row = tester.widget<ListTile>(
+    // "Choose strategy" renders as a header-row TextButton (no active plan
+    // yet) — it should be disabled while eligibility is blocked.
+    final button = tester.widget<TextButton>(
       find.ancestor(
         of: find.text('Choose strategy'),
-        matching: find.byType(ListTile),
+        matching: find.byType(TextButton),
       ),
     );
-    expect(row.onTap, isNull);
+    expect(button.onPressed, isNull);
     expect(find.textContaining('adults (18+)'), findsOneWidget);
   });
 
@@ -272,13 +322,20 @@ void main() {
     await _setUp(profile: _profile(goal: FitnessGoal.maintain));
     await _pump(tester, '/profile/nutrition');
     _expectNoLayoutErrors(tester);
-    final row = tester.widget<ListTile>(
+    // Nutrition targets now opens on the profile's own goal tab (维持 for
+    // this profile), which is just a "coming soon" placeholder — switch to
+    // 减脂/Cut to see the (blocked) strategy section this test is about.
+    await tester.tap(find.text('Cut'));
+    await tester.pumpAndSettle();
+    // "Choose strategy" renders as a header-row TextButton (no active plan
+    // yet) — it should be disabled while eligibility is blocked.
+    final button = tester.widget<TextButton>(
       find.ancestor(
         of: find.text('Choose strategy'),
-        matching: find.byType(ListTile),
+        matching: find.byType(TextButton),
       ),
     );
-    expect(row.onTap, isNull);
+    expect(button.onPressed, isNull);
     expect(find.text('Only available with the cut goal.'), findsOneWidget);
   });
 }

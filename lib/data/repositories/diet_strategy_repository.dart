@@ -17,7 +17,7 @@ class DietStrategyPlanDraft {
     this.proteinPerKg = StrategyRules.defaultProteinPerKg,
     this.fatPerKg = StrategyRules.defaultFatPerKg,
     this.schedule,
-    this.carbAmplitudeG,
+    this.carbCycleRates,
     this.taperStage = 0,
     this.observationStart,
     this.observationDays = StrategyRules.taperObservationDays,
@@ -33,7 +33,7 @@ class DietStrategyPlanDraft {
   final double proteinPerKg;
   final double fatPerKg;
   final CarbCycleSchedule? schedule;
-  final double? carbAmplitudeG;
+  final CarbCycleRates? carbCycleRates;
   final int taperStage;
   final DateTime? observationStart;
   final int observationDays;
@@ -64,7 +64,7 @@ class DietStrategyPlanDraft {
     fatPerKg: fatPerKg,
     baseEnergy: baseEnergy,
     schedule: schedule,
-    carbAmplitudeG: carbAmplitudeG,
+    carbCycleRates: carbCycleRates,
     taperStage: taperStage,
     observationStart: observationStart,
     observationDays: observationDays,
@@ -74,23 +74,28 @@ class DietStrategyPlanDraft {
 
   /// Validation errors that must block persistence.
   List<StrategyIssue> validate() {
-    final issues = <StrategyIssue>[...baseline.issues];
     if (kind == DietStrategyKind.carbCycle) {
-      if (schedule == null) {
-        issues.add(StrategyIssue.invalidSchedule);
-      } else {
-        final plan = CarbCyclePlanner.compute(
-          baseline,
-          schedule!,
-          amplitudeG: carbAmplitudeG,
-        );
-        for (final i in plan.issues) {
-          if (i != StrategyIssue.amplitudeNegligible && !issues.contains(i)) {
-            issues.add(i);
-          }
-        }
+      final issues = <StrategyIssue>[];
+      if (!referenceWeightKg.isFinite || referenceWeightKg <= 0) {
+        issues.add(StrategyIssue.invalidWeight);
       }
+      final s = schedule;
+      final r = carbCycleRates;
+      if (s == null || r == null) {
+        issues.add(StrategyIssue.invalidSchedule);
+        return issues;
+      }
+      final plan = CarbCyclePlanner.compute(
+        referenceWeightKg: referenceWeightKg,
+        rates: r,
+        schedule: s,
+      );
+      for (final i in plan.issues) {
+        if (!issues.contains(i)) issues.add(i);
+      }
+      return issues;
     }
+    final issues = <StrategyIssue>[...baseline.issues];
     if (kind == DietStrategyKind.carbTaper) {
       final stage = CarbTaperStage.of(baseline, taperStage);
       if (!stage.feasible) issues.add(StrategyIssue.energyBelowFloor);
@@ -124,7 +129,22 @@ class DietStrategyRepository {
     fatPerKg: r.fatPerKg,
     baseEnergy: r.baseEnergy,
     schedule: CarbCycleSchedule.tryParse(r.schedule),
-    carbAmplitudeG: r.carbAmplitudeG,
+    carbCycleRates:
+        r.lowProteinPerKg != null &&
+            r.lowCarbPerKg != null &&
+            r.lowFatPerKg != null &&
+            r.highProteinPerKg != null &&
+            r.highCarbPerKg != null &&
+            r.highFatPerKg != null
+        ? CarbCycleRates(
+            lowProteinPerKg: r.lowProteinPerKg!,
+            lowCarbPerKg: r.lowCarbPerKg!,
+            lowFatPerKg: r.lowFatPerKg!,
+            highProteinPerKg: r.highProteinPerKg!,
+            highCarbPerKg: r.highCarbPerKg!,
+            highFatPerKg: r.highFatPerKg!,
+          )
+        : null,
     taperStage: r.taperStage,
     observationStart: StrategyDates.tryDecode(r.observationStart),
     observationDays: r.observationDays,
@@ -233,7 +253,12 @@ class DietStrategyRepository {
               fatPerKg: draft.fatPerKg,
               baseEnergy: draft.baseEnergy,
               schedule: Value(draft.schedule?.code),
-              carbAmplitudeG: Value(draft.carbAmplitudeG),
+              lowProteinPerKg: Value(draft.carbCycleRates?.lowProteinPerKg),
+              lowCarbPerKg: Value(draft.carbCycleRates?.lowCarbPerKg),
+              lowFatPerKg: Value(draft.carbCycleRates?.lowFatPerKg),
+              highProteinPerKg: Value(draft.carbCycleRates?.highProteinPerKg),
+              highCarbPerKg: Value(draft.carbCycleRates?.highCarbPerKg),
+              highFatPerKg: Value(draft.carbCycleRates?.highFatPerKg),
               taperStage: Value(draft.taperStage),
               observationStart: Value(
                 draft.observationStart == null

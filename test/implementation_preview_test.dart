@@ -108,7 +108,8 @@ Future<void> _seedDemo(_Harness h) async {
       referenceWeightKg: 75,
       estimatedTdee: 2400,
       baseEnergy: 2000,
-      schedule: CarbCycleSchedule.tryParse('HMHMMLL'),
+      schedule: CarbCycleSchedule.tryParse('HMLL'),
+      carbCycleRates: CarbCycleRates.defaults(),
       reason: 'preview',
     ),
   );

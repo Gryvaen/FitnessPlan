@@ -44,22 +44,11 @@ extension StrategyIssueL10n on StrategyIssue {
       StrategyRules.minCarbG.round(),
     ),
     StrategyIssue.invalidSchedule => l10n.issueInvalidSchedule,
-    StrategyIssue.amplitudeNegligible => l10n.issueAmplitudeNegligible,
+    StrategyIssue.invalidCarbCycleRate => l10n.issueInvalidCarbCycleRate,
+    StrategyIssue.carbCycleHighDayCarbDepleted =>
+      l10n.issueCarbCycleHighDayCarbDepleted,
     StrategyIssue.underage => l10n.issueUnderage(StrategyRules.minAdultAge),
     StrategyIssue.goalNotCut => l10n.issueGoalNotCut,
-  };
-}
-
-extension TaperReviewStatusL10n on TaperReviewStatus {
-  String label(AppLocalizations l10n) => switch (this) {
-    TaperReviewStatus.observing => l10n.taperStatusObserving,
-    TaperReviewStatus.insufficientWeightData =>
-      l10n.taperStatusInsufficientWeight,
-    TaperReviewStatus.insufficientDietData => l10n.taperStatusInsufficientDiet,
-    TaperReviewStatus.hold => l10n.taperStatusHold,
-    TaperReviewStatus.stepDownCandidate => l10n.taperStatusStepDown,
-    TaperReviewStatus.floorReached => l10n.taperStatusFloor,
-    TaperReviewStatus.rateTooHigh => l10n.taperStatusTooFast,
   };
 }
 

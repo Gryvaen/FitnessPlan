@@ -7181,6 +7181,72 @@ class $DietStrategyPlansTable extends DietStrategyPlans
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _lowProteinPerKgMeta = const VerificationMeta(
+    'lowProteinPerKg',
+  );
+  @override
+  late final GeneratedColumn<double> lowProteinPerKg = GeneratedColumn<double>(
+    'low_protein_per_kg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lowCarbPerKgMeta = const VerificationMeta(
+    'lowCarbPerKg',
+  );
+  @override
+  late final GeneratedColumn<double> lowCarbPerKg = GeneratedColumn<double>(
+    'low_carb_per_kg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lowFatPerKgMeta = const VerificationMeta(
+    'lowFatPerKg',
+  );
+  @override
+  late final GeneratedColumn<double> lowFatPerKg = GeneratedColumn<double>(
+    'low_fat_per_kg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _highProteinPerKgMeta = const VerificationMeta(
+    'highProteinPerKg',
+  );
+  @override
+  late final GeneratedColumn<double> highProteinPerKg = GeneratedColumn<double>(
+    'high_protein_per_kg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _highCarbPerKgMeta = const VerificationMeta(
+    'highCarbPerKg',
+  );
+  @override
+  late final GeneratedColumn<double> highCarbPerKg = GeneratedColumn<double>(
+    'high_carb_per_kg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _highFatPerKgMeta = const VerificationMeta(
+    'highFatPerKg',
+  );
+  @override
+  late final GeneratedColumn<double> highFatPerKg = GeneratedColumn<double>(
+    'high_fat_per_kg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _taperStageMeta = const VerificationMeta(
     'taperStage',
   );
@@ -7254,6 +7320,12 @@ class $DietStrategyPlansTable extends DietStrategyPlans
     baseEnergy,
     schedule,
     carbAmplitudeG,
+    lowProteinPerKg,
+    lowCarbPerKg,
+    lowFatPerKg,
+    highProteinPerKg,
+    highCarbPerKg,
+    highFatPerKg,
     taperStage,
     observationStart,
     observationDays,
@@ -7399,6 +7471,60 @@ class $DietStrategyPlansTable extends DietStrategyPlans
         ),
       );
     }
+    if (data.containsKey('low_protein_per_kg')) {
+      context.handle(
+        _lowProteinPerKgMeta,
+        lowProteinPerKg.isAcceptableOrUnknown(
+          data['low_protein_per_kg']!,
+          _lowProteinPerKgMeta,
+        ),
+      );
+    }
+    if (data.containsKey('low_carb_per_kg')) {
+      context.handle(
+        _lowCarbPerKgMeta,
+        lowCarbPerKg.isAcceptableOrUnknown(
+          data['low_carb_per_kg']!,
+          _lowCarbPerKgMeta,
+        ),
+      );
+    }
+    if (data.containsKey('low_fat_per_kg')) {
+      context.handle(
+        _lowFatPerKgMeta,
+        lowFatPerKg.isAcceptableOrUnknown(
+          data['low_fat_per_kg']!,
+          _lowFatPerKgMeta,
+        ),
+      );
+    }
+    if (data.containsKey('high_protein_per_kg')) {
+      context.handle(
+        _highProteinPerKgMeta,
+        highProteinPerKg.isAcceptableOrUnknown(
+          data['high_protein_per_kg']!,
+          _highProteinPerKgMeta,
+        ),
+      );
+    }
+    if (data.containsKey('high_carb_per_kg')) {
+      context.handle(
+        _highCarbPerKgMeta,
+        highCarbPerKg.isAcceptableOrUnknown(
+          data['high_carb_per_kg']!,
+          _highCarbPerKgMeta,
+        ),
+      );
+    }
+    if (data.containsKey('high_fat_per_kg')) {
+      context.handle(
+        _highFatPerKgMeta,
+        highFatPerKg.isAcceptableOrUnknown(
+          data['high_fat_per_kg']!,
+          _highFatPerKgMeta,
+        ),
+      );
+    }
     if (data.containsKey('taper_stage')) {
       context.handle(
         _taperStageMeta,
@@ -7507,6 +7633,30 @@ class $DietStrategyPlansTable extends DietStrategyPlans
         DriftSqlType.double,
         data['${effectivePrefix}carb_amplitude_g'],
       ),
+      lowProteinPerKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}low_protein_per_kg'],
+      ),
+      lowCarbPerKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}low_carb_per_kg'],
+      ),
+      lowFatPerKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}low_fat_per_kg'],
+      ),
+      highProteinPerKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}high_protein_per_kg'],
+      ),
+      highCarbPerKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}high_carb_per_kg'],
+      ),
+      highFatPerKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}high_fat_per_kg'],
+      ),
       taperStage: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}taper_stage'],
@@ -7552,9 +7702,19 @@ class DietStrategyPlanRow extends DataClass
   final double fatPerKg;
   final double baseEnergy;
 
-  /// 7-letter H/M/L code (Mon..Sun) for carb cycling.
+  /// 3-5 letter H/M/L code for carb cycling (day-count cycle, not weekday).
   final String? schedule;
+
+  /// Deprecated (was the deficit-based amplitude); no longer written.
   final double? carbAmplitudeG;
+
+  /// Carb-cycle low/high-day multipliers (g per kg reference weight).
+  final double? lowProteinPerKg;
+  final double? lowCarbPerKg;
+  final double? lowFatPerKg;
+  final double? highProteinPerKg;
+  final double? highCarbPerKg;
+  final double? highFatPerKg;
   final int taperStage;
   final String? observationStart;
   final int observationDays;
@@ -7576,6 +7736,12 @@ class DietStrategyPlanRow extends DataClass
     required this.baseEnergy,
     this.schedule,
     this.carbAmplitudeG,
+    this.lowProteinPerKg,
+    this.lowCarbPerKg,
+    this.lowFatPerKg,
+    this.highProteinPerKg,
+    this.highCarbPerKg,
+    this.highFatPerKg,
     required this.taperStage,
     this.observationStart,
     required this.observationDays,
@@ -7605,6 +7771,24 @@ class DietStrategyPlanRow extends DataClass
     }
     if (!nullToAbsent || carbAmplitudeG != null) {
       map['carb_amplitude_g'] = Variable<double>(carbAmplitudeG);
+    }
+    if (!nullToAbsent || lowProteinPerKg != null) {
+      map['low_protein_per_kg'] = Variable<double>(lowProteinPerKg);
+    }
+    if (!nullToAbsent || lowCarbPerKg != null) {
+      map['low_carb_per_kg'] = Variable<double>(lowCarbPerKg);
+    }
+    if (!nullToAbsent || lowFatPerKg != null) {
+      map['low_fat_per_kg'] = Variable<double>(lowFatPerKg);
+    }
+    if (!nullToAbsent || highProteinPerKg != null) {
+      map['high_protein_per_kg'] = Variable<double>(highProteinPerKg);
+    }
+    if (!nullToAbsent || highCarbPerKg != null) {
+      map['high_carb_per_kg'] = Variable<double>(highCarbPerKg);
+    }
+    if (!nullToAbsent || highFatPerKg != null) {
+      map['high_fat_per_kg'] = Variable<double>(highFatPerKg);
     }
     map['taper_stage'] = Variable<int>(taperStage);
     if (!nullToAbsent || observationStart != null) {
@@ -7641,6 +7825,24 @@ class DietStrategyPlanRow extends DataClass
       carbAmplitudeG: carbAmplitudeG == null && nullToAbsent
           ? const Value.absent()
           : Value(carbAmplitudeG),
+      lowProteinPerKg: lowProteinPerKg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lowProteinPerKg),
+      lowCarbPerKg: lowCarbPerKg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lowCarbPerKg),
+      lowFatPerKg: lowFatPerKg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lowFatPerKg),
+      highProteinPerKg: highProteinPerKg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(highProteinPerKg),
+      highCarbPerKg: highCarbPerKg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(highCarbPerKg),
+      highFatPerKg: highFatPerKg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(highFatPerKg),
       taperStage: Value(taperStage),
       observationStart: observationStart == null && nullToAbsent
           ? const Value.absent()
@@ -7674,6 +7876,12 @@ class DietStrategyPlanRow extends DataClass
       baseEnergy: serializer.fromJson<double>(json['baseEnergy']),
       schedule: serializer.fromJson<String?>(json['schedule']),
       carbAmplitudeG: serializer.fromJson<double?>(json['carbAmplitudeG']),
+      lowProteinPerKg: serializer.fromJson<double?>(json['lowProteinPerKg']),
+      lowCarbPerKg: serializer.fromJson<double?>(json['lowCarbPerKg']),
+      lowFatPerKg: serializer.fromJson<double?>(json['lowFatPerKg']),
+      highProteinPerKg: serializer.fromJson<double?>(json['highProteinPerKg']),
+      highCarbPerKg: serializer.fromJson<double?>(json['highCarbPerKg']),
+      highFatPerKg: serializer.fromJson<double?>(json['highFatPerKg']),
       taperStage: serializer.fromJson<int>(json['taperStage']),
       observationStart: serializer.fromJson<String?>(json['observationStart']),
       observationDays: serializer.fromJson<int>(json['observationDays']),
@@ -7700,6 +7908,12 @@ class DietStrategyPlanRow extends DataClass
       'baseEnergy': serializer.toJson<double>(baseEnergy),
       'schedule': serializer.toJson<String?>(schedule),
       'carbAmplitudeG': serializer.toJson<double?>(carbAmplitudeG),
+      'lowProteinPerKg': serializer.toJson<double?>(lowProteinPerKg),
+      'lowCarbPerKg': serializer.toJson<double?>(lowCarbPerKg),
+      'lowFatPerKg': serializer.toJson<double?>(lowFatPerKg),
+      'highProteinPerKg': serializer.toJson<double?>(highProteinPerKg),
+      'highCarbPerKg': serializer.toJson<double?>(highCarbPerKg),
+      'highFatPerKg': serializer.toJson<double?>(highFatPerKg),
       'taperStage': serializer.toJson<int>(taperStage),
       'observationStart': serializer.toJson<String?>(observationStart),
       'observationDays': serializer.toJson<int>(observationDays),
@@ -7724,6 +7938,12 @@ class DietStrategyPlanRow extends DataClass
     double? baseEnergy,
     Value<String?> schedule = const Value.absent(),
     Value<double?> carbAmplitudeG = const Value.absent(),
+    Value<double?> lowProteinPerKg = const Value.absent(),
+    Value<double?> lowCarbPerKg = const Value.absent(),
+    Value<double?> lowFatPerKg = const Value.absent(),
+    Value<double?> highProteinPerKg = const Value.absent(),
+    Value<double?> highCarbPerKg = const Value.absent(),
+    Value<double?> highFatPerKg = const Value.absent(),
     int? taperStage,
     Value<String?> observationStart = const Value.absent(),
     int? observationDays,
@@ -7747,6 +7967,18 @@ class DietStrategyPlanRow extends DataClass
     carbAmplitudeG: carbAmplitudeG.present
         ? carbAmplitudeG.value
         : this.carbAmplitudeG,
+    lowProteinPerKg: lowProteinPerKg.present
+        ? lowProteinPerKg.value
+        : this.lowProteinPerKg,
+    lowCarbPerKg: lowCarbPerKg.present ? lowCarbPerKg.value : this.lowCarbPerKg,
+    lowFatPerKg: lowFatPerKg.present ? lowFatPerKg.value : this.lowFatPerKg,
+    highProteinPerKg: highProteinPerKg.present
+        ? highProteinPerKg.value
+        : this.highProteinPerKg,
+    highCarbPerKg: highCarbPerKg.present
+        ? highCarbPerKg.value
+        : this.highCarbPerKg,
+    highFatPerKg: highFatPerKg.present ? highFatPerKg.value : this.highFatPerKg,
     taperStage: taperStage ?? this.taperStage,
     observationStart: observationStart.present
         ? observationStart.value
@@ -7788,6 +8020,24 @@ class DietStrategyPlanRow extends DataClass
       carbAmplitudeG: data.carbAmplitudeG.present
           ? data.carbAmplitudeG.value
           : this.carbAmplitudeG,
+      lowProteinPerKg: data.lowProteinPerKg.present
+          ? data.lowProteinPerKg.value
+          : this.lowProteinPerKg,
+      lowCarbPerKg: data.lowCarbPerKg.present
+          ? data.lowCarbPerKg.value
+          : this.lowCarbPerKg,
+      lowFatPerKg: data.lowFatPerKg.present
+          ? data.lowFatPerKg.value
+          : this.lowFatPerKg,
+      highProteinPerKg: data.highProteinPerKg.present
+          ? data.highProteinPerKg.value
+          : this.highProteinPerKg,
+      highCarbPerKg: data.highCarbPerKg.present
+          ? data.highCarbPerKg.value
+          : this.highCarbPerKg,
+      highFatPerKg: data.highFatPerKg.present
+          ? data.highFatPerKg.value
+          : this.highFatPerKg,
       taperStage: data.taperStage.present
           ? data.taperStage.value
           : this.taperStage,
@@ -7822,6 +8072,12 @@ class DietStrategyPlanRow extends DataClass
           ..write('baseEnergy: $baseEnergy, ')
           ..write('schedule: $schedule, ')
           ..write('carbAmplitudeG: $carbAmplitudeG, ')
+          ..write('lowProteinPerKg: $lowProteinPerKg, ')
+          ..write('lowCarbPerKg: $lowCarbPerKg, ')
+          ..write('lowFatPerKg: $lowFatPerKg, ')
+          ..write('highProteinPerKg: $highProteinPerKg, ')
+          ..write('highCarbPerKg: $highCarbPerKg, ')
+          ..write('highFatPerKg: $highFatPerKg, ')
           ..write('taperStage: $taperStage, ')
           ..write('observationStart: $observationStart, ')
           ..write('observationDays: $observationDays, ')
@@ -7832,7 +8088,7 @@ class DietStrategyPlanRow extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     version,
     strategy,
@@ -7848,12 +8104,18 @@ class DietStrategyPlanRow extends DataClass
     baseEnergy,
     schedule,
     carbAmplitudeG,
+    lowProteinPerKg,
+    lowCarbPerKg,
+    lowFatPerKg,
+    highProteinPerKg,
+    highCarbPerKg,
+    highFatPerKg,
     taperStage,
     observationStart,
     observationDays,
     reason,
     legacyCalories,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -7873,6 +8135,12 @@ class DietStrategyPlanRow extends DataClass
           other.baseEnergy == this.baseEnergy &&
           other.schedule == this.schedule &&
           other.carbAmplitudeG == this.carbAmplitudeG &&
+          other.lowProteinPerKg == this.lowProteinPerKg &&
+          other.lowCarbPerKg == this.lowCarbPerKg &&
+          other.lowFatPerKg == this.lowFatPerKg &&
+          other.highProteinPerKg == this.highProteinPerKg &&
+          other.highCarbPerKg == this.highCarbPerKg &&
+          other.highFatPerKg == this.highFatPerKg &&
           other.taperStage == this.taperStage &&
           other.observationStart == this.observationStart &&
           other.observationDays == this.observationDays &&
@@ -7896,6 +8164,12 @@ class DietStrategyPlansCompanion extends UpdateCompanion<DietStrategyPlanRow> {
   final Value<double> baseEnergy;
   final Value<String?> schedule;
   final Value<double?> carbAmplitudeG;
+  final Value<double?> lowProteinPerKg;
+  final Value<double?> lowCarbPerKg;
+  final Value<double?> lowFatPerKg;
+  final Value<double?> highProteinPerKg;
+  final Value<double?> highCarbPerKg;
+  final Value<double?> highFatPerKg;
   final Value<int> taperStage;
   final Value<String?> observationStart;
   final Value<int> observationDays;
@@ -7917,6 +8191,12 @@ class DietStrategyPlansCompanion extends UpdateCompanion<DietStrategyPlanRow> {
     this.baseEnergy = const Value.absent(),
     this.schedule = const Value.absent(),
     this.carbAmplitudeG = const Value.absent(),
+    this.lowProteinPerKg = const Value.absent(),
+    this.lowCarbPerKg = const Value.absent(),
+    this.lowFatPerKg = const Value.absent(),
+    this.highProteinPerKg = const Value.absent(),
+    this.highCarbPerKg = const Value.absent(),
+    this.highFatPerKg = const Value.absent(),
     this.taperStage = const Value.absent(),
     this.observationStart = const Value.absent(),
     this.observationDays = const Value.absent(),
@@ -7939,6 +8219,12 @@ class DietStrategyPlansCompanion extends UpdateCompanion<DietStrategyPlanRow> {
     required double baseEnergy,
     this.schedule = const Value.absent(),
     this.carbAmplitudeG = const Value.absent(),
+    this.lowProteinPerKg = const Value.absent(),
+    this.lowCarbPerKg = const Value.absent(),
+    this.lowFatPerKg = const Value.absent(),
+    this.highProteinPerKg = const Value.absent(),
+    this.highCarbPerKg = const Value.absent(),
+    this.highFatPerKg = const Value.absent(),
     this.taperStage = const Value.absent(),
     this.observationStart = const Value.absent(),
     this.observationDays = const Value.absent(),
@@ -7971,6 +8257,12 @@ class DietStrategyPlansCompanion extends UpdateCompanion<DietStrategyPlanRow> {
     Expression<double>? baseEnergy,
     Expression<String>? schedule,
     Expression<double>? carbAmplitudeG,
+    Expression<double>? lowProteinPerKg,
+    Expression<double>? lowCarbPerKg,
+    Expression<double>? lowFatPerKg,
+    Expression<double>? highProteinPerKg,
+    Expression<double>? highCarbPerKg,
+    Expression<double>? highFatPerKg,
     Expression<int>? taperStage,
     Expression<String>? observationStart,
     Expression<int>? observationDays,
@@ -7993,6 +8285,12 @@ class DietStrategyPlansCompanion extends UpdateCompanion<DietStrategyPlanRow> {
       if (baseEnergy != null) 'base_energy': baseEnergy,
       if (schedule != null) 'schedule': schedule,
       if (carbAmplitudeG != null) 'carb_amplitude_g': carbAmplitudeG,
+      if (lowProteinPerKg != null) 'low_protein_per_kg': lowProteinPerKg,
+      if (lowCarbPerKg != null) 'low_carb_per_kg': lowCarbPerKg,
+      if (lowFatPerKg != null) 'low_fat_per_kg': lowFatPerKg,
+      if (highProteinPerKg != null) 'high_protein_per_kg': highProteinPerKg,
+      if (highCarbPerKg != null) 'high_carb_per_kg': highCarbPerKg,
+      if (highFatPerKg != null) 'high_fat_per_kg': highFatPerKg,
       if (taperStage != null) 'taper_stage': taperStage,
       if (observationStart != null) 'observation_start': observationStart,
       if (observationDays != null) 'observation_days': observationDays,
@@ -8017,6 +8315,12 @@ class DietStrategyPlansCompanion extends UpdateCompanion<DietStrategyPlanRow> {
     Value<double>? baseEnergy,
     Value<String?>? schedule,
     Value<double?>? carbAmplitudeG,
+    Value<double?>? lowProteinPerKg,
+    Value<double?>? lowCarbPerKg,
+    Value<double?>? lowFatPerKg,
+    Value<double?>? highProteinPerKg,
+    Value<double?>? highCarbPerKg,
+    Value<double?>? highFatPerKg,
     Value<int>? taperStage,
     Value<String?>? observationStart,
     Value<int>? observationDays,
@@ -8039,6 +8343,12 @@ class DietStrategyPlansCompanion extends UpdateCompanion<DietStrategyPlanRow> {
       baseEnergy: baseEnergy ?? this.baseEnergy,
       schedule: schedule ?? this.schedule,
       carbAmplitudeG: carbAmplitudeG ?? this.carbAmplitudeG,
+      lowProteinPerKg: lowProteinPerKg ?? this.lowProteinPerKg,
+      lowCarbPerKg: lowCarbPerKg ?? this.lowCarbPerKg,
+      lowFatPerKg: lowFatPerKg ?? this.lowFatPerKg,
+      highProteinPerKg: highProteinPerKg ?? this.highProteinPerKg,
+      highCarbPerKg: highCarbPerKg ?? this.highCarbPerKg,
+      highFatPerKg: highFatPerKg ?? this.highFatPerKg,
       taperStage: taperStage ?? this.taperStage,
       observationStart: observationStart ?? this.observationStart,
       observationDays: observationDays ?? this.observationDays,
@@ -8095,6 +8405,24 @@ class DietStrategyPlansCompanion extends UpdateCompanion<DietStrategyPlanRow> {
     if (carbAmplitudeG.present) {
       map['carb_amplitude_g'] = Variable<double>(carbAmplitudeG.value);
     }
+    if (lowProteinPerKg.present) {
+      map['low_protein_per_kg'] = Variable<double>(lowProteinPerKg.value);
+    }
+    if (lowCarbPerKg.present) {
+      map['low_carb_per_kg'] = Variable<double>(lowCarbPerKg.value);
+    }
+    if (lowFatPerKg.present) {
+      map['low_fat_per_kg'] = Variable<double>(lowFatPerKg.value);
+    }
+    if (highProteinPerKg.present) {
+      map['high_protein_per_kg'] = Variable<double>(highProteinPerKg.value);
+    }
+    if (highCarbPerKg.present) {
+      map['high_carb_per_kg'] = Variable<double>(highCarbPerKg.value);
+    }
+    if (highFatPerKg.present) {
+      map['high_fat_per_kg'] = Variable<double>(highFatPerKg.value);
+    }
     if (taperStage.present) {
       map['taper_stage'] = Variable<int>(taperStage.value);
     }
@@ -8131,6 +8459,12 @@ class DietStrategyPlansCompanion extends UpdateCompanion<DietStrategyPlanRow> {
           ..write('baseEnergy: $baseEnergy, ')
           ..write('schedule: $schedule, ')
           ..write('carbAmplitudeG: $carbAmplitudeG, ')
+          ..write('lowProteinPerKg: $lowProteinPerKg, ')
+          ..write('lowCarbPerKg: $lowCarbPerKg, ')
+          ..write('lowFatPerKg: $lowFatPerKg, ')
+          ..write('highProteinPerKg: $highProteinPerKg, ')
+          ..write('highCarbPerKg: $highCarbPerKg, ')
+          ..write('highFatPerKg: $highFatPerKg, ')
           ..write('taperStage: $taperStage, ')
           ..write('observationStart: $observationStart, ')
           ..write('observationDays: $observationDays, ')
@@ -13080,6 +13414,12 @@ typedef $$DietStrategyPlansTableCreateCompanionBuilder =
       required double baseEnergy,
       Value<String?> schedule,
       Value<double?> carbAmplitudeG,
+      Value<double?> lowProteinPerKg,
+      Value<double?> lowCarbPerKg,
+      Value<double?> lowFatPerKg,
+      Value<double?> highProteinPerKg,
+      Value<double?> highCarbPerKg,
+      Value<double?> highFatPerKg,
       Value<int> taperStage,
       Value<String?> observationStart,
       Value<int> observationDays,
@@ -13103,6 +13443,12 @@ typedef $$DietStrategyPlansTableUpdateCompanionBuilder =
       Value<double> baseEnergy,
       Value<String?> schedule,
       Value<double?> carbAmplitudeG,
+      Value<double?> lowProteinPerKg,
+      Value<double?> lowCarbPerKg,
+      Value<double?> lowFatPerKg,
+      Value<double?> highProteinPerKg,
+      Value<double?> highCarbPerKg,
+      Value<double?> highFatPerKg,
       Value<int> taperStage,
       Value<String?> observationStart,
       Value<int> observationDays,
@@ -13191,6 +13537,36 @@ class $$DietStrategyPlansTableFilterComposer
 
   ColumnFilters<double> get carbAmplitudeG => $composableBuilder(
     column: $table.carbAmplitudeG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lowProteinPerKg => $composableBuilder(
+    column: $table.lowProteinPerKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lowCarbPerKg => $composableBuilder(
+    column: $table.lowCarbPerKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lowFatPerKg => $composableBuilder(
+    column: $table.lowFatPerKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get highProteinPerKg => $composableBuilder(
+    column: $table.highProteinPerKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get highCarbPerKg => $composableBuilder(
+    column: $table.highCarbPerKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get highFatPerKg => $composableBuilder(
+    column: $table.highFatPerKg,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -13304,6 +13680,36 @@ class $$DietStrategyPlansTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get lowProteinPerKg => $composableBuilder(
+    column: $table.lowProteinPerKg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get lowCarbPerKg => $composableBuilder(
+    column: $table.lowCarbPerKg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get lowFatPerKg => $composableBuilder(
+    column: $table.lowFatPerKg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get highProteinPerKg => $composableBuilder(
+    column: $table.highProteinPerKg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get highCarbPerKg => $composableBuilder(
+    column: $table.highCarbPerKg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get highFatPerKg => $composableBuilder(
+    column: $table.highFatPerKg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get taperStage => $composableBuilder(
     column: $table.taperStage,
     builder: (column) => ColumnOrderings(column),
@@ -13398,6 +13804,36 @@ class $$DietStrategyPlansTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get lowProteinPerKg => $composableBuilder(
+    column: $table.lowProteinPerKg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get lowCarbPerKg => $composableBuilder(
+    column: $table.lowCarbPerKg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get lowFatPerKg => $composableBuilder(
+    column: $table.lowFatPerKg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get highProteinPerKg => $composableBuilder(
+    column: $table.highProteinPerKg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get highCarbPerKg => $composableBuilder(
+    column: $table.highCarbPerKg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get highFatPerKg => $composableBuilder(
+    column: $table.highFatPerKg,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get taperStage => $composableBuilder(
     column: $table.taperStage,
     builder: (column) => column,
@@ -13477,6 +13913,12 @@ class $$DietStrategyPlansTableTableManager
                 Value<double> baseEnergy = const Value.absent(),
                 Value<String?> schedule = const Value.absent(),
                 Value<double?> carbAmplitudeG = const Value.absent(),
+                Value<double?> lowProteinPerKg = const Value.absent(),
+                Value<double?> lowCarbPerKg = const Value.absent(),
+                Value<double?> lowFatPerKg = const Value.absent(),
+                Value<double?> highProteinPerKg = const Value.absent(),
+                Value<double?> highCarbPerKg = const Value.absent(),
+                Value<double?> highFatPerKg = const Value.absent(),
                 Value<int> taperStage = const Value.absent(),
                 Value<String?> observationStart = const Value.absent(),
                 Value<int> observationDays = const Value.absent(),
@@ -13498,6 +13940,12 @@ class $$DietStrategyPlansTableTableManager
                 baseEnergy: baseEnergy,
                 schedule: schedule,
                 carbAmplitudeG: carbAmplitudeG,
+                lowProteinPerKg: lowProteinPerKg,
+                lowCarbPerKg: lowCarbPerKg,
+                lowFatPerKg: lowFatPerKg,
+                highProteinPerKg: highProteinPerKg,
+                highCarbPerKg: highCarbPerKg,
+                highFatPerKg: highFatPerKg,
                 taperStage: taperStage,
                 observationStart: observationStart,
                 observationDays: observationDays,
@@ -13521,6 +13969,12 @@ class $$DietStrategyPlansTableTableManager
                 required double baseEnergy,
                 Value<String?> schedule = const Value.absent(),
                 Value<double?> carbAmplitudeG = const Value.absent(),
+                Value<double?> lowProteinPerKg = const Value.absent(),
+                Value<double?> lowCarbPerKg = const Value.absent(),
+                Value<double?> lowFatPerKg = const Value.absent(),
+                Value<double?> highProteinPerKg = const Value.absent(),
+                Value<double?> highCarbPerKg = const Value.absent(),
+                Value<double?> highFatPerKg = const Value.absent(),
                 Value<int> taperStage = const Value.absent(),
                 Value<String?> observationStart = const Value.absent(),
                 Value<int> observationDays = const Value.absent(),
@@ -13542,6 +13996,12 @@ class $$DietStrategyPlansTableTableManager
                 baseEnergy: baseEnergy,
                 schedule: schedule,
                 carbAmplitudeG: carbAmplitudeG,
+                lowProteinPerKg: lowProteinPerKg,
+                lowCarbPerKg: lowCarbPerKg,
+                lowFatPerKg: lowFatPerKg,
+                highProteinPerKg: highProteinPerKg,
+                highCarbPerKg: highCarbPerKg,
+                highFatPerKg: highFatPerKg,
                 taperStage: taperStage,
                 observationStart: observationStart,
                 observationDays: observationDays,

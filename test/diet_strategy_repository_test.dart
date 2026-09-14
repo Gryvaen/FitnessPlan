@@ -31,17 +31,26 @@ UserProfile _profile({int calories = 2137, DateTime? since, int adj = 0}) {
   );
 }
 
+final _carbCycleRates = CarbCycleRates.defaults();
+
 DietStrategyPlanDraft _carbCycleDraft(
   DateTime from, {
-  String code = 'HMHMMLL',
+  String code = 'HMLL',
 }) {
+  final schedule = CarbCycleSchedule.tryParse(code)!;
+  final plan = CarbCyclePlanner.compute(
+    referenceWeightKg: 75,
+    rates: _carbCycleRates,
+    schedule: schedule,
+  );
   return DietStrategyPlanDraft(
     kind: DietStrategyKind.carbCycle,
     effectiveFrom: from,
     referenceWeightKg: 75,
     estimatedTdee: 2400,
-    baseEnergy: 2000,
-    schedule: CarbCycleSchedule.tryParse(code),
+    baseEnergy: plan.cycleAverageEnergy,
+    schedule: schedule,
+    carbCycleRates: _carbCycleRates,
     legacyCalories: 2137,
   );
 }
@@ -89,9 +98,9 @@ void main() {
     });
 
     test(
-      'plan starting next cycle leaves today on the profile target',
+      'plan starting tomorrow leaves today on the profile target',
       () async {
-        final from = StrategyDates.nextCycleStart(today);
+        final from = today.add(const Duration(days: 1));
         final plan = await repo.createPlan(_carbCycleDraft(from));
         expect(plan.version, 1);
         expect(plan.status, DietPlanStatus.active);
@@ -99,8 +108,14 @@ void main() {
         expect(t.source, TargetSource.profile);
         final future = (await repo.targetForDay(from, _profile()))!;
         expect(future.source, TargetSource.strategy);
-        expect(future.dayType, CarbDayType.high); // Monday = H
-        expect(future.calories, 2200);
+        // Cycle day 0 (effectiveFrom itself) is always the high day.
+        expect(future.dayType, CarbDayType.high);
+        final expectedHigh = CarbCyclePlanner.compute(
+          referenceWeightKg: 75,
+          rates: _carbCycleRates,
+          schedule: CarbCycleSchedule.tryParse('HMLL')!,
+        ).energyFor(CarbDayType.high)!;
+        expect(future.calories, closeTo(expectedHigh, 1e-6));
         expect(future.isSnapshot, isFalse); // future never persisted
       },
     );
@@ -110,17 +125,22 @@ void main() {
       await repo.createPlan(_carbCycleDraft(today));
       final t = (await repo.targetForDay(today, _profile()))!;
       expect(t.source, TargetSource.strategy);
-      final expected = CarbCycleSchedule.tryParse('HMHMMLL')!.forDate(today);
-      expect(t.dayType, expected);
-      final e = switch (expected) {
-        CarbDayType.high => 2200.0,
-        CarbDayType.mid => 2000.0,
-        CarbDayType.low => 1800.0,
-      };
-      expect(t.calories, e);
-      expect(t.proteinG, closeTo(150, 1e-9));
-      expect(t.fatG, closeTo(60, 1e-9));
-      expect(4 * t.proteinG + 4 * t.carbG + 9 * t.fatG, closeTo(e, 1e-6));
+      // effectiveFrom is cycle day 0, which is always the high day.
+      expect(t.dayType, CarbDayType.high);
+      // 'HMLL' has a mid day, so the high day's carbs (only) are trimmed to
+      // keep the cycle average steady — see CarbCyclePlanner.compute.
+      final expectedHigh = CarbCyclePlanner.compute(
+        referenceWeightKg: 75,
+        rates: _carbCycleRates,
+        schedule: CarbCycleSchedule.tryParse('HMLL')!,
+      ).energyFor(CarbDayType.high)!;
+      expect(t.calories, closeTo(expectedHigh, 1e-6));
+      expect(t.proteinG, closeTo(75 * _carbCycleRates.highProteinPerKg, 1e-9));
+      expect(t.fatG, closeTo(75 * _carbCycleRates.highFatPerKg, 1e-9));
+      expect(
+        4 * t.proteinG + 4 * t.carbG + 9 * t.fatG,
+        closeTo(t.calories, 1e-6),
+      );
     });
 
     test('history is not rewritten when a new version starts later', () async {
@@ -253,10 +273,17 @@ void main() {
       expect(map[yesterday]!.isLegacyEstimate, isFalse);
       final older = today.subtract(const Duration(days: 2));
       expect(map[older]!.isLegacyEstimate, isTrue);
-      final weekTotal = [
-        for (var i = 0; i < 7; i++) map[today.add(Duration(days: i))]!.calories,
-      ].fold<double>(0, (s, v) => s + v);
-      expect(weekTotal, closeTo(14000, 1e-6));
+      // Each day within the cycle repeats the schedule's H/M/L/L pattern
+      // (effectiveFrom = today = cycle day 0).
+      final cyclePlan = CarbCyclePlanner.compute(
+        referenceWeightKg: 75,
+        rates: _carbCycleRates,
+        schedule: CarbCycleSchedule.tryParse('HMLL')!,
+      );
+      for (var i = 0; i < 8; i++) {
+        final t = map[today.add(Duration(days: i))]!;
+        expect(t.calories, closeTo(cyclePlan.dayAt(i % 4).energy, 1e-6));
+      }
     });
 
     test('override for today wins and past override is refused', () async {
@@ -320,8 +347,8 @@ void main() {
       final plan = await repo.createPlan(_carbCycleDraft(today));
       expect(plan.covers(today), isTrue);
       expect(plan.covers(yesterday), isFalse);
-      expect(plan.carbCyclePlan!.weeklyEnergy, closeTo(14000, 1e-6));
-      expect(plan.baseline.feasible, isTrue);
+      expect(plan.carbCyclePlan!.days.length, 4);
+      expect(plan.carbCyclePlan!.usable, isTrue);
       expect(plan.legacyCalories, 2137);
     });
   });
