@@ -7,7 +7,8 @@ import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
-import '../theme/macro_color.dart';
+import '../theme/sport_chrome.dart';
+import '../widgets/food_name_link.dart';
 import '../widgets/form_options.dart';
 
 class LogMealPage extends ConsumerStatefulWidget {
@@ -108,6 +109,33 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     final food = await ref.read(foodRepositoryProvider).byId(id);
     if (!mounted || food == null) return;
     await _selectFood(food);
+  }
+
+  Future<void> _refreshFavorites() async {
+    final favorites = await ref.read(foodRepositoryProvider).favorites();
+    if (mounted) setState(() => _favorites = favorites);
+  }
+
+  Future<void> _toggleFavorite(int foodId) async {
+    try {
+      await ref.read(foodRepositoryProvider).toggleFavorite(foodId);
+      ref.invalidate(foodFavoriteProvider(foodId));
+      await _refreshFavorites();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.operationFailed('$e'))),
+      );
+    }
+  }
+
+  Future<void> _openFoodDetail(FoodItem food) async {
+    await openFoodDetail(context, food.id);
+    if (!mounted) return;
+    final updated = await ref.read(foodRepositoryProvider).byId(food.id);
+    if (!mounted || updated == null) return;
+    await _selectFood(updated);
+    await _refreshFavorites();
   }
 
   Future<void> _search(String q) async {
@@ -222,21 +250,49 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     final theme = Theme.of(context);
     return ListTile(
       key: ValueKey('food-${f.id}'),
-      title: Text(
-        f.name,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: dominantMacroColor(
-            carbG: f.carbPer100,
-            proteinG: f.proteinPer100,
-            fatG: f.fatPer100,
-          ),
-        ),
+      title: FoodNameLink(
+        name: f.name,
+        foodId: f.id,
+        carbG: f.carbPer100,
+        proteinG: f.proteinPer100,
+        fatG: f.fatPer100,
+        style: theme.textTheme.bodyLarge,
       ),
       subtitle: Text(
         [?badge, f.category, '${f.kcalPer100.round()} kcal/100g'].join(' · '),
         style: theme.textTheme.meta,
       ),
       onTap: () => _selectFood(f),
+    );
+  }
+
+  Widget _searchFoodTile(FoodItem f) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final isFav = ref.watch(foodFavoriteProvider(f.id)).value ?? false;
+    return ListTile(
+      key: ValueKey('search-food-${f.id}'),
+      title: FoodNameLink(
+        name: f.name,
+        foodId: f.id,
+        carbG: f.carbPer100,
+        proteinG: f.proteinPer100,
+        fatG: f.fatPer100,
+        style: theme.textTheme.bodyLarge,
+        onTap: () => _openFoodDetail(f),
+      ),
+      subtitle: Text(
+        [f.category, '${f.kcalPer100.round()} kcal/100g'].join(' · '),
+        style: theme.textTheme.meta,
+      ),
+      trailing: PlainIconAction(
+        icon: isFav ? Icons.star : Icons.star_border,
+        label: isFav ? l10n.unfavorite : l10n.favorites,
+        color: AppColors.favorite,
+        size: 20,
+        onPressed: () => _toggleFavorite(f.id),
+      ),
+      onTap: () => _openFoodDetail(f),
     );
   }
 
@@ -317,7 +373,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         actions: [
           IconButton(
             tooltip: l10n.addCustomFood,
-            icon: const Text('✏️', style: TextStyle(fontSize: 20)),
+            icon: const Icon(Icons.edit, color: Color(0xFFC4A035)),
             onPressed: _openCustomFood,
           ),
         ],
@@ -343,15 +399,14 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                 if (_selected != null) ...[
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(
-                      _selected!.name,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: dominantMacroColor(
-                          carbG: _selected!.carbPer100,
-                          proteinG: _selected!.proteinPer100,
-                          fatG: _selected!.fatPer100,
-                        ),
-                      ),
+                    title: FoodNameLink(
+                      name: _selected!.name,
+                      foodId: _selected!.id,
+                      carbG: _selected!.carbPer100,
+                      proteinG: _selected!.proteinPer100,
+                      fatG: _selected!.fatPer100,
+                      style: theme.textTheme.bodyLarge,
+                      onTap: () => _openFoodDetail(_selected!),
                     ),
                     subtitle: Text(
                       '${_selected!.kcalPer100.round()} kcal / 100g',
@@ -364,6 +419,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                       }),
                       child: Text(l10n.change),
                     ),
+                    onTap: () => _openFoodDetail(_selected!),
                   ),
                   if (_servings.isNotEmpty) ...[
                     Text(
@@ -376,9 +432,16 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                       runSpacing: 8,
                       children: [
                         for (final s in _servings)
-                          ActionChip(
-                            label: Text('${s.label} · ${s.grams.round()}g'),
-                            onPressed: () {
+                          SoftChip(
+                            label: '${s.label} · ${s.grams.round()}g',
+                            selected: (_grams - s.grams).abs() < 0.01,
+                            color: (_grams - s.grams).abs() < 0.01
+                                ? null
+                                : theme.colorScheme.surfaceContainerHighest,
+                            foreground: (_grams - s.grams).abs() < 0.01
+                                ? null
+                                : theme.colorScheme.onSurfaceVariant,
+                            onTap: () {
                               setState(() => _grams = s.grams);
                               _persistMealDefaults();
                             },
@@ -460,7 +523,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                             itemCount: _results.length,
                             itemBuilder: (context, i) {
                               final f = _results[i];
-                              return _foodTile(f);
+                              return _searchFoodTile(f);
                             },
                           ))
                   : _browseList(),

@@ -8,8 +8,8 @@ import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../shell/swipe_tab_view.dart';
 import '../theme/app_theme.dart';
-import '../theme/macro_color.dart';
 import '../theme/sport_chrome.dart';
+import '../widgets/food_name_link.dart';
 import 'food_category_art.dart';
 
 final _foodQueryProvider = NotifierProvider<_QueryNotifier, String>(
@@ -127,91 +127,104 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
             ],
             const SizedBox(height: AppSpacing.compact),
             Expanded(
-              child: searching
-                  ? _FoodSearchList(
+              child: Stack(
+                children: [
+                  // Keep tab panels mounted while searching so returning to
+                  // 最近/收藏/分类 does not reload or reset scroll.
+                  Offstage(
+                    offstage: searching,
+                    child: TickerMode(
+                      enabled: !searching,
+                      child: SwipeTabView(
+                        branchIndex: 1,
+                        keepPagesAlive: true,
+                        index: _tab.index,
+                        onIndexChanged: (i) =>
+                            setState(() => _tab = _FoodsTab.values[i]),
+                        children: [
+                          _FoodListView(
+                            watch: (ref) => ref.watch(_recentFoodsProvider),
+                            emptyIcon: Icons.history,
+                            emptyTitle: l10n.noRecentFoods,
+                            onLongPress: (context, ref, food) async {
+                              final confirmed =
+                                  await showDialog<bool>(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: Text(l10n.removeFromRecent),
+                                      content: Text(
+                                        l10n.confirmRemoveFromRecent(food.name),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(ctx, false),
+                                          child: Text(l10n.cancel),
+                                        ),
+                                        FilledButton(
+                                          onPressed: () =>
+                                              Navigator.pop(ctx, true),
+                                          child: Text(l10n.delete),
+                                        ),
+                                      ],
+                                    ),
+                                  ) ==
+                                  true;
+                              if (!confirmed) return;
+                              await ref
+                                  .read(foodRepositoryProvider)
+                                  .hideFromRecent(food.id);
+                              ref.invalidate(_recentFoodsProvider);
+                            },
+                          ),
+                          _FoodListView(
+                            watch: (ref) => ref.watch(favoriteFoodsProvider),
+                            emptyIcon: Icons.star_outline,
+                            emptyTitle: l10n.noFavorites,
+                            onLongPress: (context, ref, food) async {
+                              final confirmed =
+                                  await showDialog<bool>(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: Text(l10n.removeFavorite),
+                                      content: Text(
+                                        l10n.confirmRemoveFavorite(food.name),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(ctx, false),
+                                          child: Text(l10n.cancel),
+                                        ),
+                                        FilledButton(
+                                          onPressed: () =>
+                                              Navigator.pop(ctx, true),
+                                          child: Text(l10n.remove),
+                                        ),
+                                      ],
+                                    ),
+                                  ) ==
+                                  true;
+                              if (!confirmed) return;
+                              await ref
+                                  .read(foodRepositoryProvider)
+                                  .toggleFavorite(food.id);
+                            },
+                          ),
+                          const _FoodCategoryList(),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (searching)
+                    _FoodSearchList(
                       onClearQuery: () {
                         _searchController.clear();
                         _setQuery('');
                       },
-                    )
-                  : SwipeTabView(
-                      branchIndex: 1,
-                      index: _tab.index,
-                      onIndexChanged: (i) =>
-                          setState(() => _tab = _FoodsTab.values[i]),
-                      children: [
-                        _FoodListView(
-                          watch: (ref) => ref.watch(_recentFoodsProvider),
-                          emptyIcon: Icons.history,
-                          emptyTitle: l10n.noRecentFoods,
-                          onLongPress: (context, ref, food) async {
-                            final confirmed =
-                                await showDialog<bool>(
-                                  context: context,
-                                  builder: (ctx) => AlertDialog(
-                                    title: Text(l10n.removeFromRecent),
-                                    content: Text(
-                                      l10n.confirmRemoveFromRecent(food.name),
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(ctx, false),
-                                        child: Text(l10n.cancel),
-                                      ),
-                                      FilledButton(
-                                        onPressed: () =>
-                                            Navigator.pop(ctx, true),
-                                        child: Text(l10n.delete),
-                                      ),
-                                    ],
-                                  ),
-                                ) ==
-                                true;
-                            if (!confirmed) return;
-                            await ref
-                                .read(foodRepositoryProvider)
-                                .hideFromRecent(food.id);
-                            ref.invalidate(_recentFoodsProvider);
-                          },
-                        ),
-                        _FoodListView(
-                          watch: (ref) => ref.watch(favoriteFoodsProvider),
-                          emptyIcon: Icons.star_outline,
-                          emptyTitle: l10n.noFavorites,
-                          onLongPress: (context, ref, food) async {
-                            final confirmed =
-                                await showDialog<bool>(
-                                  context: context,
-                                  builder: (ctx) => AlertDialog(
-                                    title: Text(l10n.removeFavorite),
-                                    content: Text(
-                                      l10n.confirmRemoveFavorite(food.name),
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(ctx, false),
-                                        child: Text(l10n.cancel),
-                                      ),
-                                      FilledButton(
-                                        onPressed: () =>
-                                            Navigator.pop(ctx, true),
-                                        child: Text(l10n.remove),
-                                      ),
-                                    ],
-                                  ),
-                                ) ==
-                                true;
-                            if (!confirmed) return;
-                            await ref
-                                .read(foodRepositoryProvider)
-                                .toggleFavorite(food.id);
-                          },
-                        ),
-                        const _FoodCategoryList(),
-                      ],
                     ),
+                ],
+              ),
             ),
           ],
         ),
@@ -280,16 +293,15 @@ class _FoodRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
-    final macroColor = dominantMacroColor(
-      carbG: food.carbPer100,
-      proteinG: food.proteinPer100,
-      fatG: food.fatPer100,
-    );
     final tile = SportListTile(
       contentPadding: EdgeInsets.zero,
-      title: Text(
-        food.name,
-        style: theme.textTheme.bodyLarge?.copyWith(color: macroColor),
+      title: FoodNameLink(
+        name: food.name,
+        foodId: food.id,
+        carbG: food.carbPer100,
+        proteinG: food.proteinPer100,
+        fatG: food.fatPer100,
+        style: theme.textTheme.bodyLarge,
       ),
       subtitle: Text(
         food.category.localizedCategory(l10n),
@@ -299,7 +311,7 @@ class _FoodRow extends StatelessWidget {
         '${food.kcalPer100.round()} kcal/100g',
         style: theme.textTheme.bodySmall,
       ),
-      onTap: () => context.push('/foods/${food.id}'),
+      onTap: () => openFoodDetail(context, food.id),
     );
     if (onLongPress == null) {
       return KeyedSubtree(key: ValueKey(food.id), child: tile);

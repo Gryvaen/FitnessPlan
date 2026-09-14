@@ -300,9 +300,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           return LogMealPage(initialFoodId: id, initialMealType: mealType);
         },
       ),
-      // Root-level twin of /foods/custom. Pushing a shell route (e.g. from
-      // /log-meal) would remount StatefulShellRoute on the root navigator and
-      // trip Navigator's duplicate page-key assert.
+      // Root-level twins of /foods/custom and /foods/:id. Pushing a shell
+      // route (e.g. from /log-meal) would remount StatefulShellRoute on the
+      // root navigator and trip Navigator's duplicate page-key assert.
       GoRoute(
         path: '/custom-food',
         builder: (context, state) {
@@ -313,6 +313,18 @@ final routerProvider = Provider<GoRouter>((ref) {
             foodId: id,
             popWithIdOnCreate: returnId,
           );
+        },
+      ),
+      GoRoute(
+        path: '/food-detail/:id',
+        builder: (context, state) {
+          final id = int.tryParse(state.pathParameters['id'] ?? '');
+          if (id == null) {
+            return Scaffold(
+              body: Center(child: Text(context.l10n.invalidFood)),
+            );
+          }
+          return FoodDetailPage(foodId: id);
         },
       ),
       GoRoute(

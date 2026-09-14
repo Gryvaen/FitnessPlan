@@ -31,7 +31,8 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
   void initState() {
     super.initState();
     final defaults = ref.read(formMemoryRepositoryProvider).loadMealDefaults();
-    _mealType = defaults.mealType;
+    // Same clock-based default as Today / log-meal entry, not last remembered.
+    _mealType = MealType.suggestedFor(DateTime.now());
     _grams = FormOptions.snapDouble(FormOptions.mealGrams(), defaults.grams);
     _reload();
   }
@@ -229,7 +230,8 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
               tooltip: l10n.edit,
               icon: const Icon(Icons.edit_outlined),
               onPressed: () async {
-                await context.push('/foods/custom?id=${food.id}');
+                // Root twin so edit works when this page sits on /food-detail.
+                await context.push('/custom-food?id=${food.id}');
                 await _reload();
               },
             ),
@@ -241,7 +243,10 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
           ],
           IconButton(
             tooltip: isFav ? l10n.unfavorite : l10n.favorites,
-            icon: Icon(isFav ? Icons.star : Icons.star_border),
+            icon: Icon(
+              isFav ? Icons.star : Icons.star_border,
+              color: AppColors.favorite,
+            ),
             onPressed: () async {
               try {
                 await ref

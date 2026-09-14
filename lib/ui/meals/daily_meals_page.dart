@@ -8,8 +8,8 @@ import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
-import '../theme/macro_color.dart';
 import '../theme/sport_chrome.dart';
+import '../widgets/food_name_link.dart';
 
 /// Route to the full daily food-log page (board 01.04).
 String dailyMealsPath(DateTime day) {
@@ -454,15 +454,13 @@ class _MealEntryTile extends ConsumerWidget {
 
     final tile = SportListTile(
       contentPadding: EdgeInsets.zero,
-      title: Text(
-        m.foodName,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: dominantMacroColor(
-            carbG: m.carbG,
-            proteinG: m.proteinG,
-            fatG: m.fatG,
-          ),
-        ),
+      title: FoodNameLink(
+        name: m.foodName,
+        foodId: m.foodId,
+        carbG: m.carbG,
+        proteinG: m.proteinG,
+        fatG: m.fatG,
+        style: theme.textTheme.bodyLarge,
       ),
       subtitle: Text(
         '${m.grams.toStringAsFixed(0)} g · '

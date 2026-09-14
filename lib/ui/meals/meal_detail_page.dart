@@ -7,6 +7,7 @@ import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
+import '../widgets/food_name_link.dart';
 import '../widgets/form_options.dart';
 
 class MealDetailPage extends ConsumerStatefulWidget {
@@ -137,6 +138,14 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
     await _persist();
   }
 
+  Future<void> _openFoodDetail() async {
+    final food = _food;
+    if (food == null) return;
+    await openFoodDetail(context, food.id);
+    if (!mounted) return;
+    await _load();
+  }
+
   Future<void> _delete() async {
     final entry = _entry;
     if (entry == null) return;
@@ -205,7 +214,14 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(food.name),
+        title: FoodNameLink(
+          name: food.name,
+          foodId: food.id,
+          carbG: food.carbPer100,
+          proteinG: food.proteinPer100,
+          fatG: food.fatPer100,
+          onTap: _openFoodDetail,
+        ),
         actions: [
           if (_saving)
             const Padding(

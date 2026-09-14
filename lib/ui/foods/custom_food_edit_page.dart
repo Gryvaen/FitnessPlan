@@ -18,8 +18,8 @@ class CustomFoodEditPage extends ConsumerStatefulWidget {
 
   final int? foodId;
 
-  /// When true (e.g. opened from 记一笔), pop with the new food id instead of
-  /// navigating to the food detail page.
+  /// When true (e.g. opened from 记一笔), open food detail after create, then
+  /// pop with the new food id so the caller can select it.
   final bool popWithIdOnCreate;
 
   @override
@@ -163,7 +163,9 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
             context,
           ).showSnackBar(SnackBar(content: Text(l10n.customFoodAdded)));
           if (widget.popWithIdOnCreate) {
-            context.pop(id);
+            // Root twin: /foods/$id would remount the shell from /log-meal.
+            await context.push('/food-detail/$id');
+            if (mounted) context.pop(id);
           } else {
             context.pushReplacement('/foods/$id');
           }

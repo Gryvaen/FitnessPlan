@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../data/db.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
-import '../theme/macro_color.dart';
+import '../widgets/food_name_link.dart';
 import 'food_category_art.dart';
 
 const _pageSize = 80;
@@ -132,22 +131,20 @@ class _FoodCategoryPageState extends ConsumerState<FoodCategoryPage> {
                   final f = _items[i];
                   return ListTile(
                     key: ValueKey(f.id),
-                    title: Text(
-                      f.name,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: dominantMacroColor(
-                          carbG: f.carbPer100,
-                          proteinG: f.proteinPer100,
-                          fatG: f.fatPer100,
-                        ),
-                      ),
+                    title: FoodNameLink(
+                      name: f.name,
+                      foodId: f.id,
+                      carbG: f.carbPer100,
+                      proteinG: f.proteinPer100,
+                      fatG: f.fatPer100,
+                      style: theme.textTheme.bodyLarge,
                     ),
                     subtitle: Text(
                       '${f.kcalPer100.round()} kcal / 100g',
                       style: theme.textTheme.meta,
                     ),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.push('/foods/${f.id}'),
+                    onTap: () => openFoodDetail(context, f.id),
                   );
                 },
               ),
