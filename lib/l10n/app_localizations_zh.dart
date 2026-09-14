@@ -285,9 +285,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get completed => '已完成';
 
   @override
-  String get goFillIn => '去填写';
-
-  @override
   String get goRecords => '去记录';
 
   @override
@@ -306,7 +303,58 @@ class AppLocalizationsZh extends AppLocalizations {
   String get clearData => '清空数据';
 
   @override
+  String get exportData => '导出数据';
+
+  @override
+  String get importData => '导入数据';
+
+  @override
+  String get importDataBody => '导入将覆盖当前所有本地数据（饮食、体重、训练、档案等）。确定继续？';
+
+  @override
+  String get importDataDone => '数据已导入';
+
+  @override
+  String importDataFailed(String error) {
+    return '导入失败：$error';
+  }
+
+  @override
+  String get exportDataDone => '数据已导出，请保存到安全位置';
+
+  @override
+  String exportDataFailed(String error) {
+    return '导出失败：$error';
+  }
+
+  @override
+  String get exportToFolder => '保存到文件夹';
+
+  @override
+  String get exportToFolderHint => '选择文件名和保存位置';
+
+  @override
+  String get exportViaShare => '分享到其他应用';
+
+  @override
+  String get exportViaShareHint => '发送到网盘、文件管理器等';
+
+  @override
+  String exportDataSavedTo(String path) {
+    return '已保存到 $path';
+  }
+
+  @override
+  String get dataManagement => '数据管理';
+
+  @override
+  String get aboutLocalPrivacy => '数据仅保存在本机，无账号、无云同步';
+
+  @override
   String get calcMethod => '计算方法';
+
+  @override
+  String get tdeeCalcMethod => 'TDEE 计算方法';
 
   @override
   String get dailyQuota => '当前每日配额';
@@ -417,9 +465,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get possiblePlateau => '可能进入平台期';
-
-  @override
-  String get cutPlanIncomplete => '减脂计划未完成';
 
   @override
   String get noLogsToSave => '当日无记录可保存';
@@ -655,10 +700,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noSetLogs => '暂无组次记录';
 
   @override
-  String get addExercisesFirst => '请先在记录页添加动作';
+  String get addExercisesFirst => '先在动作库中添加动作，再回来组建计划';
 
   @override
   String get addExercisesFirstShort => '请先添加动作';
+
+  @override
+  String get goToExerciseLibrary => '去动作库';
 
   @override
   String get addTodayExercise => '添加今日动作';
@@ -1242,9 +1290,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noInstallPackage => '新版本没有可用的安装包';
 
   @override
-  String get cutPlanIncompleteHint => '请到「我的 → 我的档案」填写目标体重与每周降重。';
-
-  @override
   String get copyYesterdayConfirm => '当日已有记录，将追加昨日餐食，确定？';
 
   @override
@@ -1312,10 +1357,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get bmrFormulaFemale => '女：10×体重 + 6.25×身高 − 5×年龄 − 161';
-
-  @override
-  String get noteMissingTargetWeight =>
-      '未填写有效的目标体重，暂按维持消耗的 80% 估算。请在「我的」中补全后重新计算。';
 
   @override
   String loadFailed(String error) {
@@ -1770,20 +1811,28 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String weeklyAvgLine(String kcal) {
-    return '周均 $kcal kcal';
+    return '循环日均 $kcal kcal';
   }
 
   @override
   String get nutritionTargets => '营养目标';
 
   @override
-  String get todaysTarget => '今日目标';
+  String nutritionComingSoonTitle(String goal) {
+    return '「$goal」营养策略设计中';
+  }
+
+  @override
+  String get nutritionComingSoonBody => '这个目标对应的营养策略还在设计中，敬请期待。当前仍沿用档案里的基础目标。';
 
   @override
   String get dietStrategy => '减脂策略';
 
   @override
   String get noStrategyShort => '未选择策略';
+
+  @override
+  String get strategySelectedShort => '已选择';
 
   @override
   String get noStrategyYet => '尚未选择策略，当前沿用档案目标；显式选择后才会变更。';
@@ -1828,13 +1877,18 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String carbCyclePlanSummaryLine(String kg, String days, String e0) {
+    return '参考体重 $kg kg · $days 天循环 · 日均 $e0 kcal';
+  }
+
+  @override
   String baseTargetLine(String kcal) {
     return '档案目标 $kcal kcal';
   }
 
   @override
   String get strategyBasisBody =>
-      'TDEE 采用 Mifflin–St Jeor × 活动系数估算；蛋白质与脂肪按参考体重固定，碳水承担剩余能量。碳循环用统一缩放因子在高 / 中 / 低碳日间重新分配周预算，保证每日都在上下界内且七日总量不变。渐降每阶段仅减少 25 g 碳水（100 kcal），且必须经复核后由你确认。';
+      'TDEE 采用 Mifflin–St Jeor × 活动系数估算；蛋白质与脂肪按参考体重固定，碳水承担剩余能量。碳循环用统一缩放因子在高 / 中 / 低碳日间重新分配周预算，保证每日都在上下界内且七日总量不变。渐降每阶段减少 25 g 碳水（100 kcal）。';
 
   @override
   String get strategyDisclaimer =>
@@ -1847,7 +1901,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get strategyPickerIntro => '选择一种主策略。三种策略都保持蛋白质与脂肪稳定，差别在于碳水与能量如何随时间安排。';
 
   @override
-  String get defaultWord => '默认';
+  String get defaultWord => '推荐';
 
   @override
   String get currentWord => '当前';
@@ -1865,10 +1919,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get strategyBalancedDesc => '每天相同的热量与宏量，最简单、最易坚持。';
 
   @override
-  String get strategyCarbCycleDesc => '七日预算按高 / 中 / 低碳日重新分配，蛋白质与脂肪保持不变。';
+  String get strategyCarbCycleDesc =>
+      '以 3-5 天为一个循环，由你逐日指定类型（有且仅有一个高碳日）；低碳日与高碳日的三大营养素直接按参考体重倍数计算，中碳日取两者的平均值。';
 
   @override
-  String get strategyCarbTaperDesc => '从基线开始，每次复核确认后才降低一小步碳水。';
+  String get strategyCarbTaperDesc => '从基线开始，按需每次降低一小步碳水，可随时切换阶段。';
 
   @override
   String get carbDayHigh => '高碳日';
@@ -1930,10 +1985,14 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get issueInvalidSchedule => '七日安排无效。';
+  String get issueInvalidSchedule => '循环安排无效。';
 
   @override
-  String get issueAmplitudeNegligible => '受边界限制后高低碳差异过小，与均衡策略几乎等价。';
+  String get issueInvalidCarbCycleRate => '低碳日/高碳日的某项倍数超出建议范围。';
+
+  @override
+  String get issueCarbCycleHighDayCarbDepleted =>
+      '中碳日过多，按当前倍数换算高碳日碳水会变为负值。请降低高碳日碳水倍数、提高低碳日碳水倍数，或减少中碳日数量。';
 
   @override
   String issueUnderage(int age) {
@@ -1953,8 +2012,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get estimatedTdee => 'TDEE 估算';
 
   @override
-  String deficitFractionLabel(int pct) {
-    return '平均缺口 $pct%';
+  String get deficitFractionLabel => '平均缺口';
+
+  @override
+  String deficitFractionPercent(int pct) {
+    return '$pct%';
   }
 
   @override
@@ -1969,27 +2031,42 @@ class AppLocalizationsZh extends AppLocalizations {
   String get proteinPerKgLabel => '每公斤蛋白质';
 
   @override
+  String get carbPerKgLabel => '每公斤碳水';
+
+  @override
+  String get carbCycleAdjustedTooltip => '已自动调整以平衡中碳日';
+
+  @override
   String get fatPerKgLabel => '每公斤脂肪';
 
   @override
   String get dailyBaselineTitle => '日均基线';
 
   @override
-  String get weeklySchedule => '七日安排';
+  String get cycleSchedule => '循环安排';
 
   @override
-  String get suggestFromTraining => '按训练日建议';
-
-  @override
-  String trainingSuggestionBody(int high, int low) {
-    return '基于最近 4 周训练：$high 个高碳日、$low 个低碳日。与你的计划一致时再应用。';
+  String referenceWeightFromProfile(String kg) {
+    return '参考体重 $kg kg（读取自我的档案）';
   }
 
   @override
-  String get applySuggestion => '应用';
+  String get cycleLengthLabel => '循环天数';
 
   @override
-  String get carbCycleEditHint => '点击选中某天；再次点击已选中的日期在高 → 中 → 低间切换。';
+  String cycleLengthDaysOption(int n) {
+    return '$n 天';
+  }
+
+  @override
+  String get carbCycleEditHint =>
+      '每个循环有且仅有一个高碳日。点击高碳日可将其调换到循环的另一端（第一天 ↔ 最后一天），被替换的一天会变为低碳日。点击其他日期可在低碳与中碳之间切换。';
+
+  @override
+  String get lowCarbDayRatesTitle => '低碳日（每公斤参考体重）';
+
+  @override
+  String get highCarbDayRatesTitle => '高碳日（每公斤参考体重）';
 
   @override
   String weeklyBudgetLine(String total, String avg) {
@@ -1997,20 +2074,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String carbAmplitudeLine(String g) {
-    return '碳水振幅 每级 ±$g g';
-  }
-
-  @override
-  String carbAmplitudeShrunk(String g) {
-    return '原振幅 ±$g g 已统一收缩，使每日都在上下界内。';
-  }
-
-  @override
   String get taperLadderTitle => '阶段预览';
 
   @override
-  String get taperLadderHint => '每步 −25 g 碳水 / −100 kcal，需经复核由你确认；到期不会自动降低。';
+  String get taperLadderHint =>
+      '每步 −25 g 碳水 / −100 kcal，进入策略后可随时自行切换阶段，不强制等待期。';
 
   @override
   String taperFloorLine(int kcal, int carb) {
@@ -2024,11 +2092,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get effectiveDate => '生效日期';
 
   @override
-  String startNextCycle(String date) {
-    return '下个周期（$date）';
-  }
-
-  @override
   String startTomorrow(String date) {
     return '明天（$date）';
   }
@@ -2037,115 +2100,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get startToday => '今天开始';
 
   @override
-  String midCycleNotice(String from, String to, String kcal) {
-    return '周中开始：$from–$to 按计划覆盖，本周剩余预算 $kcal kcal；本周更早的日期不重算。';
-  }
-
-  @override
   String applyStrategyFrom(String date) {
     return '自 $date 起应用';
   }
 
   @override
-  String get taperReview => '渐降复核';
+  String get taperReview => '渐降阶段';
 
   @override
   String get taperNotActive => '当前未启用碳水渐降。';
 
   @override
-  String get observation => '观察期';
-
-  @override
-  String observationProgress(int done, int total) {
-    return '已观察 $done / $total 天';
-  }
-
-  @override
-  String nextReviewDate(String date) {
-    return '可复核日期 $date';
-  }
-
-  @override
-  String get weighInDays => '称重天数（14 天）';
-
-  @override
-  String weighInDaysHint(int n, int half) {
-    return '需 ≥$n 天，且前后 7 天各 ≥$half 天';
-  }
-
-  @override
-  String get completeDietDays => '完整饮食天数（14 天）';
-
-  @override
-  String completeDietDaysHint(int n) {
-    return '需在今日页确认 ≥$n 天';
-  }
-
-  @override
-  String get weeklyRate => '周变化率（7 日均值）';
-
-  @override
-  String weeklyRateHint(String low, String high) {
-    return '目标区间 每周体重的 $low%–$high%';
-  }
-
-  @override
-  String get suggestion => '建议';
-
-  @override
-  String get taperStatusObserving => '观察中';
-
-  @override
-  String get taperStatusInsufficientWeight => '称重数据不足';
-
-  @override
-  String get taperStatusInsufficientDiet => '完整饮食天数不足';
-
-  @override
-  String get taperStatusHold => '保持当前阶段';
-
-  @override
-  String get taperStatusStepDown => '可考虑进入下一阶段';
-
-  @override
-  String get taperStatusFloor => '已到下限';
-
-  @override
-  String get taperStatusTooFast => '下降快于目标区间';
-
-  @override
-  String taperObservingBody(int days) {
-    return '还需观察 $days 天才能复核；请继续记录体重并确认完整饮食日。';
-  }
-
-  @override
-  String get taperInsufficientWeightBody =>
-      '请在更多日期称重（前后 7 天都需要），使 7 日均值可信；暂不建议调整。';
-
-  @override
-  String get taperInsufficientDietBody =>
-      '确认完整的饮食天数不足，无法判断摄入可信度；请在今日页确认完整日。暂不建议调整。';
-
-  @override
-  String get taperHoldBody => '体重变化在目标区间内，保持当前阶段，下个观察期后再复核。';
-
-  @override
-  String taperStepDownBody(int kcal, String carb) {
-    return '数据可信且体重变化低于区间。候选阶段：$kcal kcal · 碳水 $carb g。未经确认不会改变。';
-  }
-
-  @override
-  String get taperFloorBody => '下一阶段将低于热量或碳水下限，不再提供继续降低。可考虑活动量、执行度或维持期。';
-
-  @override
-  String get taperTooFastBody => '体重下降快于目标区间，请勿继续降低；可考虑回到上一阶段。';
-
-  @override
-  String get confirmNextStage => '进入下一阶段？';
+  String get taperFreeChoiceHint => '可随时切换到任意阶段，由你自行判断，无需观察期或复核。';
 
   @override
   String confirmNextStageBody(int kcal, String carb) {
-    return '自明日起目标变为 $kcal kcal、碳水 $carb g，并开始新的观察期。';
+    return '自明日起目标变为 $kcal kcal、碳水 $carb g。';
   }
 
   @override
@@ -2154,25 +2124,12 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get keepStage => '保持当前阶段';
-
-  @override
-  String get keepStageBody => '目标不变，自明日起开始新的观察期。';
-
-  @override
-  String get backOneStage => '回到上一阶段';
-
-  @override
-  String get backOneStageBody => '自明日起恢复上一阶段的较高目标，并开始新的观察期。';
-
-  @override
   String taperStageConfirmed(int n) {
     return '已确认：明日起进入第 $n 阶';
   }
 
   @override
-  String get taperRulesBody =>
-      '规则：至少观察 14 天（碳循环后 21 天）；称重 ≥10 天且前后各 ≥4 天；确认完整饮食 ≥10 天；比较前后 7 日均值；每步 −25 g 碳水 / −100 kcal；不低于热量与 130 g 碳水下限。';
+  String get taperRulesBody => '规则：每步 −25 g 碳水 / −100 kcal；不低于热量与 130 g 碳水下限。';
 
   @override
   String get cancelScheduledStrategy => '取消预约切换';
@@ -2350,7 +2307,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get adjustStrategy => '调整策略';
 
   @override
-  String get weeklySummary => '每周汇总';
+  String get cycleSummary => '循环汇总';
 
   @override
   String get carbDayType => '碳水日类型';
@@ -2408,9 +2365,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get profileFieldGoalHint => '决定热量盈余或缺口，以及蛋白质目标。';
-
-  @override
-  String get profileFieldTargetWeightHint => '减脂计划的终点。';
 
   @override
   String get profileFieldWaterHint => '首页水杯要注满的目标水量。';
@@ -2520,13 +2474,10 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get weekdayColumn => '日期';
+  String get cycleDayColumn => '日期';
 
   @override
   String get targetKcalColumn => '目标热量';
-
-  @override
-  String get weekTotalKcalLabel => '周总热量';
 
   @override
   String get dailyAvgKcalLabel => '日均热量';
@@ -2671,9 +2622,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cultivationPickerTaglineBulk => '锻己筑体，突破自我';
-
-  @override
-  String get myProfileTitle => '我的资料';
 
   @override
   String get realmGuideTitle => '境界体系';

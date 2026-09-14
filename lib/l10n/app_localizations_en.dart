@@ -285,9 +285,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get completed => 'Done';
 
   @override
-  String get goFillIn => 'Fill in';
-
-  @override
   String get goRecords => 'Go to Records';
 
   @override
@@ -306,7 +303,60 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearData => 'Clear data';
 
   @override
+  String get exportData => 'Export data';
+
+  @override
+  String get importData => 'Import data';
+
+  @override
+  String get importDataBody =>
+      'Import will replace all local data (meals, weight, workouts, profile, etc.). Continue?';
+
+  @override
+  String get importDataDone => 'Data imported';
+
+  @override
+  String importDataFailed(String error) {
+    return 'Import failed: $error';
+  }
+
+  @override
+  String get exportDataDone => 'Data exported — save it somewhere safe';
+
+  @override
+  String exportDataFailed(String error) {
+    return 'Export failed: $error';
+  }
+
+  @override
+  String get exportToFolder => 'Save to folder';
+
+  @override
+  String get exportToFolderHint => 'Choose a file name and location';
+
+  @override
+  String get exportViaShare => 'Share with another app';
+
+  @override
+  String get exportViaShareHint => 'Send to Drive, Files, and more';
+
+  @override
+  String exportDataSavedTo(String path) {
+    return 'Saved to $path';
+  }
+
+  @override
+  String get dataManagement => 'Data management';
+
+  @override
+  String get aboutLocalPrivacy =>
+      'Data stays on this device — no account, no cloud';
+
+  @override
   String get calcMethod => 'How it\'s calculated';
+
+  @override
+  String get tdeeCalcMethod => 'TDEE calculation method';
 
   @override
   String get dailyQuota => 'Daily targets';
@@ -418,9 +468,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get possiblePlateau => 'Possible plateau';
-
-  @override
-  String get cutPlanIncomplete => 'Cut plan incomplete';
 
   @override
   String get noLogsToSave => 'Nothing to save for this day';
@@ -658,10 +705,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noSetLogs => 'No set logs';
 
   @override
-  String get addExercisesFirst => 'Add exercises on the Records page first';
+  String get addExercisesFirst =>
+      'Add exercises in the library first, then come back to build your plan';
 
   @override
   String get addExercisesFirstShort => 'Add exercises first';
+
+  @override
+  String get goToExerciseLibrary => 'Open library';
 
   @override
   String get addTodayExercise => 'Add today\'s exercise';
@@ -1263,10 +1314,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noInstallPackage => 'No install package for the new version';
 
   @override
-  String get cutPlanIncompleteHint =>
-      'Go to Me → My profile to set target weight and weekly loss.';
-
-  @override
   String get copyYesterdayConfirm =>
       'Day already has logs; append yesterday\'s meals?';
 
@@ -1336,10 +1383,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get bmrFormulaFemale =>
       'Female: 10×weight + 6.25×height − 5×age − 161';
-
-  @override
-  String get noteMissingTargetWeight =>
-      'No valid target weight; estimating at 80% of maintenance. Complete it under Me, then recalculate.';
 
   @override
   String loadFailed(String error) {
@@ -1796,20 +1839,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String weeklyAvgLine(String kcal) {
-    return 'Weekly avg $kcal kcal';
+    return 'Cycle avg $kcal kcal';
   }
 
   @override
   String get nutritionTargets => 'Nutrition targets';
 
   @override
-  String get todaysTarget => 'Today\'s target';
+  String nutritionComingSoonTitle(String goal) {
+    return '\"$goal\" strategy is in the works';
+  }
+
+  @override
+  String get nutritionComingSoonBody =>
+      'The nutrition strategy for this goal is still being designed — stay tuned. Your profile\'s base target is used in the meantime.';
 
   @override
   String get dietStrategy => 'Fat-loss strategy';
 
   @override
   String get noStrategyShort => 'No strategy';
+
+  @override
+  String get strategySelectedShort => 'Selected';
 
   @override
   String get noStrategyYet =>
@@ -1857,13 +1909,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String carbCyclePlanSummaryLine(String kg, String days, String e0) {
+    return 'Ref. weight $kg kg · $days-day cycle · daily avg $e0 kcal';
+  }
+
+  @override
   String baseTargetLine(String kcal) {
     return 'Profile target $kcal kcal';
   }
 
   @override
   String get strategyBasisBody =>
-      'TDEE is estimated with Mifflin–St Jeor × activity factor. Protein and fat are fixed per kg of reference weight; carbohydrate takes the remaining energy. Carb cycling redistributes the weekly budget across high / mid / low days with one common shrink factor so every day stays inside bounds and the weekly total is preserved. The taper lowers carbohydrate by 25 g (100 kcal) per stage only after a review you confirm.';
+      'TDEE is estimated with Mifflin–St Jeor × activity factor. Protein and fat are fixed per kg of reference weight; carbohydrate takes the remaining energy. Carb cycling redistributes the weekly budget across high / mid / low days with one common shrink factor so every day stays inside bounds and the weekly total is preserved. The taper lowers carbohydrate by 25 g (100 kcal) per stage.';
 
   @override
   String get strategyDisclaimer =>
@@ -1878,7 +1935,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Choose one primary strategy. Protein and fat stay stable in all three; they differ in how carbohydrate and energy are arranged over time.';
 
   @override
-  String get defaultWord => 'Default';
+  String get defaultWord => 'Recommended';
 
   @override
   String get currentWord => 'Current';
@@ -1898,11 +1955,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get strategyCarbCycleDesc =>
-      'Weekly budget is redistributed into high / mid / low-carb days while protein and fat stay fixed.';
+      'A 3-5 day cycle you assign day by day (exactly one high-carb day); low/high-carb day macros scale directly from your reference weight, and any mid-carb day averages the two.';
 
   @override
   String get strategyCarbTaperDesc =>
-      'Start at the baseline and lower carbohydrate one small step at a time, only after each review you confirm.';
+      'Start at the baseline and lower carbohydrate one small step at a time; switch stages whenever you choose.';
 
   @override
   String get carbDayHigh => 'High-carb day';
@@ -1969,11 +2026,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get issueInvalidSchedule => 'The weekly schedule is invalid.';
+  String get issueInvalidSchedule => 'The cycle schedule is invalid.';
 
   @override
-  String get issueAmplitudeNegligible =>
-      'After bounds the high/low difference is negligible; the balanced strategy would be equivalent.';
+  String get issueInvalidCarbCycleRate =>
+      'A low/high-day multiplier is outside the recommended range.';
+
+  @override
+  String get issueCarbCycleHighDayCarbDepleted =>
+      'Too many mid-carb days for these rates — the high day would need negative carbs to keep the average steady. Lower the high-carb multiplier, raise the low-carb one, or use fewer mid days.';
 
   @override
   String issueUnderage(int age) {
@@ -1993,8 +2054,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get estimatedTdee => 'Estimated TDEE';
 
   @override
-  String deficitFractionLabel(int pct) {
-    return 'Average deficit $pct%';
+  String get deficitFractionLabel => 'Average deficit';
+
+  @override
+  String deficitFractionPercent(int pct) {
+    return '$pct%';
   }
 
   @override
@@ -2009,28 +2073,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get proteinPerKgLabel => 'Protein per kg';
 
   @override
+  String get carbPerKgLabel => 'Carb per kg';
+
+  @override
+  String get carbCycleAdjustedTooltip =>
+      'Automatically adjusted to balance mid-carb days';
+
+  @override
   String get fatPerKgLabel => 'Fat per kg';
 
   @override
   String get dailyBaselineTitle => 'Daily baseline';
 
   @override
-  String get weeklySchedule => '7-day schedule';
+  String get cycleSchedule => 'Cycle schedule';
 
   @override
-  String get suggestFromTraining => 'Match training';
-
-  @override
-  String trainingSuggestionBody(int high, int low) {
-    return 'Based on the last 4 weeks: $high high-carb day(s), $low low-carb day(s). Apply only if it matches your plan.';
+  String referenceWeightFromProfile(String kg) {
+    return 'Reference weight $kg kg (from your profile)';
   }
 
   @override
-  String get applySuggestion => 'Apply';
+  String get cycleLengthLabel => 'Cycle length';
+
+  @override
+  String cycleLengthDaysOption(int n) {
+    return '$n-day';
+  }
 
   @override
   String get carbCycleEditHint =>
-      'Tap a day to select it; tap the selected day again to cycle high → mid → low.';
+      'Every cycle has exactly one high-carb day. Tap it to move it to the other end of the cycle (first ↔ last) — the day it leaves becomes low-carb. Tap any other day to switch it between low- and mid-carb.';
+
+  @override
+  String get lowCarbDayRatesTitle => 'Low-carb day (per kg reference weight)';
+
+  @override
+  String get highCarbDayRatesTitle => 'High-carb day (per kg reference weight)';
 
   @override
   String weeklyBudgetLine(String total, String avg) {
@@ -2038,21 +2117,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String carbAmplitudeLine(String g) {
-    return 'Carb amplitude ±$g g per score step';
-  }
-
-  @override
-  String carbAmplitudeShrunk(String g) {
-    return 'Requested ±$g g was shrunk uniformly so every day stays within bounds.';
-  }
-
-  @override
   String get taperLadderTitle => 'Stage ladder (preview)';
 
   @override
   String get taperLadderHint =>
-      'Each step is −25 g carbohydrate / −100 kcal and requires a review you confirm. Stages never advance automatically.';
+      'Each step is −25 g carbohydrate / −100 kcal. Once the strategy is active you can switch stages yourself anytime — no required waiting period.';
 
   @override
   String taperFloorLine(int kcal, int carb) {
@@ -2066,11 +2135,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get effectiveDate => 'Effective date';
 
   @override
-  String startNextCycle(String date) {
-    return 'Next cycle ($date)';
-  }
-
-  @override
   String startTomorrow(String date) {
     return 'Tomorrow ($date)';
   }
@@ -2079,118 +2143,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get startToday => 'Start today';
 
   @override
-  String midCycleNotice(String from, String to, String kcal) {
-    return 'Mid-cycle start: $from–$to follow the plan; remaining budget for this week $kcal kcal. Earlier days of the week are not recalculated.';
-  }
-
-  @override
   String applyStrategyFrom(String date) {
     return 'Apply from $date';
   }
 
   @override
-  String get taperReview => 'Taper review';
+  String get taperReview => 'Taper stages';
 
   @override
   String get taperNotActive => 'The carb taper is not active.';
 
   @override
-  String get observation => 'Observation';
-
-  @override
-  String observationProgress(int done, int total) {
-    return '$done / $total days observed';
-  }
-
-  @override
-  String nextReviewDate(String date) {
-    return 'Review available from $date';
-  }
-
-  @override
-  String get weighInDays => 'Weigh-in days (14 d)';
-
-  @override
-  String weighInDaysHint(int n, int half) {
-    return 'Need ≥$n days, ≥$half in each 7-day half';
-  }
-
-  @override
-  String get completeDietDays => 'Complete food-log days (14 d)';
-
-  @override
-  String completeDietDaysHint(int n) {
-    return 'Need ≥$n days confirmed on the Today page';
-  }
-
-  @override
-  String get weeklyRate => 'Weekly change (7-day means)';
-
-  @override
-  String weeklyRateHint(String low, String high) {
-    return 'Target band $low%–$high% of body weight per week';
-  }
-
-  @override
-  String get suggestion => 'Suggestion';
-
-  @override
-  String get taperStatusObserving => 'Observing';
-
-  @override
-  String get taperStatusInsufficientWeight => 'Not enough weigh-ins';
-
-  @override
-  String get taperStatusInsufficientDiet => 'Not enough complete food-log days';
-
-  @override
-  String get taperStatusHold => 'Keep the current stage';
-
-  @override
-  String get taperStatusStepDown => 'Step-down candidate';
-
-  @override
-  String get taperStatusFloor => 'Floor reached';
-
-  @override
-  String get taperStatusTooFast => 'Losing faster than the band';
-
-  @override
-  String taperObservingBody(int days) {
-    return '$days more day(s) of observation before a review is possible. Keep logging weight and confirming complete days.';
-  }
-
-  @override
-  String get taperInsufficientWeightBody =>
-      'Weigh in on more days (both halves of the window) so the 7-day means are credible. No change is suggested.';
-
-  @override
-  String get taperInsufficientDietBody =>
-      'Too few days are confirmed as complete, so intake cannot be trusted. Confirm complete days on the Today page. No change is suggested.';
-
-  @override
-  String get taperHoldBody =>
-      'Weight is changing within the target band. Keep the current stage and review again after the next window.';
-
-  @override
-  String taperStepDownBody(int kcal, String carb) {
-    return 'Weight change is below the band with credible data. Candidate: $kcal kcal · C $carb g. Nothing changes until you confirm.';
-  }
-
-  @override
-  String get taperFloorBody =>
-      'The next stage would breach the energy or carbohydrate floor, so no further reduction is offered. Consider activity, adherence or a maintenance break.';
-
-  @override
-  String get taperTooFastBody =>
-      'Weight is dropping faster than the band. Do not lower further; consider returning to the previous stage.';
-
-  @override
-  String get confirmNextStage => 'Enter next stage?';
+  String get taperFreeChoiceHint =>
+      'Switch to any stage anytime, at your own judgment — no observation period or review required.';
 
   @override
   String confirmNextStageBody(int kcal, String carb) {
-    return 'From tomorrow the target becomes $kcal kcal with $carb g carbohydrate. A new observation window starts.';
+    return 'From tomorrow the target becomes $kcal kcal with $carb g carbohydrate.';
   }
 
   @override
@@ -2199,27 +2168,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get keepStage => 'Keep current stage';
-
-  @override
-  String get keepStageBody =>
-      'The target stays the same and a new observation window starts tomorrow.';
-
-  @override
-  String get backOneStage => 'Back one stage';
-
-  @override
-  String get backOneStageBody =>
-      'From tomorrow the previous stage\'s higher target applies and a new observation window starts.';
-
-  @override
   String taperStageConfirmed(int n) {
     return 'Stage $n confirmed from tomorrow';
   }
 
   @override
   String get taperRulesBody =>
-      'Rules: at least 14 days of observation (21 after carb cycling); ≥10 weigh-in days with ≥4 in each half; ≥10 confirmed complete food-log days; compare the two 7-day means; each step is −25 g carbohydrate / −100 kcal; never below the energy and 130 g carbohydrate floors.';
+      'Rules: each step is −25 g carbohydrate / −100 kcal; never below the energy and 130 g carbohydrate floors.';
 
   @override
   String get cancelScheduledStrategy => 'Cancel scheduled change';
@@ -2398,7 +2353,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adjustStrategy => 'Adjust strategy';
 
   @override
-  String get weeklySummary => 'Weekly summary';
+  String get cycleSummary => 'Cycle summary';
 
   @override
   String get carbDayType => 'Carb-day type';
@@ -2464,9 +2419,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get profileFieldGoalHint =>
       'Chooses the calorie surplus or deficit and the protein target.';
-
-  @override
-  String get profileFieldTargetWeightHint => 'The end point of the cut.';
 
   @override
   String get profileFieldWaterHint =>
@@ -2578,13 +2530,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get weekdayColumn => 'Day';
+  String get cycleDayColumn => 'Date';
 
   @override
   String get targetKcalColumn => 'Target kcal';
-
-  @override
-  String get weekTotalKcalLabel => 'Weekly kcal';
 
   @override
   String get dailyAvgKcalLabel => 'Daily avg';
@@ -2731,9 +2680,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cultivationPickerTaglineBulk => 'Forge the body, surpass the self';
-
-  @override
-  String get myProfileTitle => 'My profile';
 
   @override
   String get realmGuideTitle => 'Realm system';
