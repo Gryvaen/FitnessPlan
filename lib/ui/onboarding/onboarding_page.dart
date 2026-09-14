@@ -6,6 +6,7 @@ import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
+import '../theme/sport_chrome.dart';
 import '../widgets/form_options.dart';
 
 class OnboardingPage extends ConsumerStatefulWidget {
@@ -22,7 +23,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   int _age = 21;
   int _heightCm = 183;
   double _weightKg = 70;
-  double _targetWeightKg = 65;
   bool _saving = false;
 
   final _pager = PageController();
@@ -52,12 +52,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   Future<void> _showResultAndSave() async {
     setState(() => _saving = true);
     try {
-      final targetOptions = FormOptions.cutTargetOptions(_weightKg);
-      var target = FormOptions.snapDouble(targetOptions, _targetWeightKg);
-      if (target >= _weightKg && targetOptions.isNotEmpty) {
-        target = targetOptions.last;
-      }
-
       final profile = await ref
           .read(profileProvider.notifier)
           .save(
@@ -67,7 +61,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             weightKg: _weightKg,
             activity: _activity,
             goal: _goal,
-            targetWeightKg: _goal == FitnessGoal.cut ? target : null,
+            targetWeightKg: null,
           );
       if (!mounted) return;
 
@@ -107,9 +101,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final targetOptions = FormOptions.cutTargetOptions(_weightKg);
-    final targetValue = FormOptions.snapDouble(targetOptions, _targetWeightKg);
-
     final theme = Theme.of(context);
 
     return PopScope(
@@ -226,13 +217,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     items: FormOptions.weightsKg(),
                     suffixText: 'kg',
                     itemLabel: formatKg,
-                    onChanged: (v) => setState(() {
-                      _weightKg = v;
-                      final opts = FormOptions.targetWeightsKg(v);
-                      if (opts.isNotEmpty && _targetWeightKg >= v) {
-                        _targetWeightKg = opts.last;
-                      }
-                    }),
+                    onChanged: (v) => setState(() => _weightKg = v),
                   ),
                   const SizedBox(height: AppSpacing.section),
                   AppDropdown<ActivityLevel>(
@@ -284,23 +269,19 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   ),
                   const SizedBox(height: AppSpacing.section),
                   for (final g in FitnessGoal.values)
-                    _GoalOption(
-                      label: g.label(l10n),
-                      description: _goalDesc(g, l10n),
-                      selected: _goal == g,
+                    SportListTile(
+                      leading: Icon(
+                        _goal == g
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_off,
+                        color: _goal == g
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurfaceVariant,
+                      ),
+                      title: Text(g.label(l10n)),
+                      subtitle: Text(_goalDesc(g, l10n)),
                       onTap: () => setState(() => _goal = g),
                     ),
-                  if (_goal == FitnessGoal.cut) ...[
-                    const SizedBox(height: AppSpacing.section),
-                    AppDropdown<double>(
-                      label: l10n.targetWeight,
-                      value: targetValue,
-                      items: targetOptions,
-                      suffixText: 'kg',
-                      itemLabel: formatKg,
-                      onChanged: (v) => setState(() => _targetWeightKg = v),
-                    ),
-                  ],
                   const SizedBox(height: 32),
                   FilledButton(
                     onPressed: _saving ? null : _showResultAndSave,
@@ -423,60 +404,3 @@ class _Feature extends StatelessWidget {
   }
 }
 
-class _GoalOption extends StatelessWidget {
-  const _GoalOption({
-    required this.label,
-    required this.description,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final String description;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final v = AppThemeVisuals.of(context);
-    return Material(
-      color: selected ? v.accentSoft : Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.tile),
-        side: BorderSide(color: selected ? v.accent : v.divider),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.tile),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.card),
-          child: Row(
-            children: [
-              Icon(
-                selected ? Icons.radio_button_checked : Icons.radio_button_off,
-                color: selected ? v.accent : theme.colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: AppSpacing.card),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(label, style: theme.textTheme.titleMedium),
-                    const SizedBox(height: 2),
-                    Text(
-                      description,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

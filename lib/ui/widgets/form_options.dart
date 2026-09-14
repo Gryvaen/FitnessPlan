@@ -28,20 +28,6 @@ class FormOptions {
     return out;
   }
 
-  /// Target weights strictly below [currentKg].
-  static List<double> targetWeightsKg(double currentKg) {
-    final max = _round2(((currentKg - 0.25) * 4).floor() / 4);
-    if (max < 30) return const [];
-    return weightsKg(min: 30, max: max.clamp(30, 200));
-  }
-
-  /// Options for cut target picker; never empty for the dropdown.
-  static List<double> cutTargetOptions(double currentKg) {
-    final opts = targetWeightsKg(currentKg);
-    if (opts.isEmpty) return weightsKg(min: 30, max: 40);
-    return opts;
-  }
-
   static List<double> bodyFatPct({
     double min = 5,
     double max = 45,
