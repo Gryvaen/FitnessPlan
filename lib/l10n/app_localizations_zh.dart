@@ -381,6 +381,20 @@ class AppLocalizationsZh extends AppLocalizations {
   String get copyYesterday => '复制昨日';
 
   @override
+  String get copyYesterdayWorkout => '复制昨日训练';
+
+  @override
+  String get copyYesterdayWorkoutConfirm => '今日已有训练计划，将追加昨日训练，确定？';
+
+  @override
+  String copiedWorkoutItems(int n) {
+    return '已复制 $n 个动作';
+  }
+
+  @override
+  String get yesterdayNoWorkout => '昨日无训练记录';
+
+  @override
   String get backfillMeal => '补记';
 
   @override
@@ -499,6 +513,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get exerciseCategoryCardio => '有氧';
+
+  @override
+  String get exerciseCategoryAnaerobic => '无氧';
 
   @override
   String get exerciseCategoryShouldersArms => '肩臂';
@@ -719,6 +736,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noPortionsHint => '暂无，记账时可快速选用';
 
   @override
+  String get deleteCommonPortion => '删除常用份量';
+
+  @override
+  String confirmDeleteCommonPortion(String name) {
+    return '确定删除常用份量「$name」？';
+  }
+
+  @override
   String get customFoodAdded => '已添加自定义食材';
 
   @override
@@ -759,6 +784,14 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get confirmDeleteMeal => '确定删除这条记录？';
+
+  @override
+  String get clearThisMeal => '清空这一餐';
+
+  @override
+  String confirmClearMeal(String name) {
+    return '确定删除今天$name的全部记录？';
+  }
 
   @override
   String get toolBodyFat => '体脂估算';
@@ -2249,6 +2282,14 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String confirmRemoveFromRecent(String name) {
     return '确定将 $name 移出最近记录？再次记录后会重新出现。';
+  }
+
+  @override
+  String get removeFavorite => '取消收藏';
+
+  @override
+  String confirmRemoveFavorite(String name) {
+    return '确定取消收藏「$name」？';
   }
 
   @override

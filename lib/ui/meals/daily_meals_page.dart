@@ -8,6 +8,7 @@ import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
+import '../theme/macro_color.dart';
 import '../theme/sport_chrome.dart';
 
 /// Route to the full daily food-log page (board 01.04).
@@ -33,6 +34,10 @@ class DailyMealsPage extends ConsumerWidget {
     final today = AppDates.todayLocal();
     final earliest = DateTime(today.year - 1, today.month, today.day);
     final mealsAsync = ref.watch(mealsForDayProvider(day));
+    final yesterday = day.subtract(const Duration(days: 1));
+    final yesterdayMeals = editable
+        ? ref.watch(mealsForDayProvider(yesterday)).value ?? const []
+        : const <MealEntry>[];
 
     void go(DateTime d) => context.pushReplacement(dailyMealsPath(d));
 
@@ -91,6 +96,14 @@ class DailyMealsPage extends ConsumerWidget {
                     '${total.round()} kcal',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
+                  if (editable && yesterdayMeals.isNotEmpty)
+                    IconButton(
+                      tooltip: l10n.copyYesterday,
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.content_copy, size: 18),
+                      onPressed: () =>
+                          _copyYesterdayMealType(context, ref, day, yesterdayMeals),
+                    ),
                   if (editable)
                     PlainIconAction(
                       icon: Icons.add,
@@ -115,6 +128,83 @@ class DailyMealsPage extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Lets the user pick one of yesterday's logged meal types and copy just
+/// that one onto [day] — a shortcut for the same [MealRepository.copyDay]
+/// call already offered per-section, without opening each section's menu.
+Future<void> _copyYesterdayMealType(
+  BuildContext context,
+  WidgetRef ref,
+  DateTime day,
+  List<MealEntry> yesterdayMeals,
+) async {
+  final l10n = context.l10n;
+  final available = [
+    for (final t in MealType.values)
+      if (yesterdayMeals.any((m) => m.mealType == t.name)) t,
+  ];
+  if (available.isEmpty) return;
+  final chosen = await showModalBottomSheet<MealType>(
+    context: context,
+    useRootNavigator: true,
+    showDragHandle: true,
+    builder: (ctx) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final t in available)
+            ListTile(
+              leading: const Icon(Icons.content_copy),
+              title: Text(t.label(l10n)),
+              onTap: () => Navigator.pop(ctx, t),
+            ),
+        ],
+      ),
+    ),
+  );
+  if (chosen == null || !context.mounted) return;
+  final from = day.subtract(const Duration(days: 1));
+  final existingToday = await ref.read(mealRepositoryProvider).forDay(day);
+  final hasToday = existingToday.any((m) => m.mealType == chosen.name);
+  if (hasToday) {
+    if (!context.mounted) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.copyYesterday),
+        content: Text(l10n.copyYesterdayConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.append),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+  }
+  if (!context.mounted) return;
+  final result = await ref
+      .read(mealRepositoryProvider)
+      .copyDay(from: from, to: day, mealType: chosen);
+  if (!context.mounted) return;
+  final skip = result.skippedMissingFood > 0
+      ? l10n.skippedItems(result.skippedMissingFood)
+      : '';
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        result.copied == 0 && result.skippedMissingFood == 0
+            ? l10n.yesterdayNoLogs
+            : l10n.copiedItems(result.copied, skip),
+      ),
+    ),
+  );
 }
 
 class _RecordStatusRow extends ConsumerWidget {
@@ -238,6 +328,29 @@ class _MealTypeSection extends ConsumerWidget {
     );
   }
 
+  Future<void> _clearMeal(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.clearThisMeal),
+        content: Text(l10n.confirmClearMeal(type.label(l10n))),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await ref.read(mealRepositoryProvider).deleteMealType(day, type);
+  }
+
   Future<void> _saveAsPreset(BuildContext context, WidgetRef ref) async {
     final l10n = context.l10n;
     if (entries.isEmpty) {
@@ -308,6 +421,14 @@ class _MealTypeSection extends ConsumerWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
+            if (editable && entries.isNotEmpty)
+              IconButton(
+                tooltip: l10n.addMealNamed(type.label(l10n)),
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.add, size: 18),
+                onPressed: () =>
+                    context.push('/log-meal?mealType=${type.name}'),
+              ),
             if (showMenu)
               PopupMenuButton<String>(
                 tooltip: l10n.more,
@@ -317,9 +438,11 @@ class _MealTypeSection extends ConsumerWidget {
                   size: 18,
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
-                onSelected: (value) => value == 'copy'
-                    ? _copyYesterday(context, ref)
-                    : _saveAsPreset(context, ref),
+                onSelected: (value) => switch (value) {
+                  'copy' => _copyYesterday(context, ref),
+                  'clear' => _clearMeal(context, ref),
+                  _ => _saveAsPreset(context, ref),
+                },
                 itemBuilder: (context) => [
                   if (editable)
                     PopupMenuItem(
@@ -327,6 +450,11 @@ class _MealTypeSection extends ConsumerWidget {
                       child: Text(l10n.copyYesterday),
                     ),
                   PopupMenuItem(value: 'preset', child: Text(l10n.saveAsPreset)),
+                  if (editable && entries.isNotEmpty)
+                    PopupMenuItem(
+                      value: 'clear',
+                      child: Text(l10n.clearThisMeal),
+                    ),
                 ],
               ),
           ],
@@ -366,7 +494,16 @@ class _MealEntryTile extends ConsumerWidget {
 
     final tile = SportListTile(
       contentPadding: EdgeInsets.zero,
-      title: Text(m.foodName, style: theme.textTheme.bodyLarge),
+      title: Text(
+        m.foodName,
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: dominantMacroColor(
+            carbG: m.carbG,
+            proteinG: m.proteinG,
+            fatG: m.fatG,
+          ),
+        ),
+      ),
       subtitle: Text(
         '${m.grams.toStringAsFixed(0)} g · '
         'P ${m.proteinG.toStringAsFixed(0)} · '

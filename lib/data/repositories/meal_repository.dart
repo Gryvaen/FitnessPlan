@@ -129,6 +129,19 @@ class MealRepository {
     await (_db.delete(_db.mealEntries)..where((t) => t.id.equals(id))).go();
   }
 
+  /// Quick "clear this meal": deletes every entry of [mealType] on [day].
+  Future<int> deleteMealType(DateTime day, MealType mealType) async {
+    CalendarDay.ensureEditableDay(day);
+    final start = _dayStart(day);
+    final end = _dayEnd(day);
+    return (_db.delete(_db.mealEntries)..where(
+          (t) =>
+              t.date.isBetweenValues(start, end) &
+              t.mealType.equals(mealType.name),
+        ))
+        .go();
+  }
+
   /// Appends [from] day's meals onto [to]. Recalculates macros from current food rows.
   /// [to] must be today; [from] may be any past day.
   Future<CopyDayResult> copyDay({

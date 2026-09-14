@@ -102,7 +102,12 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
   late int _completedSets;
   late int _perSetValue;
   late GymWeightUnit _weightUnit;
-  late double? _displayWeight;
+
+  /// Canonical, unrounded weight in kg — the single source of truth.
+  /// Switching [_weightUnit] never touches this, so displaying it in either
+  /// unit (or converting back and forth) never accumulates rounding drift;
+  /// only the *displayed* number is rounded (see [_displayWeight]).
+  double? _weightKg;
   late final _noteCtrl = TextEditingController(text: widget.initialNote ?? '');
   var _saving = false;
 
@@ -115,8 +120,18 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
       ? FormOptions.targetSeconds
       : FormOptions.targetRepsOrSeconds;
 
+  double? get _rawDisplayWeight =>
+      _weightKg == null ? null : FormOptions.fromKg(_weightKg!, _weightUnit);
+
   List<double> get _weightOptions =>
-      FormOptions.gymLoadOptions(_weightUnit, include: _displayWeight);
+      FormOptions.gymLoadOptions(_weightUnit, include: _rawDisplayWeight);
+
+  double? get _displayWeight => _rawDisplayWeight == null
+      ? null
+      : FormOptions.snapDouble(_weightOptions, _rawDisplayWeight!);
+
+  GymWeightUnit get _otherUnit =>
+      _weightUnit == GymWeightUnit.kg ? GymWeightUnit.lbs : GymWeightUnit.kg;
 
   @override
   void initState() {
@@ -130,16 +145,7 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
       widget.initialPerSetValue,
     );
     _weightUnit = GymWeightUnit.parse(widget.initialActualWeightUnit);
-    final kg = widget.initialActualWeightKg;
-    if (kg == null) {
-      _displayWeight = null;
-    } else {
-      final converted = FormOptions.fromKg(kg, _weightUnit);
-      _displayWeight = FormOptions.snapDouble(
-        FormOptions.gymLoadOptions(_weightUnit, include: converted),
-        converted,
-      );
-    }
+    _weightKg = widget.initialActualWeightKg;
   }
 
   @override
@@ -150,17 +156,12 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
 
   void _setWeightUnit(GymWeightUnit next) {
     if (next == _weightUnit) return;
-    final current = _displayWeight;
+    setState(() => _weightUnit = next);
+  }
+
+  void _onWeightChanged(double? v) {
     setState(() {
-      if (current != null) {
-        final asKg = FormOptions.toKg(current, _weightUnit);
-        final converted = FormOptions.fromKg(asKg, next);
-        _displayWeight = FormOptions.snapDouble(
-          FormOptions.gymLoadOptions(next, include: converted),
-          converted,
-        );
-      }
-      _weightUnit = next;
+      _weightKg = v == null ? null : FormOptions.toKg(v, _weightUnit);
     });
   }
 
@@ -168,14 +169,12 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
     if (_saving) return;
     setState(() => _saving = true);
     try {
-      final kg = _displayWeight == null
-          ? null
-          : FormOptions.toKg(_displayWeight!, _weightUnit);
+      final kg = _weightKg;
       await widget.onSave(
         _completedSets,
         _perSetValue,
         kg,
-        _displayWeight == null ? null : _weightUnit.storageKey,
+        kg == null ? null : _weightUnit.storageKey,
         _noteCtrl.text,
       );
     } catch (e) {
@@ -271,8 +270,34 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
               suffixText: _weightUnit.suffix,
               itemLabel: formatKg,
               noneLabel: l10n.optionalHint,
-              onChanged: (v) => setState(() => _displayWeight = v),
+              onChanged: _onWeightChanged,
             ),
+            if (_weightKg != null) ...[
+              const SizedBox(height: 6),
+              InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => _setWeightUnit(_otherUnit),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.swap_horiz,
+                        size: 14,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '≈ ${formatKg(FormOptions.fromKg(_weightKg!, _otherUnit))} '
+                        '${_otherUnit.suffix}',
+                        style: theme.textTheme.meta,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: AppSpacing.section),
             _SectionLabel(label: l10n.exerciseNoteLabel),
             const SizedBox(height: AppSpacing.compact),

@@ -842,6 +842,30 @@ abstract class AppLocalizations {
   /// **'Copy yesterday'**
   String get copyYesterday;
 
+  /// No description provided for @copyYesterdayWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy yesterday\'s workout'**
+  String get copyYesterdayWorkout;
+
+  /// No description provided for @copyYesterdayWorkoutConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Today already has a workout plan; append yesterday\'s?'**
+  String get copyYesterdayWorkoutConfirm;
+
+  /// No description provided for @copiedWorkoutItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied {n} exercises'**
+  String copiedWorkoutItems(int n);
+
+  /// No description provided for @yesterdayNoWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'No workout logged yesterday'**
+  String get yesterdayNoWorkout;
+
   /// No description provided for @backfillMeal.
   ///
   /// In en, this message translates to:
@@ -1081,6 +1105,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cardio'**
   String get exerciseCategoryCardio;
+
+  /// No description provided for @exerciseCategoryAnaerobic.
+  ///
+  /// In en, this message translates to:
+  /// **'Anaerobic'**
+  String get exerciseCategoryAnaerobic;
 
   /// No description provided for @exerciseCategoryShouldersArms.
   ///
@@ -1508,6 +1538,18 @@ abstract class AppLocalizations {
   /// **'None yet — quick-pick when logging'**
   String get noPortionsHint;
 
+  /// No description provided for @deleteCommonPortion.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete portion'**
+  String get deleteCommonPortion;
+
+  /// No description provided for @confirmDeleteCommonPortion.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete the portion \"{name}\"?'**
+  String confirmDeleteCommonPortion(String name);
+
   /// No description provided for @customFoodAdded.
   ///
   /// In en, this message translates to:
@@ -1591,6 +1633,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete this entry?'**
   String get confirmDeleteMeal;
+
+  /// No description provided for @clearThisMeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear this meal'**
+  String get clearThisMeal;
+
+  /// No description provided for @confirmClearMeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all {name} entries logged today?'**
+  String confirmClearMeal(String name);
 
   /// No description provided for @toolBodyFat.
   ///
@@ -4052,6 +4106,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove {name} from your recent foods? Logging it again will bring it back.'**
   String confirmRemoveFromRecent(String name);
+
+  /// No description provided for @removeFavorite.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove favorite'**
+  String get removeFavorite;
+
+  /// No description provided for @confirmRemoveFavorite.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name} from favorites?'**
+  String confirmRemoveFavorite(String name);
 
   /// No description provided for @editKeywords.
   ///

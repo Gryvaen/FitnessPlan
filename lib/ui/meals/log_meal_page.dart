@@ -7,6 +7,7 @@ import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
+import '../theme/macro_color.dart';
 import '../widgets/form_options.dart';
 
 class LogMealPage extends ConsumerStatefulWidget {
@@ -210,7 +211,16 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     final theme = Theme.of(context);
     return ListTile(
       key: ValueKey('food-${f.id}'),
-      title: Text(f.name, style: theme.textTheme.bodyLarge),
+      title: Text(
+        f.name,
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: dominantMacroColor(
+            carbG: f.carbPer100,
+            proteinG: f.proteinPer100,
+            fatG: f.fatPer100,
+          ),
+        ),
+      ),
       subtitle: Text(
         [?badge, f.category, '${f.kcalPer100.round()} kcal/100g'].join(' · '),
         style: theme.textTheme.meta,
@@ -315,7 +325,13 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                     contentPadding: EdgeInsets.zero,
                     title: Text(
                       _selected!.name,
-                      style: theme.textTheme.bodyLarge,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: dominantMacroColor(
+                          carbG: _selected!.carbPer100,
+                          proteinG: _selected!.proteinPer100,
+                          fatG: _selected!.fatPer100,
+                        ),
+                      ),
                     ),
                     subtitle: Text(
                       '${_selected!.kcalPer100.round()} kcal / 100g',

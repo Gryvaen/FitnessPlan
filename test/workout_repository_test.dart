@@ -103,11 +103,10 @@ void main() {
         'Walkout',
       );
       await repo.setItemDone(item.id, false);
-      // Unchecking clears the done flag but keeps the auto-filled sets, so
-      // the day still counts as history via set logs.
+      // Unchecking clears the done flag AND the auto-filled sets it created,
+      // so a day with nothing else logged drops out of history entirely.
       expect(await events.moveNext(), isTrue);
-      expect(events.current.single.sets, hasLength(3));
-      expect(events.current.single.completedItems, isEmpty);
+      expect(events.current, isEmpty);
     } finally {
       await events.cancel();
     }
@@ -153,7 +152,9 @@ void main() {
     await repo.setItemDone(item.id, false);
     snap = await repo.daySnapshot(day);
     expect(snap.items.single.item.done, isFalse);
-    expect(snap.items.single.completedSets, 4);
+    // Unchecking resets completed sets to 0 rather than leaving the
+    // auto-filled sets behind.
+    expect(snap.items.single.completedSets, 0);
   });
 
   test('recent calendar history pads empty days within the window', () async {

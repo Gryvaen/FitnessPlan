@@ -123,9 +123,15 @@ class FormOptions {
 
   static const kgPerLb = 0.45359237;
 
-  static double lbsToKg(double lbs) => _round2(lbs * kgPerLb);
+  // Deliberately NOT rounded here: rounding a kg<->lbs conversion to 2
+  // decimals and then converting back loses precision (e.g. 65 lbs -> 29.48
+  // kg -> 64.99 lbs), which read as the stored value "drifting" by 0.01 on
+  // every round trip. Callers keep a single canonical kg value and only
+  // round for display (see `_PickerField`/`formatKg` callers), so this stays
+  // exact and the drift disappears.
+  static double lbsToKg(double lbs) => lbs * kgPerLb;
 
-  static double kgToLbs(double kg) => _round2(kg / kgPerLb);
+  static double kgToLbs(double kg) => kg / kgPerLb;
 
   static double toKg(double value, GymWeightUnit unit) =>
       unit == GymWeightUnit.lbs ? lbsToKg(value) : _round2(value);

@@ -140,6 +140,54 @@ class TodayWorkoutCard extends ConsumerWidget {
     }
   }
 
+  Future<void> _copyYesterday(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
+    final from = day.subtract(const Duration(days: 1));
+    final existing = await ref.read(workoutRepositoryProvider).daySnapshot(day);
+    if (!existing.isEmpty) {
+      if (!context.mounted) return;
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l10n.copyYesterdayWorkout),
+          content: Text(l10n.copyYesterdayWorkoutConfirm),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l10n.append),
+            ),
+          ],
+        ),
+      );
+      if (ok != true) return;
+    }
+    if (!context.mounted) return;
+    try {
+      final result = await ref
+          .read(workoutRepositoryProvider)
+          .copyDayWorkout(from: from, to: day);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result.itemsCopied == 0
+                ? l10n.yesterdayNoWorkout
+                : l10n.copiedWorkoutItems(result.itemsCopied),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.addFailed('$e'))));
+    }
+  }
+
   Future<void> _saveAsPlan(BuildContext context, WidgetRef ref) async {
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context);
@@ -248,6 +296,7 @@ class TodayWorkoutCard extends ConsumerWidget {
     required AppLocalizations l10n,
     required bool canAdd,
     required bool canSaveAsPlan,
+    required bool canCopyYesterday,
     required String? summary,
   }) {
     return TodaySectionHeader(
@@ -256,6 +305,13 @@ class TodayWorkoutCard extends ConsumerWidget {
       addLabel: canAdd ? l10n.addTodayWorkout : null,
       onAdd: canAdd ? () => _pickPlan(context, ref) : null,
       trailing: [
+        if (canCopyYesterday)
+          IconButton(
+            tooltip: l10n.copyYesterdayWorkout,
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.content_copy, size: 18),
+            onPressed: () => _copyYesterday(context, ref),
+          ),
         if (canSaveAsPlan)
           PopupMenuButton<String>(
             tooltip: l10n.more,
@@ -336,6 +392,12 @@ class TodayWorkoutCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final editable = AppDates.isLocalToday(day);
+    final yesterdaySnapshot = editable
+        ? ref
+              .watch(dayWorkoutProvider(day.subtract(const Duration(days: 1))))
+              .value
+        : null;
+    final canCopyYesterday = editable && !(yesterdaySnapshot?.isEmpty ?? true);
 
     return async.when(
       loading: () => Column(
@@ -347,6 +409,7 @@ class TodayWorkoutCard extends ConsumerWidget {
             l10n: l10n,
             canAdd: editable,
             canSaveAsPlan: false,
+            canCopyYesterday: canCopyYesterday,
             summary: null,
           ),
           const SizedBox(
@@ -367,6 +430,7 @@ class TodayWorkoutCard extends ConsumerWidget {
                 l10n: l10n,
                 canAdd: editable,
                 canSaveAsPlan: editable,
+                canCopyYesterday: canCopyYesterday,
                 summary: l10n.noWorkoutShort,
               ),
               SportEmptyState(
@@ -394,6 +458,7 @@ class TodayWorkoutCard extends ConsumerWidget {
               l10n: l10n,
               canAdd: editable,
               canSaveAsPlan: true,
+              canCopyYesterday: canCopyYesterday,
               summary: '$done/$total',
             ),
             if (!showDetails) ...[

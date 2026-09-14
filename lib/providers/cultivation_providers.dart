@@ -27,8 +27,17 @@ final cultivationKgLostProvider = Provider<double>((ref) {
   return lost < 0 ? 0 : lost;
 });
 
+/// 境界进度 = 已确认减重（体重记录首尾差）+ 今日尚未反映到体重记录里的实时
+/// 缺口（步数 + 饮食，换算成 kg）。今日缺口为负（吃超了）时不倒扣，只在
+/// 净正向时才叠加——真正的倒退只能靠新的体重记录体现。次日该实时部分会
+/// 随「今日」滚动重新计算，若未被一次新的体重记录「坐实」，不会累积到
+/// 明天；这正是所需的「动态加 kcal」：练气/筑基等境界进度随当天活动实时
+/// 变化，而不是只在称重后才跳动。
 final cultivationProgressProvider = Provider<CultivationProgress>((ref) {
-  return computeCultivationProgress(ref.watch(cultivationKgLostProvider));
+  final confirmedKg = ref.watch(cultivationKgLostProvider);
+  final todayKcal = ref.watch(cultivationTodayKcalProvider);
+  final liveKg = todayKcal > 0 ? todayKcal / kKcalPerKg : 0.0;
+  return computeCultivationProgress(confirmedKg + liveKg);
 });
 
 /// 今日步数（独立于「记录」页当前浏览到的日期，恒为本地今天）。

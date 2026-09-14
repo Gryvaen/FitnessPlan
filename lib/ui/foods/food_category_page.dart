@@ -6,6 +6,7 @@ import '../../data/db.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
+import '../theme/macro_color.dart';
 import 'food_category_art.dart';
 
 const _pageSize = 80;
@@ -131,7 +132,16 @@ class _FoodCategoryPageState extends ConsumerState<FoodCategoryPage> {
                   final f = _items[i];
                   return ListTile(
                     key: ValueKey(f.id),
-                    title: Text(f.name, style: theme.textTheme.bodyLarge),
+                    title: Text(
+                      f.name,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: dominantMacroColor(
+                          carbG: f.carbPer100,
+                          proteinG: f.proteinPer100,
+                          fatG: f.fatPer100,
+                        ),
+                      ),
+                    ),
                     subtitle: Text(
                       '${f.kcalPer100.round()} kcal / 100g',
                       style: theme.textTheme.meta,

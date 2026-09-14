@@ -99,6 +99,16 @@ class WorkoutPlanSummary {
   final List<WorkoutPlanItem> items;
 }
 
+class CopyDayWorkoutResult {
+  const CopyDayWorkoutResult({
+    required this.groupsCopied,
+    required this.itemsCopied,
+  });
+
+  final int groupsCopied;
+  final int itemsCopied;
+}
+
 class WorkoutRepository {
   WorkoutRepository(this._db);
 
@@ -505,6 +515,56 @@ class WorkoutRepository {
     });
   }
 
+  /// Copies [from]'s day-workout groups (exercises + set/rep targets) onto
+  /// [to] as new, unfinished groups — mirrors [MealRepository.copyDay] for
+  /// training. Does not carry over `done`/set-log progress; [to] starts fresh.
+  Future<CopyDayWorkoutResult> copyDayWorkout({
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    CalendarDay.ensureEditableDay(to);
+    final snap = await daySnapshot(from);
+    if (snap.isEmpty) {
+      return const CopyDayWorkoutResult(groupsCopied: 0, itemsCopied: 0);
+    }
+
+    final start = _dayStart(to);
+    var itemsCopied = 0;
+    await _db.transaction(() async {
+      for (final group in snap.groups) {
+        final dayId = await _db
+            .into(_db.dayWorkouts)
+            .insert(
+              DayWorkoutsCompanion.insert(
+                date: start,
+                planId: Value(group.workout.planId),
+                planName: Value(group.workout.planName),
+              ),
+            );
+        for (var i = 0; i < group.items.length; i++) {
+          final item = group.items[i].item;
+          await _db
+              .into(_db.dayWorkoutItems)
+              .insert(
+                DayWorkoutItemsCompanion.insert(
+                  dayWorkoutId: dayId,
+                  exerciseId: item.exerciseId,
+                  exerciseName: item.exerciseName,
+                  targetSets: item.targetSets,
+                  targetReps: item.targetReps,
+                  sortOrder: Value(i),
+                ),
+              );
+          itemsCopied++;
+        }
+      }
+    });
+    return CopyDayWorkoutResult(
+      groupsCopied: snap.groups.length,
+      itemsCopied: itemsCopied,
+    );
+  }
+
   Future<void> _deleteDayWorkoutById(int dayWorkoutId) async {
     final items = await dayItemsFor(dayWorkoutId);
     for (final item in items) {
@@ -582,9 +642,14 @@ class WorkoutRepository {
     CalendarDay.ensureEditableDay(day);
 
     if (!done) {
-      await (_db.update(_db.dayWorkoutItems)
-            ..where((t) => t.id.equals(dayWorkoutItemId)))
-          .write(const DayWorkoutItemsCompanion(done: Value(false)));
+      await _db.transaction(() async {
+        await (_db.delete(
+          _db.workoutSetLogs,
+        )..where((t) => t.dayWorkoutItemId.equals(dayWorkoutItemId))).go();
+        await (_db.update(_db.dayWorkoutItems)
+              ..where((t) => t.id.equals(dayWorkoutItemId)))
+            .write(const DayWorkoutItemsCompanion(done: Value(false)));
+      });
       return;
     }
 

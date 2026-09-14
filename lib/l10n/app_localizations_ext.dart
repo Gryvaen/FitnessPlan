@@ -175,6 +175,7 @@ const kExerciseCategoryOrder = <String>[
   'arms',
   'legs',
   'cardio',
+  'anaerobic',
   'core',
 ];
 
@@ -187,6 +188,7 @@ extension ExerciseCategoryL10n on String {
       'arms' => l10n.exerciseCategoryArms,
       'legs' => l10n.exerciseCategoryLegs,
       'cardio' => l10n.exerciseCategoryCardio,
+      'anaerobic' => l10n.exerciseCategoryAnaerobic,
       'core' => l10n.exerciseCategoryCore,
       // Legacy keys before v12 migration.
       'shoulders_arms' => l10n.exerciseCategoryArms,

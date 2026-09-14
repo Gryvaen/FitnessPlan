@@ -381,6 +381,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get copyYesterday => 'Copy yesterday';
 
   @override
+  String get copyYesterdayWorkout => 'Copy yesterday\'s workout';
+
+  @override
+  String get copyYesterdayWorkoutConfirm =>
+      'Today already has a workout plan; append yesterday\'s?';
+
+  @override
+  String copiedWorkoutItems(int n) {
+    return 'Copied $n exercises';
+  }
+
+  @override
+  String get yesterdayNoWorkout => 'No workout logged yesterday';
+
+  @override
   String get backfillMeal => 'Backfill';
 
   @override
@@ -499,6 +514,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get exerciseCategoryCardio => 'Cardio';
+
+  @override
+  String get exerciseCategoryAnaerobic => 'Anaerobic';
 
   @override
   String get exerciseCategoryShouldersArms => 'Shoulders & arms';
@@ -722,6 +740,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noPortionsHint => 'None yet — quick-pick when logging';
 
   @override
+  String get deleteCommonPortion => 'Delete portion';
+
+  @override
+  String confirmDeleteCommonPortion(String name) {
+    return 'Delete the portion \"$name\"?';
+  }
+
+  @override
   String get customFoodAdded => 'Custom food added';
 
   @override
@@ -763,6 +789,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get confirmDeleteMeal => 'Delete this entry?';
+
+  @override
+  String get clearThisMeal => 'Clear this meal';
+
+  @override
+  String confirmClearMeal(String name) {
+    return 'Delete all $name entries logged today?';
+  }
 
   @override
   String get toolBodyFat => 'Body-fat estimate';
@@ -2296,6 +2330,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String confirmRemoveFromRecent(String name) {
     return 'Remove $name from your recent foods? Logging it again will bring it back.';
+  }
+
+  @override
+  String get removeFavorite => 'Remove favorite';
+
+  @override
+  String confirmRemoveFavorite(String name) {
+    return 'Remove $name from favorites?';
   }
 
   @override

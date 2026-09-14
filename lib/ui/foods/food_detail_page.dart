@@ -7,6 +7,7 @@ import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
+import '../theme/macro_color.dart';
 import '../widgets/form_options.dart';
 
 class FoodDetailPage extends ConsumerStatefulWidget {
@@ -212,7 +213,16 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(food.name),
+        title: Text(
+          food.name,
+          style: TextStyle(
+            color: dominantMacroColor(
+              carbG: food.carbPer100,
+              proteinG: food.proteinPer100,
+              fatG: food.fatPer100,
+            ),
+          ),
+        ),
         actions: [
           if (food.isCustom) ...[
             IconButton(
@@ -296,23 +306,6 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
             grams: _grams,
             onStep: _stepGrams,
           ),
-          if (_servings.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.field),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final s in _servings)
-                  ActionChip(
-                    label: Text('${s.label} · ${s.grams.round()} g'),
-                    labelStyle: theme.textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                    onPressed: () => setState(() => _grams = s.grams),
-                  ),
-              ],
-            ),
-          ],
           const SizedBox(height: AppSpacing.section),
           Text(l10n.nutritionResult, style: theme.textTheme.titleMedium),
           const SizedBox(height: 4),
@@ -358,22 +351,50 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
             Text(l10n.noPortionsHint, style: theme.textTheme.meta)
           else
             for (final s in _servings)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  s.label,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+              Dismissible(
+                key: ValueKey(s.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 16),
+                  color: theme.colorScheme.error,
+                  child: const Icon(Icons.delete, color: Colors.white),
                 ),
-                subtitle: Text(
-                  '${s.grams.round()} g',
-                  style: theme.textTheme.meta,
-                ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () async {
-                    await ref.read(foodRepositoryProvider).deleteServing(s.id);
-                    await _reload();
-                  },
+                confirmDismiss: (_) async =>
+                    await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: Text(l10n.deleteCommonPortion),
+                        content: Text(l10n.confirmDeleteCommonPortion(s.label)),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: Text(l10n.cancel),
+                          ),
+                          FilledButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: Text(l10n.delete),
+                          ),
+                        ],
+                      ),
+                    ) ==
+                    true,
+                onDismissed: (_) async {
+                  await ref.read(foodRepositoryProvider).deleteServing(s.id);
+                  await _reload();
+                },
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    s.label,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  subtitle: Text(
+                    '${s.grams.round()} g',
+                    style: theme.textTheme.meta,
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => setState(() => _grams = s.grams),
                 ),
               ),
         ],

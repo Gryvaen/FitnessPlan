@@ -8,6 +8,7 @@ import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../shell/swipe_tab_view.dart';
 import '../theme/app_theme.dart';
+import '../theme/macro_color.dart';
 import '../theme/sport_chrome.dart';
 import 'food_category_art.dart';
 
@@ -143,7 +144,31 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                           watch: (ref) => ref.watch(_recentFoodsProvider),
                           emptyIcon: Icons.history,
                           emptyTitle: l10n.noRecentFoods,
-                          onSwipeDelete: (ref, food) async {
+                          onLongPress: (context, ref, food) async {
+                            final confirmed =
+                                await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: Text(l10n.removeFromRecent),
+                                    content: Text(
+                                      l10n.confirmRemoveFromRecent(food.name),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, false),
+                                        child: Text(l10n.cancel),
+                                      ),
+                                      FilledButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, true),
+                                        child: Text(l10n.delete),
+                                      ),
+                                    ],
+                                  ),
+                                ) ==
+                                true;
+                            if (!confirmed) return;
                             await ref
                                 .read(foodRepositoryProvider)
                                 .hideFromRecent(food.id);
@@ -154,6 +179,35 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                           watch: (ref) => ref.watch(favoriteFoodsProvider),
                           emptyIcon: Icons.star_outline,
                           emptyTitle: l10n.noFavorites,
+                          onLongPress: (context, ref, food) async {
+                            final confirmed =
+                                await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: Text(l10n.removeFavorite),
+                                    content: Text(
+                                      l10n.confirmRemoveFavorite(food.name),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, false),
+                                        child: Text(l10n.cancel),
+                                      ),
+                                      FilledButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, true),
+                                        child: Text(l10n.remove),
+                                      ),
+                                    ],
+                                  ),
+                                ) ==
+                                true;
+                            if (!confirmed) return;
+                            await ref
+                                .read(foodRepositoryProvider)
+                                .toggleFavorite(food.id);
+                          },
                         ),
                         const _FoodCategoryList(),
                       ],
@@ -167,20 +221,22 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
 }
 
 /// A simple food list (recent / favorites) with a shared empty state.
-/// [onSwipeDelete], when given, lets a row be long-pressed to remove — only
-/// meaningful on 最近 (Recent).
+/// [onLongPress], when given, lets a row be long-pressed for a row-specific
+/// action (remove from recent / unfavorite) — the caller owns any confirm
+/// dialog and the actual mutation.
 class _FoodListView extends ConsumerWidget {
   const _FoodListView({
     required this.watch,
     required this.emptyIcon,
     required this.emptyTitle,
-    this.onSwipeDelete,
+    this.onLongPress,
   });
 
   final AsyncValue<List<FoodItem>> Function(WidgetRef ref) watch;
   final IconData emptyIcon;
   final String emptyTitle;
-  final Future<void> Function(WidgetRef ref, FoodItem food)? onSwipeDelete;
+  final Future<void> Function(BuildContext context, WidgetRef ref, FoodItem food)?
+  onLongPress;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -204,9 +260,9 @@ class _FoodListView extends ConsumerWidget {
           itemCount: foods.length,
           itemBuilder: (context, i) => _FoodRow(
             food: foods[i],
-            onSwipeDelete: onSwipeDelete == null
+            onLongPress: onLongPress == null
                 ? null
-                : () => onSwipeDelete!(ref, foods[i]),
+                : () => onLongPress!(context, ref, foods[i]),
           ),
         );
       },
@@ -215,18 +271,26 @@ class _FoodListView extends ConsumerWidget {
 }
 
 class _FoodRow extends StatelessWidget {
-  const _FoodRow({required this.food, this.onSwipeDelete});
+  const _FoodRow({required this.food, this.onLongPress});
 
   final FoodItem food;
-  final VoidCallback? onSwipeDelete;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
+    final macroColor = dominantMacroColor(
+      carbG: food.carbPer100,
+      proteinG: food.proteinPer100,
+      fatG: food.fatPer100,
+    );
     final tile = SportListTile(
       contentPadding: EdgeInsets.zero,
-      title: Text(food.name, style: theme.textTheme.bodyLarge),
+      title: Text(
+        food.name,
+        style: theme.textTheme.bodyLarge?.copyWith(color: macroColor),
+      ),
       subtitle: Text(
         food.category.localizedCategory(l10n),
         style: theme.textTheme.meta,
@@ -237,33 +301,12 @@ class _FoodRow extends StatelessWidget {
       ),
       onTap: () => context.push('/foods/${food.id}'),
     );
-    if (onSwipeDelete == null) {
+    if (onLongPress == null) {
       return KeyedSubtree(key: ValueKey(food.id), child: tile);
     }
     return GestureDetector(
       key: ValueKey(food.id),
-      onLongPress: () async {
-        final confirmed =
-            await showDialog<bool>(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                title: Text(l10n.removeFromRecent),
-                content: Text(l10n.confirmRemoveFromRecent(food.name)),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx, false),
-                    child: Text(l10n.cancel),
-                  ),
-                  FilledButton(
-                    onPressed: () => Navigator.pop(ctx, true),
-                    child: Text(l10n.delete),
-                  ),
-                ],
-              ),
-            ) ==
-            true;
-        if (confirmed) onSwipeDelete!();
-      },
+      onLongPress: onLongPress,
       child: tile,
     );
   }
