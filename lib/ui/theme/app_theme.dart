@@ -1,12 +1,75 @@
 import 'package:flutter/material.dart';
 
-/// Nutrient semantic colors; identical across all themes so that protein /
-/// carbs / fat / water always read the same.
+/// Nutrient + feedback semantic colors; identical across all themes so that
+/// protein / carbs / fat / water / success / warning always read the same.
+/// Brand chrome (buttons, nav, focus) lives on [AppThemeVisuals.accent] —
+/// these tokens stay reserved for "speaking" status, not decoration.
 abstract final class AppColors {
   static const protein = Color(0xFFE0605A);
   static const carb = Color(0xFF4C8BE0);
   static const fat = Color(0xFFE4B94B);
   static const water = Color(0xFF3FB8C6);
+
+  /// Favorite / star accent.
+  static const favorite = Color(0xFFF5C518);
+
+  /// Met target / completed / positive delta.
+  static const success = Color(0xFF2F7A46);
+
+  /// Over target / soft warning (coral; distinct from hard [ColorScheme.error]).
+  static const warning = Color(0xFFE07060);
+
+  // ---- Calorie ring spectrum (SweepGradient; several hues visible at once) ----
+  /// Soft azure — ring start.
+  static const calorieAzure = Color(0xFF5BADE8);
+
+  /// Soft iris — mid arc.
+  static const calorieIris = Color(0xFF8B84F0);
+
+  /// Soft orchid — late arc.
+  static const calorieOrchid = Color(0xFFD07AE0);
+
+  /// Soft mint — tip when near / at target.
+  static const calorieMint = Color(0xFF4DB88A);
+}
+
+/// Color stops for [calorieRingSpectrum] along the ring (0 = top → clockwise).
+const List<double> calorieRingStops = [0.0, 0.38, 0.70, 1.0];
+
+/// Default calorie-ring hue ramp (azure → iris → orchid → mint).
+const List<Color> calorieRingSpectrum = [
+  AppColors.calorieAzure,
+  AppColors.calorieIris,
+  AppColors.calorieOrchid,
+  AppColors.calorieMint,
+];
+
+/// Sample the calorie-ring spectrum at progress [t] ∈ [0, 1].
+Color calorieRingColorAt(double t) {
+  final x = t.clamp(0.0, 1.0);
+  final stops = calorieRingStops;
+  final colors = calorieRingSpectrum;
+  if (x <= stops.first) return colors.first;
+  for (var i = 1; i < stops.length; i++) {
+    if (x <= stops[i]) {
+      final span = stops[i] - stops[i - 1];
+      final local = span <= 0 ? 1.0 : (x - stops[i - 1]) / span;
+      return Color.lerp(colors[i - 1], colors[i], local)!;
+    }
+  }
+  return colors.last;
+}
+
+/// Intake remaining-number / ring-centre color: muted when empty, otherwise
+/// the tip of the ring spectrum; coral when over.
+Color intakeProgressColor({
+  required bool over,
+  required double fraction,
+  required Color fallback,
+}) {
+  if (over) return AppColors.warning;
+  if (fraction <= 0) return fallback;
+  return calorieRingColorAt(fraction.clamp(0.0, 1.0));
 }
 
 /// Layout spacing tokens.
@@ -212,17 +275,17 @@ class AppThemeVisuals extends ThemeExtension<AppThemeVisuals> {
   }
 }
 
-/// The two selectable themes — deliberately just black and white: a
-/// monochrome, professional light theme and its matte-dark counterpart.
+/// The two selectable themes — a restrained light theme with one deep-teal
+/// brand accent, and its matte-dark counterpart.
 /// Storage keeps the enum name; legacy ids from earlier releases (when
 /// there were four colorful presets) are mapped in [fromStorage] so
 /// existing users land on whichever of the two remaining themes is closer
 /// (light presets → [fresh], dark presets → [graphite]).
 enum AppThemeId {
-  /// 简约白 — monochrome light theme; default for new users.
+  /// 简约白 — light surfaces + deep teal chrome; default for new users.
   fresh,
 
-  /// 石墨黑 — matte dark grey with silver accents.
+  /// 石墨黑 — matte dark grey with soft teal accents.
   graphite;
 
   static const defaultId = fresh;
@@ -295,14 +358,14 @@ class AppTheme {
 
   static ColorScheme schemeFor(AppThemeId id) {
     return switch (id) {
-      // Monochrome, professional light theme: near-black ink on white/grey
-      // surfaces — no hue anywhere except the universal error red.
+      // Restrained light theme: white/grey skeleton + one deep teal brand
+      // primary. Body text stays near-black; hue is for chrome & status only.
       AppThemeId.fresh => const ColorScheme(
         brightness: Brightness.light,
-        primary: Color(0xFF1C1C1E),
+        primary: Color(0xFF0F6B6E),
         onPrimary: Color(0xFFFFFFFF),
-        primaryContainer: Color(0xFFE5E5E7),
-        onPrimaryContainer: Color(0xFF1C1C1E),
+        primaryContainer: Color(0xFFDCEFEF),
+        onPrimaryContainer: Color(0xFF0A4547),
         secondary: Color(0xFF3A3A3C),
         onSecondary: Color(0xFFFFFFFF),
         secondaryContainer: Color(0xFFEDEDEF),
@@ -327,17 +390,17 @@ class AppTheme {
         outlineVariant: Color(0xFFE5E5E7),
         inverseSurface: Color(0xFF2C2C2E),
         onInverseSurface: Color(0xFFF2F2F3),
-        inversePrimary: Color(0xFFAEAEB2),
+        inversePrimary: Color(0xFF7EC4C6),
         shadow: Color(0xFF000000),
         scrim: Color(0xFF000000),
-        surfaceTint: Color(0xFF1C1C1E),
+        surfaceTint: Color(0xFF0F6B6E),
       ),
       AppThemeId.graphite => const ColorScheme(
         brightness: Brightness.dark,
-        primary: Color(0xFFC7CED6),
-        onPrimary: Color(0xFF14181D),
-        primaryContainer: Color(0xFF3A414A),
-        onPrimaryContainer: Color(0xFFEEF2F6),
+        primary: Color(0xFF7EC4C6),
+        onPrimary: Color(0xFF0F1F20),
+        primaryContainer: Color(0xFF2A3E40),
+        onPrimaryContainer: Color(0xFFD5F0F1),
         secondary: Color(0xFF8FB6D6),
         onSecondary: Color(0xFF0F1B26),
         secondaryContainer: Color(0xFF2E3A47),
@@ -362,10 +425,10 @@ class AppTheme {
         outlineVariant: Color(0xFF30363D),
         inverseSurface: Color(0xFFECEFF2),
         onInverseSurface: Color(0xFF1B1E22),
-        inversePrimary: Color(0xFF5B646E),
+        inversePrimary: Color(0xFF0F6B6E),
         shadow: Color(0xFF000000),
         scrim: Color(0xFF000000),
-        surfaceTint: Color(0xFFC7CED6),
+        surfaceTint: Color(0xFF7EC4C6),
       ),
     };
   }
@@ -380,23 +443,24 @@ class AppTheme {
         heroGlow: Color(0x00000000),
         onHero: Color(0xFF1C1C1E),
         onHeroMuted: Color(0xFF6E6E73),
-        accent: Color(0xFF1C1C1E),
+        accent: Color(0xFF0F6B6E),
         onAccent: Color(0xFFFFFFFF),
-        accentSoft: Color(0xFFEDEDEF),
+        accentSoft: Color(0xFFDCEFEF),
         divider: Color(0xFFE5E5E7),
         track: Color(0xFFECECED),
         navShell: Color(0xFFFFFFFF),
         navBorder: Color(0xFFE5E5E7),
-        navIndicator: Color(0xFF1C1C1E),
-        onNavIndicator: Color(0xFFFFFFFF),
-        waterFill: Color(0x991C1C1E),
-        waterFillDeep: Color(0xCC3A3A3C),
-        waterStroke: Color(0xFF1C1C1E),
-        cupGlass: Color(0x141C1C1E),
+        // Soft tint + brand icon (not a black pill).
+        navIndicator: Color(0xFFDCEFEF),
+        onNavIndicator: Color(0xFF0F6B6E),
+        waterFill: Color(0x993FB8C6),
+        waterFillDeep: Color(0xCC2A9AA8),
+        waterStroke: Color(0xFF2A9AA8),
+        cupGlass: Color(0x143FB8C6),
         previewColors: [
-          Color(0xFF1C1C1E),
+          Color(0xFF0F6B6E),
           Color(0xFFFFFFFF),
-          Color(0xFF6E6E73),
+          Color(0xFF3FB8C6),
         ],
       ),
       AppThemeId.graphite => const AppThemeVisuals(
@@ -407,23 +471,23 @@ class AppTheme {
         heroGlow: Color(0x00000000),
         onHero: Color(0xFFECEFF2),
         onHeroMuted: Color(0xFFA6AEB8),
-        accent: Color(0xFFC7CED6),
-        onAccent: Color(0xFF14181D),
-        accentSoft: Color(0xFF3A414A),
+        accent: Color(0xFF7EC4C6),
+        onAccent: Color(0xFF0F1F20),
+        accentSoft: Color(0xFF2A3E40),
         divider: Color(0xFF30363D),
         track: Color(0xFF31373E),
         navShell: Color(0xFF24282E),
         navBorder: Color(0xFF30363D),
-        navIndicator: Color(0xFFC7CED6),
-        onNavIndicator: Color(0xFF14181D),
-        waterFill: Color(0xA67FB3D5),
-        waterFillDeep: Color(0xD95C98C2),
-        waterStroke: Color(0xFFC7CED6),
-        cupGlass: Color(0x1AC7CED6),
+        navIndicator: Color(0xFF2A3E40),
+        onNavIndicator: Color(0xFF7EC4C6),
+        waterFill: Color(0xA63FB8C6),
+        waterFillDeep: Color(0xD92A9AA8),
+        waterStroke: Color(0xFF7EC4C6),
+        cupGlass: Color(0x1A3FB8C6),
         previewColors: [
           Color(0xFF1B1E22),
-          Color(0xFFC7CED6),
-          Color(0xFF7FB3D5),
+          Color(0xFF7EC4C6),
+          Color(0xFF3FB8C6),
         ],
       ),
     };
@@ -543,11 +607,16 @@ class AppTheme {
           }),
           foregroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return scheme.onSurface;
+              return accent;
             }
             return scheme.onSurfaceVariant;
           }),
-          side: WidgetStatePropertyAll(BorderSide(color: border)),
+          side: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return BorderSide(color: accent.withValues(alpha: 0.45));
+            }
+            return BorderSide(color: border);
+          }),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -653,7 +722,7 @@ class AppTheme {
                 ? FontWeight.w700
                 : FontWeight.w500,
             color: states.contains(WidgetState.selected)
-                ? scheme.onSurface
+                ? visuals.onNavIndicator
                 : scheme.onSurfaceVariant,
           ),
         ),
