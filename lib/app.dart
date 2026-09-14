@@ -143,12 +143,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                   final sub = state.uri.queryParameters['sub'];
                   final trainTab = switch (sub) {
                     'plans' => 0,
-                    'history' => 1,
-                    'library' => 2,
+                    'library' => 1,
+                    'history' => 2,
                     _ => null,
                   };
                   return RecordsPage(
-                    key: ValueKey('records-${tab ?? ''}-${sub ?? ''}'),
                     initialSegment: segment,
                     initialTrainTab: trainTab,
                   );

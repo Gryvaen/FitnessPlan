@@ -18,7 +18,7 @@ import '../widgets/form_options.dart';
 class TrainRecordsTab extends ConsumerStatefulWidget {
   const TrainRecordsTab({super.key, this.initialTab});
 
-  /// When set, forces the sub-tab (0=计划, 1=历史, 2=动作库) to this index —
+  /// When set, forces the sub-tab (0=计划, 1=动作库, 2=历史) to this index —
   /// overrides whatever this widget last had selected, since [RecordsPage]
   /// keeps it alive across navigations away and back.
   final int? initialTab;
@@ -29,12 +29,17 @@ class TrainRecordsTab extends ConsumerStatefulWidget {
 
 class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   int _tab = 0;
+
   /// 0 = recent, 1 = all (under the History sub-tab).
   int _historyScope = 0;
   int? _planId;
   String _query = '';
   String? _category;
   bool _starting = false;
+
+  /// Last applied records URI query — kept-alive tab must re-read `sub`
+  /// when Today / plan-edit calls `go('/records?tab=train&sub=plans')`.
+  String? _appliedRouteKey;
 
   @override
   void initState() {
@@ -46,9 +51,100 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   void didUpdateWidget(covariant TrainRecordsTab oldWidget) {
     super.didUpdateWidget(oldWidget);
     final target = widget.initialTab;
-    if (target != null && target != oldWidget.initialTab) {
+    if (target != null && target != _tab) {
       setState(() => _tab = target);
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncSubFromRoute();
+  }
+
+  static int? _trainTabFromSub(String? sub) => switch (sub) {
+    'plans' => 0,
+    'library' => 1,
+    'history' => 2,
+    _ => null,
+  };
+
+  static String _subName(int tab) => switch (tab) {
+    1 => 'library',
+    2 => 'history',
+    _ => 'plans',
+  };
+
+  /// Progressive history scopes: hidden by default → 「最近」 once any recent
+  /// step/workout activity exists → 「全部」 on the 14th calendar day after the
+  /// first logged day (first day counts as day 1).
+  static List<int> _availableHistoryScopes({
+    required List<WorkoutHistoryDay> recentWorkouts,
+    required List<WorkoutHistoryDay> allWorkouts,
+    required List<StepDay> recentSteps,
+    required List<StepDay> allSteps,
+  }) {
+    final hasRecent =
+        recentWorkouts.any((d) => d.hasActivity) ||
+        recentSteps.any((d) => d.steps > 0);
+    DateTime? first;
+    for (final d in allWorkouts) {
+      final day = AppDates.dayOnly(d.date);
+      if (first == null || day.isBefore(first)) first = day;
+    }
+    for (final d in allSteps) {
+      final day = AppDates.dayOnly(d.date);
+      if (first == null || day.isBefore(first)) first = day;
+    }
+    final showAll =
+        first != null &&
+        AppDates.todayLocal().difference(first).inDays >= 13;
+    return [if (hasRecent) 0, if (showAll) 1];
+  }
+
+  void _ensureHistoryScopeAvailable(List<int> scopes) {
+    if (scopes.contains(_historyScope)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || scopes.contains(_historyScope)) return;
+      final next = scopes.isEmpty ? 0 : scopes.first;
+      setState(() => _historyScope = next);
+      if (next == 1) {
+        ref.read(stepsSyncServiceProvider).syncRecent(limitDays: 90);
+      }
+    });
+  }
+
+  void _ensureTrainTabAvailable({required bool showHistory}) {
+    if (_tab != 2 || showHistory) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _tab != 2 || showHistory) return;
+      _selectTab(0);
+    });
+  }
+
+  void _syncSubFromRoute() {
+    final state = GoRouterState.of(context);
+    if (state.matchedLocation != '/records') return;
+    final tab = state.uri.queryParameters['tab'];
+    // Only react while the train segment is the route target.
+    if (tab != null && tab.isNotEmpty && tab != 'train') return;
+
+    final key = '${state.matchedLocation}?${state.uri.query}';
+    if (key == _appliedRouteKey) return;
+    _appliedRouteKey = key;
+
+    final trainTab = _trainTabFromSub(state.uri.queryParameters['sub']);
+    if (trainTab != null && trainTab != _tab) {
+      setState(() => _tab = trainTab);
+    }
+  }
+
+  void _selectTab(int v) {
+    if (v == _tab) return;
+    setState(() => _tab = v);
+    final path = '/records?tab=train&sub=${_subName(v)}';
+    _appliedRouteKey = '/records?tab=train&sub=${_subName(v)}';
+    context.go(path);
   }
 
   int _dayExerciseCount(WorkoutHistoryDay day) {
@@ -98,7 +194,10 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
             for (final day in days)
               SportListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.directions_walk),
+                leading: const MenuIconBadge(
+                  icon: Icons.directions_walk,
+                  color: AppColors.water,
+                ),
                 title: Text(AppDates.md(day.date, locale)),
                 trailing: Text(context.l10n.nSteps(day.steps)),
               ),
@@ -129,7 +228,10 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
             for (final day in days)
               SportListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.fitness_center),
+                leading: const MenuIconBadge(
+                  icon: Icons.fitness_center,
+                  color: AppColors.protein,
+                ),
                 title: Text(AppDates.md(day.date, locale)),
                 trailing: Text(_dayProgressLabel(day, l10n)),
                 onTap: !day.hasActivity
@@ -261,6 +363,24 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final recentWorkouts = ref.watch(workoutHistoryProvider).value ?? const [];
+    final allWorkouts = ref.watch(allWorkoutHistoryProvider).value ?? const [];
+    final recentSteps = ref.watch(recentStepsProvider).value ?? const [];
+    final allSteps = ref.watch(allStepsProvider).value ?? const [];
+    final historyScopes = _availableHistoryScopes(
+      recentWorkouts: recentWorkouts,
+      allWorkouts: allWorkouts,
+      recentSteps: recentSteps,
+      allSteps: allSteps,
+    );
+    final showHistory = historyScopes.isNotEmpty;
+    _ensureHistoryScopeAvailable(historyScopes);
+    _ensureTrainTabAvailable(showHistory: showHistory);
+    final tab = (!showHistory && _tab == 2) ? 0 : _tab;
+    final scope = historyScopes.contains(_historyScope)
+        ? _historyScope
+        : (historyScopes.isEmpty ? 0 : historyScopes.first);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -273,18 +393,18 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                 child: SportTabs<int>(
                   items: {
                     0: l10n.tabPlans,
-                    1: l10n.tabHistory,
-                    2: l10n.exerciseLibrary,
+                    1: l10n.exerciseLibrary,
+                    if (showHistory) 2: l10n.tabHistory,
                   },
-                  selected: _tab,
-                  onSelected: (v) => setState(() => _tab = v),
+                  selected: tab,
+                  onSelected: _selectTab,
                 ),
               ),
-              if (_tab != 1)
+              if (tab != 2)
                 PlainIconAction(
                   icon: Icons.add,
-                  label: _tab == 0 ? l10n.fabNewPlan : l10n.addExercise,
-                  onPressed: () => _tab == 0
+                  label: tab == 0 ? l10n.fabNewPlan : l10n.addExercise,
+                  onPressed: () => tab == 0
                       ? context.push('/records/plan')
                       : _addExercise(context, ref),
                 ),
@@ -294,12 +414,16 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
         const SizedBox(height: 12),
         Expanded(
           child: SwipeTabView(
-            index: _tab,
-            onIndexChanged: (v) => setState(() => _tab = v),
+            keepPagesAlive: true,
+            index: tab,
+            onIndexChanged: (i) {
+              if (!showHistory && i == 2) return;
+              _selectTab(i);
+            },
             children: [
               _plansPanel(context),
-              _historyPanel(context),
               _exercisesPanel(context),
+              if (showHistory) _historyPanel(context, historyScopes, scope),
             ],
           ),
         ),
@@ -419,7 +543,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: TextButton(
-                        onPressed: () => setState(() => _tab = 1),
+                        onPressed: () => _selectTab(1),
                         child: Text(l10n.viewWorkoutHistory),
                       ),
                     ),
@@ -431,32 +555,41 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     );
   }
 
-  Widget _historyPanel(BuildContext context) {
+  Widget _historyPanel(
+    BuildContext context,
+    List<int> scopes,
+    int scope,
+  ) {
     final l10n = context.l10n;
+    final showScopeTabs = scopes.length > 1;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-          child: SportTabs<int>(
-            items: {
-              0: l10n.tabRecent,
-              1: l10n.filterAll,
-            },
-            selected: _historyScope,
-            onSelected: (v) => _setHistoryScope(v),
+        if (showScopeTabs)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+            child: SportTabs<int>(
+              items: {
+                for (final s in scopes)
+                  s: s == 0 ? l10n.tabRecent : l10n.filterAll,
+              },
+              selected: scope,
+              onSelected: _setHistoryScope,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
+        if (showScopeTabs) const SizedBox(height: 8),
         Expanded(
-          child: SwipeTabView(
-            index: _historyScope,
-            onIndexChanged: _setHistoryScope,
-            children: [
-              _historyScopeList(context, all: false),
-              _historyScopeList(context, all: true),
-            ],
-          ),
+          child: showScopeTabs
+              ? SwipeTabView(
+                  keepPagesAlive: true,
+                  index: scopes.indexOf(scope).clamp(0, scopes.length - 1),
+                  onIndexChanged: (i) => _setHistoryScope(scopes[i]),
+                  children: [
+                    for (final s in scopes)
+                      _historyScopeList(context, all: s == 1),
+                  ],
+                )
+              : _historyScopeList(context, all: scope == 1),
         ),
       ],
     );
@@ -499,7 +632,10 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
             final latest = visible.first;
             return SportListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.directions_walk),
+              leading: const MenuIconBadge(
+                icon: Icons.directions_walk,
+                color: AppColors.water,
+              ),
               title: Text(stepsTitle),
               subtitle: Text(AppDates.md(latest.date, locale)),
               trailing: Text(l10n.nSteps(latest.steps)),
@@ -536,7 +672,10 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
             final latest = days.first;
             return SportListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.fitness_center),
+              leading: const MenuIconBadge(
+                icon: Icons.fitness_center,
+                color: AppColors.protein,
+              ),
               title: Text(workoutsTitle),
               subtitle: Text(AppDates.md(latest.date, locale)),
               trailing: Text(_dayProgressLabel(latest, l10n)),

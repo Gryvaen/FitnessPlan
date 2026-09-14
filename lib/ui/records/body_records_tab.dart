@@ -33,7 +33,29 @@ class BodyRecordsTab extends ConsumerStatefulWidget {
 }
 
 class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
-  int _period = 7;
+  /// 0 = all. Prefer all until shorter ranges unlock from history.
+  int _period = 0;
+
+  /// Progressive ranges: all only → +7d once any log exists → +30d on the
+  /// 7th calendar day after the first log (first day counts as day 1).
+  static List<int> _availablePeriods(List<WeightLog> orderedOldestFirst) {
+    if (orderedOldestFirst.isEmpty) return const [0];
+    final firstDay = AppDates.dayOnly(orderedOldestFirst.first.date);
+    final daysSinceFirst = AppDates.todayLocal().difference(firstDay).inDays;
+    return [
+      7,
+      if (daysSinceFirst >= 6) 30,
+      0,
+    ];
+  }
+
+  void _ensurePeriodAvailable(List<int> periods) {
+    if (periods.contains(_period)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || periods.contains(_period)) return;
+      setState(() => _period = 0);
+    });
+  }
 
   Future<void> addWeight() async {
     final l10n = context.l10n;
@@ -132,8 +154,6 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
     return parts.join(' · ');
   }
 
-  static const _periods = [7, 30, 0];
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -145,11 +165,15 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
           SportLoadError(onRetry: () => ref.invalidate(weightLogsProvider)),
       data: (logs) {
         final ordered = [...logs]..sort((a, b) => a.date.compareTo(b.date));
+        final periods = _availablePeriods(ordered);
+        _ensurePeriodAvailable(periods);
+        final period = periods.contains(_period) ? _period : 0;
         final latest = ordered.lastOrNull;
         final previous = ordered.length > 1
             ? ordered[ordered.length - 2]
             : null;
         final theme = Theme.of(context);
+        final showPeriodTabs = periods.length > 1;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -165,30 +189,34 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
                       style: theme.textTheme.headlineLarge,
                     ),
                     if (previous != null) _deltaRow(context, latest, previous),
-                    const SizedBox(height: 12),
+                    if (showPeriodTabs) const SizedBox(height: 12),
                   ],
-                  SportTabs<int>(
-                    items: {
-                      7: l10n.lastNDays(7),
-                      30: l10n.lastNDays(30),
-                      0: l10n.filterAll,
-                    },
-                    selected: _period,
-                    onSelected: (v) => setState(() => _period = v),
-                  ),
+                  if (showPeriodTabs)
+                    SportTabs<int>(
+                      items: {
+                        for (final p in periods)
+                          p: p == 0 ? l10n.filterAll : l10n.lastNDays(p),
+                      },
+                      selected: period,
+                      onSelected: (v) => setState(() => _period = v),
+                    ),
                 ],
               ),
             ),
             const SizedBox(height: 8),
             Expanded(
-              child: SwipeTabView(
-                index: _periods.indexOf(_period),
-                onIndexChanged: (i) => setState(() => _period = _periods[i]),
-                children: [
-                  for (final p in _periods)
-                    _periodPanel(context, ordered, logs, p),
-                ],
-              ),
+              child: showPeriodTabs
+                  ? SwipeTabView(
+                      keepPagesAlive: true,
+                      index: periods.indexOf(period).clamp(0, periods.length - 1),
+                      onIndexChanged: (i) =>
+                          setState(() => _period = periods[i]),
+                      children: [
+                        for (final p in periods)
+                          _periodPanel(context, ordered, logs, p),
+                      ],
+                    )
+                  : _periodPanel(context, ordered, logs, 0),
             ),
           ],
         );
@@ -201,6 +229,11 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
     final up = delta > 0;
     final flat = delta.abs() < 0.05;
     final scheme = Theme.of(context).colorScheme;
+    final color = flat
+        ? scheme.onSurfaceVariant
+        : up
+        ? AppColors.warning
+        : AppColors.success;
     return Row(
       children: [
         Icon(
@@ -210,17 +243,13 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
               ? Icons.arrow_upward
               : Icons.arrow_downward,
           size: 14,
-          color: flat
-              ? scheme.onSurfaceVariant
-              : up
-              ? scheme.error
-              : scheme.primary,
+          color: color,
         ),
         const SizedBox(width: 4),
         Text(
           '${up ? '+' : ''}${delta.toStringAsFixed(1)} kg · '
           '${context.l10n.sincePreviousRecord}',
-          style: Theme.of(context).textTheme.bodySmall,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
         ),
       ],
     );
