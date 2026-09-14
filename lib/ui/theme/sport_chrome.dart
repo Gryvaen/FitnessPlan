@@ -559,9 +559,8 @@ class PlainIconAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final enabled = onPressed != null;
-    final fg = color ?? scheme.onSurface;
+    final fg = color ?? AppThemeVisuals.of(context).accent;
     return Semantics(
       button: true,
       label: label,
@@ -592,6 +591,30 @@ class PlainIconAction extends StatelessWidget {
   }
 }
 
+/// Tinted leading icon for hub / menu entry rows — color only, no circle
+/// badge behind it.
+///
+/// Use for **category & entry** icons (profile, tools, reminders). Keep
+/// chrome actions (add / delete / chevron / more) in muted grey — coloring
+/// those too makes the page noisy.
+class MenuIconBadge extends StatelessWidget {
+  const MenuIconBadge({
+    super.key,
+    required this.icon,
+    required this.color,
+    this.size = 24,
+  });
+
+  final IconData icon;
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Icon(icon, color: color, size: size);
+  }
+}
+
 /// Small rounded label chip (e.g. strategy tag on the Today card).
 class SoftChip extends StatelessWidget {
   const SoftChip({
@@ -601,6 +624,7 @@ class SoftChip extends StatelessWidget {
     this.onTap,
     this.color,
     this.foreground,
+    this.selected = false,
   });
 
   final String label;
@@ -608,13 +632,15 @@ class SoftChip extends StatelessWidget {
   final VoidCallback? onTap;
   final Color? color;
   final Color? foreground;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
     final v = AppThemeVisuals.of(context);
     final theme = Theme.of(context);
     final bg = color ?? v.accentSoft;
-    final fg = foreground ?? theme.colorScheme.onSurface;
+    final fg = foreground ??
+        (selected ? v.accent : theme.colorScheme.onSurface);
     final chip = Container(
       constraints: const BoxConstraints(minHeight: 32),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -640,16 +666,13 @@ class SoftChip extends StatelessWidget {
               ),
             ),
           ),
-          if (onTap != null) ...[
-            const SizedBox(width: 2),
-            Icon(Icons.chevron_right, size: 14, color: fg),
-          ],
         ],
       ),
     );
     if (onTap == null) return chip;
     return Semantics(
       button: true,
+      selected: selected,
       label: label,
       child: Material(
         color: Colors.transparent,
