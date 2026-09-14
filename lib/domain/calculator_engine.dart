@@ -25,6 +25,11 @@ class CalcHistoryEntry {
 }
 
 /// Left-associative chain calculator with expression line + memory.
+///
+/// Display contract:
+/// - [expression] shows the pending op (`12 +`) or a finished line (`12 + 3 =`)
+/// - [input] is always the large current value — never duplicated into
+///   [expression] while typing the right-hand operand
 class CalculatorEngine {
   String expression = '';
   String input = '0';
@@ -34,10 +39,22 @@ class CalculatorEngine {
   bool error = false;
   double? memory;
 
+  /// For repeating `=` (e.g. `5 + 3 = =` → 11).
+  String? _lastOp;
+  double? _lastRhs;
+
   bool get hasMemory => memory != null;
 
   /// Current pending operator (for UI highlight), or null.
   String? get pendingOp => _op;
+
+  /// iOS-style: show AC when idle at zero; otherwise C to clear the entry.
+  bool get showsAllClear {
+    if (error) return true;
+    if (!fresh) return false;
+    if (input != '0' && input != '0.') return false;
+    return true;
+  }
 
   void digit(String d) {
     if (error) clear();
@@ -52,7 +69,7 @@ class CalculatorEngine {
         input += d;
       }
     }
-    _syncExpressionTrailing();
+    _refreshPendingExpression();
   }
 
   void dot() {
@@ -64,7 +81,7 @@ class CalculatorEngine {
     } else if (!input.contains('.') && input.length < 14) {
       input += '.';
     }
-    _syncExpressionTrailing();
+    _refreshPendingExpression();
   }
 
   void op(String operator) {
@@ -87,13 +104,47 @@ class CalculatorEngine {
       _acc = cur;
     }
     _op = operator;
+    _lastOp = null;
+    _lastRhs = null;
     fresh = true;
     expression = '${format(_acc!)} $operator';
   }
 
-  /// Returns a history entry when a full `a op b =` succeeds.
+  /// Returns a history entry when a calculation succeeds.
   CalcHistoryEntry? equals() {
-    if (error || _acc == null || _op == null) return null;
+    if (error) return null;
+
+    // Repeat last operation: `5 + 3 = =` → 11.
+    if ((_acc == null || _op == null) &&
+        _lastOp != null &&
+        _lastRhs != null) {
+      final cur = double.tryParse(input);
+      if (cur == null) {
+        _setError();
+        return null;
+      }
+      final r = _apply(cur, _lastOp!, _lastRhs!);
+      if (r == null) {
+        _setError();
+        return null;
+      }
+      final left = format(cur);
+      final right = format(_lastRhs!);
+      final exprLine = '$left $_lastOp $right =';
+      final resultStr = format(r);
+      expression = exprLine;
+      input = resultStr;
+      _acc = r;
+      _op = null;
+      fresh = true;
+      return CalcHistoryEntry(
+        expression: exprLine,
+        result: resultStr,
+        at: DateTime.now(),
+      );
+    }
+
+    if (_acc == null || _op == null) return null;
     final cur = double.tryParse(input);
     if (cur == null) {
       _setError();
@@ -110,6 +161,8 @@ class CalculatorEngine {
     final resultStr = format(r);
     expression = exprLine;
     input = resultStr;
+    _lastOp = _op;
+    _lastRhs = cur;
     _acc = r;
     _op = null;
     fresh = true;
@@ -125,8 +178,28 @@ class CalculatorEngine {
     input = '0';
     _acc = null;
     _op = null;
+    _lastOp = null;
+    _lastRhs = null;
     fresh = true;
     error = false;
+  }
+
+  /// Clear current entry only; keep pending operator when present.
+  void clearEntry() {
+    if (error) {
+      clear();
+      return;
+    }
+    input = '0';
+    fresh = true;
+    if (_op == null) {
+      expression = '';
+      _acc = null;
+      _lastOp = null;
+      _lastRhs = null;
+    } else {
+      _refreshPendingExpression();
+    }
   }
 
   void backspace() {
@@ -134,14 +207,42 @@ class CalculatorEngine {
       clear();
       return;
     }
-    if (fresh) return;
+
+    // After an operator: undo the operator and restore the left operand.
+    if (fresh && _op != null && _acc != null) {
+      input = format(_acc!);
+      _acc = null;
+      _op = null;
+      expression = '';
+      fresh = false;
+      return;
+    }
+
+    // After equals: drop the finished expression, then delete digits.
+    if (fresh && expression.endsWith(' =')) {
+      expression = '';
+      _acc = null;
+      _op = null;
+      _lastOp = null;
+      _lastRhs = null;
+    }
+
+    if (fresh) {
+      if (input == '0' || input == '0.') return;
+      fresh = false;
+    }
+
     if (input.length <= 1 || (input.length == 2 && input.startsWith('-'))) {
       input = '0';
       fresh = true;
     } else {
       input = input.substring(0, input.length - 1);
+      if (input == '-' || input.isEmpty) {
+        input = '0';
+        fresh = true;
+      }
     }
-    _syncExpressionTrailing();
+    _refreshPendingExpression();
   }
 
   void negate() {
@@ -152,17 +253,25 @@ class CalculatorEngine {
     } else {
       input = '-$input';
     }
+    // Negating a fresh result starts a new editable entry.
     fresh = false;
-    _syncExpressionTrailing();
+    if (expression.endsWith(' =')) expression = '';
+    _refreshPendingExpression();
   }
 
+  /// Percent: with a pending op, use `acc * (input/100)` (e.g. `200 + 10%` → 20).
+  /// Otherwise divide the current value by 100.
   void percent() {
     if (error) return;
     final cur = double.tryParse(input);
     if (cur == null) return;
-    input = format(cur / 100);
+    if (_acc != null && _op != null) {
+      input = format(_acc! * (cur / 100));
+    } else {
+      input = format(cur / 100);
+    }
     fresh = true;
-    _syncExpressionTrailing();
+    _refreshPendingExpression();
   }
 
   void memoryClear() => memory = null;
@@ -170,9 +279,10 @@ class CalculatorEngine {
   void memoryRecall() {
     if (memory == null) return;
     if (error) clear();
+    if (expression.endsWith(' =')) expression = '';
     input = format(memory!);
-    fresh = true;
-    _syncExpressionTrailing();
+    fresh = false;
+    _refreshPendingExpression();
   }
 
   void memoryAdd() {
@@ -194,18 +304,11 @@ class CalculatorEngine {
     fresh = true;
   }
 
-  void _syncExpressionTrailing() {
-    if (_op == null || _acc == null) {
-      if (expression.endsWith(' =')) {
-        // Keep completed expression until next op/digit clears via fresh path.
-      }
-      return;
-    }
-    if (fresh) {
-      expression = '${format(_acc!)} $_op';
-    } else {
-      expression = '${format(_acc!)} $_op $input';
-    }
+  /// Keep expression as `acc op` only — never append the live input.
+  void _refreshPendingExpression() {
+    if (_op == null || _acc == null) return;
+    if (expression.endsWith(' =')) return;
+    expression = '${format(_acc!)} $_op';
   }
 
   void _setError() {
@@ -214,6 +317,8 @@ class CalculatorEngine {
     input = 'Error';
     _acc = null;
     _op = null;
+    _lastOp = null;
+    _lastRhs = null;
     fresh = true;
   }
 

@@ -85,6 +85,16 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     );
   }
 
+  void _tapDigit(String d) {
+    HapticFeedback.selectionClick();
+    _bump(() => _engine.digit(d));
+  }
+
+  void _tapOp(String o) {
+    HapticFeedback.lightImpact();
+    _bump(() => _engine.op(o));
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -92,8 +102,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final scheme = theme.colorScheme;
     final eng = _engine;
     final displayInput = eng.error ? l10n.calcError : eng.input;
+    final clearLabel = eng.showsAllClear ? 'AC' : 'C';
 
     return Scaffold(
+      backgroundColor: scheme.surface,
       appBar: AppBar(
         title: Text(l10n.toolCalculator),
         actions: [
@@ -113,255 +125,147 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.formPage,
-            AppSpacing.field,
+            AppSpacing.compact,
             AppSpacing.formPage,
             AppSpacing.formPage,
           ),
           child: Column(
             children: [
               Expanded(
-                child: Card(
-                  child: Stack(
-                    children: [
-                      if (eng.hasMemory)
-                        Positioned(
-                          top: 12,
-                          left: 16,
-                          child: Text(
-                            'M',
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              color: scheme.primary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      Padding(
-                        padding: const EdgeInsets.all(AppSpacing.card),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const Spacer(),
-                            if (eng.expression.isNotEmpty)
-                              Text(
-                                eng.expression,
-                                textAlign: TextAlign.right,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  color: scheme.onSurfaceVariant,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                            FittedBox(
-                              fit: BoxFit.scaleDown,
-                              alignment: Alignment.centerRight,
-                              child: Text(
-                                displayInput,
-                                maxLines: 1,
-                                textAlign: TextAlign.right,
-                                style: theme.textTheme.displayMedium?.copyWith(
-                                  color: scheme.onSurface,
-                                  fontWeight: FontWeight.w300,
-                                  height: 1.05,
-                                  letterSpacing: -1.5,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                flex: 3,
+                child: _DisplayPanel(
+                  expression: eng.expression,
+                  value: displayInput,
+                  hasMemory: eng.hasMemory,
                 ),
               ),
-              const SizedBox(height: AppSpacing.section),
-              _row([
-                _KeySpec(
-                  'MC',
-                  kind: _KeyKind.mem,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    _bump(_engine.memoryClear);
-                  },
+              const SizedBox(height: AppSpacing.field),
+              // Memory strip — compact, not square keys.
+              _MemoryRow(
+                onMc: () {
+                  HapticFeedback.selectionClick();
+                  _bump(_engine.memoryClear);
+                },
+                onMr: () {
+                  HapticFeedback.selectionClick();
+                  _bump(_engine.memoryRecall);
+                },
+                onMPlus: () {
+                  HapticFeedback.selectionClick();
+                  _bump(_engine.memoryAdd);
+                },
+                onMMinus: () {
+                  HapticFeedback.selectionClick();
+                  _bump(_engine.memorySub);
+                },
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                flex: 7,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: _row([
+                        _KeySpec(
+                          clearLabel,
+                          kind: _KeyKind.fn,
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            _bump(
+                              eng.showsAllClear
+                                  ? _engine.clear
+                                  : _engine.clearEntry,
+                            );
+                          },
+                        ),
+                        _KeySpec(
+                          '⌫',
+                          kind: _KeyKind.fn,
+                          icon: Icons.backspace_outlined,
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            _bump(_engine.backspace);
+                          },
+                        ),
+                        _KeySpec(
+                          '%',
+                          kind: _KeyKind.fn,
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            _bump(_engine.percent);
+                          },
+                        ),
+                        _KeySpec(
+                          '÷',
+                          kind: _KeyKind.op,
+                          onTap: () => _tapOp('÷'),
+                        ),
+                      ]),
+                    ),
+                    Expanded(
+                      child: _row([
+                        _KeySpec('7', onTap: () => _tapDigit('7')),
+                        _KeySpec('8', onTap: () => _tapDigit('8')),
+                        _KeySpec('9', onTap: () => _tapDigit('9')),
+                        _KeySpec(
+                          '×',
+                          kind: _KeyKind.op,
+                          onTap: () => _tapOp('×'),
+                        ),
+                      ]),
+                    ),
+                    Expanded(
+                      child: _row([
+                        _KeySpec('4', onTap: () => _tapDigit('4')),
+                        _KeySpec('5', onTap: () => _tapDigit('5')),
+                        _KeySpec('6', onTap: () => _tapDigit('6')),
+                        _KeySpec(
+                          '−',
+                          kind: _KeyKind.op,
+                          onTap: () => _tapOp('−'),
+                        ),
+                      ]),
+                    ),
+                    Expanded(
+                      child: _row([
+                        _KeySpec('1', onTap: () => _tapDigit('1')),
+                        _KeySpec('2', onTap: () => _tapDigit('2')),
+                        _KeySpec('3', onTap: () => _tapDigit('3')),
+                        _KeySpec(
+                          '+',
+                          kind: _KeyKind.op,
+                          onTap: () => _tapOp('+'),
+                        ),
+                      ]),
+                    ),
+                    Expanded(
+                      child: _row([
+                        _KeySpec(
+                          '+/−',
+                          kind: _KeyKind.fn,
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            _bump(_engine.negate);
+                          },
+                        ),
+                        _KeySpec('0', onTap: () => _tapDigit('0')),
+                        _KeySpec(
+                          '.',
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            _bump(_engine.dot);
+                          },
+                        ),
+                        _KeySpec(
+                          '=',
+                          kind: _KeyKind.equals,
+                          onTap: _onEquals,
+                        ),
+                      ]),
+                    ),
+                  ],
                 ),
-                _KeySpec(
-                  'MR',
-                  kind: _KeyKind.mem,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    _bump(_engine.memoryRecall);
-                  },
-                ),
-                _KeySpec(
-                  'M+',
-                  kind: _KeyKind.mem,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    _bump(_engine.memoryAdd);
-                  },
-                ),
-                _KeySpec(
-                  'M−',
-                  kind: _KeyKind.mem,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    _bump(_engine.memorySub);
-                  },
-                ),
-                _KeySpec(
-                  '⌫',
-                  kind: _KeyKind.fn,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    _bump(_engine.backspace);
-                  },
-                ),
-              ]),
-              _row([
-                _KeySpec(
-                  'AC',
-                  kind: _KeyKind.fn,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    _bump(_engine.clear);
-                  },
-                ),
-                _KeySpec(
-                  '+/−',
-                  kind: _KeyKind.fn,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    _bump(_engine.negate);
-                  },
-                ),
-                _KeySpec(
-                  '%',
-                  kind: _KeyKind.fn,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    _bump(_engine.percent);
-                  },
-                ),
-                _KeySpec(
-                  '÷',
-                  kind: _KeyKind.op,
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    _bump(() => _engine.op('÷'));
-                  },
-                ),
-              ]),
-              _row([
-                _KeySpec(
-                  '7',
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    _bump(() => _engine.digit('7'));
-                  },
-                ),
-                _KeySpec(
-                  '8',
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    _bump(() => _engine.digit('8'));
-                  },
-                ),
-                _KeySpec(
-                  '9',
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    _bump(() => _engine.digit('9'));
-                  },
-                ),
-                _KeySpec(
-                  '×',
-                  kind: _KeyKind.op,
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    _bump(() => _engine.op('×'));
-                  },
-                ),
-              ]),
-              _row([
-                _KeySpec(
-                  '4',
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    _bump(() => _engine.digit('4'));
-                  },
-                ),
-                _KeySpec(
-                  '5',
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    _bump(() => _engine.digit('5'));
-                  },
-                ),
-                _KeySpec(
-                  '6',
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    _bump(() => _engine.digit('6'));
-                  },
-                ),
-                _KeySpec(
-                  '−',
-                  kind: _KeyKind.op,
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    _bump(() => _engine.op('−'));
-                  },
-                ),
-              ]),
-              _row([
-                _KeySpec(
-                  '1',
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    _bump(() => _engine.digit('1'));
-                  },
-                ),
-                _KeySpec(
-                  '2',
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    _bump(() => _engine.digit('2'));
-                  },
-                ),
-                _KeySpec(
-                  '3',
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    _bump(() => _engine.digit('3'));
-                  },
-                ),
-                _KeySpec(
-                  '+',
-                  kind: _KeyKind.op,
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    _bump(() => _engine.op('+'));
-                  },
-                ),
-              ]),
-              _row([
-                _KeySpec(
-                  '0',
-                  wide: true,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    _bump(() => _engine.digit('0'));
-                  },
-                ),
-                _KeySpec(
-                  '.',
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    _bump(_engine.dot);
-                  },
-                ),
-                _KeySpec('=', kind: _KeyKind.op, onTap: _onEquals),
-              ]),
+              ),
             ],
           ),
         ),
@@ -377,21 +281,152 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           for (var i = 0; i < keys.length; i++) ...[
             if (i > 0) const SizedBox(width: 8),
             Expanded(
-              flex: keys[i].wide ? 2 : 1,
               child: _CalcButton(
                 label: keys[i].label,
+                icon: keys[i].icon,
                 kind: keys[i].kind,
                 selected:
                     keys[i].kind == _KeyKind.op &&
                     _engine.pendingOp == keys[i].label &&
                     _engine.fresh &&
                     !_engine.error,
-                wide: keys[i].wide,
                 onTap: keys[i].onTap,
               ),
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _MemoryRow extends StatelessWidget {
+  const _MemoryRow({
+    required this.onMc,
+    required this.onMr,
+    required this.onMPlus,
+    required this.onMMinus,
+  });
+
+  final VoidCallback onMc;
+  final VoidCallback onMr;
+  final VoidCallback onMPlus;
+  final VoidCallback onMMinus;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    Widget chip(String label, VoidCallback onTap) {
+      return Expanded(
+        child: Material(
+          color: scheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(AppRadius.control),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: scheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  height: 1,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Row(
+      children: [
+        chip('MC', onMc),
+        const SizedBox(width: 8),
+        chip('MR', onMr),
+        const SizedBox(width: 8),
+        chip('M+', onMPlus),
+        const SizedBox(width: 8),
+        chip('M−', onMMinus),
+      ],
+    );
+  }
+}
+
+class _DisplayPanel extends StatelessWidget {
+  const _DisplayPanel({
+    required this.expression,
+    required this.value,
+    required this.hasMemory,
+  });
+
+  final String expression;
+  final String value;
+  final bool hasMemory;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                hasMemory ? 'M' : ' ',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: hasMemory ? scheme.primary : Colors.transparent,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const Spacer(),
+            if (expression.isNotEmpty)
+              Text(
+                expression,
+                textAlign: TextAlign.right,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w400,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            const SizedBox(height: 6),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                value,
+                maxLines: 1,
+                textAlign: TextAlign.right,
+                style: theme.textTheme.displayMedium?.copyWith(
+                  color: scheme.onSurface,
+                  fontWeight: FontWeight.w300,
+                  height: 1.05,
+                  letterSpacing: -1.5,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -469,20 +504,20 @@ class _HistorySheet extends StatelessWidget {
   }
 }
 
-enum _KeyKind { num, fn, op, mem }
+enum _KeyKind { num, fn, op, equals }
 
 class _KeySpec {
   const _KeySpec(
     this.label, {
     required this.onTap,
     this.kind = _KeyKind.num,
-    this.wide = false,
+    this.icon,
   });
 
   final String label;
   final VoidCallback onTap;
   final _KeyKind kind;
-  final bool wide;
+  final IconData? icon;
 }
 
 class _CalcButton extends StatelessWidget {
@@ -490,15 +525,15 @@ class _CalcButton extends StatelessWidget {
     required this.label,
     required this.kind,
     required this.onTap,
+    this.icon,
     this.selected = false,
-    this.wide = false,
   });
 
   final String label;
+  final IconData? icon;
   final _KeyKind kind;
   final VoidCallback onTap;
   final bool selected;
-  final bool wide;
 
   @override
   Widget build(BuildContext context) {
@@ -509,55 +544,53 @@ class _CalcButton extends StatelessWidget {
     switch (kind) {
       case _KeyKind.fn:
         bg = scheme.surfaceContainerHigh;
-        fg = scheme.onSurface;
-      case _KeyKind.mem:
-        bg = scheme.surfaceContainerHighest;
-        fg = scheme.onSurface;
+        fg = label == 'AC' || label == 'C'
+            ? AppColors.warning
+            : scheme.onSurface;
       case _KeyKind.op:
         bg = selected ? scheme.surface : visuals.accent;
         fg = selected ? visuals.accent : visuals.onAccent;
+      case _KeyKind.equals:
+        bg = visuals.accent;
+        fg = visuals.onAccent;
       case _KeyKind.num:
         bg = scheme.surfaceContainerHighest;
         fg = scheme.onSurface;
     }
 
     final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
       side: kind == _KeyKind.op && selected
           ? BorderSide(color: visuals.accent, width: 1.5)
           : BorderSide.none,
     );
 
     final fontSize = switch (kind) {
-      _KeyKind.mem => 15.0,
-      _KeyKind.fn || _KeyKind.op => 26.0,
-      _KeyKind.num => 30.0,
+      _KeyKind.fn => 22.0,
+      _KeyKind.op || _KeyKind.equals => 28.0,
+      _KeyKind.num => 28.0,
     };
 
-    return AspectRatio(
-      aspectRatio: wide ? 2.15 : 1,
-      child: Material(
-        color: bg,
-        elevation: 0,
-        shape: shape,
-        child: InkWell(
-          customBorder: shape,
-          onTap: onTap,
-          child: Align(
-            alignment: wide ? Alignment.centerLeft : Alignment.center,
-            child: Padding(
-              padding: EdgeInsets.only(left: wide ? 24 : 0),
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: fg,
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.w500,
-                  height: 1,
+    return Material(
+      color: bg,
+      elevation: 0,
+      shape: shape,
+      child: InkWell(
+        customBorder: shape,
+        onTap: onTap,
+        child: Center(
+          child: icon != null
+              ? Icon(icon, color: fg, size: 26)
+              : Text(
+                  label,
+                  style: TextStyle(
+                    color: fg,
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.w500,
+                    height: 1,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
                 ),
-              ),
-            ),
-          ),
         ),
       ),
     );
