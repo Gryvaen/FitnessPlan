@@ -339,7 +339,7 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
                             _StepButton(
                               tooltip: l10n.decreasePerSetValue,
                               icon: Icons.remove,
-                              onPressed: !_saving && _perSetValue > 0
+                              onPressed: !_saving && _perSetValue > 1
                                   ? () => setState(() => _perSetValue--)
                                   : null,
                             ),
