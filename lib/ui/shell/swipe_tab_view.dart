@@ -146,7 +146,7 @@ class SwipeTabView extends StatefulWidget {
   const SwipeTabView({
     super.key,
     this.branchIndex,
-    this.keepPagesAlive = false,
+    this.keepPagesAlive = true,
     required this.index,
     required this.onIndexChanged,
     required this.children,
@@ -155,6 +155,7 @@ class SwipeTabView extends StatefulWidget {
   final int? branchIndex;
 
   /// Retain visited panels, including their locally selected nested tabs.
+  /// Defaults to true so tab switches stay smooth across the app.
   final bool keepPagesAlive;
   final int index;
   final ValueChanged<int> onIndexChanged;
@@ -171,6 +172,10 @@ class _SwipeTabViewState extends State<SwipeTabView>
   /// True while the controller is driven programmatically so the resulting
   /// [onPageChanged] is not echoed back out.
   bool _syncing = false;
+
+  /// Tab tapped while an animation is in flight — applied when the current
+  /// animation finishes so rapid SportTabs taps are not dropped.
+  int? _pendingIndex;
 
   /// The page actually shown, tracked so [_stepSelf] works off the settled
   /// position even mid-animation.
@@ -209,21 +214,43 @@ class _SwipeTabViewState extends State<SwipeTabView>
   @override
   void didUpdateWidget(covariant SwipeTabView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_syncing ||
-        widget.index == oldWidget.index ||
-        !_controller.hasClients ||
-        _settledPage == widget.index) {
+    if (widget.index == oldWidget.index) return;
+    if (!_controller.hasClients) {
+      _settledPage = widget.index;
       return;
     }
+    if (_settledPage == widget.index) {
+      _pendingIndex = null;
+      return;
+    }
+    if (_syncing) {
+      _pendingIndex = widget.index;
+      return;
+    }
+    _animateTo(widget.index);
+  }
+
+  void _animateTo(int index, {bool notify = false}) {
     _syncing = true;
     _controller
         .animateToPage(
-          widget.index,
+          index,
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
         )
         .whenComplete(() {
-          if (mounted) setState(() => _syncing = false);
+          if (!mounted) return;
+          if (notify && index != widget.index) {
+            widget.onIndexChanged(index);
+          }
+          final pending = _pendingIndex;
+          _pendingIndex = null;
+          if (pending != null && pending != index) {
+            // Parent already updated [widget.index]; just animate.
+            _animateTo(pending);
+            return;
+          }
+          setState(() => _syncing = false);
         });
   }
 
@@ -249,18 +276,7 @@ class _SwipeTabViewState extends State<SwipeTabView>
     if (target < 0 || target >= widget.children.length) {
       return _handoffUp(delta);
     }
-    _syncing = true;
-    _controller
-        .animateToPage(
-          target,
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-        )
-        .whenComplete(() {
-          if (!mounted) return;
-          widget.onIndexChanged(target);
-          setState(() => _syncing = false);
-        });
+    _animateTo(target, notify: true);
     return true;
   }
 

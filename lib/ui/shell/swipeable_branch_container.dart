@@ -24,6 +24,7 @@ class SwipeableBranchContainer extends StatefulWidget {
 class _SwipeableBranchContainerState extends State<SwipeableBranchContainer> {
   late final PageController _controller;
   bool _animatingFromNav = false;
+  int? _pendingIndex;
 
   @override
   void initState() {
@@ -37,16 +38,34 @@ class _SwipeableBranchContainerState extends State<SwipeableBranchContainer> {
     if (widget.currentIndex == oldWidget.currentIndex) return;
     if (!_controller.hasClients) return;
     final page = _controller.page?.round() ?? _controller.initialPage;
-    if (page == widget.currentIndex) return;
+    if (page == widget.currentIndex) {
+      _pendingIndex = null;
+      return;
+    }
+    if (_animatingFromNav) {
+      _pendingIndex = widget.currentIndex;
+      return;
+    }
+    _animateTo(widget.currentIndex);
+  }
+
+  void _animateTo(int index) {
     _animatingFromNav = true;
     _controller
         .animateToPage(
-          widget.currentIndex,
+          index,
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeOutCubic,
         )
         .whenComplete(() {
-          if (mounted) _animatingFromNav = false;
+          if (!mounted) return;
+          final pending = _pendingIndex;
+          _pendingIndex = null;
+          if (pending != null && pending != index) {
+            _animateTo(pending);
+            return;
+          }
+          _animatingFromNav = false;
         });
   }
 
