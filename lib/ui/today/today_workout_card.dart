@@ -62,14 +62,14 @@ class TodayWorkoutCard extends ConsumerWidget {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(ctx, true),
-                      child: Text(l10n.goRecords),
+                      child: Text(l10n.tabPlans),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: FilledButton(
                       onPressed: () => Navigator.pop(ctx, false),
-                      child: Text(l10n.quickAddExercise),
+                      child: Text(l10n.exercise),
                     ),
                   ),
                 ],
@@ -80,9 +80,9 @@ class TodayWorkoutCard extends ConsumerWidget {
       );
       if (!context.mounted) return;
       if (go == true) {
-        context.go('/records?tab=train');
+        context.go('/records?tab=train&sub=plans');
       } else if (go == false) {
-        await showQuickAddDayItemDialog(context: context, ref: ref, day: day);
+        context.go('/records?tab=train&sub=library');
       }
       return;
     }
@@ -140,7 +140,11 @@ class TodayWorkoutCard extends ConsumerWidget {
     }
   }
 
-  Future<void> _copyYesterday(BuildContext context, WidgetRef ref) async {
+  Future<void> _copyYesterday(
+    BuildContext context,
+    WidgetRef ref, {
+    int? sourceDayWorkoutId,
+  }) async {
     final l10n = context.l10n;
     final from = day.subtract(const Duration(days: 1));
     final existing = await ref.read(workoutRepositoryProvider).daySnapshot(day);
@@ -169,7 +173,11 @@ class TodayWorkoutCard extends ConsumerWidget {
     try {
       final result = await ref
           .read(workoutRepositoryProvider)
-          .copyDayWorkout(from: from, to: day);
+          .copyDayWorkout(
+            from: from,
+            to: day,
+            sourceDayWorkoutId: sourceDayWorkoutId,
+          );
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -295,8 +303,9 @@ class TodayWorkoutCard extends ConsumerWidget {
     required WidgetRef ref,
     required AppLocalizations l10n,
     required bool canAdd,
-    required bool canSaveAsPlan,
     required bool canCopyYesterday,
+    required bool canSaveAsPlan,
+    required List<DayWorkoutGroup> yesterdayGroups,
     required String? summary,
   }) {
     return TodaySectionHeader(
@@ -305,12 +314,19 @@ class TodayWorkoutCard extends ConsumerWidget {
       addLabel: canAdd ? l10n.addTodayWorkout : null,
       onAdd: canAdd ? () => _pickPlan(context, ref) : null,
       trailing: [
-        if (canCopyYesterday)
-          IconButton(
-            tooltip: l10n.copyYesterdayWorkout,
-            visualDensity: VisualDensity.compact,
-            icon: const Icon(Icons.content_copy, size: 18),
-            onPressed: () => _copyYesterday(context, ref),
+        if (canCopyYesterday && yesterdayGroups.isNotEmpty)
+          PopupMenuButton<int>(
+            tooltip: l10n.copyYesterday,
+            icon: const Icon(Icons.more_horiz),
+            onSelected: (id) =>
+                _copyYesterday(context, ref, sourceDayWorkoutId: id),
+            itemBuilder: (context) => [
+              for (final group in yesterdayGroups)
+                PopupMenuItem(
+                  value: group.workout.id,
+                  child: Text(_groupTitle(group, l10n)),
+                ),
+            ],
           ),
         if (canSaveAsPlan)
           PopupMenuButton<String>(
@@ -321,7 +337,10 @@ class TodayWorkoutCard extends ConsumerWidget {
               }
             },
             itemBuilder: (context) => [
-              PopupMenuItem(value: 'savePlan', child: Text(l10n.saveAsPlan)),
+              PopupMenuItem(
+                value: 'savePlan',
+                child: Text(l10n.saveAsPlan),
+              ),
             ],
           ),
       ],
@@ -392,12 +411,16 @@ class TodayWorkoutCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final editable = AppDates.isLocalToday(day);
-    final yesterdaySnapshot = editable
-        ? ref
-              .watch(dayWorkoutProvider(day.subtract(const Duration(days: 1))))
-              .value
-        : null;
-    final canCopyYesterday = editable && !(yesterdaySnapshot?.isEmpty ?? true);
+    final yesterdayGroups = editable
+        ? (ref
+                  .watch(
+                    dayWorkoutProvider(day.subtract(const Duration(days: 1))),
+                  )
+                  .value
+                  ?.groups ??
+              const <DayWorkoutGroup>[])
+        : const <DayWorkoutGroup>[];
+    final canCopyYesterday = editable && yesterdayGroups.isNotEmpty;
 
     return async.when(
       loading: () => Column(
@@ -408,8 +431,9 @@ class TodayWorkoutCard extends ConsumerWidget {
             ref: ref,
             l10n: l10n,
             canAdd: editable,
-            canSaveAsPlan: false,
             canCopyYesterday: canCopyYesterday,
+            canSaveAsPlan: false,
+            yesterdayGroups: yesterdayGroups,
             summary: null,
           ),
           const SizedBox(
@@ -420,6 +444,7 @@ class TodayWorkoutCard extends ConsumerWidget {
       ),
       error: (e, _) => Text(l10n.workoutLoadFailed('$e')),
       data: (snapshot) {
+        final canSaveAsPlan = !snapshot.isEmpty;
         if (snapshot.isEmpty) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -429,8 +454,9 @@ class TodayWorkoutCard extends ConsumerWidget {
                 ref: ref,
                 l10n: l10n,
                 canAdd: editable,
-                canSaveAsPlan: editable,
                 canCopyYesterday: canCopyYesterday,
+                canSaveAsPlan: canSaveAsPlan,
+                yesterdayGroups: yesterdayGroups,
                 summary: l10n.noWorkoutShort,
               ),
               SportEmptyState(
@@ -457,8 +483,9 @@ class TodayWorkoutCard extends ConsumerWidget {
               ref: ref,
               l10n: l10n,
               canAdd: editable,
-              canSaveAsPlan: true,
               canCopyYesterday: canCopyYesterday,
+              canSaveAsPlan: canSaveAsPlan,
+              yesterdayGroups: yesterdayGroups,
               summary: '$done/$total',
             ),
             if (!showDetails) ...[
@@ -598,7 +625,6 @@ class _WorkoutItemTile extends ConsumerWidget {
     final theme = Theme.of(context);
     final note = item.note?.trim();
     final weightKg = item.actualWeightKg;
-    final weightUnit = GymWeightUnit.parse(item.actualWeightUnit);
     final progressLine = item.done
         ? l10n.completed
         : l10n.setsProgress(
@@ -607,11 +633,25 @@ class _WorkoutItemTile extends ConsumerWidget {
             '${item.targetReps}',
             unitLabel,
           );
-    final metaParts = <String>[
-      progressLine,
-      if (weightKg != null)
-        '${formatKg(FormOptions.fromKg(weightKg, weightUnit))} ${weightUnit.suffix}',
-    ];
+    final metaStyle = theme.textTheme.meta;
+    final weightSpans = weightKg == null
+        ? null
+        : <InlineSpan>[
+            TextSpan(
+              text:
+                  '${formatKg(FormOptions.fromKg(weightKg, GymWeightUnit.kg))} '
+                  '${GymWeightUnit.kg.suffix} ',
+            ),
+            TextSpan(
+              text: '|',
+              style: metaStyle?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            TextSpan(
+              text:
+                  ' ${formatKg(FormOptions.fromKg(weightKg, GymWeightUnit.lbs))} '
+                  '${GymWeightUnit.lbs.suffix}',
+            ),
+          ];
 
     return SportListTile(
       leading: Checkbox(
@@ -636,12 +676,23 @@ class _WorkoutItemTile extends ConsumerWidget {
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(metaParts.join(' · '), style: theme.textTheme.meta),
+          Text.rich(
+            TextSpan(
+              style: metaStyle,
+              children: [
+                TextSpan(text: progressLine),
+                if (weightSpans != null) ...[
+                  const TextSpan(text: ' · '),
+                  ...weightSpans,
+                ],
+              ],
+            ),
+          ),
           if (note != null && note.isNotEmpty) ...[
             const SizedBox(height: 2),
             Text(
               note,
-              style: theme.textTheme.meta?.copyWith(
+              style: metaStyle?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
               maxLines: 2,

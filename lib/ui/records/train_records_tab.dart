@@ -16,7 +16,13 @@ import '../widgets/form_options.dart';
 
 /// Training management: exercise catalog, plans, recent set history.
 class TrainRecordsTab extends ConsumerStatefulWidget {
-  const TrainRecordsTab({super.key});
+  const TrainRecordsTab({super.key, this.initialTab});
+
+  /// When set, forces the sub-tab (0=计划, 1=历史, 2=动作库) to this index —
+  /// overrides whatever this widget last had selected, since [RecordsPage]
+  /// keeps it alive across navigations away and back.
+  final int? initialTab;
+
   @override
   ConsumerState<TrainRecordsTab> createState() => _TrainRecordsTabState();
 }
@@ -29,6 +35,21 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   String _query = '';
   String? _category;
   bool _starting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialTab != null) _tab = widget.initialTab!;
+  }
+
+  @override
+  void didUpdateWidget(covariant TrainRecordsTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final target = widget.initialTab;
+    if (target != null && target != oldWidget.initialTab) {
+      setState(() => _tab = target);
+    }
+  }
 
   int _dayExerciseCount(WorkoutHistoryDay day) {
     return {

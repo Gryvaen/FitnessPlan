@@ -12,9 +12,18 @@ import 'train_records_tab.dart';
 enum RecordsSegment { body, train, notes }
 
 class RecordsPage extends ConsumerStatefulWidget {
-  const RecordsPage({super.key, this.initialSegment = RecordsSegment.body});
+  const RecordsPage({
+    super.key,
+    this.initialSegment = RecordsSegment.body,
+    this.initialTrainTab,
+  });
 
   final RecordsSegment initialSegment;
+
+  /// When set (e.g. navigating in via `/records?tab=train&sub=library`),
+  /// forces the 训练 sub-tab (0=计划, 1=历史, 2=动作库) to this index even if
+  /// [TrainRecordsTab] kept a different one alive from an earlier visit.
+  final int? initialTrainTab;
 
   @override
   ConsumerState<RecordsPage> createState() => _RecordsPageState();
@@ -76,10 +85,10 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
                 index: _segment.index,
                 onIndexChanged: (i) =>
                     setState(() => _segment = RecordsSegment.values[i]),
-                children: const [
-                  BodyRecordsTab(),
-                  TrainRecordsTab(),
-                  NotesRecordsTab(),
+                children: [
+                  const BodyRecordsTab(),
+                  TrainRecordsTab(initialTab: widget.initialTrainTab),
+                  const NotesRecordsTab(),
                 ],
               ),
             ),

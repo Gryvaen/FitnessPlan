@@ -376,28 +376,6 @@ class WorkoutRepository {
     );
   }
 
-  /// Number of distinct days with a planned workout per weekday (1=Mon..7=Sun)
-  /// within [[start], [end]] inclusive. Used to *suggest* carb-cycle days;
-  /// the user still confirms the schedule.
-  Future<Map<int, int>> trainingWeekdayCounts(
-    DateTime start,
-    DateTime end,
-  ) async {
-    final s = _dayStart(start);
-    final e = _dayStart(end);
-    final rows =
-        await (_db.select(_db.dayWorkouts)
-              ..where((t) => t.date.isBiggerOrEqualValue(s))
-              ..where((t) => t.date.isSmallerOrEqualValue(e)))
-            .get();
-    final days = <DateTime>{for (final r in rows) _dayStart(r.date)};
-    final counts = <int, int>{for (var i = 1; i <= 7; i++) i: 0};
-    for (final d in days) {
-      counts[d.weekday] = (counts[d.weekday] ?? 0) + 1;
-    }
-    return counts;
-  }
-
   Future<DayWorkoutSnapshot> daySnapshot(DateTime day) async {
     final workouts = await dayWorkoutsFor(day);
     if (workouts.isEmpty) return const DayWorkoutSnapshot();
@@ -518,20 +496,28 @@ class WorkoutRepository {
   /// Copies [from]'s day-workout groups (exercises + set/rep targets) onto
   /// [to] as new, unfinished groups — mirrors [MealRepository.copyDay] for
   /// training. Does not carry over `done`/set-log progress; [to] starts fresh.
+  ///
+  /// When [sourceDayWorkoutId] is set, only that group is copied.
   Future<CopyDayWorkoutResult> copyDayWorkout({
     required DateTime from,
     required DateTime to,
+    int? sourceDayWorkoutId,
   }) async {
     CalendarDay.ensureEditableDay(to);
     final snap = await daySnapshot(from);
-    if (snap.isEmpty) {
+    final groups = sourceDayWorkoutId == null
+        ? snap.groups
+        : snap.groups
+              .where((g) => g.workout.id == sourceDayWorkoutId)
+              .toList(growable: false);
+    if (groups.isEmpty) {
       return const CopyDayWorkoutResult(groupsCopied: 0, itemsCopied: 0);
     }
 
     final start = _dayStart(to);
     var itemsCopied = 0;
     await _db.transaction(() async {
-      for (final group in snap.groups) {
+      for (final group in groups) {
         final dayId = await _db
             .into(_db.dayWorkouts)
             .insert(
@@ -560,7 +546,7 @@ class WorkoutRepository {
       }
     });
     return CopyDayWorkoutResult(
-      groupsCopied: snap.groups.length,
+      groupsCopied: groups.length,
       itemsCopied: itemsCopied,
     );
   }

@@ -142,39 +142,48 @@ class SportEmptyState extends StatelessWidget {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 48,
-            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.55),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.titleMedium,
-          ),
-          if (message != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              message!,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+      // Full width regardless of the parent's crossAxisAlignment (many
+      // callers sit in a `start`-aligned Column), so the icon/text/actions
+      // below center on the row instead of hugging the left edge.
+      child: SizedBox(
+        width: double.infinity,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 48,
+              color: theme.colorScheme.onSurfaceVariant.withValues(
+                alpha: 0.55,
               ),
             ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium,
+            ),
+            if (message != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                message!,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+            if (onAction != null && actionLabel != null) ...[
+              const SizedBox(height: 20),
+              FilledButton(onPressed: onAction, child: Text(actionLabel!)),
+            ],
+            if (onSecondary != null && secondaryLabel != null) ...[
+              const SizedBox(height: 4),
+              TextButton(onPressed: onSecondary, child: Text(secondaryLabel!)),
+            ],
           ],
-          if (onAction != null && actionLabel != null) ...[
-            const SizedBox(height: 20),
-            FilledButton(onPressed: onAction, child: Text(actionLabel!)),
-          ],
-          if (onSecondary != null && secondaryLabel != null) ...[
-            const SizedBox(height: 4),
-            TextButton(onPressed: onSecondary, child: Text(secondaryLabel!)),
-          ],
-        ],
+        ),
       ),
     );
   }

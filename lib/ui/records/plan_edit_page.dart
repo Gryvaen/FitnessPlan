@@ -166,12 +166,20 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
     final l10n = context.l10n;
     final exercisesAsync = ref.watch(exercisesProvider);
     final theme = Theme.of(context);
+    final hasExercises = exercisesAsync.maybeWhen(
+      data: (exercises) => exercises.isNotEmpty,
+      orElse: () => false,
+    );
 
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.planId == null ? l10n.newPlan : l10n.editPlan),
         actions: [
-          TextButton(onPressed: _saving ? null : _save, child: Text(l10n.save)),
+          if (hasExercises)
+            TextButton(
+              onPressed: _saving ? null : _save,
+              child: Text(l10n.save),
+            ),
         ],
       ),
       body: _loading
@@ -181,7 +189,13 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
               error: (e, _) => Center(child: Text(l10n.loadFailed('$e'))),
               data: (exercises) {
                 if (exercises.isEmpty) {
-                  return Center(child: Text(l10n.addExercisesFirstShort));
+                  return _PlanNoExercisesEmpty(
+                    onOpenLibrary: () {
+                      // Prefer a single go() — pop()+go() in the same frame
+                      // races go_router's page sync under StatefulShellRoute.
+                      context.go('/records?tab=train&sub=library');
+                    },
+                  );
                 }
                 return ListView(
                   padding: const EdgeInsets.all(AppSpacing.formPage),
@@ -266,6 +280,58 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
                 );
               },
             ),
+    );
+  }
+}
+
+/// Empty library state for plan editing: prompt + CTA to exercise library.
+class _PlanNoExercisesEmpty extends StatelessWidget {
+  const _PlanNoExercisesEmpty({required this.onOpenLibrary});
+
+  final VoidCallback onOpenLibrary;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.formPage,
+          vertical: 40,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.fitness_center,
+              size: 48,
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.55),
+            ),
+            const SizedBox(height: AppSpacing.section),
+            Text(
+              l10n.addExercisesFirstShort,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: AppSpacing.compact),
+            Text(
+              l10n.addExercisesFirst,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.section),
+            FilledButton.icon(
+              onPressed: onOpenLibrary,
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(l10n.goToExerciseLibrary),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
