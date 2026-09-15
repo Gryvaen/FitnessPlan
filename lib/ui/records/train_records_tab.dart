@@ -38,6 +38,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   String _query = '';
   String? _category;
   bool _starting = false;
+  bool _otherPlansExpanded = false;
   final _exerciseSearchFocus = FocusNode();
 
   /// Last applied records URI query — kept-alive tab must re-read `sub`
@@ -527,18 +528,45 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                       ),
                     if (plans.length > 1) ...[
                       const SizedBox(height: 24),
-                      Text(l10n.otherPlans, style: theme.textTheme.titleMedium),
-                    ],
-                    for (final other in plans.where(
-                      (p) => p.plan.id != plan.plan.id,
-                    ))
-                      SportListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(other.plan.name),
-                        subtitle: Text(l10n.nExercises(other.items.length)),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => setState(() => _planId = other.plan.id),
+                      InkWell(
+                        onTap: () => setState(
+                          () => _otherPlansExpanded = !_otherPlansExpanded,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  l10n.otherPlans,
+                                  style: theme.textTheme.titleMedium,
+                                ),
+                              ),
+                              Icon(
+                                _otherPlansExpanded
+                                    ? Icons.expand_less
+                                    : Icons.expand_more,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
+                      if (_otherPlansExpanded)
+                        for (final other in plans.where(
+                          (p) => p.plan.id != plan.plan.id,
+                        ))
+                          SportListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(other.plan.name),
+                            subtitle: Text(
+                              l10n.nExercises(other.items.length),
+                            ),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () =>
+                                setState(() => _planId = other.plan.id),
+                          ),
+                    ],
                     if (showHistory)
                       Align(
                         alignment: Alignment.centerLeft,
