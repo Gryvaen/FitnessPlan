@@ -11,6 +11,7 @@ import '../records/train_records_tab.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/form_options.dart';
+import '../widgets/search_field_focus.dart';
 import 'today_section_header.dart';
 
 /// Today's planned workout checklist with set logging.
@@ -133,7 +134,13 @@ class TodayWorkoutCard extends ConsumerWidget {
       return;
     }
     if (choice == 'quickPlan') {
-      await context.push('/records/plan');
+      final router = GoRouter.of(context);
+      // Details sheet is itself a root modal; dismiss it before the plan editor
+      // so it isn't still covering Today when the user comes back.
+      if (showDetails) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+      await router.push('/records/plan');
       return;
     }
     if (choice is WorkoutPlanSummary) {
@@ -230,6 +237,8 @@ class TodayWorkoutCard extends ConsumerWidget {
           ? existingName
           : AppDates.relativeDayTitle(day, AppDates.todayLocal(), l10n, locale),
     );
+    final nameFocus = FocusNode();
+    suppressInitialTextFocus(nameFocus);
     final ok = await showDialog<bool>(
       context: context,
       useRootNavigator: true,
@@ -237,11 +246,11 @@ class TodayWorkoutCard extends ConsumerWidget {
         title: Text(l10n.saveAsPlan),
         content: TextField(
           controller: nameCtrl,
+          focusNode: nameFocus,
           decoration: InputDecoration(
             labelText: l10n.planName,
             hintText: l10n.planNameHint,
           ),
-          autofocus: true,
         ),
         actions: [
           TextButton(
@@ -255,8 +264,11 @@ class TodayWorkoutCard extends ConsumerWidget {
         ],
       ),
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      nameCtrl.dispose();
+      nameFocus.dispose();
+    });
     final planName = nameCtrl.text;
-    WidgetsBinding.instance.addPostFrameCallback((_) => nameCtrl.dispose());
     if (ok != true || !context.mounted) return;
     try {
       await ref
@@ -662,7 +674,7 @@ class _WorkoutItemTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final item = progress.item;
-    final unitLabel = progress.unit.label(l10n);
+    final unitLabel = progress.unit.label(l10n, category: progress.category);
     final theme = Theme.of(context);
     final note = item.note?.trim();
     final weightKg = item.actualWeightKg;
@@ -765,6 +777,7 @@ class _WorkoutItemTile extends ConsumerWidget {
                 day: day,
                 exerciseName: item.exerciseName,
                 unit: progress.unit,
+                category: progress.category,
                 dayWorkoutItemId: item.id,
                 completedSets: progress.completedSets,
                 targetSets: item.targetSets,

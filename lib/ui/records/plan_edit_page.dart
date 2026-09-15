@@ -9,6 +9,7 @@ import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/form_options.dart';
+import '../widgets/search_field_focus.dart';
 import 'exercise_form_dialog.dart';
 
 class PlanEditPage extends ConsumerStatefulWidget {
@@ -53,6 +54,7 @@ Exercise? _resolvePlanExercise(
 
 class _PlanEditPageState extends ConsumerState<PlanEditPage> {
   final _nameCtrl = TextEditingController();
+  final _nameFocus = FocusNode();
   final _rows = <_PlanRow>[_PlanRow()];
   var _loading = false;
   var _saving = false;
@@ -60,6 +62,7 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
   @override
   void initState() {
     super.initState();
+    suppressInitialTextFocus(_nameFocus);
     if (widget.planId != null) {
       _loadExisting();
     }
@@ -107,6 +110,7 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _nameFocus.dispose();
     super.dispose();
   }
 
@@ -234,6 +238,7 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
                   children: [
                     TextField(
                       controller: _nameCtrl,
+                      focusNode: _nameFocus,
                       decoration: InputDecoration(
                         labelText: l10n.planName,
                         hintText: l10n.planNameHint,
@@ -396,11 +401,12 @@ class _PlanRowSection extends StatelessWidget {
     final unit = ExerciseUnit.fromStorage(
       selected?.unit ?? ExerciseUnit.reps.name,
     );
-    final isSeconds = unit == ExerciseUnit.seconds;
-    final targetLabel = isSeconds ? l10n.targetSeconds : l10n.targetReps;
-    final targetOptions = isSeconds
-        ? FormOptions.targetSeconds
-        : FormOptions.targetRepsOrSeconds;
+    final category = selected?.category;
+    final targetLabel = unit.targetLabel(l10n, category: category);
+    final targetOptions = FormOptions.exerciseTargetOptions(
+      unit,
+      category: category,
+    );
 
     return Column(
       children: [

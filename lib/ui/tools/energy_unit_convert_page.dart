@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../domain/energy_units.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../theme/app_theme.dart';
+import '../widgets/search_field_focus.dart';
 
 /// Bidirectional kcal ⇄ kJ converter: editing either field updates the other.
 class EnergyUnitConvertPage extends StatefulWidget {
@@ -16,12 +17,20 @@ class EnergyUnitConvertPage extends StatefulWidget {
 class _EnergyUnitConvertPageState extends State<EnergyUnitConvertPage> {
   final _kcal = TextEditingController();
   final _kj = TextEditingController();
+  final _kcalFocus = FocusNode();
   bool _updating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    suppressInitialTextFocus(_kcalFocus);
+  }
 
   @override
   void dispose() {
     _kcal.dispose();
     _kj.dispose();
+    _kcalFocus.dispose();
     super.dispose();
   }
 
@@ -60,7 +69,7 @@ class _EnergyUnitConvertPageState extends State<EnergyUnitConvertPage> {
             ),
           ),
           const SizedBox(height: AppSpacing.section),
-          _unitField(context, _kcal, 'kcal', _onKcalChanged),
+          _unitField(context, _kcal, 'kcal', _onKcalChanged, focus: _kcalFocus),
           const SizedBox(height: AppSpacing.field),
           Center(
             child: Icon(
@@ -84,10 +93,12 @@ class _EnergyUnitConvertPageState extends State<EnergyUnitConvertPage> {
     BuildContext context,
     TextEditingController c,
     String suffix,
-    ValueChanged<String> onChanged,
-  ) {
+    ValueChanged<String> onChanged, {
+    FocusNode? focus,
+  }) {
     return TextField(
       controller: c,
+      focusNode: focus,
       decoration: InputDecoration(
         labelText: suffix,
         border: const OutlineInputBorder(),

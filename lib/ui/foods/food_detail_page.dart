@@ -9,6 +9,7 @@ import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../theme/macro_color.dart';
 import '../widgets/form_options.dart';
+import '../widgets/search_field_focus.dart';
 
 class FoodDetailPage extends ConsumerStatefulWidget {
   const FoodDetailPage({super.key, required this.foodId, this.initialMealType});
@@ -97,6 +98,8 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
   Future<void> _addServing() async {
     final l10n = context.l10n;
     final labelCtrl = TextEditingController();
+    final labelFocus = FocusNode();
+    suppressInitialTextFocus(labelFocus);
     double grams = 100;
     final ok = await showDialog<bool>(
       context: context,
@@ -107,6 +110,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
           children: [
             TextField(
               controller: labelCtrl,
+              focusNode: labelFocus,
               decoration: InputDecoration(
                 labelText: l10n.name,
                 hintText: l10n.portionNameHint,
@@ -141,7 +145,10 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
     );
     final label = labelCtrl.text;
     // Defer dispose until after the dialog route finishes unmounting.
-    WidgetsBinding.instance.addPostFrameCallback((_) => labelCtrl.dispose());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      labelCtrl.dispose();
+      labelFocus.dispose();
+    });
     if (ok != true || !mounted) return;
     try {
       await ref

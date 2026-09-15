@@ -7,13 +7,14 @@ import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/form_options.dart';
 
-/// Edit today's item progress: completed sets + per-set reps/seconds.
+/// Edit today's item progress: completed sets + per-set reps/seconds/minutes.
 Future<bool> showLogSetSheet({
   required BuildContext context,
   required WidgetRef ref,
   required DateTime day,
   required String exerciseName,
   required ExerciseUnit unit,
+  String? category,
   required int dayWorkoutItemId,
   required int completedSets,
   required int targetSets,
@@ -36,6 +37,7 @@ Future<bool> showLogSetSheet({
     builder: (ctx) => _EditProgressSheet(
       exerciseName: exerciseName,
       unit: unit,
+      category: category,
       initialCompletedSets: completedSets,
       targetSets: targetSets,
       initialPerSetValue: perSetValue,
@@ -68,6 +70,7 @@ class _EditProgressSheet extends StatefulWidget {
   const _EditProgressSheet({
     required this.exerciseName,
     required this.unit,
+    this.category,
     required this.initialCompletedSets,
     required this.targetSets,
     required this.initialPerSetValue,
@@ -79,6 +82,7 @@ class _EditProgressSheet extends StatefulWidget {
 
   final String exerciseName;
   final ExerciseUnit unit;
+  final String? category;
   final int initialCompletedSets;
   final int targetSets;
   final int initialPerSetValue;
@@ -122,9 +126,10 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
     return [for (var i = 0; i <= max; i++) i];
   }
 
-  List<int> get _valueOptions => widget.unit == ExerciseUnit.seconds
-      ? FormOptions.targetSeconds
-      : FormOptions.targetRepsOrSeconds;
+  List<int> get _valueOptions => FormOptions.exerciseTargetOptions(
+    widget.unit,
+    category: widget.category,
+  );
 
   List<double> _optionsFor(GymWeightUnit unit) => FormOptions.gymLoadOptions(
     unit,
@@ -330,9 +335,10 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
                           children: [
                             Expanded(
                               child: Text(
-                                widget.unit == ExerciseUnit.seconds
-                                    ? l10n.trainingSecondsPerSet
-                                    : l10n.trainingRepsPerSet,
+                                widget.unit.perSetLabel(
+                                  l10n,
+                                  category: widget.category,
+                                ),
                                 style: theme.textTheme.titleSmall,
                               ),
                             ),

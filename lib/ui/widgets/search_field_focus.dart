@@ -22,16 +22,24 @@ Future<T> withoutSearchFocus<T>({
   }
 }
 
-/// Stops the first focusable [TextField] on a newly pushed page from
-/// auto-claiming focus (and raising the IME) before the user taps it.
-void suppressInitialSearchFocus(FocusNode focus) {
+/// Stops a [TextField] on a newly opened page/dialog from auto-claiming
+/// focus (and raising the IME) before the user taps it.
+void suppressInitialTextFocus(FocusNode focus) {
   focus.canRequestFocus = false;
   WidgetsBinding.instance.addPostFrameCallback((_) {
     focus.unfocus();
     FocusManager.instance.primaryFocus?.unfocus();
-    focus.canRequestFocus = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      focus.unfocus();
+      FocusManager.instance.primaryFocus?.unfocus();
+      focus.canRequestFocus = true;
+    });
   });
 }
+
+/// Alias kept for existing search-field call sites.
+void suppressInitialSearchFocus(FocusNode focus) =>
+    suppressInitialTextFocus(focus);
 
 /// Drops any current text focus / IME before navigating away.
 void unfocusForNavigation() {

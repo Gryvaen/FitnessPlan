@@ -622,6 +622,7 @@ class SoftChip extends StatelessWidget {
     required this.label,
     this.icon,
     this.onTap,
+    this.onLongPress,
     this.color,
     this.foreground,
     this.selected = false,
@@ -630,6 +631,7 @@ class SoftChip extends StatelessWidget {
   final String label;
   final IconData? icon;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final Color? color;
   final Color? foreground;
   final bool selected;
@@ -669,7 +671,7 @@ class SoftChip extends StatelessWidget {
         ],
       ),
     );
-    if (onTap == null) return chip;
+    if (onTap == null && onLongPress == null) return chip;
     return Semantics(
       button: true,
       selected: selected,
@@ -679,6 +681,7 @@ class SoftChip extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(AppRadius.chip),
           onTap: onTap,
+          onLongPress: onLongPress,
           child: chip,
         ),
       ),

@@ -234,6 +234,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get targetSeconds => 'Target seconds';
 
   @override
+  String get targetMinutes => 'Target minutes';
+
+  @override
   String get addExercise => 'Add exercise';
 
   @override
@@ -250,6 +253,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get seconds => 'sec';
+
+  @override
+  String get minutes => 'min';
 
   @override
   String get repsCount => 'Reps';
@@ -538,6 +544,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get repsOrSeconds => 'Reps / sec';
 
   @override
+  String get repsOrMinutes => 'Reps / min';
+
+  @override
   String get exerciseLibrary => 'Exercise library';
 
   @override
@@ -782,6 +791,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addCommonPortion => 'Add portion';
+
+  @override
+  String get editCommonPortion => 'Edit portion';
 
   @override
   String get portionNameHint => 'e.g. 1 bowl / 500 ml bottle';
@@ -2787,6 +2799,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trainingSecondsPerSet => 'Seconds per set';
+
+  @override
+  String get trainingMinutesPerSet => 'Minutes per set';
 
   @override
   String get decreaseCompletedSets => 'Decrease completed sets';

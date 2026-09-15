@@ -26,11 +26,13 @@ class DayWorkoutItemProgress {
     required this.item,
     required this.completedSets,
     required this.unit,
+    this.category = 'chest',
   });
 
   final DayWorkoutItem item;
   final int completedSets;
   final ExerciseUnit unit;
+  final String category;
 }
 
 class DayWorkoutGroup {
@@ -445,6 +447,7 @@ class WorkoutRepository {
       item: item,
       completedSets: sets.length,
       unit: ExerciseUnit.fromStorage(ex?.unit ?? 'reps'),
+      category: ex?.category ?? 'chest',
     );
   }
 

@@ -647,12 +647,15 @@ class _TodayPageState extends ConsumerState<TodayPage> {
       final nameCtrl = TextEditingController(
         text: isSelectedToday ? l10n.mealPresets : dayLabel,
       );
+      final nameFocus = FocusNode();
+      suppressInitialTextFocus(nameFocus);
       final ok = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
           title: Text(l10n.saveAsPreset),
           content: TextField(
             controller: nameCtrl,
+            focusNode: nameFocus,
             decoration: InputDecoration(labelText: l10n.name),
           ),
           actions: [
@@ -669,7 +672,10 @@ class _TodayPageState extends ConsumerState<TodayPage> {
       );
       final presetName = nameCtrl.text;
       // Defer dispose until after the dialog route finishes unmounting.
-      WidgetsBinding.instance.addPostFrameCallback((_) => nameCtrl.dispose());
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        nameCtrl.dispose();
+        nameFocus.dispose();
+      });
       if (ok != true) return;
       try {
         await ref

@@ -548,6 +548,12 @@ abstract class AppLocalizations {
   /// **'Target seconds'**
   String get targetSeconds;
 
+  /// No description provided for @targetMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Target minutes'**
+  String get targetMinutes;
+
   /// No description provided for @addExercise.
   ///
   /// In en, this message translates to:
@@ -583,6 +589,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'sec'**
   String get seconds;
+
+  /// No description provided for @minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'min'**
+  String get minutes;
 
   /// No description provided for @repsCount.
   ///
@@ -1130,6 +1142,12 @@ abstract class AppLocalizations {
   /// **'Reps / sec'**
   String get repsOrSeconds;
 
+  /// No description provided for @repsOrMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Reps / min'**
+  String get repsOrMinutes;
+
   /// No description provided for @exerciseLibrary.
   ///
   /// In en, this message translates to:
@@ -1603,6 +1621,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add portion'**
   String get addCommonPortion;
+
+  /// No description provided for @editCommonPortion.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit portion'**
+  String get editCommonPortion;
 
   /// No description provided for @portionNameHint.
   ///
@@ -4868,6 +4892,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Seconds per set'**
   String get trainingSecondsPerSet;
+
+  /// No description provided for @trainingMinutesPerSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Minutes per set'**
+  String get trainingMinutesPerSet;
 
   /// No description provided for @decreaseCompletedSets.
   ///

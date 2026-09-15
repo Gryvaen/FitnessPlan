@@ -41,10 +41,36 @@ extension MealTypeL10n on MealType {
 }
 
 extension ExerciseUnitL10n on ExerciseUnit {
-  String label(AppLocalizations l10n) => switch (this) {
+  /// Cardio stores duration as [ExerciseUnit.seconds] but shows minutes.
+  bool usesMinutes({String? category}) =>
+      this == ExerciseUnit.seconds && category == 'cardio';
+
+  String label(AppLocalizations l10n, {String? category}) => switch (this) {
     ExerciseUnit.reps => l10n.reps,
-    ExerciseUnit.seconds => l10n.seconds,
+    ExerciseUnit.seconds =>
+      usesMinutes(category: category) ? l10n.minutes : l10n.seconds,
   };
+
+  String targetLabel(AppLocalizations l10n, {String? category}) =>
+      switch (this) {
+        ExerciseUnit.reps => l10n.targetReps,
+        ExerciseUnit.seconds => usesMinutes(category: category)
+            ? l10n.targetMinutes
+            : l10n.targetSeconds,
+      };
+
+  String perSetLabel(AppLocalizations l10n, {String? category}) =>
+      switch (this) {
+        ExerciseUnit.reps => l10n.trainingRepsPerSet,
+        ExerciseUnit.seconds => usesMinutes(category: category)
+            ? l10n.trainingMinutesPerSet
+            : l10n.trainingSecondsPerSet,
+      };
+
+  String unitChoiceLabel(AppLocalizations l10n, {String? category}) =>
+      this == ExerciseUnit.reps
+      ? l10n.repsCount
+      : (category == 'cardio' ? l10n.minutes : l10n.seconds);
 }
 
 extension BmiCategoryL10n on BmiCategory {

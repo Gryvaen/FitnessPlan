@@ -4,6 +4,7 @@ import '../../data/db.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../widgets/form_options.dart';
+import '../widgets/search_field_focus.dart';
 
 class ExerciseFormData {
   const ExerciseFormData({
@@ -43,6 +44,7 @@ class _ExerciseFormDialog extends StatefulWidget {
 
 class _ExerciseFormDialogState extends State<_ExerciseFormDialog> {
   late final TextEditingController _nameCtrl;
+  final _nameFocus = FocusNode();
   late ExerciseUnit _unit;
   late String _selectedCategory;
 
@@ -58,11 +60,13 @@ class _ExerciseFormDialogState extends State<_ExerciseFormDialog> {
         exercise != null && kExerciseCategoryOrder.contains(exercise.category)
         ? exercise.category
         : widget.defaultCategory;
+    suppressInitialTextFocus(_nameFocus);
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _nameFocus.dispose();
     super.dispose();
   }
 
@@ -78,8 +82,8 @@ class _ExerciseFormDialogState extends State<_ExerciseFormDialog> {
           children: [
             TextField(
               controller: _nameCtrl,
+              focusNode: _nameFocus,
               decoration: InputDecoration(labelText: l10n.exerciseName),
-              autofocus: !isEdit,
             ),
             const SizedBox(height: 12),
             AppDropdown<String>(
@@ -91,11 +95,13 @@ class _ExerciseFormDialogState extends State<_ExerciseFormDialog> {
             ),
             const SizedBox(height: 12),
             AppDropdown<ExerciseUnit>(
-              label: l10n.repsOrSeconds,
+              label: _selectedCategory == 'cardio'
+                  ? l10n.repsOrMinutes
+                  : l10n.repsOrSeconds,
               value: _unit,
               items: ExerciseUnit.values,
               itemLabel: (u) =>
-                  u == ExerciseUnit.reps ? l10n.repsCount : l10n.seconds,
+                  u.unitChoiceLabel(l10n, category: _selectedCategory),
               onChanged: (v) => setState(() => _unit = v),
             ),
           ],

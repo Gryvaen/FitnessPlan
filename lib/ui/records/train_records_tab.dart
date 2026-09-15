@@ -13,6 +13,7 @@ import '../shell/swipe_tab_view.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/form_options.dart';
+import '../widgets/search_field_focus.dart';
 import 'exercise_form_dialog.dart';
 
 /// Training management: exercise catalog, plans, recent set history.
@@ -37,6 +38,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   String _query = '';
   String? _category;
   bool _starting = false;
+  final _exerciseSearchFocus = FocusNode();
 
   /// Last applied records URI query — kept-alive tab must re-read `sub`
   /// when Today / plan-edit calls `go('/records?tab=train&sub=plans')`.
@@ -46,6 +48,13 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   void initState() {
     super.initState();
     if (widget.initialTab != null) _tab = widget.initialTab!;
+    suppressInitialTextFocus(_exerciseSearchFocus);
+  }
+
+  @override
+  void dispose() {
+    _exerciseSearchFocus.dispose();
+    super.dispose();
   }
 
   @override
@@ -694,6 +703,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
       ),
       children: [
         TextField(
+          focusNode: _exerciseSearchFocus,
           decoration: InputDecoration(
             hintText: l10n.exerciseName,
             prefixIcon: const Icon(Icons.search),
@@ -745,7 +755,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                         contentPadding: EdgeInsets.zero,
                         title: Text(ex.name),
                         subtitle: Text(
-                          '${ex.category.localizedExerciseCategory(l10n)} · ${ExerciseUnit.fromStorage(ex.unit).label(l10n)}',
+                          '${ex.category.localizedExerciseCategory(l10n)} · ${ExerciseUnit.fromStorage(ex.unit).label(l10n, category: ex.category)}',
                         ),
                         onTap: () => _editExercise(context, ref, ex),
                         trailing: ex.isCustom
@@ -839,12 +849,14 @@ Future<void> showQuickAddDayItemDialog({
     useRootNavigator: true,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setLocal) {
-        final isSeconds =
-            selected != null &&
-            ExerciseUnit.fromStorage(selected!.unit) == ExerciseUnit.seconds;
-        final targetOptions = isSeconds
-            ? FormOptions.targetSeconds
-            : FormOptions.targetRepsOrSeconds;
+        final unit = selected == null
+            ? ExerciseUnit.reps
+            : ExerciseUnit.fromStorage(selected!.unit);
+        final category = selected?.category;
+        final targetOptions = FormOptions.exerciseTargetOptions(
+          unit,
+          category: category,
+        );
         return AlertDialog(
           title: Text(l10n.addTodayExercise),
           content: SingleChildScrollView(
@@ -859,9 +871,10 @@ Future<void> showQuickAddDayItemDialog({
                   onChanged: (v) => setLocal(() {
                     selected = v;
                     reps = FormOptions.snapInt(
-                      ExerciseUnit.fromStorage(v.unit) == ExerciseUnit.seconds
-                          ? FormOptions.targetSeconds
-                          : FormOptions.targetRepsOrSeconds,
+                      FormOptions.exerciseTargetOptions(
+                        ExerciseUnit.fromStorage(v.unit),
+                        category: v.category,
+                      ),
                       reps,
                     );
                   }),
@@ -875,7 +888,7 @@ Future<void> showQuickAddDayItemDialog({
                 ),
                 const SizedBox(height: 12),
                 AppDropdown<int>(
-                  label: isSeconds ? l10n.targetSeconds : l10n.targetReps,
+                  label: unit.targetLabel(l10n, category: category),
                   value: FormOptions.snapInt(targetOptions, reps),
                   items: targetOptions,
                   onChanged: (v) => setLocal(() => reps = v),

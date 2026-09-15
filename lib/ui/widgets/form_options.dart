@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../theme/app_theme.dart';
 
@@ -210,6 +211,38 @@ class FormOptions {
     540,
     600,
   ];
+
+  /// Duration options for cardio (stored as ExerciseUnit.seconds values).
+  static const targetMinutes = <int>[
+    5,
+    10,
+    15,
+    20,
+    25,
+    30,
+    35,
+    40,
+    45,
+    50,
+    55,
+    60,
+    75,
+    90,
+    105,
+    120,
+    150,
+    180,
+  ];
+
+  /// Target value options for [unit], using minutes when [category] is cardio.
+  static List<int> exerciseTargetOptions(
+    ExerciseUnit unit, {
+    String? category,
+  }) {
+    if (unit == ExerciseUnit.reps) return targetRepsOrSeconds;
+    if (category == 'cardio') return targetMinutes;
+    return targetSeconds;
+  }
 
   /// Meal portion options; consecutive values differ by at most [step] (default 5g).
   static List<double> mealGrams({

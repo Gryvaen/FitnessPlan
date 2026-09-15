@@ -234,6 +234,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get targetSeconds => '目标秒数';
 
   @override
+  String get targetMinutes => '目标分钟';
+
+  @override
   String get addExercise => '添加动作';
 
   @override
@@ -250,6 +253,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get seconds => '秒';
+
+  @override
+  String get minutes => '分钟';
 
   @override
   String get repsCount => '次数';
@@ -535,6 +541,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get repsOrSeconds => '次数/秒';
 
   @override
+  String get repsOrMinutes => '次数/分钟';
+
+  @override
   String get exerciseLibrary => '动作库';
 
   @override
@@ -775,6 +784,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get addCommonPortion => '添加常用份量';
+
+  @override
+  String get editCommonPortion => '修改常用份量';
 
   @override
   String get portionNameHint => '如：一碗 / 瓶 500ml';
@@ -2728,6 +2740,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get trainingSecondsPerSet => '每组时长（秒）';
+
+  @override
+  String get trainingMinutesPerSet => '每组时长（分钟）';
 
   @override
   String get decreaseCompletedSets => '减少完成组数';

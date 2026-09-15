@@ -9,6 +9,7 @@ import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/food_name_link.dart';
+import '../widgets/search_field_focus.dart';
 
 /// Create or edit a user-defined food (per 100g macros).
 class CustomFoodEditPage extends ConsumerStatefulWidget {
@@ -35,6 +36,7 @@ class CustomFoodEditPage extends ConsumerStatefulWidget {
 
 class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
   final _name = TextEditingController();
+  final _nameFocus = FocusNode();
   final _kcal = TextEditingController();
   final _kj = TextEditingController();
   bool _updatingEnergy = false;
@@ -55,6 +57,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
   @override
   void initState() {
     super.initState();
+    suppressInitialTextFocus(_nameFocus);
     _bootstrap();
   }
 
@@ -111,6 +114,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
   @override
   void dispose() {
     _name.dispose();
+    _nameFocus.dispose();
     _kcal.dispose();
     _kj.dispose();
     _protein.dispose();
@@ -208,6 +212,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
         children: [
           TextField(
             controller: _name,
+            focusNode: _nameFocus,
             decoration: InputDecoration(labelText: l10n.name),
             textInputAction: TextInputAction.next,
           ),

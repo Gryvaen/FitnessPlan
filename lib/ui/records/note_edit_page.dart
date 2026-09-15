@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
+import '../widgets/search_field_focus.dart';
 
 enum _SaveStatus { idle, dirty, saving, saved }
 
@@ -26,6 +27,7 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
 
   late final DateTime _day;
   late final TextEditingController _ctrl;
+  final _focus = FocusNode();
   Timer? _timer;
   var _loading = true;
   var _status = _SaveStatus.idle;
@@ -40,6 +42,7 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
     _day = DateTime(raw.year, raw.month, raw.day);
     _ctrl = TextEditingController();
     _ctrl.addListener(_onChanged);
+    suppressInitialTextFocus(_focus);
     _load();
   }
 
@@ -130,6 +133,7 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
     _timer?.cancel();
     _ctrl.removeListener(_onChanged);
     _ctrl.dispose();
+    _focus.dispose();
     super.dispose();
   }
 
@@ -215,6 +219,7 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
                         ),
                         child: TextField(
                           controller: _ctrl,
+                          focusNode: _focus,
                           // Never toggle readOnly mid-session: flipping it while
                           // an autosave runs tears down and rebuilds the input
                           // connection, so the keyboard flickers shut on every

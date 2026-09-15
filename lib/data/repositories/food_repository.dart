@@ -393,6 +393,22 @@ LIMIT ?
         );
   }
 
+  Future<void> updateServing({
+    required int id,
+    required String label,
+    required double grams,
+  }) {
+    final trimmed = label.trim();
+    if (trimmed.isEmpty) throw ArgumentError('份量名称不能为空');
+    if (grams <= 0) throw ArgumentError('克数须大于 0');
+    return (_db.update(_db.foodServings)..where((t) => t.id.equals(id))).write(
+      FoodServingsCompanion(
+        label: Value(trimmed),
+        grams: Value(grams),
+      ),
+    );
+  }
+
   Future<void> deleteServing(int id) =>
       (_db.delete(_db.foodServings)..where((t) => t.id.equals(id))).go();
 
