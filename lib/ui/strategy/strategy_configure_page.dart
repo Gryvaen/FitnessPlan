@@ -28,10 +28,6 @@ class StrategyConfigurePage extends ConsumerStatefulWidget {
 }
 
 class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
-  late final TextEditingController _weightCtrl;
-  late final TextEditingController _tdeeCtrl;
-  late final TextEditingController _energyCtrl;
-
   double _deficit = StrategyRules.defaultDeficitFraction;
   double _proteinPerKg = StrategyRules.defaultProteinPerKg;
   double _fatPerKg = StrategyRules.defaultFatPerKg;
@@ -72,30 +68,9 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
     return effective;
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _weightCtrl = TextEditingController();
-    _tdeeCtrl = TextEditingController();
-    _energyCtrl = TextEditingController();
-  }
-
-  @override
-  void dispose() {
-    _weightCtrl.dispose();
-    _tdeeCtrl.dispose();
-    _energyCtrl.dispose();
-    super.dispose();
-  }
-
   void _initFrom(DietStrategyPlan? active) {
     if (_initialised) return;
     _initialised = true;
-    final profile = ref.read(profileProvider);
-    final w = active?.referenceWeightKg ?? profile?.weightKg ?? 0;
-    final t = active?.estimatedTdee ?? profile?.tdee ?? 0;
-    _weightCtrl.text = w > 0 ? w.toStringAsFixed(1) : '';
-    _tdeeCtrl.text = t > 0 ? t.round().toString() : '';
     if (active != null) {
       _deficit = active.deficitFraction.clamp(
         StrategyRules.minDeficitFraction,
@@ -120,36 +95,11 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
         }
       }
     }
-    _syncEnergyFromDeficit();
   }
 
-  /// Carb cycling always reads the reference weight straight from the
-  /// profile (no manual override); other strategies use the editable field.
-  double get _weight => _isCarbCycle
-      ? (ref.read(profileProvider)?.weightKg ?? 0)
-      : double.tryParse(_weightCtrl.text.trim()) ?? 0;
-  double get _tdee => double.tryParse(_tdeeCtrl.text.trim()) ?? 0;
-  double get _energy => double.tryParse(_energyCtrl.text.trim()) ?? 0;
-
-  void _syncEnergyFromDeficit() {
-    final t = _tdee;
-    if (t > 0) {
-      _energyCtrl.text = (t * (1 - _deficit)).round().toString();
-    }
-  }
-
-  void _onEnergyEdited(String raw) {
-    final e = double.tryParse(raw.trim());
-    final t = _tdee;
-    if (e == null || t <= 0) return;
-    final d = 1 - e / t;
-    setState(() {
-      _deficit = d.clamp(
-        StrategyRules.minDeficitFraction - 0.05,
-        StrategyRules.maxDeficitFraction + 0.05,
-      );
-    });
-  }
+  double get _weight => ref.read(profileProvider)?.weightKg ?? 0;
+  double get _tdee => ref.read(profileProvider)?.tdee ?? 0;
+  double get _energy => _tdee * (1 - _deficit);
 
   StrategyBaseline get _baseline => StrategyBaseline.fromTargetEnergy(
     referenceWeightKg: _weight,
@@ -172,9 +122,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
       kind: widget.kind,
       effectiveFrom: _effectiveFrom,
       referenceWeightKg: _weight,
-      estimatedTdee: isCarbCycle
-          ? (ref.read(profileProvider)?.tdee ?? 0)
-          : _tdee,
+      estimatedTdee: _tdee,
       baseEnergy: isCarbCycle
           ? CarbCyclePlanner.compute(
               referenceWeightKg: _weight,
@@ -208,59 +156,22 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
         : StrategyRules.taperObservationDays;
   }
 
-  /// Deficit slider in kcal within the selectable band; percent tracks the
-  /// thumb horizontally so it stays under the current value.
-  Widget _buildDeficitSlider(
-    AppLocalizations l10n,
-    ThemeData theme,
-    double tdee,
-  ) {
-    // Interior of the 10%–20% band. Endpoints are excluded so whole-kcal
-    // rounding does not push the stored fraction just outside
-    // [minDeficitFraction, maxDeficitFraction].
-    const minFrac = 0.11;
-    const maxFrac = 0.19;
+  /// Deficit slider in kcal within the selectable band.
+  Widget _buildDeficitSlider(double tdee) {
+    const minFrac = StrategyRules.minDeficitFraction;
+    const maxFrac = StrategyRules.maxDeficitFraction;
     final minKcal = tdee * minFrac;
     final maxKcal = tdee * maxFrac;
     final deficitKcal = (tdee * _deficit).clamp(minKcal, maxKcal);
-    final trackT = maxKcal > minKcal
-        ? ((deficitKcal - minKcal) / (maxKcal - minKcal)).clamp(0.0, 1.0)
-        : 0.0;
-    final percentText = l10n.deficitFractionPercent((_deficit * 100).round());
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Slider(
-          value: deficitKcal,
-          min: minKcal,
-          max: maxKcal,
-          divisions: 8,
-          label: '${deficitKcal.round()} kcal',
-          onChanged: (v) => setState(() {
-            _deficit = v / tdee;
-            _syncEnergyFromDeficit();
-          }),
-        ),
-        Builder(
-          builder: (context) {
-            // Match Material Slider track insets (half overlay width).
-            final overlay = SliderTheme.of(context).overlayShape ??
-                const RoundSliderOverlayShape();
-            final pad = overlay.getPreferredSize(true, false).width / 2;
-            return Padding(
-              padding: EdgeInsets.symmetric(horizontal: pad),
-              child: Align(
-                alignment: Alignment(2 * trackT - 1, 0),
-                child: Text(percentText, style: theme.textTheme.bodySmall),
-              ),
-            );
-          },
-        ),
-        Text(
-          l10n.energyBoundsHint(minKcal.round(), maxKcal.round()),
-          style: theme.textTheme.bodySmall,
-        ),
-      ],
+    return Slider(
+      value: deficitKcal,
+      min: minKcal,
+      max: maxKcal,
+      divisions: 10,
+      label: '${deficitKcal.round()} kcal',
+      onChanged: (v) => setState(() {
+        _deficit = v / tdee;
+      }),
     );
   }
 
@@ -275,7 +186,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.strategyApplied)));
-      context.go('/profile/nutrition');
+      context.go('/profile');
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -321,9 +232,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
     return AppChromeScaffold(
       appBar: AppBar(
         title: Text(widget.kind.label(l10n)),
-        // 策略配置是从 Me 进入的独立操作流，退出时直接回到 Me，
-        // 不再要求用户依次返回「策略选择」和「营养目标」页面。
-        leading: BackButton(onPressed: () => context.go('/profile')),
+        leading: BackButton(onPressed: () => context.pop()),
       ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
@@ -339,10 +248,25 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
           ),
           const SizedBox(height: AppSpacing.card),
           // ------------------------------------------------ parameters
-          if (!_isCarbCycle) ...[
-            Text(l10n.strategyParameters, style: theme.textTheme.titleMedium),
-            const SizedBox(height: AppSpacing.section),
-          ],
+          Text(l10n.strategyParameters, style: theme.textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.section),
+          Column(
+            children: [
+              _ReadOnlyMetric(
+                key: const ValueKey('strategyReferenceWeight'),
+                label: l10n.referenceWeightKg,
+                value: _weight > 0 ? _weight.toStringAsFixed(1) : '–',
+                unit: 'kg',
+              ),
+              _ReadOnlyMetric(
+                key: const ValueKey('strategyEstimatedTdee'),
+                label: l10n.estimatedTdee,
+                value: _tdee > 0 ? _tdee.round().toString() : '–',
+                unit: 'kcal',
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.field),
           if (_isCarbCycle) ...[
             Text(
               l10n.cycleLengthLabel,
@@ -447,50 +371,18 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
               onChanged: (v) => setState(() => _highFatPerKg = v),
             ),
           ] else ...[
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _weightCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: l10n.referenceWeightKg,
-                      suffixText: 'kg',
-                    ),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.field),
-                Expanded(
-                  child: TextField(
-                    controller: _tdeeCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: l10n.estimatedTdee,
-                      suffixText: 'kcal',
-                    ),
-                    onChanged: (_) => setState(_syncEnergyFromDeficit),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.field),
             Text(
-              l10n.deficitFractionLabel,
+              '${l10n.deficitFractionLabel} | '
+              '${l10n.deficitFractionPercent((_deficit * 100).round())}',
               style: theme.textTheme.fieldLabel,
             ),
-            if (baseline.tdee > 0)
-              _buildDeficitSlider(l10n, theme, baseline.tdee),
-            TextField(
-              controller: _energyCtrl,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: l10n.averageTargetEnergy,
-                suffixText: 'kcal',
-              ),
-              onChanged: _onEnergyEdited,
+            if (baseline.tdee > 0) _buildDeficitSlider(baseline.tdee),
+            const SizedBox(height: AppSpacing.field),
+            _ReadOnlyMetric(
+              key: const ValueKey('strategyAverageTargetEnergy'),
+              label: l10n.averageTargetEnergy,
+              value: _energy > 0 ? _energy.round().toString() : '–',
+              unit: 'kcal',
             ),
             const SizedBox(height: AppSpacing.field),
             _StepperRow(
@@ -595,6 +487,65 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
           const SizedBox(height: AppSpacing.section),
           Text(l10n.strategyDisclaimer, style: theme.textTheme.bodySmall),
         ],
+      ),
+    );
+  }
+}
+
+class _ReadOnlyMetric extends StatelessWidget {
+  const _ReadOnlyMetric({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.unit,
+  });
+
+  final String label;
+  final String value;
+  final String unit;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Semantics(
+      readOnly: true,
+      label: label,
+      value: '$value $unit',
+      child: ExcludeSemantics(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.field),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    value,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    unit,
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

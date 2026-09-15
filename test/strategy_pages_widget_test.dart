@@ -64,6 +64,10 @@ Widget _app(String initialLocation) {
     routes: [
       GoRoute(path: '/today', builder: (_, _) => const TodayPage()),
       GoRoute(
+        path: '/profile',
+        builder: (_, _) => const Scaffold(body: Text('Me')),
+      ),
+      GoRoute(
         path: '/profile/nutrition',
         builder: (_, _) => const NutritionTargetsPage(),
         routes: [
@@ -160,6 +164,71 @@ void main() {
     expect(find.textContaining('keto', findRichText: true), findsNothing);
   });
 
+  testWidgets('configure uses read-only profile metrics and back returns', (
+    tester,
+  ) async {
+    await _pump(tester, '/profile/nutrition/strategy');
+    await tester.tap(find.text('Balanced deficit'));
+    await _settle(tester);
+
+    final weight = find.byKey(const ValueKey('strategyReferenceWeight'));
+    final tdee = find.byKey(const ValueKey('strategyEstimatedTdee'));
+    final energy = find.byKey(const ValueKey('strategyAverageTargetEnergy'));
+    expect(weight, findsOneWidget);
+    expect(tdee, findsOneWidget);
+    expect(energy, findsOneWidget);
+    expect(
+      find.descendant(of: weight, matching: find.byType(TextField)),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: tdee, matching: find.byType(TextField)),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: energy, matching: find.byType(TextField)),
+      findsNothing,
+    );
+    expect(find.text('75.0'), findsOneWidget);
+    expect(find.text('2400'), findsOneWidget);
+
+    await tester.tap(find.byType(BackButton).last);
+    await _settle(tester);
+    expect(find.text('Fat-loss strategy'), findsOneWidget);
+  });
+
+  testWidgets('carb cycle shows the same read-only profile metrics', (
+    tester,
+  ) async {
+    await _pump(tester, '/profile/nutrition/strategy/configure?kind=carbCycle');
+    final weight = find.byKey(const ValueKey('strategyReferenceWeight'));
+    final tdee = find.byKey(const ValueKey('strategyEstimatedTdee'));
+    expect(weight, findsOneWidget);
+    expect(tdee, findsOneWidget);
+    expect(
+      find.descendant(of: weight, matching: find.byType(TextField)),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: tdee, matching: find.byType(TextField)),
+      findsNothing,
+    );
+    _expectNoLayoutErrors(tester);
+  });
+
+  testWidgets('balanced and taper deficits are bounded by the slider', (
+    tester,
+  ) async {
+    for (final kind in ['balanced', 'carbTaper']) {
+      await _pump(tester, '/profile/nutrition/strategy/configure?kind=$kind');
+      final slider = tester.widget<Slider>(find.byType(Slider));
+      expect(slider.min, 240);
+      expect(slider.max, 480);
+      expect(slider.divisions, 10);
+      expect(find.textContaining('Allowed'), findsNothing);
+    }
+  });
+
   testWidgets('carb cycle configure → apply today → Today hero follows plan', (
     tester,
   ) async {
@@ -242,9 +311,8 @@ void main() {
       CarbDayType.high,
     );
 
-    // Back on the targets page after apply; then the Today hero shows the
-    // plan chip and the plan's numbers instead of the profile target.
-    expect(find.text('Stop strategy'), findsOneWidget);
+    // Applying completes the flow and returns directly to Me.
+    expect(find.text('Me'), findsOneWidget);
     final todayTarget = (await repo.targetForDay(today, profile))!;
     await tester.pumpWidget(_app('/today'));
     await _settle(tester);
