@@ -42,6 +42,9 @@ class ProfileRepository {
   }
 
   static bool _calorieStandardChanged(UserProfile old, UserProfile next) {
+    // Switching goal resets the cultivation / deficit "new standard" clock
+    // even when calorie numbers happen to match.
+    if (old.goal != next.goal) return true;
     if (old.targets.calories != next.targets.calories) return true;
     final oldDef = (old.dailyDeficit ?? 0).round();
     final nextDef = (next.dailyDeficit ?? 0).round();

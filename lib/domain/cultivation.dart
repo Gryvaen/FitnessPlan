@@ -75,6 +75,56 @@ class CultivationProgress {
   bool get isMax => realm.isMax;
 }
 
+/// 从体重日志换算累计减重（kg）。
+///
+/// [since] 为新热量标准 / 目标生效日时，只从该日起算：基准体重取生效日
+/// 当天或之前最近一条，当前体重取最新一条；生效日前的减重不计入境界。
+/// [since] 为 null 时沿用全历史（最早一条 − 最新一条）。
+double cultivationKgLostFromLogs({
+  required List<({DateTime date, double weightKg})> logs,
+  DateTime? since,
+}) {
+  if (logs.length < 2) return 0;
+
+  if (since == null) {
+    final lost = logs.first.weightKg - logs.last.weightKg;
+    return lost < 0 ? 0.0 : lost;
+  }
+
+  final sinceDay = DateTime(since.year, since.month, since.day);
+  ({DateTime date, double weightKg})? baseline;
+  for (final log in logs) {
+    final day = DateTime(log.date.year, log.date.month, log.date.day);
+    if (!day.isAfter(sinceDay)) baseline = log;
+  }
+  if (baseline == null) {
+    for (final log in logs) {
+      final day = DateTime(log.date.year, log.date.month, log.date.day);
+      if (!day.isBefore(sinceDay)) {
+        baseline = log;
+        break;
+      }
+    }
+  }
+  if (baseline == null) return 0;
+
+  final current = logs.last;
+  final baseDay = DateTime(
+    baseline.date.year,
+    baseline.date.month,
+    baseline.date.day,
+  );
+  final curDay = DateTime(
+    current.date.year,
+    current.date.month,
+    current.date.day,
+  );
+  if (!curDay.isAfter(baseDay)) return 0;
+
+  final lost = baseline.weightKg - current.weightKg;
+  return lost < 0 ? 0.0 : lost;
+}
+
 /// 由累计减重（kg，允许为负——尚未产生净减重时按 0 处理）换算境界进度。
 CultivationProgress computeCultivationProgress(double rawKgLost) {
   final kgLost = rawKgLost < 0 ? 0.0 : rawKgLost;

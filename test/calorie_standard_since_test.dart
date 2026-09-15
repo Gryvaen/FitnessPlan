@@ -58,4 +58,22 @@ void main() {
     expect(again.targets.calories, stamped.targets.calories);
     expect(again.calorieStandardSince, stampedDay);
   });
+
+  test('switching goal stamps calorieStandardSince today', () async {
+    await seedCut();
+    expect(repo.load()?.calorieStandardSince, isNull);
+
+    final updated = await repo.saveFromInputs(
+      sex: Sex.male,
+      age: 30,
+      heightCm: 175,
+      weightKg: 80,
+      activity: ActivityLevel.moderate,
+      goal: FitnessGoal.maintain,
+    );
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    expect(updated.goal, FitnessGoal.maintain);
+    expect(updated.calorieStandardSince, today);
+  });
 }

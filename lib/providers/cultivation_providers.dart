@@ -18,13 +18,18 @@ final cultivationEligibleProvider = Provider<bool>((ref) {
   return profile?.goal == FitnessGoal.cut;
 });
 
-/// 累计减重（kg）：最早一条体重记录 − 最新一条体重记录，不足两条记为 0。
-/// 不足以产生净减重（增重）时也记为 0，境界修行只按"瘦下来的部分"计。
+/// 累计减重（kg）：默认最早一条体重 − 最新一条；若档案上有
+/// [UserProfile.calorieStandardSince]（切换目标 / 热量标准生效日），则只从
+/// 该日起算，见 [cultivationKgLostFromLogs]。
 final cultivationKgLostProvider = Provider<double>((ref) {
   final logs = ref.watch(weightLogsProvider).value ?? const [];
-  if (logs.length < 2) return 0;
-  final lost = logs.first.weightKg - logs.last.weightKg;
-  return lost < 0 ? 0 : lost;
+  final since = ref.watch(profileProvider)?.calorieStandardSince;
+  return cultivationKgLostFromLogs(
+    logs: [
+      for (final l in logs) (date: l.date, weightKg: l.weightKg),
+    ],
+    since: since,
+  );
 });
 
 /// 境界进度 = 已确认减重（体重记录首尾差）+ 今日尚未反映到体重记录里的实时
@@ -101,21 +106,32 @@ class CultivationDayRecord {
 
 /// 近 14 天的境界修行 kcal 明细（步数 + 饮食，见
 /// [cultivationDietKcalForDayProvider]）与当日训练计划，最新一天在前，与
-/// 步数同步窗口一致（见 [recentStepsProvider]）。
+/// 步数同步窗口一致（见 [recentStepsProvider]）。切换目标后只展示新标准
+/// 生效日及之后的记录。
 final cultivationHistoryProvider =
     Provider.autoDispose<List<CultivationDayRecord>>((ref) {
       final stepDays = ref.watch(recentStepsProvider).value ?? const [];
+      final since = ref.watch(profileProvider)?.calorieStandardSince;
+      final sinceDay = since == null
+          ? null
+          : DateTime(since.year, since.month, since.day);
       return [
         for (final stepDay in stepDays)
-          CultivationDayRecord(
-            date: stepDay.date,
-            stepsKcal: stepsToKcal(stepDay.steps),
-            dietKcal: ref.watch(
-              cultivationDietKcalForDayProvider(stepDay.date),
+          if (sinceDay == null ||
+              !DateTime(
+                stepDay.date.year,
+                stepDay.date.month,
+                stepDay.date.day,
+              ).isBefore(sinceDay))
+            CultivationDayRecord(
+              date: stepDay.date,
+              stepsKcal: stepsToKcal(stepDay.steps),
+              dietKcal: ref.watch(
+                cultivationDietKcalForDayProvider(stepDay.date),
+              ),
+              workout:
+                  ref.watch(dayWorkoutProvider(stepDay.date)).value ??
+                  const DayWorkoutSnapshot(),
             ),
-            workout:
-                ref.watch(dayWorkoutProvider(stepDay.date)).value ??
-                const DayWorkoutSnapshot(),
-          ),
       ];
     });
