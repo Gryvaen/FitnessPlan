@@ -11,9 +11,10 @@ import '../theme/app_theme.dart';
 import '../widgets/form_options.dart';
 
 class PlanEditPage extends ConsumerStatefulWidget {
-  const PlanEditPage({super.key, this.planId});
+  const PlanEditPage({super.key, this.planId, this.syncDay});
 
   final int? planId;
+  final DateTime? syncDay;
 
   @override
   ConsumerState<PlanEditPage> createState() => _PlanEditPageState();
@@ -147,7 +148,12 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
       if (widget.planId == null) {
         await repo.createPlan(name: name, items: items);
       } else {
-        await repo.updatePlan(planId: widget.planId!, name: name, items: items);
+        await repo.updatePlan(
+          planId: widget.planId!,
+          name: name,
+          items: items,
+          syncDay: widget.syncDay,
+        );
       }
       if (!mounted) return;
       context.pop();

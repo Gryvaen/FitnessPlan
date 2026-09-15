@@ -153,6 +153,19 @@ void main() {
     expect(find.text('Stop strategy'), findsNothing);
   });
 
+  testWidgets('Today offers strategy selection for a cut profile', (
+    tester,
+  ) async {
+    await _pump(tester, '/today');
+    expect(find.text('Cut'), findsOneWidget);
+    final choose = find.text('Fat-loss strategy available');
+    expect(choose, findsOneWidget);
+
+    await tester.tap(choose);
+    await _settle(tester);
+    expect(find.text('Balanced deficit'), findsOneWidget);
+  });
+
   testWidgets('picker lists exactly the three primary strategies', (
     tester,
   ) async {

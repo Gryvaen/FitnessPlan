@@ -3357,6 +3357,12 @@ abstract class AppLocalizations {
   /// **'Choose strategy'**
   String get chooseStrategy;
 
+  /// No description provided for @canChooseDietStrategy.
+  ///
+  /// In en, this message translates to:
+  /// **'Fat-loss strategy available'**
+  String get canChooseDietStrategy;
+
   /// No description provided for @changeStrategy.
   ///
   /// In en, this message translates to:

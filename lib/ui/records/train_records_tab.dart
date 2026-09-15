@@ -260,7 +260,10 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
 
   Future<void> _addExercise(BuildContext context, WidgetRef ref) async {
     final l10n = context.l10n;
-    final form = await _showExerciseFormDialog(context: context);
+    final form = await _showExerciseFormDialog(
+      context: context,
+      defaultCategory: _category ?? 'chest',
+    );
     if (form == null || !context.mounted) return;
     try {
       await ref
@@ -421,7 +424,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
               _selectTab(i);
             },
             children: [
-              _plansPanel(context),
+              _plansPanel(context, showHistory: showHistory),
               _exercisesPanel(context),
               if (showHistory) _historyPanel(context, historyScopes, scope),
             ],
@@ -431,7 +434,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     );
   }
 
-  Widget _plansPanel(BuildContext context) {
+  Widget _plansPanel(BuildContext context, {required bool showHistory}) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     return ListView(
@@ -540,13 +543,14 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => setState(() => _planId = other.plan.id),
                       ),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton(
-                        onPressed: () => _selectTab(1),
-                        child: Text(l10n.viewWorkoutHistory),
+                    if (showHistory)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton(
+                          onPressed: () => _selectTab(2),
+                          child: Text(l10n.viewWorkoutHistory),
+                        ),
                       ),
-                    ),
                   ],
                 );
               },

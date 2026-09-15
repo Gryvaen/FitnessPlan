@@ -1946,6 +1946,7 @@
   "noStrategyYet": "No strategy selected. Your profile target is used as-is until you choose one.",
   "strategyOnlyForCut": "Strategies apply to the cut goal only. Maintain / bulk keep the profile target.",
   "chooseStrategy": "Choose strategy",
+  "canChooseDietStrategy": "Fat-loss strategy available",
   "changeStrategy": "Change strategy",
   "adjustSchedule": "Adjust schedule",
   "stopStrategy": "Stop strategy",

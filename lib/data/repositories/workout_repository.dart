@@ -311,10 +311,12 @@ class WorkoutRepository {
     required int planId,
     required String name,
     required List<PlanDraftItem> items,
+    DateTime? syncDay,
   }) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) throw ArgumentError('计划名称不能为空');
     if (items.isEmpty) throw ArgumentError('至少添加一个动作');
+    if (syncDay != null) CalendarDay.ensureEditableDay(syncDay);
 
     await _db.transaction(() async {
       await (_db.update(_db.workoutPlans)..where((t) => t.id.equals(planId)))
@@ -337,7 +339,77 @@ class WorkoutRepository {
               ),
             );
       }
+      if (syncDay != null) {
+        await _syncPlanToDay(
+          planId: planId,
+          planName: trimmed,
+          items: items,
+          day: syncDay,
+        );
+      }
     });
+  }
+
+  Future<void> _syncPlanToDay({
+    required int planId,
+    required String planName,
+    required List<PlanDraftItem> items,
+    required DateTime day,
+  }) async {
+    final groups = await (_db.select(_db.dayWorkouts)
+          ..where(
+            (t) =>
+                t.planId.equals(planId) & t.date.equals(_dayStart(day)),
+          ))
+        .get();
+    for (final group in groups) {
+      await (_db.update(
+        _db.dayWorkouts,
+      )..where((t) => t.id.equals(group.id))).write(
+        DayWorkoutsCompanion(planName: Value(planName)),
+      );
+      final remaining = (await dayItemsFor(group.id)).toList();
+      for (var i = 0; i < items.length; i++) {
+        final draft = items[i];
+        final existingIndex = remaining.indexWhere(
+          (row) => row.exerciseId == draft.exerciseId,
+        );
+        if (existingIndex >= 0) {
+          final existing = remaining.removeAt(existingIndex);
+          await (_db.update(
+            _db.dayWorkoutItems,
+          )..where((t) => t.id.equals(existing.id))).write(
+            DayWorkoutItemsCompanion(
+              exerciseName: Value(draft.exerciseName),
+              targetSets: Value(draft.targetSets),
+              targetReps: Value(draft.targetReps),
+              sortOrder: Value(i),
+            ),
+          );
+        } else {
+          await _db
+              .into(_db.dayWorkoutItems)
+              .insert(
+                DayWorkoutItemsCompanion.insert(
+                  dayWorkoutId: group.id,
+                  exerciseId: draft.exerciseId,
+                  exerciseName: draft.exerciseName,
+                  targetSets: draft.targetSets,
+                  targetReps: draft.targetReps,
+                  sortOrder: Value(i),
+                ),
+              );
+        }
+      }
+      for (final removed in remaining) {
+        await (_db.delete(
+          _db.workoutSetLogs,
+        )..where((t) => t.dayWorkoutItemId.equals(removed.id))).go();
+        await (_db.delete(
+          _db.dayWorkoutItems,
+        )..where((t) => t.id.equals(removed.id))).go();
+      }
+    }
   }
 
   Future<void> deletePlan(int planId) async {

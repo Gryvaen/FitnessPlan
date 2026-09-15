@@ -321,6 +321,69 @@ void main() {
     expect(snap.groups.last.items.single.item.exerciseName, '平板支撑');
   });
 
+  test('editing a plan from Today syncs its day group and keeps progress',
+      () async {
+    final pushup = await addTestExercise(repo, name: '俯卧撑');
+    final squat = await addTestExercise(repo, name: '深蹲', category: 'legs');
+    final plank = await addTestExercise(repo, name: '平板支撑', category: 'core');
+    final planId = await repo.createPlan(
+      name: '原计划',
+      items: [
+        PlanDraftItem(
+          exerciseId: pushup.id,
+          exerciseName: pushup.name,
+          targetSets: 3,
+          targetReps: 10,
+        ),
+        PlanDraftItem(
+          exerciseId: squat.id,
+          exerciseName: squat.name,
+          targetSets: 4,
+          targetReps: 8,
+        ),
+      ],
+    );
+    final today = CalendarDay.todayLocal();
+    await repo.applyPlanToDay(planId: planId, day: today);
+    final before = await repo.daySnapshot(today);
+    final pushupItem = before.items.first.item;
+    await repo.logSet(
+      day: today,
+      exerciseId: pushup.id,
+      exerciseName: pushup.name,
+      dayWorkoutItemId: pushupItem.id,
+      reps: 10,
+    );
+
+    await repo.updatePlan(
+      planId: planId,
+      name: '更新计划',
+      syncDay: today,
+      items: [
+        PlanDraftItem(
+          exerciseId: pushup.id,
+          exerciseName: pushup.name,
+          targetSets: 5,
+          targetReps: 12,
+        ),
+        PlanDraftItem(
+          exerciseId: plank.id,
+          exerciseName: plank.name,
+          targetSets: 2,
+          targetReps: 60,
+        ),
+      ],
+    );
+
+    final after = await repo.daySnapshot(today);
+    expect(after.groups.single.workout.planName, '更新计划');
+    expect(after.items.map((e) => e.item.exerciseName), ['俯卧撑', '平板支撑']);
+    expect(after.items.first.item.id, pushupItem.id);
+    expect(after.items.first.item.targetSets, 5);
+    expect(after.items.first.item.targetReps, 12);
+    expect(after.items.first.completedSets, 1);
+  });
+
   test('deleteDayWorkout removes one group and keeps the other', () async {
     final pushup = await addTestExercise(repo, name: '俯卧撑');
     final squat = await addTestExercise(

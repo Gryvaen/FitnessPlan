@@ -93,6 +93,10 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     final strategyLabel = dayTarget == null
         ? null
         : targetChipLabel(dayTarget, profile, l10n);
+    final canChooseDietStrategy =
+        profile.goal == FitnessGoal.cut &&
+        dayTarget?.source == TargetSource.profile &&
+        dayTarget?.isLegacyEstimate == false;
 
     final canAddWater = isSelectedToday;
     final canUndoWater = isSelectedToday && waterMl > 0;
@@ -247,15 +251,39 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                       ),
                       if (strategyLabel != null) ...[
                         const SizedBox(height: 4),
-                        InkWell(
-                          onTap: () => context.go('/profile/nutrition'),
-                          borderRadius: BorderRadius.circular(6),
-                          child: Text(
-                            strategyLabel,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: onHeroMuted,
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 8,
+                          runSpacing: 2,
+                          children: [
+                            InkWell(
+                              onTap: () => context.go('/profile/nutrition'),
+                              borderRadius: BorderRadius.circular(6),
+                              child: Text(
+                                canChooseDietStrategy
+                                    ? l10n.goalCut
+                                    : strategyLabel,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: onHeroMuted,
+                                ),
+                              ),
                             ),
-                          ),
+                            if (canChooseDietStrategy) ...[
+                              InkWell(
+                                onTap: () => context.go(
+                                  '/profile/nutrition/strategy',
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                                child: Text(
+                                  l10n.canChooseDietStrategy,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: scheme.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ],
                       if (dayTarget?.strategy == DietStrategyKind.carbCycle &&

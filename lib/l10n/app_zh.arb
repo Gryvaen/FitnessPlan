@@ -1920,6 +1920,7 @@
   "noStrategyYet": "尚未选择策略，当前沿用档案目标；显式选择后才会变更。",
   "strategyOnlyForCut": "减脂策略仅在“减脂”目标下可用；维持 / 增肌沿用档案目标。",
   "chooseStrategy": "选择策略",
+  "canChooseDietStrategy": "可选择减脂策略",
   "changeStrategy": "更换策略",
   "adjustSchedule": "调整安排",
   "stopStrategy": "停用策略",

@@ -1888,6 +1888,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chooseStrategy => 'Choose strategy';
 
   @override
+  String get canChooseDietStrategy => 'Fat-loss strategy available';
+
+  @override
   String get changeStrategy => 'Change strategy';
 
   @override

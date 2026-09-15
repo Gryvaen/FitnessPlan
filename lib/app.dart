@@ -163,7 +163,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                     builder: (context, state) {
                       final idStr = state.uri.queryParameters['id'];
                       final id = idStr == null ? null : int.tryParse(idStr);
-                      return PlanEditPage(planId: id);
+                      final syncDayRaw = state.uri.queryParameters['syncDay'];
+                      final syncDay = syncDayRaw == null
+                          ? null
+                          : DateTime.tryParse(syncDayRaw);
+                      return PlanEditPage(planId: id, syncDay: syncDay);
                     },
                   ),
                   GoRoute(

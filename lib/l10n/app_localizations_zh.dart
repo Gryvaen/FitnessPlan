@@ -1857,6 +1857,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chooseStrategy => '选择策略';
 
   @override
+  String get canChooseDietStrategy => '可选择减脂策略';
+
+  @override
   String get changeStrategy => '更换策略';
 
   @override

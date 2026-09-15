@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/repositories/workout_repository.dart';
+import '../../domain/calendar_day.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../records/log_set_sheet.dart';
@@ -265,9 +266,8 @@ class TodayWorkoutCard extends ConsumerWidget {
     }
   }
 
-  Future<void> _removeGroup(
+  Future<bool> _confirmRemoveGroup(
     BuildContext context,
-    WidgetRef ref,
     DayWorkoutGroup group,
   ) async {
     final l10n = context.l10n;
@@ -290,12 +290,34 @@ class TodayWorkoutCard extends ConsumerWidget {
         ],
       ),
     );
-    if (ok != true || !context.mounted) return;
+    return ok == true;
+  }
+
+  Future<void> _removeGroup(WidgetRef ref, DayWorkoutGroup group) async {
     await ref
         .read(workoutRepositoryProvider)
         .deleteDayWorkout(group.workout.id);
     ref.invalidate(workoutHistoryProvider);
     ref.invalidate(allWorkoutHistoryProvider);
+  }
+
+  Future<void> _editGroupPlan(
+    BuildContext context,
+    DayWorkoutGroup group,
+  ) async {
+    final planId = group.workout.planId;
+    if (planId == null) return;
+    final router = GoRouter.of(context);
+    await Navigator.of(context, rootNavigator: true).maybePop();
+    router.push(
+      Uri(
+        path: '/records/plan',
+        queryParameters: {
+          'id': '$planId',
+          'syncDay': CalendarDay.dayOnly(day).toIso8601String(),
+        },
+      ).toString(),
+    );
   }
 
   Widget _headerRow({
@@ -516,23 +538,38 @@ class TodayWorkoutCard extends ConsumerWidget {
             if (showDetails) ...[
               const SizedBox(height: 4),
               for (final group in snapshot.groups)
-                _DayWorkoutGroupTile(
-                  title: _groupTitle(group, l10n),
-                  done: group.doneCount,
-                  total: group.items.length,
-                  canRemove: editable,
-                  onRemove: () => _removeGroup(context, ref, group),
-                  children: [
-                    for (final progress in group.items)
-                      _itemTile(
-                        context: context,
-                        ref: ref,
-                        l10n: l10n,
-                        scheme: scheme,
-                        progress: progress,
-                        editable: editable,
-                      ),
-                  ],
+                Dismissible(
+                  key: ValueKey('day-workout-group-${group.workout.id}'),
+                  direction: editable
+                      ? DismissDirection.endToStart
+                      : DismissDirection.none,
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 16),
+                    color: scheme.error,
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ),
+                  confirmDismiss: (_) => _confirmRemoveGroup(context, group),
+                  onDismissed: (_) => _removeGroup(ref, group),
+                  child: _DayWorkoutGroupTile(
+                    title: _groupTitle(group, l10n),
+                    done: group.doneCount,
+                    total: group.items.length,
+                    onTap: group.workout.planId == null
+                        ? null
+                        : () => _editGroupPlan(context, group),
+                    children: [
+                      for (final progress in group.items)
+                        _itemTile(
+                          context: context,
+                          ref: ref,
+                          l10n: l10n,
+                          scheme: scheme,
+                          progress: progress,
+                          editable: editable,
+                        ),
+                    ],
+                  ),
                 ),
               Text(
                 l10n.workoutProgressHint(done, total),
@@ -552,15 +589,13 @@ class _DayWorkoutGroupTile extends StatelessWidget {
     required this.done,
     required this.total,
     required this.children,
-    required this.canRemove,
-    required this.onRemove,
+    required this.onTap,
   });
   final String title;
   final int done;
   final int total;
   final List<Widget> children;
-  final bool canRemove;
-  final VoidCallback onRemove;
+  final VoidCallback? onTap;
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -569,13 +604,10 @@ class _DayWorkoutGroupTile extends StatelessWidget {
         contentPadding: EdgeInsets.zero,
         title: Text(title),
         subtitle: Text('$done/$total'),
-        trailing: canRemove
-            ? IconButton(
-                tooltip: context.l10n.removeDayWorkout,
-                onPressed: onRemove,
-                icon: const Icon(Icons.delete_outline),
-              )
-            : null,
+        trailing: onTap == null
+            ? null
+            : const Icon(Icons.chevron_right, size: 20),
+        onTap: onTap,
       ),
       ...children,
       const Divider(),
