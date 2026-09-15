@@ -122,7 +122,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                           body: Center(child: Text(context.l10n.invalidFood)),
                         );
                       }
-                      return FoodDetailPage(foodId: id);
+                      return FoodDetailPage(
+                        foodId: id,
+                        initialMealType: MealType.tryParse(
+                          state.uri.queryParameters['mealType'],
+                        ),
+                      );
                     },
                   ),
                 ],
@@ -287,17 +292,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final idStr = state.uri.queryParameters['foodId'];
           final id = idStr == null ? null : int.tryParse(idStr);
-          final mealTypeRaw = state.uri.queryParameters['mealType'];
-          MealType? mealType;
-          if (mealTypeRaw != null) {
-            for (final t in MealType.values) {
-              if (t.name == mealTypeRaw) {
-                mealType = t;
-                break;
-              }
-            }
-          }
-          return LogMealPage(initialFoodId: id, initialMealType: mealType);
+          final mealType = MealType.tryParse(
+            state.uri.queryParameters['mealType'],
+          );
+          final openDayMealsAfterSearchAdd =
+              state.uri.queryParameters['openDayMealsAfterSearchAdd'] == '1';
+          return LogMealPage(
+            initialFoodId: id,
+            initialMealType: mealType,
+            openDayMealsAfterSearchAdd: openDayMealsAfterSearchAdd,
+          );
         },
       ),
       // Root-level twins of /foods/custom and /foods/:id. Pushing a shell
@@ -324,7 +328,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               body: Center(child: Text(context.l10n.invalidFood)),
             );
           }
-          return FoodDetailPage(foodId: id);
+          return FoodDetailPage(
+            foodId: id,
+            initialMealType: MealType.tryParse(
+              state.uri.queryParameters['mealType'],
+            ),
+          );
         },
       ),
       GoRoute(

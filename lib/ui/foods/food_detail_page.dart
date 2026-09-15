@@ -11,9 +11,13 @@ import '../theme/macro_color.dart';
 import '../widgets/form_options.dart';
 
 class FoodDetailPage extends ConsumerStatefulWidget {
-  const FoodDetailPage({super.key, required this.foodId});
+  const FoodDetailPage({super.key, required this.foodId, this.initialMealType});
 
   final int foodId;
+
+  /// When opened from "add breakfast/lunch/…" flows, prefer this over the
+  /// clock-based default so the bottom chips match the section the user tapped.
+  final MealType? initialMealType;
 
   @override
   ConsumerState<FoodDetailPage> createState() => _FoodDetailPageState();
@@ -31,8 +35,8 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
   void initState() {
     super.initState();
     final defaults = ref.read(formMemoryRepositoryProvider).loadMealDefaults();
-    // Same clock-based default as Today / log-meal entry, not last remembered.
-    _mealType = MealType.suggestedFor(DateTime.now());
+    _mealType =
+        widget.initialMealType ?? MealType.suggestedFor(DateTime.now());
     _grams = FormOptions.snapDouble(FormOptions.mealGrams(), defaults.grams);
     _reload();
   }
@@ -78,7 +82,8 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.mealLoggedTo(_mealType.label(l10n)))),
       );
-      context.pop();
+      // true → caller (e.g. log-meal search) can jump to the day meals page.
+      context.pop(true);
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);

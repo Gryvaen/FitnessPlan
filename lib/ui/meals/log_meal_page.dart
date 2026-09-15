@@ -10,12 +10,19 @@ import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/food_name_link.dart';
 import '../widgets/form_options.dart';
+import 'daily_meals_page.dart';
 
 class LogMealPage extends ConsumerStatefulWidget {
-  const LogMealPage({super.key, this.initialFoodId, this.initialMealType});
+  const LogMealPage({
+    super.key,
+    this.initialFoodId,
+    this.initialMealType,
+    this.openDayMealsAfterSearchAdd = false,
+  });
 
   final int? initialFoodId;
   final MealType? initialMealType;
+  final bool openDayMealsAfterSearchAdd;
 
   @override
   ConsumerState<LogMealPage> createState() => _LogMealPageState();
@@ -34,6 +41,8 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
   bool _searching = false;
   int _searchVersion = 0;
   String _query = '';
+  final _searchController = TextEditingController();
+  final _searchFocus = FocusNode();
 
   @override
   void initState() {
@@ -50,6 +59,13 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
       }
       _bootstrap();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocus.dispose();
+    super.dispose();
   }
 
   Future<void> _bootstrap() async {
@@ -129,13 +145,40 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     }
   }
 
-  Future<void> _openFoodDetail(FoodItem food) async {
-    await openFoodDetail(context, food.id);
+  /// Recent / favorites (and already-selected) open detail then stay on the
+  /// grams sheet when returning — search uses [_openFoodDetailFromSearch].
+  Future<void> _openFoodDetailKeepSelection(FoodItem food) async {
+    await openFoodDetail(context, food.id, mealType: _mealType);
     if (!mounted) return;
     final updated = await ref.read(foodRepositoryProvider).byId(food.id);
     if (!mounted || updated == null) return;
     await _selectFood(updated);
     await _refreshFavorites();
+  }
+
+  /// Search → food detail: after logging, return to the existing day meals
+  /// page, or open it when this flow started from Today. Otherwise keep the
+  /// query here with the field unfocused.
+  Future<void> _openFoodDetailFromSearch(FoodItem food) async {
+    _searchFocus.unfocus();
+    final added = await openFoodDetail<bool>(
+      context,
+      food.id,
+      mealType: _mealType,
+    );
+    if (!mounted) return;
+    await _refreshFavorites();
+    if (!mounted) return;
+    if (added == true) {
+      final day = ref.read(selectedDayProvider);
+      if (widget.openDayMealsAfterSearchAdd) {
+        context.pushReplacement(dailyMealsPath(day));
+      } else {
+        context.pop();
+      }
+      return;
+    }
+    _searchFocus.unfocus();
   }
 
   Future<void> _search(String q) async {
@@ -246,6 +289,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     }
   }
 
+  /// Grams sheet is only entered from recent / favorites (and custom create).
   Widget _foodTile(FoodItem f, {String? badge}) {
     final theme = Theme.of(context);
     return ListTile(
@@ -257,6 +301,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         proteinG: f.proteinPer100,
         fatG: f.fatPer100,
         style: theme.textTheme.bodyLarge,
+        onTap: () => openFoodDetail(context, f.id, mealType: _mealType),
       ),
       subtitle: Text(
         [?badge, f.category, '${f.kcalPer100.round()} kcal/100g'].join(' · '),
@@ -279,7 +324,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         proteinG: f.proteinPer100,
         fatG: f.fatPer100,
         style: theme.textTheme.bodyLarge,
-        onTap: () => _openFoodDetail(f),
+        onTap: () => _openFoodDetailFromSearch(f),
       ),
       subtitle: Text(
         [f.category, '${f.kcalPer100.round()} kcal/100g'].join(' · '),
@@ -292,7 +337,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         size: 20,
         onPressed: () => _toggleFavorite(f.id),
       ),
-      onTap: () => _openFoodDetail(f),
+      onTap: () => _openFoodDetailFromSearch(f),
     );
   }
 
@@ -406,7 +451,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                       proteinG: _selected!.proteinPer100,
                       fatG: _selected!.fatPer100,
                       style: theme.textTheme.bodyLarge,
-                      onTap: () => _openFoodDetail(_selected!),
+                      onTap: () => _openFoodDetailKeepSelection(_selected!),
                     ),
                     subtitle: Text(
                       '${_selected!.kcalPer100.round()} kcal / 100g',
@@ -419,7 +464,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                       }),
                       child: Text(l10n.change),
                     ),
-                    onTap: () => _openFoodDetail(_selected!),
+                    onTap: () => _openFoodDetailKeepSelection(_selected!),
                   ),
                   if (_servings.isNotEmpty) ...[
                     Text(
@@ -495,6 +540,8 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                   ),
                 ] else ...[
                   TextField(
+                    controller: _searchController,
+                    focusNode: _searchFocus,
                     decoration: InputDecoration(
                       hintText: l10n.searchFood,
                       prefixIcon: const Icon(Icons.search),

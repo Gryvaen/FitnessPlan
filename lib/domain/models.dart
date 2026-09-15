@@ -30,6 +30,14 @@ enum MealType {
     if (minutes >= 17 * 60 && minutes < 21 * 60) return dinner;
     return snack;
   }
+
+  static MealType? tryParse(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    for (final t in values) {
+      if (t.name == raw) return t;
+    }
+    return null;
+  }
 }
 
 enum ExerciseUnit {

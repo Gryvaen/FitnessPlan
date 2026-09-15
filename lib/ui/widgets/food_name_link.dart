@@ -1,23 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../domain/models.dart';
 import '../theme/macro_color.dart';
 
 /// Path to the food detail page that won't remount [StatefulShellRoute]
 /// when the caller already sits on a root route (e.g. `/log-meal`, `/meal/:id`).
-String foodDetailLocation(BuildContext context, int foodId) {
+String foodDetailLocation(
+  BuildContext context,
+  int foodId, {
+  MealType? mealType,
+}) {
   final path = GoRouterState.of(context).uri.path;
-  if (path == '/foods' || path.startsWith('/foods/')) {
-    return '/foods/$foodId';
-  }
-  return '/food-detail/$foodId';
+  final base = (path == '/foods' || path.startsWith('/foods/'))
+      ? '/foods/$foodId'
+      : '/food-detail/$foodId';
+  if (mealType == null) return base;
+  return Uri(path: base, queryParameters: {'mealType': mealType.name})
+      .toString();
 }
 
 Future<T?> openFoodDetail<T extends Object?>(
   BuildContext context,
-  int foodId,
-) {
-  return context.push<T>(foodDetailLocation(context, foodId));
+  int foodId, {
+  MealType? mealType,
+}) {
+  return context.push<T>(foodDetailLocation(context, foodId, mealType: mealType));
 }
 
 /// Colored, tappable food name that opens the food detail page.

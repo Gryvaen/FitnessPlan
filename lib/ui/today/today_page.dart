@@ -461,7 +461,8 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                             addLabel: isSelectedToday ? l10n.logMeal : null,
                             onAdd: isSelectedToday
                                 ? () => context.push(
-                                    '/log-meal?mealType=${MealType.suggestedFor(DateTime.now()).name}',
+                                    '/log-meal?mealType=${MealType.suggestedFor(DateTime.now()).name}'
+                                    '&openDayMealsAfterSearchAdd=1',
                                   )
                                 : null,
                             trailing: [
