@@ -4,23 +4,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../domain/energy_units.dart';
+import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
+import '../widgets/food_name_link.dart';
 
 /// Create or edit a user-defined food (per 100g macros).
 class CustomFoodEditPage extends ConsumerStatefulWidget {
   const CustomFoodEditPage({
     super.key,
     this.foodId,
-    this.popWithIdOnCreate = false,
+    this.openDetailOnCreate = false,
+    this.initialMealType,
   });
 
   final int? foodId;
 
-  /// When true (e.g. opened from 记一笔), open food detail after create, then
-  /// pop with the new food id so the caller can select it.
-  final bool popWithIdOnCreate;
+  /// When true (e.g. opened from 记一笔), open food detail after create so the
+  /// user can log it there; pops `true` if they added a meal, else `false`/
+  /// null — never auto-selects the grams sheet on 记一笔.
+  final bool openDetailOnCreate;
+
+  /// Forwarded to food detail so "add to breakfast/…" matches 记一笔.
+  final MealType? initialMealType;
 
   @override
   ConsumerState<CustomFoodEditPage> createState() => _CustomFoodEditPageState();
@@ -162,10 +169,14 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(l10n.customFoodAdded)));
-          if (widget.popWithIdOnCreate) {
+          if (widget.openDetailOnCreate) {
             // Root twin: /foods/$id would remount the shell from /log-meal.
-            await context.push('/food-detail/$id');
-            if (mounted) context.pop(id);
+            final added = await openFoodDetail<bool>(
+              context,
+              id,
+              mealType: widget.initialMealType,
+            );
+            if (mounted) context.pop(added == true);
           } else {
             context.pushReplacement('/foods/$id');
           }

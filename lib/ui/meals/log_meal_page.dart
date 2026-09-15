@@ -120,11 +120,24 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
   Future<void> _openCustomFood() async {
     // Must stay on a root route: /log-meal is outside the shell, and pushing
     // /foods/custom would remount StatefulShellRoute (duplicate page key).
-    final id = await context.push<int>('/custom-food?returnId=1');
-    if (id == null || !mounted) return;
-    final food = await ref.read(foodRepositoryProvider).byId(id);
-    if (!mounted || food == null) return;
-    await _selectFood(food);
+    // Same as search: log on the detail page, then leave 记一笔 — never the
+    // grams sheet (that is only for recent / favorites).
+    final added = await context.push<bool>(
+      Uri(
+        path: '/custom-food',
+        queryParameters: {
+          'returnId': '1',
+          'mealType': _mealType.name,
+        },
+      ).toString(),
+    );
+    if (!mounted || added != true) return;
+    final day = ref.read(selectedDayProvider);
+    if (widget.openDayMealsAfterSearchAdd) {
+      context.pushReplacement(dailyMealsPath(day));
+    } else {
+      context.pop();
+    }
   }
 
   Future<void> _refreshFavorites() async {
@@ -145,8 +158,8 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     }
   }
 
-  /// Recent / favorites (and already-selected) open detail then stay on the
-  /// grams sheet when returning — search uses [_openFoodDetailFromSearch].
+  /// Recent / favorites (already selected) open detail then stay on the grams
+  /// sheet when returning. Search and custom-create use the detail add flow.
   Future<void> _openFoodDetailKeepSelection(FoodItem food) async {
     await openFoodDetail(context, food.id, mealType: _mealType);
     if (!mounted) return;

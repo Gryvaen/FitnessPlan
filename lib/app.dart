@@ -109,7 +109,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                           state.uri.queryParameters['returnId'] == '1';
                       return CustomFoodEditPage(
                         foodId: id,
-                        popWithIdOnCreate: returnId,
+                        openDetailOnCreate: returnId,
+                        initialMealType: MealType.tryParse(
+                          state.uri.queryParameters['mealType'],
+                        ),
                       );
                     },
                   ),
@@ -319,7 +322,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           final returnId = state.uri.queryParameters['returnId'] == '1';
           return CustomFoodEditPage(
             foodId: id,
-            popWithIdOnCreate: returnId,
+            openDetailOnCreate: returnId,
+            initialMealType: MealType.tryParse(
+              state.uri.queryParameters['mealType'],
+            ),
           );
         },
       ),
