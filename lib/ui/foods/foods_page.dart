@@ -56,8 +56,9 @@ class FoodsPage extends ConsumerStatefulWidget {
 }
 
 class _FoodsPageState extends ConsumerState<FoodsPage> {
-  var _tab = _FoodsTab.recent;
+  var _tab = _FoodsTab.categories;
   final _searchController = TextEditingController();
+  bool _pickedInitialTab = false;
 
   @override
   void dispose() {
@@ -67,10 +68,54 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
 
   void _setQuery(String v) => ref.read(_foodQueryProvider.notifier).set(v);
 
+  List<_FoodsTab> _visibleTabs({
+    required bool hasRecent,
+    required bool hasFavorites,
+  }) {
+    return [
+      if (hasRecent) _FoodsTab.recent,
+      if (hasFavorites) _FoodsTab.favorites,
+      _FoodsTab.categories,
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final searching = ref.watch(_foodQueryProvider).trim().isNotEmpty;
+    final recentAsync = ref.watch(_recentFoodsProvider);
+    final favAsync = ref.watch(favoriteFoodsProvider);
+    final hasRecent = recentAsync.maybeWhen(
+      data: (v) => v.isNotEmpty,
+      orElse: () => false,
+    );
+    final hasFavorites = favAsync.maybeWhen(
+      data: (v) => v.isNotEmpty,
+      orElse: () => false,
+    );
+    final visible = _visibleTabs(
+      hasRecent: hasRecent,
+      hasFavorites: hasFavorites,
+    );
+
+    var effectiveTab = visible.contains(_tab) ? _tab : visible.last;
+    if (!_pickedInitialTab && recentAsync.hasValue && favAsync.hasValue) {
+      effectiveTab = visible.first;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _pickedInitialTab) return;
+        setState(() {
+          _pickedInitialTab = true;
+          _tab = visible.first;
+        });
+      });
+    } else if (effectiveTab != _tab) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() => _tab = effectiveTab);
+      });
+    }
+
+    final tabIndex = visible.indexOf(effectiveTab).clamp(0, visible.length - 1);
 
     return AppChromeScaffold(
       body: SafeArea(
@@ -108,7 +153,7 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                 onChanged: _setQuery,
               ),
             ),
-            if (!searching) ...[
+            if (!searching && visible.length > 1) ...[
               const SizedBox(height: AppSpacing.compact),
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -116,11 +161,14 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                 ),
                 child: SportTabs<_FoodsTab>(
                   items: {
-                    _FoodsTab.recent: l10n.tabRecent,
-                    _FoodsTab.favorites: l10n.favorites,
-                    _FoodsTab.categories: l10n.categories,
+                    for (final t in visible)
+                      t: switch (t) {
+                        _FoodsTab.recent => l10n.tabRecent,
+                        _FoodsTab.favorites => l10n.favorites,
+                        _FoodsTab.categories => l10n.categories,
+                      },
                   },
-                  selected: _tab,
+                  selected: effectiveTab,
                   onSelected: (v) => setState(() => _tab = v),
                 ),
               ),
@@ -136,82 +184,98 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                     child: TickerMode(
                       enabled: !searching,
                       child: SwipeTabView(
+                        key: ValueKey(
+                          visible.map((t) => t.name).join('-'),
+                        ),
                         branchIndex: 1,
                         keepPagesAlive: true,
-                        index: _tab.index,
+                        index: tabIndex,
                         onIndexChanged: (i) =>
-                            setState(() => _tab = _FoodsTab.values[i]),
+                            setState(() => _tab = visible[i]),
                         children: [
-                          _FoodListView(
-                            watch: (ref) => ref.watch(_recentFoodsProvider),
-                            emptyIcon: Icons.history,
-                            emptyTitle: l10n.noRecentFoods,
-                            onLongPress: (context, ref, food) async {
-                              final confirmed =
-                                  await showDialog<bool>(
-                                    context: context,
-                                    builder: (ctx) => AlertDialog(
-                                      title: Text(l10n.removeFromRecent),
-                                      content: Text(
-                                        l10n.confirmRemoveFromRecent(food.name),
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(ctx, false),
-                                          child: Text(l10n.cancel),
+                          for (final t in visible)
+                            KeyedSubtree(
+                              key: ValueKey(t),
+                              child: switch (t) {
+                              _FoodsTab.recent => _FoodListView(
+                                watch: (ref) =>
+                                    ref.watch(_recentFoodsProvider),
+                                emptyIcon: Icons.history,
+                                emptyTitle: l10n.noRecentFoods,
+                                onLongPress: (context, ref, food) async {
+                                  final confirmed =
+                                      await showDialog<bool>(
+                                        context: context,
+                                        builder: (ctx) => AlertDialog(
+                                          title: Text(l10n.removeFromRecent),
+                                          content: Text(
+                                            l10n.confirmRemoveFromRecent(
+                                              food.name,
+                                            ),
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(ctx, false),
+                                              child: Text(l10n.cancel),
+                                            ),
+                                            FilledButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(ctx, true),
+                                              child: Text(l10n.delete),
+                                            ),
+                                          ],
                                         ),
-                                        FilledButton(
-                                          onPressed: () =>
-                                              Navigator.pop(ctx, true),
-                                          child: Text(l10n.delete),
+                                      ) ==
+                                      true;
+                                  if (!confirmed) return;
+                                  await ref
+                                      .read(foodRepositoryProvider)
+                                      .hideFromRecent(food.id);
+                                  ref.invalidate(_recentFoodsProvider);
+                                },
+                              ),
+                              _FoodsTab.favorites => _FoodListView(
+                                watch: (ref) =>
+                                    ref.watch(favoriteFoodsProvider),
+                                emptyIcon: Icons.star_outline,
+                                emptyTitle: l10n.noFavorites,
+                                onLongPress: (context, ref, food) async {
+                                  final confirmed =
+                                      await showDialog<bool>(
+                                        context: context,
+                                        builder: (ctx) => AlertDialog(
+                                          title: Text(l10n.removeFavorite),
+                                          content: Text(
+                                            l10n.confirmRemoveFavorite(
+                                              food.name,
+                                            ),
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(ctx, false),
+                                              child: Text(l10n.cancel),
+                                            ),
+                                            FilledButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(ctx, true),
+                                              child: Text(l10n.remove),
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
-                                  ) ==
-                                  true;
-                              if (!confirmed) return;
-                              await ref
-                                  .read(foodRepositoryProvider)
-                                  .hideFromRecent(food.id);
-                              ref.invalidate(_recentFoodsProvider);
+                                      ) ==
+                                      true;
+                                  if (!confirmed) return;
+                                  await ref
+                                      .read(foodRepositoryProvider)
+                                      .toggleFavorite(food.id);
+                                },
+                              ),
+                              _FoodsTab.categories =>
+                                const _FoodCategoryList(),
                             },
-                          ),
-                          _FoodListView(
-                            watch: (ref) => ref.watch(favoriteFoodsProvider),
-                            emptyIcon: Icons.star_outline,
-                            emptyTitle: l10n.noFavorites,
-                            onLongPress: (context, ref, food) async {
-                              final confirmed =
-                                  await showDialog<bool>(
-                                    context: context,
-                                    builder: (ctx) => AlertDialog(
-                                      title: Text(l10n.removeFavorite),
-                                      content: Text(
-                                        l10n.confirmRemoveFavorite(food.name),
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(ctx, false),
-                                          child: Text(l10n.cancel),
-                                        ),
-                                        FilledButton(
-                                          onPressed: () =>
-                                              Navigator.pop(ctx, true),
-                                          child: Text(l10n.remove),
-                                        ),
-                                      ],
-                                    ),
-                                  ) ==
-                                  true;
-                              if (!confirmed) return;
-                              await ref
-                                  .read(foodRepositoryProvider)
-                                  .toggleFavorite(food.id);
-                            },
-                          ),
-                          const _FoodCategoryList(),
+                            ),
                         ],
                       ),
                     ),
