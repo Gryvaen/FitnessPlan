@@ -105,6 +105,36 @@ void main() {
     expect(intake.calories, closeTo(175, 0.1));
   });
 
+  test('renaming custom food updates meal entry foodName', () async {
+    final id = await foods.createCustom(
+      name: '旧名字鸡胸',
+      kcalPer100: 165,
+      proteinPer100: 31,
+      carbPer100: 0,
+      fatPer100: 3.6,
+    );
+    final food = (await foods.byId(id))!;
+    final day = CalendarDay.todayLocal();
+    await meals.add(
+      date: day,
+      mealType: MealType.lunch,
+      food: food,
+      grams: 100,
+    );
+    expect((await meals.forDay(day)).single.foodName, '旧名字鸡胸');
+
+    await foods.updateCustom(
+      id: id,
+      name: '新名字鸡胸',
+      kcalPer100: 165,
+      proteinPer100: 31,
+      carbPer100: 0,
+      fatPer100: 3.6,
+    );
+    expect((await foods.byId(id))!.name, '新名字鸡胸');
+    expect((await meals.forDay(day)).single.foodName, '新名字鸡胸');
+  });
+
   test('copyDay appends onto today and rejects past target', () async {
     final id = await foods.createCustom(
       name: '复制用米饭',

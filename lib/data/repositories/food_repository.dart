@@ -318,23 +318,39 @@ LIMIT ?
     if (clash != null && clash.id != id) {
       throw StateError('已存在同名食材，请换一个名称');
     }
-    await (_db.update(_db.foodItems)..where((t) => t.id.equals(id))).write(
-      FoodItemsCompanion(
-        name: Value(trimmed),
-        category: const Value(kCustomFoodCategory),
-        kcalPer100: Value(kcalPer100),
-        proteinPer100: Value(proteinPer100),
-        carbPer100: Value(carbPer100),
-        fatPer100: Value(fatPer100),
-        alcoholPer100: Value(alcoholPer100),
-        fiberPer100: Value(fiberPer100),
-        sodiumMgPer100: Value(sodiumMgPer100),
-        sugarPer100: Value(sugarPer100),
-        saturatedFatPer100: Value(saturatedFatPer100),
-        calciumMgPer100: Value(calciumMgPer100),
-        isCustom: const Value(true),
-      ),
-    );
+    await _db.transaction(() async {
+      await (_db.update(_db.foodItems)..where((t) => t.id.equals(id))).write(
+        FoodItemsCompanion(
+          name: Value(trimmed),
+          category: const Value(kCustomFoodCategory),
+          kcalPer100: Value(kcalPer100),
+          proteinPer100: Value(proteinPer100),
+          carbPer100: Value(carbPer100),
+          fatPer100: Value(fatPer100),
+          alcoholPer100: Value(alcoholPer100),
+          fiberPer100: Value(fiberPer100),
+          sodiumMgPer100: Value(sodiumMgPer100),
+          sugarPer100: Value(sugarPer100),
+          saturatedFatPer100: Value(saturatedFatPer100),
+          calciumMgPer100: Value(calciumMgPer100),
+          isCustom: const Value(true),
+        ),
+      );
+      // Meal / preset rows denormalize foodName at write time — keep them
+      // in sync when the user renames a custom food.
+      if (trimmed != food.name) {
+        await (_db.update(
+          _db.mealEntries,
+        )..where((t) => t.foodId.equals(id))).write(
+          MealEntriesCompanion(foodName: Value(trimmed)),
+        );
+        await (_db.update(
+          _db.mealPresetItems,
+        )..where((t) => t.foodId.equals(id))).write(
+          MealPresetItemsCompanion(foodName: Value(trimmed)),
+        );
+      }
+    });
   }
 
   Future<void> deleteCustom(int id) async {
