@@ -199,7 +199,6 @@ class _CutNutritionTargets extends ConsumerWidget {
     if (profile == null) {
       return const Center(child: CircularProgressIndicator());
     }
-    final plan = ref.read(profileRepositoryProvider).buildPlan(profile);
     final today = AppDates.todayLocal();
     final activeStartsLater =
         active != null && active.effectiveFrom.isAfter(today);
@@ -275,58 +274,9 @@ class _CutNutritionTargets extends ConsumerWidget {
               ),
             ),
         ],
-        // ------------------------------------------------ basis
-        SportListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: Icon(
-            Icons.calculate_outlined,
-            color: AppThemeVisuals.of(context).accent,
-          ),
-          title: Text(l10n.tdeeCalcMethod, style: theme.textTheme.titleSmall),
-          subtitle: Text(
-            active != null
-                ? l10n.planBaselineLine(
-                    active.referenceWeightKg.toStringAsFixed(1),
-                    '${active.estimatedTdee.round()}',
-                    '${active.baseEnergy.round()}',
-                  )
-                : l10n.baseTargetLine('${profile.targets.calories}'),
-            style: theme.textTheme.bodySmall,
-          ),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => showModalBottomSheet<void>(
-            context: context,
-            useRootNavigator: true,
-            isScrollControlled: true,
-            showDragHandle: true,
-            builder: (_) => SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppSpacing.formPage),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.tdeeCalcMethod,
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: AppSpacing.field),
-                    CalorieBreakdown(plan: plan, compact: true),
-                    const SizedBox(height: AppSpacing.compact),
-                    Text(
-                      l10n.strategyBasisBody,
-                      style: theme.textTheme.bodySmall,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      l10n.strategyDisclaimer,
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
+        // TDEE only on the tab that matches the profile goal.
+        if (profile.goal == FitnessGoal.cut)
+          _TdeeCalcMethodTile(profile: profile, active: active),
       ],
     );
   }
@@ -443,17 +393,21 @@ class _StrategyDescriptionState extends State<_StrategyDescription> {
   }
 }
 
-/// 增肌/维持 tab placeholder: no strategy has been designed for these goals
-/// yet — shown in the page's normal card-list language (not the 修仙-style
-/// full-bleed art) so it reads as "part of this page", not a different app.
-class _NutritionComingSoon extends StatelessWidget {
+/// 增肌/维持 tab: strategy playbooks are still TBD. TDEE is only shown when
+/// this tab matches the profile's current goal (the other two stay hidden).
+class _NutritionComingSoon extends ConsumerWidget {
   const _NutritionComingSoon({required this.goal});
 
   final FitnessGoal goal;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final profile = ref.watch(profileProvider);
+    if (profile == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final showTdee = profile.goal == goal;
     return ListView(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.formPage,
@@ -467,7 +421,72 @@ class _NutritionComingSoon extends StatelessWidget {
           title: l10n.nutritionComingSoonTitle(goal.label(l10n)),
           message: l10n.nutritionComingSoonBody,
         ),
+        if (showTdee) ...[
+          const SizedBox(height: AppSpacing.section),
+          _TdeeCalcMethodTile(profile: profile, active: null),
+        ],
       ],
+    );
+  }
+}
+
+/// Shared "TDEE 计算方法" row: summary always visible; full breakdown opens
+/// in a bottom sheet (hidden until the user asks for it).
+class _TdeeCalcMethodTile extends ConsumerWidget {
+  const _TdeeCalcMethodTile({
+    required this.profile,
+    required this.active,
+  });
+
+  final UserProfile profile;
+  final DietStrategyPlan? active;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final plan = ref.read(profileRepositoryProvider).buildPlan(profile);
+    return SportListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(
+        Icons.calculate_outlined,
+        color: AppThemeVisuals.of(context).accent,
+      ),
+      title: Text(l10n.tdeeCalcMethod, style: theme.textTheme.titleSmall),
+      subtitle: Text(
+        active != null
+            ? l10n.planBaselineLine(
+                active!.referenceWeightKg.toStringAsFixed(1),
+                '${active!.estimatedTdee.round()}',
+                '${active!.baseEnergy.round()}',
+              )
+            : l10n.baseTargetLine('${plan.targets.calories}'),
+        style: theme.textTheme.bodySmall,
+      ),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => showModalBottomSheet<void>(
+        context: context,
+        useRootNavigator: true,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (_) => SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.formPage),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.tdeeCalcMethod, style: theme.textTheme.titleMedium),
+                const SizedBox(height: AppSpacing.field),
+                CalorieBreakdown(plan: plan, compact: true),
+                const SizedBox(height: AppSpacing.compact),
+                Text(l10n.strategyBasisBody, style: theme.textTheme.bodySmall),
+                const SizedBox(height: 6),
+                Text(l10n.strategyDisclaimer, style: theme.textTheme.bodySmall),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
