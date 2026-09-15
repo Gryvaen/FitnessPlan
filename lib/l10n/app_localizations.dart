@@ -2511,6 +2511,12 @@ abstract class AppLocalizations {
   /// **'Quick-add exercise'**
   String get quickAddExercise;
 
+  /// No description provided for @quickAddPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick-add plan'**
+  String get quickAddPlan;
+
   /// No description provided for @sectionThatDay.
   ///
   /// In en, this message translates to:

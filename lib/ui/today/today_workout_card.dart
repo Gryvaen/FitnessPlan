@@ -101,6 +101,11 @@ class TodayWorkoutCard extends ConsumerWidget {
                 title: Text(l10n.quickAddExercise),
                 onTap: () => Navigator.pop(ctx, 'quick'),
               ),
+              ListTile(
+                leading: const Icon(Icons.playlist_add),
+                title: Text(l10n.quickAddPlan),
+                onTap: () => Navigator.pop(ctx, 'quickPlan'),
+              ),
               const Divider(height: 1),
               for (final p in plans)
                 ListTile(
@@ -125,6 +130,10 @@ class TodayWorkoutCard extends ConsumerWidget {
     if (!context.mounted || choice == null) return;
     if (choice == 'quick') {
       await showQuickAddDayItemDialog(context: context, ref: ref, day: day);
+      return;
+    }
+    if (choice == 'quickPlan') {
+      await context.push('/records/plan');
       return;
     }
     if (choice is WorkoutPlanSummary) {

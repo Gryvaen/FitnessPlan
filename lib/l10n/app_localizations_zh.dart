@@ -1267,6 +1267,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get quickAddExercise => '快速添加动作';
 
   @override
+  String get quickAddPlan => '快速添加计划';
+
+  @override
   String get sectionThatDay => '当日';
 
   @override

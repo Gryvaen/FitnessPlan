@@ -10,6 +10,7 @@ import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/food_name_link.dart';
 import '../widgets/form_options.dart';
+import '../widgets/search_field_focus.dart';
 import 'daily_meals_page.dart';
 
 class LogMealPage extends ConsumerStatefulWidget {
@@ -47,6 +48,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
   @override
   void initState() {
     super.initState();
+    suppressInitialSearchFocus(_searchFocus);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final day = ref.read(selectedDayProvider);
@@ -101,6 +103,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
   }
 
   Future<void> _selectFood(FoodItem food) async {
+    _searchFocus.unfocus();
     final servings = await ref
         .read(foodRepositoryProvider)
         .listServings(food.id);
@@ -122,16 +125,20 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     // /foods/custom would remount StatefulShellRoute (duplicate page key).
     // Same as search: log on the detail page, then leave 记一笔 — never the
     // grams sheet (that is only for recent / favorites).
-    final added = await context.push<bool>(
-      Uri(
-        path: '/custom-food',
-        queryParameters: {
-          'returnId': '1',
-          'mealType': _mealType.name,
-        },
-      ).toString(),
+    final added = await withoutSearchFocus(
+      focus: _searchFocus,
+      action: () => context.push<bool>(
+        Uri(
+          path: '/custom-food',
+          queryParameters: {
+            'returnId': '1',
+            'mealType': _mealType.name,
+          },
+        ).toString(),
+      ),
     );
     if (!mounted || added != true) return;
+    unfocusForNavigation();
     final day = ref.read(selectedDayProvider);
     if (widget.openDayMealsAfterSearchAdd) {
       context.pushReplacement(dailyMealsPath(day));
@@ -143,6 +150,36 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
   Future<void> _refreshFavorites() async {
     final favorites = await ref.read(foodRepositoryProvider).favorites();
     if (mounted) setState(() => _favorites = favorites);
+  }
+
+  Future<void> _refreshRecent() async {
+    final recent = await ref.read(foodRepositoryProvider).recentFoods();
+    if (mounted) setState(() => _recent = recent);
+  }
+
+  Future<bool> _confirmSwipeDelete({
+    required String title,
+    required String body,
+  }) async {
+    final l10n = context.l10n;
+    return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(title),
+            content: Text(body),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(l10n.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(l10n.delete),
+              ),
+            ],
+          ),
+        ) ==
+        true;
   }
 
   Future<void> _toggleFavorite(int foodId) async {
@@ -158,10 +195,44 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     }
   }
 
+  Widget _swipeDelete({
+    required Key key,
+    required Future<bool> Function() confirm,
+    required Future<void> Function() onRemove,
+    required Widget child,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    return Dismissible(
+      key: key,
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 16),
+        color: scheme.error,
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      confirmDismiss: (_) => confirm(),
+      onDismissed: (_) async {
+        try {
+          await onRemove();
+        } catch (e) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.operationFailed('$e'))),
+          );
+        }
+      },
+      child: child,
+    );
+  }
+
   /// Recent / favorites (already selected) open detail then stay on the grams
   /// sheet when returning. Search and custom-create use the detail add flow.
   Future<void> _openFoodDetailKeepSelection(FoodItem food) async {
-    await openFoodDetail(context, food.id, mealType: _mealType);
+    await withoutSearchFocus(
+      focus: _searchFocus,
+      action: () => openFoodDetail(context, food.id, mealType: _mealType),
+    );
     if (!mounted) return;
     final updated = await ref.read(foodRepositoryProvider).byId(food.id);
     if (!mounted || updated == null) return;
@@ -173,16 +244,19 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
   /// page, or open it when this flow started from Today. Otherwise keep the
   /// query here with the field unfocused.
   Future<void> _openFoodDetailFromSearch(FoodItem food) async {
-    _searchFocus.unfocus();
-    final added = await openFoodDetail<bool>(
-      context,
-      food.id,
-      mealType: _mealType,
+    final added = await withoutSearchFocus(
+      focus: _searchFocus,
+      action: () => openFoodDetail<bool>(
+        context,
+        food.id,
+        mealType: _mealType,
+      ),
     );
     if (!mounted) return;
     await _refreshFavorites();
     if (!mounted) return;
     if (added == true) {
+      unfocusForNavigation();
       final day = ref.read(selectedDayProvider);
       if (widget.openDayMealsAfterSearchAdd) {
         context.pushReplacement(dailyMealsPath(day));
@@ -191,7 +265,6 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
       }
       return;
     }
-    _searchFocus.unfocus();
   }
 
   Future<void> _search(String q) async {
@@ -255,6 +328,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.appliedPresetItems(result.copied, skip))),
       );
+      unfocusForNavigation();
       context.pop();
     } catch (e) {
       if (!mounted) return;
@@ -289,6 +363,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(l10n.loggedInto(l10n.today))));
+        unfocusForNavigation();
         context.pop();
       }
     } catch (e) {
@@ -302,11 +377,10 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     }
   }
 
-  /// Grams sheet is only entered from recent / favorites (and custom create).
+  /// Grams sheet is only entered from recent / favorites.
   Widget _foodTile(FoodItem f, {String? badge}) {
     final theme = Theme.of(context);
     return ListTile(
-      key: ValueKey('food-${f.id}'),
       title: FoodNameLink(
         name: f.name,
         foodId: f.id,
@@ -314,7 +388,10 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         proteinG: f.proteinPer100,
         fatG: f.fatPer100,
         style: theme.textTheme.bodyLarge,
-        onTap: () => openFoodDetail(context, f.id, mealType: _mealType),
+        onTap: () => withoutSearchFocus(
+          focus: _searchFocus,
+          action: () => openFoodDetail(context, f.id, mealType: _mealType),
+        ),
       ),
       subtitle: Text(
         [?badge, f.category, '${f.kcalPer100.round()} kcal/100g'].join(' · '),
@@ -370,17 +447,21 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
       );
       for (final p in presets) {
         sections.add(
-          ListTile(
-            leading: const Icon(Icons.restaurant_menu_outlined),
-            title: Text(p.name),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () async {
-                await ref.read(mealPresetRepositoryProvider).deletePreset(p.id);
-                ref.invalidate(mealPresetsProvider);
-              },
+          _swipeDelete(
+            key: ValueKey('preset-${p.id}'),
+            confirm: () => _confirmSwipeDelete(
+              title: l10n.delete,
+              body: l10n.confirmDeletePlan(p.name),
             ),
-            onTap: () => _applyPreset(p),
+            onRemove: () async {
+              await ref.read(mealPresetRepositoryProvider).deletePreset(p.id);
+              ref.invalidate(mealPresetsProvider);
+            },
+            child: ListTile(
+              leading: const Icon(Icons.restaurant_menu_outlined),
+              title: Text(p.name),
+              onTap: () => _applyPreset(p),
+            ),
           ),
         );
       }
@@ -394,7 +475,21 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         ),
       );
       for (final f in _favorites) {
-        sections.add(_foodTile(f, badge: l10n.badgeFavorite));
+        sections.add(
+          _swipeDelete(
+            key: ValueKey('fav-${f.id}'),
+            confirm: () => _confirmSwipeDelete(
+              title: l10n.removeFavorite,
+              body: l10n.confirmRemoveFavorite(f.name),
+            ),
+            onRemove: () async {
+              await ref.read(foodRepositoryProvider).toggleFavorite(f.id);
+              ref.invalidate(foodFavoriteProvider(f.id));
+              await _refreshFavorites();
+            },
+            child: _foodTile(f, badge: l10n.badgeFavorite),
+          ),
+        );
       }
     }
     if (_recent.isNotEmpty) {
@@ -405,7 +500,20 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         ),
       );
       for (final f in _recent) {
-        sections.add(_foodTile(f, badge: l10n.badgeRecent));
+        sections.add(
+          _swipeDelete(
+            key: ValueKey('recent-${f.id}'),
+            confirm: () => _confirmSwipeDelete(
+              title: l10n.removeFromRecent,
+              body: l10n.confirmRemoveFromRecent(f.name),
+            ),
+            onRemove: () async {
+              await ref.read(foodRepositoryProvider).hideFromRecent(f.id);
+              await _refreshRecent();
+            },
+            child: _foodTile(f, badge: l10n.badgeRecent),
+          ),
+        );
       }
     }
     if (sections.isEmpty) {
@@ -425,7 +533,12 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         ? l10n.todayWord
         : AppDates.md(day, locale);
 
-    return Scaffold(
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        unfocusForNavigation();
+        _searchFocus.unfocus();
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: Text(l10n.logMealTitle(dayLabel)),
         actions: [
@@ -590,6 +703,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
             ),
         ],
       ),
+    ),
     );
   }
 }

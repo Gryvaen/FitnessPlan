@@ -10,6 +10,7 @@ import '../theme/macro_color.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/food_name_link.dart';
 import '../widgets/form_options.dart';
+import '../widgets/search_field_focus.dart';
 
 /// One food + portion the user has added to the converter's running list.
 class _ConvertEntry {
@@ -57,6 +58,12 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
   final _searchFocus = FocusNode();
 
   @override
+  void initState() {
+    super.initState();
+    suppressInitialSearchFocus(_searchFocus);
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     _searchFocus.dispose();
@@ -65,23 +72,8 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
 
   /// Keeps the search field from reclaiming focus when a route/sheet that was
   /// opened on top of it is dismissed (Flutter restores the prior focus).
-  Future<T> _withoutSearchFocus<T>(Future<T> Function() action) async {
-    _searchFocus.unfocus();
-    _searchFocus.canRequestFocus = false;
-    try {
-      return await action();
-    } finally {
-      // Modal focus restoration can land over the next frames; keep the field
-      // blocked until those settle, then re-enable for intentional taps.
-      _searchFocus.unfocus();
-      await WidgetsBinding.instance.endOfFrame;
-      if (mounted) _searchFocus.unfocus();
-      await WidgetsBinding.instance.endOfFrame;
-      if (mounted) {
-        _searchFocus.unfocus();
-        _searchFocus.canRequestFocus = true;
-      }
-    }
+  Future<T> _withoutSearchFocus<T>(Future<T> Function() action) {
+    return withoutSearchFocus(focus: _searchFocus, action: action);
   }
 
   Future<void> _search(String q) async {

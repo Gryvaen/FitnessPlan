@@ -9,6 +9,7 @@ import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/form_options.dart';
+import 'exercise_form_dialog.dart';
 
 class PlanEditPage extends ConsumerStatefulWidget {
   const PlanEditPage({super.key, this.planId, this.syncDay});
@@ -109,6 +110,26 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
     super.dispose();
   }
 
+  Future<void> _addExerciseToLibrary() async {
+    final l10n = context.l10n;
+    final form = await showExerciseFormDialog(context: context);
+    if (form == null || !mounted) return;
+    try {
+      await ref
+          .read(workoutRepositoryProvider)
+          .addCustomExercise(
+            name: form.name,
+            unit: form.unit,
+            category: form.category,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.addFailed('$e'))));
+    }
+  }
+
   Future<void> _save() async {
     if (_saving) return;
     final l10n = context.l10n;
@@ -181,6 +202,11 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
       appBar: AppBar(
         title: Text(widget.planId == null ? l10n.newPlan : l10n.editPlan),
         actions: [
+          IconButton(
+            tooltip: l10n.addExercise,
+            onPressed: _saving ? null : _addExerciseToLibrary,
+            icon: const Icon(Icons.add),
+          ),
           if (hasExercises)
             TextButton(
               onPressed: _saving ? null : _save,

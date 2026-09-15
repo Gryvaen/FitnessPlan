@@ -20,6 +20,7 @@ import '../theme/app_theme.dart';
 import '../theme/macro_color.dart';
 import '../theme/sport_chrome.dart';
 import '../tools/workout_reminder_notifications.dart';
+import '../widgets/search_field_focus.dart';
 import 'deficit_date_picker.dart';
 import 'today_section_header.dart';
 import 'today_summary_widgets.dart';
@@ -488,10 +489,13 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                                   ),
                             addLabel: isSelectedToday ? l10n.logMeal : null,
                             onAdd: isSelectedToday
-                                ? () => context.push(
-                                    '/log-meal?mealType=${MealType.suggestedFor(DateTime.now()).name}'
-                                    '&openDayMealsAfterSearchAdd=1',
-                                  )
+                                ? () {
+                                    unfocusForNavigation();
+                                    context.push(
+                                      '/log-meal?mealType=${MealType.suggestedFor(DateTime.now()).name}'
+                                      '&openDayMealsAfterSearchAdd=1',
+                                    );
+                                  }
                                 : null,
                             trailing: [
                               if (canCopyYesterday)

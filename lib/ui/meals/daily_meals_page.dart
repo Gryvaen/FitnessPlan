@@ -10,6 +10,7 @@ import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/food_name_link.dart';
+import '../widgets/search_field_focus.dart';
 
 /// Route to the full daily food-log page (board 01.04).
 String dailyMealsPath(DateTime day) {
@@ -106,9 +107,12 @@ class DailyMealsPage extends ConsumerWidget {
                     PlainIconAction(
                       icon: Icons.add,
                       label: l10n.logMeal,
-                      onPressed: () => context.push(
-                        '/log-meal?mealType=${MealType.suggestedFor(DateTime.now()).name}',
-                      ),
+                      onPressed: () {
+                        unfocusForNavigation();
+                        context.push(
+                          '/log-meal?mealType=${MealType.suggestedFor(DateTime.now()).name}',
+                        );
+                      },
                     ),
                 ],
               ),
@@ -382,8 +386,10 @@ class _MealTypeSection extends ConsumerWidget {
                 tooltip: l10n.addMealNamed(type.label(l10n)),
                 visualDensity: VisualDensity.compact,
                 icon: const Icon(Icons.add, size: 18),
-                onPressed: () =>
-                    context.push('/log-meal?mealType=${type.name}'),
+                onPressed: () {
+                  unfocusForNavigation();
+                  context.push('/log-meal?mealType=${type.name}');
+                },
               ),
             if (showMenu)
               PopupMenuButton<String>(
@@ -424,8 +430,10 @@ class _MealTypeSection extends ConsumerWidget {
               ? Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton.icon(
-                    onPressed: () =>
-                        context.push('/log-meal?mealType=${type.name}'),
+                    onPressed: () {
+                      unfocusForNavigation();
+                      context.push('/log-meal?mealType=${type.name}');
+                    },
                     icon: const Icon(Icons.add, size: 18),
                     label: Text(l10n.addMealNamed(type.label(l10n))),
                   ),

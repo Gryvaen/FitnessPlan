@@ -511,6 +511,7 @@
   "noWorkoutThatDay": "No workout logged that day",
   "addTodayWorkout": "Add today's workout",
   "quickAddExercise": "Quick-add exercise",
+  "quickAddPlan": "Quick-add plan",
   "sectionThatDay": "That day",
   "foodsSeedLoadFailed": "Failed to load food library",
   "enterAnyway": "Enter anyway",

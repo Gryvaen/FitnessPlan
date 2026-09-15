@@ -10,6 +10,7 @@ import '../shell/swipe_tab_view.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/food_name_link.dart';
+import '../widgets/search_field_focus.dart';
 import 'food_category_art.dart';
 
 final _foodQueryProvider = NotifierProvider<_QueryNotifier, String>(
@@ -58,11 +59,19 @@ class FoodsPage extends ConsumerStatefulWidget {
 class _FoodsPageState extends ConsumerState<FoodsPage> {
   var _tab = _FoodsTab.categories;
   final _searchController = TextEditingController();
+  final _searchFocus = FocusNode();
   bool _pickedInitialTab = false;
+
+  @override
+  void initState() {
+    super.initState();
+    suppressInitialSearchFocus(_searchFocus);
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
@@ -137,6 +146,7 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
               ),
               child: TextField(
                 controller: _searchController,
+                focusNode: _searchFocus,
                 decoration: InputDecoration(
                   hintText: l10n.searchFood,
                   prefixIcon: const Icon(Icons.search),
@@ -144,6 +154,7 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                       ? IconButton(
                           icon: const Icon(Icons.close),
                           onPressed: () {
+                            _searchFocus.unfocus();
                             _searchController.clear();
                             _setQuery('');
                           },
@@ -169,7 +180,11 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                       },
                   },
                   selected: effectiveTab,
-                  onSelected: (v) => setState(() => _tab = v),
+                  onSelected: (v) {
+                    unfocusForNavigation();
+                    _searchFocus.unfocus();
+                    setState(() => _tab = v);
+                  },
                 ),
               ),
             ],
@@ -190,8 +205,11 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                         branchIndex: 1,
                         keepPagesAlive: true,
                         index: tabIndex,
-                        onIndexChanged: (i) =>
-                            setState(() => _tab = visible[i]),
+                        onIndexChanged: (i) {
+                          unfocusForNavigation();
+                          _searchFocus.unfocus();
+                          setState(() => _tab = visible[i]);
+                        },
                         children: [
                           for (final t in visible)
                             KeyedSubtree(
@@ -202,6 +220,12 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                                     ref.watch(_recentFoodsProvider),
                                 emptyIcon: Icons.history,
                                 emptyTitle: l10n.noRecentFoods,
+                                openDetail: (context, foodId) =>
+                                    withoutSearchFocus(
+                                  focus: _searchFocus,
+                                  action: () =>
+                                      openFoodDetail(context, foodId),
+                                ),
                                 onLongPress: (context, ref, food) async {
                                   final confirmed =
                                       await showDialog<bool>(
@@ -240,6 +264,12 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                                     ref.watch(favoriteFoodsProvider),
                                 emptyIcon: Icons.star_outline,
                                 emptyTitle: l10n.noFavorites,
+                                openDetail: (context, foodId) =>
+                                    withoutSearchFocus(
+                                  focus: _searchFocus,
+                                  action: () =>
+                                      openFoodDetail(context, foodId),
+                                ),
                                 onLongPress: (context, ref, food) async {
                                   final confirmed =
                                       await showDialog<bool>(
@@ -282,7 +312,12 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                   ),
                   if (searching)
                     _FoodSearchList(
+                      openDetail: (context, foodId) => withoutSearchFocus(
+                        focus: _searchFocus,
+                        action: () => openFoodDetail(context, foodId),
+                      ),
                       onClearQuery: () {
+                        _searchFocus.unfocus();
                         _searchController.clear();
                         _setQuery('');
                       },
@@ -306,12 +341,14 @@ class _FoodListView extends ConsumerWidget {
     required this.watch,
     required this.emptyIcon,
     required this.emptyTitle,
+    required this.openDetail,
     this.onLongPress,
   });
 
   final AsyncValue<List<FoodItem>> Function(WidgetRef ref) watch;
   final IconData emptyIcon;
   final String emptyTitle;
+  final Future<void> Function(BuildContext context, int foodId) openDetail;
   final Future<void> Function(BuildContext context, WidgetRef ref, FoodItem food)?
   onLongPress;
 
@@ -337,6 +374,7 @@ class _FoodListView extends ConsumerWidget {
           itemCount: foods.length,
           itemBuilder: (context, i) => _FoodRow(
             food: foods[i],
+            openDetail: openDetail,
             onLongPress: onLongPress == null
                 ? null
                 : () => onLongPress!(context, ref, foods[i]),
@@ -348,9 +386,14 @@ class _FoodListView extends ConsumerWidget {
 }
 
 class _FoodRow extends StatelessWidget {
-  const _FoodRow({required this.food, this.onLongPress});
+  const _FoodRow({
+    required this.food,
+    required this.openDetail,
+    this.onLongPress,
+  });
 
   final FoodItem food;
+  final Future<void> Function(BuildContext context, int foodId) openDetail;
   final VoidCallback? onLongPress;
 
   @override
@@ -366,6 +409,7 @@ class _FoodRow extends StatelessWidget {
         proteinG: food.proteinPer100,
         fatG: food.fatPer100,
         style: theme.textTheme.bodyLarge,
+        onTap: () => openDetail(context, food.id),
       ),
       subtitle: Text(
         food.category.localizedCategory(l10n),
@@ -375,7 +419,7 @@ class _FoodRow extends StatelessWidget {
         '${food.kcalPer100.round()} kcal/100g',
         style: theme.textTheme.bodySmall,
       ),
-      onTap: () => openFoodDetail(context, food.id),
+      onTap: () => openDetail(context, food.id),
     );
     if (onLongPress == null) {
       return KeyedSubtree(key: ValueKey(food.id), child: tile);
@@ -464,9 +508,13 @@ class _FoodCategoryList extends ConsumerWidget {
 }
 
 class _FoodSearchList extends ConsumerWidget {
-  const _FoodSearchList({required this.onClearQuery});
+  const _FoodSearchList({
+    required this.onClearQuery,
+    required this.openDetail,
+  });
 
   final VoidCallback onClearQuery;
+  final Future<void> Function(BuildContext context, int foodId) openDetail;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -497,7 +545,10 @@ class _FoodSearchList extends ConsumerWidget {
                 listBottomInset(context, hasFab: false),
               ),
               itemCount: foods.length,
-              itemBuilder: (context, i) => _FoodRow(food: foods[i]),
+              itemBuilder: (context, i) => _FoodRow(
+                food: foods[i],
+                openDetail: openDetail,
+              ),
             );
           },
         );

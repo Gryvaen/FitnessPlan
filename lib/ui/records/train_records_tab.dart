@@ -13,6 +13,7 @@ import '../shell/swipe_tab_view.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/form_options.dart';
+import 'exercise_form_dialog.dart';
 
 /// Training management: exercise catalog, plans, recent set history.
 class TrainRecordsTab extends ConsumerStatefulWidget {
@@ -244,23 +245,9 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     );
   }
 
-  Future<_ExerciseFormData?> _showExerciseFormDialog({
-    required BuildContext context,
-    Exercise? exercise,
-    String defaultCategory = 'chest',
-  }) {
-    return showDialog<_ExerciseFormData>(
-      context: context,
-      builder: (ctx) => _ExerciseFormDialog(
-        exercise: exercise,
-        defaultCategory: defaultCategory,
-      ),
-    );
-  }
-
   Future<void> _addExercise(BuildContext context, WidgetRef ref) async {
     final l10n = context.l10n;
-    final form = await _showExerciseFormDialog(
+    final form = await showExerciseFormDialog(
       context: context,
       defaultCategory: _category ?? 'chest',
     );
@@ -287,7 +274,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     Exercise exercise,
   ) async {
     final l10n = context.l10n;
-    final form = await _showExerciseFormDialog(
+    final form = await showExerciseFormDialog(
       context: context,
       exercise: exercise,
     );
@@ -924,107 +911,4 @@ Future<void> showQuickAddDayItemDialog({
     if (!context.mounted) return;
     messenger?.showSnackBar(SnackBar(content: Text(l10n.addFailed('$e'))));
   }
-}
-
-class _ExerciseFormDialog extends StatefulWidget {
-  const _ExerciseFormDialog({this.exercise, this.defaultCategory = 'chest'});
-
-  final Exercise? exercise;
-  final String defaultCategory;
-
-  @override
-  State<_ExerciseFormDialog> createState() => _ExerciseFormDialogState();
-}
-
-class _ExerciseFormDialogState extends State<_ExerciseFormDialog> {
-  late final TextEditingController _nameCtrl;
-  late ExerciseUnit _unit;
-  late String _selectedCategory;
-
-  @override
-  void initState() {
-    super.initState();
-    final exercise = widget.exercise;
-    _nameCtrl = TextEditingController(text: exercise?.name ?? '');
-    _unit = exercise != null
-        ? ExerciseUnit.fromStorage(exercise.unit)
-        : ExerciseUnit.reps;
-    _selectedCategory =
-        exercise != null && kExerciseCategoryOrder.contains(exercise.category)
-        ? exercise.category
-        : widget.defaultCategory;
-  }
-
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final isEdit = widget.exercise != null;
-    return AlertDialog(
-      title: Text(isEdit ? l10n.edit : l10n.addExercise),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _nameCtrl,
-              decoration: InputDecoration(labelText: l10n.exerciseName),
-              autofocus: !isEdit,
-            ),
-            const SizedBox(height: 12),
-            AppDropdown<String>(
-              label: l10n.categories,
-              value: _selectedCategory,
-              items: kExerciseCategoryOrder,
-              itemLabel: (c) => c.localizedExerciseCategory(l10n),
-              onChanged: (v) => setState(() => _selectedCategory = v),
-            ),
-            const SizedBox(height: 12),
-            AppDropdown<ExerciseUnit>(
-              label: l10n.repsOrSeconds,
-              value: _unit,
-              items: ExerciseUnit.values,
-              itemLabel: (u) =>
-                  u == ExerciseUnit.reps ? l10n.repsCount : l10n.seconds,
-              onChanged: (v) => setState(() => _unit = v),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(l10n.cancel),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(
-            context,
-            _ExerciseFormData(
-              name: _nameCtrl.text,
-              unit: _unit,
-              category: _selectedCategory,
-            ),
-          ),
-          child: Text(isEdit ? l10n.save : l10n.add),
-        ),
-      ],
-    );
-  }
-}
-
-class _ExerciseFormData {
-  const _ExerciseFormData({
-    required this.name,
-    required this.unit,
-    required this.category,
-  });
-
-  final String name;
-  final ExerciseUnit unit;
-  final String category;
 }

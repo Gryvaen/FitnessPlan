@@ -1289,6 +1289,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get quickAddExercise => 'Quick-add exercise';
 
   @override
+  String get quickAddPlan => 'Quick-add plan';
+
+  @override
   String get sectionThatDay => 'That day';
 
   @override
