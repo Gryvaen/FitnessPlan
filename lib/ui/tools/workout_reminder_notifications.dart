@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../data/repositories/reminders_repository.dart';
@@ -25,8 +24,10 @@ abstract final class ReminderNotifications {
 
   static Future<void> ensureInitialized() async {
     if (_initialized) return;
+    // RestTimerNotifications.ensureInitialized() already calls
+    // tz_data.initializeTimeZones() — it's a synchronous parse of the whole
+    // bundled IANA database, so it's not worth repeating here.
     await RestTimerNotifications.ensureInitialized();
-    tz_data.initializeTimeZones();
 
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const darwin = DarwinInitializationSettings(

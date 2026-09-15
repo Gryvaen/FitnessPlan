@@ -69,6 +69,7 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
   }
 
   Future<void> _loadExisting() async {
+    final l10n = context.l10n;
     setState(() => _loading = true);
     try {
       final repo = ref.read(workoutRepositoryProvider);
@@ -102,6 +103,11 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
             }(),
         ]);
       if (_rows.isEmpty) _rows.add(_PlanRow());
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.loadFailed('$e'))));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -144,31 +150,35 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
       ).showSnackBar(SnackBar(content: Text(l10n.planNameRequired)));
       return;
     }
-    final exercises = await ref.read(workoutRepositoryProvider).listExercises();
-    if (!mounted) return;
-    final items = <PlanDraftItem>[];
-    for (final row in _rows) {
-      final ex = _exerciseById(row.exerciseId, exercises);
-      if (ex == null) continue;
-      items.add(
-        PlanDraftItem(
-          exerciseId: ex.id,
-          exerciseName: ex.name,
-          targetSets: row.targetSets,
-          targetReps: row.targetReps,
-        ),
-      );
-    }
-    if (items.isEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.selectOneExercise)));
-      return;
-    }
-
+    // Flip the guard flag before the first await (disables the Save button
+    // immediately) so a rapid double-tap can't both pass the `_saving`
+    // check above and race into two `createPlan` calls.
     setState(() => _saving = true);
     try {
+      final exercises = await ref
+          .read(workoutRepositoryProvider)
+          .listExercises();
+      if (!mounted) return;
+      final items = <PlanDraftItem>[];
+      for (final row in _rows) {
+        final ex = _exerciseById(row.exerciseId, exercises);
+        if (ex == null) continue;
+        items.add(
+          PlanDraftItem(
+            exerciseId: ex.id,
+            exerciseName: ex.name,
+            targetSets: row.targetSets,
+            targetReps: row.targetReps,
+          ),
+        );
+      }
+      if (items.isEmpty) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.selectOneExercise)));
+        return;
+      }
+
       final repo = ref.read(workoutRepositoryProvider);
       if (widget.planId == null) {
         await repo.createPlan(name: name, items: items);

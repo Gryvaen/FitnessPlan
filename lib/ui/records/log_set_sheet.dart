@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -57,7 +59,17 @@ Future<bool> showLogSetSheet({
               actualWeightUnit: actualWeightUnit,
               note: note,
             );
-        await ref.read(remindersProvider.notifier).syncSchedule();
+        // Fire-and-forget: this cancels + reschedules every reminder via
+        // platform-channel calls and DB queries, which is real cost the
+        // user shouldn't wait on for every single set save (the busiest
+        // save action in the app). The reminder copy it refreshes only
+        // matters hours/days later when a notification actually fires, so
+        // it doesn't need to block this sheet's close.
+        unawaited(
+          ref.read(remindersProvider.notifier).syncSchedule().catchError((
+            _,
+          ) {}),
+        );
         if (!ctx.mounted) return;
         Navigator.pop(ctx, true);
       },

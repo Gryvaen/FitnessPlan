@@ -128,13 +128,17 @@ class FoodRepository {
             .get();
     if (obsolete.isNotEmpty) {
       final ids = obsolete.map((e) => e.id).toList();
-      await (_db.delete(
-        _db.favoriteFoods,
-      )..where((t) => t.foodId.isIn(ids))).go();
-      await (_db.delete(
-        _db.foodServings,
-      )..where((t) => t.foodId.isIn(ids))).go();
-      await (_db.delete(_db.foodItems)..where((t) => t.id.isIn(ids))).go();
+      // Transaction (matching deleteCustom) so an interrupted app run
+      // can't leave a food half-removed with orphaned favorite/serving rows.
+      await _db.transaction(() async {
+        await (_db.delete(
+          _db.favoriteFoods,
+        )..where((t) => t.foodId.isIn(ids))).go();
+        await (_db.delete(
+          _db.foodServings,
+        )..where((t) => t.foodId.isIn(ids))).go();
+        await (_db.delete(_db.foodItems)..where((t) => t.id.isIn(ids))).go();
+      });
     }
 
     await _setLocalSeedVersion(kFoodSeedVersion);
@@ -358,13 +362,18 @@ LIMIT ?
     if (food == null || !food.isCustom) {
       throw StateError('只能删除自定义食材');
     }
-    await (_db.delete(
-      _db.favoriteFoods,
-    )..where((t) => t.foodId.equals(id))).go();
-    await (_db.delete(
-      _db.foodServings,
-    )..where((t) => t.foodId.equals(id))).go();
-    await (_db.delete(_db.foodItems)..where((t) => t.id.equals(id))).go();
+    // Transaction (matching updateCustom above) so an app kill/crash
+    // between statements can't leave orphaned favorite/serving rows
+    // referencing a food id that's already gone.
+    await _db.transaction(() async {
+      await (_db.delete(
+        _db.favoriteFoods,
+      )..where((t) => t.foodId.equals(id))).go();
+      await (_db.delete(
+        _db.foodServings,
+      )..where((t) => t.foodId.equals(id))).go();
+      await (_db.delete(_db.foodItems)..where((t) => t.id.equals(id))).go();
+    });
   }
 
   Future<List<FoodServing>> listServings(int foodId) {

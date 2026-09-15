@@ -66,9 +66,6 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     final targets = dayTarget?.toMacroTargets() ?? profile.targets;
     final targetCalories = dayTarget?.calories ?? targets.calories.toDouble();
     final remainCal = targetCalories - intake.calories;
-    final waterMl = ref.watch(waterMlProvider).value ?? 0;
-    final waterGoal = ref.watch(waterGoalProvider);
-    final steps = ref.watch(stepsForSelectedDayProvider).value ?? 0;
 
     final onPlateau =
         profile.goal == FitnessGoal.cut &&
@@ -98,9 +95,6 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         profile.goal == FitnessGoal.cut &&
         dayTarget?.source == TargetSource.profile &&
         dayTarget?.isLegacyEstimate == false;
-
-    final canAddWater = isSelectedToday;
-    final canUndoWater = isSelectedToday && waterMl > 0;
 
     Future<void> openDatePicker() async {
       final repo = ref.read(dietStrategyRepositoryProvider);
@@ -242,7 +236,6 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                             ),
                           ),
                           _StepsStatusLabel(
-                            stepsLabel: l10n.nSteps(steps),
                             textStyle: theme.textTheme.meta?.copyWith(
                               color: onHeroMuted,
                             ),
@@ -321,23 +314,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                             metaColor: onHeroMuted,
                           ),
                           const SizedBox(width: 12),
-                          WaterCupControl(
-                            progress: waterGoal <= 0 ? 0 : waterMl / waterGoal,
-                            height: 92,
-                            width: 60,
-                            onAdd: canAddWater
-                                ? () => ref
-                                      .read(waterRepositoryProvider)
-                                      .addMl(day, kWaterServingMl)
-                                : null,
-                            onUndo: canUndoWater
-                                ? () => ref
-                                      .read(waterRepositoryProvider)
-                                      .addMl(day, -kWaterServingMl)
-                                : null,
-                            addLabel: l10n.waterAddMl(kWaterServingMl),
-                            undoLabel: l10n.waterUndoMl(kWaterServingMl),
-                          ),
+                          _WaterCup(day: day, canAdd: isSelectedToday),
                         ],
                       ),
                       const SizedBox(height: AppSpacing.card),
@@ -384,17 +361,10 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: MacroColumn(
+                            child: _WaterMacroColumn(
                               label: l10n.water,
-                              current: waterMl.toDouble(),
-                              target: waterGoal.toDouble(),
-                              unit: 'ml',
-                              color: AppColors.water,
                               labelColor: onHero,
                               metaColor: onHeroMuted,
-                              // Over-goal water is fine: show the real value and
-                              // keep the bar in the water colour.
-                              capProgress: false,
                             ),
                           ),
                         ],
@@ -883,19 +853,17 @@ class _MealGroups extends StatelessWidget {
 }
 
 class _StepsStatusLabel extends ConsumerWidget {
-  const _StepsStatusLabel({
-    required this.stepsLabel,
-    required this.textStyle,
-    required this.mutedColor,
-  });
+  const _StepsStatusLabel({required this.textStyle, required this.mutedColor});
 
-  final String stepsLabel;
   final TextStyle? textStyle;
   final Color mutedColor;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    // Watched here (not hoisted into TodayPage.build()) so a steps update
+    // only rebuilds this small label, not the whole page.
+    final steps = ref.watch(stepsForSelectedDayProvider).value ?? 0;
     // Keep provider alive / kick sync; display uses last known status so
     // resume/retry refresh does not flash a spinner over a known result.
     final sync = ref.watch(stepsSyncProvider);
@@ -906,7 +874,7 @@ class _StepsStatusLabel extends ConsumerWidget {
     final label = switch (status) {
       StepsSyncStatus.denied => l10n.stepsPermissionNeeded,
       StepsSyncStatus.failed || StepsSyncStatus.empty => l10n.stepsNotSynced,
-      _ => stepsLabel,
+      _ => l10n.nSteps(steps),
     };
     final iconColor = status == StepsSyncStatus.connected
         ? AppColors.success
@@ -955,6 +923,76 @@ class _StepsStatusLabel extends ConsumerWidget {
       isScrollControlled: true,
       showDragHandle: true,
       builder: (_) => const _StepsDetailSheet(),
+    );
+  }
+}
+
+/// The cup + add/undo buttons, isolated in its own [ConsumerWidget] so
+/// logging a water serving only rebuilds this small control, not the whole
+/// Today page (calorie ring, meal list, workout card, etc.).
+class _WaterCup extends ConsumerWidget {
+  const _WaterCup({required this.day, required this.canAdd});
+
+  final DateTime day;
+
+  /// Whether today's day is selected — adding water to a past day is
+  /// disallowed regardless of the water amount, so this is passed in rather
+  /// than watched (it only changes when the selected day itself changes,
+  /// which already rebuilds the page).
+  final bool canAdd;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final waterMl = ref.watch(waterMlProvider).value ?? 0;
+    final waterGoal = ref.watch(waterGoalProvider);
+    final canUndo = canAdd && waterMl > 0;
+    return WaterCupControl(
+      progress: waterGoal <= 0 ? 0 : waterMl / waterGoal,
+      height: 92,
+      width: 60,
+      onAdd: canAdd
+          ? () =>
+                ref.read(waterRepositoryProvider).addMl(day, kWaterServingMl)
+          : null,
+      onUndo: canUndo
+          ? () =>
+                ref.read(waterRepositoryProvider).addMl(day, -kWaterServingMl)
+          : null,
+      addLabel: l10n.waterAddMl(kWaterServingMl),
+      undoLabel: l10n.waterUndoMl(kWaterServingMl),
+    );
+  }
+}
+
+/// Water's entry in the four-column macro row, isolated for the same reason
+/// as [_WaterCup].
+class _WaterMacroColumn extends ConsumerWidget {
+  const _WaterMacroColumn({
+    required this.label,
+    required this.labelColor,
+    required this.metaColor,
+  });
+
+  final String label;
+  final Color labelColor;
+  final Color metaColor;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final waterMl = ref.watch(waterMlProvider).value ?? 0;
+    final waterGoal = ref.watch(waterGoalProvider);
+    return MacroColumn(
+      label: label,
+      current: waterMl.toDouble(),
+      target: waterGoal.toDouble(),
+      unit: 'ml',
+      color: AppColors.water,
+      labelColor: labelColor,
+      metaColor: metaColor,
+      // Over-goal water is fine: show the real value and keep the bar in
+      // the water colour.
+      capProgress: false,
     );
   }
 }

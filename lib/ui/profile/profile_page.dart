@@ -33,6 +33,14 @@ class ProfilePage extends ConsumerStatefulWidget {
 class _ProfilePageState extends ConsumerState<ProfilePage> {
   PackageInfo? _packageInfo;
 
+  /// Guards the three data-management actions below (clear/export/import):
+  /// the "关于" sheet that triggers them pops itself immediately, so nothing
+  /// stops the user from reopening it and tapping again while a prior
+  /// operation (especially `_importData`, which closes the DB connection
+  /// and replaces the on-disk file) is still in flight. A single shared
+  /// flag is enough since only one of these should ever run at a time.
+  bool _busy = false;
+
   @override
   void initState() {
     super.initState();
@@ -42,6 +50,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   Future<void> _clearData() async {
+    if (_busy) return;
+    _busy = true;
+    try {
+      await _doClearData();
+    } finally {
+      _busy = false;
+    }
+  }
+
+  Future<void> _doClearData() async {
     final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -85,6 +103,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   Future<void> _exportData() async {
+    if (_busy) return;
+    _busy = true;
+    try {
+      await _doExportData();
+    } finally {
+      _busy = false;
+    }
+  }
+
+  Future<void> _doExportData() async {
     final l10n = context.l10n;
     final messenger = ScaffoldMessenger.of(context);
     final destination = await showModalBottomSheet<_ExportDestination>(
@@ -174,6 +202,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   Future<void> _importData() async {
+    if (_busy) return;
+    _busy = true;
+    try {
+      await _doImportData();
+    } finally {
+      _busy = false;
+    }
+  }
+
+  Future<void> _doImportData() async {
     final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,

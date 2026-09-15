@@ -158,10 +158,23 @@ class WorkoutRepository {
         .get();
   }
 
-  Future<Exercise?> exerciseById(int id) {
-    return (_db.select(
+  // `exercises` is small and changes only through the three mutators below
+  // (add/update/delete), but `exerciseById` is called once per workout item
+  // inside `daySnapshot`/`_progressForItem` — which reruns for every day a
+  // `watchDayWorkout` stream re-triggers on (any write anywhere in
+  // day_workouts/day_workout_items/workout_set_logs, per Drift's per-table
+  // watch granularity). Caching turns repeated lookups of the same id
+  // during one session into memory reads instead of a fresh SELECT each
+  // time; cleared on any exercise mutation to stay correct.
+  final _exerciseCache = <int, Exercise?>{};
+
+  Future<Exercise?> exerciseById(int id) async {
+    if (_exerciseCache.containsKey(id)) return _exerciseCache[id];
+    final ex = await (_db.select(
       _db.exercises,
     )..where((t) => t.id.equals(id))).getSingleOrNull();
+    _exerciseCache[id] = ex;
+    return ex;
   }
 
   Future<Exercise?> exerciseByName(String name) {
@@ -221,6 +234,7 @@ class WorkoutRepository {
         category: Value(category),
       ),
     );
+    _exerciseCache.remove(id);
   }
 
   Future<void> deleteCustomExercise(int id) async {
@@ -229,17 +243,31 @@ class WorkoutRepository {
       throw StateError('只能删除自定义动作');
     }
     await (_db.delete(_db.exercises)..where((t) => t.id.equals(id))).go();
+    _exerciseCache.remove(id);
   }
 
   Future<List<WorkoutPlanSummary>> listPlanSummaries() async {
     final plans = await (_db.select(
       _db.workoutPlans,
     )..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).get();
-    final out = <WorkoutPlanSummary>[];
-    for (final plan in plans) {
-      out.add(WorkoutPlanSummary(plan: plan, items: await itemsFor(plan.id)));
+    if (plans.isEmpty) return const [];
+
+    // One batched query for every plan's items instead of one per plan —
+    // this reruns on every workoutPlans table write (watchPlans().asyncMap).
+    final planIds = [for (final p in plans) p.id];
+    final allItems =
+        await (_db.select(_db.workoutPlanItems)
+              ..where((t) => t.planId.isIn(planIds))
+              ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+            .get();
+    final itemsByPlan = <int, List<WorkoutPlanItem>>{};
+    for (final item in allItems) {
+      (itemsByPlan[item.planId] ??= []).add(item);
     }
-    return out;
+    return [
+      for (final plan in plans)
+        WorkoutPlanSummary(plan: plan, items: itemsByPlan[plan.id] ?? const []),
+    ];
   }
 
   Stream<List<WorkoutPlan>> watchPlans() {
@@ -502,6 +530,68 @@ class WorkoutRepository {
           (_db.select(
             _db.workoutSetLogs,
           )..where((t) => t.date.equals(start))).watch().listen((_) => push()),
+        ];
+        controller.onCancel = () async {
+          for (final s in subs) {
+            await s.cancel();
+          }
+        };
+        push();
+      },
+    );
+    return controller.stream;
+  }
+
+  /// Combined [daySnapshot] for a whole set of days in one subscription —
+  /// used where a screen would otherwise watch [watchDayWorkout] once per
+  /// day (e.g. the cultivation history screen's rolling window of up to 14
+  /// days). One shared set of table-level watches replaces N independent
+  /// ones, and one push recomputes every requested day together instead of
+  /// N separate `StreamController`s each firing their own push loop for the
+  /// same underlying write.
+  Stream<Map<DateTime, DayWorkoutSnapshot>> watchDayWorkoutsForDays(
+    List<DateTime> days,
+  ) {
+    final starts = {for (final d in days) _dayStart(d)}.toList();
+    if (starts.isEmpty) return Stream.value(const {});
+    late final StreamController<Map<DateTime, DayWorkoutSnapshot>> controller;
+    var pushing = false;
+    var dirty = false;
+
+    Future<void> push() async {
+      if (controller.isClosed) return;
+      if (pushing) {
+        dirty = true;
+        return;
+      }
+      pushing = true;
+      try {
+        do {
+          dirty = false;
+          if (controller.isClosed) return;
+          final out = <DateTime, DayWorkoutSnapshot>{};
+          for (final day in starts) {
+            out[day] = await daySnapshot(day);
+          }
+          controller.add(out);
+        } while (dirty && !controller.isClosed);
+      } finally {
+        pushing = false;
+      }
+    }
+
+    controller = StreamController<Map<DateTime, DayWorkoutSnapshot>>(
+      onListen: () {
+        final subs = <StreamSubscription<dynamic>>[
+          (_db.select(
+            _db.dayWorkouts,
+          )..where((t) => t.date.isIn(starts))).watch().listen((_) => push()),
+          (_db.select(_db.dayWorkoutItems)).watch().listen((_) => push()),
+          (_db.select(_db.workoutSetLogs)..where(
+                (t) => t.date.isIn(starts),
+              ))
+              .watch()
+              .listen((_) => push()),
         ];
         controller.onCancel = () async {
           for (final s in subs) {

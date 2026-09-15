@@ -154,24 +154,37 @@ class MealRepository {
     final filtered = mealType == null
         ? source
         : source.where((e) => e.mealType == mealType.name).toList();
+    if (filtered.isEmpty) {
+      return const CopyDayResult(copied: 0, skippedMissingFood: 0);
+    }
+
+    // One batched lookup instead of one SELECT per entry.
+    final foodIds = {for (final e in filtered) e.foodId}.toList();
+    final foods = await (_db.select(
+      _db.foodItems,
+    )..where((t) => t.id.isIn(foodIds))).get();
+    final foodById = {for (final f in foods) f.id: f};
+
     var copied = 0;
     var skipped = 0;
-    for (final entry in filtered.reversed) {
-      final food = await (_db.select(
-        _db.foodItems,
-      )..where((t) => t.id.equals(entry.foodId))).getSingleOrNull();
-      if (food == null) {
-        skipped++;
-        continue;
+    // Transaction (matching applyPreset) so a crash mid-copy can't leave
+    // only some of the day's entries copied.
+    await _db.transaction(() async {
+      for (final entry in filtered.reversed) {
+        final food = foodById[entry.foodId];
+        if (food == null) {
+          skipped++;
+          continue;
+        }
+        await add(
+          date: to,
+          mealType: MealType.values.byName(entry.mealType),
+          food: food,
+          grams: entry.grams,
+        );
+        copied++;
       }
-      await add(
-        date: to,
-        mealType: MealType.values.byName(entry.mealType),
-        food: food,
-        grams: entry.grams,
-      );
-      copied++;
-    }
+    });
     return CopyDayResult(copied: copied, skippedMissingFood: skipped);
   }
 

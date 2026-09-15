@@ -16,6 +16,33 @@ import '../widgets/form_options.dart';
 import '../widgets/search_field_focus.dart';
 import 'exercise_form_dialog.dart';
 
+typedef _TrainHistoryAvailability = ({bool resolved, bool hasHistory});
+
+/// Whether the train-records history sub-tab has anything to show, and
+/// whether we actually know that yet (all four underlying streams have
+/// produced a first value). [_TrainRecordsTabState] reacts to this via
+/// `ref.listen` instead of polling with a `postFrameCallback` — see the
+/// comment on that listener for why polling a stale snapshot was buggy.
+final _trainHistoryAvailabilityProvider =
+    Provider.autoDispose<_TrainHistoryAvailability>((ref) {
+      final recentWorkouts = ref.watch(workoutHistoryProvider);
+      final allWorkouts = ref.watch(allWorkoutHistoryProvider);
+      final recentSteps = ref.watch(recentStepsProvider);
+      final allSteps = ref.watch(allStepsProvider);
+      final resolved =
+          recentWorkouts.hasValue &&
+          allWorkouts.hasValue &&
+          recentSteps.hasValue &&
+          allSteps.hasValue;
+      final hasHistory = _TrainRecordsTabState._availableHistoryScopes(
+        recentWorkouts: recentWorkouts.value ?? const [],
+        allWorkouts: allWorkouts.value ?? const [],
+        recentSteps: recentSteps.value ?? const [],
+        allSteps: allSteps.value ?? const [],
+      ).isNotEmpty;
+      return (resolved: resolved, hasHistory: hasHistory);
+    });
+
 /// Training management: exercise catalog, plans, recent set history.
 class TrainRecordsTab extends ConsumerStatefulWidget {
   const TrainRecordsTab({super.key, this.initialTab});
@@ -114,10 +141,16 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   }
 
   void _ensureHistoryScopeAvailable(List<int> scopes) {
-    if (scopes.contains(_historyScope)) return;
+    // Nothing to sync to when there's no history yet (e.g. a fresh
+    // install) — `showHistory` is false in that case so this state is
+    // unused anyway. Without this guard, `next` would fall back to 0,
+    // which never satisfies `scopes.contains(_historyScope)` on an empty
+    // list, so this would reschedule and call `setState` on every single
+    // frame forever.
+    if (scopes.isEmpty || scopes.contains(_historyScope)) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || scopes.contains(_historyScope)) return;
-      final next = scopes.isEmpty ? 0 : scopes.first;
+      final next = scopes.first;
       setState(() => _historyScope = next);
       if (next == 1) {
         ref.read(stepsSyncServiceProvider).syncRecent(limitDays: 90);
@@ -125,12 +158,18 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     });
   }
 
-  void _ensureTrainTabAvailable({required bool showHistory}) {
-    if (_tab != 2 || showHistory) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _tab != 2 || showHistory) return;
-      _selectTab(0);
-    });
+  /// Bounces away from the history sub-tab once we *know* (not guess) there's
+  /// nothing to show there. `ref.listen` only fires this on an actual value
+  /// change, gated on `resolved` so it never acts on the streams' transient
+  /// loading state — a cold deep-link straight to the history sub-tab used
+  /// to race a `postFrameCallback`-based "one frame passed, still empty?"
+  /// check against those same streams still resolving, which could bounce
+  /// the user back to 计划 even though their history was about to show up.
+  void _onTrainHistoryAvailabilityChanged(
+    _TrainHistoryAvailability? previous,
+    _TrainHistoryAvailability next,
+  ) {
+    if (next.resolved && !next.hasHistory && _tab == 2) _selectTab(0);
   }
 
   void _syncSubFromRoute() {
@@ -196,23 +235,33 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
       useRootNavigator: true,
       showDragHandle: true,
       builder: (_) => SafeArea(
-        child: ListView(
+        child: ListView.builder(
           padding: const EdgeInsets.all(20),
           shrinkWrap: true,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            for (final day in days)
-              SportListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const MenuIconBadge(
-                  icon: Icons.directions_walk,
-                  color: AppColors.water,
+          // Builder (not children:) so a long "全部" history only inflates
+          // the rows actually visible in the sheet, not every logged day.
+          itemCount: days.length + 1,
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
-                title: Text(AppDates.md(day.date, locale)),
-                trailing: Text(context.l10n.nSteps(day.steps)),
+              );
+            }
+            final day = days[index - 1];
+            return SportListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const MenuIconBadge(
+                icon: Icons.directions_walk,
+                color: AppColors.water,
               ),
-          ],
+              title: Text(AppDates.md(day.date, locale)),
+              trailing: Text(context.l10n.nSteps(day.steps)),
+            );
+          },
         ),
       ),
     );
@@ -230,26 +279,36 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
       useRootNavigator: true,
       showDragHandle: true,
       builder: (sheetContext) => SafeArea(
-        child: ListView(
+        child: ListView.builder(
           padding: const EdgeInsets.all(20),
           shrinkWrap: true,
-          children: [
-            Text(title, style: Theme.of(sheetContext).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            for (final day in days)
-              SportListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const MenuIconBadge(
-                  icon: Icons.fitness_center,
-                  color: AppColors.protein,
+          // Builder (not children:) so a long "全部" history only inflates
+          // the rows actually visible in the sheet, not every logged day.
+          itemCount: days.length + 1,
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  title,
+                  style: Theme.of(sheetContext).textTheme.titleMedium,
                 ),
-                title: Text(AppDates.md(day.date, locale)),
-                trailing: Text(_dayProgressLabel(day, l10n)),
-                onTap: !day.hasActivity
-                    ? null
-                    : () => showDayWorkoutDetails(sheetContext, day.date),
+              );
+            }
+            final day = days[index - 1];
+            return SportListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const MenuIconBadge(
+                icon: Icons.fitness_center,
+                color: AppColors.protein,
               ),
-          ],
+              title: Text(AppDates.md(day.date, locale)),
+              trailing: Text(_dayProgressLabel(day, l10n)),
+              onTap: !day.hasActivity
+                  ? null
+                  : () => showDayWorkoutDetails(sheetContext, day.date),
+            );
+          },
         ),
       ),
     );
@@ -375,7 +434,17 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     );
     final showHistory = historyScopes.isNotEmpty;
     _ensureHistoryScopeAvailable(historyScopes);
-    _ensureTrainTabAvailable(showHistory: showHistory);
+    // No `fireImmediately: true` here: that would call
+    // `_onTrainHistoryAvailabilityChanged` synchronously inside this very
+    // build() on first attach, and it can call `setState` via `_selectTab`
+    // — "setState during build". The `tab` substitution right below already
+    // renders correctly on the very first frame regardless (falls back to
+    // 计划 whenever `!showHistory`), so this only needs to react to *later*
+    // transitions, which `ref.listen` fires safely outside the build phase.
+    ref.listen<_TrainHistoryAvailability>(
+      _trainHistoryAvailabilityProvider,
+      _onTrainHistoryAvailabilityChanged,
+    );
     final tab = (!showHistory && _tab == 2) ? 0 : _tab;
     final scope = historyScopes.contains(_historyScope)
         ? _historyScope
@@ -722,45 +791,62 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
 
   Widget _exercisesPanel(BuildContext context) {
     final l10n = context.l10n;
-    return ListView(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        12,
-        20,
-        listBottomInset(context, hasFab: false),
-      ),
-      children: [
-        TextField(
-          focusNode: _exerciseSearchFocus,
-          decoration: InputDecoration(
-            hintText: l10n.exerciseName,
-            prefixIcon: const Icon(Icons.search),
-          ),
-          onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          children: [
-            ChoiceChip(
-              label: Text(l10n.filterAll),
-              selected: _category == null,
-              onSelected: (_) => setState(() => _category = null),
+    // CustomScrollView + SliverList.builder (rather than a plain ListView
+    // wrapping a Column of every match) so filtering while typing only
+    // builds the rows actually on screen, not every match in the library —
+    // matters once a library grows past the built-ins with user customs.
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+          sliver: SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  focusNode: _exerciseSearchFocus,
+                  decoration: InputDecoration(
+                    hintText: l10n.exerciseName,
+                    prefixIcon: const Icon(Icons.search),
+                  ),
+                  onChanged: (v) =>
+                      setState(() => _query = v.trim().toLowerCase()),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    ChoiceChip(
+                      label: Text(l10n.filterAll),
+                      selected: _category == null,
+                      onSelected: (_) => setState(() => _category = null),
+                    ),
+                    for (final c in kExerciseCategoryOrder)
+                      ChoiceChip(
+                        label: Text(c.localizedExerciseCategory(l10n)),
+                        selected: _category == c,
+                        onSelected: (_) => setState(() => _category = c),
+                      ),
+                  ],
+                ),
+              ],
             ),
-            for (final c in kExerciseCategoryOrder)
-              ChoiceChip(
-                label: Text(c.localizedExerciseCategory(l10n)),
-                selected: _category == c,
-                onSelected: (_) => setState(() => _category = c),
-              ),
-          ],
+          ),
         ),
         ref
             .watch(exercisesProvider)
             .when(
-              loading: () => const LinearProgressIndicator(),
-              error: (e, _) => SportLoadError(
-                onRetry: () => ref.invalidate(exercisesProvider),
+              loading: () => const SliverPadding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                sliver: SliverToBoxAdapter(child: LinearProgressIndicator()),
+              ),
+              error: (e, _) => SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                sliver: SliverToBoxAdapter(
+                  child: SportLoadError(
+                    onRetry: () => ref.invalidate(exercisesProvider),
+                  ),
+                ),
               ),
               data: (exercises) {
                 final visible = exercises
@@ -771,68 +857,81 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                     )
                     .toList();
                 if (visible.isEmpty) {
-                  return SportEmptyState(
-                    title: l10n.noExercises,
-                    icon: Icons.fitness_center,
+                  return SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    sliver: SliverToBoxAdapter(
+                      child: SportEmptyState(
+                        title: l10n.noExercises,
+                        icon: Icons.fitness_center,
+                      ),
+                    ),
                   );
                 }
-                return Column(
-                  children: [
-                    for (final ex in visible)
-                      SportListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(ex.name),
-                        subtitle: Text(
-                          '${ex.category.localizedExerciseCategory(l10n)} · ${ExerciseUnit.fromStorage(ex.unit).label(l10n, category: ex.category)}',
-                        ),
-                        onTap: () => _editExercise(context, ref, ex),
-                        trailing: ex.isCustom
-                            ? IconButton(
-                                tooltip: l10n.delete,
-                                icon: const Icon(Icons.delete_outline),
-                                onPressed: () async {
-                                  final ok = await showDialog<bool>(
-                                    context: context,
-                                    builder: (ctx) => AlertDialog(
-                                      title: Text(l10n.delete),
-                                      content: Text(ex.name),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(ctx, false),
-                                          child: Text(l10n.cancel),
-                                        ),
-                                        FilledButton(
-                                          onPressed: () =>
-                                              Navigator.pop(ctx, true),
-                                          child: Text(l10n.delete),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                  if (ok != true || !context.mounted) return;
-                                  try {
-                                    await ref
-                                        .read(workoutRepositoryProvider)
-                                        .deleteCustomExercise(ex.id);
-                                  } catch (e) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(content: Text('$e')),
-                                      );
-                                    }
-                                  }
-                                },
-                              )
-                            : const Icon(Icons.chevron_right),
-                      ),
-                  ],
+                return SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    20,
+                    0,
+                    20,
+                    listBottomInset(context, hasFab: false),
+                  ),
+                  sliver: SliverList.builder(
+                    itemCount: visible.length,
+                    itemBuilder: (context, index) =>
+                        _exerciseRow(context, visible[index]),
+                  ),
                 );
               },
             ),
       ],
+    );
+  }
+
+  Widget _exerciseRow(BuildContext context, Exercise ex) {
+    final l10n = context.l10n;
+    return SportListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(ex.name),
+      subtitle: Text(
+        '${ex.category.localizedExerciseCategory(l10n)} · ${ExerciseUnit.fromStorage(ex.unit).label(l10n, category: ex.category)}',
+      ),
+      onTap: () => _editExercise(context, ref, ex),
+      trailing: ex.isCustom
+          ? IconButton(
+              tooltip: l10n.delete,
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () async {
+                final ok = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text(l10n.delete),
+                    content: Text(ex.name),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: Text(l10n.cancel),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: Text(l10n.delete),
+                      ),
+                    ],
+                  ),
+                );
+                if (ok != true || !context.mounted) return;
+                try {
+                  await ref
+                      .read(workoutRepositoryProvider)
+                      .deleteCustomExercise(ex.id);
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('$e')));
+                  }
+                }
+              },
+            )
+          : const Icon(Icons.chevron_right),
     );
   }
 }

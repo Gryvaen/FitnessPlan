@@ -17,8 +17,14 @@ final dietPlansProvider = StreamProvider<List<DietStrategyPlan>>((ref) {
 });
 
 /// Single source of truth for the target of a local calendar day.
-final dailyTargetProvider =
-    StreamProvider.family<DailyNutritionTarget?, DateTime>((ref, day) {
+///
+/// `autoDispose` (matching the sibling `mealsForDayProvider`/
+/// `dayWorkoutProvider` families) so browsing many days — Today's prev/next
+/// arrows go back a full year, and the cultivation history screen watches
+/// 14 of these at once — doesn't pin a live DB stream subscription open per
+/// day ever viewed for the rest of the app's process lifetime.
+final dailyTargetProvider = StreamProvider.autoDispose
+    .family<DailyNutritionTarget?, DateTime>((ref, day) {
       final profile = ref.watch(profileProvider);
       return ref
           .watch(dietStrategyRepositoryProvider)

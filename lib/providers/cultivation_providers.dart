@@ -5,12 +5,12 @@ import '../domain/calendar_day.dart';
 import '../domain/cultivation.dart';
 import '../domain/deficit.dart';
 import '../domain/models.dart';
+import 'core_providers.dart';
 import 'diet_strategy_providers.dart';
 import 'meal_providers.dart';
 import 'profile_providers.dart';
 import 'step_providers.dart';
 import 'weight_providers.dart';
-import 'workout_providers.dart';
 
 /// 境界修行玩法当前只对选择「减脂」目标的用户开放。
 final cultivationEligibleProvider = Provider<bool>((ref) {
@@ -104,6 +104,19 @@ class CultivationDayRecord {
   double get totalKcal => stepsKcal + dietKcal;
 }
 
+/// Combined day-workout snapshots for the same rolling window
+/// [cultivationHistoryProvider] shows — one shared subscription instead of
+/// one per day (`dayWorkoutProvider` family) so a single set-log write
+/// doesn't fan out into recomputing up to 14 independent streams at once.
+final _cultivationWorkoutSnapshotsProvider = StreamProvider.autoDispose<
+  Map<DateTime, DayWorkoutSnapshot>
+>((ref) {
+  final stepDays = ref.watch(recentStepsProvider).value ?? const [];
+  return ref
+      .watch(workoutRepositoryProvider)
+      .watchDayWorkoutsForDays([for (final d in stepDays) d.date]);
+});
+
 /// 近 14 天的境界修行 kcal 明细（步数 + 饮食，见
 /// [cultivationDietKcalForDayProvider]）与当日训练计划，最新一天在前，与
 /// 步数同步窗口一致（见 [recentStepsProvider]）。切换目标后只展示新标准
@@ -115,6 +128,8 @@ final cultivationHistoryProvider =
       final sinceDay = since == null
           ? null
           : DateTime(since.year, since.month, since.day);
+      final workouts =
+          ref.watch(_cultivationWorkoutSnapshotsProvider).value ?? const {};
       return [
         for (final stepDay in stepDays)
           if (sinceDay == null ||
@@ -130,7 +145,7 @@ final cultivationHistoryProvider =
                 cultivationDietKcalForDayProvider(stepDay.date),
               ),
               workout:
-                  ref.watch(dayWorkoutProvider(stepDay.date)).value ??
+                  workouts[CalendarDay.dayOnly(stepDay.date)] ??
                   const DayWorkoutSnapshot(),
             ),
       ];

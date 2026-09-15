@@ -40,12 +40,13 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 23;
+  int get schemaVersion => 24;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
       await m.createAll();
+      await _createDateIndices();
       await seedBuiltinExercises();
     },
     onUpgrade: (m, from, to) async {
@@ -226,8 +227,37 @@ CREATE TABLE day_workouts_new (
           dietStrategyPlans.highFatPerKg,
         );
       }
+      if (from < 24) {
+        await _createDateIndices();
+      }
     },
   );
+
+  /// Non-unique indices on the `date` columns behind the app's most common
+  /// range/equality filters — `weight_logs`, `meal_entries`, `day_workouts`
+  /// and `workout_set_logs` had none (unlike `water_logs`/`step_logs`/
+  /// `daily_nutrition_targets`, which already get one for free via a unique
+  /// key or primary key on `date`). Cheap and safe at any row count;
+  /// `IF NOT EXISTS` makes this idempotent for `onCreate` and `onUpgrade`
+  /// alike.
+  Future<void> _createDateIndices() async {
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_weight_logs_date '
+      'ON ${weightLogs.actualTableName}(date)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_meal_entries_date '
+      'ON ${mealEntries.actualTableName}(date)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_day_workouts_date '
+      'ON ${dayWorkouts.actualTableName}(date)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_workout_set_logs_date '
+      'ON ${workoutSetLogs.actualTableName}(date)',
+    );
+  }
 
   /// Legacy hook kept for migration call sites; no exercises are pre-seeded.
   Future<void> seedBuiltinExercises() async {}

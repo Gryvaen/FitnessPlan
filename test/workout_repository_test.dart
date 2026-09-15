@@ -771,4 +771,45 @@ void main() {
 
     await sub.cancel();
   });
+
+  test(
+    'watchDayWorkoutsForDays combines snapshots for multiple days in one stream',
+    () async {
+      final pushup = await addTestExercise(repo, name: '俯卧撑');
+      final planId = await repo.createPlan(
+        name: '上肢',
+        items: [
+          PlanDraftItem(
+            exerciseId: pushup.id,
+            exerciseName: pushup.name,
+            targetSets: 3,
+            targetReps: 10,
+          ),
+        ],
+      );
+
+      final today = CalendarDay.todayLocal();
+      final yesterday = today.subtract(const Duration(days: 1));
+      final events = <Map<DateTime, DayWorkoutSnapshot>>[];
+      final sub = repo
+          .watchDayWorkoutsForDays([today, yesterday])
+          .listen(events.add);
+
+      await Future<void>.delayed(Duration.zero);
+      expect(events, isNotEmpty);
+      expect(events.last[today]?.isEmpty, isTrue);
+      expect(events.last[yesterday]?.isEmpty, isTrue);
+
+      await repo.applyPlanToDay(planId: planId, day: today);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      // Only today changed; yesterday (never written) stays empty in the
+      // same emitted map — one combined stream covering both days.
+      expect(events.last[today]?.isEmpty, isFalse);
+      expect(events.last[today]?.groups.single.workout.planName, '上肢');
+      expect(events.last[yesterday]?.isEmpty, isTrue);
+
+      await sub.cancel();
+    },
+  );
 }

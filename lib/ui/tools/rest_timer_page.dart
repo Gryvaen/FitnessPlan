@@ -30,6 +30,13 @@ class _RestTimerPageState extends State<RestTimerPage>
   bool _paused = false;
   bool _finished = false;
   bool _permissionHintShown = false;
+
+  /// Guards [_start] itself: `_running` only flips true after the
+  /// permission-request await resolves, so without this a rapid double-tap
+  /// on the play button (permission already granted → the await is fast
+  /// but not instant) could both pass the `_running` check and schedule two
+  /// competing notifications.
+  bool _starting = false;
   Timer? _ticker;
   DateTime? _endsAt;
 
@@ -109,39 +116,45 @@ class _RestTimerPageState extends State<RestTimerPage>
   }
 
   Future<void> _start({bool resume = false}) async {
-    if (_running) return;
-    final seconds = (resume ? _remainingSeconds : _selectedSeconds).clamp(
-      1,
-      600,
-    );
-    final l10n = context.l10n;
+    if (_running || _starting) return;
+    _starting = true;
+    try {
+      final seconds = (resume ? _remainingSeconds : _selectedSeconds).clamp(
+        1,
+        600,
+      );
+      final l10n = context.l10n;
 
-    final permissionGranted = await RestTimerNotifications.requestPermissions();
-    if (!mounted) return;
-    if (!permissionGranted && !_permissionHintShown) {
-      _permissionHintShown = true;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.restNotifyPermissionHint)));
+      final permissionGranted =
+          await RestTimerNotifications.requestPermissions();
+      if (!mounted) return;
+      if (!permissionGranted && !_permissionHintShown) {
+        _permissionHintShown = true;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.restNotifyPermissionHint)));
+      }
+
+      final deadline = DateTime.now().add(Duration(seconds: seconds));
+      setState(() {
+        _running = true;
+        _paused = false;
+        _finished = false;
+        _remainingSeconds = seconds;
+        _totalSeconds = seconds;
+        _endsAt = deadline;
+      });
+      await _persist();
+      await RestTimerNotifications.scheduleRestEnd(
+        Duration(seconds: seconds),
+        title: l10n.restDoneTitle,
+        body: l10n.restDoneBody,
+        dismissLabel: l10n.restTimerDismiss,
+      );
+      _startTicker();
+    } finally {
+      _starting = false;
     }
-
-    final deadline = DateTime.now().add(Duration(seconds: seconds));
-    setState(() {
-      _running = true;
-      _paused = false;
-      _finished = false;
-      _remainingSeconds = seconds;
-      _totalSeconds = seconds;
-      _endsAt = deadline;
-    });
-    await _persist();
-    await RestTimerNotifications.scheduleRestEnd(
-      Duration(seconds: seconds),
-      title: l10n.restDoneTitle,
-      body: l10n.restDoneBody,
-      dismissLabel: l10n.restTimerDismiss,
-    );
-    _startTicker();
   }
 
   Future<void> _pause() async {

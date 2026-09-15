@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show compute;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,6 +15,63 @@ class BackupPayload {
 
   final String fileName;
   final Uint8List bytes;
+}
+
+typedef _BackupEncodeInput = ({
+  Uint8List dbBytes,
+  Map<String, Object?> prefs,
+  String exportedAt,
+});
+
+/// Top-level (not a method) so it can run via [compute] on a background
+/// isolate — base64/JSON-encoding the whole DB blocks the caller otherwise,
+/// growing with the DB's size over years of use. Gzipped on top: the
+/// dominant content is `databaseBase64`, and base64-of-SQLite compresses
+/// well (SQLite pages have a lot of redundancy, and base64 itself doesn't
+/// hide that from a byte-oriented compressor).
+Uint8List _encodeBackup(_BackupEncodeInput input) {
+  final encoded = utf8.encode(
+    jsonEncode({
+      'formatVersion': DataBackupRepository.formatVersion,
+      'exportedAt': input.exportedAt,
+      'prefs': input.prefs,
+      'databaseBase64': base64Encode(input.dbBytes),
+    }),
+  );
+  return Uint8List.fromList(gzip.encode(encoded));
+}
+
+typedef _DecodedBackup = ({Uint8List dbBytes, Map<String, dynamic> prefsMap});
+
+/// Top-level so it can run via [compute]; same rationale as [_encodeBackup].
+_DecodedBackup _decodeBackup(Uint8List bytes) {
+  List<int> jsonBytes;
+  try {
+    jsonBytes = gzip.decode(bytes);
+  } catch (_) {
+    // Backups written before gzip support are plain JSON bytes — the gzip
+    // magic header check above fails immediately (JSON always starts with
+    // `{`, never the gzip signature), so this fallback is unambiguous.
+    jsonBytes = bytes;
+  }
+  final root = jsonDecode(utf8.decode(jsonBytes));
+  if (root is! Map) {
+    throw const FormatException('invalid_backup');
+  }
+  final map = Map<String, dynamic>.from(root);
+  final version = map['formatVersion'];
+  if (version != DataBackupRepository.formatVersion) {
+    throw const FormatException('unsupported_backup_version');
+  }
+  final dbB64 = map['databaseBase64'];
+  final prefsRaw = map['prefs'];
+  if (dbB64 is! String || prefsRaw is! Map) {
+    throw const FormatException('invalid_backup');
+  }
+  return (
+    dbBytes: base64Decode(dbB64),
+    prefsMap: Map<String, dynamic>.from(prefsRaw),
+  );
 }
 
 /// Builds / restores a local backup: SQLite DB (base64) + SharedPreferences JSON.
@@ -48,18 +106,15 @@ class DataBackupRepository {
       prefs[key] = _prefs.get(key);
     }
 
-    final encoded = utf8.encode(
-      jsonEncode({
-        'formatVersion': formatVersion,
-        'exportedAt': DateTime.now().toIso8601String(),
-        'prefs': prefs,
-        'databaseBase64': base64Encode(dbBytes),
-      }),
-    );
+    final bytes = await compute(_encodeBackup, (
+      dbBytes: dbBytes,
+      prefs: prefs,
+      exportedAt: DateTime.now().toIso8601String(),
+    ));
 
     return BackupPayload(
-      fileName: 'FitnessPlan_backup_${_stamp()}.json',
-      bytes: Uint8List.fromList(encoded),
+      fileName: 'FitnessPlan_backup_${_stamp()}.json.gz',
+      bytes: bytes,
     );
   }
 
@@ -77,22 +132,9 @@ class DataBackupRepository {
   /// Closes the open database connection first. Caller must invalidate
   /// [databaseProvider] (and reload prefs-backed notifiers) afterwards.
   Future<void> importFromBytes(Uint8List bytes) async {
-    final root = jsonDecode(utf8.decode(bytes));
-    if (root is! Map) {
-      throw const FormatException('invalid_backup');
-    }
-    final map = Map<String, dynamic>.from(root);
-    final version = map['formatVersion'];
-    if (version != formatVersion) {
-      throw const FormatException('unsupported_backup_version');
-    }
-    final dbB64 = map['databaseBase64'];
-    final prefsRaw = map['prefs'];
-    if (dbB64 is! String || prefsRaw is! Map) {
-      throw const FormatException('invalid_backup');
-    }
-    final dbBytes = base64Decode(dbB64);
-    final prefsMap = Map<String, dynamic>.from(prefsRaw);
+    final decoded = await compute(_decodeBackup, bytes);
+    final dbBytes = decoded.dbBytes;
+    final prefsMap = decoded.prefsMap;
 
     await _db.close();
 

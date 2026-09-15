@@ -454,6 +454,27 @@ CREATE TABLE day_workout_items (
   sort_order INTEGER NOT NULL DEFAULT 0,
   done BOOLEAN NOT NULL DEFAULT 0
 )''');
+      // Present since v1 (schema unchanged since); needed so the v24
+      // date-index migration has tables to index, matching every real
+      // pre-v16 install.
+      await legacy.runCustom('''
+CREATE TABLE day_workouts (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  date INTEGER NOT NULL,
+  plan_id INTEGER NULL,
+  plan_name TEXT NULL
+)''');
+      await legacy.runCustom('''
+CREATE TABLE workout_set_logs (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  date INTEGER NOT NULL,
+  exercise_id INTEGER NOT NULL,
+  exercise_name TEXT NOT NULL,
+  set_index INTEGER NOT NULL,
+  reps INTEGER NULL,
+  duration_sec INTEGER NULL,
+  day_workout_item_id INTEGER NULL
+)''');
       await legacy.runCustom(
         'INSERT INTO weight_logs (date, weight_kg) VALUES (1700000000, 80.5)',
       );
@@ -482,6 +503,21 @@ CREATE TABLE day_workout_items (
       // v20 additive columns exist (empty tables, so just check they open).
       expect(await migrated.select(migrated.workoutPlanItems).get(), isEmpty);
       expect(await migrated.select(migrated.dayWorkoutItems).get(), isEmpty);
+      // v24: date indices exist on the tables that previously had none.
+      final indexNames = (await migrated
+              .customSelect(
+                "SELECT name FROM sqlite_master WHERE type = 'index' "
+                "AND name LIKE 'idx_%_date'",
+              )
+              .get())
+          .map((r) => r.read<String>('name'))
+          .toSet();
+      expect(indexNames, {
+        'idx_weight_logs_date',
+        'idx_meal_entries_date',
+        'idx_day_workouts_date',
+        'idx_workout_set_logs_date',
+      });
       // New tables exist and are empty.
       expect(await migrated.select(migrated.dietStrategyPlans).get(), isEmpty);
       expect(

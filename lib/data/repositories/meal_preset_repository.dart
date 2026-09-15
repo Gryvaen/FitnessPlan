@@ -64,22 +64,34 @@ class MealPresetRepository {
     final items = await itemsFor(presetId);
     var copied = 0;
     var skipped = 0;
-    for (final item in items) {
-      final food = await (_db.select(
-        _db.foodItems,
-      )..where((t) => t.id.equals(item.foodId))).getSingleOrNull();
-      if (food == null) {
-        skipped++;
-        continue;
+    if (items.isEmpty) return CopyDayResult(copied: copied, skippedMissingFood: skipped);
+
+    // One batched lookup instead of one SELECT per item.
+    final foodIds = {for (final i in items) i.foodId}.toList();
+    final foods = await (_db.select(
+      _db.foodItems,
+    )..where((t) => t.id.isIn(foodIds))).get();
+    final foodById = {for (final f in foods) f.id: f};
+
+    // Transaction (matching createFromEntries above) so the app being
+    // killed or a write failing mid-loop can't leave only some of the
+    // preset's items logged for the day.
+    await _db.transaction(() async {
+      for (final item in items) {
+        final food = foodById[item.foodId];
+        if (food == null) {
+          skipped++;
+          continue;
+        }
+        await _meals.add(
+          date: date,
+          mealType: MealType.values.byName(item.mealType),
+          food: food,
+          grams: item.grams,
+        );
+        copied++;
       }
-      await _meals.add(
-        date: date,
-        mealType: MealType.values.byName(item.mealType),
-        food: food,
-        grams: item.grams,
-      );
-      copied++;
-    }
+    });
     return CopyDayResult(copied: copied, skippedMissingFood: skipped);
   }
 
