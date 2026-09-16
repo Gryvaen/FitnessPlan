@@ -442,6 +442,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String yesterdayNamed(String name) {
+    return 'Yesterday\'s $name';
+  }
+
+  @override
   String get copyYesterdayWorkout => 'Copy yesterday\'s workout';
 
   @override

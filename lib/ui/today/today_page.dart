@@ -483,7 +483,13 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                                     for (final t in yesterdayMealTypes)
                                       PopupMenuItem(
                                         value: t,
-                                        child: Text(l10n.copyNamed(t.label(l10n))),
+                                        child: Text(
+                                          l10n.copyNamed(
+                                            l10n.yesterdayNamed(
+                                              t.label(l10n),
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                   ],
                                 ),

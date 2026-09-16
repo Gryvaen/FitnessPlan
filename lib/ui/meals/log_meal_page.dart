@@ -120,6 +120,21 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         .saveMealDefaults(mealType: _mealType, grams: _grams);
   }
 
+  /// Leaves 记一笔 after a successful add: replaces it with the full daily
+  /// meals page when this flow started from Today's "+" (so the user lands
+  /// on 饮食记录 the same way regardless of which add path they took —
+  /// search, custom food, or picking a food and saving grams directly),
+  /// otherwise just pops back to whatever pushed 记一笔.
+  void _finishAfterAdd() {
+    unfocusForNavigation();
+    final day = ref.read(selectedDayProvider);
+    if (widget.openDayMealsAfterSearchAdd) {
+      context.pushReplacement(dailyMealsPath(day));
+    } else {
+      context.pop();
+    }
+  }
+
   Future<void> _openCustomFood() async {
     // Must stay on a root route: /log-meal is outside the shell, and pushing
     // /foods/custom would remount StatefulShellRoute (duplicate page key).
@@ -138,13 +153,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
       ),
     );
     if (!mounted || added != true) return;
-    unfocusForNavigation();
-    final day = ref.read(selectedDayProvider);
-    if (widget.openDayMealsAfterSearchAdd) {
-      context.pushReplacement(dailyMealsPath(day));
-    } else {
-      context.pop();
-    }
+    _finishAfterAdd();
   }
 
   Future<void> _refreshFavorites() async {
@@ -256,13 +265,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     await _refreshFavorites();
     if (!mounted) return;
     if (added == true) {
-      unfocusForNavigation();
-      final day = ref.read(selectedDayProvider);
-      if (widget.openDayMealsAfterSearchAdd) {
-        context.pushReplacement(dailyMealsPath(day));
-      } else {
-        context.pop();
-      }
+      _finishAfterAdd();
       return;
     }
   }
@@ -328,8 +331,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.appliedPresetItems(result.copied, skip))),
       );
-      unfocusForNavigation();
-      context.pop();
+      _finishAfterAdd();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -363,8 +365,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(l10n.loggedInto(l10n.today))));
-        unfocusForNavigation();
-        context.pop();
+        _finishAfterAdd();
       }
     } catch (e) {
       if (mounted) {

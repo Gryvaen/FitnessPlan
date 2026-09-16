@@ -440,6 +440,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String yesterdayNamed(String name) {
+    return '昨日$name';
+  }
+
+  @override
   String get copyYesterdayWorkout => '复制昨日训练';
 
   @override

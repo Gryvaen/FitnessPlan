@@ -367,7 +367,9 @@ class TodayWorkoutCard extends ConsumerWidget {
               for (final group in yesterdayGroups)
                 PopupMenuItem(
                   value: group.workout.id,
-                  child: Text(l10n.copyNamed(_groupTitle(group, l10n))),
+                  child: Text(
+                    l10n.copyNamed(l10n.yesterdayNamed(_groupTitle(group, l10n))),
+                  ),
                 ),
             ],
           ),

@@ -384,6 +384,71 @@ void main() {
     expect(after.items.first.completedSets, 1);
   });
 
+  test(
+      'dayItemsForPlanOnDay reflects an item removed from today, not the '
+      'saved template', () async {
+    final pushup = await addTestExercise(repo, name: '俯卧撑');
+    final squat = await addTestExercise(repo, name: '深蹲', category: 'legs');
+    final planId = await repo.createPlan(
+      name: '计划',
+      items: [
+        PlanDraftItem(
+          exerciseId: pushup.id,
+          exerciseName: pushup.name,
+          targetSets: 3,
+          targetReps: 10,
+        ),
+        PlanDraftItem(
+          exerciseId: squat.id,
+          exerciseName: squat.name,
+          targetSets: 4,
+          targetReps: 8,
+        ),
+      ],
+    );
+    final today = CalendarDay.todayLocal();
+    await repo.applyPlanToDay(planId: planId, day: today);
+    final applied = await repo.daySnapshot(today);
+    final squatItemId = applied.items
+        .firstWhere((e) => e.item.exerciseName == '深蹲')
+        .item
+        .id;
+    // Remove it for today only (e.g. swiping it away on Today), leaving the
+    // saved template untouched.
+    await repo.deleteDayWorkoutItem(squatItemId);
+
+    final dayItems = await repo.dayItemsForPlanOnDay(
+      planId: planId,
+      day: today,
+    );
+    expect(dayItems.map((e) => e.exerciseName), ['俯卧撑']);
+
+    final templateItems = await repo.itemsFor(planId);
+    expect(templateItems.map((e) => e.exerciseName), ['俯卧撑', '深蹲']);
+  });
+
+  test(
+      'dayItemsForPlanOnDay is empty when the plan was not applied to that day',
+      () async {
+    final pushup = await addTestExercise(repo, name: '俯卧撑');
+    final planId = await repo.createPlan(
+      name: '计划',
+      items: [
+        PlanDraftItem(
+          exerciseId: pushup.id,
+          exerciseName: pushup.name,
+          targetSets: 3,
+          targetReps: 10,
+        ),
+      ],
+    );
+    final dayItems = await repo.dayItemsForPlanOnDay(
+      planId: planId,
+      day: CalendarDay.todayLocal(),
+    );
+    expect(dayItems, isEmpty);
+  });
+
   test('deleteDayWorkout removes one group and keeps the other', () async {
     final pushup = await addTestExercise(repo, name: '俯卧撑');
     final squat = await addTestExercise(

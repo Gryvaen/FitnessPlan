@@ -944,6 +944,12 @@ abstract class AppLocalizations {
   /// **'Copy {name}'**
   String copyNamed(String name);
 
+  /// No description provided for @yesterdayNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday\'s {name}'**
+  String yesterdayNamed(String name);
+
   /// No description provided for @copyYesterdayWorkout.
   ///
   /// In en, this message translates to:

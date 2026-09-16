@@ -162,6 +162,7 @@
   "noWorkoutToSave": "当日无训练可保存",
   "copyYesterday": "复制昨日",
   "copyNamed": "复制{name}",
+  "yesterdayNamed": "昨日{name}",
   "copyYesterdayWorkout": "复制昨日训练",
   "copyYesterdayWorkoutConfirm": "今日已有训练计划，将追加昨日训练，确定？",
   "copiedWorkoutItems": "已复制 {n} 个动作",

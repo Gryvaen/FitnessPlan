@@ -44,12 +44,25 @@ Exercise? _exerciseById(int? id, List<Exercise> exercises) {
   return null;
 }
 
-Exercise? _resolvePlanExercise(
-  WorkoutPlanItem item,
+/// Builds a draft row from either a saved plan item or a live day-workout
+/// item — both share the same exerciseId/exerciseName/targetSets/targetReps
+/// shape, so [_loadExisting] can source rows from whichever reflects the
+/// "current" arrangement for that entry point.
+_PlanRow _rowFromItem(
+  int exerciseId,
+  String exerciseName,
+  int targetSets,
+  int targetReps,
   Map<int, Exercise> byId,
   Map<String, Exercise> byName,
 ) {
-  return byId[item.exerciseId] ?? byName[item.exerciseName];
+  final resolved = byId[exerciseId] ?? byName[exerciseName];
+  return _PlanRow(
+    exerciseId: resolved?.id ?? exerciseId,
+    missingExerciseName: resolved == null ? exerciseName : null,
+    targetSets: targetSets,
+    targetReps: targetReps,
+  );
 }
 
 class _PlanEditPageState extends ConsumerState<PlanEditPage> {
@@ -69,7 +82,6 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
   }
 
   Future<void> _loadExisting() async {
-    final l10n = context.l10n;
     setState(() => _loading = true);
     try {
       final repo = ref.read(workoutRepositoryProvider);
@@ -86,28 +98,52 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
       final exercises = await repo.listExercises();
       final byId = {for (final e in exercises) e.id: e};
       final byName = {for (final e in exercises) e.name: e};
+
+      // Entered via "today's specific arrangement" (its day-workout group
+      // tile) → show what's actually scheduled for that day right now
+      // (including ad-hoc quick-added/removed items), not the saved
+      // template, so editing here can't silently wipe those out on save.
+      final dayItems = widget.syncDay == null
+          ? const <DayWorkoutItem>[]
+          : await repo.dayItemsForPlanOnDay(
+              planId: widget.planId!,
+              day: widget.syncDay!,
+            );
+      if (!mounted) return;
+
       _rows
         ..clear()
-        ..addAll([
-          for (final item in match.items)
-            () {
-              final resolved = _resolvePlanExercise(item, byId, byName);
-              return _PlanRow(
-                exerciseId: resolved?.id ?? item.exerciseId,
-                missingExerciseName: resolved == null
-                    ? item.exerciseName
-                    : null,
-                targetSets: item.targetSets,
-                targetReps: item.targetReps,
-              );
-            }(),
-        ]);
+        ..addAll(
+          dayItems.isNotEmpty
+              ? [
+                  for (final item in dayItems)
+                    _rowFromItem(
+                      item.exerciseId,
+                      item.exerciseName,
+                      item.targetSets,
+                      item.targetReps,
+                      byId,
+                      byName,
+                    ),
+                ]
+              : [
+                  for (final item in match.items)
+                    _rowFromItem(
+                      item.exerciseId,
+                      item.exerciseName,
+                      item.targetSets,
+                      item.targetReps,
+                      byId,
+                      byName,
+                    ),
+                ],
+        );
       if (_rows.isEmpty) _rows.add(_PlanRow());
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.loadFailed('$e'))));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.loadFailed('$e'))));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -125,13 +161,32 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
     final form = await showExerciseFormDialog(context: context);
     if (form == null || !mounted) return;
     try {
-      await ref
+      final id = await ref
           .read(workoutRepositoryProvider)
           .addCustomExercise(
             name: form.name,
             unit: form.unit,
             category: form.category,
           );
+      if (!mounted) return;
+      // Also drop it straight into the plan being edited — into the first
+      // still-empty row if there is one, otherwise as a new row — instead of
+      // only adding it to the library and leaving the user to hunt it down
+      // in the exercise picker.
+      setState(() {
+        _PlanRow? emptyRow;
+        for (final row in _rows) {
+          if (row.exerciseId == null && row.missingExerciseName == null) {
+            emptyRow = row;
+            break;
+          }
+        }
+        if (emptyRow != null) {
+          emptyRow.exerciseId = id;
+        } else {
+          _rows.add(_PlanRow()..exerciseId = id);
+        }
+      });
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -187,7 +242,11 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
           planId: widget.planId!,
           name: name,
           items: items,
-          syncDay: widget.syncDay,
+          // Opened without an explicit syncDay (e.g. from the 计划 tab) still
+          // needs to sync today's arrangement when this plan has already
+          // been "开始记录"-ed today — _syncPlanToDay is a no-op if it
+          // hasn't, so defaulting to today here is safe either way.
+          syncDay: widget.syncDay ?? AppDates.todayLocal(),
         );
       }
       if (!mounted) return;

@@ -163,6 +163,8 @@
   "copyYesterday": "Copy yesterday",
   "copyNamed": "Copy {name}",
   "@copyNamed": {"placeholders": {"name": {"type": "String"}}},
+  "yesterdayNamed": "Yesterday's {name}",
+  "@yesterdayNamed": {"placeholders": {"name": {"type": "String"}}},
   "copyYesterdayWorkout": "Copy yesterday's workout",
   "copyYesterdayWorkoutConfirm": "Today already has a workout plan; append yesterday's?",
   "copiedWorkoutItems": "Copied {n} exercises",

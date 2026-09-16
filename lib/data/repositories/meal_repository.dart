@@ -122,6 +122,17 @@ class MealRepository {
     );
   }
 
+  /// Moves an existing entry to a different meal type (e.g. drag-and-drop
+  /// between sections), keeping its food/grams/macros unchanged.
+  Future<void> moveMealType({required int id, required MealType mealType}) async {
+    final existing = await byId(id);
+    if (existing == null) return;
+    CalendarDay.ensureEditableDay(existing.date);
+    await (_db.update(_db.mealEntries)..where((t) => t.id.equals(id))).write(
+      MealEntriesCompanion(mealType: Value(mealType.name)),
+    );
+  }
+
   Future<void> delete(int id) async {
     final existing = await byId(id);
     if (existing == null) return;

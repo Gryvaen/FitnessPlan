@@ -460,6 +460,24 @@ class WorkoutRepository {
         .get();
   }
 
+  /// Current day-workout items for [planId] on [day], if that plan has an
+  /// applied day-workout there — reflects whatever is actually scheduled for
+  /// that day right now (including ad-hoc "quick add"/removed items), unlike
+  /// [itemsFor] which reads the saved plan template. Empty when the plan
+  /// hasn't been applied to that day (or was since removed).
+  Future<List<DayWorkoutItem>> dayItemsForPlanOnDay({
+    required int planId,
+    required DateTime day,
+  }) async {
+    final start = _dayStart(day);
+    final groups = await (_db.select(_db.dayWorkouts)..where(
+          (t) => t.planId.equals(planId) & t.date.equals(start),
+        ))
+        .get();
+    if (groups.isEmpty) return const [];
+    return dayItemsFor(groups.first.id);
+  }
+
   Future<List<DayWorkout>> dayWorkoutsFor(DateTime day) {
     final start = _dayStart(day);
     return (_db.select(_db.dayWorkouts)

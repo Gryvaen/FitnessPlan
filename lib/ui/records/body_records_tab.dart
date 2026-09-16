@@ -36,8 +36,9 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
   /// 0 = all. Prefer all until shorter ranges unlock from history.
   int _period = 0;
 
-  /// Progressive ranges: all only → +7d once any log exists → +30d on the
-  /// 7th calendar day after the first log (first day counts as day 1).
+  /// Progressive ranges: 7d once any log exists → +30d on the 7th calendar
+  /// day after the first log → +全部(all) on the 14th calendar day after the
+  /// first log (first day counts as day 1).
   static List<int> _availablePeriods(List<WeightLog> orderedOldestFirst) {
     if (orderedOldestFirst.isEmpty) return const [0];
     final firstDay = AppDates.dayOnly(orderedOldestFirst.first.date);
@@ -45,7 +46,7 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
     return [
       7,
       if (daysSinceFirst >= 6) 30,
-      0,
+      if (daysSinceFirst >= 13) 0,
     ];
   }
 
@@ -53,7 +54,7 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
     if (periods.contains(_period)) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || periods.contains(_period)) return;
-      setState(() => _period = 0);
+      setState(() => _period = periods.first);
     });
   }
 
@@ -167,7 +168,7 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
         final ordered = [...logs]..sort((a, b) => a.date.compareTo(b.date));
         final periods = _availablePeriods(ordered);
         _ensurePeriodAvailable(periods);
-        final period = periods.contains(_period) ? _period : 0;
+        final period = periods.contains(_period) ? _period : periods.first;
         final latest = ordered.lastOrNull;
         final previous = ordered.length > 1
             ? ordered[ordered.length - 2]
@@ -276,6 +277,7 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
         if (log.bodyFatPct != null)
           _SeriesPoint(date: log.date, value: log.bodyFatPct!),
     ];
+    final hasBodyFatHistory = logs.any((log) => log.bodyFatPct != null);
 
     return ListView(
       padding: EdgeInsets.fromLTRB(
@@ -291,13 +293,15 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
           color: scheme.primary,
           emptyHint: l10n.chartWeightEmpty,
         ),
-        const SizedBox(height: AppSpacing.field),
-        _SeriesChart(
-          title: l10n.chartBfTitle,
-          points: bodyFatSeries,
-          color: AppColors.protein,
-          emptyHint: l10n.chartBfEmpty,
-        ),
+        if (hasBodyFatHistory) ...[
+          const SizedBox(height: AppSpacing.field),
+          _SeriesChart(
+            title: l10n.chartBfTitle,
+            points: bodyFatSeries,
+            color: AppColors.protein,
+            emptyHint: l10n.chartBfEmpty,
+          ),
+        ],
         const SizedBox(height: AppSpacing.section),
         Row(
           children: [

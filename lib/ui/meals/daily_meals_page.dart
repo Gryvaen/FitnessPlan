@@ -121,9 +121,8 @@ class DailyMealsPage extends ConsumerWidget {
                 _MealTypeSection(
                   day: day,
                   type: type,
-                  entries: meals
-                      .where((m) => m.mealType == type.name)
-                      .toList(growable: false),
+                  entries: meals.where((m) => m.mealType == type.name).toList()
+                    ..sort((a, b) => a.calories.compareTo(b.calories)),
                   editable: editable,
                   canCopyYesterday: editable &&
                       yesterdayMeals.any((m) => m.mealType == type.name),
@@ -162,7 +161,7 @@ Future<void> copyYesterdayMealType(
           for (final t in available)
             ListTile(
               leading: const Icon(Icons.content_copy),
-              title: Text(t.label(l10n)),
+              title: Text(l10n.yesterdayNamed(t.label(l10n))),
               onTap: () => Navigator.pop(ctx, t),
             ),
         ],
@@ -286,27 +285,26 @@ class _MealTypeSection extends ConsumerWidget {
     );
   }
 
-  Future<void> _clearMeal(BuildContext context, WidgetRef ref) async {
+  Future<bool> _confirmClearMeal(BuildContext context) async {
     final l10n = context.l10n;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.clearThisMeal),
-        content: Text(l10n.confirmClearMeal(type.label(l10n))),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.cancel),
+    return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(l10n.clearThisMeal),
+            content: Text(l10n.confirmClearMeal(type.label(l10n))),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(l10n.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(l10n.delete),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.delete),
-          ),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    await ref.read(mealRepositoryProvider).deleteMealType(day, type);
+        ) ==
+        true;
   }
 
   Future<void> _saveAsPreset(BuildContext context, WidgetRef ref) async {
@@ -370,67 +368,85 @@ class _MealTypeSection extends ConsumerWidget {
     final kcal = entries.fold<double>(0, (s, m) => s + m.calories);
     final canSaveAsPreset = entries.isNotEmpty;
     final canClear = editable && entries.isNotEmpty;
-    final showMenu = canCopyYesterday || canSaveAsPreset || canClear;
+    final showMenu = canCopyYesterday || canSaveAsPreset;
 
-    return Column(
+    final headerRow = Row(
+      children: [
+        Expanded(
+          child: Text(type.label(l10n), style: theme.textTheme.titleSmall),
+        ),
+        Text(
+          entries.isEmpty ? l10n.mealNotLogged : '${kcal.round()} kcal',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        if (editable && entries.isNotEmpty)
+          IconButton(
+            tooltip: l10n.addMealNamed(type.label(l10n)),
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.add, size: 18),
+            onPressed: () {
+              unfocusForNavigation();
+              context.push('/log-meal?mealType=${type.name}');
+            },
+          ),
+        if (showMenu)
+          PopupMenuButton<String>(
+            tooltip: l10n.more,
+            padding: EdgeInsets.zero,
+            icon: Icon(
+              Icons.more_horiz,
+              size: 18,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            onSelected: (value) => switch (value) {
+              'copy' => _copyYesterday(context, ref),
+              _ => _saveAsPreset(context, ref),
+            },
+            itemBuilder: (context) => [
+              if (canCopyYesterday)
+                PopupMenuItem(
+                  value: 'copy',
+                  child: Text(
+                    l10n.copyNamed(l10n.yesterdayNamed(type.label(l10n))),
+                  ),
+                ),
+              if (canSaveAsPreset)
+                PopupMenuItem(
+                  value: 'preset',
+                  child: Text(l10n.saveAsPreset),
+                ),
+            ],
+          ),
+      ],
+    );
+
+    // Swipe left on the meal-type header to clear it — replaces the old
+    // "清空这一餐" menu entry with the same swipe-to-delete affordance used
+    // for individual entries below.
+    final header = canClear
+        ? Dismissible(
+            key: ValueKey('meal-header-${type.name}'),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 16),
+              color: theme.colorScheme.error,
+              child: const Icon(Icons.delete, color: Colors.white),
+            ),
+            confirmDismiss: (_) => _confirmClearMeal(context),
+            onDismissed: (_) =>
+                ref.read(mealRepositoryProvider).deleteMealType(day, type),
+            child: headerRow,
+          )
+        : headerRow;
+
+    final content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: AppSpacing.card),
-        Row(
-          children: [
-            Expanded(
-              child: Text(type.label(l10n), style: theme.textTheme.titleSmall),
-            ),
-            Text(
-              entries.isEmpty ? l10n.mealNotLogged : '${kcal.round()} kcal',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            if (editable && entries.isNotEmpty)
-              IconButton(
-                tooltip: l10n.addMealNamed(type.label(l10n)),
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.add, size: 18),
-                onPressed: () {
-                  unfocusForNavigation();
-                  context.push('/log-meal?mealType=${type.name}');
-                },
-              ),
-            if (showMenu)
-              PopupMenuButton<String>(
-                tooltip: l10n.more,
-                padding: EdgeInsets.zero,
-                icon: Icon(
-                  Icons.more_horiz,
-                  size: 18,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                onSelected: (value) => switch (value) {
-                  'copy' => _copyYesterday(context, ref),
-                  'clear' => _clearMeal(context, ref),
-                  _ => _saveAsPreset(context, ref),
-                },
-                itemBuilder: (context) => [
-                  if (canCopyYesterday)
-                    PopupMenuItem(
-                      value: 'copy',
-                      child: Text(l10n.copyYesterday),
-                    ),
-                  if (canSaveAsPreset)
-                    PopupMenuItem(
-                      value: 'preset',
-                      child: Text(l10n.saveAsPreset),
-                    ),
-                  if (canClear)
-                    PopupMenuItem(
-                      value: 'clear',
-                      child: Text(l10n.clearThisMeal),
-                    ),
-                ],
-              ),
-          ],
-        ),
+        header,
         if (entries.isEmpty)
           editable
               ? Align(
@@ -449,6 +465,30 @@ class _MealTypeSection extends ConsumerWidget {
           for (final m in entries)
             _MealEntryTile(entry: m, canDismiss: editable),
       ],
+    );
+
+    if (!editable) return content;
+
+    // Long-press-drag a food from another meal section drops it here,
+    // moving it to this meal type.
+    return DragTarget<MealEntry>(
+      onWillAcceptWithDetails: (details) => details.data.mealType != type.name,
+      onAcceptWithDetails: (details) => ref
+          .read(mealRepositoryProvider)
+          .moveMealType(id: details.data.id, mealType: type),
+      builder: (context, candidateData, rejectedData) {
+        final highlighted = candidateData.isNotEmpty;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          decoration: BoxDecoration(
+            color: highlighted
+                ? theme.colorScheme.primary.withValues(alpha: 0.06)
+                : null,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: content,
+        );
+      },
     );
   }
 }
@@ -490,7 +530,7 @@ class _MealEntryTile extends ConsumerWidget {
       onTap: () => context.push('/meal/${m.id}'),
     );
     if (!canDismiss) return tile;
-    return Dismissible(
+    final dismissible = Dismissible(
       key: ValueKey(m.id),
       direction: DismissDirection.endToStart,
       background: Container(
@@ -520,6 +560,29 @@ class _MealEntryTile extends ConsumerWidget {
           true,
       onDismissed: (_) => ref.read(mealRepositoryProvider).delete(m.id),
       child: tile,
+    );
+    // Long-press to drag this food into a different meal section.
+    return LongPressDraggable<MealEntry>(
+      data: m,
+      axis: Axis.vertical,
+      feedback: Material(
+        elevation: 4,
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(12),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 280),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Text(
+              m.foodName,
+              style: theme.textTheme.bodyLarge,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
+      ),
+      childWhenDragging: Opacity(opacity: 0.3, child: dismissible),
+      child: dismissible,
     );
   }
 }
