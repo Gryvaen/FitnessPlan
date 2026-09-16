@@ -175,7 +175,7 @@ class _CutNutritionTargets extends ConsumerWidget {
       ),
     );
     if (ok != true) return;
-    await ref.read(dietStrategyRepositoryProvider).stopActivePlan();
+    await ref.read(dietStrategyActionsProvider).cancelPlan();
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

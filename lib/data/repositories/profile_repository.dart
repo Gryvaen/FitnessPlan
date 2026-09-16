@@ -41,15 +41,12 @@ class ProfileRepository {
     await _prefs.setString(_key, jsonEncode(profile.toJson()));
   }
 
-  static bool _calorieStandardChanged(UserProfile old, UserProfile next) {
-    // Switching goal resets the cultivation / deficit "new standard" clock
-    // even when calorie numbers happen to match.
-    if (old.goal != next.goal) return true;
-    if (old.targets.calories != next.targets.calories) return true;
-    final oldDef = (old.dailyDeficit ?? 0).round();
-    final nextDef = (next.dailyDeficit ?? 0).round();
-    return oldDef != nextDef;
-  }
+  // Only a goal switch resets the "new standard" clock here. Calorie/macro
+  // numbers drift on their own with weight/height/age (see
+  // `recalculateForWeight`) and must not retrigger it; a diet-strategy
+  // change re-stamps separately via `markStandardChanged`.
+  static bool _calorieStandardChanged(UserProfile old, UserProfile next) =>
+      old.goal != next.goal;
 
   static DateTime _todayLocal() {
     final now = DateTime.now();
@@ -109,26 +106,6 @@ class ProfileRepository {
     );
   }
 
-  Future<UserProfile> applyCalorieAdjustment(
-    UserProfile current,
-    int additionalKcal,
-  ) async {
-    final next = (current.calorieAdjustment + additionalKcal).clamp(
-      0,
-      CalorieCalculator.maxCalorieAdjustment,
-    );
-    return saveFromInputs(
-      sex: current.sex,
-      age: current.age,
-      heightCm: current.heightCm,
-      weightKg: current.weightKg,
-      activity: current.activity,
-      goal: current.goal,
-      targetWeightKg: current.targetWeightKg,
-      calorieAdjustment: next,
-    );
-  }
-
   UserProfile _profileFromPlan({
     required CaloriePlan plan,
     required ActivityLevel activity,
@@ -168,5 +145,19 @@ class ProfileRepository {
   Future<void> clear() async {
     await _prefs.remove(_key);
     await _prefs.remove(_nameKey);
+  }
+
+  /// Re-stamps the "new standard" marker to [since] (day-only) when a diet
+  /// strategy change makes it the effective date. No-ops when there's no
+  /// profile yet or the stamp is already there. Returns the updated profile
+  /// so callers can refresh dependent state, or null when nothing changed.
+  Future<UserProfile?> markStandardChanged(DateTime since) async {
+    final profile = load();
+    if (profile == null) return null;
+    final day = DateTime(since.year, since.month, since.day);
+    if (profile.calorieStandardSince == day) return null;
+    final updated = profile.copyWith(calorieStandardSince: day);
+    await save(updated);
+    return updated;
   }
 }

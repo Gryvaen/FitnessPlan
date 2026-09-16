@@ -10,22 +10,35 @@ String foodDetailLocation(
   BuildContext context,
   int foodId, {
   MealType? mealType,
+  bool openDayMealsAfterAdd = true,
 }) {
   final path = GoRouterState.of(context).uri.path;
   final base = (path == '/foods' || path.startsWith('/foods/'))
       ? '/foods/$foodId'
       : '/food-detail/$foodId';
-  if (mealType == null) return base;
-  return Uri(path: base, queryParameters: {'mealType': mealType.name})
-      .toString();
+  final queryParameters = <String, String>{
+    if (mealType != null) 'mealType': mealType.name,
+    // Default is true; only pass when false so URLs stay short.
+    if (!openDayMealsAfterAdd) 'openDayMealsAfterAdd': '0',
+  };
+  if (queryParameters.isEmpty) return base;
+  return Uri(path: base, queryParameters: queryParameters).toString();
 }
 
 Future<T?> openFoodDetail<T extends Object?>(
   BuildContext context,
   int foodId, {
   MealType? mealType,
+  bool openDayMealsAfterAdd = true,
 }) {
-  return context.push<T>(foodDetailLocation(context, foodId, mealType: mealType));
+  return context.push<T>(
+    foodDetailLocation(
+      context,
+      foodId,
+      mealType: mealType,
+      openDayMealsAfterAdd: openDayMealsAfterAdd,
+    ),
+  );
 }
 
 /// Colored, tappable food name that opens the food detail page.

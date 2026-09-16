@@ -1,10 +1,48 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/repositories/diet_strategy_repository.dart';
 import '../domain/calendar_day.dart';
 import '../domain/diet_plan.dart';
 import 'core_providers.dart';
 import 'meal_providers.dart';
 import 'profile_providers.dart';
+
+/// Mutations that may re-stamp the profile's "new standard" marker.
+final dietStrategyActionsProvider = Provider<DietStrategyActions>(
+  (ref) => DietStrategyActions(ref),
+);
+
+class DietStrategyActions {
+  DietStrategyActions(this._ref);
+
+  final Ref _ref;
+
+  /// Creates [draft] as the new active version, re-stamping the "new
+  /// standard" marker to its effective date when it's a structural change
+  /// (see `DietStrategyRepository.isStructuralChange`).
+  Future<DietStrategyPlan> applyPlan(DietStrategyPlanDraft draft) async {
+    final repo = _ref.read(dietStrategyRepositoryProvider);
+    final old = await repo.activePlan();
+    final created = await repo.createPlan(draft);
+    if (DietStrategyRepository.isStructuralChange(old, draft)) {
+      await _ref
+          .read(profileProvider.notifier)
+          .markStandardChanged(draft.effectiveFrom);
+    }
+    return created;
+  }
+
+  /// Stops the active version, re-stamping the marker when today's standard
+  /// actually changes (see `DietStrategyRepository.stopActivePlan`).
+  Future<void> cancelPlan({String reason = 'stopped'}) async {
+    final restamp = await _ref
+        .read(dietStrategyRepositoryProvider)
+        .stopActivePlan(reason: reason);
+    if (restamp != null) {
+      await _ref.read(profileProvider.notifier).markStandardChanged(restamp);
+    }
+  }
+}
 
 /// Currently active strategy version (may start in the future).
 final activeDietPlanProvider = StreamProvider<DietStrategyPlan?>((ref) {

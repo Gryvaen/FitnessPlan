@@ -149,6 +149,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
           queryParameters: {
             'returnId': '1',
             'mealType': _mealType.name,
+            if (!widget.openDayMealsAfterSearchAdd) 'openDayMealsAfterAdd': '0',
           },
         ).toString(),
       ),
@@ -239,11 +240,21 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
   /// Recent / favorites (already selected) open detail then stay on the grams
   /// sheet when returning. Search and custom-create use the detail add flow.
   Future<void> _openFoodDetailKeepSelection(FoodItem food) async {
-    await withoutSearchFocus(
+    final added = await withoutSearchFocus(
       focus: _searchFocus,
-      action: () => openFoodDetail(context, food.id, mealType: _mealType),
+      action: () => openFoodDetail<bool>(
+        context,
+        food.id,
+        mealType: _mealType,
+        openDayMealsAfterAdd: widget.openDayMealsAfterSearchAdd,
+      ),
     );
     if (!mounted) return;
+    if (added == true) {
+      // Food detail only pops true when openDayMealsAfterSearchAdd is false.
+      _finishAfterAdd();
+      return;
+    }
     final updated = await ref.read(foodRepositoryProvider).byId(food.id);
     if (!mounted || updated == null) return;
     await _selectFood(updated);
@@ -260,6 +271,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         context,
         food.id,
         mealType: _mealType,
+        openDayMealsAfterAdd: widget.openDayMealsAfterSearchAdd,
       ),
     );
     if (!mounted) return;
@@ -390,10 +402,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         proteinG: f.proteinPer100,
         fatG: f.fatPer100,
         style: theme.textTheme.bodyLarge,
-        onTap: () => withoutSearchFocus(
-          focus: _searchFocus,
-          action: () => openFoodDetail(context, f.id, mealType: _mealType),
-        ),
+        onTap: () => _openFoodDetailFromSearch(f),
       ),
       subtitle: Text(
         [?badge, f.category, '${f.kcalPer100.round()} kcal/100g'].join(' · '),

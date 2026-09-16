@@ -47,6 +47,9 @@ flutter:
   assets:
     - assets/food_seed.json
     - assets/cultivation/
+    - assets/loading/swordsman.png
+    - assets/loading/flying_sword.png
+    - assets/loading/ink_slash.png
   fonts:
     - family: LXGWWenKai
       fonts:

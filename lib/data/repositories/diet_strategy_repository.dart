@@ -111,6 +111,46 @@ class DietStrategyRepository {
 
   final AppDatabase _db;
 
+  // ------------------------------------------------------------- standard
+
+  /// Whether [next] is a structurally different standard than [old] — a
+  /// change of strategy kind, or a change to the parameters that actually
+  /// shape day-to-day targets under the same kind. Fields that drift on
+  /// their own with body weight (reference weight, estimated TDEE, base
+  /// energy) are deliberately excluded so re-opening and re-saving the same
+  /// strategy after a routine weigh-in doesn't move the calendar's "new
+  /// standard" marker.
+  static bool isStructuralChange(
+    DietStrategyPlan? old,
+    DietStrategyPlanDraft next,
+  ) {
+    if (old == null) return true;
+    if (old.kind != next.kind) return true;
+    switch (next.kind) {
+      case DietStrategyKind.balanced:
+        return !_closeEnough(old.deficitFraction, next.baseline.deficitFraction) ||
+            !_closeEnough(old.proteinPerKg, next.proteinPerKg) ||
+            !_closeEnough(old.fatPerKg, next.fatPerKg);
+      case DietStrategyKind.carbCycle:
+        return old.schedule?.code != next.schedule?.code ||
+            !_sameRates(old.carbCycleRates, next.carbCycleRates);
+      case DietStrategyKind.carbTaper:
+        return old.taperStage != next.taperStage;
+    }
+  }
+
+  static bool _closeEnough(double a, double b) => (a - b).abs() < 1e-6;
+
+  static bool _sameRates(CarbCycleRates? a, CarbCycleRates? b) {
+    if (a == null || b == null) return a == b;
+    return _closeEnough(a.lowProteinPerKg, b.lowProteinPerKg) &&
+        _closeEnough(a.lowCarbPerKg, b.lowCarbPerKg) &&
+        _closeEnough(a.lowFatPerKg, b.lowFatPerKg) &&
+        _closeEnough(a.highProteinPerKg, b.highProteinPerKg) &&
+        _closeEnough(a.highCarbPerKg, b.highCarbPerKg) &&
+        _closeEnough(a.highFatPerKg, b.highFatPerKg);
+  }
+
   // ---------------------------------------------------------------- plans
 
   DietStrategyPlan _fromRow(DietStrategyPlanRow r) => DietStrategyPlan(
@@ -287,14 +327,19 @@ class DietStrategyRepository {
   /// If the active version has not started yet (a scheduled switch), stopping
   /// it cancels the switch: the version it superseded — which still governs
   /// today — is reinstated as active instead of leaving nothing in effect.
-  Future<void> stopActivePlan({
+  ///
+  /// Returns the day-only date the "new standard" marker should be re-stamped
+  /// to, or null when nothing about the day-to-day standard actually changed
+  /// (there was no active plan, or the cancelled plan hadn't started yet and
+  /// there's no earlier plan to fall back to).
+  Future<DateTime?> stopActivePlan({
     String reason = 'stopped',
     DateTime? now,
   }) async {
     final today = CalendarDay.todayLocal(now);
-    await _db.transaction(() async {
+    return _db.transaction(() async {
       final active = await activePlan();
-      if (active == null) return;
+      if (active == null) return null;
       final pending = active.effectiveFrom.isAfter(today);
       final end = pending ? active.effectiveFrom : today;
       await (_db.update(
@@ -306,6 +351,7 @@ class DietStrategyRepository {
           reason: Value('${active.reason};$reason'),
         ),
       );
+      DateTime? restoredEffectiveFrom;
       if (pending) {
         final plans = await listPlans();
         DietStrategyPlan? previous;
@@ -326,9 +372,14 @@ class DietStrategyRepository {
               endedOn: const Value(null),
             ),
           );
+          restoredEffectiveFrom = previous.effectiveFrom;
         }
       }
       await _deleteSnapshot(today);
+      // A cancelled scheduled switch never took effect, so today's standard
+      // hasn't changed — re-stamp to whatever plan now governs, or leave the
+      // marker alone if there's nothing earlier to fall back to.
+      return pending ? restoredEffectiveFrom : today;
     });
   }
 

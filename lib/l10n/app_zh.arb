@@ -174,7 +174,7 @@
   "walk3000Btn": "多走约 3000 步",
   "walk3000Snack": "可先每天多走约 3000 步。",
   "cutAdjCapReached": "已达调整上限",
-  "possiblePlateau": "可能进入平台期",
+  "possiblePlateau": "可能进入平台期，建议增加碳水摄入",
   "noLogsToSave": "当日无记录可保存",
   "yesterdayNoLogs": "昨日无记录",
   "emptyMealsToday": "还没有记录，点加号记一笔",
@@ -2155,7 +2155,7 @@
   "cultivationPickerTaglineCut": "凡人起步，一步一修行",
   "cultivationPickerTaglineBulk": "锻己筑体，突破自我",
   "realmGuideTitle": "境界体系",
-  "realmGuideIntro": "每减少 7,700 kcal 热量缺口 ≈ 瘦 1 kg。累计减重达到下方各境界标注的总量即可突破至更高境界，每个大境界再分 9 层小境界。",
+  "realmGuideIntro": "进度只按下方 kcal 来源实时累计：每 7,700 kcal ≈ 1 kg 道行。累计达到各境界门槛即可突破；每个大境界再分 9 层小境界。",
   "realmGuideRangeLine": "{floor} – {ceil} kg · 每层 {kcal} kcal",
   "realmGuideMaxRangeLine": "≥ {floor} kg · 圆满无需再突破",
   "realmGuideNextThresh": "→ {realm} {kg}kg",
@@ -2174,6 +2174,18 @@
   "cultivationHistoryTotalLabel": "合计",
   "cultivationHistoryWorkoutLabel": "训练",
   "cultivationHistoryWorkoutProgress": "{done}/{total}",
+  "cultivationHistorySegmentCurrent": "本轮减脂 · 自 {start}",
+  "@cultivationHistorySegmentCurrent": {
+    "placeholders": { "start": { "type": "String" } }
+  },
+  "cultivationHistorySegmentPast": "减脂 · {start} – {end}",
+  "@cultivationHistorySegmentPast": {
+    "placeholders": {
+      "start": { "type": "String" },
+      "end": { "type": "String" }
+    }
+  },
+  "cultivationHistorySegmentEmpty": "该时段暂无明细",
   "editTrainingRecord": "编辑训练记录",
   "saveTrainingRecord": "保存训练记录",
   "addTrainingNote": "添加备注",

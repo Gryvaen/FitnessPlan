@@ -34,29 +34,28 @@ void main() {
     expect(repo.load()?.calorieStandardSince, isNull);
   });
 
-  test('changing calorie adjustment that alters target stamps today', () async {
-    await seedCut();
-    final before = repo.load()!;
-    expect(before.calorieStandardSince, isNull);
+  test(
+    'changing calorie adjustment alone does not stamp calorieStandardSince',
+    () async {
+      // Only a goal switch or a diet-strategy change re-stamps the
+      // standard; a target-calorie shift with the goal unchanged (e.g. a
+      // plateau adjustment, or a weigh-in recalculation) must not.
+      await seedCut();
+      final before = repo.load()!;
+      expect(before.calorieStandardSince, isNull);
 
-    final updated = await seedCut(calorieAdjustment: 100);
-    expect(updated.targets.calories, isNot(before.targets.calories));
+      final updated = await seedCut(calorieAdjustment: 100);
+      expect(updated.targets.calories, isNot(before.targets.calories));
+      expect(updated.calorieStandardSince, isNull);
+      expect(repo.load()?.calorieStandardSince, isNull);
+    },
+  );
 
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    expect(updated.calorieStandardSince, today);
-    expect(repo.load()?.calorieStandardSince, today);
-  });
-
-  test('identical save does not refresh calorieStandardSince', () async {
-    await seedCut();
-    final stamped = await seedCut(calorieAdjustment: 100);
-    final stampedDay = stamped.calorieStandardSince;
-    expect(stampedDay, isNotNull);
-
-    final again = await seedCut(calorieAdjustment: 100);
-    expect(again.targets.calories, stamped.targets.calories);
-    expect(again.calorieStandardSince, stampedDay);
+  test('weight-driven recalculation does not stamp calorieStandardSince', () async {
+    final seeded = await seedCut();
+    final updated = await repo.recalculateForWeight(seeded, 78);
+    expect(updated.weightKg, 78);
+    expect(updated.calorieStandardSince, isNull);
   });
 
   test('switching goal stamps calorieStandardSince today', () async {
@@ -75,5 +74,28 @@ void main() {
     final today = DateTime(now.year, now.month, now.day);
     expect(updated.goal, FitnessGoal.maintain);
     expect(updated.calorieStandardSince, today);
+  });
+
+  group('markStandardChanged', () {
+    test('stamps the given day when it differs from the current one', () async {
+      await seedCut();
+      final day = DateTime(2026, 1, 5);
+      final updated = await repo.markStandardChanged(day);
+      expect(updated?.calorieStandardSince, day);
+      expect(repo.load()?.calorieStandardSince, day);
+    });
+
+    test('no-ops when the day is already stamped', () async {
+      await seedCut();
+      final day = DateTime(2026, 1, 5);
+      await repo.markStandardChanged(day);
+      final result = await repo.markStandardChanged(day);
+      expect(result, isNull);
+    });
+
+    test('no-ops when there is no profile yet', () async {
+      final result = await repo.markStandardChanged(DateTime(2026, 1, 5));
+      expect(result, isNull);
+    });
   });
 }

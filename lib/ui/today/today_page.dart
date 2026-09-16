@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/db.dart';
-import '../../domain/calorie_calculator.dart';
 import '../../domain/diet_plan.dart';
 import '../../domain/diet_strategy.dart';
 import '../../domain/goal_quotes.dart';
@@ -69,12 +68,9 @@ class _TodayPageState extends ConsumerState<TodayPage> {
 
     final onPlateau =
         profile.goal == FitnessGoal.cut &&
-        dayTarget?.source != TargetSource.strategy &&
         Plateau.detect(
           weightLogs.map((e) => (date: e.date, weightKg: e.weightKg)).toList(),
         );
-    final canCutMore =
-        profile.calorieAdjustment < CalorieCalculator.maxCalorieAdjustment;
 
     final now = DateTime.now();
     final today = AppDates.todayLocal(now);
@@ -156,70 +152,6 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                             .read(selectedDayProvider.notifier)
                             .goToToday(),
                 ),
-                if (onPlateau) ...[
-                  SportSurfaceCard(
-                    tint: scheme.tertiary,
-                    padding: const EdgeInsets.all(AppSpacing.card),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l10n.possiblePlateau,
-                          style: theme.textTheme.titleSmall,
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          l10n.plateauHint(Plateau.days),
-                          style: theme.textTheme.meta,
-                        ),
-                        const SizedBox(height: AppSpacing.field),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            FilledButton.tonal(
-                              onPressed: !canCutMore
-                                  ? null
-                                  : () async {
-                                      final updated = await ref
-                                          .read(profileProvider.notifier)
-                                          .applyPlateauCalorieCut();
-                                      if (!context.mounted || updated == null) {
-                                        return;
-                                      }
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            l10n.cut100Applied(
-                                              '${updated.targets.calories}',
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                              child: Text(
-                                canCutMore
-                                    ? l10n.cut100Kcal
-                                    : l10n.cutAdjCapReached,
-                              ),
-                            ),
-                            OutlinedButton(
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(l10n.walk3000Snack)),
-                                );
-                              },
-                              child: Text(l10n.walk3000Btn),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.section),
-                ],
                 Padding(
                   padding: const EdgeInsets.only(right: AppSpacing.compact),
                   child: Column(
@@ -278,6 +210,15 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                               ),
                             ],
                           ],
+                        ),
+                      ],
+                      if (onPlateau) ...[
+                        SizedBox(height: strategyLabel != null ? 2 : 4),
+                        Text(
+                          l10n.possiblePlateau,
+                          style: theme.textTheme.meta?.copyWith(
+                            color: onHeroMuted,
+                          ),
                         ),
                       ],
                       if (dayTarget?.strategy == DietStrategyKind.carbCycle &&

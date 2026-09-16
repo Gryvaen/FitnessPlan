@@ -6,19 +6,30 @@ import '../../data/db.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../meals/daily_meals_page.dart';
 import '../theme/app_theme.dart';
 import '../theme/macro_color.dart';
 import '../widgets/form_options.dart';
 import '../widgets/search_field_focus.dart';
 
 class FoodDetailPage extends ConsumerStatefulWidget {
-  const FoodDetailPage({super.key, required this.foodId, this.initialMealType});
+  const FoodDetailPage({
+    super.key,
+    required this.foodId,
+    this.initialMealType,
+    this.openDayMealsAfterAdd = true,
+  });
 
   final int foodId;
 
   /// When opened from "add breakfast/lunch/…" flows, prefer this over the
   /// clock-based default so the bottom chips match the section the user tapped.
   final MealType? initialMealType;
+
+  /// After a successful "add to meal", open 饮食记录. Set false only when the
+  /// caller already sits on that page (记一笔 from [DailyMealsPage]) so a
+  /// plain `pop(true)` lets the caller return without stacking a second copy.
+  final bool openDayMealsAfterAdd;
 
   @override
   ConsumerState<FoodDetailPage> createState() => _FoodDetailPageState();
@@ -60,6 +71,35 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
     setState(() => _grams = (_grams + delta).clamp(5, 3000));
   }
 
+  /// Land on 饮食记录 after logging from food detail (any entry path).
+  void _finishAfterAdd() {
+    unfocusForNavigation();
+    if (!widget.openDayMealsAfterAdd) {
+      // true → caller (记一笔 from 饮食记录) pops back to the existing page.
+      context.pop(true);
+      return;
+    }
+
+    final day = ref.read(selectedDayProvider);
+    final dayPath = dailyMealsPath(day);
+    final router = GoRouter.of(context);
+    final path = GoRouterState.of(context).uri.path;
+
+    if (path == '/foods' || path.startsWith('/foods/')) {
+      // Shell foods stack: drop this detail, then open 饮食记录 on top.
+      router.pop();
+      router.push(dayPath);
+      return;
+    }
+
+    // Root twin (/food-detail): may sit above 记一笔 / custom-food / tools.
+    // Reset to Today then push so intermediate pages are not left underneath.
+    router.go('/today');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      router.push(dayPath);
+    });
+  }
+
   Future<void> _addToMeal() async {
     final food = _food;
     if (food == null || _saving) return;
@@ -83,8 +123,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.mealLoggedTo(_mealType.label(l10n)))),
       );
-      // true → caller (e.g. log-meal search) can jump to the day meals page.
-      context.pop(true);
+      _finishAfterAdd();
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);

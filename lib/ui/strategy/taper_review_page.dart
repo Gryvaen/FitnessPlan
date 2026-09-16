@@ -68,7 +68,7 @@ class _TaperReviewPageState extends ConsumerState<TaperReviewPage> {
         reason: 'manualStageChange',
         legacyCalories: plan.legacyCalories,
       );
-      await ref.read(dietStrategyRepositoryProvider).createPlan(draft);
+      await ref.read(dietStrategyActionsProvider).applyPlan(draft);
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,

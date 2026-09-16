@@ -177,7 +177,7 @@
   "walk3000Btn": "+~3000 steps",
   "walk3000Snack": "Try ~3000 extra steps/day first.",
   "cutAdjCapReached": "Adjustment limit reached",
-  "possiblePlateau": "Possible plateau",
+  "possiblePlateau": "Possible plateau — try increasing carbs",
   "noLogsToSave": "Nothing to save for this day",
   "yesterdayNoLogs": "No logs yesterday",
   "emptyMealsToday": "No logs yet — tap + to log",
@@ -2228,7 +2228,7 @@
   "cultivationPickerTaglineCut": "Even a mortal's first step is cultivation",
   "cultivationPickerTaglineBulk": "Forge the body, surpass the self",
   "realmGuideTitle": "Realm system",
-  "realmGuideIntro": "Every 7,700 kcal deficit ≈ 1 kg lost. Reach the cumulative weight-loss threshold shown for each realm to break through to the next — each realm is further divided into 9 layers.",
+  "realmGuideIntro": "Progress accrues only from the kcal sources below, in real time: every 7,700 kcal ≈ 1 kg of cultivation. Reach each realm's threshold to break through — each realm is further divided into 9 layers.",
   "realmGuideRangeLine": "{floor}–{ceil} kg · {kcal} kcal per layer",
   "@realmGuideRangeLine": {"placeholders": {"floor": {"type": "String"}, "ceil": {"type": "String"}, "kcal": {"type": "String"}}},
   "realmGuideMaxRangeLine": "≥ {floor} kg · Fulfilled — no further breakthrough",
@@ -2252,6 +2252,18 @@
   "cultivationHistoryWorkoutLabel": "Training",
   "cultivationHistoryWorkoutProgress": "{done}/{total}",
   "@cultivationHistoryWorkoutProgress": {"placeholders": {"done": {"type": "String"}, "total": {"type": "String"}}},
+  "cultivationHistorySegmentCurrent": "Current cut · since {start}",
+  "@cultivationHistorySegmentCurrent": {
+    "placeholders": { "start": { "type": "String" } }
+  },
+  "cultivationHistorySegmentPast": "Cut · {start} – {end}",
+  "@cultivationHistorySegmentPast": {
+    "placeholders": {
+      "start": { "type": "String" },
+      "end": { "type": "String" }
+    }
+  },
+  "cultivationHistorySegmentEmpty": "No details in this stretch",
   "editTrainingRecord": "Edit training record",
   "saveTrainingRecord": "Save training record",
   "addTrainingNote": "Add note",

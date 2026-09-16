@@ -181,7 +181,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
     setState(() => _saving = true);
     try {
       final draft = _draft(legacyCalories: profile?.targets.calories);
-      await ref.read(dietStrategyRepositoryProvider).createPlan(draft);
+      await ref.read(dietStrategyActionsProvider).applyPlan(draft);
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,

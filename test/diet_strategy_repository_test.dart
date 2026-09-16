@@ -196,7 +196,10 @@ void main() {
         (await repo.targetForDay(today, _profile()))!.source,
         TargetSource.strategy,
       );
-      await repo.stopActivePlan(reason: 'goalChanged:maintain');
+      final restamp = await repo.stopActivePlan(
+        reason: 'goalChanged:maintain',
+      );
+      expect(restamp, today);
       final t = (await repo.targetForDay(today, _profile()))!;
       expect(t.source, TargetSource.profile);
       expect(await repo.activePlan(), isNull);
@@ -222,7 +225,10 @@ void main() {
         );
         expect((await repo.activePlan())!.kind, DietStrategyKind.carbTaper);
 
-        await repo.stopActivePlan();
+        final restamp = await repo.stopActivePlan();
+        // The cancelled switch never took effect: the marker falls back to
+        // whichever plan now governs, not "today".
+        expect(restamp, today);
 
         final active = await repo.activePlan();
         expect(active, isNotNull);
@@ -350,6 +356,94 @@ void main() {
       expect(plan.carbCyclePlan!.days.length, 4);
       expect(plan.carbCyclePlan!.usable, isTrue);
       expect(plan.legacyCalories, 2137);
+    });
+  });
+
+  group('isStructuralChange', () {
+    test('no prior plan is always a structural change', () {
+      expect(
+        DietStrategyRepository.isStructuralChange(null, _carbCycleDraft(today)),
+        isTrue,
+      );
+    });
+
+    test('switching kind is a structural change', () async {
+      final old = await repo.createPlan(_carbCycleDraft(today));
+      final draft = DietStrategyPlanDraft(
+        kind: DietStrategyKind.carbTaper,
+        effectiveFrom: today,
+        referenceWeightKg: 75,
+        estimatedTdee: 2400,
+        baseEnergy: 2000,
+      );
+      expect(DietStrategyRepository.isStructuralChange(old, draft), isTrue);
+    });
+
+    test(
+      'carb cycle: re-saving the same schedule/rates is not a change',
+      () async {
+        final old = await repo.createPlan(_carbCycleDraft(today));
+        expect(
+          DietStrategyRepository.isStructuralChange(
+            old,
+            _carbCycleDraft(today),
+          ),
+          isFalse,
+        );
+      },
+    );
+
+    test('carb cycle: a different schedule is a structural change', () async {
+      final old = await repo.createPlan(_carbCycleDraft(today));
+      expect(
+        DietStrategyRepository.isStructuralChange(
+          old,
+          _carbCycleDraft(today, code: 'HMLLL'),
+        ),
+        isTrue,
+      );
+    });
+
+    test(
+      'carb cycle: reference weight drifting alone is not a change',
+      () async {
+        final old = await repo.createPlan(_carbCycleDraft(today));
+        final schedule = CarbCycleSchedule.tryParse('HMLL')!;
+        final drifted = DietStrategyPlanDraft(
+          kind: DietStrategyKind.carbCycle,
+          effectiveFrom: today,
+          referenceWeightKg: 74, // weighed in lighter since last time
+          estimatedTdee: 2360,
+          baseEnergy: old.baseEnergy,
+          schedule: schedule,
+          carbCycleRates: _carbCycleRates,
+        );
+        expect(
+          DietStrategyRepository.isStructuralChange(old, drifted),
+          isFalse,
+        );
+      },
+    );
+
+    test('carb taper: advancing a stage is a structural change', () async {
+      final old = await repo.createPlan(
+        DietStrategyPlanDraft(
+          kind: DietStrategyKind.carbTaper,
+          effectiveFrom: today,
+          referenceWeightKg: 75,
+          estimatedTdee: 2400,
+          baseEnergy: 2000,
+        ),
+      );
+      final draft = DietStrategyPlanDraft(
+        kind: DietStrategyKind.carbTaper,
+        effectiveFrom: today,
+        referenceWeightKg: 75,
+        estimatedTdee: 2400,
+        baseEnergy: 2000,
+        taperStage: 1,
+      );
+      expect(DietStrategyRepository.isStructuralChange(old, draft), isTrue);
     });
   });
 

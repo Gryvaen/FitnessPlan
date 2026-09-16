@@ -480,7 +480,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cutAdjCapReached => '已达调整上限';
 
   @override
-  String get possiblePlateau => '可能进入平台期';
+  String get possiblePlateau => '可能进入平台期，建议增加碳水摄入';
 
   @override
   String get noLogsToSave => '当日无记录可保存';
@@ -2664,7 +2664,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get realmGuideIntro =>
-      '每减少 7,700 kcal 热量缺口 ≈ 瘦 1 kg。累计减重达到下方各境界标注的总量即可突破至更高境界，每个大境界再分 9 层小境界。';
+      '进度只按下方 kcal 来源实时累计：每 7,700 kcal ≈ 1 kg 道行。累计达到各境界门槛即可突破；每个大境界再分 9 层小境界。';
 
   @override
   String realmGuideRangeLine(String floor, String ceil, String kcal) {
@@ -2730,6 +2730,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String cultivationHistoryWorkoutProgress(String done, String total) {
     return '$done/$total';
   }
+
+  @override
+  String cultivationHistorySegmentCurrent(String start) {
+    return '本轮减脂 · 自 $start';
+  }
+
+  @override
+  String cultivationHistorySegmentPast(String start, String end) {
+    return '减脂 · $start – $end';
+  }
+
+  @override
+  String get cultivationHistorySegmentEmpty => '该时段暂无明细';
 
   @override
   String get editTrainingRecord => '编辑训练记录';

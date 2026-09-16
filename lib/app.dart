@@ -113,6 +113,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                         initialMealType: MealType.tryParse(
                           state.uri.queryParameters['mealType'],
                         ),
+                        openDayMealsAfterAdd:
+                            state.uri.queryParameters['openDayMealsAfterAdd'] !=
+                            '0',
                       );
                     },
                   ),
@@ -130,6 +133,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                         initialMealType: MealType.tryParse(
                           state.uri.queryParameters['mealType'],
                         ),
+                        openDayMealsAfterAdd:
+                            state.uri.queryParameters['openDayMealsAfterAdd'] !=
+                            '0',
                       );
                     },
                   ),
@@ -329,6 +335,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             initialMealType: MealType.tryParse(
               state.uri.queryParameters['mealType'],
             ),
+            openDayMealsAfterAdd:
+                state.uri.queryParameters['openDayMealsAfterAdd'] != '0',
           );
         },
       ),
@@ -346,6 +354,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             initialMealType: MealType.tryParse(
               state.uri.queryParameters['mealType'],
             ),
+            openDayMealsAfterAdd:
+                state.uri.queryParameters['openDayMealsAfterAdd'] != '0',
           );
         },
       ),

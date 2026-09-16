@@ -238,5 +238,32 @@ class MealRepository {
     return map;
   }
 
+  /// Per-day meal-type set + calorie sum for every day with ≥1 entry.
+  /// When [since] is set, only days on/after that local calendar day.
+  Future<Map<DateTime, ({Set<String> mealTypes, double calories})>>
+  mealDaySummaries({DateTime? since}) async {
+    final query = _db.select(_db.mealEntries);
+    if (since != null) {
+      final s = _dayStart(since);
+      query.where((t) => t.date.isBiggerOrEqualValue(s));
+    }
+    final rows = await query.get();
+    final map = <DateTime, ({Set<String> mealTypes, double calories})>{};
+    for (final r in rows) {
+      final key = _dayStart(r.date);
+      final prev = map[key];
+      if (prev == null) {
+        map[key] = (mealTypes: {r.mealType}, calories: r.calories);
+      } else {
+        prev.mealTypes.add(r.mealType);
+        map[key] = (
+          mealTypes: prev.mealTypes,
+          calories: prev.calories + r.calories,
+        );
+      }
+    }
+    return map;
+  }
+
   Future<void> clearAll() => _db.delete(_db.mealEntries).go();
 }

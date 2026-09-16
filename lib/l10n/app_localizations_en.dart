@@ -483,7 +483,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cutAdjCapReached => 'Adjustment limit reached';
 
   @override
-  String get possiblePlateau => 'Possible plateau';
+  String get possiblePlateau => 'Possible plateau — try increasing carbs';
 
   @override
   String get noLogsToSave => 'Nothing to save for this day';
@@ -2722,7 +2722,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get realmGuideIntro =>
-      'Every 7,700 kcal deficit ≈ 1 kg lost. Reach the cumulative weight-loss threshold shown for each realm to break through to the next — each realm is further divided into 9 layers.';
+      'Progress accrues only from the kcal sources below, in real time: every 7,700 kcal ≈ 1 kg of cultivation. Reach each realm\'s threshold to break through — each realm is further divided into 9 layers.';
 
   @override
   String realmGuideRangeLine(String floor, String ceil, String kcal) {
@@ -2789,6 +2789,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String cultivationHistoryWorkoutProgress(String done, String total) {
     return '$done/$total';
   }
+
+  @override
+  String cultivationHistorySegmentCurrent(String start) {
+    return 'Current cut · since $start';
+  }
+
+  @override
+  String cultivationHistorySegmentPast(String start, String end) {
+    return 'Cut · $start – $end';
+  }
+
+  @override
+  String get cultivationHistorySegmentEmpty => 'No details in this stretch';
 
   @override
   String get editTrainingRecord => 'Edit training record';

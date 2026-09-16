@@ -1019,7 +1019,7 @@ abstract class AppLocalizations {
   /// No description provided for @possiblePlateau.
   ///
   /// In en, this message translates to:
-  /// **'Possible plateau'**
+  /// **'Possible plateau — try increasing carbs'**
   String get possiblePlateau;
 
   /// No description provided for @noLogsToSave.
@@ -4758,7 +4758,7 @@ abstract class AppLocalizations {
   /// No description provided for @realmGuideIntro.
   ///
   /// In en, this message translates to:
-  /// **'Every 7,700 kcal deficit ≈ 1 kg lost. Reach the cumulative weight-loss threshold shown for each realm to break through to the next — each realm is further divided into 9 layers.'**
+  /// **'Progress accrues only from the kcal sources below, in real time: every 7,700 kcal ≈ 1 kg of cultivation. Reach each realm\'s threshold to break through — each realm is further divided into 9 layers.'**
   String get realmGuideIntro;
 
   /// No description provided for @realmGuideRangeLine.
@@ -4868,6 +4868,15 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{done}/{total}'**
   String cultivationHistoryWorkoutProgress(String done, String total);
+
+  /// Current cut stretch header.
+  String cultivationHistorySegmentCurrent(String start);
+
+  /// Past cut stretch header.
+  String cultivationHistorySegmentPast(String start, String end);
+
+  /// Empty stretch placeholder.
+  String get cultivationHistorySegmentEmpty;
 
   /// No description provided for @editTrainingRecord.
   ///

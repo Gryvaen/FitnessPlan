@@ -141,32 +141,53 @@ void main() {
   });
 
   group('Plateau', () {
-    test('detects flat weight over 14 days', () {
-      final now = DateTime(2026, 7, 14);
+    test('detects flat weight across last 7 logs', () {
       final logs = [
-        (date: DateTime(2026, 6, 30), weightKg: 70.0),
-        (date: DateTime(2026, 7, 7), weightKg: 69.9),
-        (date: DateTime(2026, 7, 14), weightKg: 70.1),
+        for (var i = 0; i < 7; i++)
+          (
+            date: DateTime(2026, 7, 1 + i),
+            weightKg: 70.0 + (i.isEven ? 0.1 : 0.0),
+          ),
       ];
-      expect(Plateau.detect(logs, now: now), isTrue);
+      expect(Plateau.detect(logs), isTrue);
+    });
+
+    test('false when latest is at least 0.3 kg below earliest', () {
+      final logs = [
+        (date: DateTime(2026, 7, 1), weightKg: 70.0),
+        (date: DateTime(2026, 7, 2), weightKg: 70.0),
+        (date: DateTime(2026, 7, 3), weightKg: 69.9),
+        (date: DateTime(2026, 7, 4), weightKg: 69.9),
+        (date: DateTime(2026, 7, 5), weightKg: 69.8),
+        (date: DateTime(2026, 7, 6), weightKg: 69.75),
+        (date: DateTime(2026, 7, 7), weightKg: 69.7), // −0.3 vs earliest
+      ];
+      expect(Plateau.detect(logs), isFalse);
     });
 
     test('false when clear downward progress', () {
-      final now = DateTime(2026, 7, 14);
       final logs = [
-        (date: DateTime(2026, 6, 30), weightKg: 70.0),
-        (date: DateTime(2026, 7, 14), weightKg: 69.0),
+        for (var i = 0; i < 7; i++)
+          (date: DateTime(2026, 7, 1 + i), weightKg: 70.0 - i * 0.2),
       ];
-      expect(Plateau.detect(logs, now: now), isFalse);
+      expect(Plateau.detect(logs), isFalse);
     });
 
-    test('false when span too short', () {
-      final now = DateTime(2026, 7, 14);
+    test('false when fewer than 7 logs', () {
       final logs = [
         (date: DateTime(2026, 7, 10), weightKg: 70.0),
         (date: DateTime(2026, 7, 14), weightKg: 70.0),
       ];
-      expect(Plateau.detect(logs, now: now), isFalse);
+      expect(Plateau.detect(logs), isFalse);
+    });
+
+    test('uses only the most recent 7 logs', () {
+      final logs = [
+        (date: DateTime(2026, 6, 1), weightKg: 75.0),
+        for (var i = 0; i < 7; i++)
+          (date: DateTime(2026, 7, 1 + i), weightKg: 70.0),
+      ];
+      expect(Plateau.detect(logs), isTrue);
     });
   });
 }

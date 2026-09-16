@@ -18,6 +18,7 @@ class CustomFoodEditPage extends ConsumerStatefulWidget {
     this.foodId,
     this.openDetailOnCreate = false,
     this.initialMealType,
+    this.openDayMealsAfterAdd = true,
   });
 
   final int? foodId;
@@ -29,6 +30,9 @@ class CustomFoodEditPage extends ConsumerStatefulWidget {
 
   /// Forwarded to food detail so "add to breakfast/…" matches 记一笔.
   final MealType? initialMealType;
+
+  /// Forwarded to food detail: after logging, open 饮食记录 (unless false).
+  final bool openDayMealsAfterAdd;
 
   @override
   ConsumerState<CustomFoodEditPage> createState() => _CustomFoodEditPageState();
@@ -179,6 +183,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
               context,
               id,
               mealType: widget.initialMealType,
+              openDayMealsAfterAdd: widget.openDayMealsAfterAdd,
             );
             if (mounted) context.pop(added == true);
           } else {
