@@ -65,6 +65,11 @@
         <receiver android:exported="false" android:name=".RestTimerAlarmReceiver" />
         <receiver android:exported="false" android:name=".RestTimerAlarmStopReceiver" />
         <receiver android:exported="false" android:name=".WorkoutReminderReceiver" />
+        <receiver android:exported="false" android:name=".ApkDownloadCompleteReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.DOWNLOAD_COMPLETE"/>
+            </intent-filter>
+        </receiver>
         <activity android:name=".ReminderAlarmActivity" android:exported="false"
             android:launchMode="singleTop" android:theme="@android:style/Theme.Material.Light.NoActionBar" />
         <service android:name=".ReminderAlarmService" android:exported="false"

@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
@@ -23,6 +25,7 @@ class _MainShellState extends ConsumerState<MainShell>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _checkForUpdateSilently();
   }
 
   @override
@@ -35,7 +38,20 @@ class _MainShellState extends ConsumerState<MainShell>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       ref.invalidate(stepsSyncProvider);
+      _checkForUpdateSilently();
     }
+  }
+
+  /// Throttled background check so the update icon's red dot can show up
+  /// without the user having to remember to tap "check for update"
+  /// themselves — see [AppUpdateNotifier.silentCheckForUpdate].
+  Future<void> _checkForUpdateSilently() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return;
+    final info = await PackageInfo.fromPlatform();
+    if (!mounted) return;
+    ref
+        .read(appUpdateProvider.notifier)
+        .silentCheckForUpdate(info.version, info.buildNumber);
   }
 
   void _onTap(int index) {

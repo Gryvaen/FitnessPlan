@@ -1,12 +1,53 @@
 import 'dart:convert';
-import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 const kGithubOwner = 'Gryvaen';
 const kGithubRepo = 'FitnessPlan';
+
+/// Native side of the update download: hands the APK URL to Android's
+/// system [DownloadManager] instead of streaming it over a plain Dart HTTP
+/// client, so the download keeps running (and the OS shows its own
+/// progress notification) even if this app's process is backgrounded or
+/// killed. See `ApkDownloader.kt` / `ApkDownloadCompleteReceiver.kt`.
+const _apkDownloaderChannel = MethodChannel('fitness_plan/apk_downloader');
+
+enum ApkDownloadState { running, success, failed, missing }
+
+class ApkDownloadInfo {
+  const ApkDownloadInfo({
+    required this.state,
+    required this.bytesDownloaded,
+    required this.totalBytes,
+    this.localPath,
+    this.reason,
+  });
+
+  factory ApkDownloadInfo.fromMap(Map<dynamic, dynamic> map) {
+    final state = switch (map['status']) {
+      'success' => ApkDownloadState.success,
+      'failed' => ApkDownloadState.failed,
+      'missing' => ApkDownloadState.missing,
+      _ => ApkDownloadState.running,
+    };
+    return ApkDownloadInfo(
+      state: state,
+      bytesDownloaded: (map['bytesDownloaded'] as num?)?.toInt() ?? 0,
+      totalBytes: (map['totalBytes'] as num?)?.toInt() ?? 0,
+      localPath: map['localPath'] as String?,
+      reason: (map['reason'] as num?)?.toInt(),
+    );
+  }
+
+  final ApkDownloadState state;
+  final int bytesDownloaded;
+  final int totalBytes;
+  final String? localPath;
+  final int? reason;
+
+  double get progress => totalBytes > 0 ? bytesDownloaded / totalBytes : 0;
+}
 
 class ReleaseAsset {
   const ReleaseAsset({required this.name, required this.downloadUrl});
@@ -144,38 +185,31 @@ class AppUpdateRepository {
     );
   }
 
-  Future<String> downloadApk(
-    String url, {
-    String? localVersion,
-    void Function(double progress)? onProgress,
+  /// Enqueues the APK with the system [DownloadManager] (via
+  /// [_apkDownloaderChannel]) and returns its download id.
+  Future<int> enqueueDownload({
+    required String url,
+    String fileName = 'FitnessPlan-update.apk',
   }) async {
-    final request = http.Request('GET', Uri.parse(url));
-    request.headers.addAll(_headers(localVersion));
-    final streamed = await _client.send(request);
-    if (streamed.statusCode != 200) {
-      throw Exception('下载失败（HTTP ${streamed.statusCode}）');
-    }
-    final total = streamed.contentLength ?? 0;
-    final dir = await getTemporaryDirectory();
-    final path = p.join(dir.path, 'FitnessPlan-update.apk');
-    final file = File(path);
-    final sink = file.openWrite();
-    var received = 0;
-    try {
-      await for (final chunk in streamed.stream) {
-        sink.add(chunk);
-        received += chunk.length;
-        if (total > 0 && onProgress != null) {
-          onProgress((received / total).clamp(0.0, 1.0));
-        }
-      }
-      await sink.flush();
-    } finally {
-      await sink.close();
-    }
-    if (total > 0 && onProgress != null) {
-      onProgress(1.0);
-    }
-    return path;
+    final id = await _apkDownloaderChannel.invokeMethod<int>('enqueue', {
+      'url': url,
+      'fileName': fileName,
+    });
+    if (id == null) throw Exception('下载未能开始');
+    return id;
+  }
+
+  Future<ApkDownloadInfo> queryDownload(int downloadId) async {
+    final map = await _apkDownloaderChannel.invokeMethod<Map<dynamic, dynamic>>(
+      'query',
+      {'downloadId': downloadId},
+    );
+    return ApkDownloadInfo.fromMap(map ?? const {});
+  }
+
+  Future<void> cancelDownload(int downloadId) {
+    return _apkDownloaderChannel.invokeMethod('cancel', {
+      'downloadId': downloadId,
+    });
   }
 }

@@ -872,7 +872,31 @@ class _UpdateDownloadIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     const color = _updateColor;
     if (status.phase == AppUpdatePhase.idle) {
-      return const Icon(Icons.download_outlined, color: color);
+      if (!status.hasUpdateAvailable) {
+        return const Icon(Icons.download_outlined, color: color);
+      }
+      return Stack(
+        clipBehavior: Clip.none,
+        children: [
+          const Icon(Icons.download_outlined, color: color),
+          Positioned(
+            right: -1,
+            top: -1,
+            child: Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.error,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.surface,
+                  width: 1.5,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
     }
 
     final determinate =

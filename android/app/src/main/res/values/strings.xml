@@ -15,4 +15,8 @@
     <string name="step_service_notification_title">Counting your steps</string>
     <string name="step_service_notification_body">Tap to see today\'s total</string>
     <string name="reminder_alarm_channel">Daily reminder alarms</string>
+    <string name="app_update_channel">App updates</string>
+    <string name="app_update_channel_description">Notifies when a downloaded update is ready to install</string>
+    <string name="app_update_notification_title">Update downloaded</string>
+    <string name="app_update_notification_body">Tap to install the new version</string>
 </resources>

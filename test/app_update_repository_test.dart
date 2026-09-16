@@ -1,8 +1,100 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:diet/data/repositories/app_update_repository.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  const channel = MethodChannel('fitness_plan/apk_downloader');
+
+  group('AppUpdateRepository apk_downloader channel', () {
+    late List<MethodCall> calls;
+
+    void mockHandler(Object? Function(MethodCall) handler) {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+        calls.add(call);
+        return handler(call);
+      });
+    }
+
+    setUp(() => calls = []);
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+    });
+
+    test('enqueueDownload passes url/fileName and returns the download id', () async {
+      mockHandler((call) => 42);
+      final repo = AppUpdateRepository();
+      final id = await repo.enqueueDownload(
+        url: 'https://example.com/a.apk',
+        fileName: 'update.apk',
+      );
+      expect(id, 42);
+      expect(calls.single.method, 'enqueue');
+      expect(calls.single.arguments, {
+        'url': 'https://example.com/a.apk',
+        'fileName': 'update.apk',
+      });
+    });
+
+    test('queryDownload maps the native status payload', () async {
+      mockHandler(
+        (call) => {
+          'status': 'running',
+          'bytesDownloaded': 50,
+          'totalBytes': 200,
+          'localPath': null,
+          'reason': null,
+        },
+      );
+      final repo = AppUpdateRepository();
+      final info = await repo.queryDownload(42);
+      expect(calls.single.method, 'query');
+      expect(calls.single.arguments, {'downloadId': 42});
+      expect(info.state, ApkDownloadState.running);
+      expect(info.progress, 0.25);
+    });
+
+    test('cancelDownload passes the download id', () async {
+      mockHandler((call) => null);
+      final repo = AppUpdateRepository();
+      await repo.cancelDownload(42);
+      expect(calls.single.method, 'cancel');
+      expect(calls.single.arguments, {'downloadId': 42});
+    });
+  });
+
+  group('ApkDownloadInfo.fromMap', () {
+    test('parses each status', () {
+      expect(
+        ApkDownloadInfo.fromMap({'status': 'success'}).state,
+        ApkDownloadState.success,
+      );
+      expect(
+        ApkDownloadInfo.fromMap({'status': 'failed'}).state,
+        ApkDownloadState.failed,
+      );
+      expect(
+        ApkDownloadInfo.fromMap({'status': 'missing'}).state,
+        ApkDownloadState.missing,
+      );
+      expect(
+        ApkDownloadInfo.fromMap({'status': 'running'}).state,
+        ApkDownloadState.running,
+      );
+    });
+
+    test('progress is 0 when totalBytes is unknown', () {
+      final info = ApkDownloadInfo.fromMap({
+        'status': 'running',
+        'bytesDownloaded': 10,
+      });
+      expect(info.progress, 0);
+    });
+  });
+
   group('AppUpdateLogic.normalizeVersion', () {
     test('strips v prefix and build metadata', () {
       expect(AppUpdateLogic.normalizeVersion('v1.1.0'), '1.1.0');

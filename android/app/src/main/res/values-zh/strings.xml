@@ -11,4 +11,8 @@
     <string name="step_service_notification_title">正在统计步数</string>
     <string name="step_service_notification_body">点按查看今日步数</string>
     <string name="reminder_alarm_channel">日常提醒闹钟</string>
+    <string name="app_update_channel">应用更新</string>
+    <string name="app_update_channel_description">下载完成后提醒安装新版本</string>
+    <string name="app_update_notification_title">新版本已下载</string>
+    <string name="app_update_notification_body">点击安装新版本</string>
 </resources>

@@ -143,6 +143,40 @@ class MainActivity : FlutterFragmentActivity() {
                 }
             }
 
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ApkDownloader.CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "enqueue" -> {
+                        val url = call.argument<String>("url")
+                        val fileName = call.argument<String>("fileName")
+                        if (url == null || fileName == null) {
+                            result.error("invalid_arguments", "Missing url/fileName", null)
+                            return@setMethodCallHandler
+                        }
+                        try {
+                            result.success(ApkDownloader.enqueue(applicationContext, url, fileName))
+                        } catch (e: Exception) {
+                            result.error("enqueue_failed", e.message, null)
+                        }
+                    }
+                    "query" -> {
+                        val id = call.argument<Number>("downloadId")?.toLong()
+                        if (id == null) {
+                            result.error("invalid_arguments", "Missing downloadId", null)
+                            return@setMethodCallHandler
+                        }
+                        result.success(ApkDownloader.query(applicationContext, id))
+                    }
+                    "cancel" -> {
+                        call.argument<Number>("downloadId")?.toLong()?.let {
+                            ApkDownloader.cancel(applicationContext, it)
+                        }
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+
         // Re-arm the background counter after a cold start / app update.
         StepCounterService.startIfEnabled(applicationContext)
     }
