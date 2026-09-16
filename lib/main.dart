@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
-import 'features/loading/swordsman_loading_page.dart';
 import 'l10n/app_localizations.dart';
 import 'providers/app_providers.dart';
+import 'ui/loading/discipline_freedom_loading_page.dart';
 import 'ui/theme/app_theme.dart';
 import 'ui/tools/workout_reminder_notifications.dart';
 
@@ -67,7 +67,7 @@ class _BootstrapState extends ConsumerState<_Bootstrap> {
                 GlobalCupertinoLocalizations.delegate,
               ],
               supportedLocales: AppLocalizations.supportedLocales,
-              home: SwordsmanLoadingPage(
+              home: DisciplineFreedomLoadingPage(
                 onInitialize: () async {
                   ref.invalidate(foodsSeedProvider);
                   await ref.read(foodsSeedProvider.future);

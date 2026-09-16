@@ -221,10 +221,19 @@ class _LoadingStatus extends StatelessWidget {
           alignment: WrapAlignment.center,
           spacing: 8,
           children: [
-            TextButton(onPressed: onRetry, child: Text(context.l10n.retry)),
+            TextButton(
+              onPressed: onRetry,
+              style: TextButton.styleFrom(
+                foregroundColor: SwordsmanLoadingConfig.ink,
+              ),
+              child: Text(context.l10n.retry),
+            ),
             if (onEnterAnyway != null)
               TextButton(
                 onPressed: onEnterAnyway,
+                style: TextButton.styleFrom(
+                  foregroundColor: SwordsmanLoadingConfig.ink,
+                ),
                 child: Text(context.l10n.enterAnyway),
               ),
           ],

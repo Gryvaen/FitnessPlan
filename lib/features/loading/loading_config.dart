@@ -6,9 +6,9 @@ abstract final class SwordsmanLoadingConfig {
   static const reducedMotionDuration = Duration(milliseconds: 300);
   static const prewarmDelay = Duration(milliseconds: 4200);
 
-  static const background = Color(0xFFF3EFE5);
-  static const ink = Color(0xFF242320);
-  static const mist = Color(0x14242320);
+  static const background = Color(0xFFFFFFFF);
+  static const ink = Color(0xFF000000);
+  static const mist = Color(0x14000000);
 
   static const characterCenter = Offset(.53, .56);
   static const characterHeightFactor = .66;

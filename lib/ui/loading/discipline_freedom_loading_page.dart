@@ -261,7 +261,7 @@ class _DisciplineFreedomLoadingPageState
             fit: StackFit.expand,
             children: [
               ColoredBox(color: colors.background),
-              RepaintBoundary(child: _InkRainbowBloom(bloom: _inkBloom)),
+              RepaintBoundary(child: _InkBloom(bloom: _inkBloom)),
               SafeArea(
                 child: LayoutBuilder(
                   builder: (context, constraints) {
@@ -374,59 +374,21 @@ class _DisciplineFreedomLoadingPageState
   }
 }
 
-/// Bright rainbow for loading text / runner (readable on soft wash).
-const _loadingBrightRainbow = <Color>[
-  Color(0xFFFF3B5C),
-  Color(0xFFFF8A00),
-  Color(0xFFFFE135),
-  Color(0xFF00C853),
-  Color(0xFF00B0FF),
-  Color(0xFF7C4DFF),
-  Color(0xFFFF2D95),
-];
-
-/// Tints opaque ink with a bright rainbow (no blur halo).
-class _RainbowTint extends StatelessWidget {
-  const _RainbowTint({required this.builder, this.shift = 0});
+/// Pass-through wrapper kept so call sites stay stable after dropping rainbow.
+class _InkTint extends StatelessWidget {
+  const _InkTint({required this.builder, this.shift = 0});
 
   final WidgetBuilder builder;
-  final double shift;
-
-  static final _flowColors = [
-    ..._loadingBrightRainbow,
-    _loadingBrightRainbow.first,
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return ShaderMask(
-      blendMode: BlendMode.srcIn,
-      shaderCallback: (bounds) => LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: _flowColors,
-        tileMode: TileMode.repeated,
-        transform: _SlidingGradientTransform(shift: shift),
-      ).createShader(bounds),
-      child: builder(context),
-    );
-  }
-}
-
-class _SlidingGradientTransform extends GradientTransform {
-  const _SlidingGradientTransform({required this.shift});
-
+  // Ignored: previously drove rainbow flow; monochrome needs no shift.
   final double shift;
 
   @override
-  Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
-    return Matrix4.translationValues(shift * bounds.width, 0, 0);
-  }
+  Widget build(BuildContext context) => builder(context);
 }
 
-/// Full-screen rainbow bloom fill.
-class _InkRainbowBloom extends StatelessWidget {
-  const _InkRainbowBloom({required this.bloom});
+/// Full-screen monochrome ink bloom fill.
+class _InkBloom extends StatelessWidget {
+  const _InkBloom({required this.bloom});
 
   final Animation<double> bloom;
 
@@ -435,17 +397,29 @@ class _InkRainbowBloom extends StatelessWidget {
     return AnimatedBuilder(
       animation: bloom,
       builder: (context, _) => CustomPaint(
-        painter: _InkRainbowBloomPainter(bloomT: bloom.value),
+        painter: _InkBloomPainter(bloomT: bloom.value),
         child: const SizedBox.expand(),
       ),
     );
   }
 }
 
-class _InkRainbowBloomPainter extends CustomPainter {
-  _InkRainbowBloomPainter({required this.bloomT});
+class _InkBloomPainter extends CustomPainter {
+  _InkBloomPainter({required this.bloomT});
 
   final double bloomT;
+
+  static const _wash = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xE8F2F2F2),
+      Color(0xE8E6E6E6),
+      Color(0xE8FAFAFA),
+      Color(0xE8DEDEDE),
+      Color(0xE8F0F0F0),
+    ],
+  );
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -462,13 +436,12 @@ class _InkRainbowBloomPainter extends CustomPainter {
         1.2;
     final bloomR = maxR * bloomT;
 
-    final washPaint = Paint()
-      ..shader = AppTheme.oilRainbowWash.createShader(fullRect);
+    final washPaint = Paint()..shader = _wash.createShader(fullRect);
     canvas.drawCircle(impact, bloomR, washPaint);
   }
 
   @override
-  bool shouldRepaint(covariant _InkRainbowBloomPainter oldDelegate) {
+  bool shouldRepaint(covariant _InkBloomPainter oldDelegate) {
     if (oldDelegate.bloomT >= 1.0 && bloomT >= 1.0) return false;
     return oldDelegate.bloomT != bloomT;
   }
@@ -483,12 +456,13 @@ class _LoadingColors {
     required this.decoration,
   });
 
-  factory _LoadingColors.from(ColorScheme scheme) => _LoadingColors(
-    background: scheme.surface,
-    primaryText: scheme.onSurface,
-    secondaryText: scheme.onSurfaceVariant,
-    accent: scheme.primary,
-    decoration: Colors.white.withValues(alpha: 0.92),
+  /// Fixed black-and-white palette (no theme rainbow / brand teal).
+  factory _LoadingColors.from(ColorScheme scheme) => const _LoadingColors(
+    background: Color(0xFFFFFFFF),
+    primaryText: Color(0xFF000000),
+    secondaryText: Color(0xFF000000),
+    accent: Color(0xFF000000),
+    decoration: Color(0xEB000000),
   );
 
   final Color background;
@@ -528,7 +502,7 @@ class _KineticTitle extends StatelessWidget {
       fontWeight: FontWeight.w500,
       letterSpacing: 0,
       height: 1.15,
-      color: Colors.white,
+      color: Colors.black,
     );
     final leftChars = left.characters.toList();
     final rightChars = right.characters.toList();
@@ -554,7 +528,7 @@ class _KineticTitle extends StatelessWidget {
 
         return FittedBox(
           fit: BoxFit.scaleDown,
-          child: _RainbowTint(
+          child: _InkTint(
             shift: shift * 0.35,
             builder: (context) => Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -605,7 +579,7 @@ class _KineticTitle extends StatelessWidget {
             child: Text(
               chars[i],
               style: style?.copyWith(
-                color: Colors.white.withValues(alpha: alpha),
+                color: Colors.black.withValues(alpha: alpha),
               ),
             ),
           ),
@@ -639,7 +613,7 @@ class _AnimatedSubtitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final baseStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
       fontFamily: AppTheme.displayFontFamily,
-      color: Colors.white,
+      color: Colors.black,
       letterSpacing: 1.2,
       fontWeight: FontWeight.w500,
     );
@@ -653,7 +627,7 @@ class _AnimatedSubtitle extends StatelessWidget {
             : Curves.easeOut.transform(entrance.value.clamp(0.0, 1.0)) * 0.25;
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: _RainbowTint(
+          child: _InkTint(
             shift: shift,
             builder: (context) => Wrap(
               alignment: WrapAlignment.center,
@@ -688,7 +662,7 @@ class _AnimatedSubtitle extends StatelessWidget {
       offset: Offset(0, (1 - t) * 10),
       child: Text(
         token,
-        style: style?.copyWith(color: Colors.white.withValues(alpha: alpha)),
+        style: style?.copyWith(color: Colors.black.withValues(alpha: alpha)),
       ),
     );
   }
@@ -723,12 +697,12 @@ class _AnimatedRunner extends StatelessWidget {
       height: compact ? 60 : 70,
       child: AnimatedBuilder(
         animation: Listenable.merge([progress, gait]),
-        builder: (context, _) => _RainbowTint(
+        builder: (context, _) => _InkTint(
           builder: (context) => CustomPaint(
             painter: _MinimalRunnerPainter(
               progress: progress.value,
               phase: gait.value,
-              color: Colors.white,
+              color: Colors.black,
             ),
           ),
         ),
@@ -1458,13 +1432,13 @@ class _BottomStatus extends StatelessWidget {
                                 entrance.value.clamp(0.0, 1.0),
                               ) *
                               0.2;
-                    return _RainbowTint(
+                    return _InkTint(
                       shift: shift,
                       builder: (context) => Text(
                         statusText,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontFamily: AppTheme.displayFontFamily,
-                          color: Colors.white,
+                          color: Colors.black,
                           letterSpacing: .8,
                           fontWeight: FontWeight.w500,
                         ),
@@ -1482,12 +1456,12 @@ class _BottomStatus extends StatelessWidget {
               key: const ValueKey('error'),
               mainAxisSize: MainAxisSize.min,
               children: [
-                _RainbowTint(
+                _InkTint(
                   builder: (context) => Text(
                     context.l10n.loadingPreparationFailed,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontFamily: AppTheme.displayFontFamily,
-                      color: Colors.white,
+                      color: Colors.black,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -1498,12 +1472,19 @@ class _BottomStatus extends StatelessWidget {
                   children: [
                     OutlinedButton(
                       onPressed: onRetry,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.black,
+                        side: const BorderSide(color: Colors.black),
+                      ),
                       child: Text(context.l10n.retry),
                     ),
                     if (onEnterAnyway != null) ...[
                       const SizedBox(width: 8),
                       TextButton(
                         onPressed: onEnterAnyway,
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.black,
+                        ),
                         child: Text(context.l10n.enterAnyway),
                       ),
                     ],
