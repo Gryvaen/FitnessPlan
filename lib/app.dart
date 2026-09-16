@@ -302,8 +302,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           final mealType = MealType.tryParse(
             state.uri.queryParameters['mealType'],
           );
+          // Default true: after add (incl. grams save) open 饮食记录.
+          // Daily meals passes openDayMealsAfterSearchAdd=0 so pop returns
+          // to the existing day page.
           final openDayMealsAfterSearchAdd =
-              state.uri.queryParameters['openDayMealsAfterSearchAdd'] == '1';
+              state.uri.queryParameters['openDayMealsAfterSearchAdd'] != '0';
           return LogMealPage(
             initialFoodId: id,
             initialMealType: mealType,

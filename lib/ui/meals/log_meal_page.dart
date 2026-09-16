@@ -18,7 +18,10 @@ class LogMealPage extends ConsumerStatefulWidget {
     super.key,
     this.initialFoodId,
     this.initialMealType,
-    this.openDayMealsAfterSearchAdd = false,
+    /// When true (default), leave 记一笔 by opening 饮食记录. Set false only
+    /// when 记一笔 was pushed from [DailyMealsPage] so a plain pop returns
+    /// there without stacking a second copy.
+    this.openDayMealsAfterSearchAdd = true,
   });
 
   final int? initialFoodId;
@@ -120,11 +123,9 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         .saveMealDefaults(mealType: _mealType, grams: _grams);
   }
 
-  /// Leaves 记一笔 after a successful add: replaces it with the full daily
-  /// meals page when this flow started from Today's "+" (so the user lands
-  /// on 饮食记录 the same way regardless of which add path they took —
-  /// search, custom food, or picking a food and saving grams directly),
-  /// otherwise just pops back to whatever pushed 记一笔.
+  /// Leaves 记一笔 after a successful add (search / custom / grams save /
+  /// preset): land on 饮食记录. From Today's "+" that means replacing 记一笔
+  /// with the day page; from 饮食记录 itself just pop.
   void _finishAfterAdd() {
     unfocusForNavigation();
     final day = ref.read(selectedDayProvider);

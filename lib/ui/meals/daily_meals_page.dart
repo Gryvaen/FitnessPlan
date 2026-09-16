@@ -110,7 +110,8 @@ class DailyMealsPage extends ConsumerWidget {
                       onPressed: () {
                         unfocusForNavigation();
                         context.push(
-                          '/log-meal?mealType=${MealType.suggestedFor(DateTime.now()).name}',
+                          '/log-meal?mealType=${MealType.suggestedFor(DateTime.now()).name}'
+                          '&openDayMealsAfterSearchAdd=0',
                         );
                       },
                     ),
@@ -388,7 +389,9 @@ class _MealTypeSection extends ConsumerWidget {
             icon: const Icon(Icons.add, size: 18),
             onPressed: () {
               unfocusForNavigation();
-              context.push('/log-meal?mealType=${type.name}');
+              context.push(
+                '/log-meal?mealType=${type.name}&openDayMealsAfterSearchAdd=0',
+              );
             },
           ),
         if (showMenu)
@@ -454,7 +457,10 @@ class _MealTypeSection extends ConsumerWidget {
                   child: TextButton.icon(
                     onPressed: () {
                       unfocusForNavigation();
-                      context.push('/log-meal?mealType=${type.name}');
+                      context.push(
+                        '/log-meal?mealType=${type.name}'
+                        '&openDayMealsAfterSearchAdd=0',
+                      );
                     },
                     icon: const Icon(Icons.add, size: 18),
                     label: Text(l10n.addMealNamed(type.label(l10n))),
