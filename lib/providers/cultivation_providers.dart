@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/repositories/cultivation_repository.dart';
 import '../data/repositories/workout_repository.dart';
+import '../data/services/steps_sync_service.dart';
 import '../domain/calendar_day.dart';
 import '../domain/cultivation.dart';
 import '../domain/cut_cultivation.dart';
@@ -63,11 +64,21 @@ final cultivationEligibleProvider = Provider<bool>((ref) {
   return profile?.goal == FitnessGoal.cut;
 });
 
-/// 今日步数（独立于「记录」页当前浏览到的日期，恒为本地今天）。
-final cultivationStepsTodayProvider = StreamProvider<int>((ref) {
+/// DB row for local today (re-subscribes after each sync so the calendar day
+/// does not stay stuck on yesterday if the provider outlives midnight).
+final _storedStepsTodayProvider = StreamProvider<int>((ref) {
+  ref.watch(stepsSyncProvider);
   return ref
       .watch(stepRepositoryProvider)
       .watchStepsForDay(CalendarDay.todayLocal());
+});
+
+/// 今日步数（恒为本地今天）。未成功同步（权限/失败/空读）时按 0，避免把
+/// 库里残留的昨日总量当成今日修行贡献。
+final cultivationStepsTodayProvider = Provider<int>((ref) {
+  final status = ref.watch(stepsSyncStatusProvider);
+  if (status != StepsSyncStatus.connected) return 0;
+  return ref.watch(_storedStepsTodayProvider).value ?? 0;
 });
 
 /// 指定日期的饮食 kcal 贡献，仅当日记录餐次 ≥ 2 类时计入。
@@ -90,7 +101,7 @@ final cultivationDietKcalTodayProvider = Provider<double>((ref) {
 });
 
 final cultivationTodayKcalProvider = Provider<double>((ref) {
-  final steps = ref.watch(cultivationStepsTodayProvider).value ?? 0;
+  final steps = ref.watch(cultivationStepsTodayProvider);
   final dietKcal = ref.watch(cultivationDietKcalTodayProvider);
   return stepsToKcal(steps) + dietKcal;
 });
@@ -187,9 +198,7 @@ Future<List<CultivationDayRecord>> _buildCultivationDays({
     if (!allowedDays.contains(day)) continue;
 
     final steps = day == today
-        ? (ref.read(cultivationStepsTodayProvider).value ??
-              stepsByDay[day] ??
-              0)
+        ? ref.read(cultivationStepsTodayProvider)
         : (stepsByDay[day] ?? 0);
     final stepsKcal = stepsToKcal(steps);
 

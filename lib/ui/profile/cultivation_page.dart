@@ -67,7 +67,7 @@ class _CultivationHomeState extends ConsumerState<_CultivationHome> {
     final l10n = context.l10n;
     final progress = ref.watch(cultivationProgressProvider);
     final stepsKcal = stepsToKcal(
-      ref.watch(cultivationStepsTodayProvider).value ?? 0,
+      ref.watch(cultivationStepsTodayProvider),
     );
     final dietKcal = ref.watch(cultivationDietKcalTodayProvider);
 

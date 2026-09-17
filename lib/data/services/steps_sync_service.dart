@@ -195,14 +195,9 @@ class StepsSyncService {
       if (sensorToday != null && sensorToday > todayFinal) {
         todayFinal = sensorToday;
       }
-      // Both live sources came back empty — a later sensor read can regress to
-      // 0 after a reboot / OEM midnight counter reset, and some OEM Health
-      // Connect builds briefly return 0. A day's total never drops, so keep
-      // what we already had rather than overwriting it with 0.
-      if (todayFinal == 0) {
-        final storedToday = await _repo.stepsForDay(today);
-        if (storedToday > 0) todayFinal = storedToday;
-      }
+      // Trust live readings including 0. Keeping a previous DB total when
+      // Health/sensor report 0 made "today" look like yesterday after a
+      // midnight reset or a failed sync, while the phone already showed 0.
       await _repo.setStepsForDay(today, todayFinal);
 
       if (authorized &&
