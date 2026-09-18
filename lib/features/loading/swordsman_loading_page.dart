@@ -29,9 +29,9 @@ class SwordsmanLoadingPage extends StatefulWidget {
 class _SwordsmanLoadingPageState extends State<SwordsmanLoadingPage>
     with TickerProviderStateMixin, WidgetsBindingObserver {
   static const _assets = <String>[
-    'assets/loading/swordsman.png',
-    'assets/loading/flying_sword.png',
-    'assets/loading/ink_slash.png',
+    'assets/splash/paper.webp',
+    'assets/splash/landscape.png',
+    'assets/splash/sword.webp',
   ];
 
   late final AnimationController _scene;
@@ -74,7 +74,7 @@ class _SwordsmanLoadingPageState extends State<SwordsmanLoadingPage>
     );
     if (!mounted) return;
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
-    if (!reduceMotion) _scene.repeat();
+    if (!reduceMotion) _scene.forward();
     _prewarmTimer = Timer(SwordsmanLoadingConfig.prewarmDelay, () {
       if (mounted && !_finishing) widget.onPrewarm?.call();
     });
@@ -124,7 +124,7 @@ class _SwordsmanLoadingPageState extends State<SwordsmanLoadingPage>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (_finishing || MediaQuery.disableAnimationsOf(context)) return;
     if (state == AppLifecycleState.resumed) {
-      _scene.repeat();
+      if (!_scene.isCompleted) _scene.forward();
     } else if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive ||
         state == AppLifecycleState.detached ||
@@ -153,29 +153,27 @@ class _SwordsmanLoadingPageState extends State<SwordsmanLoadingPage>
         onTap: _error == null ? _skip : null,
         child: FadeTransition(
           opacity: _exitOpacity,
-          child: SafeArea(
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                const ColoredBox(color: SwordsmanLoadingConfig.background),
-                RepaintBoundary(
-                  child: SwordsmanLoadingScene(
-                    animation: _scene,
-                    reduceMotion: reduceMotion,
-                  ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              const ColoredBox(color: SwordsmanLoadingConfig.background),
+              RepaintBoundary(
+                child: SwordsmanLoadingScene(
+                  animation: _scene,
+                  reduceMotion: reduceMotion,
                 ),
-                Positioned(
-                  left: 24,
-                  right: 24,
-                  bottom: 24,
-                  child: _LoadingStatus(
-                    error: _error,
-                    onRetry: () => _initialize(reduceMotion: reduceMotion),
-                    onEnterAnyway: widget.onEnterAnyway,
-                  ),
+              ),
+              Positioned(
+                left: 24,
+                right: 24,
+                bottom: MediaQuery.paddingOf(context).bottom + 24,
+                child: _LoadingStatus(
+                  error: _error,
+                  onRetry: () => _initialize(reduceMotion: reduceMotion),
+                  onEnterAnyway: widget.onEnterAnyway,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

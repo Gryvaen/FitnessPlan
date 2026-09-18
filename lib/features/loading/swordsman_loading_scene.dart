@@ -1,10 +1,12 @@
-import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
 
-import 'ink_particle_painter.dart';
-import 'loading_config.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import 'river_distortion_painter.dart';
 import 'swordsman_animation.dart';
 
-class SwordsmanLoadingScene extends StatelessWidget {
+class SwordsmanLoadingScene extends StatefulWidget {
   const SwordsmanLoadingScene({
     super.key,
     required this.animation,
@@ -15,127 +17,117 @@ class SwordsmanLoadingScene extends StatelessWidget {
   final bool reduceMotion;
 
   @override
+  State<SwordsmanLoadingScene> createState() => _SwordsmanLoadingSceneState();
+}
+
+class _SwordsmanLoadingSceneState extends State<SwordsmanLoadingScene> {
+  late final Future<(ui.FragmentProgram, ui.Image)> _riverResources;
+  ui.Image? _decodedLandscape;
+
+  @override
+  void initState() {
+    super.initState();
+    _riverResources = _loadRiverResources();
+  }
+
+  Future<(ui.FragmentProgram, ui.Image)> _loadRiverResources() async {
+    final results = await Future.wait<Object>([
+      ui.FragmentProgram.fromAsset('shaders/river_distortion.frag'),
+      rootBundle.load('assets/splash/landscape.png'),
+    ]);
+    final program = results[0] as ui.FragmentProgram;
+    final data = results[1] as ByteData;
+    final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
+    final frame = await codec.getNextFrame();
+    codec.dispose();
+    _decodedLandscape = frame.image;
+    return (program, frame.image);
+  }
+
+  @override
+  void dispose() {
+    _decodedLandscape?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = constraints.biggest;
         final pixelRatio = MediaQuery.devicePixelRatioOf(context);
-        final characterHeight =
-            (size.height * SwordsmanLoadingConfig.characterHeightFactor).clamp(
-              0.0,
-              size.width *
-                  1.63 *
-                  SwordsmanLoadingConfig.characterMaxWidthFactor,
-            );
-        final character = Image.asset(
-          'assets/loading/swordsman.png',
-          height: characterHeight,
-          fit: BoxFit.contain,
-          filterQuality: FilterQuality.medium,
+        final targetWidth = (size.width * pixelRatio).round().clamp(1, 941);
+        final targetHeight = (size.height * pixelRatio).round().clamp(1, 1672);
+
+        final paper = Image.asset(
+          'assets/splash/paper.webp',
+          fit: BoxFit.cover,
           gaplessPlayback: true,
-          cacheHeight: (characterHeight * pixelRatio).round().clamp(1, 1602),
-        );
-        final flyingSword = Image.asset(
-          'assets/loading/flying_sword.png',
-          width: size.width * SwordsmanLoadingConfig.flyingSwordWidthFactor,
-          fit: BoxFit.contain,
           filterQuality: FilterQuality.medium,
-          gaplessPlayback: true,
-          cacheWidth:
-              (size.width *
-                      SwordsmanLoadingConfig.flyingSwordWidthFactor *
-                      pixelRatio)
-                  .round()
-                  .clamp(1, 2172),
-        );
-        final slash = Image.asset(
-          'assets/loading/ink_slash.png',
-          width: size.width * SwordsmanLoadingConfig.inkSlashWidthFactor,
-          fit: BoxFit.contain,
-          filterQuality: FilterQuality.medium,
-          gaplessPlayback: true,
-          cacheWidth:
-              (size.width *
-                      SwordsmanLoadingConfig.inkSlashWidthFactor *
-                      pixelRatio)
-                  .round()
-                  .clamp(1, 2172),
+          cacheWidth: targetWidth,
+          cacheHeight: targetHeight,
         );
 
         return AnimatedBuilder(
-          animation: animation,
+          animation: widget.animation,
           builder: (context, _) {
             final frame = SwordsmanFrame.at(
-              animation.value,
-              reduceMotion: reduceMotion,
+              widget.animation.value,
+              reduceMotion: widget.reduceMotion,
             );
-            final characterCenter = Offset(
-              size.width * SwordsmanLoadingConfig.characterCenter.dx,
-              size.height * SwordsmanLoadingConfig.characterCenter.dy,
-            );
-            final swordCenter = Offset(
-              frame.swordPosition.dx * size.width,
-              frame.swordPosition.dy * size.height,
-            );
-
+            final swordHeight = size.height * .42;
+            final swordWidth = swordHeight * (635 / 2069);
+            final swordTop = frame.swordY * size.height - swordHeight * .16;
             return Stack(
               fit: StackFit.expand,
               clipBehavior: Clip.hardEdge,
               children: [
-                CustomPaint(painter: const _InkMistPainter()),
-                Positioned(
-                  left: characterCenter.dx - size.width * .39,
-                  top:
-                      characterCenter.dy -
-                      characterHeight * .46 +
-                      frame.characterDy,
-                  width: size.width * .78,
-                  height: characterHeight,
-                  child: Transform.rotate(
-                    angle: frame.characterRotation,
-                    alignment: const Alignment(.2, .4),
-                    child: Transform.scale(
-                      scale: frame.characterScale,
-                      child: RepaintBoundary(child: character),
-                    ),
+                paper,
+                if (!widget.reduceMotion)
+                  FutureBuilder<(ui.FragmentProgram, ui.Image)>(
+                    future: _riverResources,
+                    builder: (context, snapshot) {
+                      final resources = snapshot.data;
+                      if (resources == null) {
+                        return Image.asset(
+                          'assets/splash/landscape.png',
+                          fit: BoxFit.cover,
+                          gaplessPlayback: true,
+                          filterQuality: FilterQuality.medium,
+                          cacheWidth: targetWidth,
+                          cacheHeight: targetHeight,
+                        );
+                      }
+                      return CustomPaint(
+                        painter: RiverDistortionPainter(
+                          program: resources.$1,
+                          image: resources.$2,
+                          progress: frame.revealProgress,
+                          time: widget.animation.value,
+                        ),
+                      );
+                    },
                   ),
-                ),
                 if (frame.swordOpacity > 0)
                   Positioned(
-                    left: swordCenter.dx - size.width * .17,
-                    top: swordCenter.dy - size.width * .057,
-                    width: size.width * .34,
-                    height: size.width * .114,
+                    left: (size.width - swordWidth) / 2,
+                    top: swordTop,
+                    width: swordWidth,
+                    height: swordHeight,
                     child: Opacity(
                       opacity: frame.swordOpacity,
-                      child: Transform.rotate(
-                        angle: frame.swordRotation,
-                        child: RepaintBoundary(child: flyingSword),
+                      child: Image.asset(
+                        'assets/splash/sword.webp',
+                        fit: BoxFit.contain,
+                        gaplessPlayback: true,
+                        filterQuality: FilterQuality.high,
+                        cacheHeight: (swordHeight * pixelRatio).round().clamp(
+                          1,
+                          2069,
+                        ),
                       ),
                     ),
                   ),
-                if (frame.slashOpacity > 0)
-                  Positioned(
-                    left: size.width * (-.04 + frame.slashDx),
-                    top: size.height * .42,
-                    width: size.width * 1.08,
-                    child: Opacity(
-                      opacity: frame.slashOpacity,
-                      child: Transform.scale(
-                        scaleX: frame.slashScaleX,
-                        alignment: Alignment.centerLeft,
-                        child: RepaintBoundary(child: slash),
-                      ),
-                    ),
-                  ),
-                IgnorePointer(
-                  child: CustomPaint(
-                    painter: InkParticlePainter(
-                      progress: frame.particleProgress,
-                      strength: frame.particleStrength,
-                    ),
-                  ),
-                ),
               ],
             );
           },
@@ -143,35 +135,4 @@ class SwordsmanLoadingScene extends StatelessWidget {
       },
     );
   }
-}
-
-class _InkMistPainter extends CustomPainter {
-  const _InkMistPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = SwordsmanLoadingConfig.mist
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
-    final horizon = size.height * .72;
-    final path = Path()
-      ..moveTo(0, horizon)
-      ..quadraticBezierTo(
-        size.width * .18,
-        horizon - 13,
-        size.width * .37,
-        horizon - 4,
-      )
-      ..quadraticBezierTo(
-        size.width * .63,
-        horizon + 9,
-        size.width,
-        horizon - 2,
-      );
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _InkMistPainter oldDelegate) => false;
 }

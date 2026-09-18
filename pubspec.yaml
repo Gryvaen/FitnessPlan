@@ -47,9 +47,9 @@ flutter:
   assets:
     - assets/food_seed.json
     - assets/cultivation/
-    - assets/loading/swordsman.png
-    - assets/loading/flying_sword.png
-    - assets/loading/ink_slash.png
+    - assets/splash/
+  shaders:
+    - shaders/river_distortion.frag
   fonts:
     - family: LXGWWenKai
       fonts:

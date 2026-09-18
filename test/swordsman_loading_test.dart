@@ -4,18 +4,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('timeline shows ink slash only during the strike window', () {
-    expect(SwordsmanFrame.at(.67, reduceMotion: false).slashOpacity, 0);
-    expect(SwordsmanFrame.at(.72, reduceMotion: false).slashOpacity, 1);
-    expect(SwordsmanFrame.at(.77, reduceMotion: false).slashOpacity, 0);
+  test('timeline dissolves the landscape from bottom to top', () {
+    final beginning = SwordsmanFrame.at(.05, reduceMotion: false);
+    final middle = SwordsmanFrame.at(.45, reduceMotion: false);
+    final ending = SwordsmanFrame.at(.9, reduceMotion: false);
+    expect(beginning.revealProgress, lessThan(middle.revealProgress));
+    expect(middle.revealProgress, lessThan(ending.revealProgress));
+    expect(ending.revealProgress, 1);
   });
 
-  test('flying sword follows its path tangent', () {
-    final entering = SwordsmanFrame.at(.25, reduceMotion: false);
+  test('sword travels upward and fades before the final frame', () {
+    final entering = SwordsmanFrame.at(.15, reduceMotion: false);
     final passing = SwordsmanFrame.at(.60, reduceMotion: false);
+    final exited = SwordsmanFrame.at(.84, reduceMotion: false);
+    final finished = SwordsmanFrame.at(1, reduceMotion: false);
+    expect(entering.swordY, greaterThan(passing.swordY));
     expect(entering.swordOpacity, greaterThan(0));
     expect(passing.swordOpacity, greaterThan(0));
-    expect(entering.swordRotation, isNot(equals(passing.swordRotation)));
+    expect(exited.swordY, lessThan(-.35));
+    expect(exited.swordOpacity, 1);
+    expect(finished.swordOpacity, 0);
+    expect(finished.revealProgress, 1);
   });
 
   testWidgets('scene lays out on narrow and tall phones', (tester) async {
@@ -33,7 +42,7 @@ void main() {
         ),
       );
       expect(tester.takeException(), isNull);
-      expect(find.byType(Image), findsNWidgets(3));
+      expect(find.byType(Image), findsAtLeastNWidgets(2));
     }
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
