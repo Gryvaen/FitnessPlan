@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,10 @@ import 'l10n/app_localizations.dart';
 import 'providers/app_providers.dart';
 import 'ui/theme/app_theme.dart';
 import 'ui/tools/workout_reminder_notifications.dart';
+
+/// Skip the real bootstrap splash and open the in-app loading lab.
+/// Usage: `flutter run --profile --dart-define=LOADING_LAB=true`
+const _loadingLab = bool.fromEnvironment('LOADING_LAB');
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,7 +39,7 @@ class _Bootstrap extends ConsumerStatefulWidget {
 
 class _BootstrapState extends ConsumerState<_Bootstrap> {
   /// The loading page is done (finished, skipped or bypassed).
-  bool _ready = false;
+  bool _ready = !kReleaseMode && _loadingLab;
 
   /// Build the real app behind the loading page so the hand-off is instant.
   bool _prewarm = false;

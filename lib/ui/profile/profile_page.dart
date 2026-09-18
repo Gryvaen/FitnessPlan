@@ -418,10 +418,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       Text(l10n.me, style: theme.textTheme.headlineSmall),
                       if (versionLabel != null) ...[
                         const SizedBox(width: 8),
-                        Text(
-                          'v$versionLabel',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                        GestureDetector(
+                          onLongPress: kReleaseMode
+                              ? null
+                              : () => context.push('/debug/swordsman-loading'),
+                          child: Text(
+                            'v$versionLabel',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ),
                       ],

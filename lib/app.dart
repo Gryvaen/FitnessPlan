@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'domain/diet_strategy.dart';
+import 'features/loading/swordsman_loading_lab_page.dart';
 import 'l10n/app_localizations_ext.dart';
 import 'providers/app_providers.dart';
 import 'ui/foods/custom_food_edit_page.dart';
@@ -41,6 +43,10 @@ import 'ui/tools/reminders_hub_page.dart';
 import 'ui/tools/rest_timer_page.dart';
 import 'ui/tools/tools_hub_page.dart';
 
+/// Opens the swordsman splash lab as the first route (debug/profile only).
+/// Usage: `flutter run --profile --dart-define=LOADING_LAB=true`
+const _loadingLab = bool.fromEnvironment('LOADING_LAB');
+
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
   // Only the null <-> non-null transition matters to `redirect` below; a
@@ -52,14 +58,18 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.onDispose(refresh.dispose);
 
   return GoRouter(
-    initialLocation: '/today',
+    initialLocation: (!kReleaseMode && _loadingLab)
+        ? '/debug/swordsman-loading'
+        : '/today',
     refreshListenable: refresh,
     redirect: (context, state) {
+      final loc = state.matchedLocation;
+      if (!kReleaseMode && loc.startsWith('/debug/')) return null;
       final profile = ref.read(profileProvider);
-      final onboarding = state.matchedLocation == '/onboarding';
+      final onboarding = loc == '/onboarding';
       if (profile == null && !onboarding) return '/onboarding';
       if (profile != null && onboarding) return '/today';
-      if (state.matchedLocation == '/weight') return '/records';
+      if (loc == '/weight') return '/records';
       return null;
     },
     routes: [
@@ -67,6 +77,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/onboarding',
         builder: (context, state) => const OnboardingPage(),
       ),
+      if (!kReleaseMode)
+        GoRoute(
+          path: '/debug/swordsman-loading',
+          builder: (context, state) => const SwordsmanLoadingLabPage(),
+        ),
       StatefulShellRoute(
         builder: (context, state, navigationShell) {
           return MainShell(navigationShell: navigationShell);
