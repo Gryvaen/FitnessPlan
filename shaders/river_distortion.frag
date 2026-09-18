@@ -85,7 +85,14 @@ void main() {
   // swordY*H - swordHeight*.16). If those constants change, this formula
   // must be updated to match. Evaluated at rowCrossedAtProgress (not the
   // live uProgress) so it stays fixed per row.
-  float tailGapAtCross = clamp(0.4328 - 0.54 * rowCrossedAtProgress, 0.0, 0.5);
+  // Distance (in uv.y units) between the blade line and where the sword's
+  // grip/hilt begins (not the full sprite down to the tassel tip) at the
+  // moment this row was crossed. Derived the same way as before but using
+  // the hilt-start point (~58% down assets/splash/sword.webp, i.e.
+  // swordY + swordHeight*.42 instead of the full-sprite swordY +
+  // swordHeight*.84) - the tassel below the grip is a thin decorative cord,
+  // not part of what needs to have "passed" before disturbance can begin.
+  float tailGapAtCross = clamp(0.2564 - 0.54 * rowCrossedAtProgress, 0.0, 0.5);
   // Dead zone = full sword length past the blade line, plus a small extra
   // buffer, so disturbance starts a beat after the tail has cleared a row -
   // not the instant the tip appears there.
@@ -133,7 +140,15 @@ void main() {
   // closest to - strongest right at the center, fading to nothing once a
   // sample is already near the bank - selling the "squeezed outward" motion
   // rather than just a static concentration gradient.
-  float squeezePush = sign(uv.x - 0.5) * (1.0 - edgeConcentration) * 0.02;
+  // Fade the push to zero in a thin band hugging the centerline instead of
+  // flipping at full strength the instant uv.x crosses 0.5 - sign(uv.x-0.5)
+  // jumps from -1 to +1 right where (1-edgeConcentration) is at its max,
+  // so without this fade the two sides get yanked apart at full force at
+  // exactly the same point, reading as a visible vertical seam.
+  float distFromCenterForPush = abs(uv.x - 0.5);
+  float centerFade = smoothstep(0.0, 0.05, distFromCenterForPush);
+  float squeezePush = sign(uv.x - 0.5) * centerFade
+      * (1.0 - edgeConcentration) * 0.02;
   float wobbleX = flowEase * (
       (flowA - 0.5) * (0.05 + outward * 0.05)
           + sin(uv.y * 42.0 + flowB * 8.0) * 0.012

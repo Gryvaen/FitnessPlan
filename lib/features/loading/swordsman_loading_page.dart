@@ -88,7 +88,7 @@ class _SwordsmanLoadingPageState extends State<SwordsmanLoadingPage>
       final minimum = Future<void>.delayed(
         reduceMotion
             ? SwordsmanLoadingConfig.reducedMotionDuration
-            : SwordsmanLoadingConfig.cycleDuration,
+            : SwordsmanLoadingConfig.minimumDisplayDuration,
       );
       await Future.wait<void>([
         widget.onInitialize?.call() ?? Future<void>.value(),
@@ -115,8 +115,12 @@ class _SwordsmanLoadingPageState extends State<SwordsmanLoadingPage>
     if (_finishing) return;
     _finishing = true;
     _prewarmTimer?.cancel();
-    await _exit.forward();
+    // The scene is already fully frozen by the time minimumDisplayDuration
+    // has elapsed, so stop ticking it before the exit fade rather than
+    // after - no need to keep re-invoking the shader every frame during
+    // the 420ms fade for output that no longer changes.
     _scene.stop();
+    await _exit.forward();
     if (mounted) widget.onFinished();
   }
 
@@ -146,13 +150,13 @@ class _SwordsmanLoadingPageState extends State<SwordsmanLoadingPage>
   @override
   Widget build(BuildContext context) {
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
-    return Scaffold(
-      backgroundColor: SwordsmanLoadingConfig.background,
-      body: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: _error == null ? _skip : null,
-        child: FadeTransition(
-          opacity: _exitOpacity,
+    return FadeTransition(
+      opacity: _exitOpacity,
+      child: Scaffold(
+        backgroundColor: SwordsmanLoadingConfig.background,
+        body: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _error == null ? _skip : null,
           child: Stack(
             fit: StackFit.expand,
             children: [
