@@ -1,6 +1,7 @@
 # Docs
 /docs/copyright/
-
+# Design
+/design-handoff/product-redesign-v3/debug
 # Miscellaneous
 *.class
 *.log
