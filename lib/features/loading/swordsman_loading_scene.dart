@@ -33,7 +33,7 @@ class _SwordsmanLoadingSceneState extends State<SwordsmanLoadingScene> {
   Future<(ui.FragmentProgram, ui.Image)> _loadRiverResources() async {
     final results = await Future.wait<Object>([
       ui.FragmentProgram.fromAsset('shaders/river_distortion.frag'),
-      rootBundle.load('assets/splash/landscape.png'),
+      rootBundle.load('assets/splash/landscape.webp'),
     ]);
     final program = results[0] as ui.FragmentProgram;
     final data = results[1] as ByteData;
@@ -90,7 +90,7 @@ class _SwordsmanLoadingSceneState extends State<SwordsmanLoadingScene> {
                       final resources = snapshot.data;
                       if (resources == null) {
                         return Image.asset(
-                          'assets/splash/landscape.png',
+                          'assets/splash/landscape.webp',
                           fit: BoxFit.cover,
                           gaplessPlayback: true,
                           filterQuality: FilterQuality.medium,

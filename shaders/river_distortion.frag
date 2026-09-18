@@ -66,6 +66,13 @@ void main() {
   float rightOut = (uv.x - 0.5) / max(rightBank - 0.5, 0.001);
   float outward = clamp(max(leftOut, rightOut), 0.0, 1.0);
 
+  // Gentle concentration curve across the channel width: the centerline
+  // (outward = 0) stays a bit cleaner than the banks (outward = 1), but the
+  // transition is gradual - a steeper curve here reads as two separate dark
+  // streams split by a bright seam rather than one river with a lighter
+  // current down the middle.
+  float edgeConcentration = pow(outward, 1.0);
+
   // The uProgress value at which the blade line first reached this row
   // (bladeY = 1 - uProgress equals uv.y). Fixed per pixel, independent of
   // the current frame's uProgress.
@@ -122,9 +129,15 @@ void main() {
   // Wobble amplitude is also gated by flowEase, so no horizontal jitter or
   // vertical micro-turbulence appears until a row has actually been left
   // behind by the blade for a beat.
+  // Pushes samples near the centerline out toward whichever bank they're
+  // closest to - strongest right at the center, fading to nothing once a
+  // sample is already near the bank - selling the "squeezed outward" motion
+  // rather than just a static concentration gradient.
+  float squeezePush = sign(uv.x - 0.5) * (1.0 - edgeConcentration) * 0.02;
   float wobbleX = flowEase * (
       (flowA - 0.5) * (0.05 + outward * 0.05)
           + sin(uv.y * 42.0 + flowB * 8.0) * 0.012
+          + squeezePush
   );
   float wobbleY = flowEase * ((flowB - flowC) * (0.03 + outward * 0.02));
   float verticalPull = streak + continuousDrift + wobbleY;
@@ -160,7 +173,7 @@ void main() {
   );
   float darkBand = 1.0 - smoothstep(0.24, 0.54, bandField);
   float pooling = disturbance * flowEase * mix(0.18, 1.0, darkBand)
-      * mix(0.34, 1.0, outward);
+      * mix(0.32, 1.0, edgeConcentration);
   vec3 color = mix(texture(uTexture, sourceUv).rgb, moved.rgb, disturbance * 0.92);
   color = mix(color, pooledPigment, pooling * 0.91);
 
@@ -181,7 +194,7 @@ void main() {
   // Once the sword has crossed a row, the whole disturbed region keeps the
   // same fluid conversion strength. This is a persistent transformed painting,
   // not a temporary effect attached to the blade front.
-  float fluidAmount = disturbance * flowEase * 0.92;
+  float fluidAmount = disturbance * flowEase * mix(0.38, 0.95, edgeConcentration);
   vec3 concentratedInk = pooledPigment * mix(0.48, 0.22, inkCell);
   color = mix(color, concentratedInk, inkCell * fluidAmount * 0.94);
 

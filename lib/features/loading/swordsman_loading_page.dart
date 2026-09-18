@@ -30,7 +30,7 @@ class _SwordsmanLoadingPageState extends State<SwordsmanLoadingPage>
     with TickerProviderStateMixin, WidgetsBindingObserver {
   static const _assets = <String>[
     'assets/splash/paper.webp',
-    'assets/splash/landscape.png',
+    'assets/splash/landscape.webp',
     'assets/splash/sword.webp',
   ];
 
