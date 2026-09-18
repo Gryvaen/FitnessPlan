@@ -3,7 +3,6 @@
 uniform vec2 uSize;
 uniform vec2 uImageSize;
 uniform float uProgress;
-uniform float uTime;
 uniform sampler2D uTexture;
 out vec4 fragColor;
 
@@ -67,39 +66,100 @@ void main() {
   float rightOut = (uv.x - 0.5) / max(rightBank - 0.5, 0.001);
   float outward = clamp(max(leftOut, rightOut), 0.0, 1.0);
 
-  // Curl-like displacement transports actual pigment from the source image.
-  // No synthetic black marks are drawn.
-  float flowA = fbm(vec2(uv.y * 8.0 - uTime * 0.16, uv.x * 9.0));
-  float flowB = fbm(vec2(uv.y * 17.0 + 11.0, uv.x * 13.0 + uTime * 0.12));
-  float flowC = fbm(vec2(uv.y * 31.0, uv.x * 23.0 - uTime * 0.10));
-  float direction = (flowA - 0.5) * 2.0;
-  vec2 displacement = vec2(
-    direction * (0.014 + outward * 0.047)
-        + sin(uv.y * 42.0 + flowB * 8.0) * 0.011,
-    (flowB - flowC) * (0.008 + outward * 0.023)
-  ) * disturbance;
+  // The uProgress value at which the blade line first reached this row
+  // (bladeY = 1 - uProgress equals uv.y). Fixed per pixel, independent of
+  // the current frame's uProgress.
+  float rowCrossedAtProgress = 1.0 - uv.y;
+  // Distance (in uv.y units) between the blade line and the sword's tail
+  // (hilt end) at the moment this row was crossed, derived from the same
+  // constants as SwordsmanFrame.swordY (swordsman_animation.dart:39, lerp
+  // 1.08 -> -.46) and the sword sprite's height/offset in
+  // swordsman_loading_scene.dart (swordHeight = .42 * H, drawn from
+  // swordY*H - swordHeight*.16). If those constants change, this formula
+  // must be updated to match. Evaluated at rowCrossedAtProgress (not the
+  // live uProgress) so it stays fixed per row.
+  float tailGapAtCross = clamp(0.4328 - 0.54 * rowCrossedAtProgress, 0.0, 0.5);
+  // Dead zone = full sword length past the blade line, plus a small extra
+  // buffer, so disturbance starts a beat after the tail has cleared a row -
+  // not the instant the tip appears there.
+  float baseDelay = tailGapAtCross + 0.02;
+  float flowStartProgress = rowCrossedAtProgress + baseDelay;
 
-  vec2 displacedUv = clamp(sourceUv + displacement, vec2(0.001), vec2(0.999));
+  // Once a row has been flowing for this many uProgress units, it freezes
+  // solid instead of animating for the rest of the cycle. Empirical value,
+  // tune during QA.
+  const float settleWindow = 0.26;
+  float freezeAtProgress = flowStartProgress + settleWindow;
+
+  // The freeze itself: everything downstream reads effectiveProgress
+  // instead of uProgress, so once the live uProgress passes this row's
+  // freeze point, effectiveProgress stops advancing and the pixel output
+  // becomes a fixed function of uv alone - a true per-row freeze, no
+  // feedback texture or extra uniform needed.
+  float effectiveProgress = min(uProgress, freezeAtProgress);
+
+  float crossProgress = clamp(effectiveProgress - rowCrossedAtProgress, 0.0, 1.0);
+  float delayedCross = clamp(
+      (crossProgress - baseDelay) / max(1.0 - baseDelay, 0.001), 0.0, 1.0);
+  float flowEase = 1.0 - exp(-3.0 * delayedCross);
+  const float streakMax = 0.40;
+  // Core channel (river) is carried harder than the wide turbulence fringe.
+  float streak = flowEase * streakMax * mix(0.55, 1.0, river);
+  // Small perpetual creep while still active, driven by effectiveProgress
+  // (not flowEase's plateau) so it keeps the current from feeling frozen
+  // during the active window - and, since it reads effectiveProgress, it
+  // stops advancing at exactly the same moment the row freezes.
+  float continuousDrift = disturbance * flowEase * effectiveProgress * 0.02;
+
+  // Turbulence fields drift with effectiveProgress (not wall-clock uTime)
+  // on both axes, so the wobble pattern visibly travels while active and
+  // - because effectiveProgress is what freezes per row - locks in place
+  // exactly when that row freezes, with no separate uniform needed.
+  float flowA = fbm(vec2(uv.x * 9.0 - effectiveProgress * 0.10, uv.y * 8.0 - effectiveProgress * 0.22));
+  float flowB = fbm(vec2(uv.x * 13.0 + effectiveProgress * 0.16, uv.y * 17.0 - effectiveProgress * 0.28));
+  float flowC = fbm(vec2(uv.x * 23.0 - effectiveProgress * 0.12, uv.y * 31.0 - effectiveProgress * 0.18));
+
+  // Wobble amplitude is also gated by flowEase, so no horizontal jitter or
+  // vertical micro-turbulence appears until a row has actually been left
+  // behind by the blade for a beat.
+  float wobbleX = flowEase * (
+      (flowA - 0.5) * (0.05 + outward * 0.05)
+          + sin(uv.y * 42.0 + flowB * 8.0) * 0.012
+  );
+  float wobbleY = flowEase * ((flowB - flowC) * (0.03 + outward * 0.02));
+  float verticalPull = streak + continuousDrift + wobbleY;
+
+  // Positive y offset: sample the source from further down (larger uv.y),
+  // so this pixel shows pigment carried up from below - matching the
+  // sword's bottom-to-top travel direction.
+  vec2 baseDisplacement = vec2(wobbleX, verticalPull) * disturbance;
+
+  vec2 displacedUv = clamp(sourceUv + baseDisplacement, vec2(0.001), vec2(0.999));
   vec4 moved = texture(uTexture, displacedUv);
-  vec4 pullLeft = texture(uTexture, clamp(
-    displacedUv + vec2(-0.009 - outward * 0.018, 0.004),
+
+  // Two extra taps further along the same upward flow direction stand in for
+  // a directional motion streak; min() across taps still pools/darkens wet
+  // ink, but the pooling is now directional instead of symmetric left/right.
+  vec2 tapUv1 = clamp(
+    sourceUv + vec2(wobbleX * 0.6, streak * 0.33 + wobbleY),
     vec2(0.001), vec2(0.999)
-  ));
-  vec4 pullRight = texture(uTexture, clamp(
-    displacedUv + vec2(0.010 + outward * 0.020, -0.004),
+  );
+  vec2 tapUv2 = clamp(
+    sourceUv + vec2(wobbleX * 1.2, streak * 0.66 + wobbleY),
     vec2(0.001), vec2(0.999)
-  ));
+  );
+  vec4 tap1 = texture(uTexture, tapUv1);
+  vec4 tap2 = texture(uTexture, tapUv2);
 
   // Dark pigment is pooled from nearby real source pixels; min() mimics wet
   // ink collecting in eddies while retaining the source painting's texture.
-  vec3 pooledPigment = min(moved.rgb, min(pullLeft.rgb, pullRight.rgb));
+  vec3 pooledPigment = min(moved.rgb, min(tap1.rgb, tap2.rgb));
   float bandField = 0.5 + 0.5 * sin(
     uv.y * 83.0 + uv.x * 21.0
-        + fbm(vec2(uv.x * 17.0, uv.y * 29.0 + uTime * 0.08)) * 15.0
+        + fbm(vec2(uv.x * 17.0, uv.y * 29.0 + effectiveProgress * 0.08)) * 15.0
   );
   float darkBand = 1.0 - smoothstep(0.24, 0.54, bandField);
-  float paperBand = smoothstep(0.46, 0.78, bandField);
-  float pooling = disturbance * mix(0.18, 1.0, darkBand)
+  float pooling = disturbance * flowEase * mix(0.18, 1.0, darkBand)
       * mix(0.34, 1.0, outward);
   vec3 color = mix(texture(uTexture, sourceUv).rgb, moved.rgb, disturbance * 0.92);
   color = mix(color, pooledPigment, pooling * 0.91);
@@ -109,8 +169,8 @@ void main() {
   // shapes curl with the painting instead of looking painted on top.
   float pigmentLuma = dot(pooledPigment, vec3(0.299, 0.587, 0.114));
   float cellNoise = fbm(vec2(
-    uv.x * 24.0 + flowA * 5.0 - uTime * 0.20,
-    uv.y * 34.0 + flowB * 6.0 + uTime * 0.14
+    uv.x * 24.0 + flowA * 5.0 - effectiveProgress * 0.20,
+    uv.y * 34.0 + flowB * 6.0 - streak * 6.0
   ));
   float inkCell = 1.0 - smoothstep(
     0.36,
@@ -121,18 +181,11 @@ void main() {
   // Once the sword has crossed a row, the whole disturbed region keeps the
   // same fluid conversion strength. This is a persistent transformed painting,
   // not a temporary effect attached to the blade front.
-  float fluidAmount = disturbance * 0.92;
+  float fluidAmount = disturbance * flowEase * 0.92;
   vec3 concentratedInk = pooledPigment * mix(0.48, 0.22, inkCell);
   color = mix(color, concentratedInk, inkCell * fluidAmount * 0.94);
 
-  // Reveal the actual paper layer instead of producing a flat white color.
-  // Bright bands expose nearly all xuan-paper texture; dark bands retain the
-  // displaced pigment, especially towards the two outer banks.
-  float washNoise = fbm(vec2(uv.x * 19.0 + uTime * 0.06, uv.y * 25.0));
-  float paperCell = (1.0 - inkCell) * mix(0.58, 1.0, paperBand);
-  float wash = river * mix(0.92, 0.38, outward)
-      * mix(0.24, 1.0, paperCell)
-      * mix(0.76, 1.0, washNoise);
-  float alpha = 1.0 - wash;
-  fragColor = vec4(color, alpha);
+  // Always fully opaque: pixels are only ever displaced/blended among
+  // themselves, never faded to reveal the paper layer underneath.
+  fragColor = vec4(color, 1.0);
 }

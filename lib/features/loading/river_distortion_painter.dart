@@ -7,13 +7,11 @@ class RiverDistortionPainter extends CustomPainter {
     required this.program,
     required this.image,
     required this.progress,
-    required this.time,
   });
 
   final ui.FragmentProgram program;
   final ui.Image image;
   final double progress;
-  final double time;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -23,7 +21,6 @@ class RiverDistortionPainter extends CustomPainter {
       ..setFloat(2, image.width.toDouble())
       ..setFloat(3, image.height.toDouble())
       ..setFloat(4, progress)
-      ..setFloat(5, time)
       ..setImageSampler(0, image);
     canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
   }
@@ -31,7 +28,6 @@ class RiverDistortionPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant RiverDistortionPainter oldDelegate) =>
       progress != oldDelegate.progress ||
-      time != oldDelegate.time ||
       image != oldDelegate.image ||
       program != oldDelegate.program;
 }

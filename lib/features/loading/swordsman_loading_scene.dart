@@ -103,7 +103,6 @@ class _SwordsmanLoadingSceneState extends State<SwordsmanLoadingScene> {
                           program: resources.$1,
                           image: resources.$2,
                           progress: frame.revealProgress,
-                          time: widget.animation.value,
                         ),
                       );
                     },
