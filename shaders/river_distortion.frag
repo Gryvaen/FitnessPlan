@@ -88,7 +88,7 @@ void main() {
   // Distance (in uv.y units) between the blade line and where the sword's
   // grip/hilt begins (not the full sprite down to the tassel tip) at the
   // moment this row was crossed. Derived the same way as before but using
-  // the hilt-start point (~58% down assets/splash/sword.webp, i.e.
+  // the hilt-start point (~58% down assets/splash/sword-v4-clean.webp, i.e.
   // swordY + swordHeight*.42 instead of the full-sprite swordY +
   // swordHeight*.84) - the tassel below the grip is a thin decorative cord,
   // not part of what needs to have "passed" before disturbance can begin.
@@ -101,8 +101,9 @@ void main() {
 
   // Once a row has been flowing for this many uProgress units, it freezes
   // solid instead of animating for the rest of the cycle. Empirical value,
-  // tune during QA.
-  const float settleWindow = 0.26;
+  // tune during QA. Lowered from 0.26 so rows settle sooner instead of
+  // still visibly churning well after the sword has passed.
+  const float settleWindow = 0.14;
   float freezeAtProgress = flowStartProgress + settleWindow;
 
   // The freeze itself: everything downstream reads effectiveProgress

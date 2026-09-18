@@ -31,7 +31,7 @@ class _SwordsmanLoadingPageState extends State<SwordsmanLoadingPage>
   static const _assets = <String>[
     'assets/splash/paper.webp',
     'assets/splash/landscape.webp',
-    'assets/splash/sword.webp',
+    'assets/splash/sword-v4-clean.webp',
   ];
 
   late final AnimationController _scene;

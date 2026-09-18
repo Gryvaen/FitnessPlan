@@ -76,7 +76,7 @@ class _SwordsmanLoadingSceneState extends State<SwordsmanLoadingScene> {
               reduceMotion: widget.reduceMotion,
             );
             final swordHeight = size.height * .42;
-            final swordWidth = swordHeight * (635 / 2069);
+            final swordWidth = swordHeight * (724 / 2172);
             final swordTop = frame.swordY * size.height - swordHeight * .16;
             return Stack(
               fit: StackFit.expand,
@@ -116,13 +116,13 @@ class _SwordsmanLoadingSceneState extends State<SwordsmanLoadingScene> {
                     child: Opacity(
                       opacity: frame.swordOpacity,
                       child: Image.asset(
-                        'assets/splash/sword.webp',
+                        'assets/splash/sword-v4-clean.webp',
                         fit: BoxFit.contain,
                         gaplessPlayback: true,
                         filterQuality: FilterQuality.high,
                         cacheHeight: (swordHeight * pixelRatio).round().clamp(
                           1,
-                          2069,
+                          2172,
                         ),
                       ),
                     ),

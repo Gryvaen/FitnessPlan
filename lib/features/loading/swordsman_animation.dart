@@ -30,7 +30,7 @@ class SwordsmanFrame {
     }
 
     final t = value.clamp(0.0, 1.0);
-    final dissolve = _interval(t, .04, .82, Curves.easeInOutCubic);
+    final dissolve = _interval(t, .04, .72, Curves.easeInOutCubic);
     final settle = _interval(t, .68, .94, Curves.easeOutCubic);
     final wakeLife = _fadeWindow(t, .025, .11, .70, .88);
 
