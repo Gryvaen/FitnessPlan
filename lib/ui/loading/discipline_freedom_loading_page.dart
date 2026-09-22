@@ -52,9 +52,9 @@ class _DisciplineFreedomLoadingPageState
     with TickerProviderStateMixin {
   static const _exitDuration = Duration(milliseconds: 200);
   static const _holdDuration = Duration.zero;
-  static const _paperAsset = 'assets/splash/paper.webp';
-  static const _landscapeAsset = 'assets/splash/landscape.webp';
-  static const _swordAsset = 'assets/splash/sword-v4-clean.webp';
+  static const _paperAsset = 'assets/splash/paper-ink-v1.webp';
+  static const _landscapeAsset = 'assets/splash/landscape-logo-ink-v1.webp';
+  static const _swordAsset = 'assets/splash/sword-ink-jian-v1.webp';
 
   late final AnimationController _entrance;
   late final AnimationController _exit;
