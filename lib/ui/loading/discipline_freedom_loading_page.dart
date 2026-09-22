@@ -1,19 +1,13 @@
-import 'dart:math' as math;
-import 'dart:ui' show PathMetric;
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations_ext.dart';
-import '../theme/app_theme.dart';
 
-/// A lightweight startup page that runs [onInitialize] alongside its entrance
-/// animation. After both complete, it dwells briefly so the runner keeps
-/// moving, then calls [onFinished]. Tap anywhere to enter the home page
-/// immediately with no exit animation (initialization may continue in the
-/// background).
+/// A short, layered ink-painting startup sequence.
 ///
-/// [onPrewarm] fires shortly after the entrance animation settles so the host
-/// can build the real app behind this page, keeping the hand-off cheap.
+/// App initialization runs alongside the 1.8 second entrance. The page leaves
+/// only after both finish, so fast startup never cuts the sword motion short.
 class DisciplineFreedomLoadingPage extends StatefulWidget {
   const DisciplineFreedomLoadingPage({
     super.key,
@@ -26,6 +20,7 @@ class DisciplineFreedomLoadingPage extends StatefulWidget {
     this.titleRight,
     this.subtitle,
     this.statusText,
+    this.labProgress,
   });
 
   final Future<void> Function()? onInitialize;
@@ -33,10 +28,19 @@ class DisciplineFreedomLoadingPage extends StatefulWidget {
   final VoidCallback? onPrewarm;
   final ValueChanged<Object>? onError;
   final VoidCallback? onEnterAnyway;
+
+  // Kept for compatibility with the previous loading page. The new visual
+  // deliberately contains no title or logo.
   final String? titleLeft;
   final String? titleRight;
   final String? subtitle;
   final String? statusText;
+
+  /// Debug Lab: when set, entrance is scrubbed by this 0–1 value and the page
+  /// never auto-finishes or tap-skips.
+  final ValueNotifier<double>? labProgress;
+
+  static const entranceDuration = Duration(milliseconds: 1000);
 
   @override
   State<DisciplineFreedomLoadingPage> createState() =>
@@ -46,141 +50,124 @@ class DisciplineFreedomLoadingPage extends StatefulWidget {
 class _DisciplineFreedomLoadingPageState
     extends State<DisciplineFreedomLoadingPage>
     with TickerProviderStateMixin {
-  static const _dwell = Duration(milliseconds: 2500);
-  static const _prewarmDelay = Duration(milliseconds: 150);
+  static const _exitDuration = Duration(milliseconds: 200);
+  static const _holdDuration = Duration.zero;
+  static const _paperAsset = 'assets/splash/paper.webp';
+  static const _landscapeAsset = 'assets/splash/landscape.webp';
+  static const _swordAsset = 'assets/splash/sword-v4-clean.webp';
 
   late final AnimationController _entrance;
-  late final AnimationController _ambient;
-  late final AnimationController _runnerController;
-  late final AnimationController _lineClimb;
   late final AnimationController _exit;
-
-  late final CurvedAnimation _exitCurve;
+  late final Animation<double> _swordEntrance;
+  late final Animation<double> _tipMorph;
+  late final Animation<double> _expansion;
+  late final Animation<double> _paperScale;
   late final Animation<double> _exitOpacity;
-  late final CurvedAnimation _inkBloom;
-  late final CurvedAnimation _contentFade;
-  late final CurvedAnimation _runnerProgress;
-  late final CurvedAnimation _subtitleProgress;
-  late final CurvedAnimation _progressLine;
-  late final CurvedAnimation _statusVisible;
 
+  Timer? _prewarmTimer;
   Object? _error;
+  int _attempt = 0;
   bool _finishing = false;
   bool _prewarmed = false;
-  bool _climbStarted = false;
-  int _attempt = 0;
+
+  bool get _lab => widget.labProgress != null;
 
   @override
   void initState() {
     super.initState();
-    _entrance =
-        AnimationController(
-            vsync: this,
-            duration: const Duration(milliseconds: 2000),
-          )
-          ..addStatusListener(_onEntranceStatus)
-          ..addListener(_maybeStartClimb)
-          ..forward();
-    _ambient = AnimationController(
+    _entrance = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1250),
-    )..repeat();
-    _runnerController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 820),
-    )..repeat();
-    _lineClimb = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    )..addStatusListener(_onClimbStatus);
-    _exit = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 320),
+      duration: DisciplineFreedomLoadingPage.entranceDuration,
+      value: widget.labProgress?.value ?? 0,
+    );
+    _exit = AnimationController(vsync: this, duration: _exitDuration);
+
+    _swordEntrance = CurvedAnimation(
+      parent: _entrance,
+      curve: const Interval(.06, .76),
+    );
+    // The sword's center crosses the viewport center at about .43 of the
+    // master timeline; only then does its pointed trail start rounding out.
+    _tipMorph = CurvedAnimation(
+      parent: _entrance,
+      curve: const Interval(.43, .76, curve: Curves.easeInOutCubic),
+    );
+    _expansion = CurvedAnimation(
+      parent: _entrance,
+      // Start with velocity the instant the cap touches the top; an ease-in
+      // here reads as a pause between the vertical and horizontal motion.
+      curve: const Interval(.76, .96, curve: Curves.easeOutCubic),
+    );
+    // Sword progress .25 and .50 map to master-timeline values .235 and .41.
+    // Hold before that, reach 1.1x at halfway, then push through to 1.4x when
+    // the landscape finishes opening at .96.
+    _paperScale = TweenSequence<double>([
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 23.5),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 1.0,
+          end: 1.1,
+        ).chain(CurveTween(curve: Curves.easeInOutSine)),
+        weight: 17.5,
+      ),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 1.1,
+          end: 1.4,
+        ).chain(CurveTween(curve: Curves.easeInOutSine)),
+        weight: 55,
+      ),
+      TweenSequenceItem(tween: ConstantTween(1.4), weight: 4),
+    ]).animate(_entrance);
+    _exitOpacity = ReverseAnimation(
+      CurvedAnimation(parent: _exit, curve: Curves.easeInCubic),
     );
 
-    _exitCurve = CurvedAnimation(parent: _exit, curve: Curves.easeInCubic);
-    _exitOpacity = ReverseAnimation(_exitCurve);
-    _inkBloom = CurvedAnimation(
-      parent: _entrance,
-      curve: const Interval(0, .55, curve: Curves.easeOutCubic),
-    );
-    _contentFade = CurvedAnimation(
-      parent: _entrance,
-      curve: const Interval(.28, .42, curve: Curves.easeIn),
-    );
-    _runnerProgress = CurvedAnimation(
-      parent: _entrance,
-      curve: const Interval(.30, .52, curve: Curves.easeOutCubic),
-    );
-    _subtitleProgress = CurvedAnimation(
-      parent: _entrance,
-      curve: const Interval(.58, .78, curve: Curves.easeOutCubic),
-    );
-    _progressLine = CurvedAnimation(
-      parent: _entrance,
-      curve: const Interval(.70, .95, curve: Curves.easeOutCubic),
-    );
-    _statusVisible = CurvedAnimation(
-      parent: _entrance,
-      curve: const Interval(.72, .88, curve: Curves.easeIn),
-    );
+    if (_lab) {
+      widget.labProgress!.addListener(_onLabProgress);
+      _entrance.value = widget.labProgress!.value.clamp(0.0, 1.0);
+    } else {
+      _entrance.forward();
+      _schedulePrewarm();
+      _initialize();
+    }
+  }
 
-    _initialize();
+  void _onLabProgress() {
+    if (!mounted) return;
+    _entrance.value = widget.labProgress!.value.clamp(0.0, 1.0);
+  }
+
+  @override
+  void didUpdateWidget(covariant DisciplineFreedomLoadingPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.labProgress != widget.labProgress) {
+      oldWidget.labProgress?.removeListener(_onLabProgress);
+      widget.labProgress?.addListener(_onLabProgress);
+      if (widget.labProgress != null) {
+        _entrance.value = widget.labProgress!.value.clamp(0.0, 1.0);
+      }
+    }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final reduce = MediaQuery.disableAnimationsOf(context);
-    void sync(AnimationController c) {
-      if (reduce) {
-        c.stop();
-        c.value = 0;
-      } else if (!c.isAnimating && c.duration != null) {
-        c.repeat();
-      }
+    precacheImage(const AssetImage(_paperAsset), context);
+    precacheImage(const AssetImage(_landscapeAsset), context);
+    precacheImage(const AssetImage(_swordAsset), context);
+
+    if (!_lab &&
+        MediaQuery.disableAnimationsOf(context) &&
+        _entrance.value < 1) {
+      _entrance.value = 1;
     }
-
-    sync(_ambient);
-    sync(_runnerController);
-    if (reduce) {
-      _climbStarted = true;
-      _lineClimb
-        ..stop()
-        ..value = 1;
-    }
-  }
-
-  void _maybeStartClimb() {
-    if (_climbStarted || _finishing) return;
-    if (_progressLine.value <= 0) return;
-    _climbStarted = true;
-    if (!mounted) return;
-    if (MediaQuery.disableAnimationsOf(context)) {
-      _lineClimb.value = 1;
-      return;
-    }
-    _lineClimb.forward();
-  }
-
-  void _onEntranceStatus(AnimationStatus status) {
-    if (status != AnimationStatus.completed || _prewarmed) return;
-    // Keep the climb smooth: only prewarm now if the run already finished
-    // (reduce-motion jumps climb to 1 without a status callback).
-    if (_lineClimb.value < 1) return;
-    _schedulePrewarm();
-  }
-
-  void _onClimbStatus(AnimationStatus status) {
-    if (status != AnimationStatus.completed) return;
-    _schedulePrewarm();
   }
 
   void _schedulePrewarm() {
-    if (_prewarmed) return;
-    _prewarmed = true;
-    Future.delayed(_prewarmDelay, () {
-      if (!mounted || _finishing) return;
+    _prewarmTimer = Timer(const Duration(milliseconds: 650), () {
+      if (!mounted || _finishing || _prewarmed) return;
+      _prewarmed = true;
       widget.onPrewarm?.call();
     });
   }
@@ -188,13 +175,16 @@ class _DisciplineFreedomLoadingPageState
   Future<void> _initialize() async {
     final attempt = ++_attempt;
     if (mounted) setState(() => _error = null);
+
     try {
-      final task = widget.onInitialize?.call() ?? Future<void>.value();
-      await Future.wait<void>([task, _entrance.forward().then((_) {})]);
-      if (!mounted || attempt != _attempt) return;
-      if (!MediaQuery.disableAnimationsOf(context)) {
-        await Future.delayed(_dwell);
-      }
+      final initialization =
+          widget.onInitialize?.call() ?? Future<void>.value();
+      await Future.wait<void>([
+        initialization,
+        _entrance.forward().then<void>((_) {}),
+      ]);
+      if (!mounted || attempt != _attempt || _finishing) return;
+      await Future<void>.delayed(_holdDuration);
       if (!mounted || attempt != _attempt || _finishing) return;
       await _finish();
     } catch (error) {
@@ -204,1346 +194,279 @@ class _DisciplineFreedomLoadingPageState
     }
   }
 
-  void _stopAmbientMotion() {
-    _entrance.stop();
-    _ambient.stop();
-    _runnerController.stop();
-    _lineClimb.stop();
-  }
-
   void _skip() {
-    if (_finishing) return;
+    if (_lab || _finishing || _error != null) return;
     _finishing = true;
-    _stopAmbientMotion();
+    _prewarmTimer?.cancel();
+    _entrance.stop();
     widget.onFinished();
   }
 
   Future<void> _finish() async {
-    if (_finishing) return;
+    if (_lab || _finishing) return;
     _finishing = true;
+    _prewarmTimer?.cancel();
     await _exit.forward();
-    _stopAmbientMotion();
     if (mounted) widget.onFinished();
   }
 
   @override
   void dispose() {
-    _exitCurve.dispose();
-    _inkBloom.dispose();
-    _contentFade.dispose();
-    _runnerProgress.dispose();
-    _subtitleProgress.dispose();
-    _progressLine.dispose();
-    _statusVisible.dispose();
+    widget.labProgress?.removeListener(_onLabProgress);
+    _prewarmTimer?.cancel();
     _entrance.dispose();
-    _ambient.dispose();
-    _runnerController.dispose();
-    _lineClimb.dispose();
     _exit.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final l10n = context.l10n;
-    final colors = _LoadingColors.from(theme.colorScheme);
-    final reduceMotion = MediaQuery.disableAnimationsOf(context);
-
+    final reduceMotion = !_lab && MediaQuery.disableAnimationsOf(context);
     return Scaffold(
-      backgroundColor: colors.background,
+      backgroundColor: const Color(0xffeeeae1),
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: _error == null ? _skip : null,
+        onTap: (!_lab && _error == null) ? _skip : null,
         child: FadeTransition(
           opacity: _exitOpacity,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              ColoredBox(color: colors.background),
-              RepaintBoundary(child: _InkBloom(bloom: _inkBloom)),
-              SafeArea(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final compact = constraints.maxHeight < 620;
-                    final contentWidth = math.min(
-                      constraints.maxWidth - 40,
-                      440.0,
-                    );
-                    final travel = constraints.maxWidth / 2 + 80;
-                    return FadeTransition(
-                      opacity: _contentFade,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Center(
-                            child: SizedBox(
-                              width: contentWidth,
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  _AnimatedRunner(
-                                    progress: _runnerProgress,
-                                    gait: _runnerController,
-                                    compact: compact,
-                                  ),
-                                  SizedBox(height: compact ? 12 : 20),
-                                  _KineticTitle(
-                                    left:
-                                        widget.titleLeft ??
-                                        l10n.loadingTitleLeft,
-                                    right:
-                                        widget.titleRight ??
-                                        l10n.loadingTitleRight,
-                                    entrance: _entrance,
-                                    reduceMotion: reduceMotion,
-                                    compact: compact,
-                                    travel: travel,
-                                  ),
-                                  SizedBox(height: compact ? 12 : 18),
-                                  _AnimatedSubtitle(
-                                    text:
-                                        widget.subtitle ?? l10n.loadingSubtitle,
-                                    animation: _subtitleProgress,
-                                    entrance: _entrance,
-                                    reduceMotion: reduceMotion,
-                                  ),
-                                  SizedBox(height: compact ? 20 : 30),
-                                  RepaintBoundary(
-                                    child: SizedBox(
-                                      width: math.min(contentWidth * .65, 250),
-                                      height: compact ? 88 : 102,
-                                      child: AnimatedBuilder(
-                                        animation: Listenable.merge([
-                                          _lineClimb,
-                                          _runnerController,
-                                          _ambient,
-                                        ]),
-                                        builder: (context, _) => CustomPaint(
-                                          isComplex: true,
-                                          willChange: _lineClimb.value < 1,
-                                          painter: _ProgressLinePainter(
-                                            climb: _lineClimb.value,
-                                            gait: _runnerController.value,
-                                            flagPhase: _ambient.value,
-                                            reduceMotion: reduceMotion,
-                                            lineColor: colors.decoration,
-                                            accentColor: colors.accent,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            left: 24,
-                            right: 24,
-                            bottom: compact ? 16 : 30,
-                            child: _BottomStatus(
-                              visible: _statusVisible,
-                              pulse: _ambient,
-                              entrance: _entrance,
-                              reduceMotion: reduceMotion,
-                              color: colors.accent,
-                              statusText:
-                                  widget.statusText ??
-                                  l10n.loadingPreparingPlan,
-                              error: _error,
-                              onRetry: _initialize,
-                              onEnterAnyway: widget.onEnterAnyway == null
-                                  ? null
-                                  : () async {
-                                      widget.onEnterAnyway!();
-                                    },
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Pass-through wrapper kept so call sites stay stable after dropping rainbow.
-class _InkTint extends StatelessWidget {
-  const _InkTint({required this.builder, this.shift = 0});
-
-  final WidgetBuilder builder;
-  // Ignored: previously drove rainbow flow; monochrome needs no shift.
-  final double shift;
-
-  @override
-  Widget build(BuildContext context) => builder(context);
-}
-
-/// Full-screen monochrome ink bloom fill.
-class _InkBloom extends StatelessWidget {
-  const _InkBloom({required this.bloom});
-
-  final Animation<double> bloom;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: bloom,
-      builder: (context, _) => CustomPaint(
-        painter: _InkBloomPainter(bloomT: bloom.value),
-        child: const SizedBox.expand(),
-      ),
-    );
-  }
-}
-
-class _InkBloomPainter extends CustomPainter {
-  _InkBloomPainter({required this.bloomT});
-
-  final double bloomT;
-
-  static const _wash = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [
-      Color(0xE8F2F2F2),
-      Color(0xE8E6E6E6),
-      Color(0xE8FAFAFA),
-      Color(0xE8DEDEDE),
-      Color(0xE8F0F0F0),
-    ],
-  );
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (bloomT <= 0.001) return;
-
-    final cx = size.width * 0.5;
-    final impact = Offset(cx, size.height * 0.42);
-    final fullRect = Offset.zero & size;
-    final maxR =
-        math.sqrt(
-          math.pow(math.max(cx, size.width - cx), 2) +
-              math.pow(math.max(impact.dy, size.height - impact.dy), 2),
-        ) *
-        1.2;
-    final bloomR = maxR * bloomT;
-
-    final washPaint = Paint()..shader = _wash.createShader(fullRect);
-    canvas.drawCircle(impact, bloomR, washPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _InkBloomPainter oldDelegate) {
-    if (oldDelegate.bloomT >= 1.0 && bloomT >= 1.0) return false;
-    return oldDelegate.bloomT != bloomT;
-  }
-}
-
-class _LoadingColors {
-  const _LoadingColors({
-    required this.background,
-    required this.primaryText,
-    required this.secondaryText,
-    required this.accent,
-    required this.decoration,
-  });
-
-  /// Fixed black-and-white palette (no theme rainbow / brand teal).
-  factory _LoadingColors.from(ColorScheme scheme) => const _LoadingColors(
-    background: Color(0xFFFFFFFF),
-    primaryText: Color(0xFF000000),
-    secondaryText: Color(0xFF000000),
-    accent: Color(0xFF000000),
-    decoration: Color(0xEB000000),
-  );
-
-  final Color background;
-  final Color primaryText;
-  final Color secondaryText;
-  final Color accent;
-  final Color decoration;
-}
-
-class _KineticTitle extends StatelessWidget {
-  const _KineticTitle({
-    required this.left,
-    required this.right,
-    required this.entrance,
-    required this.reduceMotion,
-    required this.compact,
-    required this.travel,
-  });
-
-  final String left;
-  final String right;
-  final AnimationController entrance;
-  final bool reduceMotion;
-  final bool compact;
-  final double travel;
-
-  static const _titleBegin = 0.30;
-  static const _titleEnd = 0.62;
-  static const _charSpan = 0.18;
-  static const _stagger = 0.03;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = Theme.of(context).textTheme.headlineMedium?.copyWith(
-      fontFamily: AppTheme.displayFontFamily,
-      fontSize: compact ? 32 : 38,
-      fontWeight: FontWeight.w500,
-      letterSpacing: 0,
-      height: 1.15,
-      color: Colors.black,
-    );
-    final leftChars = left.characters.toList();
-    final rightChars = right.characters.toList();
-    final gap = compact ? 18.0 : 26.0;
-
-    return AnimatedBuilder(
-      animation: entrance,
-      builder: (context, _) {
-        final spacing = Tween<double>(begin: 12, end: 3).transform(
-          _intervalValue(
-            entrance.value,
-            _titleBegin,
-            _titleEnd,
-            Curves.easeOutCubic,
-          ),
-        );
-        // Rainbow flows only during entrance, then settles.
-        final shift = reduceMotion
-            ? 0.0
-            : Curves.easeOut.transform(
-                (entrance.value / _titleEnd).clamp(0.0, 1.0),
-              );
-
-        return FittedBox(
-          fit: BoxFit.scaleDown,
-          child: _InkTint(
-            shift: shift * 0.35,
-            builder: (context) => Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
+          child: AnimatedBuilder(
+            animation: _entrance,
+            builder: (context, _) => Stack(
+              fit: StackFit.expand,
               children: [
-                ..._buildGroup(
-                  chars: leftChars,
-                  style: style,
-                  fromLeft: true,
-                  spacing: spacing,
+                _PaperLayer(scale: reduceMotion ? 1.4 : _paperScale.value),
+                _LandscapeLayer(
+                  swordProgress: reduceMotion ? 1 : _swordEntrance.value,
+                  tipMorph: reduceMotion ? 1 : _tipMorph.value,
+                  expansion: reduceMotion ? 1 : _expansion.value,
                 ),
-                SizedBox(width: gap),
-                ..._buildGroup(
-                  chars: rightChars,
-                  style: style,
-                  fromLeft: false,
-                  spacing: spacing,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  List<Widget> _buildGroup({
-    required List<String> chars,
-    required TextStyle? style,
-    required bool fromLeft,
-    required double spacing,
-  }) {
-    final widgets = <Widget>[];
-    for (var i = 0; i < chars.length; i++) {
-      // Stagger from outer edge inward so both sides meet near the center.
-      final staggerIndex = fromLeft ? i : (chars.length - 1 - i);
-      final begin = (_titleBegin + staggerIndex * _stagger).clamp(0.0, 1.0);
-      final end = (begin + _charSpan).clamp(0.0, 1.0);
-      final t = _intervalValue(entrance.value, begin, end, Curves.easeOutCubic);
-      final dx = fromLeft ? -(1 - t) * travel : (1 - t) * travel;
-      if (i > 0) widgets.add(SizedBox(width: spacing));
-      final alpha = t.clamp(0.0, 1.0);
-      widgets.add(
-        Transform.translate(
-          offset: Offset(dx, 0),
-          child: Transform.scale(
-            scale: 0.92 + 0.08 * t,
-            child: Text(
-              chars[i],
-              style: style?.copyWith(
-                color: Colors.black.withValues(alpha: alpha),
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-    return widgets;
-  }
-}
-
-class _AnimatedSubtitle extends StatelessWidget {
-  const _AnimatedSubtitle({
-    required this.text,
-    required this.animation,
-    required this.entrance,
-    required this.reduceMotion,
-  });
-
-  final String text;
-  final Animation<double> animation;
-  final AnimationController entrance;
-  final bool reduceMotion;
-
-  List<String> _tokens(String value) {
-    final hasCjk = RegExp(r'[\u4e00-\u9fff]').hasMatch(value);
-    if (hasCjk) return value.characters.toList();
-    return value.split(RegExp(r'(\s+)')).where((t) => t.isNotEmpty).toList();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final baseStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-      fontFamily: AppTheme.displayFontFamily,
-      color: Colors.black,
-      letterSpacing: 1.2,
-      fontWeight: FontWeight.w500,
-    );
-    final tokens = _tokens(text);
-
-    return AnimatedBuilder(
-      animation: animation,
-      builder: (context, _) {
-        final shift = reduceMotion
-            ? 0.0
-            : Curves.easeOut.transform(entrance.value.clamp(0.0, 1.0)) * 0.25;
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: _InkTint(
-            shift: shift,
-            builder: (context) => Wrap(
-              alignment: WrapAlignment.center,
-              children: [
-                for (var i = 0; i < tokens.length; i++)
-                  _staggerToken(
-                    token: tokens[i],
-                    index: i,
-                    total: tokens.length,
-                    style: baseStyle,
+                _SwordLayer(entrance: reduceMotion ? 1 : _swordEntrance.value),
+                if (_error != null)
+                  _ErrorControls(
+                    onRetry: _initialize,
+                    onEnterAnyway: widget.onEnterAnyway,
                   ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PaperLayer extends StatelessWidget {
+  const _PaperLayer({required this.scale});
+
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.scale(
+      scale: scale,
+      child: Image.asset(
+        _DisciplineFreedomLoadingPageState._paperAsset,
+        fit: BoxFit.cover,
+        filterQuality: FilterQuality.medium,
+        excludeFromSemantics: true,
+      ),
+    );
+  }
+}
+
+class _LandscapeLayer extends StatelessWidget {
+  const _LandscapeLayer({
+    required this.swordProgress,
+    required this.tipMorph,
+    required this.expansion,
+  });
+
+  final double swordProgress;
+  final double tipMorph;
+  final double expansion;
+
+  @override
+  Widget build(BuildContext context) {
+    // Landscape is the foreground sheet. The clip removes a straight vertical
+    // trail only after the sword has passed and exposes the paper below.
+    return ClipPath(
+      clipper: _SwordCutClipper(
+        swordProgress.clamp(0, 1),
+        tipMorph.clamp(0, 1),
+        expansion.clamp(0, 1),
+      ),
+      child: Image.asset(
+        _DisciplineFreedomLoadingPageState._landscapeAsset,
+        fit: BoxFit.cover,
+        filterQuality: FilterQuality.medium,
+        excludeFromSemantics: true,
+      ),
+    );
+  }
+}
+
+class _SwordCutClipper extends CustomClipper<Path> {
+  const _SwordCutClipper(this.swordProgress, this.tipMorph, this.expansion);
+
+  final double swordProgress;
+  final double tipMorph;
+  final double expansion;
+
+  @override
+  Path getClip(Size size) {
+    final center = size.width / 2;
+    final swordBottom =
+        size.height *
+        (.5 + _swordVerticalPosition(swordProgress) + _swordHeightFactor / 2);
+    if (swordBottom >= size.height) {
+      return Path()..addRect(Offset.zero & size);
+    }
+
+    // The leading edge remains attached to the sword's tail. Once the sword
+    // leaves the screen, the rounded cap continues out during side expansion.
+    final initialCutWidth = size.width * .18;
+    final roundedCutWidth = size.width * .48;
+    final morphingCutWidth =
+        initialCutWidth + (roundedCutWidth - initialCutWidth) * tipMorph;
+    final cutWidth =
+        morphingCutWidth + (size.width * 1.02 - morphingCutWidth) * expansion;
+    final halfWidth = cutWidth / 2;
+    final capHeight = halfWidth;
+    final cutTop =
+        swordBottom.clamp(-size.height, size.height) - capHeight * expansion;
+
+    // The point is fully semicircular on contact. While the width expands,
+    // the complete cap moves above the viewport, so the visible opening reads
+    // as a rectangle spreading sideways.
+    final roundness = Curves.easeInOutCubic.transform(tipMorph);
+    final controlDx = halfWidth * (.5 + .5 * roundness);
+    final controlY = cutTop + capHeight * .5 * (1 - roundness);
+    final cut = Path()
+      ..moveTo(center, cutTop)
+      ..quadraticBezierTo(
+        center + controlDx,
+        controlY,
+        center + halfWidth,
+        cutTop + capHeight,
+      )
+      ..lineTo(center + halfWidth, size.height)
+      ..lineTo(center - halfWidth, size.height)
+      ..lineTo(center - halfWidth, cutTop + capHeight)
+      ..quadraticBezierTo(center - controlDx, controlY, center, cutTop)
+      ..close();
+
+    return Path()
+      ..fillType = PathFillType.evenOdd
+      ..addRect(Offset.zero & size)
+      ..addPath(cut, Offset.zero);
+  }
+
+  @override
+  bool shouldReclip(_SwordCutClipper oldClipper) =>
+      oldClipper.swordProgress != swordProgress ||
+      oldClipper.tipMorph != tipMorph ||
+      oldClipper.expansion != expansion;
+}
+
+const _swordHeightFactor = .91;
+
+double _swordVerticalPosition(double progress) {
+  final t = progress.clamp(0, 1);
+  const morphStart = .525;
+  if (t < morphStart) {
+    final u = t / morphStart;
+    // Enter quickly, then shed a little speed before reaching center. The
+    // derivative at u=1 matches the accelerating segment below.
+    return 1.20 - 1.604 * u + .404 * u * u;
+  }
+  // Once the point starts becoming a semicircle, add restrained acceleration
+  // through the top edge. The 75/25 blend is deliberately milder than a full
+  // ease-in so the sword gathers pace without suddenly darting away.
+  final u = (t - morphStart) / (1 - morphStart);
+  final accelerated = .75 * u + .25 * u * u;
+  return -.96 * accelerated;
+}
+
+class _SwordLayer extends StatelessWidget {
+  const _SwordLayer({required this.entrance});
+
+  final double entrance;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final swordHeight = constraints.maxHeight * _swordHeightFactor;
+        return Transform.translate(
+          offset: Offset(
+            0,
+            constraints.maxHeight * _swordVerticalPosition(entrance),
+          ),
+          child: Center(
+            child: Image.asset(
+              _DisciplineFreedomLoadingPageState._swordAsset,
+              height: swordHeight,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+              excludeFromSemantics: true,
+            ),
+          ),
         );
       },
     );
   }
-
-  Widget _staggerToken({
-    required String token,
-    required int index,
-    required int total,
-    required TextStyle? style,
-  }) {
-    final span = total <= 1 ? 1.0 : 1.0 / (total + 1);
-    final begin = (index * span * 0.85).clamp(0.0, 1.0);
-    final end = (begin + 0.45).clamp(0.0, 1.0);
-    final t = _intervalValue(animation.value, begin, end, Curves.easeOutCubic);
-    final alpha = t.clamp(0.0, 1.0);
-    return Transform.translate(
-      offset: Offset(0, (1 - t) * 10),
-      child: Text(
-        token,
-        style: style?.copyWith(color: Colors.black.withValues(alpha: alpha)),
-      ),
-    );
-  }
 }
 
-double _intervalValue(
-  double parent,
-  double begin,
-  double end, [
-  Curve curve = Curves.easeOutCubic,
-]) {
-  if (end <= begin) return parent >= end ? 1.0 : 0.0;
-  final raw = ((parent - begin) / (end - begin)).clamp(0.0, 1.0);
-  return curve.transform(raw);
-}
+class _ErrorControls extends StatelessWidget {
+  const _ErrorControls({required this.onRetry, this.onEnterAnyway});
 
-class _AnimatedRunner extends StatelessWidget {
-  const _AnimatedRunner({
-    required this.progress,
-    required this.gait,
-    required this.compact,
-  });
-
-  final Animation<double> progress;
-  final Animation<double> gait;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) => RepaintBoundary(
-    child: SizedBox(
-      width: compact ? 70 : 82,
-      height: compact ? 60 : 70,
-      child: AnimatedBuilder(
-        animation: Listenable.merge([progress, gait]),
-        builder: (context, _) => _InkTint(
-          builder: (context) => CustomPaint(
-            painter: _MinimalRunnerPainter(
-              progress: progress.value,
-              phase: gait.value,
-              color: Colors.black,
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-class _MinimalRunnerPainter extends CustomPainter {
-  const _MinimalRunnerPainter({
-    required this.progress,
-    required this.phase,
-    required this.color,
-  });
-
-  static const double lineWidth = 2.2;
-
-  final double progress;
-  final double phase;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final cycle = _wrapCycle(phase);
-    final rightCycle = cycle;
-    final leftCycle = _wrapCycle(cycle + .5);
-    final flight = _flightAmount(cycle);
-    final bodyOffset = -math.min(.8, size.height * .012) * flight;
-
-    Offset bodyPoint(double x, double y) =>
-        Offset(size.width * x, size.height * y + bodyOffset);
-
-    Paint stroke(Color strokeColor, double width) => Paint()
-      ..color = strokeColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = width
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final limbWidth = lineWidth * 0.82;
-    final mainPaint = stroke(color, lineWidth);
-    final shoulder = bodyPoint(.565, .335);
-    final hip = bodyPoint(.53, .545);
-    final neckTop = bodyPoint(.598, .24);
-    final headCenter = bodyPoint(.632, .18);
-    final headRadius = size.shortestSide * .062;
-
-    Offset scaled(Offset point) => bodyPoint(point.dx, point.dy);
-
-    final rightLeg = _sampleLegPose(rightCycle);
-    final leftLeg = _sampleLegPose(leftCycle);
-    final rightArm = _sampleArmPose(leftCycle);
-    final leftArm = _sampleArmPose(rightCycle);
-
-    final rightDepth = (math.cos(cycle * math.pi * 2) + 1) / 2;
-    final leftDepth = 1 - rightDepth;
-    final rightPaint = stroke(
-      color.withValues(alpha: .42 + rightDepth * .58),
-      limbWidth + rightDepth * lineWidth * 0.18,
-    );
-    final leftPaint = stroke(
-      color.withValues(alpha: .42 + leftDepth * .58),
-      limbWidth + leftDepth * lineWidth * 0.18,
-    );
-    final bendUnit = size.shortestSide;
-
-    final rightLegPath = _legPath(
-      hip,
-      scaled(rightLeg.knee),
-      scaled(rightLeg.ankle),
-      scaled(rightLeg.toe),
-      bendUnit,
-    );
-    final leftLegPath = _legPath(
-      hip,
-      scaled(leftLeg.knee),
-      scaled(leftLeg.ankle),
-      scaled(leftLeg.toe),
-      bendUnit,
-    );
-    final rightArmPath = _armPath(
-      shoulder,
-      scaled(rightArm.elbow),
-      scaled(rightArm.hand),
-      bendUnit,
-    );
-    final leftArmPath = _armPath(
-      Offset(shoulder.dx - size.width * .008, shoulder.dy),
-      scaled(leftArm.elbow),
-      scaled(leftArm.hand),
-      bendUnit,
-    );
-
-    final rightIsNearer = rightDepth >= leftDepth;
-    _drawPartialPath(
-      canvas,
-      rightIsNearer ? leftLegPath : rightLegPath,
-      rightIsNearer ? leftPaint : rightPaint,
-      progress,
-    );
-    _drawPartialPath(
-      canvas,
-      rightIsNearer ? leftArmPath : rightArmPath,
-      rightIsNearer ? leftPaint : rightPaint,
-      progress,
-    );
-
-    final torsoPath = Path()
-      ..moveTo(shoulder.dx, shoulder.dy)
-      ..cubicTo(
-        size.width * .59,
-        size.height * .40 + bodyOffset,
-        size.width * .54,
-        size.height * .475 + bodyOffset,
-        hip.dx,
-        hip.dy,
-      );
-    _drawPartialPath(canvas, torsoPath, mainPaint, progress);
-
-    _drawPartialPath(
-      canvas,
-      rightIsNearer ? rightLegPath : leftLegPath,
-      rightIsNearer ? rightPaint : leftPaint,
-      progress,
-    );
-    _drawPartialPath(
-      canvas,
-      rightIsNearer ? rightArmPath : leftArmPath,
-      rightIsNearer ? rightPaint : leftPaint,
-      progress,
-    );
-
-    final neckPath = Path()
-      ..moveTo(neckTop.dx, neckTop.dy)
-      ..lineTo(shoulder.dx, shoulder.dy);
-    _drawPartialPath(canvas, neckPath, mainPaint, progress);
-
-    final headPath = Path()
-      ..addOval(Rect.fromCircle(center: headCenter, radius: headRadius));
-    _drawPartialPath(canvas, headPath, mainPaint, progress);
-  }
-
-  @override
-  bool shouldRepaint(_MinimalRunnerPainter oldDelegate) =>
-      oldDelegate.progress != progress ||
-      oldDelegate.phase != phase ||
-      oldDelegate.color != color;
-}
-
-double _wrapCycle(double value) {
-  final wrapped = value % 1;
-  return wrapped < 0 ? wrapped + 1 : wrapped;
-}
-
-double _smoothStep(double value) => value * value * (3 - 2 * value);
-
-double _flightAmount(double cycle) =>
-    math.max(_pulse(cycle, .34, .44), _pulse(cycle, .84, .94));
-
-double _pulse(double value, double begin, double end) {
-  if (value <= begin || value >= end) return 0;
-  final midpoint = (begin + end) / 2;
-  final raw = value <= midpoint
-      ? (value - begin) / (midpoint - begin)
-      : (end - value) / (end - midpoint);
-  return _smoothStep(raw.clamp(0.0, 1.0));
-}
-
-Offset _curvedControl(Offset start, Offset end, double position, double bend) {
-  final base = Offset.lerp(start, end, position)!;
-  final delta = end - start;
-  final length = delta.distance;
-  if (length == 0) return base;
-  final normal = Offset(-delta.dy / length, delta.dx / length);
-  return base + normal * bend;
-}
-
-Path _legPath(
-  Offset root,
-  Offset knee,
-  Offset ankle,
-  Offset toe,
-  double bendUnit,
-) {
-  final poseBias = ((knee.dx - root.dx) / (bendUnit * .18)).clamp(-1.0, 1.0);
-  final thighControl = _curvedControl(
-    root,
-    knee,
-    .52,
-    -poseBias * bendUnit * .009,
-  );
-  final shinControl = _curvedControl(
-    knee,
-    ankle,
-    .42,
-    poseBias * bendUnit * .012,
-  );
-  final path = Path()
-    ..moveTo(root.dx, root.dy)
-    ..quadraticBezierTo(thighControl.dx, thighControl.dy, knee.dx, knee.dy)
-    ..quadraticBezierTo(shinControl.dx, shinControl.dy, ankle.dx, ankle.dy)
-    ..quadraticBezierTo(
-      (ankle.dx + toe.dx) / 2,
-      (ankle.dy + toe.dy) / 2,
-      toe.dx,
-      toe.dy,
-    );
-  return path;
-}
-
-Path _armPath(Offset root, Offset elbow, Offset hand, double bendUnit) {
-  final poseBias = ((elbow.dx - root.dx) / (bendUnit * .16)).clamp(-1.0, 1.0);
-  final upperControl = _curvedControl(
-    root,
-    elbow,
-    .58,
-    -poseBias * bendUnit * .012,
-  );
-  final forearmControl = _curvedControl(
-    elbow,
-    hand,
-    .45,
-    poseBias * bendUnit * .014,
-  );
-  return Path()
-    ..moveTo(root.dx, root.dy)
-    ..quadraticBezierTo(upperControl.dx, upperControl.dy, elbow.dx, elbow.dy)
-    ..quadraticBezierTo(forearmControl.dx, forearmControl.dy, hand.dx, hand.dy);
-}
-
-class _RunnerLegPose {
-  const _RunnerLegPose({
-    required this.knee,
-    required this.ankle,
-    required this.toe,
-  });
-
-  final Offset knee;
-  final Offset ankle;
-  final Offset toe;
-}
-
-class _RunnerArmPose {
-  const _RunnerArmPose({required this.elbow, required this.hand});
-
-  final Offset elbow;
-  final Offset hand;
-}
-
-const _poseTimes = <double>[0, .25, .45, .72, 1];
-const _legPoses = <_RunnerLegPose>[
-  _RunnerLegPose(
-    knee: Offset(.61, .61),
-    ankle: Offset(.55, .715),
-    toe: Offset(.59, .701),
-  ),
-  _RunnerLegPose(
-    knee: Offset(.56, .65),
-    ankle: Offset(.62, .79),
-    toe: Offset(.665, .787),
-  ),
-  _RunnerLegPose(
-    knee: Offset(.45, .68),
-    ankle: Offset(.47, .81),
-    toe: Offset(.515, .81),
-  ),
-  _RunnerLegPose(
-    knee: Offset(.33, .68),
-    ankle: Offset(.27, .77),
-    toe: Offset(.24, .765),
-  ),
-  _RunnerLegPose(
-    knee: Offset(.61, .61),
-    ankle: Offset(.55, .715),
-    toe: Offset(.59, .701),
-  ),
-];
-const _armPoses = <_RunnerArmPose>[
-  _RunnerArmPose(elbow: Offset(.605, .39), hand: Offset(.565, .34)),
-  _RunnerArmPose(elbow: Offset(.57, .405), hand: Offset(.545, .37)),
-  _RunnerArmPose(elbow: Offset(.49, .42), hand: Offset(.48, .44)),
-  _RunnerArmPose(elbow: Offset(.40, .42), hand: Offset(.45, .48)),
-  _RunnerArmPose(elbow: Offset(.605, .39), hand: Offset(.565, .34)),
-];
-
-_RunnerLegPose _sampleLegPose(double cycle) {
-  final index = _poseInterval(cycle);
-  final amount = _intervalAmount(cycle, index);
-  final a = _legPoses[index];
-  final b = _legPoses[index + 1];
-  return _RunnerLegPose(
-    knee: Offset.lerp(a.knee, b.knee, amount)!,
-    ankle: Offset.lerp(a.ankle, b.ankle, amount)!,
-    toe: Offset.lerp(a.toe, b.toe, amount)!,
-  );
-}
-
-_RunnerArmPose _sampleArmPose(double cycle) {
-  final index = _poseInterval(cycle);
-  final amount = _intervalAmount(cycle, index);
-  final a = _armPoses[index];
-  final b = _armPoses[index + 1];
-  return _RunnerArmPose(
-    elbow: Offset.lerp(a.elbow, b.elbow, amount)!,
-    hand: Offset.lerp(a.hand, b.hand, amount)!,
-  );
-}
-
-int _poseInterval(double cycle) {
-  for (var i = 0; i < _poseTimes.length - 1; i++) {
-    if (cycle < _poseTimes[i + 1]) return i;
-  }
-  return _poseTimes.length - 2;
-}
-
-double _intervalAmount(double cycle, int index) {
-  final raw =
-      (cycle - _poseTimes[index]) / (_poseTimes[index + 1] - _poseTimes[index]);
-  return _smoothStep(raw.clamp(0.0, 1.0));
-}
-
-class _ClimbPathCache {
-  static const _samples = 48;
-
-  Size? _size;
-  double? _topInset;
-  Path? path;
-  PathMetric? metric;
-  Offset tip = Offset.zero;
-  List<double> _times = const [0, 1];
-
-  void sync(Size size, double topInset) {
-    if (_size == size &&
-        _topInset == topInset &&
-        path != null &&
-        metric != null) {
-      return;
-    }
-    _size = size;
-    _topInset = topInset;
-    final built = _buildClimbPath(size, topInset);
-    path = built;
-    metric = built.computeMetrics().first;
-    final end = metric!.getTangentForOffset(metric!.length);
-    tip = end?.position ?? Offset(size.width - 3, topInset);
-    _times = _buildEffortTimes(metric!);
-  }
-
-  /// Maps elapsed climb time 0–1 onto arc-length 0–1, slower on steep/rugged bits.
-  double pathTForTime(double u) {
-    final t = u.clamp(0.0, 1.0);
-    if (t <= 0) return 0;
-    if (t >= 1) return 1;
-    final times = _times;
-    var lo = 0;
-    var hi = times.length - 1;
-    while (lo < hi - 1) {
-      final mid = (lo + hi) >> 1;
-      if (times[mid] <= t) {
-        lo = mid;
-      } else {
-        hi = mid;
-      }
-    }
-    final span = times[hi] - times[lo];
-    final f = span <= 1e-9 ? 0.0 : (t - times[lo]) / span;
-    final step = 1.0 / (times.length - 1);
-    return (lo + f) * step;
-  }
-
-  List<double> _buildEffortTimes(PathMetric metric) {
-    final n = _samples;
-    final times = List<double>.filled(n, 0);
-    var acc = 0.0;
-    Offset? prevDir;
-    for (var i = 0; i < n; i++) {
-      if (i > 0) {
-        final tangent = metric.getTangentForOffset(
-          metric.length * (i - 0.5) / (n - 1),
-        );
-        var rugged = 0.0;
-        if (tangent != null) {
-          final v = tangent.vector;
-          final len = v.distance;
-          if (len > 1e-6) {
-            rugged = (v.dy.abs() / len).clamp(0.0, 1.0);
-            if (prevDir != null) {
-              final plen = prevDir.distance;
-              if (plen > 1e-6) {
-                final align =
-                    ((v.dx * prevDir.dx + v.dy * prevDir.dy) / (len * plen))
-                        .clamp(-1.0, 1.0);
-                final turn = (1 - align) * 0.5;
-                rugged = (rugged + turn * 0.85).clamp(0.0, 1.0);
-              }
-            }
-            prevDir = v;
-          }
-        }
-        final speed = 0.38 + 1.45 * math.pow(1 - rugged, 1.35);
-        acc += 1 / speed;
-      }
-      times[i] = acc;
-    }
-    final total = times.last;
-    if (total <= 1e-9) return const [0.0, 1.0];
-    for (var i = 0; i < n; i++) {
-      times[i] /= total;
-    }
-    return times;
-  }
-}
-
-final _climbPathCache = _ClimbPathCache();
-
-Path _buildClimbPath(Size size, double topInset) {
-  final usable = size.height - topInset;
-  double y(double f) => topInset + usable * f;
-  return Path()
-    ..moveTo(2, y(.8))
-    ..cubicTo(
-      size.width * .2,
-      y(.78),
-      size.width * .22,
-      y(.57),
-      size.width * .39,
-      y(.62),
-    )
-    ..cubicTo(
-      size.width * .55,
-      y(.68),
-      size.width * .61,
-      y(.30),
-      size.width * .76,
-      y(.38),
-    )
-    ..quadraticBezierTo(size.width * .89, y(.43), size.width - 3, y(.12));
-}
-
-class _MiniClimberPainter extends CustomPainter {
-  const _MiniClimberPainter({required this.phase, required this.color});
-
-  static const double lineWidth = 1.8;
-
-  final double phase;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final cycle = _wrapCycle(phase);
-    final bob = math.sin(cycle * math.pi * 2) * 1.15;
-    final w = size.width;
-    final h = size.height;
-
-    Paint stroke(double width, double alpha) => Paint()
-      ..color = color.withValues(alpha: color.a * alpha)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = width
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final hip = Offset(w * 0.46, h * 0.50 + bob);
-    final shoulder = Offset(w * 0.51, h * 0.29 + bob);
-    final headCenter = Offset(w * 0.56, h * 0.145 + bob);
-    final headR = h * 0.09;
-
-    void drawLeg(double limbCycle, Paint paint) {
-      final swing = math.sin(limbCycle * math.pi * 2);
-      final high = (swing + 1) / 2;
-      final knee = Offset(
-        hip.dx + swing * w * 0.16,
-        hip.dy + h * (0.18 - high * 0.12),
-      );
-      final foot = Offset(
-        hip.dx + swing * w * 0.26,
-        hip.dy + h * (0.46 - high * 0.33),
-      );
-      canvas.drawPath(
-        Path()
-          ..moveTo(hip.dx, hip.dy)
-          ..lineTo(knee.dx, knee.dy)
-          ..lineTo(foot.dx, foot.dy),
-        paint,
-      );
-    }
-
-    void drawArm(double limbCycle, Paint paint) {
-      final swing = math.sin(limbCycle * math.pi * 2);
-      final elbow = Offset(
-        shoulder.dx + swing * w * 0.13,
-        shoulder.dy + h * 0.13,
-      );
-      final hand = Offset(
-        shoulder.dx + swing * w * 0.23,
-        shoulder.dy + h * (0.10 - swing * 0.09),
-      );
-      canvas.drawPath(
-        Path()
-          ..moveTo(shoulder.dx, shoulder.dy)
-          ..lineTo(elbow.dx, elbow.dy)
-          ..lineTo(hand.dx, hand.dy),
-        paint,
-      );
-    }
-
-    final rightNear = math.cos(cycle * math.pi * 2) >= 0;
-    final farPaint = stroke(lineWidth * 0.9, 0.52);
-    final nearPaint = stroke(lineWidth, 1);
-    final torsoPaint = stroke(lineWidth, 1);
-    final farLeg = rightNear ? _wrapCycle(cycle + 0.5) : cycle;
-    final nearLeg = rightNear ? cycle : _wrapCycle(cycle + 0.5);
-    final farArm = rightNear ? cycle : _wrapCycle(cycle + 0.5);
-    final nearArm = rightNear ? _wrapCycle(cycle + 0.5) : cycle;
-
-    drawLeg(farLeg, farPaint);
-    drawArm(farArm, farPaint);
-    canvas.drawLine(hip, shoulder, torsoPaint);
-    canvas.drawLine(
-      shoulder,
-      Offset(headCenter.dx, headCenter.dy + headR * 0.65),
-      torsoPaint,
-    );
-    canvas.drawCircle(headCenter, headR, torsoPaint);
-    drawLeg(nearLeg, nearPaint);
-    drawArm(nearArm, nearPaint);
-  }
-
-  @override
-  bool shouldRepaint(_MiniClimberPainter oldDelegate) =>
-      oldDelegate.phase != phase || oldDelegate.color != color;
-}
-
-class _ProgressLinePainter extends CustomPainter {
-  const _ProgressLinePainter({
-    required this.climb,
-    required this.gait,
-    required this.flagPhase,
-    required this.reduceMotion,
-    required this.lineColor,
-    required this.accentColor,
-  });
-
-  final double climb;
-  final double gait;
-  final double flagPhase;
-  final bool reduceMotion;
-  final Color lineColor;
-  final Color accentColor;
-
-  static const _figureW = 30.0;
-  static const _figureH = 34.0;
-  static const _arriveAt = 0.82;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    _climbPathCache.sync(size, _figureH);
-    final path = _climbPathCache.path!;
-    final metric = _climbPathCache.metric!;
-    final timeT = reduceMotion ? 1.0 : (climb / _arriveAt).clamp(0.0, 1.0);
-    final lineT = reduceMotion ? 1.0 : _climbPathCache.pathTForTime(timeT);
-    final underlay = Paint()
-      ..color = const Color(0x66141018)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4.5
-      ..strokeCap = StrokeCap.round;
-    _drawPartialMetric(canvas, path, metric, underlay, lineT);
-    final paint = Paint()
-      ..color = lineColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.75
-      ..strokeCap = StrokeCap.round;
-    _drawPartialMetric(canvas, path, metric, paint, lineT);
-
-    if (reduceMotion || climb >= _arriveAt) {
-      _drawSummitFlag(canvas);
-    }
-
-    if (reduceMotion) return;
-    final climberAlpha = climb < _arriveAt
-        ? 1.0
-        : (1.0 - (climb - _arriveAt) / (1.0 - _arriveAt)).clamp(0.0, 1.0);
-    if (climberAlpha < 0.02 || lineT <= 0.01) return;
-    _drawClimber(canvas, metric, lineT, climberAlpha);
-  }
-
-  void _drawSummitFlag(Canvas canvas) {
-    final tip = _climbPathCache.tip;
-    canvas.drawCircle(tip, 6, Paint()..color = const Color(0x66141018));
-    canvas.drawCircle(tip, 4.5, Paint()..color = accentColor);
-
-    final sway = reduceMotion ? 0.0 : math.sin(flagPhase * math.pi * 2) * 3.5;
-    final poleTop = Offset(tip.dx, tip.dy - 16);
-    canvas.drawLine(
-      tip,
-      poleTop,
-      Paint()
-        ..color = lineColor
-        ..strokeWidth = 1.5
-        ..strokeCap = StrokeCap.round,
-    );
-    final flag = Path()
-      ..moveTo(poleTop.dx, poleTop.dy + 1)
-      ..lineTo(poleTop.dx + 11 + sway, poleTop.dy + 5.5)
-      ..lineTo(poleTop.dx, poleTop.dy + 10)
-      ..close();
-    canvas.drawPath(
-      flag,
-      Paint()
-        ..color = const Color(0x66141018)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.4
-        ..strokeJoin = StrokeJoin.round,
-    );
-    canvas.drawPath(flag, Paint()..color = accentColor);
-  }
-
-  void _drawClimber(Canvas canvas, PathMetric metric, double t, double alpha) {
-    final tangent = metric.getTangentForOffset(
-      metric.length * t.clamp(0.0, 1.0),
-    );
-    if (tangent == null) return;
-    final slope = math.atan2(tangent.vector.dy, tangent.vector.dx);
-    final lean = (-slope * 0.28).clamp(-0.12, 0.42);
-    const footLift = 2.0;
-    canvas.save();
-    canvas.translate(tangent.position.dx, tangent.position.dy);
-    canvas.rotate(lean);
-    canvas.translate(-_figureW * 0.5, -(_figureH - footLift));
-    _MiniClimberPainter(
-      phase: gait,
-      color: lineColor.withValues(alpha: alpha),
-    ).paint(canvas, const Size(_figureW, _figureH));
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(_ProgressLinePainter oldDelegate) {
-    final climberGone = climb >= 1 && oldDelegate.climb >= 1;
-    if (climberGone) {
-      return oldDelegate.flagPhase != flagPhase ||
-          oldDelegate.lineColor != lineColor ||
-          oldDelegate.accentColor != accentColor ||
-          oldDelegate.reduceMotion != reduceMotion;
-    }
-    if (climb < _arriveAt && oldDelegate.climb < _arriveAt) {
-      return oldDelegate.climb != climb ||
-          oldDelegate.gait != gait ||
-          oldDelegate.reduceMotion != reduceMotion ||
-          oldDelegate.lineColor != lineColor;
-    }
-    return oldDelegate.climb != climb ||
-        oldDelegate.gait != gait ||
-        oldDelegate.flagPhase != flagPhase ||
-        oldDelegate.reduceMotion != reduceMotion ||
-        oldDelegate.lineColor != lineColor ||
-        oldDelegate.accentColor != accentColor;
-  }
-}
-
-void _drawPartialMetric(
-  Canvas canvas,
-  Path path,
-  PathMetric metric,
-  Paint paint,
-  double progress,
-) {
-  final t = progress.clamp(0.0, 1.0);
-  if (t <= 0) return;
-  if (t >= 1) {
-    canvas.drawPath(path, paint);
-    return;
-  }
-  canvas.drawPath(metric.extractPath(0, metric.length * t), paint);
-}
-
-void _drawPartialPath(Canvas canvas, Path path, Paint paint, double progress) {
-  final t = progress.clamp(0.0, 1.0);
-  if (t <= 0) return;
-  if (t >= 1) {
-    canvas.drawPath(path, paint);
-    return;
-  }
-  for (final metric in path.computeMetrics()) {
-    canvas.drawPath(metric.extractPath(0, metric.length * t), paint);
-  }
-}
-
-class _BottomStatus extends StatelessWidget {
-  const _BottomStatus({
-    required this.visible,
-    required this.pulse,
-    required this.entrance,
-    required this.reduceMotion,
-    required this.color,
-    required this.statusText,
-    required this.error,
-    required this.onRetry,
-    required this.onEnterAnyway,
-  });
-
-  final Animation<double> visible;
-  final Animation<double> pulse;
-  final AnimationController entrance;
-  final bool reduceMotion;
-  final Color color;
-  final String statusText;
-  final Object? error;
   final VoidCallback onRetry;
   final VoidCallback? onEnterAnyway;
 
   @override
-  Widget build(BuildContext context) => FadeTransition(
-    opacity: visible,
-    child: AnimatedSwitcher(
-      duration: const Duration(milliseconds: 250),
-      child: error == null
-          ? Column(
-              key: const ValueKey('loading'),
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: 24,
+      right: 24,
+      bottom: 36 + MediaQuery.paddingOf(context).bottom,
+      child: Semantics(
+        container: true,
+        liveRegion: true,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: const Color(0xddf5f1e8),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0x33231f1b)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                AnimatedBuilder(
-                  animation: entrance,
-                  builder: (context, _) {
-                    final shift = reduceMotion
-                        ? 0.0
-                        : Curves.easeOut.transform(
-                                entrance.value.clamp(0.0, 1.0),
-                              ) *
-                              0.2;
-                    return _InkTint(
-                      shift: shift,
-                      builder: (context) => Text(
-                        statusText,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontFamily: AppTheme.displayFontFamily,
-                          color: Colors.black,
-                          letterSpacing: .8,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 10),
-                RepaintBoundary(
-                  child: _LoadingTrack(animation: pulse, color: color),
-                ),
-              ],
-            )
-          : Column(
-              key: const ValueKey('error'),
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _InkTint(
-                  builder: (context) => Text(
-                    context.l10n.loadingPreparationFailed,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontFamily: AppTheme.displayFontFamily,
-                      color: Colors.black,
-                      fontWeight: FontWeight.w500,
-                    ),
+                Text(
+                  context.l10n.loadingPreparationFailed,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: const Color(0xff28231e),
                   ),
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 8,
                   children: [
-                    OutlinedButton(
-                      onPressed: onRetry,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.black,
-                        side: const BorderSide(color: Colors.black),
-                      ),
-                      child: Text(context.l10n.retry),
-                    ),
-                    if (onEnterAnyway != null) ...[
-                      const SizedBox(width: 8),
+                    TextButton(onPressed: onRetry, child: const Text('重试')),
+                    if (onEnterAnyway != null)
                       TextButton(
                         onPressed: onEnterAnyway,
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.black,
-                        ),
-                        child: Text(context.l10n.enterAnyway),
+                        child: const Text('直接进入'),
                       ),
-                    ],
                   ],
                 ),
               ],
             ),
-    ),
-  );
-}
-
-class _LoadingTrack extends StatelessWidget {
-  const _LoadingTrack({required this.animation, required this.color});
-
-  final Animation<double> animation;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    width: 52,
-    height: 5,
-    child: ClipRRect(
-      borderRadius: BorderRadius.circular(3),
-      child: AnimatedBuilder(
-        animation: animation,
-        builder: (context, _) {
-          const highlightWidth = 13.0;
-          final position = Curves.easeInOutCubic.transform(animation.value);
-          final edgeFade = math.sin(animation.value * math.pi);
-          return Stack(
-            alignment: Alignment.centerLeft,
-            children: [
-              Center(
-                child: Container(
-                  height: 1.5,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: .18),
-                    borderRadius: BorderRadius.circular(1),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: (52 - highlightWidth) * position,
-                child: Opacity(
-                  opacity: edgeFade.clamp(0.0, 1.0),
-                  child: Container(
-                    width: highlightWidth,
-                    height: 2.5,
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: .9),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
+          ),
+        ),
       ),
-    ),
-  );
+    );
+  }
 }

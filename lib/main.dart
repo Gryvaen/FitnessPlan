@@ -7,8 +7,14 @@ import 'app.dart';
 import 'l10n/app_localizations.dart';
 import 'providers/app_providers.dart';
 import 'ui/loading/discipline_freedom_loading_page.dart';
+import 'ui/loading/loading_lab_page.dart';
 import 'ui/theme/app_theme.dart';
 import 'ui/tools/workout_reminder_notifications.dart';
+
+/// Splash playground: loops opening UI without entering Home.
+///
+/// `flutter run --dart-define=LOADING_LAB=true`
+const bool kLoadingLab = bool.fromEnvironment('LOADING_LAB');
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -67,18 +73,22 @@ class _BootstrapState extends ConsumerState<_Bootstrap> {
                 GlobalCupertinoLocalizations.delegate,
               ],
               supportedLocales: AppLocalizations.supportedLocales,
-              home: DisciplineFreedomLoadingPage(
-                onInitialize: () async {
-                  ref.invalidate(foodsSeedProvider);
-                  await ref.read(foodsSeedProvider.future);
-                },
-                onPrewarm: () {
-                  if (mounted && !_prewarm) setState(() => _prewarm = true);
-                },
-                onFinished: _enterHome,
-                onError: (_) {},
-                onEnterAnyway: _enterHome,
-              ),
+              home: kLoadingLab
+                  ? const LoadingLabPage()
+                  : DisciplineFreedomLoadingPage(
+                      onInitialize: () async {
+                        ref.invalidate(foodsSeedProvider);
+                        await ref.read(foodsSeedProvider.future);
+                      },
+                      onPrewarm: () {
+                        if (mounted && !_prewarm) {
+                          setState(() => _prewarm = true);
+                        }
+                      },
+                      onFinished: _enterHome,
+                      onError: (_) {},
+                      onEnterAnyway: _enterHome,
+                    ),
             ),
         ],
       ),

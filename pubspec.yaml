@@ -47,6 +47,7 @@ flutter:
   assets:
     - assets/food_seed.json
     - assets/cultivation/
+    - assets/splash/
   fonts:
     - family: LXGWWenKai
       fonts:
