@@ -14,6 +14,7 @@ class SwordsmanLoadingPage extends StatefulWidget {
     this.onPrewarm,
     this.onError,
     this.onEnterAnyway,
+    this.labProgress,
   });
 
   final Future<void> Function()? onInitialize;
@@ -21,6 +22,10 @@ class SwordsmanLoadingPage extends StatefulWidget {
   final VoidCallback? onPrewarm;
   final ValueChanged<Object>? onError;
   final VoidCallback? onEnterAnyway;
+
+  /// Debug Lab: when set, the scene is scrubbed by this 0–1 value and the
+  /// page never auto-finishes or tap-skips.
+  final ValueNotifier<double>? labProgress;
 
   @override
   State<SwordsmanLoadingPage> createState() => _SwordsmanLoadingPageState();
@@ -44,6 +49,8 @@ class _SwordsmanLoadingPageState extends State<SwordsmanLoadingPage>
   bool _finishing = false;
   int _attempt = 0;
 
+  bool get _lab => widget.labProgress != null;
+
   @override
   void initState() {
     super.initState();
@@ -51,6 +58,7 @@ class _SwordsmanLoadingPageState extends State<SwordsmanLoadingPage>
     _scene = AnimationController(
       vsync: this,
       duration: SwordsmanLoadingConfig.cycleDuration,
+      value: widget.labProgress?.value ?? 0,
     );
     _exit = AnimationController(
       vsync: this,
@@ -58,6 +66,27 @@ class _SwordsmanLoadingPageState extends State<SwordsmanLoadingPage>
     );
     _exitCurve = CurvedAnimation(parent: _exit, curve: Curves.easeInCubic);
     _exitOpacity = ReverseAnimation(_exitCurve);
+    if (_lab) {
+      widget.labProgress!.addListener(_onLabProgress);
+      _scene.value = widget.labProgress!.value.clamp(0.0, 1.0);
+    }
+  }
+
+  void _onLabProgress() {
+    if (!mounted) return;
+    _scene.value = widget.labProgress!.value.clamp(0.0, 1.0);
+  }
+
+  @override
+  void didUpdateWidget(covariant SwordsmanLoadingPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.labProgress != widget.labProgress) {
+      oldWidget.labProgress?.removeListener(_onLabProgress);
+      widget.labProgress?.addListener(_onLabProgress);
+      if (widget.labProgress != null) {
+        _scene.value = widget.labProgress!.value.clamp(0.0, 1.0);
+      }
+    }
   }
 
   @override
@@ -73,6 +102,7 @@ class _SwordsmanLoadingPageState extends State<SwordsmanLoadingPage>
       _assets.map((asset) => precacheImage(AssetImage(asset), context)),
     );
     if (!mounted) return;
+    if (_lab) return;
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     if (!reduceMotion) _scene.forward();
     _prewarmTimer = Timer(SwordsmanLoadingConfig.prewarmDelay, () {
@@ -104,7 +134,7 @@ class _SwordsmanLoadingPageState extends State<SwordsmanLoadingPage>
   }
 
   void _skip() {
-    if (_finishing || _error != null) return;
+    if (_lab || _finishing || _error != null) return;
     _finishing = true;
     _prewarmTimer?.cancel();
     _scene.stop();
@@ -112,7 +142,7 @@ class _SwordsmanLoadingPageState extends State<SwordsmanLoadingPage>
   }
 
   Future<void> _finish() async {
-    if (_finishing) return;
+    if (_lab || _finishing) return;
     _finishing = true;
     _prewarmTimer?.cancel();
     // The scene is already fully frozen by the time minimumDisplayDuration
@@ -126,7 +156,7 @@ class _SwordsmanLoadingPageState extends State<SwordsmanLoadingPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (_finishing || MediaQuery.disableAnimationsOf(context)) return;
+    if (_lab || _finishing || MediaQuery.disableAnimationsOf(context)) return;
     if (state == AppLifecycleState.resumed) {
       if (!_scene.isCompleted) _scene.forward();
     } else if (state == AppLifecycleState.paused ||
@@ -139,6 +169,7 @@ class _SwordsmanLoadingPageState extends State<SwordsmanLoadingPage>
 
   @override
   void dispose() {
+    widget.labProgress?.removeListener(_onLabProgress);
     WidgetsBinding.instance.removeObserver(this);
     _prewarmTimer?.cancel();
     _exitCurve.dispose();
@@ -149,14 +180,14 @@ class _SwordsmanLoadingPageState extends State<SwordsmanLoadingPage>
 
   @override
   Widget build(BuildContext context) {
-    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final reduceMotion = !_lab && MediaQuery.disableAnimationsOf(context);
     return FadeTransition(
       opacity: _exitOpacity,
       child: Scaffold(
         backgroundColor: SwordsmanLoadingConfig.background,
         body: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: _error == null ? _skip : null,
+          onTap: (!_lab && _error == null) ? _skip : null,
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -167,16 +198,17 @@ class _SwordsmanLoadingPageState extends State<SwordsmanLoadingPage>
                   reduceMotion: reduceMotion,
                 ),
               ),
-              Positioned(
-                left: 24,
-                right: 24,
-                bottom: MediaQuery.paddingOf(context).bottom + 24,
-                child: _LoadingStatus(
-                  error: _error,
-                  onRetry: () => _initialize(reduceMotion: reduceMotion),
-                  onEnterAnyway: widget.onEnterAnyway,
+              if (!_lab)
+                Positioned(
+                  left: 24,
+                  right: 24,
+                  bottom: MediaQuery.paddingOf(context).bottom + 24,
+                  child: _LoadingStatus(
+                    error: _error,
+                    onRetry: () => _initialize(reduceMotion: reduceMotion),
+                    onEnterAnyway: widget.onEnterAnyway,
+                  ),
                 ),
-              ),
             ],
           ),
         ),
