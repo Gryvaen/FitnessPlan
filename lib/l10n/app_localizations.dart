@@ -1640,6 +1640,18 @@ abstract class AppLocalizations {
   /// **'e.g. 1 bowl / 500 ml bottle'**
   String get portionNameHint;
 
+  /// No description provided for @manualGramsToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter grams manually'**
+  String get manualGramsToggle;
+
+  /// No description provided for @invalidGramsValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a value greater than 0'**
+  String get invalidGramsValue;
+
   /// No description provided for @deleteCustomFood.
   ///
   /// In en, this message translates to:

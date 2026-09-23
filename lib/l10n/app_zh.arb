@@ -285,6 +285,8 @@
   "addCommonPortion": "添加常用份量",
   "editCommonPortion": "修改常用份量",
   "portionNameHint": "如：一碗 / 瓶 500ml",
+  "manualGramsToggle": "手动输入克数",
+  "invalidGramsValue": "请输入大于 0 的克数",
   "deleteCustomFood": "删除自定义食材",
   "deleteCustomFoodBody": "确定删除？历史记账仍会保留名称。",
   "noPortionsHint": "暂无，记账时可快速选用",

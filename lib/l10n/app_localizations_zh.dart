@@ -797,6 +797,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get portionNameHint => '如：一碗 / 瓶 500ml';
 
   @override
+  String get manualGramsToggle => '手动输入克数';
+
+  @override
+  String get invalidGramsValue => '请输入大于 0 的克数';
+
+  @override
   String get deleteCustomFood => '删除自定义食材';
 
   @override

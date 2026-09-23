@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -139,47 +140,106 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
     final labelCtrl = TextEditingController();
     final labelFocus = FocusNode();
     suppressInitialTextFocus(labelFocus);
+    final manualCtrl = TextEditingController();
     double grams = 100;
+    bool useManual = false;
+    String? manualError;
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.addCommonPortion),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: labelCtrl,
-              focusNode: labelFocus,
-              decoration: InputDecoration(
-                labelText: l10n.name,
-                hintText: l10n.portionNameHint,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setLocal) => AlertDialog(
+          title: Text(l10n.addCommonPortion),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: labelCtrl,
+                focusNode: labelFocus,
+                decoration: InputDecoration(
+                  labelText: l10n.name,
+                  hintText: l10n.portionNameHint,
+                ),
               ),
+              const SizedBox(height: 12),
+              AppDropdown<double>(
+                label: l10n.grams,
+                value: FormOptions.snapDouble(FormOptions.mealGrams(), grams),
+                items: FormOptions.mealGrams(),
+                suffixText: 'g',
+                itemLabel: formatKg,
+                onChanged: (v) => setLocal(() => grams = v),
+              ),
+              InkWell(
+                onTap: () => setLocal(() {
+                  useManual = !useManual;
+                  if (!useManual) {
+                    manualCtrl.clear();
+                    manualError = null;
+                  }
+                }),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    children: [
+                      const Expanded(child: Divider(height: 1)),
+                      Icon(
+                        useManual
+                            ? Icons.keyboard_arrow_up
+                            : Icons.keyboard_arrow_down,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (useManual)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: TextField(
+                    controller: manualCtrl,
+                    autofocus: true,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                    ],
+                    decoration: InputDecoration(
+                      labelText: l10n.manualGramsToggle,
+                      suffixText: 'g',
+                      errorText: manualError,
+                    ),
+                    onChanged: (_) {
+                      if (manualError != null) {
+                        setLocal(() => manualError = null);
+                      }
+                    },
+                  ),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.cancel),
             ),
-            const SizedBox(height: 12),
-            StatefulBuilder(
-              builder: (context, setLocal) {
-                return AppDropdown<double>(
-                  label: l10n.grams,
-                  value: FormOptions.snapDouble(FormOptions.mealGrams(), grams),
-                  items: FormOptions.mealGrams(),
-                  suffixText: 'g',
-                  itemLabel: formatKg,
-                  onChanged: (v) => setLocal(() => grams = v),
-                );
+            FilledButton(
+              onPressed: () {
+                if (useManual) {
+                  final parsed = double.tryParse(manualCtrl.text.trim());
+                  if (parsed == null || parsed <= 0) {
+                    setLocal(() => manualError = l10n.invalidGramsValue);
+                    return;
+                  }
+                  grams = parsed;
+                }
+                Navigator.pop(ctx, true);
               },
+              child: Text(l10n.add),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.add),
-          ),
-        ],
       ),
     );
     final label = labelCtrl.text;
@@ -187,6 +247,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       labelCtrl.dispose();
       labelFocus.dispose();
+      manualCtrl.dispose();
     });
     if (ok != true || !mounted) return;
     try {

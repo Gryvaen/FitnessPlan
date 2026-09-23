@@ -804,6 +804,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get portionNameHint => 'e.g. 1 bowl / 500 ml bottle';
 
   @override
+  String get manualGramsToggle => 'Enter grams manually';
+
+  @override
+  String get invalidGramsValue => 'Enter a value greater than 0';
+
+  @override
   String get deleteCustomFood => 'Delete custom food';
 
   @override
