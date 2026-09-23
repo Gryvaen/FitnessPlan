@@ -1,4 +1,5 @@
-import 'package:fl_chart/fl_chart.dart';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -378,6 +379,7 @@ class _SeriesChart extends StatelessWidget {
         Text(title, style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 8),
         SizedBox(
+          key: ValueKey('ink-series-chart-$title'),
           height: 180,
           child: points.isEmpty
               ? Center(
@@ -386,17 +388,58 @@ class _SeriesChart extends StatelessWidget {
                     style: Theme.of(context).textTheme.meta,
                   ),
                 )
-              : _buildChart(context),
+              : Semantics(
+                  label: '$title，${points.length}',
+                  image: true,
+                  child: CustomPaint(
+                    painter: _InkSeriesPainter(
+                      points: points,
+                      color: color,
+                      inkColor: Theme.of(context).colorScheme.onSurface,
+                      paperColor: AppThemeVisuals.of(context).card,
+                      labelStyle: Theme.of(context).textTheme.labelSmall,
+                      locale: Localizations.localeOf(context),
+                    ),
+                    size: Size.infinite,
+                  ),
+                ),
         ),
       ],
     );
   }
+}
 
-  Widget _buildChart(BuildContext context) {
-    final spots = <FlSpot>[
-      for (var i = 0; i < points.length; i++)
-        FlSpot(i.toDouble(), points[i].value),
-    ];
+class _InkSeriesPainter extends CustomPainter {
+  const _InkSeriesPainter({
+    required this.points,
+    required this.color,
+    required this.inkColor,
+    required this.paperColor,
+    required this.labelStyle,
+    required this.locale,
+  });
+
+  final List<_SeriesPoint> points;
+  final Color color;
+  final Color inkColor;
+  final Color paperColor;
+  final TextStyle? labelStyle;
+  final Locale locale;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const left = 10.0;
+    const right = 10.0;
+    const top = 11.0;
+    const bottom = 28.0;
+    final plot = Rect.fromLTRB(
+      left,
+      top,
+      size.width - right,
+      size.height - bottom,
+    );
+
+    _paintPaperWash(canvas, plot);
 
     var minY = points.map((e) => e.value).reduce((a, b) => a < b ? a : b);
     var maxY = points.map((e) => e.value).reduce((a, b) => a > b ? a : b);
@@ -409,51 +452,177 @@ class _SeriesChart extends StatelessWidget {
       maxY += pad;
     }
 
-    return LineChart(
-      LineChartData(
-        minY: minY,
-        maxY: maxY,
-        gridData: const FlGridData(show: true),
-        borderData: FlBorderData(show: false),
-        titlesData: FlTitlesData(
-          topTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          rightTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 28,
-              interval: points.length > 6
-                  ? (points.length / 4).ceilToDouble()
-                  : 1,
-              getTitlesWidget: (value, meta) {
-                final i = value.round();
-                if (i < 0 || i >= points.length) {
-                  return const SizedBox.shrink();
-                }
-                return Text(
-                  DateFormat('M/d').format(points[i].date),
-                  style: Theme.of(context).textTheme.labelSmall,
-                );
-              },
-            ),
-          ),
+    final offsets = <Offset>[
+      for (var i = 0; i < points.length; i++)
+        Offset(
+          points.length == 1
+              ? plot.center.dx
+              : plot.left + plot.width * i / (points.length - 1),
+          plot.bottom -
+              plot.height * ((points[i].value - minY) / (maxY - minY)),
         ),
-        lineBarsData: [
-          LineChartBarData(
-            spots: spots,
-            isCurved: false,
-            barWidth: 3,
-            color: color,
-            dotData: const FlDotData(show: true),
-          ),
-        ],
-      ),
+    ];
+    final line = _smoothPath(offsets);
+    final wash = Path.from(line)
+      ..lineTo(offsets.last.dx, plot.bottom)
+      ..lineTo(offsets.first.dx, plot.bottom)
+      ..close();
+    canvas.drawPath(
+      wash,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [color.withValues(alpha: .17), color.withValues(alpha: .01)],
+        ).createShader(plot),
     );
+
+    canvas.drawPath(
+      line,
+      Paint()
+        ..color = color.withValues(alpha: .18)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 7
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+    canvas.drawPath(
+      line,
+      Paint()
+        ..color = color.withValues(alpha: .92)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.6
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+
+    for (var i = 0; i < offsets.length; i++) {
+      final p = offsets[i];
+      canvas.drawCircle(
+        p,
+        i == offsets.length - 1 ? 5.2 : 3.8,
+        Paint()..color = paperColor,
+      );
+      canvas.drawCircle(
+        p,
+        i == offsets.length - 1 ? 4.1 : 2.8,
+        Paint()
+          ..color = color.withValues(alpha: i == offsets.length - 1 ? 1 : .82),
+      );
+      if (i == offsets.length - 1) {
+        canvas.drawCircle(
+          p,
+          7,
+          Paint()
+            ..color = color.withValues(alpha: .28)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1,
+        );
+      }
+    }
+
+    _paintDateLabels(canvas, plot);
   }
+
+  void _paintPaperWash(Canvas canvas, Rect plot) {
+    final washPath = Path()
+      ..moveTo(plot.left + 2, plot.top)
+      ..quadraticBezierTo(
+        plot.center.dx,
+        plot.top + 2,
+        plot.right - 2,
+        plot.top,
+      )
+      ..lineTo(plot.right, plot.bottom - 2)
+      ..quadraticBezierTo(
+        plot.center.dx,
+        plot.bottom,
+        plot.left,
+        plot.bottom - 1,
+      )
+      ..close();
+    canvas.drawPath(
+      washPath,
+      Paint()..color = inkColor.withValues(alpha: .025),
+    );
+
+    final guidePaint = Paint()
+      ..color = inkColor.withValues(alpha: .09)
+      ..strokeWidth = .7
+      ..strokeCap = StrokeCap.round;
+    for (var row = 1; row <= 3; row++) {
+      final y = plot.top + plot.height * row / 4;
+      const dash = 13.0;
+      for (
+        var x = plot.left + (row.isOdd ? 5 : 0);
+        x < plot.right;
+        x += dash + 8
+      ) {
+        canvas.drawLine(
+          Offset(x, y),
+          Offset((x + dash).clamp(plot.left, plot.right), y),
+          guidePaint,
+        );
+      }
+    }
+  }
+
+  Path _smoothPath(List<Offset> values) {
+    final path = Path()..moveTo(values.first.dx, values.first.dy);
+    if (values.length == 1) {
+      path.lineTo(values.first.dx + .01, values.first.dy);
+      return path;
+    }
+    for (var i = 0; i < values.length - 1; i++) {
+      final current = values[i];
+      final next = values[i + 1];
+      final middleX = (current.dx + next.dx) / 2;
+      path.cubicTo(middleX, current.dy, middleX, next.dy, next.dx, next.dy);
+    }
+    return path;
+  }
+
+  void _paintDateLabels(Canvas canvas, Rect plot) {
+    final labelIndexes = <int>{0, points.length - 1};
+    if (points.length > 2) labelIndexes.add((points.length - 1) ~/ 2);
+    if (points.length > 6) {
+      labelIndexes
+        ..add((points.length - 1) ~/ 4)
+        ..add(((points.length - 1) * 3) ~/ 4);
+    }
+    for (final i in labelIndexes.toList()..sort()) {
+      final text = TextPainter(
+        text: TextSpan(
+          text: DateFormat(
+            'M/d',
+            locale.toLanguageTag(),
+          ).format(points[i].date),
+          style: labelStyle?.copyWith(color: inkColor.withValues(alpha: .58)),
+        ),
+        textDirection: ui.TextDirection.ltr,
+        maxLines: 1,
+      )..layout();
+      final x = points.length == 1
+          ? plot.center.dx
+          : plot.left + plot.width * i / (points.length - 1);
+      text.paint(
+        canvas,
+        Offset(
+          (x - text.width / 2).clamp(0.0, plot.right - text.width),
+          plot.bottom + 8,
+        ),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_InkSeriesPainter oldDelegate) =>
+      points != oldDelegate.points ||
+      color != oldDelegate.color ||
+      inkColor != oldDelegate.inkColor ||
+      paperColor != oldDelegate.paperColor ||
+      labelStyle != oldDelegate.labelStyle ||
+      locale != oldDelegate.locale;
 }
 
 class _WeightLogDialog extends StatefulWidget {
