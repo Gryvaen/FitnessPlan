@@ -143,8 +143,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   ),
                   title: Text(l10n.exportToFolder),
                   subtitle: Text(l10n.exportToFolderHint),
-                  onTap: () =>
-                      Navigator.pop(ctx, _ExportDestination.folder),
+                  onTap: () => Navigator.pop(ctx, _ExportDestination.folder),
                 ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
@@ -154,8 +153,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   ),
                   title: Text(l10n.exportViaShare),
                   subtitle: Text(l10n.exportViaShareHint),
-                  onTap: () =>
-                      Navigator.pop(ctx, _ExportDestination.share),
+                  onTap: () => Navigator.pop(ctx, _ExportDestination.share),
                 ),
               ],
             ),
@@ -781,7 +779,7 @@ class _CultivationHeroCard extends ConsumerWidget {
                             ),
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: progress?.realm.textColor,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     if (progress != null && !progress.isMax) ...[
