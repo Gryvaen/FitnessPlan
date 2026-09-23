@@ -138,7 +138,7 @@ class _RealmGuideCard extends StatelessWidget {
                         realm.label(l10n),
                         style: theme.textTheme.titleMedium?.copyWith(
                           color: realm.textColor,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
