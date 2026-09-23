@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/cultivation.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import 'cultivation_labels.dart';
 
@@ -243,8 +244,8 @@ class _RealmSwatch extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: Colors.black.withValues(alpha: 0.45),
                   ),
-                  child: const Icon(
-                    Icons.lock_outline,
+                  child: const InkIcon(
+                    InkGlyph.lock,
                     size: 14,
                     color: Colors.white,
                   ),
