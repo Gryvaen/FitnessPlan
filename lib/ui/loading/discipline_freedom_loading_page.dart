@@ -4,7 +4,7 @@ import '../../l10n/app_localizations_ext.dart';
 
 /// A short, layered ink-painting startup sequence.
 ///
-/// App initialization runs alongside the 1.8 second entrance. The page leaves
+/// App initialization runs alongside the 1.4 second entrance. The page leaves
 /// only after both finish, so fast startup never cuts the sword motion short.
 class DisciplineFreedomLoadingPage extends StatefulWidget {
   const DisciplineFreedomLoadingPage({
@@ -43,7 +43,7 @@ class DisciplineFreedomLoadingPage extends StatefulWidget {
   /// decoded. Enabled only by the real app bootstrap, not widget tests/lab.
   final bool releaseDeferredFirstFrame;
 
-  static const entranceDuration = Duration(milliseconds: 1800);
+  static const entranceDuration = Duration(milliseconds: 1400);
 
   @override
   State<DisciplineFreedomLoadingPage> createState() =>
