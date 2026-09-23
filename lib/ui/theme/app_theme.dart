@@ -7,9 +7,9 @@ import '../ink/ink_icon.dart';
 /// Brand chrome (buttons, nav, focus) lives on [AppThemeVisuals.accent] —
 /// these tokens stay reserved for "speaking" status, not decoration.
 abstract final class AppColors {
-  static const protein = Color(0xFF155E5B);
-  static const carb = Color(0xFF155E5B);
-  static const fat = Color(0xFF155E5B);
+  static const protein = Color(0xFF97354F);
+  static const carb = Color(0xFF2B6588);
+  static const fat = Color(0xFFA08017);
   static const water = Color(0xFF155E5B);
 
   /// Favorite / star accent.
@@ -334,8 +334,8 @@ class AppTheme {
   /// Display / loading-page typeface (霞鹜文楷 Lite Medium).
   static const displayFontFamily = 'LXGWWenKai';
 
-  /// UI body / numeric typeface. The variable font supplies real weights.
-  static const bodyFontFamily = 'NotoSansSC';
+  /// UI body / numeric typeface (霞鹜文楷 Lite Medium，水墨风统一正文字体).
+  static const bodyFontFamily = 'LXGWWenKai';
 
   /// Soft rainbow wash used only by the loading-page ink bloom animation.
   static const oilRainbowWash = LinearGradient(
