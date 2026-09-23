@@ -59,49 +59,115 @@ class CalorieRing extends StatelessWidget {
           fraction: f,
           fallback: scheme.onSurface,
         );
-    final centerColor = labelColor ?? tipColor;
+    // Going over target is communicated by the percentage only. The ring
+    // remains a full primary-colour brush stroke instead of turning red.
+    final centerColor = labelColor ?? (over ? AppColors.warning : tipColor);
     final percent = (f * 100).round();
+    final progressColor = color ?? AppThemeVisuals.of(context).accent;
 
     return SizedBox(
       width: size,
       height: size,
-      child: CustomPaint(
-        painter: _RingPainter(
-          progress: progress,
-          over: over,
-          solidColor: color,
-          trackColor: trackColor ?? visuals.track,
-          strokeWidth: strokeWidth,
-        ),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '$percent%',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: centerColor,
-                  height: 1.0,
-                ),
-              ),
-              if (centerLabel != null) ...[
-                const SizedBox(height: 2),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          CustomPaint(
+            painter: _RingPainter(
+              progress: 0,
+              over: false,
+              solidColor: color,
+              trackColor: trackColor ?? visuals.track,
+              strokeWidth: strokeWidth,
+            ),
+          ),
+          if (progress >= 1)
+            _ProgressRingTexture(color: progressColor)
+          else if (progress > 0)
+            ClipPath(
+              clipper: _RingArcSegmentClipper(start: 0, end: progress),
+              child: _ProgressRingTexture(color: progressColor),
+            ),
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 Text(
-                  centerLabel!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: metaColor ?? scheme.onSurfaceVariant,
+                  '$percent%',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: centerColor,
+                    height: 1.0,
                   ),
                 ),
+                if (centerLabel != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    centerLabel!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: metaColor ?? scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
+}
+
+/// Active progress uses the original dry-brush asset at its natural weight.
+/// The base track is drawn on a smaller radius, so this reads as an outer ink
+/// stroke instead of a thicker replacement painted across the same centreline.
+class _ProgressRingTexture extends StatelessWidget {
+  const _ProgressRingTexture({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => ColorFiltered(
+    colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+    child: Image.asset(
+      'assets/ink/brush-ring-v1.png',
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.medium,
+    ),
+  );
+}
+
+class _RingArcSegmentClipper extends CustomClipper<Path> {
+  const _RingArcSegmentClipper({required this.start, required this.end});
+
+  final double start;
+  final double end;
+
+  @override
+  Path getClip(Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.longestSide * .8;
+    final startAngle = -math.pi / 2 + math.pi * 2 * start;
+    final startPoint = Offset(
+      center.dx + math.cos(startAngle) * radius,
+      center.dy + math.sin(startAngle) * radius,
+    );
+    return Path()
+      ..moveTo(center.dx, center.dy)
+      ..lineTo(startPoint.dx, startPoint.dy)
+      ..arcTo(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle,
+        math.pi * 2 * (end - start),
+        false,
+      )
+      ..close();
+  }
+
+  @override
+  bool shouldReclip(covariant _RingArcSegmentClipper oldClipper) =>
+      oldClipper.start != start || oldClipper.end != end;
 }
 
 class _RingPainter extends CustomPainter {
@@ -122,13 +188,14 @@ class _RingPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.shortestSide - strokeWidth) / 2;
+    // The quiet track sits clearly inside the broader dry-brush progress ring.
+    final radius = (size.shortestSide - strokeWidth * 2.9) / 2;
     final rect = Rect.fromCircle(center: center, radius: radius);
     final track = Paint()
       ..color = trackColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
+      ..strokeWidth = strokeWidth * .55
+      ..strokeCap = StrokeCap.butt;
 
     // One deliberate dry-ink break keeps the ring from reading as stock UI.
     canvas.drawArc(rect, -math.pi / 2 + .12, 2 * math.pi - .24, false, track);
@@ -137,7 +204,7 @@ class _RingPainter extends CustomPainter {
     final arc = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
+      ..strokeCap = StrokeCap.butt;
 
     if (solidColor != null) {
       arc.color = solidColor!;
@@ -155,7 +222,62 @@ class _RingPainter extends CustomPainter {
       ).createShader(rect);
     }
 
-    canvas.drawArc(rect, -math.pi / 2, 2 * math.pi * progress, false, arc);
+    final sweep = 2 * math.pi * progress;
+    canvas.drawArc(rect, -math.pi / 2, sweep, false, arc);
+
+    // Two restrained bristles follow the main stroke and create a dry-brush
+    // edge without turning the progress ring into a decorative ink splash.
+    final bristleColor =
+        solidColor ?? (over ? AppColors.warning : AppColors.water);
+    final outer = Rect.fromCircle(
+      center: center,
+      radius: radius + strokeWidth * .38,
+    );
+    final inner = Rect.fromCircle(
+      center: center,
+      radius: radius - strokeWidth * .38,
+    );
+    canvas.drawArc(
+      outer,
+      -math.pi / 2 + .025,
+      math.max(0, sweep - .06),
+      false,
+      Paint()
+        ..color = bristleColor.withValues(alpha: .28)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = .8
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.drawArc(
+      inner,
+      -math.pi / 2 + .055,
+      math.max(0, sweep - .11),
+      false,
+      Paint()
+        ..color = bristleColor.withValues(alpha: .18)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = .55
+        ..strokeCap = StrokeCap.round,
+    );
+
+    // A pressure-shaped terminal replaces the generic rounded progress cap.
+    final endAngle = -math.pi / 2 + sweep;
+    final tip = Offset(
+      center.dx + math.cos(endAngle) * radius,
+      center.dy + math.sin(endAngle) * radius,
+    );
+    canvas.save();
+    canvas.translate(tip.dx, tip.dy);
+    canvas.rotate(endAngle + math.pi / 2);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset.zero,
+        width: strokeWidth * 1.14,
+        height: strokeWidth * .72,
+      ),
+      Paint()..color = bristleColor,
+    );
+    canvas.restore();
   }
 
   @override
@@ -359,12 +481,17 @@ class WaterCupControl extends StatelessWidget {
                         child: SizedBox(
                           width: math.min(width, cupWidth + 6),
                           height: 9,
-                          child: CustomPaint(
-                            painter: _WaterCupLidPainter(
-                              stroke: onUndo == null
-                                  ? visuals.waterStroke.withValues(alpha: 0.45)
+                          child: ColorFiltered(
+                            colorFilter: ColorFilter.mode(
+                              onUndo == null
+                                  ? visuals.waterStroke.withValues(alpha: .45)
                                   : visuals.waterStroke,
-                              fill: visuals.cupGlass,
+                              BlendMode.srcIn,
+                            ),
+                            child: Image.asset(
+                              'assets/ink/brush-rim-v1.png',
+                              fit: BoxFit.fill,
+                              filterQuality: FilterQuality.medium,
                             ),
                           ),
                         ),
@@ -563,29 +690,59 @@ class _WaterCupBodyPainter extends CustomPainter {
       canvas.restore();
     }
 
+    // Three independent strokes form the vessel: two inward walls and one
+    // shallow base sweep. Their unequal pressure is the cup's signature.
+    final left = Path()
+      ..moveTo(w * .10, h * .03)
+      ..cubicTo(w * .12, h * .28, w * .16, h * .70, w * .23, h * .86);
+    final right = Path()
+      ..moveTo(w * .90, h * .03)
+      ..cubicTo(w * .88, h * .30, w * .84, h * .70, w * .77, h * .86);
+    final base = Path()
+      ..moveTo(w * .23, h * .86)
+      ..cubicTo(w * .34, h * .98, w * .66, h * .98, w * .77, h * .86);
     canvas.drawPath(
-      outline,
+      left,
       Paint()
         ..color = stroke
         ..style = PaintingStyle.stroke
-        ..strokeWidth = _strokeWidth
-        ..strokeJoin = StrokeJoin.round
+        ..strokeWidth = 1.8
         ..strokeCap = StrokeCap.round,
     );
+    canvas.drawPath(
+      right,
+      Paint()
+        ..color = stroke
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.45
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.drawPath(
+      base,
+      Paint()
+        ..color = stroke
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.save();
+    canvas.translate(1.1, .4);
+    canvas.drawPath(
+      left,
+      Paint()
+        ..color = stroke.withValues(alpha: .22)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = .55
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.restore();
 
     // Signature droplet at the upper-right edge.
     final drop = Path()
       ..moveTo(w * .88, h * .04)
       ..cubicTo(w * .81, h * .13, w * .83, h * .20, w * .88, h * .20)
       ..cubicTo(w * .94, h * .20, w * .95, h * .13, w * .88, h * .04);
-    canvas.drawPath(
-      drop,
-      Paint()
-        ..color = stroke
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2
-        ..strokeJoin = StrokeJoin.round,
-    );
+    canvas.drawPath(drop, Paint()..color = stroke);
   }
 
   @override
@@ -596,34 +753,4 @@ class _WaterCupBodyPainter extends CustomPainter {
       old.glass != glass ||
       old.water != water ||
       old.waterDeep != waterDeep;
-}
-
-/// Open brush rim, drawn separately so it remains an independent undo target.
-class _WaterCupLidPainter extends CustomPainter {
-  _WaterCupLidPainter({required this.stroke, required this.fill});
-
-  final Color stroke;
-  final Color fill;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // The missing segment is the icon family's deliberate ink break.
-    final rect = Rect.fromLTWH(0.8, 0.8, size.width - 1.6, size.height - 1.6);
-    canvas.drawOval(rect, Paint()..color = fill.withValues(alpha: .28));
-    canvas.drawArc(
-      rect,
-      .18,
-      math.pi * 1.78,
-      false,
-      Paint()
-        ..color = stroke
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.35
-        ..strokeCap = StrokeCap.round,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _WaterCupLidPainter old) =>
-      old.stroke != stroke || old.fill != fill;
 }
