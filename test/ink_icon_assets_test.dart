@@ -36,4 +36,22 @@ void main() {
     expect(find.byType(InkIcon), findsNWidgets(InkGlyph.values.length * 6));
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('dark-theme glyphs use the high-contrast surface foreground', (
+    tester,
+  ) async {
+    const foreground = Color(0xFFECEFF2);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(
+          colorScheme: const ColorScheme.dark(onSurface: foreground),
+        ),
+        home: const Scaffold(body: InkIcon(InkGlyph.food)),
+      ),
+    );
+
+    final image = tester.widget<Image>(find.byType(Image));
+    expect(image.color, foreground);
+    expect(image.colorBlendMode, BlendMode.srcIn);
+  });
 }
