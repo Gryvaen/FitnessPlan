@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -82,8 +84,13 @@ class _BootstrapState extends ConsumerState<_Bootstrap> {
                   : DisciplineFreedomLoadingPage(
                       releaseDeferredFirstFrame: true,
                       onInitialize: () async {
+                        // Kick the seed sync off but don't block the splash
+                        // on it: it can take longer than the 1.4s entrance
+                        // on a cold DB (batch upsert + obsolete-row cleanup),
+                        // and every screen that reads foods already awaits
+                        // this same future before showing food data.
                         ref.invalidate(foodsSeedProvider);
-                        await ref.read(foodsSeedProvider.future);
+                        unawaited(ref.read(foodsSeedProvider.future));
                       },
                       onPrewarm: () {
                         if (mounted && !_prewarm) {
