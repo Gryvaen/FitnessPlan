@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../domain/energy_units.dart';
 import '../../l10n/app_localizations_ext.dart';
+import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import '../widgets/search_field_focus.dart';
 
@@ -72,8 +73,8 @@ class _EnergyUnitConvertPageState extends State<EnergyUnitConvertPage> {
           _unitField(context, _kcal, 'kcal', _onKcalChanged, focus: _kcalFocus),
           const SizedBox(height: AppSpacing.field),
           Center(
-            child: Icon(
-              Icons.swap_vert,
+            child: InkIcon(
+              InkGlyph.swapVertical,
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
