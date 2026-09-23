@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../domain/calculator_engine.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 
 /// App-themed calculator with expression line, memory, and history.
@@ -112,12 +113,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           IconButton(
             tooltip: l10n.history,
             onPressed: _openHistory,
-            icon: const Icon(Icons.history),
+            icon: const InkIcon(InkGlyph.history),
           ),
           IconButton(
             tooltip: l10n.copy,
             onPressed: _copy,
-            icon: const Icon(Icons.copy_outlined),
+            icon: const InkIcon(InkGlyph.copy),
           ),
         ],
       ),
@@ -181,7 +182,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                         _KeySpec(
                           '⌫',
                           kind: _KeyKind.fn,
-                          icon: Icons.backspace_outlined,
+                          glyph: InkGlyph.backspace,
                           onTap: () {
                             HapticFeedback.selectionClick();
                             _bump(_engine.backspace);
@@ -256,11 +257,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                             _bump(_engine.dot);
                           },
                         ),
-                        _KeySpec(
-                          '=',
-                          kind: _KeyKind.equals,
-                          onTap: _onEquals,
-                        ),
+                        _KeySpec('=', kind: _KeyKind.equals, onTap: _onEquals),
                       ]),
                     ),
                   ],
@@ -283,7 +280,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             Expanded(
               child: _CalcButton(
                 label: keys[i].label,
-                icon: keys[i].icon,
+                glyph: keys[i].glyph,
                 kind: keys[i].kind,
                 selected:
                     keys[i].kind == _KeyKind.op &&
@@ -511,13 +508,13 @@ class _KeySpec {
     this.label, {
     required this.onTap,
     this.kind = _KeyKind.num,
-    this.icon,
+    this.glyph,
   });
 
   final String label;
   final VoidCallback onTap;
   final _KeyKind kind;
-  final IconData? icon;
+  final InkGlyph? glyph;
 }
 
 class _CalcButton extends StatelessWidget {
@@ -525,12 +522,12 @@ class _CalcButton extends StatelessWidget {
     required this.label,
     required this.kind,
     required this.onTap,
-    this.icon,
+    this.glyph,
     this.selected = false,
   });
 
   final String label;
-  final IconData? icon;
+  final InkGlyph? glyph;
   final _KeyKind kind;
   final VoidCallback onTap;
   final bool selected;
@@ -579,8 +576,8 @@ class _CalcButton extends StatelessWidget {
         customBorder: shape,
         onTap: onTap,
         child: Center(
-          child: icon != null
-              ? Icon(icon, color: fg, size: 26)
+          child: glyph != null
+              ? InkIcon(glyph!, color: fg, size: 26)
               : Text(
                   label,
                   style: TextStyle(
