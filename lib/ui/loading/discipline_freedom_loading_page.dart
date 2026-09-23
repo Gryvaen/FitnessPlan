@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations_ext.dart';
@@ -21,6 +19,7 @@ class DisciplineFreedomLoadingPage extends StatefulWidget {
     this.subtitle,
     this.statusText,
     this.labProgress,
+    this.releaseDeferredFirstFrame = false,
   });
 
   final Future<void> Function()? onInitialize;
@@ -40,7 +39,11 @@ class DisciplineFreedomLoadingPage extends StatefulWidget {
   /// never auto-finishes or tap-skips.
   final ValueNotifier<double>? labProgress;
 
-  static const entranceDuration = Duration(milliseconds: 1000);
+  /// Releases the native launch screen after the matching landscape frame is
+  /// decoded. Enabled only by the real app bootstrap, not widget tests/lab.
+  final bool releaseDeferredFirstFrame;
+
+  static const entranceDuration = Duration(milliseconds: 1800);
 
   @override
   State<DisciplineFreedomLoadingPage> createState() =>
@@ -64,11 +67,11 @@ class _DisciplineFreedomLoadingPageState
   late final Animation<double> _paperScale;
   late final Animation<double> _exitOpacity;
 
-  Timer? _prewarmTimer;
   Object? _error;
   int _attempt = 0;
   bool _finishing = false;
   bool _prewarmed = false;
+  bool _preparing = false;
 
   bool get _lab => widget.labProgress != null;
 
@@ -126,10 +129,6 @@ class _DisciplineFreedomLoadingPageState
     if (_lab) {
       widget.labProgress!.addListener(_onLabProgress);
       _entrance.value = widget.labProgress!.value.clamp(0.0, 1.0);
-    } else {
-      _entrance.forward();
-      _schedulePrewarm();
-      _initialize();
     }
   }
 
@@ -153,23 +152,54 @@ class _DisciplineFreedomLoadingPageState
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    precacheImage(const AssetImage(_paperAsset), context);
-    precacheImage(const AssetImage(_landscapeAsset), context);
-    precacheImage(const AssetImage(_swordAsset), context);
-
-    if (!_lab &&
-        MediaQuery.disableAnimationsOf(context) &&
-        _entrance.value < 1) {
-      _entrance.value = 1;
+    if (_lab) {
+      if (widget.releaseDeferredFirstFrame && !_preparing) {
+        _preparing = true;
+        _prepareLabFirstFrame();
+      } else if (!widget.releaseDeferredFirstFrame) {
+        precacheImage(const AssetImage(_paperAsset), context);
+        precacheImage(const AssetImage(_landscapeAsset), context);
+        precacheImage(const AssetImage(_swordAsset), context);
+      }
+    } else if (!_preparing) {
+      _preparing = true;
+      _prepareAndInitialize();
     }
   }
 
-  void _schedulePrewarm() {
-    _prewarmTimer = Timer(const Duration(milliseconds: 650), () {
-      if (!mounted || _finishing || _prewarmed) return;
-      _prewarmed = true;
-      widget.onPrewarm?.call();
-    });
+  Future<void> _prepareLabFirstFrame() async {
+    try {
+      await Future.wait<void>([
+        precacheImage(const AssetImage(_paperAsset), context),
+        precacheImage(const AssetImage(_landscapeAsset), context),
+        precacheImage(const AssetImage(_swordAsset), context),
+      ]);
+    } catch (_) {}
+    if (!mounted) return;
+    WidgetsBinding.instance.allowFirstFrame();
+  }
+
+  Future<void> _prepareAndInitialize() async {
+    try {
+      await Future.wait<void>([
+        precacheImage(const AssetImage(_paperAsset), context),
+        precacheImage(const AssetImage(_landscapeAsset), context),
+        precacheImage(const AssetImage(_swordAsset), context),
+      ]);
+    } catch (_) {
+      // Let Image.asset surface the asset error. The loading flow must still
+      // be able to finish instead of getting stuck on a failed pre-cache.
+    }
+    if (!mounted) return;
+
+    if (widget.releaseDeferredFirstFrame) {
+      WidgetsBinding.instance.allowFirstFrame();
+    }
+
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _entrance.value = 1;
+    }
+    _initialize();
   }
 
   Future<void> _initialize() async {
@@ -195,17 +225,29 @@ class _DisciplineFreedomLoadingPageState
   }
 
   void _skip() {
-    if (_lab || _finishing || _error != null) return;
-    _finishing = true;
-    _prewarmTimer?.cancel();
-    _entrance.stop();
-    widget.onFinished();
+    // A stray tap during startup must not cut the visual sequence short.
+    // Skipping is only useful when initialization is still pending after the
+    // entrance has reached its final frame.
+    if (_lab || _finishing || _error != null || !_entrance.isCompleted) {
+      return;
+    }
+    _finish();
   }
 
   Future<void> _finish() async {
     if (_lab || _finishing) return;
     _finishing = true;
-    _prewarmTimer?.cancel();
+
+    // Building the real app during the moving portion of the splash can
+    // steal a frame on slower devices. Prewarm only after the final splash
+    // frame is visible, then wait for that build before fading the overlay.
+    if (!_prewarmed) {
+      _prewarmed = true;
+      widget.onPrewarm?.call();
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) return;
+    }
+
     await _exit.forward();
     if (mounted) widget.onFinished();
   }
@@ -213,7 +255,6 @@ class _DisciplineFreedomLoadingPageState
   @override
   void dispose() {
     widget.labProgress?.removeListener(_onLabProgress);
-    _prewarmTimer?.cancel();
     _entrance.dispose();
     _exit.dispose();
     super.dispose();
@@ -231,23 +272,33 @@ class _DisciplineFreedomLoadingPageState
           opacity: _exitOpacity,
           child: AnimatedBuilder(
             animation: _entrance,
-            builder: (context, _) => Stack(
-              fit: StackFit.expand,
-              children: [
-                _PaperLayer(scale: reduceMotion ? 1.4 : _paperScale.value),
-                _LandscapeLayer(
-                  swordProgress: reduceMotion ? 1 : _swordEntrance.value,
-                  tipMorph: reduceMotion ? 1 : _tipMorph.value,
-                  expansion: reduceMotion ? 1 : _expansion.value,
-                ),
-                _SwordLayer(entrance: reduceMotion ? 1 : _swordEntrance.value),
-                if (_error != null)
-                  _ErrorControls(
-                    onRetry: _initialize,
-                    onEnterAnyway: widget.onEnterAnyway,
+            builder: (context, _) {
+              final swordProgress = reduceMotion ? 1.0 : _swordEntrance.value;
+              final revealPaper = _swordHasOpenedLandscape(swordProgress);
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Paper is introduced only when the sword has physically
+                  // opened the landscape. It is not a permanent startup
+                  // background, so the initial frame remains the landscape.
+                  if (revealPaper)
+                    _PaperLayer(scale: reduceMotion ? 1.4 : _paperScale.value),
+                  _LandscapeLayer(
+                    swordProgress: swordProgress,
+                    tipMorph: reduceMotion ? 1 : _tipMorph.value,
+                    expansion: reduceMotion ? 1 : _expansion.value,
                   ),
-              ],
-            ),
+                  _SwordLayer(
+                    entrance: reduceMotion ? 1 : _swordEntrance.value,
+                  ),
+                  if (_error != null)
+                    _ErrorControls(
+                      onRetry: _initialize,
+                      onEnterAnyway: widget.onEnterAnyway,
+                    ),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -385,6 +436,12 @@ double _swordVerticalPosition(double progress) {
   final u = (t - morphStart) / (1 - morphStart);
   final accelerated = .75 * u + .25 * u * u;
   return -.96 * accelerated;
+}
+
+bool _swordHasOpenedLandscape(double swordProgress) {
+  final swordBottomFactor =
+      .5 + _swordVerticalPosition(swordProgress) + _swordHeightFactor / 2;
+  return swordBottomFactor < 1;
 }
 
 class _SwordLayer extends StatelessWidget {

@@ -7,6 +7,7 @@ import '../../domain/calendar_day.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../records/log_set_sheet.dart';
+import '../ink/ink_icon.dart';
 import '../records/train_records_tab.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
@@ -360,7 +361,7 @@ class TodayWorkoutCard extends ConsumerWidget {
         if (canCopyYesterday && yesterdayGroups.isNotEmpty)
           PopupMenuButton<int>(
             tooltip: l10n.copyYesterday,
-            icon: const Icon(Icons.more_horiz),
+            icon: const InkIcon(InkGlyph.more),
             onSelected: (id) =>
                 _copyYesterday(context, ref, sourceDayWorkoutId: id),
             itemBuilder: (context) => [
@@ -368,7 +369,9 @@ class TodayWorkoutCard extends ConsumerWidget {
                 PopupMenuItem(
                   value: group.workout.id,
                   child: Text(
-                    l10n.copyNamed(l10n.yesterdayNamed(_groupTitle(group, l10n))),
+                    l10n.copyNamed(
+                      l10n.yesterdayNamed(_groupTitle(group, l10n)),
+                    ),
                   ),
                 ),
             ],
@@ -376,16 +379,14 @@ class TodayWorkoutCard extends ConsumerWidget {
         if (canSaveAsPlan)
           PopupMenuButton<String>(
             tooltip: l10n.more,
+            icon: const InkIcon(InkGlyph.more),
             onSelected: (value) async {
               if (value == 'savePlan') {
                 await _saveAsPlan(context, ref);
               }
             },
             itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'savePlan',
-                child: Text(l10n.saveAsPlan),
-              ),
+              PopupMenuItem(value: 'savePlan', child: Text(l10n.saveAsPlan)),
             ],
           ),
       ],
@@ -506,6 +507,22 @@ class TodayWorkoutCard extends ConsumerWidget {
               ),
               SportEmptyState(
                 icon: Icons.fitness_center,
+                iconWidget: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    InkIcon(
+                      InkGlyph.training,
+                      size: 52,
+                      color: scheme.onSurfaceVariant.withValues(alpha: .62),
+                      strokeWidth: 1.6,
+                    ),
+                    const Positioned(
+                      right: -8,
+                      bottom: -3,
+                      child: InkSeal('炼', size: 19),
+                    ),
+                  ],
+                ),
                 title: editable
                     ? l10n.noWorkoutPlannedTitle
                     : l10n.noWorkoutThatDay,
@@ -544,7 +561,7 @@ class TodayWorkoutCard extends ConsumerWidget {
                       group.items.length,
                     ),
                   ),
-                  trailing: const Icon(Icons.arrow_forward, size: 18),
+                  trailing: const InkIcon(InkGlyph.arrowForward, size: 18),
                   onTap: () => showDayWorkoutDetails(context, day),
                 ),
               SportProgressBar(

@@ -17,7 +17,11 @@ import 'ui/tools/workout_reminder_notifications.dart';
 const bool kLoadingLab = bool.fromEnvironment('LOADING_LAB');
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final binding = WidgetsFlutterBinding.ensureInitialized();
+  // Keep the native launch screen until Flutter has decoded the opening frame.
+  // Lab uses the same gate so the first painted frame is progress 0, not a
+  // blank window or a frame that already moved.
+  binding.deferFirstFrame();
   final prefs = await SharedPreferences.getInstance();
   // ReminderNotifications.ensureInitialized() already awaits
   // RestTimerNotifications.ensureInitialized() itself.
@@ -76,6 +80,7 @@ class _BootstrapState extends ConsumerState<_Bootstrap> {
               home: kLoadingLab
                   ? const LoadingLabPage()
                   : DisciplineFreedomLoadingPage(
+                      releaseDeferredFirstFrame: true,
                       onInitialize: () async {
                         ref.invalidate(foodsSeedProvider);
                         await ref.read(foodsSeedProvider.future);

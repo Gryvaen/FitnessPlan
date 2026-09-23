@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 /// Brand chrome (buttons, nav, focus) lives on [AppThemeVisuals.accent] —
 /// these tokens stay reserved for "speaking" status, not decoration.
 abstract final class AppColors {
-  static const protein = Color(0xFFE0605A);
-  static const carb = Color(0xFF4C8BE0);
-  static const fat = Color(0xFFE4B94B);
-  static const water = Color(0xFF3FB8C6);
+  static const protein = Color(0xFF155E5B);
+  static const carb = Color(0xFF155E5B);
+  static const fat = Color(0xFF155E5B);
+  static const water = Color(0xFF155E5B);
 
   /// Favorite / star accent.
   static const favorite = Color(0xFFF5C518);
@@ -17,20 +17,20 @@ abstract final class AppColors {
   static const success = Color(0xFF2F7A46);
 
   /// Over target / soft warning (coral; distinct from hard [ColorScheme.error]).
-  static const warning = Color(0xFFE07060);
+  static const warning = Color(0xFFA8493F);
 
   // ---- Calorie ring spectrum (SweepGradient; several hues visible at once) ----
   /// Soft azure — ring start.
-  static const calorieAzure = Color(0xFF5BADE8);
+  static const calorieAzure = Color(0xFF155E5B);
 
   /// Soft iris — mid arc.
-  static const calorieIris = Color(0xFF8B84F0);
+  static const calorieIris = Color(0xFF155E5B);
 
   /// Soft orchid — late arc.
-  static const calorieOrchid = Color(0xFFD07AE0);
+  static const calorieOrchid = Color(0xFF155E5B);
 
   /// Soft mint — tip when near / at target.
-  static const calorieMint = Color(0xFF4DB88A);
+  static const calorieMint = Color(0xFF155E5B);
 }
 
 /// Color stops for [calorieRingSpectrum] along the ring (0 = top → clockwise).
@@ -362,10 +362,10 @@ class AppTheme {
       // primary. Body text stays near-black; hue is for chrome & status only.
       AppThemeId.fresh => const ColorScheme(
         brightness: Brightness.light,
-        primary: Color(0xFF0F6B6E),
+        primary: Color(0xFF155E5B),
         onPrimary: Color(0xFFFFFFFF),
         primaryContainer: Color(0xFFDCEFEF),
-        onPrimaryContainer: Color(0xFF0A4547),
+        onPrimaryContainer: Color(0xFF123F3D),
         secondary: Color(0xFF3A3A3C),
         onSecondary: Color(0xFFFFFFFF),
         secondaryContainer: Color(0xFFEDEDEF),
@@ -378,22 +378,22 @@ class AppTheme {
         onError: Color(0xFFFFFFFF),
         errorContainer: Color(0xFFF8DEDB),
         onErrorContainer: Color(0xFF5A1612),
-        surface: Color(0xFFFFFFFF),
-        onSurface: Color(0xFF1C1C1E),
-        onSurfaceVariant: Color(0xFF6E6E73),
-        surfaceContainerLowest: Color(0xFFFFFFFF),
-        surfaceContainerLow: Color(0xFFF7F7F8),
-        surfaceContainer: Color(0xFFF2F2F3),
-        surfaceContainerHigh: Color(0xFFECECED),
-        surfaceContainerHighest: Color(0xFFE5E5E7),
-        outline: Color(0xFFD1D1D6),
-        outlineVariant: Color(0xFFE5E5E7),
+        surface: Color(0xFFF4F1E9),
+        onSurface: Color(0xFF202624),
+        onSurfaceVariant: Color(0xFF66706C),
+        surfaceContainerLowest: Color(0xFFF8F5EE),
+        surfaceContainerLow: Color(0xFFF6F3EC),
+        surfaceContainer: Color(0xFFF0EDE5),
+        surfaceContainerHigh: Color(0xFFE9E6DE),
+        surfaceContainerHighest: Color(0xFFE2DED5),
+        outline: Color(0xFFD8D5CC),
+        outlineVariant: Color(0xFFE1DDD4),
         inverseSurface: Color(0xFF2C2C2E),
         onInverseSurface: Color(0xFFF2F2F3),
-        inversePrimary: Color(0xFF7EC4C6),
+        inversePrimary: Color(0xFF89C2BE),
         shadow: Color(0xFF000000),
         scrim: Color(0xFF000000),
-        surfaceTint: Color(0xFF0F6B6E),
+        surfaceTint: Color(0xFF155E5B),
       ),
       AppThemeId.graphite => const ColorScheme(
         brightness: Brightness.dark,
@@ -436,31 +436,31 @@ class AppTheme {
   static AppThemeVisuals visualsFor(AppThemeId id) {
     return switch (id) {
       AppThemeId.fresh => const AppThemeVisuals(
-        card: Color(0xFFFFFFFF),
-        cardBorder: Color(0xFFE5E5E7),
-        cardShadow: Color(0x14000000),
-        heroCard: Color(0xFFFFFFFF),
+        card: Color(0xFFF8F5EE),
+        cardBorder: Color(0xFFD8D5CC),
+        cardShadow: Color(0x00000000),
+        heroCard: Color(0xFFF8F5EE),
         heroGlow: Color(0x00000000),
-        onHero: Color(0xFF1C1C1E),
-        onHeroMuted: Color(0xFF6E6E73),
-        accent: Color(0xFF0F6B6E),
+        onHero: Color(0xFF202624),
+        onHeroMuted: Color(0xFF66706C),
+        accent: Color(0xFF155E5B),
         onAccent: Color(0xFFFFFFFF),
         accentSoft: Color(0xFFDCEFEF),
-        divider: Color(0xFFE5E5E7),
-        track: Color(0xFFECECED),
-        navShell: Color(0xFFFFFFFF),
-        navBorder: Color(0xFFE5E5E7),
+        divider: Color(0xFFD8D5CC),
+        track: Color(0xFFE1DED6),
+        navShell: Color(0xFFF4F1E9),
+        navBorder: Color(0xFFD8D5CC),
         // Soft tint + brand icon (not a black pill).
         navIndicator: Color(0xFFDCEFEF),
         onNavIndicator: Color(0xFF0F6B6E),
-        waterFill: Color(0x993FB8C6),
-        waterFillDeep: Color(0xCC2A9AA8),
-        waterStroke: Color(0xFF2A9AA8),
-        cupGlass: Color(0x143FB8C6),
+        waterFill: Color(0x66155E5B),
+        waterFillDeep: Color(0xCC155E5B),
+        waterStroke: Color(0xFF155E5B),
+        cupGlass: Color(0x14155E5B),
         previewColors: [
-          Color(0xFF0F6B6E),
-          Color(0xFFFFFFFF),
-          Color(0xFF3FB8C6),
+          Color(0xFF155E5B),
+          Color(0xFFF4F1E9),
+          Color(0xFFA8493F),
         ],
       ),
       AppThemeId.graphite => const AppThemeVisuals(
@@ -497,10 +497,12 @@ class AppTheme {
     final base = ThemeData(colorScheme: scheme, useMaterial3: true);
     final text = base.textTheme.copyWith(
       titleLarge: base.textTheme.titleLarge?.copyWith(
+        fontFamily: displayFontFamily,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.2,
       ),
       titleMedium: base.textTheme.titleMedium?.copyWith(
+        fontFamily: displayFontFamily,
         fontWeight: FontWeight.w600,
       ),
       titleSmall: base.textTheme.titleSmall?.copyWith(
@@ -520,6 +522,7 @@ class AppTheme {
         color: scheme.onSurfaceVariant,
       ),
       headlineSmall: base.textTheme.headlineSmall?.copyWith(
+        fontFamily: displayFontFamily,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.5,
       ),

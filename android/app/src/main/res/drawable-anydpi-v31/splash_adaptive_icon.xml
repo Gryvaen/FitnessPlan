@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Match the full-screen splash color so Android's mandatory adaptive
+         icon container has no visible tile or white backing shape. -->
+    <background android:drawable="@color/splash_background" />
+    <foreground android:drawable="@drawable/splash_mark" />
+</adaptive-icon>

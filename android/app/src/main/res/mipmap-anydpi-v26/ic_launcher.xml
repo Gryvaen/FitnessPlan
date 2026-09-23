@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Some Android vendors build their starting window from the application
+         icon instead of windowSplashScreenAnimatedIcon. Match that path too. -->
+    <background android:drawable="@color/splash_background" />
+    <foreground android:drawable="@drawable/splash_mark" />
+</adaptive-icon>

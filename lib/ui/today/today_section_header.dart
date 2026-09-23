@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/sport_chrome.dart';
+import '../ink/ink_icon.dart';
 
 /// Open section heading. Add and overflow remain independent actions.
 class TodaySectionHeader extends StatelessWidget {
@@ -33,7 +33,27 @@ class TodaySectionHeader extends StatelessWidget {
         ),
       ),
       if (addLabel != null)
-        PlainIconAction(icon: Icons.add, label: addLabel!, onPressed: onAdd),
+        Semantics(
+          button: true,
+          label: addLabel,
+          enabled: onAdd != null,
+          child: Tooltip(
+            message: addLabel!,
+            child: InkResponse(
+              onTap: onAdd,
+              radius: 24,
+              child: SizedBox.square(
+                dimension: 48,
+                child: Center(
+                  child: InkIcon(
+                    InkGlyph.addRing,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ...trailing,
     ],
   );

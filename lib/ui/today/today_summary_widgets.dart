@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../theme/app_theme.dart';
+import '../ink/ink_icon.dart';
 
 /// Intake progress ring with a percentage in the centre.
 ///
@@ -129,7 +130,8 @@ class _RingPainter extends CustomPainter {
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
 
-    canvas.drawArc(rect, -math.pi / 2, 2 * math.pi, false, track);
+    // One deliberate dry-ink break keeps the ring from reading as stock UI.
+    canvas.drawArc(rect, -math.pi / 2 + .12, 2 * math.pi - .24, false, track);
     if (progress <= 0) return;
 
     final arc = Paint()
@@ -183,6 +185,7 @@ class MacroColumn extends StatelessWidget {
     this.metaColor,
     this.capProgress = true,
     this.semanticsLabel,
+    this.icon,
   });
 
   final String label;
@@ -195,6 +198,7 @@ class MacroColumn extends StatelessWidget {
   final Color? metaColor;
   final bool capProgress;
   final String? semanticsLabel;
+  final InkGlyph? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -215,13 +219,29 @@ class MacroColumn extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: labelColor ?? scheme.onSurfaceVariant,
-            ),
+          Row(
+            children: [
+              if (icon != null) ...[
+                InkIcon(
+                  icon!,
+                  size: 16,
+                  color: labelColor ?? scheme.onSurfaceVariant,
+                  secondaryColor: color,
+                  strokeWidth: 1.55,
+                ),
+                const SizedBox(width: 4),
+              ],
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: labelColor ?? scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 7),
           ClipRRect(
@@ -384,15 +404,25 @@ class WaterCupControl extends StatelessWidget {
                               ? Duration.zero
                               : const Duration(milliseconds: 420),
                           curve: Curves.easeOutCubic,
-                          builder: (context, level, _) => CustomPaint(
-                            painter: _WaterCupBodyPainter(
-                              level: level,
-                              stroke: visuals.waterStroke,
-                              glass: visuals.cupGlass,
-                              water: visuals.waterFill,
-                              waterDeep: visuals.waterFillDeep,
-                            ),
-                          ),
+                          builder: (context, level, _) =>
+                              TweenAnimationBuilder<double>(
+                                key: ValueKey(clamped),
+                                tween: Tween(begin: 0, end: 1),
+                                duration: disableAnimations
+                                    ? Duration.zero
+                                    : const Duration(milliseconds: 320),
+                                curve: Curves.easeOutCubic,
+                                builder: (context, pulse, _) => CustomPaint(
+                                  painter: _WaterCupBodyPainter(
+                                    level: level,
+                                    bloom: math.sin(math.pi * pulse),
+                                    stroke: visuals.waterStroke,
+                                    glass: visuals.cupGlass,
+                                    water: visuals.waterFill,
+                                    waterDeep: visuals.waterFillDeep,
+                                  ),
+                                ),
+                              ),
                         ),
                       ),
                     ),
@@ -412,6 +442,7 @@ class WaterCupControl extends StatelessWidget {
 class _WaterCupBodyPainter extends CustomPainter {
   _WaterCupBodyPainter({
     required this.level,
+    required this.bloom,
     required this.stroke,
     required this.glass,
     required this.water,
@@ -419,6 +450,7 @@ class _WaterCupBodyPainter extends CustomPainter {
   });
 
   final double level;
+  final double bloom;
   final Color stroke;
   final Color glass;
   final Color water;
@@ -447,9 +479,15 @@ class _WaterCupBodyPainter extends CustomPainter {
     final path = Path()
       ..moveTo(topL, top)
       ..lineTo(leftAt(bottom - r), bottom - r)
-      ..quadraticBezierTo(botL, bottom, botL + r, bottom)
-      ..lineTo(botR - r, bottom)
-      ..quadraticBezierTo(botR, bottom, rightAt(bottom - r), bottom - r)
+      ..cubicTo(botL, bottom - 1, w * .36, bottom, w * .5, bottom)
+      ..cubicTo(
+        w * .64,
+        bottom,
+        botR,
+        bottom - 1,
+        rightAt(bottom - r),
+        bottom - r,
+      )
       ..lineTo(topR, top);
     return path;
   }
@@ -461,8 +499,21 @@ class _WaterCupBodyPainter extends CustomPainter {
     final outline = _bodyPath(size);
     final closed = Path.from(outline)..close();
 
-    // Glass tint.
-    canvas.drawPath(closed, Paint()..color = glass);
+    if (bloom > 0 && level > 0) {
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(w * .5, h * .57),
+          width: w * (1 + bloom * .34),
+          height: h * (.72 + bloom * .15),
+        ),
+        Paint()..color = waterDeep.withValues(alpha: bloom * .08),
+      );
+    }
+
+    // Empty state is outline-only; tint arrives with the first water serving.
+    if (level > 0) {
+      canvas.drawPath(closed, Paint()..color = glass.withValues(alpha: .42));
+    }
 
     if (level > 0) {
       const inset = _strokeWidth;
@@ -489,28 +540,28 @@ class _WaterCupBodyPainter extends CustomPainter {
 
       canvas.save();
       canvas.clipPath(closed);
-      final gradient = Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [water, waterDeep],
-        ).createShader(Rect.fromLTWH(0, surfaceY, w, h - surfaceY));
-      canvas.drawPath(wave(0, surfaceY), gradient);
-      // Second, fainter ripple slightly offset for softness.
+      // Flat translucent fill plus one calm ink-water surface line.
       canvas.drawPath(
-        wave(math.pi * 0.8, surfaceY + amp * 0.9),
-        Paint()..color = water.withValues(alpha: water.a * 0.55),
+        wave(0, surfaceY),
+        Paint()..color = water.withValues(alpha: .22),
+      );
+      final surface = Path()..moveTo(-2, surfaceY);
+      const steps = 24;
+      for (var i = 0; i <= steps; i++) {
+        final x = -2 + (w + 4) * i / steps;
+        final y = surfaceY + math.sin(i / steps * math.pi * 2) * amp;
+        surface.lineTo(x, y);
+      }
+      canvas.drawPath(
+        surface,
+        Paint()
+          ..color = waterDeep
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.35
+          ..strokeCap = StrokeCap.round,
       );
       canvas.restore();
     }
-
-    // Subtle glass highlight on the left wall.
-    final hl = Paint()
-      ..color = Colors.white.withValues(alpha: 0.18)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(Offset(w * 0.16, h * 0.18), Offset(w * 0.22, h * 0.72), hl);
 
     canvas.drawPath(
       outline,
@@ -521,18 +572,33 @@ class _WaterCupBodyPainter extends CustomPainter {
         ..strokeJoin = StrokeJoin.round
         ..strokeCap = StrokeCap.round,
     );
+
+    // Signature droplet at the upper-right edge.
+    final drop = Path()
+      ..moveTo(w * .88, h * .04)
+      ..cubicTo(w * .81, h * .13, w * .83, h * .20, w * .88, h * .20)
+      ..cubicTo(w * .94, h * .20, w * .95, h * .13, w * .88, h * .04);
+    canvas.drawPath(
+      drop,
+      Paint()
+        ..color = stroke
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2
+        ..strokeJoin = StrokeJoin.round,
+    );
   }
 
   @override
   bool shouldRepaint(covariant _WaterCupBodyPainter old) =>
       old.level != level ||
+      old.bloom != bloom ||
       old.stroke != stroke ||
       old.glass != glass ||
       old.water != water ||
       old.waterDeep != waterDeep;
 }
 
-/// Thin flat lid with a tiny centre nub; drawn separately from the body.
+/// Open brush rim, drawn separately so it remains an independent undo target.
 class _WaterCupLidPainter extends CustomPainter {
   _WaterCupLidPainter({required this.stroke, required this.fill});
 
@@ -541,25 +607,20 @@ class _WaterCupLidPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // A thin, slightly wider disc floating above the rim — drawn as a
-    // shallow ellipse so it reads as a lid seen from a low angle.
+    // The missing segment is the icon family's deliberate ink break.
     final rect = Rect.fromLTWH(0.8, 0.8, size.width - 1.6, size.height - 1.6);
-    canvas.drawOval(rect, Paint()..color = fill);
-    canvas.drawOval(
+    canvas.drawOval(rect, Paint()..color = fill.withValues(alpha: .28));
+    canvas.drawArc(
       rect,
+      .18,
+      math.pi * 1.78,
+      false,
       Paint()
         ..color = stroke
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.3,
+        ..strokeWidth = 1.35
+        ..strokeCap = StrokeCap.round,
     );
-    // Soft highlight along the upper edge.
-    final hi = Rect.fromLTWH(
-      rect.left + rect.width * 0.18,
-      rect.top + rect.height * 0.22,
-      rect.width * 0.64,
-      rect.height * 0.28,
-    );
-    canvas.drawOval(hi, Paint()..color = Colors.white.withValues(alpha: 0.35));
   }
 
   @override

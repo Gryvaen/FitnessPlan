@@ -30,7 +30,10 @@ class _LoadingLabPageState extends State<LoadingLabPage>
       duration: DisciplineFreedomLoadingPage.entranceDuration,
     )..addListener(_syncProgressFromPlayer);
     _player.addStatusListener(_onPlayerStatus);
-    _startPlayback();
+    // Stay on the opening frame until play is pressed.
+    _frozen = true;
+    _player.value = 0;
+    _progress.value = 0;
   }
 
   void _syncProgressFromPlayer() {
@@ -48,11 +51,6 @@ class _LoadingLabPageState extends State<LoadingLabPage>
     } else {
       setState(() => _frozen = true);
     }
-  }
-
-  void _startPlayback() {
-    _frozen = false;
-    _player.forward(from: _progress.value.clamp(0.0, 0.999));
   }
 
   void _freeze() {
@@ -105,6 +103,7 @@ class _LoadingLabPageState extends State<LoadingLabPage>
       children: [
         DisciplineFreedomLoadingPage(
           labProgress: _progress,
+          releaseDeferredFirstFrame: true,
           onInitialize: () async {},
           onFinished: () {},
           onError: (_) {},

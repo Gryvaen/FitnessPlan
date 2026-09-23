@@ -6,8 +6,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
-import '../theme/sport_chrome.dart';
 import 'swipe_tab_view.dart';
 
 class MainShell extends ConsumerStatefulWidget {
@@ -75,23 +75,11 @@ class _MainShellState extends ConsumerState<MainShell>
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
     final selected = widget.navigationShell.currentIndex;
 
-    final items = <({IconData icon, IconData selectedIcon, String label})>[
-      (
-        icon: Icons.today_outlined,
-        selectedIcon: Icons.today,
-        label: l10n.today,
-      ),
-      (
-        icon: Icons.restaurant_outlined,
-        selectedIcon: Icons.restaurant,
-        label: l10n.foods,
-      ),
-      (
-        icon: Icons.fitness_center_outlined,
-        selectedIcon: Icons.fitness_center,
-        label: l10n.records,
-      ),
-      (icon: Icons.person_outline, selectedIcon: Icons.person, label: l10n.me),
+    final items = <({InkGlyph glyph, String label})>[
+      (glyph: InkGlyph.calendar, label: l10n.today),
+      (glyph: InkGlyph.food, label: l10n.foods),
+      (glyph: InkGlyph.training, label: l10n.records),
+      (glyph: InkGlyph.profile, label: l10n.me),
     ];
 
     return ShellSwipe(
@@ -106,18 +94,26 @@ class _MainShellState extends ConsumerState<MainShell>
             backgroundColor: Colors.transparent,
             body: widget.navigationShell,
             bottomNavigationBar: Padding(
-              padding: EdgeInsets.fromLTRB(20, 4, 20, 8 + bottomInset),
-              child: SportPillShell(
+              padding: EdgeInsets.only(bottom: bottomInset),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  border: Border(
+                    top: BorderSide(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                      width: .7,
+                    ),
+                  ),
+                ),
                 child: SizedBox(
-                  height: 52,
+                  height: 66,
                   child: Row(
                     children: [
                       for (var i = 0; i < items.length; i++)
                         Expanded(
                           child: _PillNavItem(
                             selected: selected == i,
-                            icon: items[i].icon,
-                            selectedIcon: items[i].selectedIcon,
+                            glyph: items[i].glyph,
                             tooltip: items[i].label,
                             onTap: () => _onTap(i),
                           ),
@@ -137,15 +133,13 @@ class _MainShellState extends ConsumerState<MainShell>
 class _PillNavItem extends StatelessWidget {
   const _PillNavItem({
     required this.selected,
-    required this.icon,
-    required this.selectedIcon,
+    required this.glyph,
     required this.tooltip,
     required this.onTap,
   });
 
   final bool selected;
-  final IconData icon;
-  final IconData selectedIcon;
+  final InkGlyph glyph;
   final String tooltip;
   final VoidCallback onTap;
 
@@ -153,32 +147,49 @@ class _PillNavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final accent = AppThemeVisuals.of(context).accent;
-    const pillRadius = BorderRadius.all(Radius.circular(18));
 
     return Tooltip(
       message: tooltip,
       child: Center(
         child: Material(
           color: Colors.transparent,
-          child: InkWell(
+          child: InkResponse(
             onTap: onTap,
-            borderRadius: pillRadius,
-            customBorder: const RoundedRectangleBorder(
-              borderRadius: pillRadius,
-            ),
             child: SizedBox(
-              width: 56,
-              height: 36,
+              width: 64,
+              height: 58,
               child: Center(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
                   switchInCurve: Curves.easeOutCubic,
                   switchOutCurve: Curves.easeInCubic,
-                  child: Icon(
-                    selected ? selectedIcon : icon,
+                  child: Column(
                     key: ValueKey(selected),
-                    size: 24,
-                    color: selected ? accent : scheme.onSurfaceVariant,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      InkIcon(
+                        glyph,
+                        size: 24,
+                        color: selected ? accent : scheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        tooltip,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: selected ? accent : scheme.onSurfaceVariant,
+                          fontWeight: selected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          height: 1,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      InkStrokeUnderline(
+                        selected: selected,
+                        color: accent,
+                        width: 24,
+                      ),
+                    ],
                   ),
                 ),
               ),

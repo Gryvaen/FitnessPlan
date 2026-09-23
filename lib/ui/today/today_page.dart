@@ -13,6 +13,7 @@ import '../../data/services/steps_sync_service.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../meals/daily_meals_page.dart';
+import '../ink/ink_icon.dart';
 import '../shell/swipe_tab_view.dart';
 import '../strategy/strategy_labels.dart';
 import '../theme/app_theme.dart';
@@ -148,9 +149,8 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                   onCalendar: openDatePicker,
                   onGoToToday: isSelectedToday
                       ? null
-                      : () => ref
-                            .read(selectedDayProvider.notifier)
-                            .goToToday(),
+                      : () =>
+                            ref.read(selectedDayProvider.notifier).goToToday(),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(right: AppSpacing.compact),
@@ -194,11 +194,17 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                                 ),
                               ),
                             ),
+                            if (canChooseDietStrategy)
+                              Text(
+                                '|',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: onHeroMuted,
+                                ),
+                              ),
                             if (canChooseDietStrategy) ...[
                               InkWell(
-                                onTap: () => context.go(
-                                  '/profile/nutrition/strategy',
-                                ),
+                                onTap: () =>
+                                    context.go('/profile/nutrition/strategy'),
                                 borderRadius: BorderRadius.circular(6),
                                 child: Text(
                                   l10n.canChooseDietStrategy,
@@ -230,7 +236,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                         ),
                       ],
                       const SizedBox(height: AppSpacing.card),
-                      // Upper row: remaining (left) · ring (centre) · cup (right).
+                      // Open composition: remaining, ring, and interactive cup.
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
@@ -250,11 +256,12 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                             over: remainCal < 0,
                             size: 88,
                             strokeWidth: 8,
+                            color: scheme.primary,
                             trackColor: visuals.track,
                             centerLabel: l10n.eatenWord,
                             metaColor: onHeroMuted,
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 10),
                           _WaterCup(day: day, canAdd: isSelectedToday),
                         ],
                       ),
@@ -267,11 +274,12 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                         children: [
                           Expanded(
                             child: MacroColumn(
+                              icon: InkGlyph.protein,
                               label: l10n.protein,
                               current: intake.proteinG,
                               target: targets.proteinG,
                               unit: 'g',
-                              color: AppColors.protein,
+                              color: scheme.primary,
                               labelColor: onHero,
                               metaColor: onHeroMuted,
                             ),
@@ -279,11 +287,12 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: MacroColumn(
+                              icon: InkGlyph.carbs,
                               label: l10n.carbs,
                               current: intake.carbG,
                               target: targets.carbG,
                               unit: 'g',
-                              color: AppColors.carb,
+                              color: scheme.primary,
                               labelColor: onHero,
                               metaColor: onHeroMuted,
                             ),
@@ -291,11 +300,12 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: MacroColumn(
+                              icon: InkGlyph.fat,
                               label: l10n.fat,
                               current: intake.fatG,
                               target: targets.fatG,
                               unit: 'g',
-                              color: AppColors.fat,
+                              color: scheme.primary,
                               labelColor: onHero,
                               metaColor: onHeroMuted,
                             ),
@@ -330,15 +340,6 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                           ),
                         ),
                       ],
-                      const SizedBox(height: 6),
-                      Text(
-                        isSelectedToday
-                            ? l10n.waterTapHint
-                            : l10n.pastDayReadOnly,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: onHeroMuted,
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -412,7 +413,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                               if (canCopyYesterday)
                                 PopupMenuButton<MealType>(
                                   tooltip: l10n.copyYesterday,
-                                  icon: const Icon(Icons.more_horiz),
+                                  icon: const InkIcon(InkGlyph.more),
                                   onSelected: (type) =>
                                       copyMealTypeFromYesterday(
                                         context: context,
@@ -426,9 +427,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                                         value: t,
                                         child: Text(
                                           l10n.copyNamed(
-                                            l10n.yesterdayNamed(
-                                              t.label(l10n),
-                                            ),
+                                            l10n.yesterdayNamed(t.label(l10n)),
                                           ),
                                         ),
                                       ),
@@ -437,6 +436,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                               if (canSaveAsPreset)
                                 PopupMenuButton<String>(
                                   tooltip: l10n.more,
+                                  icon: const InkIcon(InkGlyph.more),
                                   onSelected: (value) => _onMealMenu(
                                     value,
                                     day,
@@ -464,6 +464,23 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                             data: (meals) => meals.isEmpty
                                 ? SportEmptyState(
                                     icon: Icons.restaurant_outlined,
+                                    iconWidget: Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        InkIcon(
+                                          InkGlyph.mealEmpty,
+                                          size: 52,
+                                          color: scheme.onSurfaceVariant
+                                              .withValues(alpha: .62),
+                                          strokeWidth: 1.6,
+                                        ),
+                                        const Positioned(
+                                          right: -8,
+                                          bottom: -3,
+                                          child: InkSeal('食', size: 19),
+                                        ),
+                                      ],
+                                    ),
                                     title: isSelectedToday
                                         ? l10n.noMealsTitle
                                         : l10n.noMealsThatDay,
@@ -483,9 +500,8 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                                       Align(
                                         alignment: Alignment.centerLeft,
                                         child: TextButton(
-                                          onPressed: () => context.push(
-                                            dailyMealsPath(day),
-                                          ),
+                                          onPressed: () =>
+                                              context.push(dailyMealsPath(day)),
                                           child: Text(l10n.viewDayRecords),
                                         ),
                                       ),
@@ -841,7 +857,7 @@ class _StepsStatusLabel extends ConsumerWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.directions_walk, size: 18, color: iconColor),
+                InkIcon(InkGlyph.walk, size: 18, color: iconColor),
                 const SizedBox(width: 4),
                 Text(label, style: textStyle),
                 if (showSpinner) ...[
@@ -897,14 +913,12 @@ class _WaterCup extends ConsumerWidget {
     return WaterCupControl(
       progress: waterGoal <= 0 ? 0 : waterMl / waterGoal,
       height: 92,
-      width: 60,
+      width: 58,
       onAdd: canAdd
-          ? () =>
-                ref.read(waterRepositoryProvider).addMl(day, kWaterServingMl)
+          ? () => ref.read(waterRepositoryProvider).addMl(day, kWaterServingMl)
           : null,
       onUndo: canUndo
-          ? () =>
-                ref.read(waterRepositoryProvider).addMl(day, -kWaterServingMl)
+          ? () => ref.read(waterRepositoryProvider).addMl(day, -kWaterServingMl)
           : null,
       addLabel: l10n.waterAddMl(kWaterServingMl),
       undoLabel: l10n.waterUndoMl(kWaterServingMl),
@@ -930,6 +944,7 @@ class _WaterMacroColumn extends ConsumerWidget {
     final waterMl = ref.watch(waterMlProvider).value ?? 0;
     final waterGoal = ref.watch(waterGoalProvider);
     return MacroColumn(
+      icon: InkGlyph.water,
       label: label,
       current: waterMl.toDouble(),
       target: waterGoal.toDouble(),
@@ -965,7 +980,8 @@ class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
   Future<void> _refreshBatteryStatus() async {
     if (!StepServiceNotifier.isAvailable) return;
     final aggressive = await ReminderNotifications.isAggressiveOem();
-    final ignoring = await ReminderNotifications.isIgnoringBatteryOptimizations();
+    final ignoring =
+        await ReminderNotifications.isIgnoringBatteryOptimizations();
     if (!mounted) return;
     setState(() => _showBatteryHint = aggressive && !ignoring);
   }
@@ -1008,32 +1024,32 @@ class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
     final (statusText, statusIcon, statusColor) = switch (status) {
       StepsSyncStatus.connected => (
         l10n.stepsStatusConnected,
-        Icons.check,
+        InkGlyph.check,
         Colors.green,
       ),
       StepsSyncStatus.empty => (
         l10n.stepsStatusEmpty,
-        Icons.info_outline,
+        InkGlyph.info,
         Colors.orange,
       ),
       StepsSyncStatus.denied => (
         l10n.stepsStatusDenied,
-        Icons.link_off,
+        InkGlyph.disconnect,
         Colors.orange,
       ),
       StepsSyncStatus.failed => (
         l10n.stepsStatusFailed,
-        Icons.error_outline,
+        InkGlyph.info,
         theme.colorScheme.error,
       ),
       StepsSyncStatus.unsupported => (
         l10n.stepsStatusUnsupported,
-        Icons.phonelink_off,
+        InkGlyph.disconnect,
         theme.colorScheme.onSurfaceVariant,
       ),
       null => (
         l10n.stepsStatusSyncing,
-        Icons.sync,
+        InkGlyph.sync,
         theme.colorScheme.onSurfaceVariant,
       ),
     };
@@ -1067,7 +1083,7 @@ class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(statusIcon, size: 20, color: statusColor),
+                  InkIcon(statusIcon, size: 20, color: statusColor),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(statusText, style: theme.textTheme.bodyLarge),
@@ -1095,9 +1111,9 @@ class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
                           ? const SizedBox(
                               width: 16,
                               height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                              child: InkIcon(InkGlyph.loading, size: 16),
                             )
-                          : const Icon(Icons.sync),
+                          : const InkIcon(InkGlyph.sync),
                       label: Text(l10n.stepsSheetResync),
                     ),
                   ),
@@ -1105,7 +1121,7 @@ class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: _openSettings,
-                      icon: const Icon(Icons.settings_outlined),
+                      icon: const InkIcon(InkGlyph.settings),
                       label: Text(
                         l10n.stepsSheetOpenSettings,
                         maxLines: 1,
@@ -1139,8 +1155,8 @@ class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.battery_alert_outlined,
+                        InkIcon(
+                          InkGlyph.battery,
                           size: 16,
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -1163,8 +1179,7 @@ class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
                                       MaterialTapTargetSize.shrinkWrap,
                                 ),
                                 onPressed: () async {
-                                  await ReminderNotifications
-                                      .requestIgnoreBatteryOptimizations();
+                                  await ReminderNotifications.requestIgnoreBatteryOptimizations();
                                   await _refreshBatteryStatus();
                                 },
                                 child: Text(l10n.reminderOemHintBatteryButton),
@@ -1218,7 +1233,7 @@ class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
                             alignment: Alignment.centerRight,
                             child: TextButton.icon(
                               onPressed: () => _copyDiagnostics(data),
-                              icon: const Icon(Icons.copy, size: 16),
+                              icon: const InkIcon(InkGlyph.copy, size: 16),
                               label: Text(l10n.copy),
                             ),
                           ),
@@ -1287,11 +1302,10 @@ class _TodayHeader extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
+          InkIconButton(
+            glyph: InkGlyph.chevronLeft,
             tooltip: l10n.prevDay,
-            visualDensity: VisualDensity.compact,
             onPressed: canGoPrev ? onPrev : null,
-            icon: const Icon(Icons.chevron_left),
           ),
           IconButton(
             tooltip: l10n.selectDate,
@@ -1304,16 +1318,16 @@ class _TodayHeader extends StatelessWidget {
                     onGoToToday!();
                   },
             icon: _TodayWeekdayCalendarIcon(
-              weekdayLetter: l10n.weekdayLettersMonSun
-                  .split(',')[DateTime.now().weekday - 1],
+              weekdayLetter: l10n.weekdayLettersMonSun.split(
+                ',',
+              )[DateTime.now().weekday - 1],
               color: AppThemeVisuals.of(context).accent,
             ),
           ),
-          IconButton(
+          InkIconButton(
+            glyph: InkGlyph.chevronRight,
             tooltip: l10n.nextDay,
-            visualDensity: VisualDensity.compact,
             onPressed: canGoNext ? onNext : null,
-            icon: const Icon(Icons.chevron_right),
           ),
         ],
       ),
@@ -1339,7 +1353,7 @@ class _TodayWeekdayCalendarIcon extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Icon(Icons.calendar_today_outlined, size: 24, color: color),
+          InkIcon(InkGlyph.calendar, size: 24, color: color),
           Padding(
             padding: const EdgeInsets.only(top: 5),
             child: Text(

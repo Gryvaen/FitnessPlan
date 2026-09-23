@@ -120,6 +120,7 @@ class SportEmptyState extends StatelessWidget {
     required this.title,
     this.message,
     this.icon = Icons.inbox_outlined,
+    this.iconWidget,
     this.actionLabel,
     this.onAction,
     this.secondaryLabel,
@@ -128,6 +129,7 @@ class SportEmptyState extends StatelessWidget {
   final String title;
   final String? message;
   final IconData icon;
+  final Widget? iconWidget;
 
   /// Primary call to action, rendered as a [FilledButton].
   final String? actionLabel;
@@ -151,13 +153,14 @@ class SportEmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 48,
-              color: theme.colorScheme.onSurfaceVariant.withValues(
-                alpha: 0.55,
-              ),
-            ),
+            iconWidget ??
+                Icon(
+                  icon,
+                  size: 48,
+                  color: theme.colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.55,
+                  ),
+                ),
             const SizedBox(height: 16),
             Text(
               title,
@@ -641,8 +644,8 @@ class SoftChip extends StatelessWidget {
     final v = AppThemeVisuals.of(context);
     final theme = Theme.of(context);
     final bg = color ?? v.accentSoft;
-    final fg = foreground ??
-        (selected ? v.accent : theme.colorScheme.onSurface);
+    final fg =
+        foreground ?? (selected ? v.accent : theme.colorScheme.onSurface);
     final chip = Container(
       constraints: const BoxConstraints(minHeight: 32),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
