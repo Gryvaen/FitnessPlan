@@ -112,7 +112,8 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
   DateTime get _tomorrow =>
       CalendarDay.todayLocal().add(const Duration(days: 1));
 
-  DateTime get _effectiveFrom => _startToday ? CalendarDay.todayLocal() : _tomorrow;
+  DateTime get _effectiveFrom =>
+      _startToday ? CalendarDay.todayLocal() : _tomorrow;
 
   bool get _isCarbCycle => widget.kind == DietStrategyKind.carbCycle;
 
@@ -271,7 +272,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
             Text(
               l10n.cycleLengthLabel,
               style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 8),
@@ -320,10 +321,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
               onChanged: (v) => setState(() => _lowFatPerKg = v),
             ),
             const SizedBox(height: AppSpacing.compact),
-            Text(
-              l10n.highCarbDayRatesTitle,
-              style: theme.textTheme.titleSmall,
-            ),
+            Text(l10n.highCarbDayRatesTitle, style: theme.textTheme.titleSmall),
             const SizedBox(height: 4),
             _StepperRow(
               label: l10n.proteinPerKgLabel,
@@ -533,14 +531,11 @@ class _ReadOnlyMetric extends StatelessWidget {
                   Text(
                     value,
                     style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Text(
-                    unit,
-                    style: theme.textTheme.bodySmall,
-                  ),
+                  Text(unit, style: theme.textTheme.bodySmall),
                 ],
               ),
             ],
