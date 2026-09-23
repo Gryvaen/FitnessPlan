@@ -7,6 +7,7 @@ import '../../data/repositories/food_repository.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../shell/swipe_tab_view.dart';
+import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/food_name_link.dart';
@@ -149,10 +150,10 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                 focusNode: _searchFocus,
                 decoration: InputDecoration(
                   hintText: l10n.searchFood,
-                  prefixIcon: const Icon(Icons.search),
+                  prefixIcon: const InkIcon(InkGlyph.search),
                   suffixIcon: searching
                       ? IconButton(
-                          icon: const Icon(Icons.close),
+                          icon: const InkIcon(InkGlyph.close),
                           onPressed: () {
                             _searchFocus.unfocus();
                             _searchController.clear();
@@ -199,9 +200,7 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                     child: TickerMode(
                       enabled: !searching,
                       child: SwipeTabView(
-                        key: ValueKey(
-                          visible.map((t) => t.name).join('-'),
-                        ),
+                        key: ValueKey(visible.map((t) => t.name).join('-')),
                         branchIndex: 1,
                         keepPagesAlive: true,
                         index: tabIndex,
@@ -215,96 +214,96 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                             KeyedSubtree(
                               key: ValueKey(t),
                               child: switch (t) {
-                              _FoodsTab.recent => _FoodListView(
-                                watch: (ref) =>
-                                    ref.watch(_recentFoodsProvider),
-                                emptyIcon: Icons.history,
-                                emptyTitle: l10n.noRecentFoods,
-                                openDetail: (context, foodId) =>
-                                    withoutSearchFocus(
-                                  focus: _searchFocus,
-                                  action: () =>
-                                      openFoodDetail(context, foodId),
-                                ),
-                                onLongPress: (context, ref, food) async {
-                                  final confirmed =
-                                      await showDialog<bool>(
-                                        context: context,
-                                        builder: (ctx) => AlertDialog(
-                                          title: Text(l10n.removeFromRecent),
-                                          content: Text(
-                                            l10n.confirmRemoveFromRecent(
-                                              food.name,
+                                _FoodsTab.recent => _FoodListView(
+                                  watch: (ref) =>
+                                      ref.watch(_recentFoodsProvider),
+                                  emptyGlyph: InkGlyph.loading,
+                                  emptyTitle: l10n.noRecentFoods,
+                                  openDetail: (context, foodId) =>
+                                      withoutSearchFocus(
+                                        focus: _searchFocus,
+                                        action: () =>
+                                            openFoodDetail(context, foodId),
+                                      ),
+                                  onLongPress: (context, ref, food) async {
+                                    final confirmed =
+                                        await showDialog<bool>(
+                                          context: context,
+                                          builder: (ctx) => AlertDialog(
+                                            title: Text(l10n.removeFromRecent),
+                                            content: Text(
+                                              l10n.confirmRemoveFromRecent(
+                                                food.name,
+                                              ),
                                             ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.pop(ctx, false),
+                                                child: Text(l10n.cancel),
+                                              ),
+                                              FilledButton(
+                                                onPressed: () =>
+                                                    Navigator.pop(ctx, true),
+                                                child: Text(l10n.delete),
+                                              ),
+                                            ],
                                           ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(ctx, false),
-                                              child: Text(l10n.cancel),
-                                            ),
-                                            FilledButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(ctx, true),
-                                              child: Text(l10n.delete),
-                                            ),
-                                          ],
-                                        ),
-                                      ) ==
-                                      true;
-                                  if (!confirmed) return;
-                                  await ref
-                                      .read(foodRepositoryProvider)
-                                      .hideFromRecent(food.id);
-                                  ref.invalidate(_recentFoodsProvider);
-                                },
-                              ),
-                              _FoodsTab.favorites => _FoodListView(
-                                watch: (ref) =>
-                                    ref.watch(favoriteFoodsProvider),
-                                emptyIcon: Icons.star_outline,
-                                emptyTitle: l10n.noFavorites,
-                                openDetail: (context, foodId) =>
-                                    withoutSearchFocus(
-                                  focus: _searchFocus,
-                                  action: () =>
-                                      openFoodDetail(context, foodId),
+                                        ) ==
+                                        true;
+                                    if (!confirmed) return;
+                                    await ref
+                                        .read(foodRepositoryProvider)
+                                        .hideFromRecent(food.id);
+                                    ref.invalidate(_recentFoodsProvider);
+                                  },
                                 ),
-                                onLongPress: (context, ref, food) async {
-                                  final confirmed =
-                                      await showDialog<bool>(
-                                        context: context,
-                                        builder: (ctx) => AlertDialog(
-                                          title: Text(l10n.removeFavorite),
-                                          content: Text(
-                                            l10n.confirmRemoveFavorite(
-                                              food.name,
+                                _FoodsTab.favorites => _FoodListView(
+                                  watch: (ref) =>
+                                      ref.watch(favoriteFoodsProvider),
+                                  emptyGlyph: InkGlyph.starOutline,
+                                  emptyTitle: l10n.noFavorites,
+                                  openDetail: (context, foodId) =>
+                                      withoutSearchFocus(
+                                        focus: _searchFocus,
+                                        action: () =>
+                                            openFoodDetail(context, foodId),
+                                      ),
+                                  onLongPress: (context, ref, food) async {
+                                    final confirmed =
+                                        await showDialog<bool>(
+                                          context: context,
+                                          builder: (ctx) => AlertDialog(
+                                            title: Text(l10n.removeFavorite),
+                                            content: Text(
+                                              l10n.confirmRemoveFavorite(
+                                                food.name,
+                                              ),
                                             ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.pop(ctx, false),
+                                                child: Text(l10n.cancel),
+                                              ),
+                                              FilledButton(
+                                                onPressed: () =>
+                                                    Navigator.pop(ctx, true),
+                                                child: Text(l10n.remove),
+                                              ),
+                                            ],
                                           ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(ctx, false),
-                                              child: Text(l10n.cancel),
-                                            ),
-                                            FilledButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(ctx, true),
-                                              child: Text(l10n.remove),
-                                            ),
-                                          ],
-                                        ),
-                                      ) ==
-                                      true;
-                                  if (!confirmed) return;
-                                  await ref
-                                      .read(foodRepositoryProvider)
-                                      .toggleFavorite(food.id);
-                                },
-                              ),
-                              _FoodsTab.categories =>
-                                const _FoodCategoryList(),
-                            },
+                                        ) ==
+                                        true;
+                                    if (!confirmed) return;
+                                    await ref
+                                        .read(foodRepositoryProvider)
+                                        .toggleFavorite(food.id);
+                                  },
+                                ),
+                                _FoodsTab.categories =>
+                                  const _FoodCategoryList(),
+                              },
                             ),
                         ],
                       ),
@@ -339,17 +338,21 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
 class _FoodListView extends ConsumerWidget {
   const _FoodListView({
     required this.watch,
-    required this.emptyIcon,
+    required this.emptyGlyph,
     required this.emptyTitle,
     required this.openDetail,
     this.onLongPress,
   });
 
   final AsyncValue<List<FoodItem>> Function(WidgetRef ref) watch;
-  final IconData emptyIcon;
+  final InkGlyph emptyGlyph;
   final String emptyTitle;
   final Future<void> Function(BuildContext context, int foodId) openDetail;
-  final Future<void> Function(BuildContext context, WidgetRef ref, FoodItem food)?
+  final Future<void> Function(
+    BuildContext context,
+    WidgetRef ref,
+    FoodItem food,
+  )?
   onLongPress;
 
   @override
@@ -361,7 +364,10 @@ class _FoodListView extends ConsumerWidget {
       data: (foods) {
         if (foods.isEmpty) {
           return SingleChildScrollView(
-            child: SportEmptyState(icon: emptyIcon, title: emptyTitle),
+            child: SportEmptyState(
+              iconWidget: InkIcon(emptyGlyph, size: 48),
+              title: emptyTitle,
+            ),
           );
         }
         return ListView.builder(
@@ -460,7 +466,7 @@ class _FoodCategoryList extends ConsumerWidget {
             if (categories.isEmpty) {
               return SingleChildScrollView(
                 child: SportEmptyState(
-                  icon: Icons.category_outlined,
+                  iconWidget: const InkIcon(InkGlyph.food, size: 48),
                   title: l10n.noCategories,
                 ),
               );
@@ -485,7 +491,7 @@ class _FoodCategoryList extends ConsumerWidget {
                       l10n.nKinds(c.count),
                       style: theme.textTheme.meta,
                     ),
-                    trailing: const Icon(Icons.chevron_right),
+                    trailing: const InkIcon(InkGlyph.chevronRight),
                     onTap: () => context.push(
                       Uri(
                         path: '/foods/category',
@@ -497,7 +503,7 @@ class _FoodCategoryList extends ConsumerWidget {
                   contentPadding: EdgeInsets.zero,
                   leading: const FoodCategoryAvatar(category: '自定义'),
                   title: Text(l10n.custom, style: theme.textTheme.bodyLarge),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const InkIcon(InkGlyph.chevronRight),
                   onTap: () => context.push('/foods/custom'),
                 ),
               ],
@@ -508,10 +514,7 @@ class _FoodCategoryList extends ConsumerWidget {
 }
 
 class _FoodSearchList extends ConsumerWidget {
-  const _FoodSearchList({
-    required this.onClearQuery,
-    required this.openDetail,
-  });
+  const _FoodSearchList({required this.onClearQuery, required this.openDetail});
 
   final VoidCallback onClearQuery;
   final Future<void> Function(BuildContext context, int foodId) openDetail;
@@ -528,7 +531,7 @@ class _FoodSearchList extends ConsumerWidget {
             if (foods.isEmpty) {
               return SingleChildScrollView(
                 child: SportEmptyState(
-                  icon: Icons.search_off,
+                  iconWidget: const InkIcon(InkGlyph.search, size: 48),
                   title: l10n.noFoodFound,
                   actionLabel: l10n.editKeywords,
                   onAction: onClearQuery,
@@ -545,10 +548,8 @@ class _FoodSearchList extends ConsumerWidget {
                 listBottomInset(context, hasFab: false),
               ),
               itemCount: foods.length,
-              itemBuilder: (context, i) => _FoodRow(
-                food: foods[i],
-                openDetail: openDetail,
-              ),
+              itemBuilder: (context, i) =>
+                  _FoodRow(food: foods[i], openDetail: openDetail),
             );
           },
         );

@@ -8,6 +8,7 @@ import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../shell/swipe_tab_view.dart';
 import '../theme/app_theme.dart';
+import '../ink/ink_icon.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/form_options.dart';
 
@@ -43,11 +44,7 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
     if (orderedOldestFirst.isEmpty) return const [0];
     final firstDay = AppDates.dayOnly(orderedOldestFirst.first.date);
     final daysSinceFirst = AppDates.todayLocal().difference(firstDay).inDays;
-    return [
-      7,
-      if (daysSinceFirst >= 6) 30,
-      if (daysSinceFirst >= 13) 0,
-    ];
+    return [7, if (daysSinceFirst >= 6) 30, if (daysSinceFirst >= 13) 0];
   }
 
   void _ensurePeriodAvailable(List<int> periods) {
@@ -209,7 +206,9 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
               child: showPeriodTabs
                   ? SwipeTabView(
                       keepPagesAlive: true,
-                      index: periods.indexOf(period).clamp(0, periods.length - 1),
+                      index: periods
+                          .indexOf(period)
+                          .clamp(0, periods.length - 1),
                       onIndexChanged: (i) =>
                           setState(() => _period = periods[i]),
                       children: [
@@ -237,12 +236,12 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
         : AppColors.success;
     return Row(
       children: [
-        Icon(
+        InkIcon(
           flat
-              ? Icons.remove
+              ? InkGlyph.remove
               : up
-              ? Icons.arrow_upward
-              : Icons.arrow_downward,
+              ? InkGlyph.collapse
+              : InkGlyph.expand,
           size: 14,
           color: color,
         ),
@@ -310,7 +309,7 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
             IconButton(
               tooltip: l10n.fabLogWeight,
               onPressed: addWeight,
-              icon: const Icon(Icons.add),
+              icon: const InkIcon(InkGlyph.add),
             ),
           ],
         ),
@@ -338,7 +337,7 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
             ),
             trailing: AppDates.isLocalToday(log.date)
                 ? IconButton(
-                    icon: const Icon(Icons.delete_outline),
+                    icon: const InkIcon(InkGlyph.delete),
                     tooltip: l10n.delete,
                     onPressed: () => _confirmDelete(log),
                   )

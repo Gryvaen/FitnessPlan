@@ -8,6 +8,7 @@ import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../shell/swipe_tab_view.dart';
 import '../theme/app_theme.dart';
+import '../ink/ink_icon.dart';
 import '../theme/sport_chrome.dart';
 
 String noteEditPath(DateTime day) {
@@ -60,7 +61,7 @@ class NotesRecordsTab extends ConsumerWidget {
                 ),
               ),
               PlainIconAction(
-                icon: Icons.add,
+                iconWidget: const InkIcon(InkGlyph.add),
                 label: l10n.fabWriteNote,
                 onPressed: () => context.push(noteEditPath(DateTime.now())),
               ),
@@ -69,12 +70,9 @@ class NotesRecordsTab extends ConsumerWidget {
           Text(l10n.journalSubtitle, style: theme.textTheme.bodySmall),
           const SizedBox(height: 12),
           SportInkRow(
-            leading: const Icon(
-              Icons.edit,
-              color: Color(0xFFC4A035),
-            ),
+            leading: const InkIcon(InkGlyph.edit, color: Color(0xFFC4A035)),
             title: Text(l10n.journalPrompt),
-            trailing: const Icon(Icons.arrow_forward, size: 18),
+            trailing: const InkIcon(InkGlyph.arrowForward, size: 18),
             onTap: () => context.push(noteEditPath(DateTime.now())),
           ),
         ],
@@ -92,7 +90,7 @@ class NotesRecordsTab extends ConsumerWidget {
               header,
               SportEmptyState(
                 title: l10n.notesEmptyHint,
-                icon: Icons.edit_note,
+                iconWidget: const InkIcon(InkGlyph.edit, size: 48),
               ),
             ],
           );
@@ -223,7 +221,10 @@ class NotesRecordsTab extends ConsumerWidget {
                         alignment: Alignment.centerRight,
                         padding: const EdgeInsets.only(right: 16),
                         color: scheme.error,
-                        child: const Icon(Icons.delete, color: Colors.white),
+                        child: const InkIcon(
+                          InkGlyph.delete,
+                          color: Colors.white,
+                        ),
                       ),
                       confirmDismiss: (_) async {
                         return await showDialog<bool>(

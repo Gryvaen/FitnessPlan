@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../theme/app_theme.dart';
+import '../ink/ink_icon.dart';
 
 /// Shared discrete option lists for profile / weight / meal forms.
 class FormOptions {
@@ -629,8 +630,8 @@ class _PickerField extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Icon(
-                    CupertinoIcons.chevron_up_chevron_down,
+                  InkIcon(
+                    InkGlyph.expand,
                     size: 16,
                     color: theme.colorScheme.onSurfaceVariant,
                   ),

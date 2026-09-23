@@ -5,6 +5,7 @@ import '../../data/db.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
+import '../ink/ink_icon.dart';
 import '../widgets/food_name_link.dart';
 import 'food_category_art.dart';
 
@@ -143,7 +144,7 @@ class _FoodCategoryPageState extends ConsumerState<FoodCategoryPage> {
                       '${f.kcalPer100.round()} kcal / 100g',
                       style: theme.textTheme.meta,
                     ),
-                    trailing: const Icon(Icons.chevron_right),
+                    trailing: const InkIcon(InkGlyph.chevronRight),
                     onTap: () => openFoodDetail(context, f.id),
                   );
                 },

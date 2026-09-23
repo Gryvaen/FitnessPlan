@@ -561,7 +561,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
           actions: [
             IconButton(
               tooltip: l10n.addCustomFood,
-              icon: const InkIcon(InkGlyph.edit, color: Color(0xFFC4A035)),
+              icon: const InkIcon(InkGlyph.autoFix, size: 29),
               onPressed: _openCustomFood,
             ),
           ],

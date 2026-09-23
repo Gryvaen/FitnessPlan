@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_theme.dart';
 import '../../l10n/app_localizations_ext.dart';
+import '../ink/ink_icon.dart';
 
 /// Large inline page heading used at the top of a tab-root body (replaces the
 /// AppBar title in the V2 "open list" layout). Optional [subtitle] and a
@@ -198,7 +199,11 @@ class SportLoadError extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SportEmptyState(
     title: context.l10n.loadRecordsFailed,
-    icon: Icons.error_outline,
+    iconWidget: InkIcon(
+      InkGlyph.error,
+      size: 48,
+      color: Theme.of(context).colorScheme.error,
+    ),
     actionLabel: context.l10n.retry,
     onAction: onRetry,
   );

@@ -1,53 +1,17 @@
 import 'package:flutter/material.dart';
 
-/// A small emoji "illustration" for a food-seed category. Falls back to a
-/// generic plate for unknown / custom categories.
-String foodCategoryEmoji(String category) {
-  switch (category) {
-    case '畜肉':
-      return '🥩';
-    case '禽肉':
-      return '🍗';
-    case '水产':
-      return '🐟';
-    case '乳类':
-      return '🥛';
-    case '蛋类':
-      return '🥚';
-    case '谷类':
-      return '🌾';
-    case '薯类':
-      return '🥔';
-    case '豆类':
-      return '🫘';
-    case '蔬菜':
-      return '🥬';
-    case '菌藻':
-      return '🍄';
-    case '水果':
-      return '🍎';
-    case '坚果':
-      return '🥜';
-    case '油脂':
-      return '🫗';
-    case '调味品':
-      return '🧂';
-    case '饮料':
-      return '🥤';
-    case '小吃':
-      return '🍿';
-    case '糖蜜饯':
-      return '🍬';
-    case '包装食品':
-      return '🥫';
-    case '自定义':
-      return '✏️';
-    default:
-      return '🍽️';
-  }
-}
+import '../ink/ink_icon.dart';
 
-/// Category emoji used as a list `leading` — plain glyph, no circle badge.
+InkGlyph foodCategoryGlyph(String category) => switch (category) {
+  '畜肉' || '禽肉' || '水产' || '乳类' || '蛋类' || '豆类' => InkGlyph.protein,
+  '谷类' || '薯类' || '水果' || '糖蜜饯' => InkGlyph.carbs,
+  '坚果' || '油脂' => InkGlyph.fat,
+  '饮料' => InkGlyph.water,
+  '自定义' => InkGlyph.autoFix,
+  _ => InkGlyph.food,
+};
+
+/// Theme-aware ink PNG used as a food-category list marker.
 class FoodCategoryAvatar extends StatelessWidget {
   const FoodCategoryAvatar({super.key, required this.category, this.size = 40});
 
@@ -59,12 +23,7 @@ class FoodCategoryAvatar extends StatelessWidget {
     return SizedBox(
       width: size,
       height: size,
-      child: Center(
-        child: Text(
-          foodCategoryEmoji(category),
-          style: TextStyle(fontSize: size * 0.55),
-        ),
-      ),
+      child: Center(child: InkIcon(foodCategoryGlyph(category), size: size)),
     );
   }
 }

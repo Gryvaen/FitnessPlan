@@ -1023,18 +1023,13 @@ class _WorkoutItemTile extends ConsumerWidget {
           ];
 
     return SportListTile(
-      leading: Checkbox(
+      leading: _InkDoneToggle(
         value: item.done,
-        fillColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return AppColors.success;
-          return null;
-        }),
-        checkColor: Colors.white,
         onChanged: editable
             ? (v) {
                 ref
                     .read(workoutRepositoryProvider)
-                    .setItemDone(item.id, v ?? false);
+                    .setItemDone(item.id, v);
               }
             : null,
       ),
@@ -1105,6 +1100,41 @@ class _WorkoutItemTile extends ConsumerWidget {
               ref.invalidate(workoutHistoryProvider);
               ref.invalidate(allWorkoutHistoryProvider);
             },
+    );
+  }
+}
+
+class _InkDoneToggle extends StatelessWidget {
+  const _InkDoneToggle({required this.value, required this.onChanged});
+
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      checked: value,
+      enabled: onChanged != null,
+      button: true,
+      child: InkResponse(
+        onTap: onChanged == null ? null : () => onChanged!(!value),
+        radius: 24,
+        child: SizedBox.square(
+          dimension: 48,
+          child: Center(
+            child: InkIcon(
+              value ? InkGlyph.check : InkGlyph.radioEmpty,
+              size: 30,
+              color: onChanged == null
+                  ? scheme.onSurface.withValues(alpha: .32)
+                  : value
+                  ? AppColors.success
+                  : scheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

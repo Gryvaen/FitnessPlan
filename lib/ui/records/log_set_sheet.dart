@@ -7,6 +7,7 @@ import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../theme/app_theme.dart';
+import '../ink/ink_icon.dart';
 import '../widgets/form_options.dart';
 
 /// Edit today's item progress: completed sets + per-set reps/seconds/minutes.
@@ -264,7 +265,7 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
                             _StepButton(
                               large: true,
                               tooltip: l10n.decreaseCompletedSets,
-                              icon: Icons.remove,
+                              glyph: InkGlyph.remove,
                               onPressed:
                                   !_saving && _completedSets > _setOptions.first
                                   ? () => setState(() => _completedSets--)
@@ -296,7 +297,7 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
                             _StepButton(
                               large: true,
                               tooltip: l10n.increaseCompletedSets,
-                              icon: Icons.add,
+                              glyph: InkGlyph.add,
                               onPressed:
                                   !_saving && _completedSets < _setOptions.last
                                   ? () => setState(() => _completedSets++)
@@ -355,7 +356,7 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
                             ),
                             _StepButton(
                               tooltip: l10n.decreasePerSetValue,
-                              icon: Icons.remove,
+                              glyph: InkGlyph.remove,
                               onPressed: !_saving && _perSetValue > 1
                                   ? () => setState(() => _perSetValue--)
                                   : null,
@@ -373,7 +374,7 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
                             ),
                             _StepButton(
                               tooltip: l10n.increasePerSetValue,
-                              icon: Icons.add,
+                              glyph: InkGlyph.add,
                               onPressed: !_saving && _perSetValue < 999
                                   ? () => setState(() => _perSetValue++)
                                   : null,
@@ -404,8 +405,8 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 8,
                                         ),
-                                        child: Icon(
-                                          Icons.swap_horiz,
+                                        child: InkIcon(
+                                          InkGlyph.swapHorizontal,
                                           size: 20,
                                           color: scheme.onSurfaceVariant,
                                         ),
@@ -510,7 +511,7 @@ class _DisclosureRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             children: [
-              Icon(expanded ? Icons.remove : Icons.add, size: 24),
+              InkIcon(expanded ? InkGlyph.remove : InkGlyph.add, size: 24),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -518,9 +519,7 @@ class _DisclosureRow extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
               ),
-              Icon(
-                expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-              ),
+              InkIcon(expanded ? InkGlyph.collapse : InkGlyph.expand),
             ],
           ),
         ),
@@ -531,13 +530,13 @@ class _DisclosureRow extends StatelessWidget {
 
 class _StepButton extends StatelessWidget {
   const _StepButton({
-    required this.icon,
+    required this.glyph,
     required this.tooltip,
     required this.onPressed,
     this.large = false,
   });
 
-  final IconData icon;
+  final InkGlyph glyph;
   final String tooltip;
   final VoidCallback? onPressed;
   final bool large;
@@ -548,9 +547,11 @@ class _StepButton extends StatelessWidget {
     return IconButton(
       tooltip: tooltip,
       onPressed: onPressed,
-      icon: Icon(icon, size: large ? 22 : 18),
+      icon: InkIcon(glyph, size: large ? 22 : 18),
       style: IconButton.styleFrom(
-        foregroundColor: icon == Icons.add ? scheme.primary : scheme.secondary,
+        foregroundColor: glyph == InkGlyph.add
+            ? scheme.primary
+            : scheme.secondary,
         minimumSize: Size.square(large ? 40 : 36),
         maximumSize: Size.square(large ? 40 : 36),
         padding: const EdgeInsets.all(6),

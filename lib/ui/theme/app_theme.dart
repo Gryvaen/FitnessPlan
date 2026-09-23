@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../ink/ink_icon.dart';
+
 /// Nutrient + feedback semantic colors; identical across all themes so that
 /// protein / carbs / fat / water / success / warning always read the same.
 /// Brand chrome (buttons, nav, focus) lives on [AppThemeVisuals.accent] —
@@ -556,6 +558,11 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         foregroundColor: scheme.onSurface,
         titleTextStyle: text.titleLarge?.copyWith(color: scheme.onSurface),
+      ),
+      actionIconTheme: ActionIconThemeData(
+        backButtonIconBuilder: (_) =>
+            const InkIcon(InkGlyph.chevronLeft, size: 28),
+        closeButtonIconBuilder: (_) => const InkIcon(InkGlyph.close, size: 28),
       ),
       cardTheme: CardThemeData(
         elevation: 0,
