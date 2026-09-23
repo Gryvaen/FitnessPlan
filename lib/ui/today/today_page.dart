@@ -489,22 +489,9 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                             ),
                             data: (meals) => meals.isEmpty
                                 ? SportEmptyState(
-                                    iconWidget: Stack(
-                                      clipBehavior: Clip.none,
-                                      children: [
-                                        InkIcon(
-                                          InkGlyph.mealEmpty,
-                                          size: 52,
-                                          color: scheme.onSurfaceVariant
-                                              .withValues(alpha: .62),
-                                          strokeWidth: 1.6,
-                                        ),
-                                        const Positioned(
-                                          right: -8,
-                                          bottom: -3,
-                                          child: InkSeal('食', size: 19),
-                                        ),
-                                      ],
+                                    iconWidget: const StampedInkEmptyIcon(
+                                      glyph: InkGlyph.mealEmpty,
+                                      seal: '食',
                                     ),
                                     title: isSelectedToday
                                         ? l10n.noMealsTitle
