@@ -523,7 +523,10 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                 if (plans.isEmpty) {
                   return SportEmptyState(
                     title: l10n.emptyPlans,
-                    iconWidget: const InkIcon(InkGlyph.training),
+                    iconWidget: const StampedInkEmptyIcon(
+                      glyph: InkGlyph.training,
+                      seal: '炼',
+                    ),
                   );
                 }
                 final plan =
@@ -757,7 +760,10 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
             if (all && days.isEmpty) {
               return SportEmptyState(
                 title: l10n.noSetLogs,
-                iconWidget: const InkIcon(InkGlyph.training),
+                iconWidget: const StampedInkEmptyIcon(
+                  glyph: InkGlyph.training,
+                  seal: '炼',
+                ),
               );
             }
             if (days.isEmpty) return const SizedBox.shrink();
@@ -857,7 +863,10 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                     sliver: SliverToBoxAdapter(
                       child: SportEmptyState(
                         title: l10n.noExercises,
-                        iconWidget: const InkIcon(InkGlyph.training),
+                        iconWidget: const StampedInkEmptyIcon(
+                          glyph: InkGlyph.training,
+                          seal: '炼',
+                        ),
                       ),
                     ),
                   );
