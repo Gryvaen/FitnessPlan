@@ -5,6 +5,7 @@ import '../../data/db.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import '../theme/macro_color.dart';
 import '../theme/sport_chrome.dart';
@@ -251,7 +252,10 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           PlainIconAction(
-            icon: isFav ? Icons.star : Icons.star_border,
+            iconWidget: InkIcon(
+              isFav ? InkGlyph.star : InkGlyph.starOutline,
+              color: isFav ? AppColors.favorite : null,
+            ),
             label: isFav ? l10n.unfavorite : l10n.favorites,
             color: AppColors.favorite,
             size: 20,
@@ -259,16 +263,14 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
           ),
           if (!pickOnTap)
             PlainIconAction(
-              icon: Icons.add,
+              iconWidget: const InkIcon(InkGlyph.add),
               label: l10n.add,
               size: 22,
               onPressed: () => _pickFood(food),
             ),
         ],
       ),
-      onTap: pickOnTap
-          ? () => _pickFood(food)
-          : () => _openFoodDetail(food.id),
+      onTap: pickOnTap ? () => _pickFood(food) : () => _openFoodDetail(food.id),
     );
   }
 
@@ -291,7 +293,7 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 16),
         color: scheme.error,
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: const InkIcon(InkGlyph.delete, color: Colors.white),
       ),
       onDismissed: (_) {
         setState(() => _entries.removeWhere((e) => e.key == entry.key));
@@ -357,7 +359,7 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
             focusNode: _searchFocus,
             decoration: InputDecoration(
               labelText: l10n.searchFood,
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: const InkIcon(InkGlyph.search),
             ),
             onChanged: _search,
           ),
@@ -584,10 +586,8 @@ class _PortionSheetState extends State<_PortionSheet> {
             )
           else
             FilledButton(
-              onPressed: () => Navigator.pop(
-                context,
-                _PortionSheetResult.grams(_grams),
-              ),
+              onPressed: () =>
+                  Navigator.pop(context, _PortionSheetResult.grams(_grams)),
               child: Text(l10n.done),
             ),
         ],
