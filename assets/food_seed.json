@@ -11,7 +11,8 @@
     "sodium_mg": 57,
     "sugar": 0,
     "saturated_fat": 2.2,
-    "calcium_mg": 6
+    "calcium_mg": 6,
+    "name_en": "Pork (Lean)"
   },
   {
     "name": "猪肉(肥瘦)",
@@ -25,7 +26,8 @@
     "sodium_mg": 59,
     "sugar": 0,
     "saturated_fat": 13,
-    "calcium_mg": 6
+    "calcium_mg": 6,
+    "name_en": "Pork (Fatty & Lean)"
   },
   {
     "name": "猪里脊",
@@ -39,7 +41,8 @@
     "sodium_mg": 58,
     "sugar": 0,
     "saturated_fat": 2.8,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Pork Tenderloin"
   },
   {
     "name": "猪蹄",
@@ -53,7 +56,8 @@
     "sodium_mg": 100,
     "sugar": 0,
     "saturated_fat": 6.6,
-    "calcium_mg": 33
+    "calcium_mg": 33,
+    "name_en": "Pig's Trotter"
   },
   {
     "name": "猪肝",
@@ -67,7 +71,8 @@
     "sodium_mg": 68,
     "sugar": 0,
     "saturated_fat": 1.1,
-    "calcium_mg": 6
+    "calcium_mg": 6,
+    "name_en": "Pork Liver"
   },
   {
     "name": "猪肚",
@@ -81,7 +86,8 @@
     "sodium_mg": 75,
     "sugar": 0,
     "saturated_fat": 1.8,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Pork Tripe"
   },
   {
     "name": "猪血",
@@ -95,7 +101,8 @@
     "sodium_mg": 76,
     "sugar": 0,
     "saturated_fat": 0.1,
-    "calcium_mg": 4
+    "calcium_mg": 4,
+    "name_en": "Pig's Blood Curd"
   },
   {
     "name": "猪大肠",
@@ -109,7 +116,8 @@
     "sodium_mg": 58,
     "sugar": 0,
     "saturated_fat": 8.2,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Pork Large Intestine"
   },
   {
     "name": "排骨(猪)",
@@ -123,7 +131,8 @@
     "sodium_mg": 60,
     "sugar": 0,
     "saturated_fat": 8.1,
-    "calcium_mg": 8
+    "calcium_mg": 8,
+    "name_en": "Pork Ribs"
   },
   {
     "name": "五花肉",
@@ -137,7 +146,8 @@
     "sodium_mg": 55,
     "sugar": 0,
     "saturated_fat": 22,
-    "calcium_mg": 6
+    "calcium_mg": 6,
+    "name_en": "Pork Belly"
   },
   {
     "name": "培根",
@@ -151,7 +161,8 @@
     "sodium_mg": 1500,
     "sugar": 0,
     "saturated_fat": 18,
-    "calcium_mg": 11
+    "calcium_mg": 11,
+    "name_en": "Bacon"
   },
   {
     "name": "火腿",
@@ -165,7 +176,8 @@
     "sodium_mg": 1086,
     "sugar": 2,
     "saturated_fat": 1.3,
-    "calcium_mg": 8
+    "calcium_mg": 8,
+    "name_en": "Ham"
   },
   {
     "name": "午餐肉",
@@ -179,7 +191,8 @@
     "sodium_mg": 1200,
     "sugar": 1,
     "saturated_fat": 7,
-    "calcium_mg": 8
+    "calcium_mg": 8,
+    "name_en": "Luncheon Meat"
   },
   {
     "name": "腊肉",
@@ -193,7 +206,8 @@
     "sodium_mg": 763,
     "sugar": 0,
     "saturated_fat": 17,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Chinese Cured Pork"
   },
   {
     "name": "猪肉松",
@@ -207,7 +221,8 @@
     "sodium_mg": 1000,
     "sugar": 20,
     "saturated_fat": 5,
-    "calcium_mg": 25
+    "calcium_mg": 25,
+    "name_en": "Pork Floss"
   },
   {
     "name": "牛肉(瘦)",
@@ -221,7 +236,8 @@
     "sodium_mg": 53,
     "sugar": 0,
     "saturated_fat": 0.9,
-    "calcium_mg": 9
+    "calcium_mg": 9,
+    "name_en": "Beef (Lean)"
   },
   {
     "name": "牛腩",
@@ -235,7 +251,8 @@
     "sodium_mg": 63,
     "sugar": 0,
     "saturated_fat": 7,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Beef Brisket"
   },
   {
     "name": "牛里脊",
@@ -249,7 +266,8 @@
     "sodium_mg": 55,
     "sugar": 0,
     "saturated_fat": 0.6,
-    "calcium_mg": 4
+    "calcium_mg": 4,
+    "name_en": "Beef Tenderloin"
   },
   {
     "name": "牛腱子",
@@ -263,7 +281,8 @@
     "sodium_mg": 68,
     "sugar": 0,
     "saturated_fat": 1.8,
-    "calcium_mg": 9
+    "calcium_mg": 9,
+    "name_en": "Beef Shank"
   },
   {
     "name": "牛肚",
@@ -277,7 +296,8 @@
     "sodium_mg": 70,
     "sugar": 0,
     "saturated_fat": 0.5,
-    "calcium_mg": 29
+    "calcium_mg": 29,
+    "name_en": "Beef Tripe"
   },
   {
     "name": "牛肝",
@@ -291,7 +311,8 @@
     "sodium_mg": 80,
     "sugar": 0,
     "saturated_fat": 1.4,
-    "calcium_mg": 4
+    "calcium_mg": 4,
+    "name_en": "Beef Liver"
   },
   {
     "name": "牛舌",
@@ -305,7 +326,8 @@
     "sodium_mg": 80,
     "sugar": 0,
     "saturated_fat": 5.5,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Beef Tongue"
   },
   {
     "name": "羊肉(瘦)",
@@ -319,7 +341,8 @@
     "sodium_mg": 69,
     "sugar": 0,
     "saturated_fat": 1.3,
-    "calcium_mg": 6
+    "calcium_mg": 6,
+    "name_en": "Lamb (Lean)"
   },
   {
     "name": "羊肉(肥瘦)",
@@ -333,7 +356,8 @@
     "sodium_mg": 80,
     "sugar": 0,
     "saturated_fat": 5.9,
-    "calcium_mg": 6
+    "calcium_mg": 6,
+    "name_en": "Lamb (Fatty & Lean)"
   },
   {
     "name": "羊排",
@@ -347,7 +371,8 @@
     "sodium_mg": 75,
     "sugar": 0,
     "saturated_fat": 7.5,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Lamb Chops"
   },
   {
     "name": "羊肝",
@@ -361,7 +386,8 @@
     "sodium_mg": 80,
     "sugar": 0,
     "saturated_fat": 1.2,
-    "calcium_mg": 8
+    "calcium_mg": 8,
+    "name_en": "Lamb Liver"
   },
   {
     "name": "兔肉",
@@ -375,7 +401,8 @@
     "sodium_mg": 45,
     "sugar": 0,
     "saturated_fat": 0.7,
-    "calcium_mg": 12
+    "calcium_mg": 12,
+    "name_en": "Rabbit Meat"
   },
   {
     "name": "酱牛肉",
@@ -389,7 +416,8 @@
     "sodium_mg": 700,
     "sugar": 3,
     "saturated_fat": 4.5,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Soy-Braised Beef"
   },
   {
     "name": "卤猪蹄",
@@ -403,7 +431,8 @@
     "sodium_mg": 500,
     "sugar": 1,
     "saturated_fat": 7,
-    "calcium_mg": 30
+    "calcium_mg": 30,
+    "name_en": "Braised Pig's Trotter"
   },
   {
     "name": "猪心",
@@ -417,7 +446,8 @@
     "sodium_mg": 71,
     "sugar": 0,
     "saturated_fat": 1.7,
-    "calcium_mg": 13
+    "calcium_mg": 13,
+    "name_en": "Pork Heart"
   },
   {
     "name": "猪腰",
@@ -431,7 +461,8 @@
     "sodium_mg": 140,
     "sugar": 0,
     "saturated_fat": 1,
-    "calcium_mg": 12
+    "calcium_mg": 12,
+    "name_en": "Pork Kidney"
   },
   {
     "name": "牛肉干",
@@ -445,7 +476,8 @@
     "sodium_mg": 1200,
     "sugar": 10,
     "saturated_fat": 15,
-    "calcium_mg": 26
+    "calcium_mg": 26,
+    "name_en": "Beef Jerky"
   },
   {
     "name": "鸡胸肉",
@@ -459,7 +491,8 @@
     "sodium_mg": 63,
     "sugar": 0,
     "saturated_fat": 1.5,
-    "calcium_mg": 3
+    "calcium_mg": 3,
+    "name_en": "Chicken Breast"
   },
   {
     "name": "鸡腿肉(带皮)",
@@ -473,7 +506,8 @@
     "sodium_mg": 71,
     "sugar": 0,
     "saturated_fat": 3.6,
-    "calcium_mg": 6
+    "calcium_mg": 6,
+    "name_en": "Chicken Thigh (Skin-On)"
   },
   {
     "name": "鸡翅",
@@ -487,7 +521,8 @@
     "sodium_mg": 68,
     "sugar": 0,
     "saturated_fat": 3.9,
-    "calcium_mg": 8
+    "calcium_mg": 8,
+    "name_en": "Chicken Wing"
   },
   {
     "name": "整鸡(鸡肉)",
@@ -501,7 +536,8 @@
     "sodium_mg": 63,
     "sugar": 0,
     "saturated_fat": 2.5,
-    "calcium_mg": 9
+    "calcium_mg": 9,
+    "name_en": "Whole Chicken"
   },
   {
     "name": "鸡爪",
@@ -515,7 +551,8 @@
     "sodium_mg": 96,
     "sugar": 0,
     "saturated_fat": 4.5,
-    "calcium_mg": 42
+    "calcium_mg": 42,
+    "name_en": "Chicken Feet"
   },
   {
     "name": "鸡心",
@@ -529,7 +566,8 @@
     "sodium_mg": 80,
     "sugar": 0,
     "saturated_fat": 3,
-    "calcium_mg": 14
+    "calcium_mg": 14,
+    "name_en": "Chicken Heart"
   },
   {
     "name": "鸡肝",
@@ -543,7 +581,8 @@
     "sodium_mg": 90,
     "sugar": 0,
     "saturated_fat": 1.4,
-    "calcium_mg": 7
+    "calcium_mg": 7,
+    "name_en": "Chicken Liver"
   },
   {
     "name": "鸡胗",
@@ -557,7 +596,8 @@
     "sodium_mg": 74,
     "sugar": 0,
     "saturated_fat": 0.8,
-    "calcium_mg": 8
+    "calcium_mg": 8,
+    "name_en": "Chicken Gizzard"
   },
   {
     "name": "鸭肉",
@@ -571,7 +611,8 @@
     "sodium_mg": 69,
     "sugar": 0,
     "saturated_fat": 6,
-    "calcium_mg": 6
+    "calcium_mg": 6,
+    "name_en": "Duck Meat"
   },
   {
     "name": "鸭胸",
@@ -585,7 +626,8 @@
     "sodium_mg": 60,
     "sugar": 0,
     "saturated_fat": 1.7,
-    "calcium_mg": 8
+    "calcium_mg": 8,
+    "name_en": "Duck Breast"
   },
   {
     "name": "鸭腿",
@@ -599,7 +641,8 @@
     "sodium_mg": 70,
     "sugar": 0,
     "saturated_fat": 4.2,
-    "calcium_mg": 7
+    "calcium_mg": 7,
+    "name_en": "Duck Leg"
   },
   {
     "name": "烤鸭",
@@ -613,7 +656,8 @@
     "sodium_mg": 830,
     "sugar": 3,
     "saturated_fat": 12,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Roast Duck"
   },
   {
     "name": "鸭血",
@@ -627,7 +671,8 @@
     "sodium_mg": 55,
     "sugar": 0,
     "saturated_fat": 0.2,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Duck Blood Curd"
   },
   {
     "name": "鸭肫",
@@ -641,7 +686,8 @@
     "sodium_mg": 80,
     "sugar": 0,
     "saturated_fat": 0.4,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Duck Gizzard"
   },
   {
     "name": "鹅肉",
@@ -655,7 +701,8 @@
     "sodium_mg": 60,
     "sugar": 0,
     "saturated_fat": 6.5,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Goose Meat"
   },
   {
     "name": "鹌鹑",
@@ -669,7 +716,8 @@
     "sodium_mg": 50,
     "sugar": 0,
     "saturated_fat": 1,
-    "calcium_mg": 48
+    "calcium_mg": 48,
+    "name_en": "Quail"
   },
   {
     "name": "鸡肉松",
@@ -683,7 +731,8 @@
     "sodium_mg": 900,
     "sugar": 25,
     "saturated_fat": 3.5,
-    "calcium_mg": 30
+    "calcium_mg": 30,
+    "name_en": "Chicken Floss"
   },
   {
     "name": "白切鸡",
@@ -697,7 +746,8 @@
     "sodium_mg": 250,
     "sugar": 0,
     "saturated_fat": 2.3,
-    "calcium_mg": 8
+    "calcium_mg": 8,
+    "name_en": "Poached Chicken (White Cut)"
   },
   {
     "name": "盐焗鸡",
@@ -711,7 +761,8 @@
     "sodium_mg": 550,
     "sugar": 0,
     "saturated_fat": 3,
-    "calcium_mg": 9
+    "calcium_mg": 9,
+    "name_en": "Salt-Baked Chicken"
   },
   {
     "name": "卤鸭脖",
@@ -725,7 +776,8 @@
     "sodium_mg": 900,
     "sugar": 3,
     "saturated_fat": 4.5,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Braised Duck Neck"
   },
   {
     "name": "鸡脆骨",
@@ -739,7 +791,8 @@
     "sodium_mg": 60,
     "sugar": 0,
     "saturated_fat": 0.6,
-    "calcium_mg": 90
+    "calcium_mg": 90,
+    "name_en": "Chicken Cartilage"
   },
   {
     "name": "鸡皮",
@@ -753,7 +806,8 @@
     "sodium_mg": 60,
     "sugar": 0,
     "saturated_fat": 13,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Chicken Skin"
   },
   {
     "name": "草鱼",
@@ -767,7 +821,8 @@
     "sodium_mg": 46,
     "sugar": 0,
     "saturated_fat": 1.4,
-    "calcium_mg": 38
+    "calcium_mg": 38,
+    "name_en": "Grass Carp"
   },
   {
     "name": "鲤鱼",
@@ -781,7 +836,8 @@
     "sodium_mg": 54,
     "sugar": 0,
     "saturated_fat": 1,
-    "calcium_mg": 50
+    "calcium_mg": 50,
+    "name_en": "Common Carp"
   },
   {
     "name": "鲫鱼",
@@ -795,7 +851,8 @@
     "sodium_mg": 60,
     "sugar": 0,
     "saturated_fat": 0.7,
-    "calcium_mg": 79
+    "calcium_mg": 79,
+    "name_en": "Crucian Carp"
   },
   {
     "name": "鲈鱼",
@@ -809,7 +866,8 @@
     "sodium_mg": 60,
     "sugar": 0,
     "saturated_fat": 0.9,
-    "calcium_mg": 138
+    "calcium_mg": 138,
+    "name_en": "Sea Bass"
   },
   {
     "name": "黄花鱼",
@@ -823,7 +881,8 @@
     "sodium_mg": 120,
     "sugar": 0,
     "saturated_fat": 0.7,
-    "calcium_mg": 53
+    "calcium_mg": 53,
+    "name_en": "Yellow Croaker"
   },
   {
     "name": "带鱼",
@@ -837,7 +896,8 @@
     "sodium_mg": 150,
     "sugar": 0,
     "saturated_fat": 1.5,
-    "calcium_mg": 28
+    "calcium_mg": 28,
+    "name_en": "Hairtail (Ribbonfish)"
   },
   {
     "name": "鲳鱼",
@@ -851,7 +911,8 @@
     "sodium_mg": 70,
     "sugar": 0,
     "saturated_fat": 2.2,
-    "calcium_mg": 46
+    "calcium_mg": 46,
+    "name_en": "Pomfret"
   },
   {
     "name": "鳕鱼",
@@ -865,7 +926,8 @@
     "sodium_mg": 77,
     "sugar": 0,
     "saturated_fat": 0.1,
-    "calcium_mg": 42
+    "calcium_mg": 42,
+    "name_en": "Cod"
   },
   {
     "name": "三文鱼",
@@ -879,7 +941,8 @@
     "sodium_mg": 50,
     "sugar": 0,
     "saturated_fat": 1.9,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Salmon"
   },
   {
     "name": "金枪鱼",
@@ -893,7 +956,8 @@
     "sodium_mg": 45,
     "sugar": 0,
     "saturated_fat": 0.2,
-    "calcium_mg": 8
+    "calcium_mg": 8,
+    "name_en": "Tuna"
   },
   {
     "name": "鲢鱼",
@@ -907,7 +971,8 @@
     "sodium_mg": 50,
     "sugar": 0,
     "saturated_fat": 1.2,
-    "calcium_mg": 53
+    "calcium_mg": 53,
+    "name_en": "Silver Carp"
   },
   {
     "name": "罗非鱼",
@@ -921,7 +986,8 @@
     "sodium_mg": 60,
     "sugar": 0,
     "saturated_fat": 0.5,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Tilapia"
   },
   {
     "name": "泥鳅",
@@ -935,7 +1001,8 @@
     "sodium_mg": 74,
     "sugar": 0,
     "saturated_fat": 0.5,
-    "calcium_mg": 299
+    "calcium_mg": 299,
+    "name_en": "Loach"
   },
   {
     "name": "黄鳝",
@@ -949,7 +1016,8 @@
     "sodium_mg": 70,
     "sugar": 0,
     "saturated_fat": 0.3,
-    "calcium_mg": 42
+    "calcium_mg": 42,
+    "name_en": "Ricefield Eel"
   },
   {
     "name": "鲶鱼",
@@ -963,7 +1031,8 @@
     "sodium_mg": 60,
     "sugar": 0,
     "saturated_fat": 0.9,
-    "calcium_mg": 40
+    "calcium_mg": 40,
+    "name_en": "Catfish"
   },
   {
     "name": "基围虾",
@@ -977,7 +1046,8 @@
     "sodium_mg": 165,
     "sugar": 0,
     "saturated_fat": 0.3,
-    "calcium_mg": 62
+    "calcium_mg": 62,
+    "name_en": "Whiteleg Shrimp"
   },
   {
     "name": "虾仁",
@@ -991,7 +1061,8 @@
     "sodium_mg": 140,
     "sugar": 0,
     "saturated_fat": 0.2,
-    "calcium_mg": 35
+    "calcium_mg": 35,
+    "name_en": "Shelled Shrimp"
   },
   {
     "name": "对虾",
@@ -1005,7 +1076,8 @@
     "sodium_mg": 165,
     "sugar": 0,
     "saturated_fat": 0.2,
-    "calcium_mg": 62
+    "calcium_mg": 62,
+    "name_en": "Prawn"
   },
   {
     "name": "皮皮虾",
@@ -1019,7 +1091,8 @@
     "sodium_mg": 150,
     "sugar": 0,
     "saturated_fat": 0.2,
-    "calcium_mg": 90
+    "calcium_mg": 90,
+    "name_en": "Mantis Shrimp"
   },
   {
     "name": "龙虾",
@@ -1033,7 +1106,8 @@
     "sodium_mg": 190,
     "sugar": 0,
     "saturated_fat": 0.2,
-    "calcium_mg": 63
+    "calcium_mg": 63,
+    "name_en": "Lobster"
   },
   {
     "name": "梭子蟹",
@@ -1047,7 +1121,8 @@
     "sodium_mg": 260,
     "sugar": 0,
     "saturated_fat": 0.4,
-    "calcium_mg": 208
+    "calcium_mg": 208,
+    "name_en": "Swimming Crab"
   },
   {
     "name": "大闸蟹",
@@ -1061,7 +1136,8 @@
     "sodium_mg": 200,
     "sugar": 0,
     "saturated_fat": 0.5,
-    "calcium_mg": 129
+    "calcium_mg": 129,
+    "name_en": "Hairy Crab"
   },
   {
     "name": "蛤蜊",
@@ -1075,7 +1151,8 @@
     "sodium_mg": 425,
     "sugar": 0,
     "saturated_fat": 0.2,
-    "calcium_mg": 133
+    "calcium_mg": 133,
+    "name_en": "Clam"
   },
   {
     "name": "扇贝",
@@ -1089,7 +1166,8 @@
     "sodium_mg": 339,
     "sugar": 0,
     "saturated_fat": 0.1,
-    "calcium_mg": 142
+    "calcium_mg": 142,
+    "name_en": "Scallop"
   },
   {
     "name": "生蚝",
@@ -1103,7 +1181,8 @@
     "sodium_mg": 462,
     "sugar": 1,
     "saturated_fat": 0.3,
-    "calcium_mg": 35
+    "calcium_mg": 35,
+    "name_en": "Oyster"
   },
   {
     "name": "鱿鱼",
@@ -1117,7 +1196,8 @@
     "sodium_mg": 135,
     "sugar": 0,
     "saturated_fat": 0.2,
-    "calcium_mg": 43
+    "calcium_mg": 43,
+    "name_en": "Squid"
   },
   {
     "name": "章鱼",
@@ -1131,7 +1211,8 @@
     "sodium_mg": 120,
     "sugar": 0,
     "saturated_fat": 0.1,
-    "calcium_mg": 22
+    "calcium_mg": 22,
+    "name_en": "Octopus"
   },
   {
     "name": "墨鱼",
@@ -1145,7 +1226,8 @@
     "sodium_mg": 165,
     "sugar": 0,
     "saturated_fat": 0.2,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Cuttlefish"
   },
   {
     "name": "海参",
@@ -1159,7 +1241,8 @@
     "sodium_mg": 502,
     "sugar": 0,
     "saturated_fat": 0.1,
-    "calcium_mg": 285
+    "calcium_mg": 285,
+    "name_en": "Sea Cucumber"
   },
   {
     "name": "鲍鱼",
@@ -1173,7 +1256,8 @@
     "sodium_mg": 260,
     "sugar": 0,
     "saturated_fat": 0.2,
-    "calcium_mg": 266
+    "calcium_mg": 266,
+    "name_en": "Abalone"
   },
   {
     "name": "田螺",
@@ -1187,7 +1271,8 @@
     "sodium_mg": 180,
     "sugar": 0,
     "saturated_fat": 0.1,
-    "calcium_mg": 1030
+    "calcium_mg": 1030,
+    "name_en": "River Snail"
   },
   {
     "name": "河蚌",
@@ -1201,7 +1286,8 @@
     "sodium_mg": 90,
     "sugar": 0,
     "saturated_fat": 0.2,
-    "calcium_mg": 190
+    "calcium_mg": 190,
+    "name_en": "Freshwater Mussel"
   },
   {
     "name": "虾皮",
@@ -1215,7 +1301,8 @@
     "sodium_mg": 5057,
     "sugar": 0,
     "saturated_fat": 0.7,
-    "calcium_mg": 991
+    "calcium_mg": 991,
+    "name_en": "Dried Baby Shrimp"
   },
   {
     "name": "虾米",
@@ -1229,7 +1316,8 @@
     "sodium_mg": 4892,
     "sugar": 0,
     "saturated_fat": 0.8,
-    "calcium_mg": 555
+    "calcium_mg": 555,
+    "name_en": "Dried Shrimp"
   },
   {
     "name": "草鱼片",
@@ -1243,7 +1331,8 @@
     "sodium_mg": 50,
     "sugar": 0,
     "saturated_fat": 0.7,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Grass Carp Fillet"
   },
   {
     "name": "咸鱼",
@@ -1257,7 +1346,8 @@
     "sodium_mg": 4200,
     "sugar": 0,
     "saturated_fat": 0.8,
-    "calcium_mg": 60
+    "calcium_mg": 60,
+    "name_en": "Salted Fish"
   },
   {
     "name": "鱼丸",
@@ -1271,7 +1361,8 @@
     "sodium_mg": 400,
     "sugar": 1,
     "saturated_fat": 0.9,
-    "calcium_mg": 25
+    "calcium_mg": 25,
+    "name_en": "Fish Ball"
   },
   {
     "name": "蟹肉棒",
@@ -1285,7 +1376,8 @@
     "sodium_mg": 500,
     "sugar": 5,
     "saturated_fat": 0.2,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Crab Stick (Surimi)"
   },
   {
     "name": "海蜇皮",
@@ -1299,7 +1391,8 @@
     "sodium_mg": 325,
     "sugar": 0,
     "saturated_fat": 0.1,
-    "calcium_mg": 150
+    "calcium_mg": 150,
+    "name_en": "Jellyfish Skin"
   },
   {
     "name": "鳗鱼",
@@ -1313,7 +1406,8 @@
     "sodium_mg": 80,
     "sugar": 0,
     "saturated_fat": 2.9,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Eel"
   },
   {
     "name": "银鱼",
@@ -1327,7 +1421,8 @@
     "sodium_mg": 90,
     "sugar": 0,
     "saturated_fat": 1.5,
-    "calcium_mg": 258
+    "calcium_mg": 258,
+    "name_en": "Icefish"
   },
   {
     "name": "泥螺",
@@ -1341,7 +1436,8 @@
     "sodium_mg": 300,
     "sugar": 0,
     "saturated_fat": 0.3,
-    "calcium_mg": 60
+    "calcium_mg": 60,
+    "name_en": "Mud Snail"
   },
   {
     "name": "花蛤",
@@ -1355,7 +1451,8 @@
     "sodium_mg": 300,
     "sugar": 0,
     "saturated_fat": 0.1,
-    "calcium_mg": 122
+    "calcium_mg": 122,
+    "name_en": "Baby Clam"
   },
   {
     "name": "青口贝",
@@ -1369,7 +1466,8 @@
     "sodium_mg": 290,
     "sugar": 0,
     "saturated_fat": 0.2,
-    "calcium_mg": 33
+    "calcium_mg": 33,
+    "name_en": "Mussel"
   },
   {
     "name": "沙丁鱼",
@@ -1383,7 +1481,8 @@
     "sodium_mg": 100,
     "sugar": 0,
     "saturated_fat": 2.5,
-    "calcium_mg": 60
+    "calcium_mg": 60,
+    "name_en": "Sardine"
   },
   {
     "name": "秋刀鱼",
@@ -1397,7 +1496,8 @@
     "sodium_mg": 90,
     "sugar": 0,
     "saturated_fat": 3,
-    "calcium_mg": 60
+    "calcium_mg": 60,
+    "name_en": "Pacific Saury"
   },
   {
     "name": "多宝鱼",
@@ -1411,7 +1511,8 @@
     "sodium_mg": 70,
     "sugar": 0,
     "saturated_fat": 0.6,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Turbot"
   },
   {
     "name": "石斑鱼",
@@ -1425,7 +1526,8 @@
     "sodium_mg": 60,
     "sugar": 0,
     "saturated_fat": 0.6,
-    "calcium_mg": 25
+    "calcium_mg": 25,
+    "name_en": "Grouper"
   },
   {
     "name": "黑鱼",
@@ -1439,7 +1541,8 @@
     "sodium_mg": 60,
     "sugar": 0,
     "saturated_fat": 0.3,
-    "calcium_mg": 40
+    "calcium_mg": 40,
+    "name_en": "Snakehead Fish"
   },
   {
     "name": "银鲳",
@@ -1453,7 +1556,8 @@
     "sodium_mg": 70,
     "sugar": 0,
     "saturated_fat": 1.9,
-    "calcium_mg": 40
+    "calcium_mg": 40,
+    "name_en": "Silver Pomfret"
   },
   {
     "name": "干贝",
@@ -1467,7 +1571,8 @@
     "sodium_mg": 1500,
     "sugar": 0,
     "saturated_fat": 0.6,
-    "calcium_mg": 77
+    "calcium_mg": 77,
+    "name_en": "Dried Scallop"
   },
   {
     "name": "蚬子",
@@ -1481,7 +1586,8 @@
     "sodium_mg": 150,
     "sugar": 0,
     "saturated_fat": 0.2,
-    "calcium_mg": 190
+    "calcium_mg": 190,
+    "name_en": "Freshwater Clam"
   },
   {
     "name": "纯牛奶(全脂)",
@@ -1495,7 +1601,8 @@
     "sodium_mg": 40,
     "sugar": 4.9,
     "saturated_fat": 2.2,
-    "calcium_mg": 104
+    "calcium_mg": 104,
+    "name_en": "Whole Milk"
   },
   {
     "name": "低脂牛奶",
@@ -1509,7 +1616,8 @@
     "sodium_mg": 45,
     "sugar": 4.9,
     "saturated_fat": 0.8,
-    "calcium_mg": 118
+    "calcium_mg": 118,
+    "name_en": "Low-Fat Milk"
   },
   {
     "name": "脱脂牛奶",
@@ -1523,7 +1631,8 @@
     "sodium_mg": 50,
     "sugar": 5,
     "saturated_fat": 0.2,
-    "calcium_mg": 123
+    "calcium_mg": 123,
+    "name_en": "Skim Milk"
   },
   {
     "name": "酸奶(全脂)",
@@ -1537,7 +1646,8 @@
     "sodium_mg": 40,
     "sugar": 9.3,
     "saturated_fat": 1.7,
-    "calcium_mg": 118
+    "calcium_mg": 118,
+    "name_en": "Yogurt (Whole Milk)"
   },
   {
     "name": "无糖酸奶",
@@ -1551,7 +1661,8 @@
     "sodium_mg": 45,
     "sugar": 5,
     "saturated_fat": 2,
-    "calcium_mg": 130
+    "calcium_mg": 130,
+    "name_en": "Unsweetened Yogurt"
   },
   {
     "name": "老酸奶",
@@ -1565,7 +1676,8 @@
     "sodium_mg": 50,
     "sugar": 13,
     "saturated_fat": 2.1,
-    "calcium_mg": 108
+    "calcium_mg": 108,
+    "name_en": "Set-Style Yogurt"
   },
   {
     "name": "奶酪(切达)",
@@ -1579,7 +1691,8 @@
     "sodium_mg": 700,
     "sugar": 0.5,
     "saturated_fat": 21,
-    "calcium_mg": 799
+    "calcium_mg": 799,
+    "name_en": "Cheddar Cheese"
   },
   {
     "name": "马苏里拉奶酪",
@@ -1593,7 +1706,8 @@
     "sodium_mg": 373,
     "sugar": 1,
     "saturated_fat": 14,
-    "calcium_mg": 731
+    "calcium_mg": 731,
+    "name_en": "Mozzarella Cheese"
   },
   {
     "name": "淡奶油",
@@ -1607,7 +1721,8 @@
     "sodium_mg": 40,
     "sugar": 3,
     "saturated_fat": 23,
-    "calcium_mg": 71
+    "calcium_mg": 71,
+    "name_en": "Heavy Cream"
   },
   {
     "name": "黄油",
@@ -1621,7 +1736,8 @@
     "sodium_mg": 15,
     "sugar": 0.1,
     "saturated_fat": 61,
-    "calcium_mg": 35
+    "calcium_mg": 35,
+    "name_en": "Butter"
   },
   {
     "name": "炼乳",
@@ -1635,7 +1751,8 @@
     "sodium_mg": 120,
     "sugar": 55,
     "saturated_fat": 5.5,
-    "calcium_mg": 242
+    "calcium_mg": 242,
+    "name_en": "Condensed Milk"
   },
   {
     "name": "奶粉(全脂)",
@@ -1649,7 +1766,8 @@
     "sodium_mg": 300,
     "sugar": 34,
     "saturated_fat": 13,
-    "calcium_mg": 676
+    "calcium_mg": 676,
+    "name_en": "Whole Milk Powder"
   },
   {
     "name": "羊奶",
@@ -1663,7 +1781,8 @@
     "sodium_mg": 35,
     "sugar": 5,
     "saturated_fat": 2.3,
-    "calcium_mg": 82
+    "calcium_mg": 82,
+    "name_en": "Goat Milk"
   },
   {
     "name": "奶茶(现制,少糖)",
@@ -1677,7 +1796,8 @@
     "sodium_mg": 20,
     "sugar": 8,
     "saturated_fat": 1.1,
-    "calcium_mg": 40
+    "calcium_mg": 40,
+    "name_en": "Milk Tea (Freshly Made, Less Sugar)"
   },
   {
     "name": "酸奶饮品",
@@ -1691,7 +1811,8 @@
     "sodium_mg": 25,
     "sugar": 15,
     "saturated_fat": 0.4,
-    "calcium_mg": 35
+    "calcium_mg": 35,
+    "name_en": "Yogurt Drink"
   },
   {
     "name": "芝士片",
@@ -1705,7 +1826,8 @@
     "sodium_mg": 1250,
     "sugar": 3,
     "saturated_fat": 15,
-    "calcium_mg": 519
+    "calcium_mg": 519,
+    "name_en": "Cheese Slice"
   },
   {
     "name": "奶油奶酪",
@@ -1719,7 +1841,8 @@
     "sodium_mg": 220,
     "sugar": 3,
     "saturated_fat": 21,
-    "calcium_mg": 98
+    "calcium_mg": 98,
+    "name_en": "Cream Cheese"
   },
   {
     "name": "鸡蛋",
@@ -1733,7 +1856,8 @@
     "sodium_mg": 131,
     "sugar": 1,
     "saturated_fat": 2.8,
-    "calcium_mg": 56
+    "calcium_mg": 56,
+    "name_en": "Egg"
   },
   {
     "name": "鸡蛋清",
@@ -1747,7 +1871,8 @@
     "sodium_mg": 166,
     "sugar": 1,
     "saturated_fat": 0,
-    "calcium_mg": 9
+    "calcium_mg": 9,
+    "name_en": "Egg White"
   },
   {
     "name": "鸡蛋黄",
@@ -1761,7 +1886,8 @@
     "sodium_mg": 55,
     "sugar": 1,
     "saturated_fat": 9.8,
-    "calcium_mg": 112
+    "calcium_mg": 112,
+    "name_en": "Egg Yolk"
   },
   {
     "name": "鸭蛋",
@@ -1775,7 +1901,8 @@
     "sodium_mg": 106,
     "sugar": 1,
     "saturated_fat": 4.5,
-    "calcium_mg": 62
+    "calcium_mg": 62,
+    "name_en": "Duck Egg"
   },
   {
     "name": "咸鸭蛋",
@@ -1789,7 +1916,8 @@
     "sodium_mg": 2706,
     "sugar": 1,
     "saturated_fat": 4.6,
-    "calcium_mg": 118
+    "calcium_mg": 118,
+    "name_en": "Salted Duck Egg"
   },
   {
     "name": "松花蛋(皮蛋)",
@@ -1803,7 +1931,8 @@
     "sodium_mg": 542,
     "sugar": 1,
     "saturated_fat": 3.6,
-    "calcium_mg": 63
+    "calcium_mg": 63,
+    "name_en": "Century Egg"
   },
   {
     "name": "鹌鹑蛋",
@@ -1817,7 +1946,8 @@
     "sodium_mg": 106,
     "sugar": 1,
     "saturated_fat": 3.7,
-    "calcium_mg": 47
+    "calcium_mg": 47,
+    "name_en": "Quail Egg"
   },
   {
     "name": "鹅蛋",
@@ -1831,7 +1961,8 @@
     "sodium_mg": 90,
     "sugar": 1,
     "saturated_fat": 4.7,
-    "calcium_mg": 34
+    "calcium_mg": 34,
+    "name_en": "Goose Egg"
   },
   {
     "name": "茶叶蛋",
@@ -1845,7 +1976,8 @@
     "sodium_mg": 400,
     "sugar": 1,
     "saturated_fat": 2.9,
-    "calcium_mg": 55
+    "calcium_mg": 55,
+    "name_en": "Tea Egg"
   },
   {
     "name": "荷包蛋",
@@ -1859,7 +1991,8 @@
     "sodium_mg": 150,
     "sugar": 1,
     "saturated_fat": 3.4,
-    "calcium_mg": 55
+    "calcium_mg": 55,
+    "name_en": "Fried Egg"
   },
   {
     "name": "大米(粳米)",
@@ -1873,7 +2006,8 @@
     "sodium_mg": 3,
     "sugar": 0.1,
     "saturated_fat": 0.2,
-    "calcium_mg": 13
+    "calcium_mg": 13,
+    "name_en": "Rice (Japonica)"
   },
   {
     "name": "籼米",
@@ -1887,7 +2021,8 @@
     "sodium_mg": 3,
     "sugar": 0.1,
     "saturated_fat": 0.1,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Indica Rice"
   },
   {
     "name": "糯米",
@@ -1901,7 +2036,8 @@
     "sodium_mg": 2,
     "sugar": 0.1,
     "saturated_fat": 0.3,
-    "calcium_mg": 26
+    "calcium_mg": 26,
+    "name_en": "Glutinous Rice"
   },
   {
     "name": "小米",
@@ -1915,7 +2051,8 @@
     "sodium_mg": 4,
     "sugar": 0.1,
     "saturated_fat": 0.6,
-    "calcium_mg": 41
+    "calcium_mg": 41,
+    "name_en": "Millet"
   },
   {
     "name": "玉米(鲜)",
@@ -1929,7 +2066,8 @@
     "sodium_mg": 2,
     "sugar": 3.3,
     "saturated_fat": 0.2,
-    "calcium_mg": 1
+    "calcium_mg": 1,
+    "name_en": "Corn (Fresh)"
   },
   {
     "name": "玉米面",
@@ -1943,7 +2081,8 @@
     "sodium_mg": 3,
     "sugar": 0.5,
     "saturated_fat": 0.5,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Cornmeal"
   },
   {
     "name": "面粉(小麦粉)",
@@ -1957,7 +2096,8 @@
     "sodium_mg": 3,
     "sugar": 0.5,
     "saturated_fat": 0.3,
-    "calcium_mg": 31
+    "calcium_mg": 31,
+    "name_en": "Wheat Flour"
   },
   {
     "name": "全麦面粉",
@@ -1971,7 +2111,8 @@
     "sodium_mg": 3,
     "sugar": 0.5,
     "saturated_fat": 0.4,
-    "calcium_mg": 34
+    "calcium_mg": 34,
+    "name_en": "Whole Wheat Flour"
   },
   {
     "name": "面条(生)",
@@ -1985,7 +2126,8 @@
     "sodium_mg": 80,
     "sugar": 0.5,
     "saturated_fat": 0.2,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Noodles (Raw)"
   },
   {
     "name": "挂面",
@@ -1999,7 +2141,8 @@
     "sodium_mg": 200,
     "sugar": 0.5,
     "saturated_fat": 0.2,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Dried Noodles"
   },
   {
     "name": "米粉(干)",
@@ -2013,7 +2156,8 @@
     "sodium_mg": 5,
     "sugar": 0.2,
     "saturated_fat": 0,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Rice Noodles (Dried)"
   },
   {
     "name": "馒头",
@@ -2027,7 +2171,8 @@
     "sodium_mg": 165,
     "sugar": 0.5,
     "saturated_fat": 0.3,
-    "calcium_mg": 26
+    "calcium_mg": 26,
+    "name_en": "Steamed Bun (Mantou)"
   },
   {
     "name": "花卷",
@@ -2041,7 +2186,8 @@
     "sodium_mg": 150,
     "sugar": 0.5,
     "saturated_fat": 0.3,
-    "calcium_mg": 22
+    "calcium_mg": 22,
+    "name_en": "Steamed Twisted Roll"
   },
   {
     "name": "白面包",
@@ -2055,7 +2201,8 @@
     "sodium_mg": 400,
     "sugar": 6,
     "saturated_fat": 1.8,
-    "calcium_mg": 50
+    "calcium_mg": 50,
+    "name_en": "White Bread"
   },
   {
     "name": "全麦面包",
@@ -2069,7 +2216,8 @@
     "sodium_mg": 380,
     "sugar": 4,
     "saturated_fat": 0.9,
-    "calcium_mg": 60
+    "calcium_mg": 60,
+    "name_en": "Whole Wheat Bread"
   },
   {
     "name": "燕麦(生)",
@@ -2083,7 +2231,8 @@
     "sodium_mg": 3,
     "sugar": 1,
     "saturated_fat": 1.2,
-    "calcium_mg": 52
+    "calcium_mg": 52,
+    "name_en": "Oats (Raw)"
   },
   {
     "name": "燕麦片(即食)",
@@ -2097,7 +2246,8 @@
     "sodium_mg": 80,
     "sugar": 1,
     "saturated_fat": 1.2,
-    "calcium_mg": 60
+    "calcium_mg": 60,
+    "name_en": "Instant Oatmeal"
   },
   {
     "name": "荞麦",
@@ -2111,7 +2261,8 @@
     "sodium_mg": 4,
     "sugar": 1,
     "saturated_fat": 0.6,
-    "calcium_mg": 47
+    "calcium_mg": 47,
+    "name_en": "Buckwheat"
   },
   {
     "name": "黑米",
@@ -2125,7 +2276,8 @@
     "sodium_mg": 4,
     "sugar": 1,
     "saturated_fat": 0.7,
-    "calcium_mg": 14
+    "calcium_mg": 14,
+    "name_en": "Black Rice"
   },
   {
     "name": "紫米",
@@ -2139,7 +2291,8 @@
     "sodium_mg": 4,
     "sugar": 1,
     "saturated_fat": 0.6,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Purple Rice"
   },
   {
     "name": "高粱米",
@@ -2153,7 +2306,8 @@
     "sodium_mg": 6,
     "sugar": 0.5,
     "saturated_fat": 0.5,
-    "calcium_mg": 22
+    "calcium_mg": 22,
+    "name_en": "Sorghum"
   },
   {
     "name": "薏米",
@@ -2167,7 +2321,8 @@
     "sodium_mg": 3,
     "sugar": 0.5,
     "saturated_fat": 0.6,
-    "calcium_mg": 42
+    "calcium_mg": 42,
+    "name_en": "Job's Tears"
   },
   {
     "name": "大麦",
@@ -2181,7 +2336,8 @@
     "sodium_mg": 3,
     "sugar": 0.5,
     "saturated_fat": 0.3,
-    "calcium_mg": 66
+    "calcium_mg": 66,
+    "name_en": "Barley"
   },
   {
     "name": "藜麦",
@@ -2195,7 +2351,8 @@
     "sodium_mg": 7,
     "sugar": 2,
     "saturated_fat": 0.7,
-    "calcium_mg": 47
+    "calcium_mg": 47,
+    "name_en": "Quinoa"
   },
   {
     "name": "米饭(熟)",
@@ -2209,7 +2366,8 @@
     "sodium_mg": 2,
     "sugar": 0.1,
     "saturated_fat": 0.1,
-    "calcium_mg": 7
+    "calcium_mg": 7,
+    "name_en": "Cooked Rice"
   },
   {
     "name": "玉米(熟)",
@@ -2223,7 +2381,8 @@
     "sodium_mg": 2,
     "sugar": 3.3,
     "saturated_fat": 0.2,
-    "calcium_mg": 1
+    "calcium_mg": 1,
+    "name_en": "Corn (Cooked)"
   },
   {
     "name": "油条",
@@ -2237,7 +2396,8 @@
     "sodium_mg": 585,
     "sugar": 0.5,
     "saturated_fat": 5.3,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Fried Dough Stick"
   },
   {
     "name": "烧饼",
@@ -2251,7 +2411,8 @@
     "sodium_mg": 300,
     "sugar": 0.5,
     "saturated_fat": 1.3,
-    "calcium_mg": 60
+    "calcium_mg": 60,
+    "name_en": "Sesame Flatbread"
   },
   {
     "name": "大饼",
@@ -2265,7 +2426,8 @@
     "sodium_mg": 200,
     "sugar": 0.5,
     "saturated_fat": 0.4,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Chinese Flatbread"
   },
   {
     "name": "煎饼",
@@ -2279,7 +2441,8 @@
     "sodium_mg": 180,
     "sugar": 0.5,
     "saturated_fat": 0.6,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Chinese Crepe"
   },
   {
     "name": "粽子(肉粽)",
@@ -2293,7 +2456,8 @@
     "sodium_mg": 350,
     "sugar": 1,
     "saturated_fat": 2.2,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Rice Dumpling (Meat Zongzi)"
   },
   {
     "name": "八宝粥",
@@ -2307,7 +2471,8 @@
     "sodium_mg": 20,
     "sugar": 8,
     "saturated_fat": 0.1,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Eight-Treasure Porridge"
   },
   {
     "name": "方便面(生面饼)",
@@ -2321,7 +2486,8 @@
     "sodium_mg": 1770,
     "sugar": 2,
     "saturated_fat": 10,
-    "calcium_mg": 30
+    "calcium_mg": 30,
+    "name_en": "Instant Noodles (Dry Block)"
   },
   {
     "name": "河粉",
@@ -2335,7 +2501,8 @@
     "sodium_mg": 10,
     "sugar": 0.2,
     "saturated_fat": 0.1,
-    "calcium_mg": 8
+    "calcium_mg": 8,
+    "name_en": "Rice Noodle (Hor Fun)"
   },
   {
     "name": "年糕",
@@ -2349,7 +2516,8 @@
     "sodium_mg": 20,
     "sugar": 1,
     "saturated_fat": 0.2,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Rice Cake"
   },
   {
     "name": "土豆",
@@ -2363,7 +2531,8 @@
     "sodium_mg": 3,
     "sugar": 0.8,
     "saturated_fat": 0.1,
-    "calcium_mg": 8
+    "calcium_mg": 8,
+    "name_en": "Potato"
   },
   {
     "name": "红薯",
@@ -2377,7 +2546,8 @@
     "sodium_mg": 28,
     "sugar": 4.2,
     "saturated_fat": 0.1,
-    "calcium_mg": 23
+    "calcium_mg": 23,
+    "name_en": "Sweet Potato"
   },
   {
     "name": "紫薯",
@@ -2391,7 +2561,8 @@
     "sodium_mg": 20,
     "sugar": 4,
     "saturated_fat": 0.1,
-    "calcium_mg": 34
+    "calcium_mg": 34,
+    "name_en": "Purple Sweet Potato"
   },
   {
     "name": "山药",
@@ -2405,7 +2576,8 @@
     "sodium_mg": 18,
     "sugar": 1,
     "saturated_fat": 0.1,
-    "calcium_mg": 16
+    "calcium_mg": 16,
+    "name_en": "Chinese Yam"
   },
   {
     "name": "芋头",
@@ -2419,7 +2591,8 @@
     "sodium_mg": 33,
     "sugar": 1,
     "saturated_fat": 0.1,
-    "calcium_mg": 36
+    "calcium_mg": 36,
+    "name_en": "Taro"
   },
   {
     "name": "木薯",
@@ -2433,7 +2606,8 @@
     "sodium_mg": 14,
     "sugar": 2,
     "saturated_fat": 0.1,
-    "calcium_mg": 16
+    "calcium_mg": 16,
+    "name_en": "Cassava"
   },
   {
     "name": "土豆淀粉",
@@ -2447,7 +2621,8 @@
     "sodium_mg": 5,
     "sugar": 0.1,
     "saturated_fat": 0,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Potato Starch"
   },
   {
     "name": "红薯粉条",
@@ -2461,7 +2636,8 @@
     "sodium_mg": 10,
     "sugar": 0.5,
     "saturated_fat": 0,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Sweet Potato Vermicelli"
   },
   {
     "name": "土豆泥",
@@ -2475,7 +2651,8 @@
     "sodium_mg": 300,
     "sugar": 1,
     "saturated_fat": 1.5,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Mashed Potato"
   },
   {
     "name": "薯条(炸)",
@@ -2489,7 +2666,8 @@
     "sodium_mg": 210,
     "sugar": 0.5,
     "saturated_fat": 2.6,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "French Fries"
   },
   {
     "name": "黄豆(大豆)",
@@ -2503,7 +2681,8 @@
     "sodium_mg": 2,
     "sugar": 3,
     "saturated_fat": 2.3,
-    "calcium_mg": 191
+    "calcium_mg": 191,
+    "name_en": "Soybean"
   },
   {
     "name": "黑豆",
@@ -2517,7 +2696,8 @@
     "sodium_mg": 3,
     "sugar": 3,
     "saturated_fat": 2,
-    "calcium_mg": 224
+    "calcium_mg": 224,
+    "name_en": "Black Soybean"
   },
   {
     "name": "绿豆",
@@ -2531,7 +2711,8 @@
     "sodium_mg": 3,
     "sugar": 2,
     "saturated_fat": 0.2,
-    "calcium_mg": 81
+    "calcium_mg": 81,
+    "name_en": "Mung Bean"
   },
   {
     "name": "红豆(赤小豆)",
@@ -2545,7 +2726,8 @@
     "sodium_mg": 3,
     "sugar": 2,
     "saturated_fat": 0.2,
-    "calcium_mg": 74
+    "calcium_mg": 74,
+    "name_en": "Adzuki Bean"
   },
   {
     "name": "芸豆",
@@ -2559,7 +2741,8 @@
     "sodium_mg": 3,
     "sugar": 2,
     "saturated_fat": 0.2,
-    "calcium_mg": 176
+    "calcium_mg": 176,
+    "name_en": "Kidney Bean"
   },
   {
     "name": "豌豆(干)",
@@ -2573,7 +2756,8 @@
     "sodium_mg": 3,
     "sugar": 3,
     "saturated_fat": 0.2,
-    "calcium_mg": 97
+    "calcium_mg": 97,
+    "name_en": "Dried Pea"
   },
   {
     "name": "蚕豆",
@@ -2587,7 +2771,8 @@
     "sodium_mg": 3,
     "sugar": 2,
     "saturated_fat": 0.3,
-    "calcium_mg": 31
+    "calcium_mg": 31,
+    "name_en": "Fava Bean"
   },
   {
     "name": "鹰嘴豆",
@@ -2601,7 +2786,8 @@
     "sodium_mg": 24,
     "sugar": 4,
     "saturated_fat": 0.6,
-    "calcium_mg": 95
+    "calcium_mg": 95,
+    "name_en": "Chickpea"
   },
   {
     "name": "豆腐(北豆腐)",
@@ -2615,7 +2801,8 @@
     "sodium_mg": 7,
     "sugar": 1,
     "saturated_fat": 0.7,
-    "calcium_mg": 138
+    "calcium_mg": 138,
+    "name_en": "Tofu (Firm, Northern-Style)"
   },
   {
     "name": "豆腐(南豆腐)",
@@ -2629,7 +2816,8 @@
     "sodium_mg": 8,
     "sugar": 1,
     "saturated_fat": 0.4,
-    "calcium_mg": 116
+    "calcium_mg": 116,
+    "name_en": "Tofu (Soft, Southern-Style)"
   },
   {
     "name": "内酯豆腐",
@@ -2643,7 +2831,8 @@
     "sodium_mg": 6,
     "sugar": 1,
     "saturated_fat": 0.3,
-    "calcium_mg": 17
+    "calcium_mg": 17,
+    "name_en": "Silken Tofu"
   },
   {
     "name": "豆腐干",
@@ -2657,7 +2846,8 @@
     "sodium_mg": 364,
     "sugar": 1,
     "saturated_fat": 0.9,
-    "calcium_mg": 308
+    "calcium_mg": 308,
+    "name_en": "Dried Tofu"
   },
   {
     "name": "香干",
@@ -2671,7 +2861,8 @@
     "sodium_mg": 400,
     "sugar": 1,
     "saturated_fat": 1.1,
-    "calcium_mg": 240
+    "calcium_mg": 240,
+    "name_en": "Seasoned Dried Tofu"
   },
   {
     "name": "豆腐皮",
@@ -2685,7 +2876,8 @@
     "sodium_mg": 320,
     "sugar": 1,
     "saturated_fat": 2.5,
-    "calcium_mg": 116
+    "calcium_mg": 116,
+    "name_en": "Tofu Skin"
   },
   {
     "name": "腐竹",
@@ -2699,7 +2891,8 @@
     "sodium_mg": 330,
     "sugar": 1,
     "saturated_fat": 3,
-    "calcium_mg": 77
+    "calcium_mg": 77,
+    "name_en": "Dried Beancurd Sticks"
   },
   {
     "name": "豆浆(无糖)",
@@ -2713,7 +2906,8 @@
     "sodium_mg": 3,
     "sugar": 0.5,
     "saturated_fat": 0.1,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Soy Milk (Unsweetened)"
   },
   {
     "name": "豆浆(甜)",
@@ -2727,7 +2921,8 @@
     "sodium_mg": 10,
     "sugar": 4.5,
     "saturated_fat": 0.1,
-    "calcium_mg": 8
+    "calcium_mg": 8,
+    "name_en": "Soy Milk (Sweetened)"
   },
   {
     "name": "千张",
@@ -2741,7 +2936,8 @@
     "sodium_mg": 310,
     "sugar": 1,
     "saturated_fat": 1.9,
-    "calcium_mg": 313
+    "calcium_mg": 313,
+    "name_en": "Thousand-Layer Tofu Skin"
   },
   {
     "name": "素鸡",
@@ -2755,7 +2951,8 @@
     "sodium_mg": 350,
     "sugar": 1,
     "saturated_fat": 1.8,
-    "calcium_mg": 319
+    "calcium_mg": 319,
+    "name_en": "Vegetarian \"Chicken\" (Pressed Tofu Roll)"
   },
   {
     "name": "臭豆腐",
@@ -2769,7 +2966,8 @@
     "sodium_mg": 500,
     "sugar": 1,
     "saturated_fat": 1,
-    "calcium_mg": 150
+    "calcium_mg": 150,
+    "name_en": "Stinky Tofu"
   },
   {
     "name": "毛豆",
@@ -2783,7 +2981,8 @@
     "sodium_mg": 5,
     "sugar": 2,
     "saturated_fat": 0.7,
-    "calcium_mg": 135
+    "calcium_mg": 135,
+    "name_en": "Edamame"
   },
   {
     "name": "黄豆芽",
@@ -2797,7 +2996,8 @@
     "sodium_mg": 5,
     "sugar": 1,
     "saturated_fat": 0.2,
-    "calcium_mg": 21
+    "calcium_mg": 21,
+    "name_en": "Soybean Sprouts"
   },
   {
     "name": "绿豆芽",
@@ -2811,7 +3011,8 @@
     "sodium_mg": 4,
     "sugar": 1,
     "saturated_fat": 0,
-    "calcium_mg": 9
+    "calcium_mg": 9,
+    "name_en": "Mung Bean Sprouts"
   },
   {
     "name": "纳豆",
@@ -2825,7 +3026,8 @@
     "sodium_mg": 7,
     "sugar": 2,
     "saturated_fat": 1.5,
-    "calcium_mg": 217
+    "calcium_mg": 217,
+    "name_en": "Natto"
   },
   {
     "name": "豆豉",
@@ -2839,7 +3041,8 @@
     "sodium_mg": 3452,
     "sugar": 2,
     "saturated_fat": 1.2,
-    "calcium_mg": 181
+    "calcium_mg": 181,
+    "name_en": "Fermented Black Beans"
   },
   {
     "name": "腐乳",
@@ -2853,7 +3056,8 @@
     "sodium_mg": 3091,
     "sugar": 1,
     "saturated_fat": 1.2,
-    "calcium_mg": 210
+    "calcium_mg": 210,
+    "name_en": "Fermented Bean Curd"
   },
   {
     "name": "大白菜",
@@ -2867,7 +3071,8 @@
     "sodium_mg": 50,
     "sugar": 1.5,
     "saturated_fat": 0,
-    "calcium_mg": 50
+    "calcium_mg": 50,
+    "name_en": "Napa Cabbage"
   },
   {
     "name": "小白菜",
@@ -2881,7 +3086,8 @@
     "sodium_mg": 73,
     "sugar": 1,
     "saturated_fat": 0.1,
-    "calcium_mg": 90
+    "calcium_mg": 90,
+    "name_en": "Bok Choy"
   },
   {
     "name": "菠菜",
@@ -2895,7 +3101,8 @@
     "sodium_mg": 85,
     "sugar": 0.4,
     "saturated_fat": 0,
-    "calcium_mg": 66
+    "calcium_mg": 66,
+    "name_en": "Spinach"
   },
   {
     "name": "油菜",
@@ -2909,7 +3116,8 @@
     "sodium_mg": 55,
     "sugar": 1.2,
     "saturated_fat": 0.1,
-    "calcium_mg": 108
+    "calcium_mg": 108,
+    "name_en": "Choy Sum"
   },
   {
     "name": "生菜",
@@ -2923,7 +3131,8 @@
     "sodium_mg": 32,
     "sugar": 0.8,
     "saturated_fat": 0,
-    "calcium_mg": 34
+    "calcium_mg": 34,
+    "name_en": "Lettuce"
   },
   {
     "name": "圆白菜(卷心菜)",
@@ -2937,7 +3146,8 @@
     "sodium_mg": 27,
     "sugar": 2.6,
     "saturated_fat": 0,
-    "calcium_mg": 49
+    "calcium_mg": 49,
+    "name_en": "Cabbage"
   },
   {
     "name": "紫甘蓝",
@@ -2951,7 +3161,8 @@
     "sodium_mg": 26,
     "sugar": 3.8,
     "saturated_fat": 0,
-    "calcium_mg": 46
+    "calcium_mg": 46,
+    "name_en": "Purple Cabbage"
   },
   {
     "name": "芹菜",
@@ -2965,7 +3176,8 @@
     "sodium_mg": 159,
     "sugar": 0.8,
     "saturated_fat": 0,
-    "calcium_mg": 80
+    "calcium_mg": 80,
+    "name_en": "Celery"
   },
   {
     "name": "韭菜",
@@ -2979,7 +3191,8 @@
     "sodium_mg": 8,
     "sugar": 1.5,
     "saturated_fat": 0.1,
-    "calcium_mg": 42
+    "calcium_mg": 42,
+    "name_en": "Chinese Chive"
   },
   {
     "name": "蒜苗",
@@ -2993,7 +3206,8 @@
     "sodium_mg": 4,
     "sugar": 2,
     "saturated_fat": 0,
-    "calcium_mg": 29
+    "calcium_mg": 29,
+    "name_en": "Garlic Shoots"
   },
   {
     "name": "茼蒿",
@@ -3007,7 +3221,8 @@
     "sodium_mg": 161,
     "sugar": 0.8,
     "saturated_fat": 0,
-    "calcium_mg": 73
+    "calcium_mg": 73,
+    "name_en": "Garland Chrysanthemum"
   },
   {
     "name": "空心菜",
@@ -3021,7 +3236,8 @@
     "sodium_mg": 94,
     "sugar": 1,
     "saturated_fat": 0.1,
-    "calcium_mg": 99
+    "calcium_mg": 99,
+    "name_en": "Water Spinach"
   },
   {
     "name": "苋菜",
@@ -3035,7 +3251,8 @@
     "sodium_mg": 42,
     "sugar": 0.8,
     "saturated_fat": 0.1,
-    "calcium_mg": 178
+    "calcium_mg": 178,
+    "name_en": "Amaranth Greens"
   },
   {
     "name": "香菜",
@@ -3049,7 +3266,8 @@
     "sodium_mg": 40,
     "sugar": 0.9,
     "saturated_fat": 0,
-    "calcium_mg": 101
+    "calcium_mg": 101,
+    "name_en": "Cilantro"
   },
   {
     "name": "西兰花",
@@ -3063,7 +3281,8 @@
     "sodium_mg": 18,
     "sugar": 1.7,
     "saturated_fat": 0.1,
-    "calcium_mg": 67
+    "calcium_mg": 67,
+    "name_en": "Broccoli"
   },
   {
     "name": "菜花",
@@ -3077,7 +3296,8 @@
     "sodium_mg": 31,
     "sugar": 2.1,
     "saturated_fat": 0,
-    "calcium_mg": 23
+    "calcium_mg": 23,
+    "name_en": "Cauliflower"
   },
   {
     "name": "西红柿",
@@ -3091,7 +3311,8 @@
     "sodium_mg": 5,
     "sugar": 3.5,
     "saturated_fat": 0,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Tomato"
   },
   {
     "name": "黄瓜",
@@ -3105,7 +3326,8 @@
     "sodium_mg": 4,
     "sugar": 1.7,
     "saturated_fat": 0,
-    "calcium_mg": 24
+    "calcium_mg": 24,
+    "name_en": "Cucumber"
   },
   {
     "name": "冬瓜",
@@ -3119,7 +3341,8 @@
     "sodium_mg": 2,
     "sugar": 1.8,
     "saturated_fat": 0,
-    "calcium_mg": 19
+    "calcium_mg": 19,
+    "name_en": "Winter Melon"
   },
   {
     "name": "南瓜",
@@ -3133,7 +3356,8 @@
     "sodium_mg": 1,
     "sugar": 2,
     "saturated_fat": 0,
-    "calcium_mg": 16
+    "calcium_mg": 16,
+    "name_en": "Pumpkin"
   },
   {
     "name": "丝瓜",
@@ -3147,7 +3371,8 @@
     "sodium_mg": 3,
     "sugar": 2,
     "saturated_fat": 0,
-    "calcium_mg": 14
+    "calcium_mg": 14,
+    "name_en": "Loofah"
   },
   {
     "name": "苦瓜",
@@ -3161,7 +3386,8 @@
     "sodium_mg": 3,
     "sugar": 2.4,
     "saturated_fat": 0,
-    "calcium_mg": 14
+    "calcium_mg": 14,
+    "name_en": "Bitter Melon"
   },
   {
     "name": "茄子",
@@ -3175,7 +3401,8 @@
     "sodium_mg": 5,
     "sugar": 3,
     "saturated_fat": 0,
-    "calcium_mg": 24
+    "calcium_mg": 24,
+    "name_en": "Eggplant"
   },
   {
     "name": "青椒(柿子椒)",
@@ -3189,7 +3416,8 @@
     "sodium_mg": 3,
     "sugar": 3.5,
     "saturated_fat": 0,
-    "calcium_mg": 14
+    "calcium_mg": 14,
+    "name_en": "Green Bell Pepper"
   },
   {
     "name": "辣椒(红尖椒)",
@@ -3203,7 +3431,8 @@
     "sodium_mg": 4,
     "sugar": 4,
     "saturated_fat": 0,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Red Chili Pepper"
   },
   {
     "name": "胡萝卜",
@@ -3217,7 +3446,8 @@
     "sodium_mg": 71,
     "sugar": 4.7,
     "saturated_fat": 0,
-    "calcium_mg": 32
+    "calcium_mg": 32,
+    "name_en": "Carrot"
   },
   {
     "name": "白萝卜",
@@ -3231,7 +3461,8 @@
     "sodium_mg": 61,
     "sugar": 3,
     "saturated_fat": 0,
-    "calcium_mg": 36
+    "calcium_mg": 36,
+    "name_en": "White Radish (Daikon)"
   },
   {
     "name": "洋葱",
@@ -3245,7 +3476,8 @@
     "sodium_mg": 4,
     "sugar": 4.2,
     "saturated_fat": 0,
-    "calcium_mg": 24
+    "calcium_mg": 24,
+    "name_en": "Onion"
   },
   {
     "name": "大蒜",
@@ -3259,7 +3491,8 @@
     "sodium_mg": 19,
     "sugar": 1,
     "saturated_fat": 0,
-    "calcium_mg": 39
+    "calcium_mg": 39,
+    "name_en": "Garlic"
   },
   {
     "name": "生姜",
@@ -3273,7 +3506,8 @@
     "sodium_mg": 14,
     "sugar": 1.7,
     "saturated_fat": 0.1,
-    "calcium_mg": 27
+    "calcium_mg": 27,
+    "name_en": "Ginger"
   },
   {
     "name": "芦笋",
@@ -3287,7 +3521,8 @@
     "sodium_mg": 3,
     "sugar": 1.3,
     "saturated_fat": 0,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Asparagus"
   },
   {
     "name": "四季豆",
@@ -3301,7 +3536,8 @@
     "sodium_mg": 8,
     "sugar": 2,
     "saturated_fat": 0.1,
-    "calcium_mg": 42
+    "calcium_mg": 42,
+    "name_en": "Green Bean"
   },
   {
     "name": "豇豆(长豆角)",
@@ -3315,7 +3551,8 @@
     "sodium_mg": 5,
     "sugar": 2,
     "saturated_fat": 0,
-    "calcium_mg": 27
+    "calcium_mg": 27,
+    "name_en": "Long Bean"
   },
   {
     "name": "荷兰豆",
@@ -3329,7 +3566,8 @@
     "sodium_mg": 4,
     "sugar": 2.5,
     "saturated_fat": 0,
-    "calcium_mg": 51
+    "calcium_mg": 51,
+    "name_en": "Snow Pea"
   },
   {
     "name": "秋葵",
@@ -3343,7 +3581,8 @@
     "sodium_mg": 7,
     "sugar": 1.5,
     "saturated_fat": 0,
-    "calcium_mg": 82
+    "calcium_mg": 82,
+    "name_en": "Okra"
   },
   {
     "name": "莲藕",
@@ -3357,7 +3596,8 @@
     "sodium_mg": 44,
     "sugar": 2,
     "saturated_fat": 0,
-    "calcium_mg": 39
+    "calcium_mg": 39,
+    "name_en": "Lotus Root"
   },
   {
     "name": "竹笋",
@@ -3371,7 +3611,8 @@
     "sodium_mg": 1,
     "sugar": 1.5,
     "saturated_fat": 0,
-    "calcium_mg": 9
+    "calcium_mg": 9,
+    "name_en": "Bamboo Shoot"
   },
   {
     "name": "茭白",
@@ -3385,7 +3626,8 @@
     "sodium_mg": 5,
     "sugar": 2,
     "saturated_fat": 0,
-    "calcium_mg": 4
+    "calcium_mg": 4,
+    "name_en": "Water Bamboo"
   },
   {
     "name": "蒜薹",
@@ -3399,7 +3641,8 @@
     "sodium_mg": 5,
     "sugar": 3,
     "saturated_fat": 0,
-    "calcium_mg": 19
+    "calcium_mg": 19,
+    "name_en": "Garlic Scape"
   },
   {
     "name": "娃娃菜",
@@ -3413,7 +3656,8 @@
     "sodium_mg": 30,
     "sugar": 1.5,
     "saturated_fat": 0,
-    "calcium_mg": 45
+    "calcium_mg": 45,
+    "name_en": "Baby Napa Cabbage"
   },
   {
     "name": "芥兰",
@@ -3427,7 +3671,8 @@
     "sodium_mg": 60,
     "sugar": 1,
     "saturated_fat": 0.1,
-    "calcium_mg": 128
+    "calcium_mg": 128,
+    "name_en": "Chinese Broccoli"
   },
   {
     "name": "雪里蕻",
@@ -3441,7 +3686,8 @@
     "sodium_mg": 121,
     "sugar": 1,
     "saturated_fat": 0,
-    "calcium_mg": 230
+    "calcium_mg": 230,
+    "name_en": "Potherb Mustard"
   },
   {
     "name": "豌豆苗",
@@ -3455,7 +3701,8 @@
     "sodium_mg": 5,
     "sugar": 1.5,
     "saturated_fat": 0.1,
-    "calcium_mg": 76
+    "calcium_mg": 76,
+    "name_en": "Pea Shoots"
   },
   {
     "name": "西葫芦",
@@ -3469,7 +3716,8 @@
     "sodium_mg": 5,
     "sugar": 2,
     "saturated_fat": 0,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Zucchini"
   },
   {
     "name": "荠菜",
@@ -3483,7 +3731,8 @@
     "sodium_mg": 32,
     "sugar": 1,
     "saturated_fat": 0.1,
-    "calcium_mg": 294
+    "calcium_mg": 294,
+    "name_en": "Shepherd's Purse"
   },
   {
     "name": "百合(鲜)",
@@ -3497,7 +3746,8 @@
     "sodium_mg": 5,
     "sugar": 10,
     "saturated_fat": 0,
-    "calcium_mg": 11
+    "calcium_mg": 11,
+    "name_en": "Fresh Lily Bulb"
   },
   {
     "name": "荸荠(马蹄)",
@@ -3511,7 +3761,8 @@
     "sodium_mg": 15,
     "sugar": 7,
     "saturated_fat": 0,
-    "calcium_mg": 4
+    "calcium_mg": 4,
+    "name_en": "Water Chestnut"
   },
   {
     "name": "菜心",
@@ -3525,7 +3776,8 @@
     "sodium_mg": 30,
     "sugar": 1,
     "saturated_fat": 0,
-    "calcium_mg": 102
+    "calcium_mg": 102,
+    "name_en": "Choy Sum (Flowering Stem)"
   },
   {
     "name": "紫苏叶",
@@ -3539,7 +3791,8 @@
     "sodium_mg": 6,
     "sugar": 1,
     "saturated_fat": 0.1,
-    "calcium_mg": 220
+    "calcium_mg": 220,
+    "name_en": "Perilla Leaf"
   },
   {
     "name": "大葱",
@@ -3553,7 +3806,8 @@
     "sodium_mg": 4,
     "sugar": 3,
     "saturated_fat": 0,
-    "calcium_mg": 29
+    "calcium_mg": 29,
+    "name_en": "Chinese Leek (Green Onion, Large)"
   },
   {
     "name": "香葱(小葱)",
@@ -3567,7 +3821,8 @@
     "sodium_mg": 4,
     "sugar": 2,
     "saturated_fat": 0.1,
-    "calcium_mg": 24
+    "calcium_mg": 24,
+    "name_en": "Scallion (Green Onion, Small)"
   },
   {
     "name": "彩椒",
@@ -3581,7 +3836,8 @@
     "sodium_mg": 3,
     "sugar": 3.5,
     "saturated_fat": 0,
-    "calcium_mg": 7
+    "calcium_mg": 7,
+    "name_en": "Bell Pepper (Mixed Colors)"
   },
   {
     "name": "马齿苋",
@@ -3595,7 +3851,8 @@
     "sodium_mg": 50,
     "sugar": 1.5,
     "saturated_fat": 0,
-    "calcium_mg": 85
+    "calcium_mg": 85,
+    "name_en": "Purslane"
   },
   {
     "name": "莴笋(莴苣)",
@@ -3609,7 +3866,8 @@
     "sodium_mg": 36,
     "sugar": 1.5,
     "saturated_fat": 0,
-    "calcium_mg": 23
+    "calcium_mg": 23,
+    "name_en": "Celtuce"
   },
   {
     "name": "木耳菜",
@@ -3623,7 +3881,8 @@
     "sodium_mg": 26,
     "sugar": 1,
     "saturated_fat": 0,
-    "calcium_mg": 166
+    "calcium_mg": 166,
+    "name_en": "Malabar Spinach"
   },
   {
     "name": "苦菊",
@@ -3637,7 +3896,8 @@
     "sodium_mg": 30,
     "sugar": 1.5,
     "saturated_fat": 0,
-    "calcium_mg": 76
+    "calcium_mg": 76,
+    "name_en": "Bitter Chicory"
   },
   {
     "name": "蕨菜",
@@ -3651,7 +3911,8 @@
     "sodium_mg": 20,
     "sugar": 1.5,
     "saturated_fat": 0,
-    "calcium_mg": 17
+    "calcium_mg": 17,
+    "name_en": "Fiddlehead Fern"
   },
   {
     "name": "慈姑",
@@ -3665,7 +3926,8 @@
     "sodium_mg": 30,
     "sugar": 3,
     "saturated_fat": 0,
-    "calcium_mg": 39
+    "calcium_mg": 39,
+    "name_en": "Arrowhead"
   },
   {
     "name": "苤蓝",
@@ -3679,7 +3941,8 @@
     "sodium_mg": 10,
     "sugar": 2,
     "saturated_fat": 0,
-    "calcium_mg": 45
+    "calcium_mg": 45,
+    "name_en": "Kohlrabi"
   },
   {
     "name": "冬笋",
@@ -3693,7 +3956,8 @@
     "sodium_mg": 2,
     "sugar": 1.5,
     "saturated_fat": 0,
-    "calcium_mg": 3
+    "calcium_mg": 3,
+    "name_en": "Winter Bamboo Shoot"
   },
   {
     "name": "春笋",
@@ -3707,7 +3971,8 @@
     "sodium_mg": 2,
     "sugar": 1.5,
     "saturated_fat": 0,
-    "calcium_mg": 9
+    "calcium_mg": 9,
+    "name_en": "Spring Bamboo Shoot"
   },
   {
     "name": "香菇(鲜)",
@@ -3721,7 +3986,8 @@
     "sodium_mg": 2,
     "sugar": 1.5,
     "saturated_fat": 0,
-    "calcium_mg": 2
+    "calcium_mg": 2,
+    "name_en": "Shiitake Mushroom (Fresh)"
   },
   {
     "name": "香菇(干)",
@@ -3735,7 +4001,8 @@
     "sodium_mg": 11,
     "sugar": 7,
     "saturated_fat": 0.2,
-    "calcium_mg": 83
+    "calcium_mg": 83,
+    "name_en": "Shiitake Mushroom (Dried)"
   },
   {
     "name": "金针菇",
@@ -3749,7 +4016,8 @@
     "sodium_mg": 4,
     "sugar": 2,
     "saturated_fat": 0.1,
-    "calcium_mg": 1
+    "calcium_mg": 1,
+    "name_en": "Enoki Mushroom"
   },
   {
     "name": "平菇",
@@ -3763,7 +4031,8 @@
     "sodium_mg": 4,
     "sugar": 1,
     "saturated_fat": 0,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Oyster Mushroom"
   },
   {
     "name": "杏鲍菇",
@@ -3777,7 +4046,8 @@
     "sodium_mg": 3,
     "sugar": 2,
     "saturated_fat": 0,
-    "calcium_mg": 3
+    "calcium_mg": 3,
+    "name_en": "King Oyster Mushroom"
   },
   {
     "name": "蟹味菇",
@@ -3791,7 +4061,8 @@
     "sodium_mg": 3,
     "sugar": 1.5,
     "saturated_fat": 0,
-    "calcium_mg": 2
+    "calcium_mg": 2,
+    "name_en": "Beech Mushroom"
   },
   {
     "name": "白玉菇",
@@ -3805,7 +4076,8 @@
     "sodium_mg": 3,
     "sugar": 1,
     "saturated_fat": 0,
-    "calcium_mg": 2
+    "calcium_mg": 2,
+    "name_en": "White Beech Mushroom"
   },
   {
     "name": "茶树菇",
@@ -3819,7 +4091,8 @@
     "sodium_mg": 3,
     "sugar": 1.5,
     "saturated_fat": 0,
-    "calcium_mg": 3
+    "calcium_mg": 3,
+    "name_en": "Tea Tree Mushroom"
   },
   {
     "name": "猴头菇",
@@ -3833,7 +4106,8 @@
     "sodium_mg": 3,
     "sugar": 1.5,
     "saturated_fat": 0,
-    "calcium_mg": 3
+    "calcium_mg": 3,
+    "name_en": "Lion's Mane Mushroom"
   },
   {
     "name": "银耳(干)",
@@ -3847,7 +4121,8 @@
     "sodium_mg": 82,
     "sugar": 3,
     "saturated_fat": 0.1,
-    "calcium_mg": 36
+    "calcium_mg": 36,
+    "name_en": "White Fungus (Dried)"
   },
   {
     "name": "木耳(干)",
@@ -3861,7 +4136,8 @@
     "sodium_mg": 48,
     "sugar": 3,
     "saturated_fat": 0.1,
-    "calcium_mg": 247
+    "calcium_mg": 247,
+    "name_en": "Wood Ear Mushroom (Dried)"
   },
   {
     "name": "木耳(水发)",
@@ -3875,7 +4151,8 @@
     "sodium_mg": 8,
     "sugar": 0.5,
     "saturated_fat": 0,
-    "calcium_mg": 34
+    "calcium_mg": 34,
+    "name_en": "Wood Ear Mushroom (Soaked)"
   },
   {
     "name": "海带(鲜)",
@@ -3889,7 +4166,8 @@
     "sodium_mg": 306,
     "sugar": 0.5,
     "saturated_fat": 0,
-    "calcium_mg": 46
+    "calcium_mg": 46,
+    "name_en": "Kelp (Fresh)"
   },
   {
     "name": "海带(干)",
@@ -3903,7 +4181,8 @@
     "sodium_mg": 327,
     "sugar": 2,
     "saturated_fat": 0,
-    "calcium_mg": 348
+    "calcium_mg": 348,
+    "name_en": "Kelp (Dried)"
   },
   {
     "name": "紫菜(干)",
@@ -3917,7 +4196,8 @@
     "sodium_mg": 710,
     "sugar": 3,
     "saturated_fat": 0.2,
-    "calcium_mg": 264
+    "calcium_mg": 264,
+    "name_en": "Laver (Dried Nori)"
   },
   {
     "name": "裙带菜",
@@ -3931,7 +4211,8 @@
     "sodium_mg": 872,
     "sugar": 0.5,
     "saturated_fat": 0,
-    "calcium_mg": 150
+    "calcium_mg": 150,
+    "name_en": "Wakame"
   },
   {
     "name": "竹荪",
@@ -3945,7 +4226,8 @@
     "sodium_mg": 80,
     "sugar": 5,
     "saturated_fat": 0.3,
-    "calcium_mg": 17
+    "calcium_mg": 17,
+    "name_en": "Bamboo Fungus"
   },
   {
     "name": "草菇",
@@ -3959,7 +4241,8 @@
     "sodium_mg": 3,
     "sugar": 1.5,
     "saturated_fat": 0,
-    "calcium_mg": 17
+    "calcium_mg": 17,
+    "name_en": "Straw Mushroom"
   },
   {
     "name": "口蘑(白蘑菇)",
@@ -3973,7 +4256,8 @@
     "sodium_mg": 5,
     "sugar": 2,
     "saturated_fat": 0,
-    "calcium_mg": 6
+    "calcium_mg": 6,
+    "name_en": "White Button Mushroom"
   },
   {
     "name": "苹果",
@@ -3987,7 +4271,8 @@
     "sodium_mg": 1,
     "sugar": 10.4,
     "saturated_fat": 0,
-    "calcium_mg": 4
+    "calcium_mg": 4,
+    "name_en": "Apple"
   },
   {
     "name": "梨",
@@ -4001,7 +4286,8 @@
     "sodium_mg": 2,
     "sugar": 9.8,
     "saturated_fat": 0,
-    "calcium_mg": 9
+    "calcium_mg": 9,
+    "name_en": "Pear"
   },
   {
     "name": "香蕉",
@@ -4015,7 +4301,8 @@
     "sodium_mg": 4,
     "sugar": 12.2,
     "saturated_fat": 0.1,
-    "calcium_mg": 7
+    "calcium_mg": 7,
+    "name_en": "Banana"
   },
   {
     "name": "橙子",
@@ -4029,7 +4316,8 @@
     "sodium_mg": 1,
     "sugar": 9,
     "saturated_fat": 0,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Orange"
   },
   {
     "name": "橘子(柑橘)",
@@ -4043,7 +4331,8 @@
     "sodium_mg": 1,
     "sugar": 9.5,
     "saturated_fat": 0,
-    "calcium_mg": 35
+    "calcium_mg": 35,
+    "name_en": "Mandarin"
   },
   {
     "name": "柚子",
@@ -4057,7 +4346,8 @@
     "sodium_mg": 2,
     "sugar": 7.5,
     "saturated_fat": 0,
-    "calcium_mg": 4
+    "calcium_mg": 4,
+    "name_en": "Pomelo"
   },
   {
     "name": "葡萄",
@@ -4071,7 +4361,8 @@
     "sodium_mg": 2,
     "sugar": 9.9,
     "saturated_fat": 0,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Grape"
   },
   {
     "name": "西瓜",
@@ -4085,7 +4376,8 @@
     "sodium_mg": 3,
     "sugar": 5,
     "saturated_fat": 0,
-    "calcium_mg": 8
+    "calcium_mg": 8,
+    "name_en": "Watermelon"
   },
   {
     "name": "哈密瓜",
@@ -4099,7 +4391,8 @@
     "sodium_mg": 7,
     "sugar": 7,
     "saturated_fat": 0,
-    "calcium_mg": 4
+    "calcium_mg": 4,
+    "name_en": "Hami Melon"
   },
   {
     "name": "甜瓜(香瓜)",
@@ -4113,7 +4406,8 @@
     "sodium_mg": 8,
     "sugar": 5.8,
     "saturated_fat": 0,
-    "calcium_mg": 14
+    "calcium_mg": 14,
+    "name_en": "Sweet Melon"
   },
   {
     "name": "草莓",
@@ -4127,7 +4421,8 @@
     "sodium_mg": 4,
     "sugar": 4.9,
     "saturated_fat": 0,
-    "calcium_mg": 18
+    "calcium_mg": 18,
+    "name_en": "Strawberry"
   },
   {
     "name": "蓝莓",
@@ -4141,7 +4436,8 @@
     "sodium_mg": 1,
     "sugar": 10,
     "saturated_fat": 0,
-    "calcium_mg": 6
+    "calcium_mg": 6,
+    "name_en": "Blueberry"
   },
   {
     "name": "樱桃",
@@ -4155,7 +4451,8 @@
     "sodium_mg": 8,
     "sugar": 8,
     "saturated_fat": 0.1,
-    "calcium_mg": 11
+    "calcium_mg": 11,
+    "name_en": "Cherry"
   },
   {
     "name": "桃子",
@@ -4169,7 +4466,8 @@
     "sodium_mg": 3,
     "sugar": 8.4,
     "saturated_fat": 0,
-    "calcium_mg": 6
+    "calcium_mg": 6,
+    "name_en": "Peach"
   },
   {
     "name": "李子",
@@ -4183,7 +4481,8 @@
     "sodium_mg": 3,
     "sugar": 7.5,
     "saturated_fat": 0,
-    "calcium_mg": 8
+    "calcium_mg": 8,
+    "name_en": "Plum"
   },
   {
     "name": "杏",
@@ -4197,7 +4496,8 @@
     "sodium_mg": 2,
     "sugar": 7,
     "saturated_fat": 0,
-    "calcium_mg": 14
+    "calcium_mg": 14,
+    "name_en": "Apricot"
   },
   {
     "name": "芒果",
@@ -4211,7 +4511,8 @@
     "sodium_mg": 3,
     "sugar": 7.3,
     "saturated_fat": 0,
-    "calcium_mg": 11
+    "calcium_mg": 11,
+    "name_en": "Mango"
   },
   {
     "name": "菠萝",
@@ -4225,7 +4526,8 @@
     "sodium_mg": 1,
     "sugar": 8,
     "saturated_fat": 0,
-    "calcium_mg": 12
+    "calcium_mg": 12,
+    "name_en": "Pineapple"
   },
   {
     "name": "猕猴桃",
@@ -4239,7 +4541,8 @@
     "sodium_mg": 10,
     "sugar": 8.9,
     "saturated_fat": 0,
-    "calcium_mg": 27
+    "calcium_mg": 27,
+    "name_en": "Kiwifruit"
   },
   {
     "name": "火龙果",
@@ -4253,7 +4556,8 @@
     "sodium_mg": 2,
     "sugar": 8,
     "saturated_fat": 0,
-    "calcium_mg": 6
+    "calcium_mg": 6,
+    "name_en": "Dragon Fruit"
   },
   {
     "name": "石榴",
@@ -4267,7 +4571,8 @@
     "sodium_mg": 3,
     "sugar": 14,
     "saturated_fat": 0,
-    "calcium_mg": 6
+    "calcium_mg": 6,
+    "name_en": "Pomegranate"
   },
   {
     "name": "柿子",
@@ -4281,7 +4586,8 @@
     "sodium_mg": 1,
     "sugar": 15,
     "saturated_fat": 0,
-    "calcium_mg": 9
+    "calcium_mg": 9,
+    "name_en": "Persimmon"
   },
   {
     "name": "山楂",
@@ -4295,7 +4601,8 @@
     "sodium_mg": 5,
     "sugar": 15,
     "saturated_fat": 0,
-    "calcium_mg": 52
+    "calcium_mg": 52,
+    "name_en": "Hawthorn"
   },
   {
     "name": "桑葚",
@@ -4309,7 +4616,8 @@
     "sodium_mg": 2,
     "sugar": 9,
     "saturated_fat": 0,
-    "calcium_mg": 37
+    "calcium_mg": 37,
+    "name_en": "Mulberry"
   },
   {
     "name": "枇杷",
@@ -4323,7 +4631,8 @@
     "sodium_mg": 4,
     "sugar": 7,
     "saturated_fat": 0,
-    "calcium_mg": 17
+    "calcium_mg": 17,
+    "name_en": "Loquat"
   },
   {
     "name": "荔枝",
@@ -4337,7 +4646,8 @@
     "sodium_mg": 2,
     "sugar": 15,
     "saturated_fat": 0,
-    "calcium_mg": 2
+    "calcium_mg": 2,
+    "name_en": "Lychee"
   },
   {
     "name": "龙眼",
@@ -4351,7 +4661,8 @@
     "sodium_mg": 3,
     "sugar": 13,
     "saturated_fat": 0,
-    "calcium_mg": 6
+    "calcium_mg": 6,
+    "name_en": "Longan"
   },
   {
     "name": "榴莲",
@@ -4365,7 +4676,8 @@
     "sodium_mg": 3,
     "sugar": 20,
     "saturated_fat": 1.6,
-    "calcium_mg": 4
+    "calcium_mg": 4,
+    "name_en": "Durian"
   },
   {
     "name": "椰子(肉)",
@@ -4379,7 +4691,8 @@
     "sodium_mg": 25,
     "sugar": 7,
     "saturated_fat": 10.5,
-    "calcium_mg": 2
+    "calcium_mg": 2,
+    "name_en": "Coconut (Flesh)"
   },
   {
     "name": "牛油果",
@@ -4393,7 +4706,8 @@
     "sodium_mg": 7,
     "sugar": 0.7,
     "saturated_fat": 3,
-    "calcium_mg": 12
+    "calcium_mg": 12,
+    "name_en": "Avocado"
   },
   {
     "name": "木瓜",
@@ -4407,7 +4721,8 @@
     "sodium_mg": 8,
     "sugar": 6,
     "saturated_fat": 0,
-    "calcium_mg": 17
+    "calcium_mg": 17,
+    "name_en": "Papaya"
   },
   {
     "name": "番石榴",
@@ -4421,7 +4736,8 @@
     "sodium_mg": 3,
     "sugar": 5,
     "saturated_fat": 0.1,
-    "calcium_mg": 18
+    "calcium_mg": 18,
+    "name_en": "Guava"
   },
   {
     "name": "杨桃",
@@ -4435,7 +4751,8 @@
     "sodium_mg": 3,
     "sugar": 6,
     "saturated_fat": 0,
-    "calcium_mg": 4
+    "calcium_mg": 4,
+    "name_en": "Star Fruit"
   },
   {
     "name": "柠檬",
@@ -4449,7 +4766,8 @@
     "sodium_mg": 2,
     "sugar": 2.5,
     "saturated_fat": 0.1,
-    "calcium_mg": 101
+    "calcium_mg": 101,
+    "name_en": "Lemon"
   },
   {
     "name": "青柠",
@@ -4463,7 +4781,8 @@
     "sodium_mg": 2,
     "sugar": 4,
     "saturated_fat": 0,
-    "calcium_mg": 33
+    "calcium_mg": 33,
+    "name_en": "Lime"
   },
   {
     "name": "无花果",
@@ -4477,7 +4796,8 @@
     "sodium_mg": 2,
     "sugar": 12,
     "saturated_fat": 0,
-    "calcium_mg": 67
+    "calcium_mg": 67,
+    "name_en": "Fig"
   },
   {
     "name": "鲜枣(冬枣)",
@@ -4491,7 +4811,8 @@
     "sodium_mg": 1,
     "sugar": 24,
     "saturated_fat": 0,
-    "calcium_mg": 23
+    "calcium_mg": 23,
+    "name_en": "Fresh Jujube"
   },
   {
     "name": "蟠桃",
@@ -4505,7 +4826,8 @@
     "sodium_mg": 3,
     "sugar": 8,
     "saturated_fat": 0,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Flat Peach"
   },
   {
     "name": "油桃",
@@ -4519,7 +4841,8 @@
     "sodium_mg": 3,
     "sugar": 8,
     "saturated_fat": 0,
-    "calcium_mg": 6
+    "calcium_mg": 6,
+    "name_en": "Nectarine"
   },
   {
     "name": "黄桃",
@@ -4533,7 +4856,8 @@
     "sodium_mg": 3,
     "sugar": 9,
     "saturated_fat": 0,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Yellow Peach"
   },
   {
     "name": "红提(无籽葡萄)",
@@ -4547,7 +4871,8 @@
     "sodium_mg": 2,
     "sugar": 10,
     "saturated_fat": 0,
-    "calcium_mg": 6
+    "calcium_mg": 6,
+    "name_en": "Red Globe Grape (Seedless)"
   },
   {
     "name": "车厘子",
@@ -4561,7 +4886,8 @@
     "sodium_mg": 2,
     "sugar": 12.8,
     "saturated_fat": 0,
-    "calcium_mg": 13
+    "calcium_mg": 13,
+    "name_en": "Cherry (Imported)"
   },
   {
     "name": "百香果",
@@ -4575,7 +4901,8 @@
     "sodium_mg": 28,
     "sugar": 11.2,
     "saturated_fat": 0.1,
-    "calcium_mg": 12
+    "calcium_mg": 12,
+    "name_en": "Passion Fruit"
   },
   {
     "name": "圣女果(小番茄)",
@@ -4589,7 +4916,8 @@
     "sodium_mg": 5,
     "sugar": 3.5,
     "saturated_fat": 0,
-    "calcium_mg": 12
+    "calcium_mg": 12,
+    "name_en": "Cherry Tomato"
   },
   {
     "name": "甘蔗",
@@ -4603,7 +4931,8 @@
     "sodium_mg": 3,
     "sugar": 15,
     "saturated_fat": 0,
-    "calcium_mg": 14
+    "calcium_mg": 14,
+    "name_en": "Sugarcane"
   },
   {
     "name": "杨梅",
@@ -4617,7 +4946,8 @@
     "sodium_mg": 1,
     "sugar": 6,
     "saturated_fat": 0,
-    "calcium_mg": 14
+    "calcium_mg": 14,
+    "name_en": "Waxberry"
   },
   {
     "name": "释迦(番荔枝)",
@@ -4631,7 +4961,8 @@
     "sodium_mg": 9,
     "sugar": 20,
     "saturated_fat": 0.1,
-    "calcium_mg": 17
+    "calcium_mg": 17,
+    "name_en": "Sugar Apple"
   },
   {
     "name": "沙棘",
@@ -4645,7 +4976,8 @@
     "sodium_mg": 4,
     "sugar": 8,
     "saturated_fat": 0.2,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Sea Buckthorn"
   },
   {
     "name": "黄金奇异果",
@@ -4659,7 +4991,8 @@
     "sodium_mg": 3,
     "sugar": 9,
     "saturated_fat": 0,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Gold Kiwifruit"
   },
   {
     "name": "树莓",
@@ -4673,7 +5006,8 @@
     "sodium_mg": 1,
     "sugar": 4,
     "saturated_fat": 0,
-    "calcium_mg": 25
+    "calcium_mg": 25,
+    "name_en": "Raspberry"
   },
   {
     "name": "黑莓",
@@ -4687,7 +5021,8 @@
     "sodium_mg": 1,
     "sugar": 5,
     "saturated_fat": 0,
-    "calcium_mg": 29
+    "calcium_mg": 29,
+    "name_en": "Blackberry"
   },
   {
     "name": "花生(生)",
@@ -4701,7 +5036,8 @@
     "sodium_mg": 3,
     "sugar": 4,
     "saturated_fat": 6.3,
-    "calcium_mg": 39
+    "calcium_mg": 39,
+    "name_en": "Peanuts (Raw)"
   },
   {
     "name": "花生仁(炒)",
@@ -4715,7 +5051,8 @@
     "sodium_mg": 4,
     "sugar": 4,
     "saturated_fat": 8.3,
-    "calcium_mg": 47
+    "calcium_mg": 47,
+    "name_en": "Peanuts (Roasted)"
   },
   {
     "name": "核桃",
@@ -4729,7 +5066,8 @@
     "sodium_mg": 7,
     "sugar": 3,
     "saturated_fat": 5.6,
-    "calcium_mg": 56
+    "calcium_mg": 56,
+    "name_en": "Walnut"
   },
   {
     "name": "杏仁",
@@ -4743,7 +5081,8 @@
     "sodium_mg": 1,
     "sugar": 4,
     "saturated_fat": 3.7,
-    "calcium_mg": 264
+    "calcium_mg": 264,
+    "name_en": "Almond"
   },
   {
     "name": "腰果",
@@ -4757,7 +5096,8 @@
     "sodium_mg": 12,
     "sugar": 6,
     "saturated_fat": 7.8,
-    "calcium_mg": 26
+    "calcium_mg": 26,
+    "name_en": "Cashew"
   },
   {
     "name": "开心果",
@@ -4771,7 +5111,8 @@
     "sodium_mg": 5,
     "sugar": 7,
     "saturated_fat": 5.6,
-    "calcium_mg": 107
+    "calcium_mg": 107,
+    "name_en": "Pistachio"
   },
   {
     "name": "榛子",
@@ -4785,7 +5126,8 @@
     "sodium_mg": 5,
     "sugar": 4,
     "saturated_fat": 4.4,
-    "calcium_mg": 104
+    "calcium_mg": 104,
+    "name_en": "Hazelnut"
   },
   {
     "name": "碧根果(山核桃)",
@@ -4799,7 +5141,8 @@
     "sodium_mg": 1,
     "sugar": 4,
     "saturated_fat": 6.2,
-    "calcium_mg": 61
+    "calcium_mg": 61,
+    "name_en": "Pecan"
   },
   {
     "name": "松子",
@@ -4813,7 +5156,8 @@
     "sodium_mg": 3,
     "sugar": 3,
     "saturated_fat": 4.9,
-    "calcium_mg": 78
+    "calcium_mg": 78,
+    "name_en": "Pine Nut"
   },
   {
     "name": "板栗(生)",
@@ -4827,7 +5171,8 @@
     "sodium_mg": 10,
     "sugar": 8,
     "saturated_fat": 0.1,
-    "calcium_mg": 17
+    "calcium_mg": 17,
+    "name_en": "Chestnut (Raw)"
   },
   {
     "name": "板栗(熟)",
@@ -4841,7 +5186,8 @@
     "sodium_mg": 10,
     "sugar": 9,
     "saturated_fat": 0.1,
-    "calcium_mg": 19
+    "calcium_mg": 19,
+    "name_en": "Chestnut (Cooked)"
   },
   {
     "name": "葵花籽",
@@ -4855,7 +5201,8 @@
     "sodium_mg": 10,
     "sugar": 3,
     "saturated_fat": 5.2,
-    "calcium_mg": 72
+    "calcium_mg": 72,
+    "name_en": "Sunflower Seeds"
   },
   {
     "name": "南瓜子",
@@ -4869,7 +5216,8 @@
     "sodium_mg": 20,
     "sugar": 2,
     "saturated_fat": 8.3,
-    "calcium_mg": 37
+    "calcium_mg": 37,
+    "name_en": "Pumpkin Seeds"
   },
   {
     "name": "黑芝麻",
@@ -4883,7 +5231,8 @@
     "sodium_mg": 9,
     "sugar": 2,
     "saturated_fat": 6.5,
-    "calcium_mg": 780
+    "calcium_mg": 780,
+    "name_en": "Black Sesame"
   },
   {
     "name": "白芝麻",
@@ -4897,7 +5246,8 @@
     "sodium_mg": 9,
     "sugar": 2,
     "saturated_fat": 5.5,
-    "calcium_mg": 620
+    "calcium_mg": 620,
+    "name_en": "White Sesame"
   },
   {
     "name": "芝麻酱",
@@ -4911,7 +5261,8 @@
     "sodium_mg": 50,
     "sugar": 4,
     "saturated_fat": 7.4,
-    "calcium_mg": 870
+    "calcium_mg": 870,
+    "name_en": "Sesame Paste"
   },
   {
     "name": "花生酱",
@@ -4925,7 +5276,8 @@
     "sodium_mg": 400,
     "sugar": 6,
     "saturated_fat": 8.7,
-    "calcium_mg": 61
+    "calcium_mg": 61,
+    "name_en": "Peanut Butter"
   },
   {
     "name": "夏威夷果",
@@ -4939,7 +5291,8 @@
     "sodium_mg": 5,
     "sugar": 4,
     "saturated_fat": 12,
-    "calcium_mg": 47
+    "calcium_mg": 47,
+    "name_en": "Macadamia Nut"
   },
   {
     "name": "白瓜子(西瓜子)",
@@ -4953,7 +5306,8 @@
     "sodium_mg": 20,
     "sugar": 2,
     "saturated_fat": 7.5,
-    "calcium_mg": 28
+    "calcium_mg": 28,
+    "name_en": "Watermelon Seeds"
   },
   {
     "name": "大豆油",
@@ -4967,7 +5321,8 @@
     "sodium_mg": 0,
     "sugar": 0,
     "saturated_fat": 15.9,
-    "calcium_mg": 0
+    "calcium_mg": 0,
+    "name_en": "Soybean Oil"
   },
   {
     "name": "花生油",
@@ -4981,7 +5336,8 @@
     "sodium_mg": 0,
     "sugar": 0,
     "saturated_fat": 18.7,
-    "calcium_mg": 0
+    "calcium_mg": 0,
+    "name_en": "Peanut Oil"
   },
   {
     "name": "菜籽油",
@@ -4995,7 +5351,8 @@
     "sodium_mg": 0,
     "sugar": 0,
     "saturated_fat": 7.1,
-    "calcium_mg": 0
+    "calcium_mg": 0,
+    "name_en": "Rapeseed Oil"
   },
   {
     "name": "玉米油",
@@ -5009,7 +5366,8 @@
     "sodium_mg": 0,
     "sugar": 0,
     "saturated_fat": 13.2,
-    "calcium_mg": 0
+    "calcium_mg": 0,
+    "name_en": "Corn Oil"
   },
   {
     "name": "葵花籽油",
@@ -5023,7 +5381,8 @@
     "sodium_mg": 0,
     "sugar": 0,
     "saturated_fat": 10.3,
-    "calcium_mg": 0
+    "calcium_mg": 0,
+    "name_en": "Sunflower Oil"
   },
   {
     "name": "橄榄油",
@@ -5037,7 +5396,8 @@
     "sodium_mg": 0,
     "sugar": 0,
     "saturated_fat": 13.8,
-    "calcium_mg": 0
+    "calcium_mg": 0,
+    "name_en": "Olive Oil"
   },
   {
     "name": "香油(芝麻油)",
@@ -5051,7 +5411,8 @@
     "sodium_mg": 0,
     "sugar": 0,
     "saturated_fat": 14.2,
-    "calcium_mg": 0
+    "calcium_mg": 0,
+    "name_en": "Sesame Oil"
   },
   {
     "name": "猪油",
@@ -5065,7 +5426,8 @@
     "sodium_mg": 0,
     "sugar": 0,
     "saturated_fat": 39.4,
-    "calcium_mg": 0
+    "calcium_mg": 0,
+    "name_en": "Lard"
   },
   {
     "name": "棕榈油",
@@ -5079,7 +5441,8 @@
     "sodium_mg": 0,
     "sugar": 0,
     "saturated_fat": 49.3,
-    "calcium_mg": 0
+    "calcium_mg": 0,
+    "name_en": "Palm Oil"
   },
   {
     "name": "亚麻籽油",
@@ -5093,7 +5456,8 @@
     "sodium_mg": 0,
     "sugar": 0,
     "saturated_fat": 8.5,
-    "calcium_mg": 0
+    "calcium_mg": 0,
+    "name_en": "Flaxseed Oil"
   },
   {
     "name": "辣椒油",
@@ -5107,7 +5471,8 @@
     "sodium_mg": 800,
     "sugar": 0.5,
     "saturated_fat": 12,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Chili Oil"
   },
   {
     "name": "沙拉酱(蛋黄酱)",
@@ -5121,7 +5486,8 @@
     "sodium_mg": 500,
     "sugar": 3,
     "saturated_fat": 11,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Mayonnaise"
   },
   {
     "name": "食盐",
@@ -5135,7 +5501,8 @@
     "sodium_mg": 39312,
     "sugar": 0,
     "saturated_fat": 0,
-    "calcium_mg": 0
+    "calcium_mg": 0,
+    "name_en": "Salt"
   },
   {
     "name": "白砂糖",
@@ -5149,7 +5516,8 @@
     "sodium_mg": 1,
     "sugar": 99.9,
     "saturated_fat": 0,
-    "calcium_mg": 0
+    "calcium_mg": 0,
+    "name_en": "White Sugar"
   },
   {
     "name": "冰糖",
@@ -5163,7 +5531,8 @@
     "sodium_mg": 1,
     "sugar": 98,
     "saturated_fat": 0,
-    "calcium_mg": 2
+    "calcium_mg": 2,
+    "name_en": "Rock Sugar"
   },
   {
     "name": "蜂蜜",
@@ -5177,7 +5546,8 @@
     "sodium_mg": 2,
     "sugar": 75,
     "saturated_fat": 0,
-    "calcium_mg": 4
+    "calcium_mg": 4,
+    "name_en": "Honey"
   },
   {
     "name": "生抽",
@@ -5191,7 +5561,8 @@
     "sodium_mg": 6100,
     "sugar": 1,
     "saturated_fat": 0,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Light Soy Sauce"
   },
   {
     "name": "老抽",
@@ -5205,7 +5576,8 @@
     "sodium_mg": 5757,
     "sugar": 3,
     "saturated_fat": 0,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Dark Soy Sauce"
   },
   {
     "name": "蚝油",
@@ -5219,7 +5591,8 @@
     "sodium_mg": 2606,
     "sugar": 12,
     "saturated_fat": 0,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Oyster Sauce"
   },
   {
     "name": "米醋",
@@ -5233,7 +5606,8 @@
     "sodium_mg": 262,
     "sugar": 0.5,
     "saturated_fat": 0,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Rice Vinegar"
   },
   {
     "name": "陈醋",
@@ -5247,7 +5621,8 @@
     "sodium_mg": 1400,
     "sugar": 0.5,
     "saturated_fat": 0,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Aged Vinegar"
   },
   {
     "name": "香醋",
@@ -5261,7 +5636,8 @@
     "sodium_mg": 300,
     "sugar": 0.5,
     "saturated_fat": 0,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Fragrant Vinegar"
   },
   {
     "name": "料酒",
@@ -5275,7 +5651,8 @@
     "sodium_mg": 240,
     "sugar": 0.2,
     "saturated_fat": 0,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Cooking Wine"
   },
   {
     "name": "豆瓣酱",
@@ -5289,7 +5666,8 @@
     "sodium_mg": 6012,
     "sugar": 3,
     "saturated_fat": 0.2,
-    "calcium_mg": 50
+    "calcium_mg": 50,
+    "name_en": "Broad Bean Chili Paste"
   },
   {
     "name": "甜面酱",
@@ -5303,7 +5681,8 @@
     "sodium_mg": 2097,
     "sugar": 15,
     "saturated_fat": 0.1,
-    "calcium_mg": 40
+    "calcium_mg": 40,
+    "name_en": "Sweet Bean Sauce"
   },
   {
     "name": "黄豆酱",
@@ -5317,7 +5696,8 @@
     "sodium_mg": 5866,
     "sugar": 5,
     "saturated_fat": 0.6,
-    "calcium_mg": 80
+    "calcium_mg": 80,
+    "name_en": "Soybean Paste"
   },
   {
     "name": "番茄酱",
@@ -5331,7 +5711,8 @@
     "sodium_mg": 950,
     "sugar": 18,
     "saturated_fat": 0.1,
-    "calcium_mg": 25
+    "calcium_mg": 25,
+    "name_en": "Tomato Paste"
   },
   {
     "name": "辣椒酱",
@@ -5345,7 +5726,8 @@
     "sodium_mg": 3000,
     "sugar": 4,
     "saturated_fat": 0.4,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Chili Sauce"
   },
   {
     "name": "沙茶酱",
@@ -5359,7 +5741,8 @@
     "sodium_mg": 1500,
     "sugar": 5,
     "saturated_fat": 12,
-    "calcium_mg": 60
+    "calcium_mg": 60,
+    "name_en": "Sha Cha Sauce"
   },
   {
     "name": "味精",
@@ -5373,7 +5756,8 @@
     "sodium_mg": 8160,
     "sugar": 0,
     "saturated_fat": 0,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "MSG"
   },
   {
     "name": "鸡精",
@@ -5387,7 +5771,8 @@
     "sodium_mg": 16000,
     "sugar": 2,
     "saturated_fat": 1,
-    "calcium_mg": 30
+    "calcium_mg": 30,
+    "name_en": "Chicken Bouillon"
   },
   {
     "name": "五香粉",
@@ -5401,7 +5786,8 @@
     "sodium_mg": 50,
     "sugar": 2,
     "saturated_fat": 2,
-    "calcium_mg": 300
+    "calcium_mg": 300,
+    "name_en": "Five-Spice Powder"
   },
   {
     "name": "花椒",
@@ -5415,7 +5801,8 @@
     "sodium_mg": 10,
     "sugar": 1,
     "saturated_fat": 3,
-    "calcium_mg": 639
+    "calcium_mg": 639,
+    "name_en": "Sichuan Pepper"
   },
   {
     "name": "八角",
@@ -5429,7 +5816,8 @@
     "sodium_mg": 10,
     "sugar": 1,
     "saturated_fat": 4,
-    "calcium_mg": 833
+    "calcium_mg": 833,
+    "name_en": "Star Anise"
   },
   {
     "name": "桂皮",
@@ -5443,7 +5831,8 @@
     "sodium_mg": 10,
     "sugar": 1,
     "saturated_fat": 1,
-    "calcium_mg": 400
+    "calcium_mg": 400,
+    "name_en": "Cassia Bark"
   },
   {
     "name": "孜然",
@@ -5457,7 +5846,8 @@
     "sodium_mg": 168,
     "sugar": 2,
     "saturated_fat": 1.5,
-    "calcium_mg": 931
+    "calcium_mg": 931,
+    "name_en": "Cumin"
   },
   {
     "name": "胡椒粉",
@@ -5471,7 +5861,8 @@
     "sodium_mg": 44,
     "sugar": 1,
     "saturated_fat": 1.4,
-    "calcium_mg": 460
+    "calcium_mg": 460,
+    "name_en": "Pepper Powder"
   },
   {
     "name": "咖喱粉",
@@ -5485,7 +5876,8 @@
     "sodium_mg": 52,
     "sugar": 3,
     "saturated_fat": 4,
-    "calcium_mg": 478
+    "calcium_mg": 478,
+    "name_en": "Curry Powder"
   },
   {
     "name": "芥末",
@@ -5499,7 +5891,8 @@
     "sodium_mg": 1000,
     "sugar": 3,
     "saturated_fat": 0.1,
-    "calcium_mg": 60
+    "calcium_mg": 60,
+    "name_en": "Mustard"
   },
   {
     "name": "蒜蓉辣酱",
@@ -5513,7 +5906,8 @@
     "sodium_mg": 2500,
     "sugar": 5,
     "saturated_fat": 0.5,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Garlic Chili Sauce"
   },
   {
     "name": "甜辣酱",
@@ -5527,7 +5921,8 @@
     "sodium_mg": 800,
     "sugar": 35,
     "saturated_fat": 0,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Sweet Chili Sauce"
   },
   {
     "name": "韩式辣酱",
@@ -5541,7 +5936,8 @@
     "sodium_mg": 2000,
     "sugar": 15,
     "saturated_fat": 0.3,
-    "calcium_mg": 30
+    "calcium_mg": 30,
+    "name_en": "Korean Chili Paste"
   },
   {
     "name": "番茄沙司",
@@ -5555,7 +5951,8 @@
     "sodium_mg": 700,
     "sugar": 12,
     "saturated_fat": 0,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Ketchup"
   },
   {
     "name": "黑胡椒",
@@ -5569,7 +5966,8 @@
     "sodium_mg": 44,
     "sugar": 1,
     "saturated_fat": 1.4,
-    "calcium_mg": 437
+    "calcium_mg": 437,
+    "name_en": "Black Pepper"
   },
   {
     "name": "蜂蜜芥末酱",
@@ -5583,7 +5981,8 @@
     "sodium_mg": 400,
     "sugar": 25,
     "saturated_fat": 3,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Honey Mustard Sauce"
   },
   {
     "name": "千岛酱",
@@ -5597,7 +5996,8 @@
     "sodium_mg": 600,
     "sugar": 12,
     "saturated_fat": 6,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Thousand Island Dressing"
   },
   {
     "name": "可乐",
@@ -5611,7 +6011,8 @@
     "sodium_mg": 4,
     "sugar": 10.7,
     "saturated_fat": 0,
-    "calcium_mg": 3
+    "calcium_mg": 3,
+    "name_en": "Cola"
   },
   {
     "name": "雪碧",
@@ -5625,7 +6026,8 @@
     "sodium_mg": 10,
     "sugar": 10.3,
     "saturated_fat": 0,
-    "calcium_mg": 3
+    "calcium_mg": 3,
+    "name_en": "Sprite"
   },
   {
     "name": "橙汁(纯)",
@@ -5639,7 +6041,8 @@
     "sodium_mg": 3,
     "sugar": 9,
     "saturated_fat": 0,
-    "calcium_mg": 8
+    "calcium_mg": 8,
+    "name_en": "Orange Juice (Pure)"
   },
   {
     "name": "苹果汁",
@@ -5653,7 +6056,8 @@
     "sodium_mg": 3,
     "sugar": 10.5,
     "saturated_fat": 0,
-    "calcium_mg": 4
+    "calcium_mg": 4,
+    "name_en": "Apple Juice"
   },
   {
     "name": "矿泉水",
@@ -5667,7 +6071,8 @@
     "sodium_mg": 3,
     "sugar": 0,
     "saturated_fat": 0,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Mineral Water"
   },
   {
     "name": "绿茶(无糖)",
@@ -5681,7 +6086,8 @@
     "sodium_mg": 2,
     "sugar": 0,
     "saturated_fat": 0,
-    "calcium_mg": 2
+    "calcium_mg": 2,
+    "name_en": "Green Tea (Unsweetened)"
   },
   {
     "name": "红茶(无糖)",
@@ -5695,7 +6101,8 @@
     "sodium_mg": 2,
     "sugar": 0,
     "saturated_fat": 0,
-    "calcium_mg": 2
+    "calcium_mg": 2,
+    "name_en": "Black Tea (Unsweetened)"
   },
   {
     "name": "黑咖啡",
@@ -5709,7 +6116,8 @@
     "sodium_mg": 2,
     "sugar": 0,
     "saturated_fat": 0,
-    "calcium_mg": 2
+    "calcium_mg": 2,
+    "name_en": "Black Coffee"
   },
   {
     "name": "拿铁咖啡",
@@ -5723,7 +6131,8 @@
     "sodium_mg": 45,
     "sugar": 4,
     "saturated_fat": 1.8,
-    "calcium_mg": 90
+    "calcium_mg": 90,
+    "name_en": "Latte"
   },
   {
     "name": "椰汁(饮料)",
@@ -5737,7 +6146,8 @@
     "sodium_mg": 20,
     "sugar": 10,
     "saturated_fat": 0.8,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Coconut Juice Drink"
   },
   {
     "name": "凉茶(王老吉)",
@@ -5751,7 +6161,8 @@
     "sodium_mg": 15,
     "sugar": 8.5,
     "saturated_fat": 0,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Herbal Tea (Wong Lo Kat)"
   },
   {
     "name": "运动饮料",
@@ -5765,7 +6176,8 @@
     "sodium_mg": 50,
     "sugar": 6,
     "saturated_fat": 0,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Sports Drink"
   },
   {
     "name": "啤酒",
@@ -5779,7 +6191,8 @@
     "sodium_mg": 5,
     "sugar": 1.5,
     "saturated_fat": 0,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Beer"
   },
   {
     "name": "白酒",
@@ -5793,7 +6206,8 @@
     "sodium_mg": 1,
     "sugar": 0,
     "saturated_fat": 0,
-    "calcium_mg": 1
+    "calcium_mg": 1,
+    "name_en": "Baijiu (Chinese Liquor)"
   },
   {
     "name": "红酒",
@@ -5807,7 +6221,8 @@
     "sodium_mg": 4,
     "sugar": 1,
     "saturated_fat": 0,
-    "calcium_mg": 8
+    "calcium_mg": 8,
+    "name_en": "Red Wine"
   },
   {
     "name": "黄酒",
@@ -5821,7 +6236,8 @@
     "sodium_mg": 10,
     "sugar": 4,
     "saturated_fat": 0,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Yellow Rice Wine"
   },
   {
     "name": "米酒",
@@ -5835,7 +6251,8 @@
     "sodium_mg": 5,
     "sugar": 3,
     "saturated_fat": 0,
-    "calcium_mg": 3
+    "calcium_mg": 3,
+    "name_en": "Rice Wine"
   },
   {
     "name": "威士忌",
@@ -5849,7 +6266,8 @@
     "sodium_mg": 1,
     "sugar": 0,
     "saturated_fat": 0,
-    "calcium_mg": 0
+    "calcium_mg": 0,
+    "name_en": "Whisky"
   },
   {
     "name": "香槟",
@@ -5863,7 +6281,8 @@
     "sodium_mg": 4,
     "sugar": 1,
     "saturated_fat": 0,
-    "calcium_mg": 7
+    "calcium_mg": 7,
+    "name_en": "Champagne"
   },
   {
     "name": "功能饮料(红牛)",
@@ -5877,7 +6296,8 @@
     "sodium_mg": 50,
     "sugar": 11,
     "saturated_fat": 0,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Energy Drink (Red Bull)"
   },
   {
     "name": "果醋饮料",
@@ -5891,7 +6311,8 @@
     "sodium_mg": 15,
     "sugar": 7.5,
     "saturated_fat": 0,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Fruit Vinegar Drink"
   },
   {
     "name": "酸梅汤",
@@ -5905,7 +6326,8 @@
     "sodium_mg": 20,
     "sugar": 6.5,
     "saturated_fat": 0,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Sour Plum Drink"
   },
   {
     "name": "苏打水",
@@ -5919,7 +6341,8 @@
     "sodium_mg": 20,
     "sugar": 0,
     "saturated_fat": 0,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Soda Water"
   },
   {
     "name": "柠檬水",
@@ -5933,7 +6356,8 @@
     "sodium_mg": 3,
     "sugar": 1.5,
     "saturated_fat": 0,
-    "calcium_mg": 3
+    "calcium_mg": 3,
+    "name_en": "Lemon Water"
   },
   {
     "name": "乳酸菌饮料",
@@ -5947,7 +6371,8 @@
     "sodium_mg": 25,
     "sugar": 13,
     "saturated_fat": 0.3,
-    "calcium_mg": 30
+    "calcium_mg": 30,
+    "name_en": "Lactic Acid Bacteria Drink"
   },
   {
     "name": "无糖可乐",
@@ -5961,7 +6386,8 @@
     "sodium_mg": 15,
     "sugar": 0,
     "saturated_fat": 0,
-    "calcium_mg": 3
+    "calcium_mg": 3,
+    "name_en": "Diet Cola"
   },
   {
     "name": "椰子水(天然)",
@@ -5975,7 +6401,8 @@
     "sodium_mg": 25,
     "sugar": 2.6,
     "saturated_fat": 0.1,
-    "calcium_mg": 25
+    "calcium_mg": 25,
+    "name_en": "Coconut Water (Natural)"
   },
   {
     "name": "冰红茶(含糖)",
@@ -5989,7 +6416,8 @@
     "sodium_mg": 10,
     "sugar": 8,
     "saturated_fat": 0,
-    "calcium_mg": 3
+    "calcium_mg": 3,
+    "name_en": "Iced Black Tea (Sweetened)"
   },
   {
     "name": "冰绿茶(含糖)",
@@ -6003,7 +6431,8 @@
     "sodium_mg": 10,
     "sugar": 7.5,
     "saturated_fat": 0,
-    "calcium_mg": 3
+    "calcium_mg": 3,
+    "name_en": "Iced Green Tea (Sweetened)"
   },
   {
     "name": "蜂蜜柚子茶",
@@ -6017,7 +6446,8 @@
     "sodium_mg": 10,
     "sugar": 58,
     "saturated_fat": 0,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Honey Grapefruit Tea"
   },
   {
     "name": "薯片",
@@ -6031,7 +6461,8 @@
     "sodium_mg": 800,
     "sugar": 3,
     "saturated_fat": 12,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Potato Chips"
   },
   {
     "name": "虾条",
@@ -6045,7 +6476,8 @@
     "sodium_mg": 700,
     "sugar": 10,
     "saturated_fat": 10,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Shrimp Chips"
   },
   {
     "name": "爆米花",
@@ -6059,7 +6491,8 @@
     "sodium_mg": 300,
     "sugar": 15,
     "saturated_fat": 1,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Popcorn"
   },
   {
     "name": "江米条",
@@ -6073,7 +6506,8 @@
     "sodium_mg": 50,
     "sugar": 30,
     "saturated_fat": 5,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Fried Glutinous Rice Sticks"
   },
   {
     "name": "蛋卷",
@@ -6087,7 +6521,8 @@
     "sodium_mg": 150,
     "sugar": 25,
     "saturated_fat": 8,
-    "calcium_mg": 40
+    "calcium_mg": 40,
+    "name_en": "Egg Roll (Crispy)"
   },
   {
     "name": "沙琪玛",
@@ -6101,7 +6536,8 @@
     "sodium_mg": 80,
     "sugar": 30,
     "saturated_fat": 6,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Saqima"
   },
   {
     "name": "麻花",
@@ -6115,7 +6551,8 @@
     "sodium_mg": 200,
     "sugar": 10,
     "saturated_fat": 8,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Fried Dough Twist"
   },
   {
     "name": "锅巴",
@@ -6129,7 +6566,8 @@
     "sodium_mg": 500,
     "sugar": 2,
     "saturated_fat": 3,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Rice Crust Crisp"
   },
   {
     "name": "苏打饼干",
@@ -6143,7 +6581,8 @@
     "sodium_mg": 500,
     "sugar": 3,
     "saturated_fat": 1,
-    "calcium_mg": 30
+    "calcium_mg": 30,
+    "name_en": "Soda Crackers"
   },
   {
     "name": "曲奇饼干",
@@ -6157,7 +6596,8 @@
     "sodium_mg": 300,
     "sugar": 25,
     "saturated_fat": 12,
-    "calcium_mg": 30
+    "calcium_mg": 30,
+    "name_en": "Cookies"
   },
   {
     "name": "巧克力派",
@@ -6171,7 +6611,8 @@
     "sodium_mg": 200,
     "sugar": 30,
     "saturated_fat": 12,
-    "calcium_mg": 40
+    "calcium_mg": 40,
+    "name_en": "Chocolate Pie"
   },
   {
     "name": "威化饼干",
@@ -6185,7 +6626,8 @@
     "sodium_mg": 150,
     "sugar": 30,
     "saturated_fat": 13,
-    "calcium_mg": 30
+    "calcium_mg": 30,
+    "name_en": "Wafer Biscuit"
   },
   {
     "name": "果冻",
@@ -6199,7 +6641,8 @@
     "sodium_mg": 20,
     "sugar": 16,
     "saturated_fat": 0,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Jelly"
   },
   {
     "name": "麻辣豆干",
@@ -6213,7 +6656,8 @@
     "sodium_mg": 1200,
     "sugar": 2,
     "saturated_fat": 3,
-    "calcium_mg": 150
+    "calcium_mg": 150,
+    "name_en": "Spicy Dried Tofu"
   },
   {
     "name": "海苔片",
@@ -6227,7 +6671,8 @@
     "sodium_mg": 1500,
     "sugar": 2,
     "saturated_fat": 3,
-    "calcium_mg": 50
+    "calcium_mg": 50,
+    "name_en": "Seaweed Sheets"
   },
   {
     "name": "山楂片",
@@ -6241,7 +6686,8 @@
     "sodium_mg": 50,
     "sugar": 65,
     "saturated_fat": 0,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Hawthorn Fruit Slices"
   },
   {
     "name": "果丹皮",
@@ -6255,7 +6701,8 @@
     "sodium_mg": 30,
     "sugar": 60,
     "saturated_fat": 0,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Hawthorn Fruit Roll"
   },
   {
     "name": "肉脯",
@@ -6269,7 +6716,8 @@
     "sodium_mg": 1000,
     "sugar": 15,
     "saturated_fat": 10,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Meat Jerky"
   },
   {
     "name": "小面包(packaged)",
@@ -6283,7 +6731,8 @@
     "sodium_mg": 250,
     "sugar": 15,
     "saturated_fat": 4,
-    "calcium_mg": 40
+    "calcium_mg": 40,
+    "name_en": "Packaged Mini Bread"
   },
   {
     "name": "话梅",
@@ -6297,7 +6746,8 @@
     "sodium_mg": 3000,
     "sugar": 30,
     "saturated_fat": 0,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Preserved Plum"
   },
   {
     "name": "陈皮",
@@ -6311,7 +6761,8 @@
     "sodium_mg": 500,
     "sugar": 10,
     "saturated_fat": 0.3,
-    "calcium_mg": 100
+    "calcium_mg": 100,
+    "name_en": "Dried Tangerine Peel"
   },
   {
     "name": "蜜饯青梅",
@@ -6325,7 +6776,8 @@
     "sodium_mg": 300,
     "sugar": 60,
     "saturated_fat": 0,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Candied Green Plum"
   },
   {
     "name": "杏脯",
@@ -6339,7 +6791,8 @@
     "sodium_mg": 50,
     "sugar": 65,
     "saturated_fat": 0,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Dried Apricot"
   },
   {
     "name": "桃脯",
@@ -6353,7 +6806,8 @@
     "sodium_mg": 50,
     "sugar": 62,
     "saturated_fat": 0,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Dried Peach"
   },
   {
     "name": "冬瓜糖",
@@ -6367,7 +6821,8 @@
     "sodium_mg": 30,
     "sugar": 80,
     "saturated_fat": 0,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Candied Winter Melon"
   },
   {
     "name": "蜜枣(饯)",
@@ -6381,7 +6836,8 @@
     "sodium_mg": 60,
     "sugar": 60,
     "saturated_fat": 0,
-    "calcium_mg": 30
+    "calcium_mg": 30,
+    "name_en": "Candied Jujube"
   },
   {
     "name": "牛轧糖",
@@ -6395,7 +6851,8 @@
     "sodium_mg": 80,
     "sugar": 55,
     "saturated_fat": 6,
-    "calcium_mg": 40
+    "calcium_mg": 40,
+    "name_en": "Nougat"
   },
   {
     "name": "棉花糖",
@@ -6409,7 +6866,8 @@
     "sodium_mg": 50,
     "sugar": 60,
     "saturated_fat": 0,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Marshmallow"
   },
   {
     "name": "水果糖",
@@ -6423,7 +6881,8 @@
     "sodium_mg": 10,
     "sugar": 90,
     "saturated_fat": 0,
-    "calcium_mg": 2
+    "calcium_mg": 2,
+    "name_en": "Fruit Candy"
   },
   {
     "name": "黑巧克力",
@@ -6437,7 +6896,8 @@
     "sodium_mg": 20,
     "sugar": 24,
     "saturated_fat": 24,
-    "calcium_mg": 73
+    "calcium_mg": 73,
+    "name_en": "Dark Chocolate"
   },
   {
     "name": "牛奶巧克力",
@@ -6451,7 +6911,8 @@
     "sodium_mg": 80,
     "sugar": 51,
     "saturated_fat": 20,
-    "calcium_mg": 189
+    "calcium_mg": 189,
+    "name_en": "Milk Chocolate"
   },
   {
     "name": "奶糖",
@@ -6465,7 +6926,8 @@
     "sodium_mg": 60,
     "sugar": 70,
     "saturated_fat": 3.5,
-    "calcium_mg": 90
+    "calcium_mg": 90,
+    "name_en": "Milk Candy"
   },
   {
     "name": "方便面(桶装,含调料)",
@@ -6479,7 +6941,8 @@
     "sodium_mg": 1800,
     "sugar": 3,
     "saturated_fat": 10,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Instant Noodles (Cup, with Seasoning)"
   },
   {
     "name": "火腿肠",
@@ -6493,7 +6956,8 @@
     "sodium_mg": 900,
     "sugar": 2,
     "saturated_fat": 4,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Sausage"
   },
   {
     "name": "罐头黄桃",
@@ -6507,7 +6971,8 @@
     "sodium_mg": 10,
     "sugar": 18,
     "saturated_fat": 0,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Canned Yellow Peach"
   },
   {
     "name": "罐头玉米",
@@ -6521,7 +6986,8 @@
     "sodium_mg": 250,
     "sugar": 4,
     "saturated_fat": 0.2,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Canned Corn"
   },
   {
     "name": "果酱",
@@ -6535,7 +7001,8 @@
     "sodium_mg": 20,
     "sugar": 60,
     "saturated_fat": 0,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Jam"
   },
   {
     "name": "番茄罐头",
@@ -6549,7 +7016,8 @@
     "sodium_mg": 200,
     "sugar": 3,
     "saturated_fat": 0,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Canned Tomato"
   },
   {
     "name": "豆奶粉",
@@ -6563,7 +7031,8 @@
     "sodium_mg": 200,
     "sugar": 30,
     "saturated_fat": 1.5,
-    "calcium_mg": 180
+    "calcium_mg": 180,
+    "name_en": "Soy Milk Powder"
   },
   {
     "name": "蛋白粉",
@@ -6577,7 +7046,8 @@
     "sodium_mg": 300,
     "sugar": 5,
     "saturated_fat": 2,
-    "calcium_mg": 200
+    "calcium_mg": 200,
+    "name_en": "Protein Powder"
   },
   {
     "name": "全麦饼干",
@@ -6591,7 +7061,8 @@
     "sodium_mg": 400,
     "sugar": 12,
     "saturated_fat": 7,
-    "calcium_mg": 40
+    "calcium_mg": 40,
+    "name_en": "Whole Wheat Crackers"
   },
   {
     "name": "芝士蛋糕",
@@ -6605,7 +7076,8 @@
     "sodium_mg": 250,
     "sugar": 18,
     "saturated_fat": 13,
-    "calcium_mg": 80
+    "calcium_mg": 80,
+    "name_en": "Cheesecake"
   },
   {
     "name": "果冻布丁",
@@ -6619,7 +7091,8 @@
     "sodium_mg": 60,
     "sugar": 15,
     "saturated_fat": 1.8,
-    "calcium_mg": 60
+    "calcium_mg": 60,
+    "name_en": "Jelly Pudding"
   },
   {
     "name": "方便粥(冲泡)",
@@ -6633,7 +7106,8 @@
     "sodium_mg": 400,
     "sugar": 3,
     "saturated_fat": 0.2,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Instant Porridge"
   },
   {
     "name": "冲泡奶昔粉",
@@ -6647,7 +7121,8 @@
     "sodium_mg": 300,
     "sugar": 20,
     "saturated_fat": 3,
-    "calcium_mg": 300
+    "calcium_mg": 300,
+    "name_en": "Instant Meal Replacement Shake Powder"
   },
   {
     "name": "速冻水饺(猪肉白菜)",
@@ -6661,7 +7136,8 @@
     "sodium_mg": 380,
     "sugar": 1,
     "saturated_fat": 2.7,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Frozen Dumplings (Pork & Cabbage)"
   },
   {
     "name": "速冻水饺(三鲜)",
@@ -6675,7 +7151,8 @@
     "sodium_mg": 400,
     "sugar": 1,
     "saturated_fat": 2.5,
-    "calcium_mg": 25
+    "calcium_mg": 25,
+    "name_en": "Frozen Dumplings (Three-Delicacy)"
   },
   {
     "name": "速冻馄饨(猪肉)",
@@ -6689,7 +7166,8 @@
     "sodium_mg": 420,
     "sugar": 1,
     "saturated_fat": 2.4,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Frozen Wontons (Pork)"
   },
   {
     "name": "速冻汤圆(黑芝麻)",
@@ -6703,7 +7181,8 @@
     "sodium_mg": 20,
     "sugar": 20,
     "saturated_fat": 3,
-    "calcium_mg": 50
+    "calcium_mg": 50,
+    "name_en": "Frozen Glutinous Rice Balls (Black Sesame)"
   },
   {
     "name": "速冻汤圆(豆沙)",
@@ -6717,7 +7196,8 @@
     "sodium_mg": 20,
     "sugar": 22,
     "saturated_fat": 2,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Frozen Glutinous Rice Balls (Red Bean Paste)"
   },
   {
     "name": "速冻包子(猪肉)",
@@ -6731,7 +7211,8 @@
     "sodium_mg": 380,
     "sugar": 2,
     "saturated_fat": 2.6,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Frozen Steamed Buns (Pork)"
   },
   {
     "name": "速冻花卷(已炸/半成品)",
@@ -6745,7 +7226,8 @@
     "sodium_mg": 150,
     "sugar": 1,
     "saturated_fat": 0.5,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Frozen Twisted Roll (Fried/Semi-Prepared)"
   },
   {
     "name": "速冻披萨(什锦)",
@@ -6759,7 +7241,8 @@
     "sodium_mg": 500,
     "sugar": 3,
     "saturated_fat": 4.5,
-    "calcium_mg": 150
+    "calcium_mg": 150,
+    "name_en": "Frozen Pizza (Supreme)"
   },
   {
     "name": "冻豆腐",
@@ -6773,7 +7256,8 @@
     "sodium_mg": 10,
     "sugar": 0.5,
     "saturated_fat": 0.6,
-    "calcium_mg": 150
+    "calcium_mg": 150,
+    "name_en": "Frozen Tofu"
   },
   {
     "name": "鱼豆腐",
@@ -6787,7 +7271,8 @@
     "sodium_mg": 600,
     "sugar": 2,
     "saturated_fat": 2,
-    "calcium_mg": 60
+    "calcium_mg": 60,
+    "name_en": "Fish Tofu"
   },
   {
     "name": "甜不辣(天妇罗鱼饼)",
@@ -6801,7 +7286,8 @@
     "sodium_mg": 500,
     "sugar": 2,
     "saturated_fat": 1.2,
-    "calcium_mg": 30
+    "calcium_mg": 30,
+    "name_en": "Tempura Fish Cake"
   },
   {
     "name": "魔芋结",
@@ -6815,7 +7301,8 @@
     "sodium_mg": 10,
     "sugar": 0,
     "saturated_fat": 0,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Konjac Knot"
   },
   {
     "name": "肥牛卷",
@@ -6829,7 +7316,8 @@
     "sodium_mg": 60,
     "sugar": 0,
     "saturated_fat": 8.5,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Sliced Beef (Hot Pot)"
   },
   {
     "name": "羊肉卷",
@@ -6843,7 +7331,8 @@
     "sodium_mg": 80,
     "sugar": 0,
     "saturated_fat": 5.9,
-    "calcium_mg": 6
+    "calcium_mg": 6,
+    "name_en": "Sliced Lamb (Hot Pot)"
   },
   {
     "name": "虾滑",
@@ -6857,7 +7346,8 @@
     "sodium_mg": 300,
     "sugar": 0.5,
     "saturated_fat": 0.4,
-    "calcium_mg": 60
+    "calcium_mg": 60,
+    "name_en": "Shrimp Paste (Hot Pot)"
   },
   {
     "name": "蟹黄豆腐丸",
@@ -6871,7 +7361,8 @@
     "sodium_mg": 450,
     "sugar": 1,
     "saturated_fat": 1.5,
-    "calcium_mg": 50
+    "calcium_mg": 50,
+    "name_en": "Crab Roe Tofu Ball"
   },
   {
     "name": "吐司面包",
@@ -6885,7 +7376,8 @@
     "sodium_mg": 380,
     "sugar": 5,
     "saturated_fat": 1.5,
-    "calcium_mg": 45
+    "calcium_mg": 45,
+    "name_en": "Toast Bread"
   },
   {
     "name": "法棍面包",
@@ -6899,7 +7391,8 @@
     "sodium_mg": 500,
     "sugar": 2,
     "saturated_fat": 0.2,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Baguette"
   },
   {
     "name": "蛋糕卷",
@@ -6913,7 +7406,8 @@
     "sodium_mg": 180,
     "sugar": 22,
     "saturated_fat": 6,
-    "calcium_mg": 50
+    "calcium_mg": 50,
+    "name_en": "Swiss Roll"
   },
   {
     "name": "泡芙",
@@ -6927,7 +7421,8 @@
     "sodium_mg": 150,
     "sugar": 15,
     "saturated_fat": 10,
-    "calcium_mg": 60
+    "calcium_mg": 60,
+    "name_en": "Cream Puff"
   },
   {
     "name": "提拉米苏",
@@ -6941,7 +7436,8 @@
     "sodium_mg": 100,
     "sugar": 20,
     "saturated_fat": 10,
-    "calcium_mg": 60
+    "calcium_mg": 60,
+    "name_en": "Tiramisu"
   },
   {
     "name": "肉松面包",
@@ -6955,7 +7451,8 @@
     "sodium_mg": 350,
     "sugar": 10,
     "saturated_fat": 3,
-    "calcium_mg": 40
+    "calcium_mg": 40,
+    "name_en": "Pork Floss Bread"
   },
   {
     "name": "紫米面包",
@@ -6969,7 +7466,8 @@
     "sodium_mg": 300,
     "sugar": 8,
     "saturated_fat": 1.5,
-    "calcium_mg": 35
+    "calcium_mg": 35,
+    "name_en": "Purple Rice Bread"
   },
   {
     "name": "老式面包(蜂蜜)",
@@ -6983,7 +7481,8 @@
     "sodium_mg": 280,
     "sugar": 15,
     "saturated_fat": 2.5,
-    "calcium_mg": 30
+    "calcium_mg": 30,
+    "name_en": "Old-Fashioned Honey Bread"
   },
   {
     "name": "包子(猪肉)",
@@ -6997,7 +7496,8 @@
     "sodium_mg": 380,
     "sugar": 2,
     "saturated_fat": 2.6,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Steamed Stuffed Bun (Pork)"
   },
   {
     "name": "生煎包",
@@ -7011,7 +7511,8 @@
     "sodium_mg": 400,
     "sugar": 2,
     "saturated_fat": 3.5,
-    "calcium_mg": 25
+    "calcium_mg": 25,
+    "name_en": "Pan-Fried Pork Bun"
   },
   {
     "name": "水饺(熟,猪肉白菜)",
@@ -7025,7 +7526,8 @@
     "sodium_mg": 380,
     "sugar": 1,
     "saturated_fat": 2.7,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Boiled Dumplings (Pork & Cabbage)"
   },
   {
     "name": "韭菜盒子",
@@ -7039,7 +7541,8 @@
     "sodium_mg": 350,
     "sugar": 1,
     "saturated_fat": 3,
-    "calcium_mg": 40
+    "calcium_mg": 40,
+    "name_en": "Chive Pocket"
   },
   {
     "name": "葱油饼",
@@ -7053,7 +7556,8 @@
     "sodium_mg": 400,
     "sugar": 1,
     "saturated_fat": 3.5,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Scallion Pancake"
   },
   {
     "name": "即食鸡胸肉(低脂)",
@@ -7067,7 +7571,8 @@
     "sodium_mg": 450,
     "sugar": 1,
     "saturated_fat": 0.5,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Ready-to-Eat Chicken Breast (Low-Fat)"
   },
   {
     "name": "卤蛋",
@@ -7081,7 +7586,8 @@
     "sodium_mg": 450,
     "sugar": 1,
     "saturated_fat": 3.2,
-    "calcium_mg": 55
+    "calcium_mg": 55,
+    "name_en": "Braised Egg"
   },
   {
     "name": "即食海带丝",
@@ -7095,7 +7601,8 @@
     "sodium_mg": 600,
     "sugar": 1,
     "saturated_fat": 0,
-    "calcium_mg": 40
+    "calcium_mg": 40,
+    "name_en": "Ready-to-Eat Shredded Kelp"
   },
   {
     "name": "凉拌木耳",
@@ -7109,7 +7616,8 @@
     "sodium_mg": 400,
     "sugar": 1,
     "saturated_fat": 0.1,
-    "calcium_mg": 40
+    "calcium_mg": 40,
+    "name_en": "Cold Wood Ear Mushroom Salad"
   },
   {
     "name": "即食紫菜(海苔即食包)",
@@ -7123,7 +7631,8 @@
     "sodium_mg": 1400,
     "sugar": 2,
     "saturated_fat": 3,
-    "calcium_mg": 150
+    "calcium_mg": 150,
+    "name_en": "Ready-to-Eat Seaweed Snack"
   },
   {
     "name": "辣条",
@@ -7137,7 +7646,8 @@
     "sodium_mg": 1800,
     "sugar": 15,
     "saturated_fat": 6,
-    "calcium_mg": 30
+    "calcium_mg": 30,
+    "name_en": "Spicy Gluten Strips"
   },
   {
     "name": "魔芋爽",
@@ -7151,7 +7661,8 @@
     "sodium_mg": 900,
     "sugar": 1,
     "saturated_fat": 0.1,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Spicy Konjac Strips"
   },
   {
     "name": "溜溜梅(蜜饯梅)",
@@ -7165,7 +7676,8 @@
     "sodium_mg": 2500,
     "sugar": 28,
     "saturated_fat": 0,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Liuliumei (Preserved Plum Candy)"
   },
   {
     "name": "鱼皮花生",
@@ -7179,7 +7691,8 @@
     "sodium_mg": 400,
     "sugar": 15,
     "saturated_fat": 5,
-    "calcium_mg": 50
+    "calcium_mg": 50,
+    "name_en": "Fish Skin Peanuts"
   },
   {
     "name": "蒜香花生",
@@ -7193,7 +7706,8 @@
     "sodium_mg": 600,
     "sugar": 3,
     "saturated_fat": 6,
-    "calcium_mg": 40
+    "calcium_mg": 40,
+    "name_en": "Garlic Peanuts"
   },
   {
     "name": "牛肉粒(即食)",
@@ -7207,7 +7721,8 @@
     "sodium_mg": 1500,
     "sugar": 12,
     "saturated_fat": 9,
-    "calcium_mg": 30
+    "calcium_mg": 30,
+    "name_en": "Ready-to-Eat Beef Cubes"
   },
   {
     "name": "巧克力棒(士力架类)",
@@ -7221,7 +7736,8 @@
     "sodium_mg": 150,
     "sugar": 45,
     "saturated_fat": 10,
-    "calcium_mg": 80
+    "calcium_mg": 80,
+    "name_en": "Chocolate Bar (Snickers-Style)"
   },
   {
     "name": "肉松饼(小吃)",
@@ -7235,7 +7751,8 @@
     "sodium_mg": 300,
     "sugar": 15,
     "saturated_fat": 6,
-    "calcium_mg": 40
+    "calcium_mg": 40,
+    "name_en": "Pork Floss Pastry"
   },
   {
     "name": "蛋黄酥",
@@ -7249,7 +7766,8 @@
     "sodium_mg": 200,
     "sugar": 20,
     "saturated_fat": 8,
-    "calcium_mg": 30
+    "calcium_mg": 30,
+    "name_en": "Salted Egg Yolk Pastry"
   },
   {
     "name": "桃酥",
@@ -7263,7 +7781,8 @@
     "sodium_mg": 220,
     "sugar": 20,
     "saturated_fat": 10,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Chinese Walnut Cookie"
   },
   {
     "name": "鸡蛋卷(威化式)",
@@ -7277,7 +7796,8 @@
     "sodium_mg": 150,
     "sugar": 25,
     "saturated_fat": 8,
-    "calcium_mg": 40
+    "calcium_mg": 40,
+    "name_en": "Egg Roll (Wafer-Style)"
   },
   {
     "name": "芋头酥",
@@ -7291,7 +7811,8 @@
     "sodium_mg": 150,
     "sugar": 20,
     "saturated_fat": 8,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Taro Pastry"
   },
   {
     "name": "燕麦奶",
@@ -7305,7 +7826,8 @@
     "sodium_mg": 55,
     "sugar": 3,
     "saturated_fat": 0.2,
-    "calcium_mg": 60
+    "calcium_mg": 60,
+    "name_en": "Oat Milk"
   },
   {
     "name": "椰奶(饮品)",
@@ -7319,7 +7841,8 @@
     "sodium_mg": 30,
     "sugar": 6,
     "saturated_fat": 4.5,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Coconut Milk Drink"
   },
   {
     "name": "核桃乳",
@@ -7333,7 +7856,8 @@
     "sodium_mg": 40,
     "sugar": 6,
     "saturated_fat": 0.5,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Walnut Milk"
   },
   {
     "name": "花生牛奶",
@@ -7347,7 +7871,8 @@
     "sodium_mg": 45,
     "sugar": 7,
     "saturated_fat": 0.7,
-    "calcium_mg": 25
+    "calcium_mg": 25,
+    "name_en": "Peanut Milk"
   },
   {
     "name": "AD钙奶",
@@ -7361,7 +7886,8 @@
     "sodium_mg": 30,
     "sugar": 12,
     "saturated_fat": 0.1,
-    "calcium_mg": 40
+    "calcium_mg": 40,
+    "name_en": "AD Calcium Milk Drink"
   },
   {
     "name": "果粒橙",
@@ -7375,7 +7901,8 @@
     "sodium_mg": 10,
     "sugar": 10,
     "saturated_fat": 0,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Orange Juice with Pulp"
   },
   {
     "name": "电解质水",
@@ -7389,7 +7916,8 @@
     "sodium_mg": 150,
     "sugar": 2,
     "saturated_fat": 0,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Electrolyte Water"
   },
   {
     "name": "无糖豆奶",
@@ -7403,7 +7931,8 @@
     "sodium_mg": 15,
     "sugar": 0.5,
     "saturated_fat": 0.3,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Soy Milk (Unsweetened, Packaged)"
   },
   {
     "name": "苹果醋饮料",
@@ -7417,7 +7946,8 @@
     "sodium_mg": 15,
     "sugar": 7,
     "saturated_fat": 0,
-    "calcium_mg": 3
+    "calcium_mg": 3,
+    "name_en": "Apple Cider Vinegar Drink"
   },
   {
     "name": "桂花酒酿饮",
@@ -7431,7 +7961,8 @@
     "sodium_mg": 10,
     "sugar": 10,
     "saturated_fat": 0,
-    "calcium_mg": 3
+    "calcium_mg": 3,
+    "name_en": "Osmanthus Fermented Rice Drink"
   },
   {
     "name": "自热米饭套餐",
@@ -7445,7 +7976,8 @@
     "sodium_mg": 450,
     "sugar": 1,
     "saturated_fat": 1.8,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Self-Heating Rice Meal Kit"
   },
   {
     "name": "速食米线(袋装)",
@@ -7459,7 +7991,8 @@
     "sodium_mg": 900,
     "sugar": 2,
     "saturated_fat": 0.3,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Instant Rice Noodles (Bagged)"
   },
   {
     "name": "螺蛳粉(干)",
@@ -7473,7 +8006,8 @@
     "sodium_mg": 1600,
     "sugar": 2,
     "saturated_fat": 0.5,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Snail Rice Noodles (Dried)"
   },
   {
     "name": "自热小火锅底料+粉",
@@ -7487,7 +8021,8 @@
     "sodium_mg": 1300,
     "sugar": 3,
     "saturated_fat": 5,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Self-Heating Hot Pot Kit"
   },
   {
     "name": "葡萄干",
@@ -7501,7 +8036,8 @@
     "sodium_mg": 10,
     "sugar": 65,
     "saturated_fat": 0.1,
-    "calcium_mg": 50
+    "calcium_mg": 50,
+    "name_en": "Raisins"
   },
   {
     "name": "芒果干",
@@ -7515,7 +8051,8 @@
     "sodium_mg": 20,
     "sugar": 65,
     "saturated_fat": 0.2,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Dried Mango"
   },
   {
     "name": "苹果干",
@@ -7529,7 +8066,8 @@
     "sodium_mg": 15,
     "sugar": 55,
     "saturated_fat": 0.2,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Dried Apple"
   },
   {
     "name": "香蕉片(油炸)",
@@ -7543,7 +8081,8 @@
     "sodium_mg": 15,
     "sugar": 35,
     "saturated_fat": 28,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Fried Banana Chips"
   },
   {
     "name": "蔓越莓干",
@@ -7557,7 +8096,8 @@
     "sodium_mg": 10,
     "sugar": 65,
     "saturated_fat": 0.1,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Dried Cranberries"
   },
   {
     "name": "珍珠奶茶(含糖含波霸)",
@@ -7571,7 +8111,8 @@
     "sodium_mg": 25,
     "sugar": 15,
     "saturated_fat": 0.5,
-    "calcium_mg": 30
+    "calcium_mg": 30,
+    "name_en": "Bubble Milk Tea (Sweetened, with Tapioca Pearls)"
   },
   {
     "name": "速溶咖啡(三合一,粉末)",
@@ -7585,7 +8126,8 @@
     "sodium_mg": 150,
     "sugar": 55,
     "saturated_fat": 15,
-    "calcium_mg": 80
+    "calcium_mg": 80,
+    "name_en": "Instant Coffee (3-in-1 Powder)"
   },
   {
     "name": "玉米片(谷物早餐)",
@@ -7599,7 +8141,8 @@
     "sodium_mg": 600,
     "sugar": 8,
     "saturated_fat": 0.2,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Corn Flakes"
   },
   {
     "name": "什锦谷物麦片(granola)",
@@ -7613,7 +8156,8 @@
     "sodium_mg": 80,
     "sugar": 20,
     "saturated_fat": 5,
-    "calcium_mg": 60
+    "calcium_mg": 60,
+    "name_en": "Granola"
   },
   {
     "name": "甜甜圈",
@@ -7627,7 +8171,8 @@
     "sodium_mg": 350,
     "sugar": 25,
     "saturated_fat": 10,
-    "calcium_mg": 40
+    "calcium_mg": 40,
+    "name_en": "Doughnut"
   },
   {
     "name": "华夫饼",
@@ -7641,7 +8186,8 @@
     "sodium_mg": 350,
     "sugar": 12,
     "saturated_fat": 4,
-    "calcium_mg": 100
+    "calcium_mg": 100,
+    "name_en": "Waffle"
   },
   {
     "name": "汉堡包(牛肉)",
@@ -7655,7 +8201,8 @@
     "sodium_mg": 500,
     "sugar": 4,
     "saturated_fat": 5,
-    "calcium_mg": 60
+    "calcium_mg": 60,
+    "name_en": "Beef Burger"
   },
   {
     "name": "三明治(火腿芝士)",
@@ -7669,7 +8216,8 @@
     "sodium_mg": 550,
     "sugar": 3,
     "saturated_fat": 4.5,
-    "calcium_mg": 100
+    "calcium_mg": 100,
+    "name_en": "Ham & Cheese Sandwich"
   },
   {
     "name": "炸鸡块",
@@ -7683,7 +8231,8 @@
     "sodium_mg": 500,
     "sugar": 1,
     "saturated_fat": 3.5,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Fried Chicken Nuggets"
   },
   {
     "name": "薯饼(hash brown)",
@@ -7697,7 +8246,8 @@
     "sodium_mg": 380,
     "sugar": 1,
     "saturated_fat": 5,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Hash Brown"
   },
   {
     "name": "希腊酸奶(高蛋白)",
@@ -7711,7 +8261,8 @@
     "sodium_mg": 45,
     "sugar": 4,
     "saturated_fat": 3.2,
-    "calcium_mg": 110
+    "calcium_mg": 110,
+    "name_en": "Greek Yogurt (High-Protein)"
   },
   {
     "name": "风味酸奶(果味)",
@@ -7725,7 +8276,8 @@
     "sodium_mg": 40,
     "sugar": 13,
     "saturated_fat": 1.3,
-    "calcium_mg": 100
+    "calcium_mg": 100,
+    "name_en": "Flavored Yogurt (Fruit)"
   },
   {
     "name": "芝士条(奶酪棒)",
@@ -7739,7 +8291,8 @@
     "sodium_mg": 800,
     "sugar": 4,
     "saturated_fat": 16,
-    "calcium_mg": 700
+    "calcium_mg": 700,
+    "name_en": "Cheese Stick"
   },
   {
     "name": "罐头金枪鱼(油浸)",
@@ -7753,7 +8306,8 @@
     "sodium_mg": 350,
     "sugar": 0,
     "saturated_fat": 2,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Canned Tuna (in Oil)"
   },
   {
     "name": "罐头凤梨(菠萝罐头)",
@@ -7767,7 +8321,8 @@
     "sodium_mg": 10,
     "sugar": 17,
     "saturated_fat": 0,
-    "calcium_mg": 8
+    "calcium_mg": 8,
+    "name_en": "Canned Pineapple"
   },
   {
     "name": "芝士粉(帕玛森)",
@@ -7781,7 +8336,8 @@
     "sodium_mg": 1100,
     "sugar": 1,
     "saturated_fat": 17,
-    "calcium_mg": 1100
+    "calcium_mg": 1100,
+    "name_en": "Parmesan Cheese Powder"
   },
   {
     "name": "黑椒汁",
@@ -7795,7 +8351,8 @@
     "sodium_mg": 900,
     "sugar": 10,
     "saturated_fat": 0.8,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Black Pepper Sauce"
   },
   {
     "name": "蒜黄",
@@ -7809,7 +8366,8 @@
     "sodium_mg": 4,
     "sugar": 1,
     "saturated_fat": 0,
-    "calcium_mg": 25
+    "calcium_mg": 25,
+    "name_en": "Blanched Garlic Chives"
   },
   {
     "name": "山竹",
@@ -7823,7 +8381,8 @@
     "sodium_mg": 3,
     "sugar": 16,
     "saturated_fat": 0.1,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Mangosteen"
   },
   {
     "name": "鱿鱼丝",
@@ -7837,7 +8396,8 @@
     "sodium_mg": 1600,
     "sugar": 8,
     "saturated_fat": 0.3,
-    "calcium_mg": 30
+    "calcium_mg": 30,
+    "name_en": "Shredded Dried Squid"
   },
   {
     "name": "鸡腿肉(去皮)",
@@ -7851,7 +8411,8 @@
     "sodium_mg": 65,
     "sugar": 0,
     "saturated_fat": 1.5,
-    "calcium_mg": 8
+    "calcium_mg": 8,
+    "name_en": "Chicken Thigh (Skinless)"
   },
   {
     "name": "猪皮",
@@ -7865,7 +8426,8 @@
     "sodium_mg": 40,
     "sugar": 0,
     "saturated_fat": 9,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Pork Skin"
   },
   {
     "name": "牛肉(肥瘦)",
@@ -7879,7 +8441,8 @@
     "sodium_mg": 65,
     "sugar": 0,
     "saturated_fat": 5,
-    "calcium_mg": 9
+    "calcium_mg": 9,
+    "name_en": "Beef (Fatty & Lean)"
   },
   {
     "name": "香草冰淇淋",
@@ -7893,7 +8456,8 @@
     "sodium_mg": 60,
     "sugar": 16,
     "saturated_fat": 4,
-    "calcium_mg": 110
+    "calcium_mg": 110,
+    "name_en": "Vanilla Ice Cream"
   },
   {
     "name": "巧克力冰淇淋",
@@ -7907,7 +8471,8 @@
     "sodium_mg": 70,
     "sugar": 18,
     "saturated_fat": 4.5,
-    "calcium_mg": 100
+    "calcium_mg": 100,
+    "name_en": "Chocolate Ice Cream"
   },
   {
     "name": "老冰棍",
@@ -7921,7 +8486,8 @@
     "sodium_mg": 10,
     "sugar": 18,
     "saturated_fat": 0.1,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Old-Fashioned Popsicle"
   },
   {
     "name": "甜筒",
@@ -7935,7 +8501,8 @@
     "sodium_mg": 80,
     "sugar": 18,
     "saturated_fat": 5,
-    "calcium_mg": 90
+    "calcium_mg": 90,
+    "name_en": "Ice Cream Cone"
   },
   {
     "name": "雪饼(仙贝)",
@@ -7949,7 +8516,8 @@
     "sodium_mg": 600,
     "sugar": 15,
     "saturated_fat": 0.8,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Rice Cracker"
   },
   {
     "name": "乌龙茶(无糖)",
@@ -7963,7 +8531,8 @@
     "sodium_mg": 2,
     "sugar": 0,
     "saturated_fat": 0,
-    "calcium_mg": 2
+    "calcium_mg": 2,
+    "name_en": "Oolong Tea (Unsweetened)"
   },
   {
     "name": "橙味汽水",
@@ -7977,7 +8546,8 @@
     "sodium_mg": 15,
     "sugar": 11,
     "saturated_fat": 0,
-    "calcium_mg": 3
+    "calcium_mg": 3,
+    "name_en": "Orange Soda"
   },
   {
     "name": "维生素饮料(脉动类)",
@@ -7991,7 +8561,8 @@
     "sodium_mg": 20,
     "sugar": 6,
     "saturated_fat": 0,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Vitamin Water"
   },
   {
     "name": "阿萨姆奶茶(盒装)",
@@ -8005,7 +8576,8 @@
     "sodium_mg": 15,
     "sugar": 8,
     "saturated_fat": 0.7,
-    "calcium_mg": 15
+    "calcium_mg": 15,
+    "name_en": "Assam Milk Tea (Carton)"
   },
   {
     "name": "优乐美(奶茶,杯装)",
@@ -8019,7 +8591,8 @@
     "sodium_mg": 20,
     "sugar": 10,
     "saturated_fat": 1.3,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Instant Milk Tea (Cup)"
   },
   {
     "name": "奶盖茶(芝士奶盖)",
@@ -8033,7 +8606,8 @@
     "sodium_mg": 30,
     "sugar": 7,
     "saturated_fat": 1.2,
-    "calcium_mg": 35
+    "calcium_mg": 35,
+    "name_en": "Cheese Foam Tea"
   },
   {
     "name": "水果茶(现制,无奶)",
@@ -8047,7 +8621,8 @@
     "sodium_mg": 5,
     "sugar": 9,
     "saturated_fat": 0,
-    "calcium_mg": 5
+    "calcium_mg": 5,
+    "name_en": "Fresh Fruit Tea (No Milk)"
   },
   {
     "name": "抹茶拿铁(奶茶店)",
@@ -8061,7 +8636,8 @@
     "sodium_mg": 35,
     "sugar": 7,
     "saturated_fat": 1.3,
-    "calcium_mg": 60
+    "calcium_mg": 60,
+    "name_en": "Matcha Latte (Tea Shop)"
   },
   {
     "name": "猪耳朵",
@@ -8075,7 +8651,8 @@
     "sodium_mg": 70,
     "sugar": 0,
     "saturated_fat": 4,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Pig's Ear"
   },
   {
     "name": "咸蛋黄",
@@ -8089,7 +8666,8 @@
     "sodium_mg": 680,
     "sugar": 0,
     "saturated_fat": 11,
-    "calcium_mg": 200
+    "calcium_mg": 200,
+    "name_en": "Salted Egg Yolk"
   },
   {
     "name": "通心粉(意大利面,干)",
@@ -8103,7 +8681,8 @@
     "sodium_mg": 5,
     "sugar": 3,
     "saturated_fat": 0.3,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Macaroni (Pasta, Dried)"
   },
   {
     "name": "凉皮(现制,含调料)",
@@ -8117,7 +8696,8 @@
     "sodium_mg": 450,
     "sugar": 2,
     "saturated_fat": 0.5,
-    "calcium_mg": 10
+    "calcium_mg": 10,
+    "name_en": "Cold Skin Noodles (Dressed)"
   },
   {
     "name": "玉米淀粉",
@@ -8131,7 +8711,8 @@
     "sodium_mg": 1,
     "sugar": 0,
     "saturated_fat": 0,
-    "calcium_mg": 2
+    "calcium_mg": 2,
+    "name_en": "Corn Starch"
   },
   {
     "name": "老干妈风味豆豉辣酱",
@@ -8145,7 +8726,8 @@
     "sodium_mg": 1200,
     "sugar": 3,
     "saturated_fat": 3,
-    "calcium_mg": 30
+    "calcium_mg": 30,
+    "name_en": "Lao Gan Ma Chili Black Bean Sauce"
   },
   {
     "name": "牛肉丸",
@@ -8159,7 +8741,8 @@
     "sodium_mg": 550,
     "sugar": 1,
     "saturated_fat": 4,
-    "calcium_mg": 25
+    "calcium_mg": 25,
+    "name_en": "Beef Ball"
   },
   {
     "name": "猪肉丸(贡丸)",
@@ -8173,6 +8756,7 @@
     "sodium_mg": 500,
     "sugar": 1,
     "saturated_fat": 5.5,
-    "calcium_mg": 20
+    "calcium_mg": 20,
+    "name_en": "Pork Ball (Gongwan)"
   }
 ]

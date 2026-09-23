@@ -8,7 +8,7 @@ import '../db.dart';
 
 /// Bump when [assets/food_seed.json] content changes meaningfully,
 /// or when sync policy changes (e.g. obsolete-row deletion).
-const kFoodSeedVersion = 10;
+const kFoodSeedVersion = 11;
 
 const kFoodSearchLimit = 80;
 
@@ -62,6 +62,7 @@ class FoodRepository {
       for (final m in list) {
         final name = m['name'] as String;
         seedNames.add(name);
+        final nameEn = m['name_en'] as String?;
         final category = m['category'] as String;
         final kcal = (m['kcal'] as num).toDouble();
         final protein = (m['protein'] as num).toDouble();
@@ -83,6 +84,7 @@ class FoodRepository {
           _db.foodItems,
           FoodItemsCompanion.insert(
             name: name,
+            nameEn: Value(nameEn),
             category: category,
             kcalPer100: kcal,
             proteinPer100: protein,
@@ -98,6 +100,7 @@ class FoodRepository {
           ),
           onConflict: DoUpdate(
             (_) => FoodItemsCompanion(
+              nameEn: Value(nameEn),
               category: Value(category),
               kcalPer100: Value(kcal),
               proteinPer100: Value(protein),

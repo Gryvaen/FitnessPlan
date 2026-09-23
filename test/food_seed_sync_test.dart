@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:drift/drift.dart' hide isNull;
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -112,9 +112,20 @@ void main() {
     final list = jsonDecode(raw) as List<dynamic>;
     expect(list.length, greaterThan(500));
     final han = RegExp(r'[\u4e00-\u9fff]');
+    final latin = RegExp(r'''^[A-Za-z0-9 ()&',."/-]+$''');
     for (final item in list) {
-      final name = (item as Map<String, dynamic>)['name'] as String;
+      final map = item as Map<String, dynamic>;
+      final name = map['name'] as String;
       expect(han.hasMatch(name), isTrue, reason: 'non-Han name: $name');
+
+      final nameEn = map['name_en'] as String?;
+      expect(nameEn, isNotNull, reason: 'missing name_en for $name');
+      expect(nameEn, isNotEmpty, reason: 'empty name_en for $name');
+      expect(
+        latin.hasMatch(nameEn!),
+        isTrue,
+        reason: 'non-Latin name_en for $name: $nameEn',
+      );
     }
 
     final first = list.first as Map<String, dynamic>;
@@ -154,6 +165,7 @@ void main() {
       row.alcoholPer100,
       (first['alcohol'] as num?)?.toDouble() ?? 0.0,
     );
+    expect(row.nameEn, first['name_en'] as String?);
 
     final ghost = await (db.select(db.foodItems)
           ..where((t) => t.name.equals('__obsolete_food__')))

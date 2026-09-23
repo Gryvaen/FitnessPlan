@@ -186,6 +186,60 @@ class AppLocalizationsEn extends AppLocalizations {
   String get custom => 'Custom';
 
   @override
+  String get foodCategoryLivestock => 'Livestock Meat';
+
+  @override
+  String get foodCategoryPoultry => 'Poultry';
+
+  @override
+  String get foodCategorySeafood => 'Seafood';
+
+  @override
+  String get foodCategoryDairy => 'Dairy';
+
+  @override
+  String get foodCategoryEggs => 'Eggs';
+
+  @override
+  String get foodCategoryGrains => 'Grains';
+
+  @override
+  String get foodCategoryTubers => 'Tubers';
+
+  @override
+  String get foodCategoryBeans => 'Beans & Soy';
+
+  @override
+  String get foodCategoryVegetables => 'Vegetables';
+
+  @override
+  String get foodCategoryFungiAlgae => 'Fungi & Algae';
+
+  @override
+  String get foodCategoryFruits => 'Fruits';
+
+  @override
+  String get foodCategoryNuts => 'Nuts & Seeds';
+
+  @override
+  String get foodCategoryOils => 'Oils & Fats';
+
+  @override
+  String get foodCategorySeasonings => 'Seasonings';
+
+  @override
+  String get foodCategoryBeverages => 'Beverages';
+
+  @override
+  String get foodCategorySnacks => 'Snacks';
+
+  @override
+  String get foodCategoryCandiedFruit => 'Sweets & Preserved Fruit';
+
+  @override
+  String get foodCategoryPackaged => 'Packaged Foods';
+
+  @override
   String get searchFood => 'Search foods';
 
   @override

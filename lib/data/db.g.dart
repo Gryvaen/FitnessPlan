@@ -31,6 +31,15 @@ class $FoodItemsTable extends FoodItems
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _nameEnMeta = const VerificationMeta('nameEn');
+  @override
+  late final GeneratedColumn<String> nameEn = GeneratedColumn<String>(
+    'name_en',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _categoryMeta = const VerificationMeta(
     'category',
   );
@@ -177,6 +186,7 @@ class $FoodItemsTable extends FoodItems
   List<GeneratedColumn> get $columns => [
     id,
     name,
+    nameEn,
     category,
     kcalPer100,
     proteinPer100,
@@ -212,6 +222,12 @@ class $FoodItemsTable extends FoodItems
       );
     } else if (isInserting) {
       context.missing(_nameMeta);
+    }
+    if (data.containsKey('name_en')) {
+      context.handle(
+        _nameEnMeta,
+        nameEn.isAcceptableOrUnknown(data['name_en']!, _nameEnMeta),
+      );
     }
     if (data.containsKey('category')) {
       context.handle(
@@ -337,6 +353,10 @@ class $FoodItemsTable extends FoodItems
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
+      nameEn: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name_en'],
+      ),
       category: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}category'],
@@ -397,6 +417,10 @@ class $FoodItemsTable extends FoodItems
 class FoodItem extends DataClass implements Insertable<FoodItem> {
   final int id;
   final String name;
+
+  /// English display name; only populated for curated seed foods. Null for
+  /// user-created custom foods and any seed rows without a translation yet.
+  final String? nameEn;
   final String category;
   final double kcalPer100;
   final double proteinPer100;
@@ -426,6 +450,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
   const FoodItem({
     required this.id,
     required this.name,
+    this.nameEn,
     required this.category,
     required this.kcalPer100,
     required this.proteinPer100,
@@ -444,6 +469,9 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
+    if (!nullToAbsent || nameEn != null) {
+      map['name_en'] = Variable<String>(nameEn);
+    }
     map['category'] = Variable<String>(category);
     map['kcal_per100'] = Variable<double>(kcalPer100);
     map['protein_per100'] = Variable<double>(proteinPer100);
@@ -463,6 +491,9 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     return FoodItemsCompanion(
       id: Value(id),
       name: Value(name),
+      nameEn: nameEn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nameEn),
       category: Value(category),
       kcalPer100: Value(kcalPer100),
       proteinPer100: Value(proteinPer100),
@@ -486,6 +517,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     return FoodItem(
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
+      nameEn: serializer.fromJson<String?>(json['nameEn']),
       category: serializer.fromJson<String>(json['category']),
       kcalPer100: serializer.fromJson<double>(json['kcalPer100']),
       proteinPer100: serializer.fromJson<double>(json['proteinPer100']),
@@ -508,6 +540,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
+      'nameEn': serializer.toJson<String?>(nameEn),
       'category': serializer.toJson<String>(category),
       'kcalPer100': serializer.toJson<double>(kcalPer100),
       'proteinPer100': serializer.toJson<double>(proteinPer100),
@@ -526,6 +559,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
   FoodItem copyWith({
     int? id,
     String? name,
+    Value<String?> nameEn = const Value.absent(),
     String? category,
     double? kcalPer100,
     double? proteinPer100,
@@ -541,6 +575,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
   }) => FoodItem(
     id: id ?? this.id,
     name: name ?? this.name,
+    nameEn: nameEn.present ? nameEn.value : this.nameEn,
     category: category ?? this.category,
     kcalPer100: kcalPer100 ?? this.kcalPer100,
     proteinPer100: proteinPer100 ?? this.proteinPer100,
@@ -558,6 +593,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     return FoodItem(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
+      nameEn: data.nameEn.present ? data.nameEn.value : this.nameEn,
       category: data.category.present ? data.category.value : this.category,
       kcalPer100: data.kcalPer100.present
           ? data.kcalPer100.value
@@ -596,6 +632,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     return (StringBuffer('FoodItem(')
           ..write('id: $id, ')
           ..write('name: $name, ')
+          ..write('nameEn: $nameEn, ')
           ..write('category: $category, ')
           ..write('kcalPer100: $kcalPer100, ')
           ..write('proteinPer100: $proteinPer100, ')
@@ -616,6 +653,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
   int get hashCode => Object.hash(
     id,
     name,
+    nameEn,
     category,
     kcalPer100,
     proteinPer100,
@@ -635,6 +673,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       (other is FoodItem &&
           other.id == this.id &&
           other.name == this.name &&
+          other.nameEn == this.nameEn &&
           other.category == this.category &&
           other.kcalPer100 == this.kcalPer100 &&
           other.proteinPer100 == this.proteinPer100 &&
@@ -652,6 +691,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
 class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
   final Value<int> id;
   final Value<String> name;
+  final Value<String?> nameEn;
   final Value<String> category;
   final Value<double> kcalPer100;
   final Value<double> proteinPer100;
@@ -667,6 +707,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
   const FoodItemsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
+    this.nameEn = const Value.absent(),
     this.category = const Value.absent(),
     this.kcalPer100 = const Value.absent(),
     this.proteinPer100 = const Value.absent(),
@@ -683,6 +724,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
   FoodItemsCompanion.insert({
     this.id = const Value.absent(),
     required String name,
+    this.nameEn = const Value.absent(),
     required String category,
     required double kcalPer100,
     required double proteinPer100,
@@ -704,6 +746,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
   static Insertable<FoodItem> custom({
     Expression<int>? id,
     Expression<String>? name,
+    Expression<String>? nameEn,
     Expression<String>? category,
     Expression<double>? kcalPer100,
     Expression<double>? proteinPer100,
@@ -720,6 +763,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
+      if (nameEn != null) 'name_en': nameEn,
       if (category != null) 'category': category,
       if (kcalPer100 != null) 'kcal_per100': kcalPer100,
       if (proteinPer100 != null) 'protein_per100': proteinPer100,
@@ -739,6 +783,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
   FoodItemsCompanion copyWith({
     Value<int>? id,
     Value<String>? name,
+    Value<String?>? nameEn,
     Value<String>? category,
     Value<double>? kcalPer100,
     Value<double>? proteinPer100,
@@ -755,6 +800,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     return FoodItemsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
+      nameEn: nameEn ?? this.nameEn,
       category: category ?? this.category,
       kcalPer100: kcalPer100 ?? this.kcalPer100,
       proteinPer100: proteinPer100 ?? this.proteinPer100,
@@ -778,6 +824,9 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
+    }
+    if (nameEn.present) {
+      map['name_en'] = Variable<String>(nameEn.value);
     }
     if (category.present) {
       map['category'] = Variable<String>(category.value);
@@ -823,6 +872,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     return (StringBuffer('FoodItemsCompanion(')
           ..write('id: $id, ')
           ..write('name: $name, ')
+          ..write('nameEn: $nameEn, ')
           ..write('category: $category, ')
           ..write('kcalPer100: $kcalPer100, ')
           ..write('proteinPer100: $proteinPer100, ')
@@ -9936,6 +9986,7 @@ typedef $$FoodItemsTableCreateCompanionBuilder =
     FoodItemsCompanion Function({
       Value<int> id,
       required String name,
+      Value<String?> nameEn,
       required String category,
       required double kcalPer100,
       required double proteinPer100,
@@ -9953,6 +10004,7 @@ typedef $$FoodItemsTableUpdateCompanionBuilder =
     FoodItemsCompanion Function({
       Value<int> id,
       Value<String> name,
+      Value<String?> nameEn,
       Value<String> category,
       Value<double> kcalPer100,
       Value<double> proteinPer100,
@@ -9983,6 +10035,11 @@ class $$FoodItemsTableFilterComposer
 
   ColumnFilters<String> get name => $composableBuilder(
     column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nameEn => $composableBuilder(
+    column: $table.nameEn,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10066,6 +10123,11 @@ class $$FoodItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get nameEn => $composableBuilder(
+    column: $table.nameEn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get category => $composableBuilder(
     column: $table.category,
     builder: (column) => ColumnOrderings(column),
@@ -10141,6 +10203,9 @@ class $$FoodItemsTableAnnotationComposer
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get nameEn =>
+      $composableBuilder(column: $table.nameEn, builder: (column) => column);
 
   GeneratedColumn<String> get category =>
       $composableBuilder(column: $table.category, builder: (column) => column);
@@ -10227,6 +10292,7 @@ class $$FoodItemsTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
+                Value<String?> nameEn = const Value.absent(),
                 Value<String> category = const Value.absent(),
                 Value<double> kcalPer100 = const Value.absent(),
                 Value<double> proteinPer100 = const Value.absent(),
@@ -10242,6 +10308,7 @@ class $$FoodItemsTableTableManager
               }) => FoodItemsCompanion(
                 id: id,
                 name: name,
+                nameEn: nameEn,
                 category: category,
                 kcalPer100: kcalPer100,
                 proteinPer100: proteinPer100,
@@ -10259,6 +10326,7 @@ class $$FoodItemsTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 required String name,
+                Value<String?> nameEn = const Value.absent(),
                 required String category,
                 required double kcalPer100,
                 required double proteinPer100,
@@ -10274,6 +10342,7 @@ class $$FoodItemsTableTableManager
               }) => FoodItemsCompanion.insert(
                 id: id,
                 name: name,
+                nameEn: nameEn,
                 category: category,
                 kcalPer100: kcalPer100,
                 proteinPer100: proteinPer100,

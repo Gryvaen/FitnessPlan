@@ -3,6 +3,10 @@ import 'package:drift/drift.dart';
 class FoodItems extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
+
+  /// English display name; only populated for curated seed foods. Null for
+  /// user-created custom foods and any seed rows without a translation yet.
+  TextColumn get nameEn => text().nullable()();
   TextColumn get category => text()();
   RealColumn get kcalPer100 => real()();
   RealColumn get proteinPer100 => real()();

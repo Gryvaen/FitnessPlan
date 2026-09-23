@@ -133,7 +133,7 @@ class _FoodCategoryPageState extends ConsumerState<FoodCategoryPage> {
                   return ListTile(
                     key: ValueKey(f.id),
                     title: FoodNameLink(
-                      name: f.name,
+                      name: f.displayName(context),
                       foodId: f.id,
                       carbG: f.carbPer100,
                       proteinG: f.proteinPer100,

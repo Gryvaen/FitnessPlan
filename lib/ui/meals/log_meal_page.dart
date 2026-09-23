@@ -398,7 +398,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     final theme = Theme.of(context);
     return ListTile(
       title: FoodNameLink(
-        name: f.name,
+        name: f.displayName(context),
         foodId: f.id,
         carbG: f.carbPer100,
         proteinG: f.proteinPer100,
@@ -421,7 +421,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     return ListTile(
       key: ValueKey('search-food-${f.id}'),
       title: FoodNameLink(
-        name: f.name,
+        name: f.displayName(context),
         foodId: f.id,
         carbG: f.carbPer100,
         proteinG: f.proteinPer100,
@@ -588,7 +588,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: FoodNameLink(
-                        name: _selected!.name,
+                        name: _selected!.displayName(context),
                         foodId: _selected!.id,
                         carbG: _selected!.carbPer100,
                         proteinG: _selected!.proteinPer100,

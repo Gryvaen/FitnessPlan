@@ -303,7 +303,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
     return Scaffold(
       appBar: AppBar(
         title: FoodNameLink(
-          name: food.name,
+          name: food.displayName(context),
           foodId: food.id,
           carbG: food.carbPer100,
           proteinG: food.proteinPer100,

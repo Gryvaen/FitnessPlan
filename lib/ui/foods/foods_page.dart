@@ -239,7 +239,7 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                                             title: Text(l10n.removeFromRecent),
                                             content: Text(
                                               l10n.confirmRemoveFromRecent(
-                                                food.name,
+                                                food.displayName(context),
                                               ),
                                             ),
                                             actions: [
@@ -283,7 +283,7 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                                             title: Text(l10n.removeFavorite),
                                             content: Text(
                                               l10n.confirmRemoveFavorite(
-                                                food.name,
+                                                food.displayName(context),
                                               ),
                                             ),
                                             actions: [
@@ -419,7 +419,7 @@ class _FoodRow extends StatelessWidget {
     final tile = SportListTile(
       contentPadding: EdgeInsets.zero,
       title: FoodNameLink(
-        name: food.name,
+        name: food.displayName(context),
         foodId: food.id,
         carbG: food.carbPer100,
         proteinG: food.proteinPer100,

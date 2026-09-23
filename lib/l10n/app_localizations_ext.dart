@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 
 import 'app_localizations.dart';
+import '../data/db.dart';
 import '../domain/body_metrics.dart';
 import '../domain/calendar_day.dart';
 import '../domain/calorie_calculator.dart';
@@ -184,10 +185,48 @@ abstract final class AppDates {
 }
 
 extension FoodCategoryL10n on String {
-  /// Localize known category keys (e.g. custom); leave seed categories as-is.
+  /// Localize category labels: the custom-food bucket plus all 18 curated
+  /// seed categories map to real l10n strings; anything else (defensive,
+  /// e.g. legacy data) is returned unchanged.
   String localizedCategory(AppLocalizations l10n) {
-    if (this == '自定义') return l10n.custom;
-    return this;
+    return switch (this) {
+      '自定义' => l10n.custom,
+      '畜肉' => l10n.foodCategoryLivestock,
+      '禽肉' => l10n.foodCategoryPoultry,
+      '水产' => l10n.foodCategorySeafood,
+      '乳类' => l10n.foodCategoryDairy,
+      '蛋类' => l10n.foodCategoryEggs,
+      '谷类' => l10n.foodCategoryGrains,
+      '薯类' => l10n.foodCategoryTubers,
+      '豆类' => l10n.foodCategoryBeans,
+      '蔬菜' => l10n.foodCategoryVegetables,
+      '菌藻' => l10n.foodCategoryFungiAlgae,
+      '水果' => l10n.foodCategoryFruits,
+      '坚果' => l10n.foodCategoryNuts,
+      '油脂' => l10n.foodCategoryOils,
+      '调味品' => l10n.foodCategorySeasonings,
+      '饮料' => l10n.foodCategoryBeverages,
+      '小吃' => l10n.foodCategorySnacks,
+      '糖蜜饯' => l10n.foodCategoryCandiedFruit,
+      '包装食品' => l10n.foodCategoryPackaged,
+      _ => this,
+    };
+  }
+}
+
+extension FoodItemL10n on FoodItem {
+  /// English name when the UI locale is English and a translation exists
+  /// ([nameEn] is only populated for curated seed foods); otherwise the
+  /// original (Chinese) [name] — including for user-created custom foods,
+  /// which never carry an English name.
+  String displayName(BuildContext context) {
+    final en = nameEn;
+    if (en != null &&
+        en.isNotEmpty &&
+        Localizations.localeOf(context).languageCode == 'en') {
+      return en;
+    }
+    return name;
   }
 }
 

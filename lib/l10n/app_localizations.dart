@@ -452,6 +452,114 @@ abstract class AppLocalizations {
   /// **'Custom'**
   String get custom;
 
+  /// No description provided for @foodCategoryLivestock.
+  ///
+  /// In en, this message translates to:
+  /// **'Livestock Meat'**
+  String get foodCategoryLivestock;
+
+  /// No description provided for @foodCategoryPoultry.
+  ///
+  /// In en, this message translates to:
+  /// **'Poultry'**
+  String get foodCategoryPoultry;
+
+  /// No description provided for @foodCategorySeafood.
+  ///
+  /// In en, this message translates to:
+  /// **'Seafood'**
+  String get foodCategorySeafood;
+
+  /// No description provided for @foodCategoryDairy.
+  ///
+  /// In en, this message translates to:
+  /// **'Dairy'**
+  String get foodCategoryDairy;
+
+  /// No description provided for @foodCategoryEggs.
+  ///
+  /// In en, this message translates to:
+  /// **'Eggs'**
+  String get foodCategoryEggs;
+
+  /// No description provided for @foodCategoryGrains.
+  ///
+  /// In en, this message translates to:
+  /// **'Grains'**
+  String get foodCategoryGrains;
+
+  /// No description provided for @foodCategoryTubers.
+  ///
+  /// In en, this message translates to:
+  /// **'Tubers'**
+  String get foodCategoryTubers;
+
+  /// No description provided for @foodCategoryBeans.
+  ///
+  /// In en, this message translates to:
+  /// **'Beans & Soy'**
+  String get foodCategoryBeans;
+
+  /// No description provided for @foodCategoryVegetables.
+  ///
+  /// In en, this message translates to:
+  /// **'Vegetables'**
+  String get foodCategoryVegetables;
+
+  /// No description provided for @foodCategoryFungiAlgae.
+  ///
+  /// In en, this message translates to:
+  /// **'Fungi & Algae'**
+  String get foodCategoryFungiAlgae;
+
+  /// No description provided for @foodCategoryFruits.
+  ///
+  /// In en, this message translates to:
+  /// **'Fruits'**
+  String get foodCategoryFruits;
+
+  /// No description provided for @foodCategoryNuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Nuts & Seeds'**
+  String get foodCategoryNuts;
+
+  /// No description provided for @foodCategoryOils.
+  ///
+  /// In en, this message translates to:
+  /// **'Oils & Fats'**
+  String get foodCategoryOils;
+
+  /// No description provided for @foodCategorySeasonings.
+  ///
+  /// In en, this message translates to:
+  /// **'Seasonings'**
+  String get foodCategorySeasonings;
+
+  /// No description provided for @foodCategoryBeverages.
+  ///
+  /// In en, this message translates to:
+  /// **'Beverages'**
+  String get foodCategoryBeverages;
+
+  /// No description provided for @foodCategorySnacks.
+  ///
+  /// In en, this message translates to:
+  /// **'Snacks'**
+  String get foodCategorySnacks;
+
+  /// No description provided for @foodCategoryCandiedFruit.
+  ///
+  /// In en, this message translates to:
+  /// **'Sweets & Preserved Fruit'**
+  String get foodCategoryCandiedFruit;
+
+  /// No description provided for @foodCategoryPackaged.
+  ///
+  /// In en, this message translates to:
+  /// **'Packaged Foods'**
+  String get foodCategoryPackaged;
+
   /// No description provided for @searchFood.
   ///
   /// In en, this message translates to:

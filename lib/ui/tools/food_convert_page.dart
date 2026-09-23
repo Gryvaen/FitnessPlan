@@ -235,7 +235,7 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
         ),
       ),
       title: FoodNameLink(
-        name: food.name,
+        name: food.displayName(context),
         foodId: food.id,
         carbG: food.carbPer100,
         proteinG: food.proteinPer100,
@@ -309,7 +309,7 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
           ),
         ),
         title: FoodNameLink(
-          name: entry.food.name,
+          name: entry.food.displayName(context),
           foodId: entry.food.id,
           carbG: entry.food.carbPer100,
           proteinG: entry.food.proteinPer100,
@@ -511,7 +511,7 @@ class _PortionSheetState extends State<_PortionSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           FoodNameLink(
-            name: food.name,
+            name: food.displayName(context),
             foodId: food.id,
             carbG: food.carbPer100,
             proteinG: food.proteinPer100,

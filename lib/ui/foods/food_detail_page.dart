@@ -321,7 +321,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          food.name,
+          food.displayName(context),
           style: TextStyle(
             color: dominantMacroColor(
               carbG: food.carbPer100,

@@ -186,6 +186,60 @@ class AppLocalizationsZh extends AppLocalizations {
   String get custom => '自定义';
 
   @override
+  String get foodCategoryLivestock => '畜肉';
+
+  @override
+  String get foodCategoryPoultry => '禽肉';
+
+  @override
+  String get foodCategorySeafood => '水产';
+
+  @override
+  String get foodCategoryDairy => '乳类';
+
+  @override
+  String get foodCategoryEggs => '蛋类';
+
+  @override
+  String get foodCategoryGrains => '谷类';
+
+  @override
+  String get foodCategoryTubers => '薯类';
+
+  @override
+  String get foodCategoryBeans => '豆类';
+
+  @override
+  String get foodCategoryVegetables => '蔬菜';
+
+  @override
+  String get foodCategoryFungiAlgae => '菌藻';
+
+  @override
+  String get foodCategoryFruits => '水果';
+
+  @override
+  String get foodCategoryNuts => '坚果';
+
+  @override
+  String get foodCategoryOils => '油脂';
+
+  @override
+  String get foodCategorySeasonings => '调味品';
+
+  @override
+  String get foodCategoryBeverages => '饮料';
+
+  @override
+  String get foodCategorySnacks => '小吃';
+
+  @override
+  String get foodCategoryCandiedFruit => '糖蜜饯';
+
+  @override
+  String get foodCategoryPackaged => '包装食品';
+
+  @override
   String get searchFood => '搜索食材';
 
   @override
