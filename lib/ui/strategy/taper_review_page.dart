@@ -7,6 +7,7 @@ import '../../domain/diet_plan.dart';
 import '../../domain/diet_strategy.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import 'strategy_labels.dart';
@@ -265,7 +266,7 @@ class _StageLadder extends StatelessWidget {
                           style: theme.textTheme.labelSmall,
                         )
                       else
-                        const Icon(Icons.chevron_right, size: 18),
+                        const InkIcon(InkGlyph.chevronRight, size: 18),
                     ],
                   ),
                 ),

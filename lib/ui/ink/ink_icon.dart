@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 /// Every glyph is drawn on the same 24x24 grid, uses a restrained broken
 /// stroke, and can be tinted/animated without maintaining bitmap assets.
 enum InkGlyph {
+  add,
   calendar,
   chevronLeft,
   chevronRight,
@@ -34,6 +35,28 @@ enum InkGlyph {
   collapse,
   loading,
   profile,
+  autoFix,
+  cycle,
+  bedtime,
+  calculator,
+  celebration,
+  close,
+  radioEmpty,
+  radioChecked,
+  construction,
+  dragHandle,
+  edit,
+  error,
+  factCheck,
+  fire,
+  playlistAdd,
+  restaurant,
+  search,
+  star,
+  starOutline,
+  stop,
+  swapHorizontal,
+  remove,
 }
 
 class InkIcon extends StatelessWidget {
@@ -54,19 +77,41 @@ class InkIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resolved = color ?? Theme.of(context).colorScheme.onSurface;
+    final theme = Theme.of(context);
+    final variant = theme.brightness == Brightness.dark ? 'dark' : 'light';
+    final asset = 'assets/ink/icons/$variant/${glyph.assetName}-v1.png';
     return SizedBox.square(
       dimension: size,
-      child: CustomPaint(
-        painter: _InkIconPainter(
-          glyph: glyph,
-          color: resolved,
-          secondaryColor: secondaryColor ?? resolved,
-          strokeWidth: strokeWidth,
-        ),
+      child: Image.asset(
+        asset,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
+        color: color,
+        colorBlendMode: color == null ? null : BlendMode.srcIn,
       ),
     );
   }
+}
+
+extension InkGlyphAssetName on InkGlyph {
+  String get assetName => switch (this) {
+    InkGlyph.chevronLeft => 'chevron-left',
+    InkGlyph.chevronRight => 'chevron-right',
+    InkGlyph.addRing => 'add-ring',
+    InkGlyph.mealEmpty => 'meal-empty',
+    InkGlyph.arrowForward => 'arrow-forward',
+    InkGlyph.autoFix => 'auto-fix',
+    InkGlyph.radioEmpty => 'radio-empty',
+    InkGlyph.radioChecked => 'radio-checked',
+    InkGlyph.dragHandle => 'drag-handle',
+    InkGlyph.factCheck => 'fact-check',
+    InkGlyph.playlistAdd => 'playlist-add',
+    InkGlyph.starOutline => 'star-outline',
+    InkGlyph.swapHorizontal => 'swap-horizontal',
+    InkGlyph.expand => 'expand-more',
+    InkGlyph.collapse => 'expand-less',
+    _ => name,
+  };
 }
 
 class InkIconButton extends StatelessWidget {
@@ -87,7 +132,8 @@ class InkIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resolved = color ?? Theme.of(context).colorScheme.onSurface;
+    final disabledColor = (color ?? Theme.of(context).colorScheme.onSurface)
+        .withValues(alpha: .35);
     return IconButton(
       tooltip: tooltip,
       visualDensity: VisualDensity.compact,
@@ -95,7 +141,7 @@ class InkIconButton extends StatelessWidget {
       icon: InkIcon(
         glyph,
         size: iconSize,
-        color: onPressed == null ? resolved.withValues(alpha: .35) : resolved,
+        color: onPressed == null ? disabledColor : color,
       ),
     );
   }
@@ -146,6 +192,42 @@ class InkStrokeUnderline extends StatelessWidget {
   }
 }
 
+/// A quiet, full-width dry-brush rule for separating page sections.
+///
+/// The bitmap is used as an alpha mask so the stroke follows the active
+/// theme while retaining its feathered ends and natural dry-ink gaps.
+class InkBrushDivider extends StatelessWidget {
+  const InkBrushDivider({
+    super.key,
+    required this.color,
+    this.height = 9,
+    this.horizontalInset = 4,
+  });
+
+  final Color color;
+  final double height;
+  final double horizontalInset;
+
+  @override
+  Widget build(BuildContext context) => ExcludeSemantics(
+    child: Padding(
+      padding: EdgeInsets.symmetric(horizontal: horizontalInset),
+      child: SizedBox(
+        width: double.infinity,
+        height: height,
+        child: ColorFiltered(
+          colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+          child: Image.asset(
+            'assets/ink/today-section-divider-v1.png',
+            fit: BoxFit.fill,
+            filterQuality: FilterQuality.medium,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 class InkSeal extends StatelessWidget {
   const InkSeal(this.character, {super.key, this.size = 20});
 
@@ -174,6 +256,7 @@ class InkSeal extends StatelessWidget {
   );
 }
 
+// ignore: unused_element
 class _InkIconPainter extends CustomPainter {
   const _InkIconPainter({
     required this.glyph,
@@ -276,6 +359,31 @@ class _InkIconPainter extends CustomPainter {
         _loading(canvas, p);
       case InkGlyph.profile:
         _profile(canvas, p);
+      case InkGlyph.add ||
+          InkGlyph.autoFix ||
+          InkGlyph.cycle ||
+          InkGlyph.bedtime ||
+          InkGlyph.calculator ||
+          InkGlyph.celebration ||
+          InkGlyph.close ||
+          InkGlyph.radioEmpty ||
+          InkGlyph.radioChecked ||
+          InkGlyph.construction ||
+          InkGlyph.dragHandle ||
+          InkGlyph.edit ||
+          InkGlyph.error ||
+          InkGlyph.factCheck ||
+          InkGlyph.fire ||
+          InkGlyph.playlistAdd ||
+          InkGlyph.restaurant ||
+          InkGlyph.search ||
+          InkGlyph.star ||
+          InkGlyph.starOutline ||
+          InkGlyph.stop ||
+          InkGlyph.swapHorizontal:
+        break;
+      case InkGlyph.remove:
+        break;
     }
     canvas.restore();
   }

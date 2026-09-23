@@ -7,6 +7,7 @@ import '../../data/repositories/workout_repository.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import '../widgets/form_options.dart';
 import '../widgets/search_field_focus.dart';
@@ -279,7 +280,7 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
           IconButton(
             tooltip: l10n.addExercise,
             onPressed: _saving ? null : _addExerciseToLibrary,
-            icon: const Icon(Icons.add),
+            icon: const InkIcon(InkGlyph.add),
           ),
           if (hasExercises)
             TextButton(
@@ -317,7 +318,7 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
                           builder: (context, value, _) => value.text.isEmpty
                               ? const SizedBox.shrink()
                               : IconButton(
-                                  icon: const Icon(Icons.close),
+                                  icon: const InkIcon(InkGlyph.close),
                                   onPressed: () => _nameCtrl.clear(),
                                 ),
                         ),
@@ -355,8 +356,8 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
                                       style: theme.textTheme.bodySmall,
                                     ),
                                     const SizedBox(height: 2),
-                                    Icon(
-                                      Icons.drag_handle,
+                                    InkIcon(
+                                      InkGlyph.dragHandle,
                                       size: 18,
                                       color: theme.colorScheme.onSurfaceVariant,
                                     ),
@@ -380,7 +381,7 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
                     ),
                     OutlinedButton.icon(
                       onPressed: () => setState(() => _rows.add(_PlanRow())),
-                      icon: const Icon(Icons.add),
+                      icon: const InkIcon(InkGlyph.add),
                       label: Text(l10n.addExercise),
                     ),
                   ],
@@ -411,8 +412,8 @@ class _PlanNoExercisesEmpty extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.fitness_center,
+            InkIcon(
+              InkGlyph.training,
               size: 48,
               color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.55),
             ),
@@ -433,7 +434,7 @@ class _PlanNoExercisesEmpty extends StatelessWidget {
             const SizedBox(height: AppSpacing.section),
             FilledButton.icon(
               onPressed: onOpenLibrary,
-              icon: const Icon(Icons.add, size: 18),
+              icon: const InkIcon(InkGlyph.add, size: 18),
               label: Text(l10n.goToExerciseLibrary),
             ),
           ],
@@ -498,7 +499,7 @@ class _PlanRowSection extends StatelessWidget {
               IconButton(
                 tooltip: l10n.remove,
                 onPressed: onRemove,
-                icon: const Icon(Icons.delete_outline),
+                icon: const InkIcon(InkGlyph.delete),
               ),
           ],
         ),
@@ -526,4 +527,3 @@ class _PlanRowSection extends StatelessWidget {
     );
   }
 }
-

@@ -6,6 +6,7 @@ import '../../data/db.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/food_name_link.dart';
@@ -203,11 +204,9 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
 
     final wasSelected = (_grams - serving.grams).abs() < 0.01;
     try {
-      await ref.read(foodRepositoryProvider).updateServing(
-        id: serving.id,
-        label: label,
-        grams: grams,
-      );
+      await ref
+          .read(foodRepositoryProvider)
+          .updateServing(id: serving.id, label: label, grams: grams);
       if (!mounted) return;
       final food = _food;
       if (food != null) {
@@ -325,7 +324,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
             ),
           if (editable)
             IconButton(
-              icon: const Icon(Icons.delete_outline),
+              icon: const InkIcon(InkGlyph.delete),
               tooltip: l10n.delete,
               onPressed: _delete,
             ),

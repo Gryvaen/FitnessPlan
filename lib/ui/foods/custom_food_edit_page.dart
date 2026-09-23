@@ -7,6 +7,7 @@ import '../../domain/energy_units.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import '../widgets/food_name_link.dart';
 import '../widgets/search_field_focus.dart';
@@ -239,17 +240,13 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
               ),
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.field),
-                child: Icon(
-                  Icons.swap_horiz,
+                child: InkIcon(
+                  InkGlyph.swapHorizontal,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               Expanded(
-                child: _numField(
-                  _kj,
-                  l10n.kjField,
-                  onChanged: _onKjChanged,
-                ),
+                child: _numField(_kj, l10n.kjField, onChanged: _onKjChanged),
               ),
             ],
           ),

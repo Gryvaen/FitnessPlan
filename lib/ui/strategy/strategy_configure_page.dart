@@ -9,6 +9,7 @@ import '../../domain/diet_strategy.dart';
 import '../../domain/strategy_eligibility.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import 'carb_cycle_view.dart';
@@ -463,7 +464,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.error_outline, size: 18, color: scheme.error),
+                    InkIcon(InkGlyph.error, size: 18, color: scheme.error),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -567,8 +568,8 @@ class _EffectiveDateOption extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
-            Icon(
-              selected ? Icons.radio_button_checked : Icons.radio_button_off,
+            InkIcon(
+              selected ? InkGlyph.radioChecked : InkGlyph.radioEmpty,
               color: selected
                   ? theme.colorScheme.primary
                   : theme.colorScheme.onSurfaceVariant,
@@ -629,8 +630,8 @@ class _StepperRow extends StatelessWidget {
                   child: Tooltip(
                     message: tooltip,
                     triggerMode: TooltipTriggerMode.tap,
-                    child: Icon(
-                      Icons.auto_fix_high,
+                    child: InkIcon(
+                      InkGlyph.autoFix,
                       size: 15,
                       color: theme.colorScheme.tertiary,
                     ),
@@ -644,7 +645,7 @@ class _StepperRow extends StatelessWidget {
           onPressed: value - step >= min - 1e-9
               ? () => onChanged(snap(value - step))
               : null,
-          icon: const Icon(Icons.remove),
+          icon: const InkIcon(InkGlyph.close),
         ),
         SizedBox(
           width: 72,
@@ -659,7 +660,7 @@ class _StepperRow extends StatelessWidget {
           onPressed: value + step <= max + 1e-9
               ? () => onChanged(snap(value + step))
               : null,
-          icon: const Icon(Icons.add),
+          icon: const InkIcon(InkGlyph.add),
         ),
       ],
     );

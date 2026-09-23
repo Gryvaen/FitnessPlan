@@ -9,6 +9,7 @@ import '../today/today_workout_card.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../ink/ink_icon.dart';
 import '../shell/swipe_tab_view.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
@@ -136,8 +137,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
       if (first == null || day.isBefore(first)) first = day;
     }
     final showAll =
-        first != null &&
-        AppDates.todayLocal().difference(first).inDays >= 13;
+        first != null && AppDates.todayLocal().difference(first).inDays >= 13;
     return [if (hasRecent) 0, if (showAll) 1];
   }
 
@@ -256,8 +256,8 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
             return SportListTile(
               contentPadding: EdgeInsets.zero,
               leading: const MenuIconBadge(
-                icon: Icons.directions_walk,
                 color: AppColors.water,
+                child: InkIcon(InkGlyph.walk, color: AppColors.water),
               ),
               title: Text(AppDates.md(day.date, locale)),
               trailing: Text(context.l10n.nSteps(day.steps)),
@@ -300,8 +300,8 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
             return SportListTile(
               contentPadding: EdgeInsets.zero,
               leading: const MenuIconBadge(
-                icon: Icons.fitness_center,
                 color: AppColors.protein,
+                child: InkIcon(InkGlyph.training, color: AppColors.protein),
               ),
               title: Text(AppDates.md(day.date, locale)),
               trailing: Text(_dayProgressLabel(day, l10n)),
@@ -472,7 +472,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
               ),
               if (tab != 2)
                 PlainIconAction(
-                  icon: Icons.add,
+                  iconWidget: const InkIcon(InkGlyph.add),
                   label: tab == 0 ? l10n.fabNewPlan : l10n.addExercise,
                   onPressed: () => tab == 0
                       ? context.push('/records/plan')
@@ -523,7 +523,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                 if (plans.isEmpty) {
                   return SportEmptyState(
                     title: l10n.emptyPlans,
-                    icon: Icons.fitness_center,
+                    iconWidget: const InkIcon(InkGlyph.training),
                   );
                 }
                 final plan =
@@ -543,6 +543,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                         ),
                         PopupMenuButton<String>(
                           tooltip: l10n.more,
+                          icon: const InkIcon(InkGlyph.more),
                           onSelected: (v) {
                             if (v == 'edit') {
                               context.push('/records/plan?id=${plan.plan.id}');
@@ -592,7 +593,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                         subtitle: Text(
                           '${plan.items[i].targetSets} × ${plan.items[i].targetReps}',
                         ),
-                        trailing: const Icon(Icons.chevron_right),
+                        trailing: const InkIcon(InkGlyph.chevronRight),
                         onTap: () =>
                             context.push('/records/plan?id=${plan.plan.id}'),
                       ),
@@ -612,10 +613,10 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                                   style: theme.textTheme.titleMedium,
                                 ),
                               ),
-                              Icon(
+                              InkIcon(
                                 _otherPlansExpanded
-                                    ? Icons.expand_less
-                                    : Icons.expand_more,
+                                    ? InkGlyph.collapse
+                                    : InkGlyph.expand,
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
                             ],
@@ -629,10 +630,8 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                           SportListTile(
                             contentPadding: EdgeInsets.zero,
                             title: Text(other.plan.name),
-                            subtitle: Text(
-                              l10n.nExercises(other.items.length),
-                            ),
-                            trailing: const Icon(Icons.chevron_right),
+                            subtitle: Text(l10n.nExercises(other.items.length)),
+                            trailing: const InkIcon(InkGlyph.chevronRight),
                             onTap: () =>
                                 setState(() => _planId = other.plan.id),
                           ),
@@ -653,11 +652,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     );
   }
 
-  Widget _historyPanel(
-    BuildContext context,
-    List<int> scopes,
-    int scope,
-  ) {
+  Widget _historyPanel(BuildContext context, List<int> scopes, int scope) {
     final l10n = context.l10n;
     final showScopeTabs = scopes.length > 1;
     return Column(
@@ -724,25 +719,24 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
           data: (days) {
             // Recent: 14 calendar days (zeros allowed). All: only days with data.
             final visible = all
-                ? [for (final d in days) if (d.steps > 0) d]
+                ? [
+                    for (final d in days)
+                      if (d.steps > 0) d,
+                  ]
                 : days;
             if (visible.isEmpty) return const SizedBox.shrink();
             final latest = visible.first;
             return SportListTile(
               contentPadding: EdgeInsets.zero,
               leading: const MenuIconBadge(
-                icon: Icons.directions_walk,
                 color: AppColors.water,
+                child: InkIcon(InkGlyph.walk, color: AppColors.water),
               ),
               title: Text(stepsTitle),
               subtitle: Text(AppDates.md(latest.date, locale)),
               trailing: Text(l10n.nSteps(latest.steps)),
-              onTap: () => _showStepHistory(
-                context,
-                visible,
-                locale,
-                title: stepsTitle,
-              ),
+              onTap: () =>
+                  _showStepHistory(context, visible, locale, title: stepsTitle),
             );
           },
         ),
@@ -763,7 +757,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
             if (all && days.isEmpty) {
               return SportEmptyState(
                 title: l10n.noSetLogs,
-                icon: Icons.fitness_center,
+                iconWidget: const InkIcon(InkGlyph.training),
               );
             }
             if (days.isEmpty) return const SizedBox.shrink();
@@ -771,8 +765,8 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
             return SportListTile(
               contentPadding: EdgeInsets.zero,
               leading: const MenuIconBadge(
-                icon: Icons.fitness_center,
                 color: AppColors.protein,
+                child: InkIcon(InkGlyph.training, color: AppColors.protein),
               ),
               title: Text(workoutsTitle),
               subtitle: Text(AppDates.md(latest.date, locale)),
@@ -808,7 +802,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                   focusNode: _exerciseSearchFocus,
                   decoration: InputDecoration(
                     hintText: l10n.exerciseName,
-                    prefixIcon: const Icon(Icons.search),
+                    prefixIcon: const InkIcon(InkGlyph.search),
                   ),
                   onChanged: (v) =>
                       setState(() => _query = v.trim().toLowerCase()),
@@ -863,7 +857,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                     sliver: SliverToBoxAdapter(
                       child: SportEmptyState(
                         title: l10n.noExercises,
-                        icon: Icons.fitness_center,
+                        iconWidget: const InkIcon(InkGlyph.training),
                       ),
                     ),
                   );
@@ -899,7 +893,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
       trailing: ex.isCustom
           ? IconButton(
               tooltip: l10n.delete,
-              icon: const Icon(Icons.delete_outline),
+              icon: const InkIcon(InkGlyph.delete),
               onPressed: () async {
                 final ok = await showDialog<bool>(
                   context: context,
@@ -932,7 +926,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                 }
               },
             )
-          : const Icon(Icons.chevron_right),
+          : const InkIcon(InkGlyph.chevronRight),
     );
   }
 }

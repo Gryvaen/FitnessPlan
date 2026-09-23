@@ -138,6 +138,9 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                     l10n,
                     locale,
                   ),
+                  weekdayLetter: l10n.weekdayLettersMonSun.split(
+                    ',',
+                  )[day.weekday - 1],
                   // Each calendar day keeps its own quote (goalQuoteForDay is
                   // a pure function of day + goal, so it's stable whenever
                   // that day is viewed again) — the title already carries
@@ -283,7 +286,11 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                         },
                       ),
                       const SizedBox(height: AppSpacing.card),
-                      Divider(color: onHero.withValues(alpha: 0.10), height: 1),
+                      InkBrushDivider(
+                        height: 5,
+                        horizontalInset: 8,
+                        color: onHero.withValues(alpha: 0.26),
+                      ),
                       const SizedBox(height: AppSpacing.section),
                       // Lower row: strictly four columns.
                       Row(
@@ -361,7 +368,9 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.section),
-                Divider(height: 1, color: visuals.divider),
+                InkBrushDivider(
+                  color: scheme.onSurface.withValues(alpha: 0.42),
+                ),
                 const SizedBox(height: AppSpacing.section),
                 SportSectionBand(
                   padding: const EdgeInsets.fromLTRB(
@@ -480,7 +489,6 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                             ),
                             data: (meals) => meals.isEmpty
                                 ? SportEmptyState(
-                                    icon: Icons.restaurant_outlined,
                                     iconWidget: Stack(
                                       clipBehavior: Clip.none,
                                       children: [
@@ -1272,6 +1280,7 @@ class _TodayHeader extends StatelessWidget {
   const _TodayHeader({
     required this.title,
     required this.dateLabel,
+    required this.weekdayLetter,
     required this.canGoPrev,
     required this.canGoNext,
     required this.onPrev,
@@ -1282,6 +1291,7 @@ class _TodayHeader extends StatelessWidget {
 
   final String title;
   final String dateLabel;
+  final String weekdayLetter;
   final bool canGoPrev;
   final bool canGoNext;
   final VoidCallback onPrev;
@@ -1335,9 +1345,7 @@ class _TodayHeader extends StatelessWidget {
                     onGoToToday!();
                   },
             icon: _TodayWeekdayCalendarIcon(
-              weekdayLetter: l10n.weekdayLettersMonSun.split(
-                ',',
-              )[DateTime.now().weekday - 1],
+              weekdayLetter: weekdayLetter,
               color: AppThemeVisuals.of(context).accent,
             ),
           ),
@@ -1365,20 +1373,21 @@ class _TodayWeekdayCalendarIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 24,
-      height: 24,
+      width: 32,
+      height: 32,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          InkIcon(InkGlyph.calendar, size: 24, color: color),
+          InkIcon(InkGlyph.calendar, size: 32, color: color),
           Padding(
-            padding: const EdgeInsets.only(top: 5),
+            padding: const EdgeInsets.only(top: 7),
             child: Text(
               weekdayLetter,
               style: TextStyle(
                 color: color,
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
+                fontFamily: AppTheme.displayFontFamily,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
                 height: 1,
               ),
             ),

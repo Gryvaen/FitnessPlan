@@ -7,6 +7,7 @@ import '../../domain/day_marker.dart';
 import '../../domain/deficit.dart';
 import '../../domain/diet_plan.dart';
 import '../../l10n/app_localizations_ext.dart';
+import '../ink/ink_icon.dart';
 
 /// Loads the per-day target for every local day in an inclusive range.
 typedef DailyTargetsLoader =
@@ -27,6 +28,7 @@ Future<DateTime?> showDeficitDatePicker({
   required DayMarkerRepository markerRepository,
   required DailyTargetsLoader loadTargets,
   DateTime? calorieStandardSince,
+
   /// How far into the future the calendar may be paged for 放纵餐/休息日
   /// marking (long-press). Defaults to [lastDate] — pure date *selection*
   /// (tap + Confirm) always stays bounded by [firstDate]/[lastDate].
@@ -188,17 +190,17 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.celebration_outlined),
+                leading: const InkIcon(InkGlyph.celebration),
                 title: Text(l10n.cheatMealLabel),
                 onTap: () => Navigator.pop(ctx, 'cheatMeal'),
               ),
               ListTile(
-                leading: const Icon(Icons.bedtime_outlined),
+                leading: const InkIcon(InkGlyph.bedtime),
                 title: Text(l10n.restDayLabel),
                 onTap: () => Navigator.pop(ctx, 'restDay'),
               ),
               ListTile(
-                leading: const Icon(Icons.close),
+                leading: const InkIcon(InkGlyph.close),
                 title: Text(l10n.clearMarkerLabel),
                 onTap: () => Navigator.pop(ctx, 'clear'),
               ),
@@ -286,7 +288,7 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
         children: [
           IconButton(
             onPressed: showPrev ? () => _shiftMonth(-1) : null,
-            icon: const Icon(Icons.chevron_left),
+            icon: const InkIcon(InkGlyph.chevronLeft),
           ),
           Expanded(
             child: Text(
@@ -297,7 +299,7 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
           ),
           IconButton(
             onPressed: showNext ? () => _shiftMonth(1) : null,
-            icon: const Icon(Icons.chevron_right),
+            icon: const InkIcon(InkGlyph.chevronRight),
           ),
         ],
       ),
@@ -348,11 +350,11 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
                       label: l10n.legendNewStandardLine,
                     ),
                     _LegendLine(
-                      leading: const Icon(Icons.circle_outlined, size: 10),
+                      leading: const InkIcon(InkGlyph.radioEmpty, size: 10),
                       label: l10n.legendBeforeNeutral,
                     ),
                     _LegendLine(
-                      leading: const Icon(Icons.circle_outlined, size: 10),
+                      leading: const InkIcon(InkGlyph.radioEmpty, size: 10),
                       label: l10n.legendAfterGreenRed,
                     ),
                   ],

@@ -8,6 +8,7 @@ import '../../domain/models.dart';
 import '../../domain/strategy_eligibility.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../ink/ink_icon.dart';
 import '../shell/swipe_tab_view.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
@@ -217,10 +218,7 @@ class _CutNutritionTargets extends ConsumerWidget {
         // ------------------------------------------------ strategy
         SportListTile(
           contentPadding: EdgeInsets.zero,
-          leading: const Icon(
-            Icons.local_fire_department_outlined,
-            color: Color(0xFFF97316),
-          ),
+          leading: const InkIcon(InkGlyph.fire, color: Color(0xFFF97316)),
           title: Text(l10n.dietStrategy, style: theme.textTheme.titleSmall),
           subtitle: Text(
             active == null
@@ -228,7 +226,7 @@ class _CutNutritionTargets extends ConsumerWidget {
                 : '${l10n.strategySelectedShort} · ${active.kind.label(l10n)}',
             style: theme.textTheme.bodySmall,
           ),
-          trailing: const Icon(Icons.chevron_right),
+          trailing: const InkIcon(InkGlyph.chevronRight),
           onTap: blocking.isEmpty
               ? () => context.push('/profile/nutrition/strategy')
               : null,
@@ -243,9 +241,9 @@ class _CutNutritionTargets extends ConsumerWidget {
         if (active?.kind == DietStrategyKind.carbCycle)
           SportListTile(
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.calendar_month_outlined),
+            leading: const InkIcon(InkGlyph.calendar),
             title: Text(l10n.adjustSchedule),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const InkIcon(InkGlyph.chevronRight),
             onTap: () => context.push(
               '/profile/nutrition/strategy/configure?kind=carbCycle',
             ),
@@ -253,15 +251,15 @@ class _CutNutritionTargets extends ConsumerWidget {
         if (active?.kind == DietStrategyKind.carbTaper)
           SportListTile(
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.fact_check_outlined),
+            leading: const InkIcon(InkGlyph.factCheck),
             title: Text(l10n.taperReview),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const InkIcon(InkGlyph.chevronRight),
             onTap: () => context.push('/profile/nutrition/taper'),
           ),
         if (active != null)
           SportListTile(
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.stop_outlined),
+            leading: const InkIcon(InkGlyph.stop),
             title: Text(
               activeStartsLater
                   ? l10n.cancelScheduledStrategy
@@ -348,8 +346,8 @@ class _StrategyDescriptionState extends State<_StrategyDescription> {
                     ),
                   ),
                 ),
-                Icon(
-                  _expanded ? Icons.expand_less : Icons.expand_more,
+                InkIcon(
+                  _expanded ? InkGlyph.collapse : InkGlyph.expand,
                   size: 20,
                   color: scheme.onSurfaceVariant,
                 ),
@@ -434,7 +432,7 @@ class _NutritionComingSoon extends ConsumerWidget {
       ),
       children: [
         SportEmptyState(
-          icon: Icons.construction_outlined,
+          iconWidget: const InkIcon(InkGlyph.construction),
           title: l10n.nutritionComingSoonTitle(goal.label(l10n)),
           message: l10n.nutritionComingSoonBody,
         ),
@@ -450,10 +448,7 @@ class _NutritionComingSoon extends ConsumerWidget {
 /// Shared "TDEE 计算方法" row: summary always visible; full breakdown opens
 /// in a bottom sheet (hidden until the user asks for it).
 class _TdeeCalcMethodTile extends ConsumerWidget {
-  const _TdeeCalcMethodTile({
-    required this.profile,
-    required this.active,
-  });
+  const _TdeeCalcMethodTile({required this.profile, required this.active});
 
   final UserProfile profile;
   final DietStrategyPlan? active;
@@ -465,8 +460,8 @@ class _TdeeCalcMethodTile extends ConsumerWidget {
     final plan = ref.read(profileRepositoryProvider).buildPlan(profile);
     return SportListTile(
       contentPadding: EdgeInsets.zero,
-      leading: Icon(
-        Icons.calculate_outlined,
+      leading: InkIcon(
+        InkGlyph.calculator,
         color: AppThemeVisuals.of(context).accent,
       ),
       title: Text(l10n.tdeeCalcMethod, style: theme.textTheme.titleSmall),
@@ -480,7 +475,7 @@ class _TdeeCalcMethodTile extends ConsumerWidget {
             : l10n.baseTargetLine('${plan.targets.calories}'),
         style: theme.textTheme.bodySmall,
       ),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: const InkIcon(InkGlyph.chevronRight),
       onTap: () => showModalBottomSheet<void>(
         context: context,
         useRootNavigator: true,

@@ -48,6 +48,8 @@ flutter:
     - assets/food_seed.json
     - assets/cultivation/
     - assets/ink/
+    - assets/ink/icons/light/
+    - assets/ink/icons/dark/
     - assets/splash/
   fonts:
     - family: LXGWWenKai

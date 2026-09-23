@@ -6,6 +6,7 @@ import '../../domain/diet_strategy.dart';
 import '../../domain/strategy_eligibility.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import 'strategy_labels.dart';
@@ -113,8 +114,8 @@ class _StrategyOption extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.card),
             child: Row(
               children: [
-                Icon(
-                  current ? Icons.radio_button_checked : Icons.radio_button_off,
+                InkIcon(
+                  current ? InkGlyph.radioChecked : InkGlyph.radioEmpty,
                   color: enabled
                       ? (current ? visuals.accent : scheme.onSurfaceVariant)
                       : scheme.onSurfaceVariant.withValues(alpha: 0.45),
@@ -157,8 +158,8 @@ class _StrategyOption extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                Icon(
-                  Icons.chevron_right,
+                InkIcon(
+                  InkGlyph.chevronRight,
                   color: enabled
                       ? scheme.onSurfaceVariant
                       : theme.disabledColor,

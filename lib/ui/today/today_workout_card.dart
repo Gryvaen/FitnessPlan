@@ -151,12 +151,12 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.add),
+                leading: const InkIcon(InkGlyph.add),
                 title: Text(l10n.quickAddExercise),
                 onTap: () => Navigator.pop(ctx, 'quick'),
               ),
               ListTile(
-                leading: const Icon(Icons.playlist_add),
+                leading: const InkIcon(InkGlyph.playlistAdd),
                 title: Text(l10n.quickAddPlan),
                 onTap: () => Navigator.pop(ctx, 'quickPlan'),
               ),
@@ -183,7 +183,11 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     );
     if (!context.mounted || choice == null) return;
     if (choice == 'quick') {
-      await showQuickAddDayItemDialog(context: context, ref: ref, day: widget.day);
+      await showQuickAddDayItemDialog(
+        context: context,
+        ref: ref,
+        day: widget.day,
+      );
       return;
     }
     if (choice == 'quickPlan') {
@@ -465,14 +469,12 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
   }) {
     return Dismissible(
       key: ValueKey('day-workout-group-${group.workout.id}'),
-      direction: editable
-          ? DismissDirection.endToStart
-          : DismissDirection.none,
+      direction: editable ? DismissDirection.endToStart : DismissDirection.none,
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 16),
         color: scheme.error,
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: const InkIcon(InkGlyph.delete, color: Colors.white),
       ),
       confirmDismiss: (_) => _confirmRemoveGroup(context, group),
       onDismissed: (_) => _removeGroup(ref, group),
@@ -559,8 +561,8 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
               index: i,
               child: Padding(
                 padding: const EdgeInsets.only(top: 14),
-                child: Icon(
-                  Icons.drag_handle,
+                child: InkIcon(
+                  InkGlyph.dragHandle,
                   size: 20,
                   color: scheme.onSurfaceVariant,
                 ),
@@ -651,8 +653,8 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
               index: i,
               child: Padding(
                 padding: const EdgeInsets.only(top: 14),
-                child: Icon(
-                  Icons.drag_handle,
+                child: InkIcon(
+                  InkGlyph.dragHandle,
                   size: 20,
                   color: scheme.onSurfaceVariant,
                 ),
@@ -700,7 +702,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
           color: scheme.error,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: const InkIcon(InkGlyph.delete, color: Colors.white),
       ),
       confirmDismiss: (_) async {
         return await showDialog<bool>(
@@ -798,7 +800,6 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
                 summary: l10n.noWorkoutShort,
               ),
               SportEmptyState(
-                icon: Icons.fitness_center,
                 iconWidget: Stack(
                   clipBehavior: Clip.none,
                   children: [
@@ -942,7 +943,7 @@ class _DayWorkoutGroupTile extends StatelessWidget {
         subtitle: Text('$done/$total'),
         trailing: onTap == null
             ? null
-            : const Icon(Icons.chevron_right, size: 20),
+            : const InkIcon(InkGlyph.chevronRight, size: 20),
         onTap: onTap,
       ),
       ...children,

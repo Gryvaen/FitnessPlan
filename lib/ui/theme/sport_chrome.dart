@@ -547,14 +547,16 @@ class SportSectionTitle extends StatelessWidget {
 class PlainIconAction extends StatelessWidget {
   const PlainIconAction({
     super.key,
-    required this.icon,
+    this.icon,
+    this.iconWidget,
     required this.label,
     required this.onPressed,
     this.size = 24,
     this.color,
   });
 
-  final IconData icon;
+  final IconData? icon;
+  final Widget? iconWidget;
   final String label;
   final VoidCallback? onPressed;
   final double size;
@@ -581,11 +583,13 @@ class PlainIconAction extends StatelessWidget {
             width: kMinTapTarget,
             height: kMinTapTarget,
             child: Center(
-              child: Icon(
-                icon,
-                size: size,
-                color: enabled ? fg : fg.withValues(alpha: 0.35),
-              ),
+              child:
+                  iconWidget ??
+                  Icon(
+                    icon,
+                    size: size,
+                    color: enabled ? fg : fg.withValues(alpha: 0.35),
+                  ),
             ),
           ),
         ),
@@ -603,18 +607,20 @@ class PlainIconAction extends StatelessWidget {
 class MenuIconBadge extends StatelessWidget {
   const MenuIconBadge({
     super.key,
-    required this.icon,
+    this.icon,
+    this.child,
     required this.color,
     this.size = 24,
   });
 
-  final IconData icon;
+  final IconData? icon;
+  final Widget? child;
   final Color color;
   final double size;
 
   @override
   Widget build(BuildContext context) {
-    return Icon(icon, color: color, size: size);
+    return child ?? Icon(icon, color: color, size: size);
   }
 }
 

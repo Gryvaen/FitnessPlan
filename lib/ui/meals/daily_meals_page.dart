@@ -7,6 +7,7 @@ import '../../data/db.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/food_name_link.dart';
@@ -54,7 +55,7 @@ class DailyMealsPage extends ConsumerWidget {
               onPressed: day.isAfter(earliest)
                   ? () => go(day.subtract(const Duration(days: 1)))
                   : null,
-              icon: const Icon(Icons.chevron_left),
+              icon: const InkIcon(InkGlyph.chevronLeft),
             ),
             Text(AppDates.mdWithWeekday(day, locale)),
             IconButton(
@@ -63,7 +64,7 @@ class DailyMealsPage extends ConsumerWidget {
               onPressed: day.isBefore(today)
                   ? () => go(day.add(const Duration(days: 1)))
                   : null,
-              icon: const Icon(Icons.chevron_right),
+              icon: const InkIcon(InkGlyph.chevronRight),
             ),
           ],
         ),
@@ -99,13 +100,17 @@ class DailyMealsPage extends ConsumerWidget {
                     IconButton(
                       tooltip: l10n.copyYesterday,
                       visualDensity: VisualDensity.compact,
-                      icon: const Icon(Icons.content_copy, size: 18),
-                      onPressed: () =>
-                          copyYesterdayMealType(context, ref, day, yesterdayMeals),
+                      icon: const InkIcon(InkGlyph.copy, size: 18),
+                      onPressed: () => copyYesterdayMealType(
+                        context,
+                        ref,
+                        day,
+                        yesterdayMeals,
+                      ),
                     ),
                   if (editable)
                     PlainIconAction(
-                      icon: Icons.add,
+                      iconWidget: const InkIcon(InkGlyph.add),
                       label: l10n.logMeal,
                       onPressed: () {
                         unfocusForNavigation();
@@ -125,7 +130,8 @@ class DailyMealsPage extends ConsumerWidget {
                   entries: meals.where((m) => m.mealType == type.name).toList()
                     ..sort((a, b) => a.calories.compareTo(b.calories)),
                   editable: editable,
-                  canCopyYesterday: editable &&
+                  canCopyYesterday:
+                      editable &&
                       yesterdayMeals.any((m) => m.mealType == type.name),
                 ),
             ],
@@ -161,7 +167,7 @@ Future<void> copyYesterdayMealType(
         children: [
           for (final t in available)
             ListTile(
-              leading: const Icon(Icons.content_copy),
+              leading: const InkIcon(InkGlyph.copy),
               title: Text(l10n.yesterdayNamed(t.label(l10n))),
               onTap: () => Navigator.pop(ctx, t),
             ),
@@ -415,7 +421,7 @@ class _MealTypeSection extends ConsumerWidget {
           IconButton(
             tooltip: l10n.addMealNamed(type.label(l10n)),
             visualDensity: VisualDensity.compact,
-            icon: const Icon(Icons.add, size: 18),
+            icon: const InkIcon(InkGlyph.add, size: 18),
             onPressed: () {
               unfocusForNavigation();
               context.push(
@@ -427,8 +433,8 @@ class _MealTypeSection extends ConsumerWidget {
           PopupMenuButton<String>(
             tooltip: l10n.more,
             padding: EdgeInsets.zero,
-            icon: Icon(
-              Icons.more_horiz,
+            icon: InkIcon(
+              InkGlyph.more,
               size: 18,
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -445,10 +451,7 @@ class _MealTypeSection extends ConsumerWidget {
                   ),
                 ),
               if (canSaveAsPreset)
-                PopupMenuItem(
-                  value: 'preset',
-                  child: Text(l10n.saveAsPreset),
-                ),
+                PopupMenuItem(value: 'preset', child: Text(l10n.saveAsPreset)),
             ],
           ),
       ],
@@ -465,7 +468,7 @@ class _MealTypeSection extends ConsumerWidget {
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.only(right: 16),
               color: theme.colorScheme.error,
-              child: const Icon(Icons.delete, color: Colors.white),
+              child: const InkIcon(InkGlyph.delete, color: Colors.white),
             ),
             confirmDismiss: (_) => _confirmClearMeal(context),
             onDismissed: (_) =>
@@ -491,7 +494,7 @@ class _MealTypeSection extends ConsumerWidget {
                         '&openDayMealsAfterSearchAdd=0',
                       );
                     },
-                    icon: const Icon(Icons.add, size: 18),
+                    icon: const InkIcon(InkGlyph.add, size: 18),
                     label: Text(l10n.addMealNamed(type.label(l10n))),
                   ),
                 )
@@ -572,7 +575,7 @@ class _MealEntryTile extends ConsumerWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 16),
         color: scheme.error,
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: const InkIcon(InkGlyph.delete, color: Colors.white),
       ),
       confirmDismiss: (_) async =>
           await showDialog<bool>(

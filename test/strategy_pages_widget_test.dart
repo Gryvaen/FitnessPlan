@@ -12,6 +12,7 @@ import 'package:diet/ui/strategy/strategy_configure_page.dart';
 import 'package:diet/ui/strategy/strategy_picker_page.dart';
 import 'package:diet/ui/strategy/taper_review_page.dart';
 import 'package:diet/ui/theme/app_theme.dart';
+import 'package:diet/ui/ink/ink_icon.dart';
 import 'package:diet/ui/today/today_page.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -121,7 +122,11 @@ Future<void> _pump(WidgetTester tester, String location) async {
   await tester.pump(const Duration(seconds: 1));
 }
 
-Future<Finder> _show(WidgetTester tester, Finder finder, {double delta = 120}) async {
+Future<Finder> _show(
+  WidgetTester tester,
+  Finder finder, {
+  double delta = 120,
+}) async {
   await tester.scrollUntilVisible(
     finder,
     delta,
@@ -282,10 +287,7 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(
-      find.text('${effective.toStringAsFixed(1)} g/kg'),
-      findsOneWidget,
-    );
+    expect(find.text('${effective.toStringAsFixed(1)} g/kg'), findsOneWidget);
 
     await tester.tap(await _show(tester, find.text('Start today')));
     await _settle(tester);
@@ -356,7 +358,12 @@ void main() {
     // immediately tappable (other than the current one).
     expect(find.textContaining('Stage 0'), findsWidgets);
     expect(find.textContaining('Stage 1'), findsWidgets);
-    expect(find.byIcon(Icons.chevron_right), findsWidgets);
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is InkIcon && widget.glyph == InkGlyph.chevronRight,
+      ),
+      findsWidgets,
+    );
   });
 
   testWidgets('underage profile cannot start a fat-loss strategy', (

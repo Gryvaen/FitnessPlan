@@ -6,6 +6,7 @@ import '../../data/db.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/food_name_link.dart';
@@ -18,6 +19,7 @@ class LogMealPage extends ConsumerStatefulWidget {
     super.key,
     this.initialFoodId,
     this.initialMealType,
+
     /// When true (default), leave 记一笔 by opening 饮食记录. Set false only
     /// when 记一笔 was pushed from [DailyMealsPage] so a plain pop returns
     /// there without stacking a second copy.
@@ -220,7 +222,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 16),
         color: scheme.error,
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: const InkIcon(InkGlyph.delete, color: Colors.white),
       ),
       confirmDismiss: (_) => confirm(),
       onDismissed: (_) async {
@@ -432,7 +434,11 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         style: theme.textTheme.meta,
       ),
       trailing: PlainIconAction(
-        icon: isFav ? Icons.star : Icons.star_border,
+        iconWidget: InkIcon(
+          isFav ? InkGlyph.star : InkGlyph.starOutline,
+          size: 20,
+          color: AppColors.favorite,
+        ),
         label: isFav ? l10n.unfavorite : l10n.favorites,
         color: AppColors.favorite,
         size: 20,
@@ -469,7 +475,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
               ref.invalidate(mealPresetsProvider);
             },
             child: ListTile(
-              leading: const Icon(Icons.restaurant_menu_outlined),
+              leading: const InkIcon(InkGlyph.restaurant),
               title: Text(p.name),
               onTap: () => _applyPreset(p),
             ),
@@ -550,171 +556,171 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         _searchFocus.unfocus();
       },
       child: Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.logMealTitle(dayLabel)),
-        actions: [
-          IconButton(
-            tooltip: l10n.addCustomFood,
-            icon: const Icon(Icons.edit, color: Color(0xFFC4A035)),
-            onPressed: _openCustomFood,
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.listPage),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                AppDropdown<MealType>(
-                  label: l10n.mealType,
-                  value: _mealType,
-                  items: MealType.values,
-                  itemLabel: (e) => e.label(l10n),
-                  onChanged: (v) {
-                    setState(() => _mealType = v);
-                    _persistMealDefaults();
-                  },
-                ),
-                const SizedBox(height: AppSpacing.field),
-                if (_selected != null) ...[
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: FoodNameLink(
-                      name: _selected!.name,
-                      foodId: _selected!.id,
-                      carbG: _selected!.carbPer100,
-                      proteinG: _selected!.proteinPer100,
-                      fatG: _selected!.fatPer100,
-                      style: theme.textTheme.bodyLarge,
-                      onTap: () => _openFoodDetailKeepSelection(_selected!),
-                    ),
-                    subtitle: Text(
-                      '${_selected!.kcalPer100.round()} kcal / 100g',
-                      style: theme.textTheme.meta,
-                    ),
-                    trailing: TextButton(
-                      onPressed: () => setState(() {
-                        _selected = null;
-                        _servings = [];
-                      }),
-                      child: Text(l10n.change),
-                    ),
-                    onTap: () => _openFoodDetailKeepSelection(_selected!),
-                  ),
-                  if (_servings.isNotEmpty) ...[
-                    Text(
-                      l10n.commonPortions,
-                      style: theme.textTheme.fieldLabel,
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (final s in _servings)
-                          SoftChip(
-                            label: '${s.label} · ${s.grams.round()}g',
-                            selected: (_grams - s.grams).abs() < 0.01,
-                            color: (_grams - s.grams).abs() < 0.01
-                                ? null
-                                : theme.colorScheme.surfaceContainerHighest,
-                            foreground: (_grams - s.grams).abs() < 0.01
-                                ? null
-                                : theme.colorScheme.onSurfaceVariant,
-                            onTap: () {
-                              setState(() => _grams = s.grams);
-                              _persistMealDefaults();
-                            },
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.field),
-                  ],
-                  AppDropdown<double>(
-                    label: l10n.grams,
-                    value: FormOptions.snapDouble(
-                      FormOptions.mealGrams(),
-                      _grams,
-                    ),
-                    items: FormOptions.mealGrams(),
-                    suffixText: 'g',
-                    itemLabel: formatKg,
+        appBar: AppBar(
+          title: Text(l10n.logMealTitle(dayLabel)),
+          actions: [
+            IconButton(
+              tooltip: l10n.addCustomFood,
+              icon: const InkIcon(InkGlyph.edit, color: Color(0xFFC4A035)),
+              onPressed: _openCustomFood,
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.listPage),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AppDropdown<MealType>(
+                    label: l10n.mealType,
+                    value: _mealType,
+                    items: MealType.values,
+                    itemLabel: (e) => e.label(l10n),
                     onChanged: (v) {
-                      setState(() => _grams = v);
+                      setState(() => _mealType = v);
                       _persistMealDefaults();
                     },
                   ),
-                  if (preview != null) ...[
-                    const SizedBox(height: AppSpacing.field),
-                    Text(
-                      [
-                        '${preview.calories.round()} kcal',
-                        'P ${preview.proteinG.toStringAsFixed(1)}',
-                        'C ${preview.carbG.toStringAsFixed(1)}',
-                        'F ${preview.fatG.toStringAsFixed(1)}',
-                        if (preview.saturatedFatG > 0)
-                          '${l10n.saturatedFat} ${preview.saturatedFatG.toStringAsFixed(1)}',
-                        if (preview.sugarG > 0)
-                          '${l10n.sugar} ${preview.sugarG.toStringAsFixed(1)}',
-                        if (preview.fiberG > 0)
-                          '${l10n.fiber} ${preview.fiberG.toStringAsFixed(1)}',
-                        if (preview.sodiumMg > 0)
-                          '${l10n.sodium} ${preview.sodiumMg.toStringAsFixed(0)}mg',
-                        if (preview.calciumMg > 0)
-                          '${l10n.calcium} ${preview.calciumMg.toStringAsFixed(0)}mg',
-                        if (preview.alcoholG > 0)
-                          '${l10n.alcohol} ${preview.alcoholG.toStringAsFixed(1)}',
-                      ].join(' · '),
-                      style: theme.textTheme.meta,
+                  const SizedBox(height: AppSpacing.field),
+                  if (_selected != null) ...[
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: FoodNameLink(
+                        name: _selected!.name,
+                        foodId: _selected!.id,
+                        carbG: _selected!.carbPer100,
+                        proteinG: _selected!.proteinPer100,
+                        fatG: _selected!.fatPer100,
+                        style: theme.textTheme.bodyLarge,
+                        onTap: () => _openFoodDetailKeepSelection(_selected!),
+                      ),
+                      subtitle: Text(
+                        '${_selected!.kcalPer100.round()} kcal / 100g',
+                        style: theme.textTheme.meta,
+                      ),
+                      trailing: TextButton(
+                        onPressed: () => setState(() {
+                          _selected = null;
+                          _servings = [];
+                        }),
+                        child: Text(l10n.change),
+                      ),
+                      onTap: () => _openFoodDetailKeepSelection(_selected!),
+                    ),
+                    if (_servings.isNotEmpty) ...[
+                      Text(
+                        l10n.commonPortions,
+                        style: theme.textTheme.fieldLabel,
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final s in _servings)
+                            SoftChip(
+                              label: '${s.label} · ${s.grams.round()}g',
+                              selected: (_grams - s.grams).abs() < 0.01,
+                              color: (_grams - s.grams).abs() < 0.01
+                                  ? null
+                                  : theme.colorScheme.surfaceContainerHighest,
+                              foreground: (_grams - s.grams).abs() < 0.01
+                                  ? null
+                                  : theme.colorScheme.onSurfaceVariant,
+                              onTap: () {
+                                setState(() => _grams = s.grams);
+                                _persistMealDefaults();
+                              },
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.field),
+                    ],
+                    AppDropdown<double>(
+                      label: l10n.grams,
+                      value: FormOptions.snapDouble(
+                        FormOptions.mealGrams(),
+                        _grams,
+                      ),
+                      items: FormOptions.mealGrams(),
+                      suffixText: 'g',
+                      itemLabel: formatKg,
+                      onChanged: (v) {
+                        setState(() => _grams = v);
+                        _persistMealDefaults();
+                      },
+                    ),
+                    if (preview != null) ...[
+                      const SizedBox(height: AppSpacing.field),
+                      Text(
+                        [
+                          '${preview.calories.round()} kcal',
+                          'P ${preview.proteinG.toStringAsFixed(1)}',
+                          'C ${preview.carbG.toStringAsFixed(1)}',
+                          'F ${preview.fatG.toStringAsFixed(1)}',
+                          if (preview.saturatedFatG > 0)
+                            '${l10n.saturatedFat} ${preview.saturatedFatG.toStringAsFixed(1)}',
+                          if (preview.sugarG > 0)
+                            '${l10n.sugar} ${preview.sugarG.toStringAsFixed(1)}',
+                          if (preview.fiberG > 0)
+                            '${l10n.fiber} ${preview.fiberG.toStringAsFixed(1)}',
+                          if (preview.sodiumMg > 0)
+                            '${l10n.sodium} ${preview.sodiumMg.toStringAsFixed(0)}mg',
+                          if (preview.calciumMg > 0)
+                            '${l10n.calcium} ${preview.calciumMg.toStringAsFixed(0)}mg',
+                          if (preview.alcoholG > 0)
+                            '${l10n.alcohol} ${preview.alcoholG.toStringAsFixed(1)}',
+                        ].join(' · '),
+                        style: theme.textTheme.meta,
+                      ),
+                    ],
+                    const SizedBox(height: AppSpacing.section),
+                    FilledButton(
+                      onPressed: _saving ? null : _save,
+                      child: Text(_saving ? l10n.saving : l10n.save),
+                    ),
+                  ] else ...[
+                    TextField(
+                      controller: _searchController,
+                      focusNode: _searchFocus,
+                      decoration: InputDecoration(
+                        hintText: l10n.searchFood,
+                        prefixIcon: const InkIcon(InkGlyph.search),
+                      ),
+                      onChanged: _search,
                     ),
                   ],
-                  const SizedBox(height: AppSpacing.section),
-                  FilledButton(
-                    onPressed: _saving ? null : _save,
-                    child: Text(_saving ? l10n.saving : l10n.save),
-                  ),
-                ] else ...[
-                  TextField(
-                    controller: _searchController,
-                    focusNode: _searchFocus,
-                    decoration: InputDecoration(
-                      hintText: l10n.searchFood,
-                      prefixIcon: const Icon(Icons.search),
-                    ),
-                    onChanged: _search,
-                  ),
                 ],
-              ],
+              ),
             ),
-          ),
-          if (_selected == null)
-            Expanded(
-              child: _loadingFoods
-                  ? const Center(child: CircularProgressIndicator())
-                  : _searching
-                  ? (_results.isEmpty
-                        ? Center(
-                            child: Text(
-                              _query.isEmpty
-                                  ? l10n.searchFood
-                                  : l10n.noFoodFound,
-                              style: theme.textTheme.meta,
-                            ),
-                          )
-                        : ListView.builder(
-                            itemCount: _results.length,
-                            itemBuilder: (context, i) {
-                              final f = _results[i];
-                              return _searchFoodTile(f);
-                            },
-                          ))
-                  : _browseList(),
-            ),
-        ],
+            if (_selected == null)
+              Expanded(
+                child: _loadingFoods
+                    ? const Center(child: CircularProgressIndicator())
+                    : _searching
+                    ? (_results.isEmpty
+                          ? Center(
+                              child: Text(
+                                _query.isEmpty
+                                    ? l10n.searchFood
+                                    : l10n.noFoodFound,
+                                style: theme.textTheme.meta,
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: _results.length,
+                              itemBuilder: (context, i) {
+                                final f = _results[i];
+                                return _searchFoodTile(f);
+                              },
+                            ))
+                    : _browseList(),
+              ),
+          ],
+        ),
       ),
-    ),
     );
   }
 }

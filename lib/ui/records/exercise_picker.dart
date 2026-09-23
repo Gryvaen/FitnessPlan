@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/db.dart';
 import '../../l10n/app_localizations_ext.dart';
+import '../ink/ink_icon.dart';
 
 /// Picks one exercise from a bottom sheet grouped by [kExerciseCategoryOrder],
 /// so users aren't scanning one long flat list to find a movement.
@@ -46,7 +47,7 @@ class ExercisePicker extends StatelessWidget {
             Expanded(
               child: Text(displayText, style: theme.textTheme.bodyLarge),
             ),
-            Icon(Icons.expand_more, color: theme.colorScheme.onSurfaceVariant),
+            InkIcon(InkGlyph.expand, color: theme.colorScheme.onSurfaceVariant),
           ],
         ),
       ),
@@ -55,7 +56,11 @@ class ExercisePicker extends StatelessWidget {
 }
 
 class ExercisePickerSheet extends StatelessWidget {
-  const ExercisePickerSheet({super.key, required this.exercises, this.selectedId});
+  const ExercisePickerSheet({
+    super.key,
+    required this.exercises,
+    this.selectedId,
+  });
 
   final List<Exercise> exercises;
   final int? selectedId;
@@ -97,7 +102,10 @@ class ExercisePickerSheet extends StatelessWidget {
                 ListTile(
                   title: Text(exercise.name),
                   trailing: exercise.id == selectedId
-                      ? Icon(Icons.check, color: theme.colorScheme.primary)
+                      ? InkIcon(
+                          InkGlyph.check,
+                          color: theme.colorScheme.primary,
+                        )
                       : null,
                   onTap: () => Navigator.pop(ctx, exercise),
                 ),

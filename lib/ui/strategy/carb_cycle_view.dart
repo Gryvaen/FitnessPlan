@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../ink/ink_icon.dart';
 
 import '../../domain/calendar_day.dart';
 import '../../domain/diet_strategy.dart';
@@ -66,7 +67,10 @@ class CarbCycleView extends StatelessWidget {
           children: [
             Expanded(
               flex: 3,
-              child: Text(l10n.cycleDayColumn, style: theme.textTheme.labelSmall),
+              child: Text(
+                l10n.cycleDayColumn,
+                style: theme.textTheme.labelSmall,
+              ),
             ),
             Expanded(
               flex: 4,
@@ -118,7 +122,7 @@ class CarbCycleView extends StatelessWidget {
                   plan.referenceWeightKg.toStringAsFixed(1),
                 )
               : '${l10n.referenceWeightKg} '
-                  '${plan.referenceWeightKg.toStringAsFixed(1)} kg',
+                    '${plan.referenceWeightKg.toStringAsFixed(1)} kg',
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -262,7 +266,11 @@ class _DayRow extends StatelessWidget {
                   if (onTap != null)
                     Padding(
                       padding: const EdgeInsets.only(left: 4),
-                      child: Icon(Icons.autorenew, size: 16, color: typeColor),
+                      child: InkIcon(
+                        InkGlyph.cycle,
+                        size: 16,
+                        color: typeColor,
+                      ),
                     ),
                 ],
               ),

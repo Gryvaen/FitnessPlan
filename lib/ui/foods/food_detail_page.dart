@@ -7,6 +7,7 @@ import '../../data/db.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../ink/ink_icon.dart';
 import '../meals/daily_meals_page.dart';
 import '../theme/app_theme.dart';
 import '../theme/macro_color.dart';
@@ -48,8 +49,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
   void initState() {
     super.initState();
     final defaults = ref.read(formMemoryRepositoryProvider).loadMealDefaults();
-    _mealType =
-        widget.initialMealType ?? MealType.suggestedFor(DateTime.now());
+    _mealType = widget.initialMealType ?? MealType.suggestedFor(DateTime.now());
     _grams = FormOptions.snapDouble(FormOptions.mealGrams(), defaults.grams);
     _reload();
   }
@@ -182,10 +182,8 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
                   child: Row(
                     children: [
                       const Expanded(child: Divider(height: 1)),
-                      Icon(
-                        useManual
-                            ? Icons.keyboard_arrow_up
-                            : Icons.keyboard_arrow_down,
+                      InkIcon(
+                        useManual ? InkGlyph.collapse : InkGlyph.expand,
                         size: 18,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -253,11 +251,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
     try {
       await ref
           .read(foodRepositoryProvider)
-          .addServing(
-            foodId: widget.foodId,
-            label: label,
-            grams: grams,
-          );
+          .addServing(foodId: widget.foodId, label: label, grams: grams);
       await _reload();
     } catch (e) {
       if (mounted) {
@@ -340,7 +334,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
           if (food.isCustom) ...[
             IconButton(
               tooltip: l10n.edit,
-              icon: const Icon(Icons.edit_outlined),
+              icon: const InkIcon(InkGlyph.edit),
               onPressed: () async {
                 // Root twin so edit works when this page sits on /food-detail.
                 await context.push('/custom-food?id=${food.id}');
@@ -349,14 +343,14 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
             ),
             IconButton(
               tooltip: l10n.delete,
-              icon: const Icon(Icons.delete_outline),
+              icon: const InkIcon(InkGlyph.delete),
               onPressed: _deleteFood,
             ),
           ],
           IconButton(
             tooltip: isFav ? l10n.unfavorite : l10n.favorites,
-            icon: Icon(
-              isFav ? Icons.star : Icons.star_border,
+            icon: InkIcon(
+              isFav ? InkGlyph.star : InkGlyph.starOutline,
               color: AppColors.favorite,
             ),
             onPressed: () async {
@@ -419,10 +413,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
           const SizedBox(height: AppSpacing.section),
           Text(l10n.servingSize, style: theme.textTheme.titleMedium),
           const SizedBox(height: AppSpacing.compact),
-          _GramsStepper(
-            grams: _grams,
-            onStep: _stepGrams,
-          ),
+          _GramsStepper(grams: _grams, onStep: _stepGrams),
           const SizedBox(height: AppSpacing.section),
           Text(l10n.nutritionResult, style: theme.textTheme.titleMedium),
           const SizedBox(height: 4),
@@ -459,7 +450,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
               const Spacer(),
               TextButton.icon(
                 onPressed: _addServing,
-                icon: const Icon(Icons.add, size: 18),
+                icon: const InkIcon(InkGlyph.add, size: 18),
                 label: Text(l10n.add),
               ),
             ],
@@ -475,7 +466,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
                   alignment: Alignment.centerRight,
                   padding: const EdgeInsets.only(right: 16),
                   color: theme.colorScheme.error,
-                  child: const Icon(Icons.delete, color: Colors.white),
+                  child: const InkIcon(InkGlyph.delete, color: Colors.white),
                 ),
                 confirmDismiss: (_) async =>
                     await showDialog<bool>(
@@ -510,7 +501,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
                     '${s.grams.round()} g',
                     style: theme.textTheme.meta,
                   ),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const InkIcon(InkGlyph.chevronRight),
                   onTap: () => setState(() => _grams = s.grams),
                 ),
               ),
@@ -626,10 +617,7 @@ class _MacroRow extends StatelessWidget {
 }
 
 class _GramsStepper extends StatelessWidget {
-  const _GramsStepper({
-    required this.grams,
-    required this.onStep,
-  });
+  const _GramsStepper({required this.grams, required this.onStep});
 
   final double grams;
   final ValueChanged<double> onStep;
@@ -640,12 +628,12 @@ class _GramsStepper extends StatelessWidget {
     return Row(
       children: [
         _GramStepButton(
-          icon: Icons.remove,
+          glyph: InkGlyph.remove,
           iconSize: 28,
           onPressed: () => onStep(-50),
         ),
         _GramStepButton(
-          icon: Icons.remove,
+          glyph: InkGlyph.remove,
           iconSize: 18,
           onPressed: () => onStep(-5),
         ),
@@ -657,12 +645,12 @@ class _GramsStepper extends StatelessWidget {
           ),
         ),
         _GramStepButton(
-          icon: Icons.add,
+          glyph: InkGlyph.add,
           iconSize: 18,
           onPressed: () => onStep(5),
         ),
         _GramStepButton(
-          icon: Icons.add,
+          glyph: InkGlyph.add,
           iconSize: 28,
           onPressed: () => onStep(50),
         ),
@@ -673,12 +661,12 @@ class _GramsStepper extends StatelessWidget {
 
 class _GramStepButton extends StatelessWidget {
   const _GramStepButton({
-    required this.icon,
+    required this.glyph,
     required this.iconSize,
     required this.onPressed,
   });
 
-  final IconData icon;
+  final InkGlyph glyph;
   final double iconSize;
   final VoidCallback onPressed;
 
@@ -686,7 +674,7 @@ class _GramStepButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton.outlined(
       onPressed: onPressed,
-      icon: Icon(icon, size: iconSize),
+      icon: InkIcon(glyph, size: iconSize),
       style: IconButton.styleFrom(
         minimumSize: const Size(44, 44),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
