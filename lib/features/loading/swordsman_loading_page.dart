@@ -200,6 +200,7 @@ class _LoadingStatus extends StatelessWidget {
       color: SwordsmanLoadingConfig.ink.withValues(alpha: .62),
       letterSpacing: 2,
       fontFamily: 'LXGWWenKai',
+      fontWeight: FontWeight.w500,
     );
     if (error == null) {
       return Semantics(
