@@ -90,7 +90,10 @@ class NotesRecordsTab extends ConsumerWidget {
               header,
               SportEmptyState(
                 title: l10n.notesEmptyHint,
-                iconWidget: const InkIcon(InkGlyph.edit, size: 48),
+                iconWidget: const StampedInkEmptyIcon(
+                  glyph: InkGlyph.edit,
+                  seal: '记',
+                ),
               ),
             ],
           );
