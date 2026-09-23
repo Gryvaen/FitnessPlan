@@ -472,6 +472,80 @@ class SportProgressBar extends StatelessWidget {
   }
 }
 
+/// A progress mark rendered from a real, generated dry-brush texture.
+class InkBrushProgressBar extends StatelessWidget {
+  const InkBrushProgressBar({
+    super.key,
+    required this.value,
+    this.height = 12,
+    this.color,
+  });
+
+  final double value;
+  final double height;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final visuals = AppThemeVisuals.of(context);
+    final clamped = value.isFinite ? value.clamp(0.0, 1.0) : 0.0;
+    final activeInk = color ?? Theme.of(context).colorScheme.onSurface;
+    final direction = Directionality.of(context);
+
+    return Semantics(
+      label: '${(clamped * 100).round()}%',
+      value: '${(clamped * 100).round()}%',
+      child: SizedBox(
+        height: height,
+        width: double.infinity,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            _BrushTexture(
+              color: visuals.track.withValues(alpha: .72),
+              flipHorizontally: direction == TextDirection.rtl,
+            ),
+            if (clamped > 0)
+              FractionallySizedBox(
+                alignment: direction == TextDirection.rtl
+                    ? Alignment.centerRight
+                    : Alignment.centerLeft,
+                widthFactor: clamped,
+                child: _BrushTexture(
+                  color: activeInk,
+                  flipHorizontally: direction == TextDirection.rtl,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BrushTexture extends StatelessWidget {
+  const _BrushTexture({required this.color, this.flipHorizontally = false});
+
+  final Color color;
+  final bool flipHorizontally;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget image = Image.asset(
+      'assets/ink/workout_progress_brush.png',
+      fit: BoxFit.fill,
+      filterQuality: FilterQuality.high,
+      excludeFromSemantics: true,
+      color: color,
+      colorBlendMode: BlendMode.srcIn,
+    );
+    if (flipHorizontally) {
+      image = Transform.flip(flipX: true, child: image);
+    }
+    return image;
+  }
+}
+
 /// Floating pill nav shell.
 class SportPillShell extends StatelessWidget {
   const SportPillShell({super.key, required this.child});
