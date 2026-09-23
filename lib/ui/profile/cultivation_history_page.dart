@@ -159,7 +159,7 @@ class _DayRow extends StatelessWidget {
                   color: record.totalKcal < 0
                       ? theme.colorScheme.error
                       : theme.colorScheme.primary,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
