@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <filter id="rough" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.02 0.075" numOctaves="2" seed="29" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.7" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+  <g fill="none" stroke="#075866" stroke-linecap="round" stroke-linejoin="round" filter="url(#rough)">
+    <!-- Torso drawn as two independent brush strokes, leaving breathing room at center. -->
+    <path d="M104 35 C103 52 91 62 72 70 C55 78 52 94 61 111 C70 127 82 136 86 151 C91 169 73 188 69 215" stroke-width="11"/>
+    <path d="M151 35 C153 52 165 62 184 70 C201 78 204 95 195 112 C186 128 174 136 170 151 C165 169 183 188 187 215" stroke-width="11"/>
+    <path d="M87 109 C101 117 113 120 128 120 C143 120 155 116 169 108" stroke-width="5" opacity=".52"/>
+    <path d="M91 148 C107 157 147 157 166 148" stroke-width="5" opacity=".64"/>
+    <path d="M87 174 C105 184 149 184 171 173" stroke-width="4" opacity=".38"/>
+    <!-- Measuring tape wraps the waist; notches use irregular calligraphic lengths. -->
+    <path d="M66 142 C96 132 157 133 195 145 C205 148 207 158 199 163 C169 177 102 173 65 160 C55 156 56 146 66 142" stroke-width="8"/>
+    <path d="M84 143 L82 153 M101 140 L100 150 M119 139 L119 153 M138 139 L139 149 M157 141 L158 153 M176 143 L178 151" stroke-width="4"/>
+    <path d="M196 149 C212 153 218 160 213 170" stroke-width="6"/>
+    <!-- Small leaf-like center mark keeps the symbol calm rather than clinical. -->
+    <path d="M127 89 C119 100 119 108 128 116 C137 107 137 99 127 89 Z" stroke-width="4"/>
+  </g>
+  <g fill="#075866" opacity=".48">
+    <circle cx="58" cy="127" r="2.5"/><circle cx="199" cy="126" r="3"/><circle cx="72" cy="222" r="2"/>
+  </g>
+</svg>
