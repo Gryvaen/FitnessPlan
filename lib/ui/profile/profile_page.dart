@@ -10,6 +10,7 @@ import '../../data/repositories/app_update_repository.dart';
 import '../../domain/calorie_calculator.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../ink/ink_icon.dart';
 import '../shell/swipe_tab_view.dart';
 import '../strategy/strategy_labels.dart';
 import '../theme/app_theme.dart';
@@ -138,8 +139,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 const SizedBox(height: AppSpacing.compact),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: Icon(
-                    Icons.folder_open_outlined,
+                  leading: InkIcon(
+                    InkGlyph.folder,
                     color: theme.colorScheme.primary,
                   ),
                   title: Text(l10n.exportToFolder),
@@ -148,8 +149,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: Icon(
-                    Icons.share_outlined,
+                  leading: InkIcon(
+                    InkGlyph.share,
                     color: theme.colorScheme.primary,
                   ),
                   title: Text(l10n.exportViaShare),
@@ -434,8 +435,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         icon: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
-                              Icons.translate,
+                            const InkIcon(
+                              InkGlyph.language,
                               size: 18,
                               color: _languageColor,
                             ),
@@ -462,10 +463,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               .read(themeProvider.notifier)
                               .select(current.toggled);
                         },
-                        icon: Icon(
+                        icon: InkIcon(
                           ref.watch(themeProvider).isDark
-                              ? Icons.dark_mode_outlined
-                              : Icons.light_mode_outlined,
+                              ? InkGlyph.moon
+                              : InkGlyph.sun,
                           size: 20,
                           color: _themeColor,
                         ),
@@ -483,12 +484,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ],
                   ),
                 ),
-                const _CultivationHeroCard(),
+                const CultivationHeroCard(),
                 const SizedBox(height: AppSpacing.section),
                 SportListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: MenuIconBadge(
-                    icon: Icons.person_outline,
+                  leading: InkIcon(
+                    InkGlyph.profile,
                     color: AppThemeVisuals.of(context).accent,
                   ),
                   title: Text(
@@ -505,25 +506,25 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ),
                     style: theme.textTheme.meta,
                   ),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const InkIcon(InkGlyph.chevronRight),
                   onTap: () => context.push('/profile/edit'),
                 ),
                 _MenuRow(
-                  icon: Icons.track_changes_outlined,
+                  glyph: InkGlyph.target,
                   title: l10n.nutritionTargets,
                   subtitle: _nutritionSubtitle(ref, l10n),
                   color: AppColors.carb,
                   onTap: () => context.push('/profile/nutrition'),
                 ),
                 _MenuRow(
-                  icon: Icons.notifications_outlined,
+                  glyph: InkGlyph.notification,
                   title: l10n.reminders,
                   subtitle: l10n.remindersSubtitle,
                   color: AppColors.water,
                   onTap: () => context.push('/profile/reminders'),
                 ),
                 _MenuRow(
-                  icon: Icons.handyman_outlined,
+                  glyph: InkGlyph.tools,
                   title: l10n.toolbox,
                   subtitle: l10n.toolboxSubtitle,
                   color: AppColors.fat,
@@ -531,8 +532,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 ),
                 SportListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: MenuIconBadge(
-                    icon: Icons.info_outline,
+                  leading: InkIcon(
+                    InkGlyph.info,
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                   title: Text(l10n.about),
@@ -542,7 +543,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           l10n.appVersionLabel(versionLabel),
                           style: theme.textTheme.meta,
                         ),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const InkIcon(InkGlyph.chevronRight),
                   onTap: () => _showAbout(context, plan, versionLabel),
                 ),
               ],
@@ -637,8 +638,8 @@ class _AboutSheet extends StatelessWidget {
                     visualDensity: VisualDensity.compact,
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                   ),
-                  icon: Icon(
-                    Icons.delete_outline,
+                  icon: InkIcon(
+                    InkGlyph.delete,
                     color: theme.colorScheme.error,
                   ),
                   label: Text(
@@ -676,10 +677,7 @@ class _AboutSheet extends StatelessWidget {
                 Expanded(
                   child: TextButton.icon(
                     onPressed: onExport,
-                    icon: const Icon(
-                      Icons.upload_outlined,
-                      color: _exportGreen,
-                    ),
+                    icon: const InkIcon(InkGlyph.upload, color: _exportGreen),
                     label: Text(
                       l10n.exportData,
                       style: const TextStyle(
@@ -692,10 +690,7 @@ class _AboutSheet extends StatelessWidget {
                 Expanded(
                   child: TextButton.icon(
                     onPressed: onImport,
-                    icon: const Icon(
-                      Icons.download_outlined,
-                      color: _importBlue,
-                    ),
+                    icon: const InkIcon(InkGlyph.download, color: _importBlue),
                     label: Text(
                       l10n.importData,
                       style: const TextStyle(
@@ -717,8 +712,8 @@ class _AboutSheet extends StatelessWidget {
 /// Entry into the cultivation-realm mini-game. Shows live realm/layer
 /// progress once the user is eligible ([cultivationEligibleProvider]);
 /// otherwise a generic invite that still routes to the locked explainer.
-class _CultivationHeroCard extends ConsumerWidget {
-  const _CultivationHeroCard();
+class CultivationHeroCard extends ConsumerWidget {
+  const CultivationHeroCard({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -727,96 +722,123 @@ class _CultivationHeroCard extends ConsumerWidget {
     final l10n = context.l10n;
     final eligible = ref.watch(cultivationEligibleProvider);
     final progress = eligible ? ref.watch(cultivationProgressProvider) : null;
+    final accent = progress?.realm.textColor ?? v.accent;
 
-    return Material(
-      color: v.card,
-      borderRadius: BorderRadius.circular(AppRadius.card),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.card),
+    final title = progress == null
+        ? l10n.cultivationLockedTitle
+        : l10n.cultivationLayerBadge(
+            progress.realm.label(l10n),
+            '${progress.layer}',
+          );
+
+    return Semantics(
+      button: true,
+      label: '${l10n.cultivationHeroLabel}，$title',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: () => context.push('/profile/cultivation'),
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.card),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.card),
-            border: Border.all(color: v.cardBorder),
-          ),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(32),
-                child: progress == null
-                    ? Container(
-                        width: 64,
-                        height: 64,
-                        color: v.accentSoft,
-                        child: Icon(Icons.self_improvement, color: v.accent),
-                      )
-                    : Image.asset(
-                        progress.realm.artAsset(progress.layer),
-                        width: 64,
-                        height: 64,
-                        fit: BoxFit.cover,
-                        alignment: const Alignment(0, -0.4),
-                      ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.cultivationHeroLabel,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      progress == null
-                          ? l10n.cultivationLockedTitle
-                          : l10n.cultivationLayerBadge(
-                              progress.realm.label(l10n),
-                              '${progress.layer}',
-                            ),
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: progress?.realm.textColor,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    if (progress != null && !progress.isMax) ...[
-                      const SizedBox(height: 6),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(3),
-                        child: SizedBox(
-                          height: 4,
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              ColoredBox(color: v.track),
-                              FractionallySizedBox(
-                                alignment: AlignmentDirectional.centerStart,
-                                widthFactor: progress.layerProgress.clamp(
-                                  0.0,
-                                  1.0,
-                                ),
-                                child: ColoredBox(
-                                  color: progress.realm.textColor,
-                                ),
-                              ),
-                            ],
+        child: SizedBox(
+          key: const ValueKey('cultivation-ink-card'),
+          height: 138,
+          width: double.infinity,
+          child: CustomPaint(
+            painter: _RealmCardPainter(
+              paper: v.card,
+              ink: theme.colorScheme.onSurface,
+              accent: accent,
+              dark: theme.brightness == Brightness.dark,
+            ),
+            child: Stack(
+              children: [
+                Positioned(
+                  left: 7,
+                  top: 7,
+                  bottom: 7,
+                  width: 112,
+                  child: ClipPath(
+                    clipper: const _RealmArtClipper(),
+                    child: progress == null
+                        ? _LockedRealmArt(accent: accent)
+                        : Image.asset(
+                            progress.realm.artAsset(progress.layer),
+                            fit: BoxFit.cover,
+                            alignment: const Alignment(0, -0.42),
+                            color: theme.brightness == Brightness.dark
+                                ? Colors.black.withValues(alpha: .14)
+                                : null,
+                            colorBlendMode: theme.brightness == Brightness.dark
+                                ? BlendMode.darken
+                                : null,
                           ),
+                  ),
+                ),
+                Positioned(
+                  left: 102,
+                  top: 0,
+                  bottom: 0,
+                  child: CustomPaint(
+                    size: const Size(28, 138),
+                    painter: _InkFadePainter(
+                      color: v.card,
+                      ink: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 126,
+                  right: 16,
+                  top: 16,
+                  bottom: 14,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              l10n.cultivationHeroLabel,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                letterSpacing: 2.4,
+                              ),
+                            ),
+                          ),
+                          const InkSeal('境', size: 23),
+                        ],
+                      ),
+                      const SizedBox(height: 7),
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: accent,
+                          fontFamily: AppTheme.displayFontFamily,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: .8,
                         ),
                       ),
+                      const Spacer(),
+                      if (progress == null)
+                        _LockedRealmHint(color: accent)
+                      else ...[
+                        _RealmLayerMarks(layer: progress.layer, color: accent),
+                        if (!progress.isMax) ...[
+                          const SizedBox(height: 8),
+                          InkBrushProgressBar(
+                            value: progress.layerProgress,
+                            height: 8,
+                            color: accent,
+                          ),
+                        ],
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.chevron_right,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -824,17 +846,257 @@ class _CultivationHeroCard extends ConsumerWidget {
   }
 }
 
+class _LockedRealmArt extends StatelessWidget {
+  const _LockedRealmArt({required this.accent});
+
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: accent.withValues(alpha: .09),
+    child: Center(
+      child: InkIcon(
+        InkGlyph.meditation,
+        size: 58,
+        color: accent.withValues(alpha: .7),
+      ),
+    ),
+  );
+}
+
+class _LockedRealmHint extends StatelessWidget {
+  const _LockedRealmHint({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      CustomPaint(size: const Size(48, 8), painter: _DryBrushPainter(color)),
+      const SizedBox(width: 8),
+      InkIcon(InkGlyph.chevronRight, size: 18, color: color),
+    ],
+  );
+}
+
+class _RealmLayerMarks extends StatelessWidget {
+  const _RealmLayerMarks({required this.layer, required this.color});
+
+  final int layer;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    key: const ValueKey('cultivation-layer-marks'),
+    children: [
+      for (var i = 1; i <= 9; i++) ...[
+        if (i > 1) const SizedBox(width: 5),
+        CustomPaint(
+          size: Size(i == layer ? 13 : 8, 7),
+          painter: _LayerMarkPainter(
+            color: color,
+            filled: i <= layer,
+            current: i == layer,
+          ),
+        ),
+      ],
+    ],
+  );
+}
+
+class _RealmCardPainter extends CustomPainter {
+  const _RealmCardPainter({
+    required this.paper,
+    required this.ink,
+    required this.accent,
+    required this.dark,
+  });
+
+  final Color paper;
+  final Color ink;
+  final Color accent;
+  final bool dark;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Rect.fromLTWH(1, 1, size.width - 2, size.height - 2);
+    final paperPath = Path()
+      ..moveTo(11, 3)
+      ..quadraticBezierTo(size.width * .35, 0, size.width - 14, 4)
+      ..quadraticBezierTo(size.width - 2, 5, size.width - 4, 18)
+      ..lineTo(size.width - 2, size.height - 15)
+      ..quadraticBezierTo(
+        size.width - 4,
+        size.height - 3,
+        size.width - 18,
+        size.height - 4,
+      )
+      ..quadraticBezierTo(size.width * .52, size.height, 12, size.height - 3)
+      ..quadraticBezierTo(2, size.height - 5, 4, size.height - 18)
+      ..lineTo(2, 16)
+      ..quadraticBezierTo(3, 5, 11, 3)
+      ..close();
+    canvas.drawShadow(paperPath, Colors.black.withValues(alpha: .18), 10, true);
+    canvas.drawPath(paperPath, Paint()..color = paper);
+
+    final wash = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: [
+          accent.withValues(alpha: dark ? .13 : .08),
+          Colors.transparent,
+        ],
+      ).createShader(rect);
+    canvas.drawPath(paperPath, wash);
+
+    final border = Paint()
+      ..color = ink.withValues(alpha: dark ? .42 : .28)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.1;
+    canvas.drawPath(paperPath, border);
+    canvas.drawLine(
+      Offset(132, 12),
+      Offset(size.width - 18, 12),
+      Paint()
+        ..color = ink.withValues(alpha: .08)
+        ..strokeWidth = .8,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_RealmCardPainter oldDelegate) =>
+      paper != oldDelegate.paper ||
+      ink != oldDelegate.ink ||
+      accent != oldDelegate.accent ||
+      dark != oldDelegate.dark;
+}
+
+class _RealmArtClipper extends CustomClipper<Path> {
+  const _RealmArtClipper();
+
+  @override
+  Path getClip(Size size) => Path()
+    ..moveTo(5, 1)
+    ..lineTo(size.width - 10, 0)
+    ..quadraticBezierTo(
+      size.width,
+      size.height * .28,
+      size.width - 5,
+      size.height * .5,
+    )
+    ..quadraticBezierTo(
+      size.width - 13,
+      size.height * .76,
+      size.width - 2,
+      size.height,
+    )
+    ..lineTo(3, size.height - 2)
+    ..quadraticBezierTo(0, size.height * .52, 4, 1)
+    ..close();
+
+  @override
+  bool shouldReclip(_RealmArtClipper oldClipper) => false;
+}
+
+class _InkFadePainter extends CustomPainter {
+  const _InkFadePainter({required this.color, required this.ink});
+
+  final Color color;
+  final Color ink;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final fade = Paint()
+      ..shader = LinearGradient(
+        colors: [color.withValues(alpha: 0), color, color],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, fade);
+    final stroke = Paint()
+      ..color = ink.withValues(alpha: .12)
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+      Offset(size.width * .7, 18),
+      Offset(size.width * .45, size.height - 20),
+      stroke,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_InkFadePainter oldDelegate) =>
+      color != oldDelegate.color || ink != oldDelegate.ink;
+}
+
+class _DryBrushPainter extends CustomPainter {
+  const _DryBrushPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color.withValues(alpha: .58)
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+      Offset(0, size.height * .45),
+      Offset(size.width, size.height * .45),
+      paint..strokeWidth = 3.2,
+    );
+    canvas.drawLine(
+      Offset(4, size.height * .78),
+      Offset(size.width * .78, size.height * .78),
+      paint..strokeWidth = 1.1,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_DryBrushPainter oldDelegate) =>
+      color != oldDelegate.color;
+}
+
+class _LayerMarkPainter extends CustomPainter {
+  const _LayerMarkPainter({
+    required this.color,
+    required this.filled,
+    required this.current,
+  });
+
+  final Color color;
+  final bool filled;
+  final bool current;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color.withValues(alpha: filled ? 1 : .2)
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = current ? 5 : 3;
+    canvas.drawLine(
+      Offset(1, size.height / 2),
+      Offset(size.width - 1, size.height / 2),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_LayerMarkPainter oldDelegate) =>
+      color != oldDelegate.color ||
+      filled != oldDelegate.filled ||
+      current != oldDelegate.current;
+}
+
 /// A profile menu row: tinted icon badge + title + subtitle + chevron.
 class _MenuRow extends StatelessWidget {
   const _MenuRow({
-    required this.icon,
+    required this.glyph,
     required this.title,
     required this.subtitle,
     required this.onTap,
     required this.color,
   });
 
-  final IconData icon;
+  final InkGlyph glyph;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
@@ -844,7 +1106,7 @@ class _MenuRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return SportListTile(
       contentPadding: EdgeInsets.zero,
-      leading: MenuIconBadge(icon: icon, color: color),
+      leading: InkIcon(glyph, color: color),
       title: Text(title),
       subtitle: Text(
         subtitle,
@@ -852,8 +1114,8 @@ class _MenuRow extends StatelessWidget {
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
-      trailing: Icon(
-        Icons.chevron_right,
+      trailing: InkIcon(
+        InkGlyph.chevronRight,
         color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
       onTap: onTap,
@@ -872,12 +1134,12 @@ class _UpdateDownloadIcon extends StatelessWidget {
     const color = _updateColor;
     if (status.phase == AppUpdatePhase.idle) {
       if (!status.hasUpdateAvailable) {
-        return const Icon(Icons.download_outlined, color: color);
+        return const InkIcon(InkGlyph.download, color: color);
       }
       return Stack(
         clipBehavior: Clip.none,
         children: [
-          const Icon(Icons.download_outlined, color: color),
+          const InkIcon(InkGlyph.download, color: color),
           Positioned(
             right: -1,
             top: -1,
@@ -913,7 +1175,7 @@ class _UpdateDownloadIcon extends StatelessWidget {
             color: color,
             backgroundColor: color.withValues(alpha: 0.18),
           ),
-          const Icon(Icons.download_outlined, size: 16, color: color),
+          const InkIcon(InkGlyph.download, size: 16, color: color),
         ],
       ),
     );
