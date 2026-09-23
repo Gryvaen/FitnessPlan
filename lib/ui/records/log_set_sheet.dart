@@ -66,9 +66,10 @@ Future<bool> showLogSetSheet({
         // matters hours/days later when a notification actually fires, so
         // it doesn't need to block this sheet's close.
         unawaited(
-          ref.read(remindersProvider.notifier).syncSchedule().catchError((
-            _,
-          ) {}),
+          ref
+              .read(remindersProvider.notifier)
+              .syncSchedule()
+              .catchError((_) {}),
         );
         if (!ctx.mounted) return;
         Navigator.pop(ctx, true);
@@ -138,10 +139,8 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
     return [for (var i = 0; i <= max; i++) i];
   }
 
-  List<int> get _valueOptions => FormOptions.exerciseTargetOptions(
-    widget.unit,
-    category: widget.category,
-  );
+  List<int> get _valueOptions =>
+      FormOptions.exerciseTargetOptions(widget.unit, category: widget.category);
 
   List<double> _optionsFor(GymWeightUnit unit) => FormOptions.gymLoadOptions(
     unit,
@@ -244,7 +243,7 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
                         Text(
                           widget.exerciseName,
                           style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -368,7 +367,7 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
                               child: Text(
                                 '$_perSetValue',
                                 style: theme.textTheme.headlineSmall?.copyWith(
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ),
