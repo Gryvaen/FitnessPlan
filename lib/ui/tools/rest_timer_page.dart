@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../l10n/app_localizations_ext.dart';
+import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import 'rest_timer_notifications.dart';
 
@@ -324,7 +325,7 @@ class _RestTimerPageState extends State<RestTimerPage>
               width: double.infinity,
               child: FilledButton.icon(
                 onPressed: _running ? _pause : () => _start(resume: _paused),
-                icon: Icon(_running ? Icons.pause : Icons.play_arrow),
+                icon: InkIcon(_running ? InkGlyph.pause : InkGlyph.play),
                 label: Text(
                   _running
                       ? l10n.restTimerPause
@@ -339,7 +340,7 @@ class _RestTimerPageState extends State<RestTimerPage>
               width: double.infinity,
               child: TextButton.icon(
                 onPressed: _reset,
-                icon: const Icon(Icons.replay),
+                icon: const InkIcon(InkGlyph.replay),
                 label: Text(l10n.reset),
               ),
             ),
