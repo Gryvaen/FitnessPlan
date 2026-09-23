@@ -6,6 +6,7 @@ import '../../domain/cultivation.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../ink/ink_icon.dart';
 import 'cultivation_labels.dart';
 
 /// 「我的境界」入口：始终展示当前用户所选目标（减脂/增肌/维持）对应的
@@ -129,19 +130,19 @@ class _CultivationHomeState extends ConsumerState<_CultivationHome> {
             child: Column(
               children: [
                 _SideAction(
-                  icon: Icons.bar_chart_rounded,
+                  glyph: InkGlyph.chart,
                   label: l10n.cultivationSideHistory,
                   onTap: () => context.push('/profile/cultivation/history'),
                 ),
                 const SizedBox(height: 12),
                 _SideAction(
-                  icon: Icons.emoji_events_outlined,
+                  glyph: InkGlyph.trophy,
                   label: l10n.cultivationSideRealmGuide,
                   onTap: () => context.push('/profile/cultivation/realm-guide'),
                 ),
                 const SizedBox(height: 12),
                 _SideAction(
-                  icon: Icons.settings_outlined,
+                  glyph: InkGlyph.settings,
                   label: l10n.cultivationSideSettings,
                   onTap: () => context.push('/profile/cultivation/settings'),
                 ),
@@ -172,31 +173,31 @@ class _CultivationHomeState extends ConsumerState<_CultivationHome> {
 
 class _SideAction extends StatelessWidget {
   const _SideAction({
-    required this.icon,
+    required this.glyph,
     required this.label,
     required this.onTap,
   });
 
-  final IconData icon;
+  final InkGlyph glyph;
   final String label;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: label,
-      child: Material(
-        color: Colors.white.withValues(alpha: 0.55),
-        shape: const CircleBorder(
-          side: BorderSide(color: Colors.white70, width: 1),
-        ),
-        child: InkWell(
-          customBorder: const CircleBorder(),
+    return Semantics(
+      button: true,
+      label: label,
+      child: Tooltip(
+        message: label,
+        excludeFromSemantics: true,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: onTap,
-          child: SizedBox(
-            width: 44,
-            height: 44,
-            child: Icon(icon, size: 20, color: const Color(0xFF1B2A24)),
+          child: SizedBox.square(
+            dimension: 44,
+            child: Center(
+              child: InkIcon(glyph, size: 27, color: const Color(0xFF1B2A24)),
+            ),
           ),
         ),
       ),
@@ -354,8 +355,8 @@ class _RealmPanel extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.directions_walk,
+                  InkIcon(
+                    InkGlyph.walk,
                     size: 14,
                     color: const Color(0xFF1B2A24).withValues(alpha: 0.65),
                   ),
@@ -369,8 +370,8 @@ class _RealmPanel extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  Icon(
-                    Icons.restaurant_outlined,
+                  InkIcon(
+                    InkGlyph.food,
                     size: 14,
                     color: const Color(0xFF1B2A24).withValues(alpha: 0.65),
                   ),
@@ -516,8 +517,8 @@ class _CultivationLockedView extends ConsumerWidget {
                       shape: BoxShape.circle,
                       color: Colors.white.withValues(alpha: 0.65),
                     ),
-                    child: const Icon(
-                      Icons.lock_outline,
+                    child: const InkIcon(
+                      InkGlyph.lock,
                       size: 30,
                       color: Color(0xFF5C6B65),
                     ),
@@ -620,7 +621,7 @@ class _CultivationComingSoonHome extends StatelessWidget {
             top: kToolbarHeight + MediaQuery.paddingOf(context).top + 12,
             right: 14,
             child: _SideAction(
-              icon: Icons.settings_outlined,
+              glyph: InkGlyph.settings,
               label: l10n.cultivationSideSettings,
               onTap: () => context.push('/profile/cultivation/settings'),
             ),
