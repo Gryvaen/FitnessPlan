@@ -27,10 +27,10 @@ void main() {
     expect(prewarmed, isFalse);
   });
 
-  test('entrance keeps the intended 1.8 second duration', () {
+  test('entrance keeps the intended 1.4 second duration', () {
     expect(
       DisciplineFreedomLoadingPage.entranceDuration,
-      const Duration(milliseconds: 1800),
+      const Duration(milliseconds: 1400),
     );
   });
 }
