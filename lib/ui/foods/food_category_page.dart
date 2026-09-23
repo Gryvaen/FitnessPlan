@@ -144,7 +144,10 @@ class _FoodCategoryPageState extends ConsumerState<FoodCategoryPage> {
                       '${f.kcalPer100.round()} kcal / 100g',
                       style: theme.textTheme.meta,
                     ),
-                    trailing: const InkIcon(InkGlyph.chevronRight),
+                    trailing: InkIcon(
+                      InkGlyph.chevronRight,
+                      color: foodUtilityIconColor(context),
+                    ),
                     onTap: () => openFoodDetail(context, f.id),
                   );
                 },
