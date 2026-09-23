@@ -914,6 +914,18 @@ abstract class AppLocalizations {
   /// **'Preset saved'**
   String get presetSaved;
 
+  /// No description provided for @presetNameExists.
+  ///
+  /// In en, this message translates to:
+  /// **'Preset name already exists'**
+  String get presetNameExists;
+
+  /// No description provided for @presetNameExistsConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'A preset named \"{name}\" already exists. Replace it?'**
+  String presetNameExistsConfirm(String name);
+
   /// No description provided for @saveAsPlan.
   ///
   /// In en, this message translates to:
@@ -1639,6 +1651,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'e.g. 1 bowl / 500 ml bottle'**
   String get portionNameHint;
+
+  /// No description provided for @manualGramsToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter grams manually'**
+  String get manualGramsToggle;
+
+  /// No description provided for @invalidGramsValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a value greater than 0'**
+  String get invalidGramsValue;
 
   /// No description provided for @deleteCustomFood.
   ///
@@ -2486,6 +2510,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'After: past green/red'**
   String get legendAfterGreenRed;
+
+  /// No description provided for @cheatMealLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cheat meal'**
+  String get cheatMealLabel;
+
+  /// No description provided for @restDayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest day'**
+  String get restDayLabel;
+
+  /// No description provided for @clearMarkerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear marker'**
+  String get clearMarkerLabel;
+
+  /// No description provided for @cheatMealShortLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cheat'**
+  String get cheatMealShortLabel;
+
+  /// No description provided for @restDayShortLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest'**
+  String get restDayShortLabel;
 
   /// No description provided for @waterTapHint.
   ///

@@ -20,7 +20,7 @@ import 'today_section_header.dart';
 /// Collapsible: the header is always shown, the checklist only when
 /// [expanded]. The plain "+" opens the existing add-workout flow and never
 /// toggles the block.
-class TodayWorkoutCard extends ConsumerWidget {
+class TodayWorkoutCard extends ConsumerStatefulWidget {
   const TodayWorkoutCard({
     super.key,
     required this.day,
@@ -32,6 +32,58 @@ class TodayWorkoutCard extends ConsumerWidget {
   final String sectionPrefix;
   final bool showDetails;
 
+  @override
+  ConsumerState<TodayWorkoutCard> createState() => _TodayWorkoutCardState();
+}
+
+class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
+  // Optimistic local ordering: dragging a group/item updates these
+  // immediately (before the async DB write round-trips through the
+  // watchDayWorkout stream), so ReorderableListView animates smoothly
+  // instead of snapping/flickering once the new snapshot arrives. The
+  // stream's own order is only used as a fallback for ids we haven't
+  // reordered locally yet (new items, or on first load).
+  List<int>? _groupOrder;
+  final Map<int, List<int>> _itemOrder = {};
+
+  @override
+  void didUpdateWidget(covariant TodayWorkoutCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.day != widget.day) {
+      _groupOrder = null;
+      _itemOrder.clear();
+    }
+  }
+
+  List<DayWorkoutGroup> _orderedGroups(List<DayWorkoutGroup> groups) {
+    final order = _groupOrder;
+    if (order == null) return groups;
+    final byId = {for (final g in groups) g.workout.id: g};
+    final result = <DayWorkoutGroup>[];
+    for (final id in order) {
+      final g = byId.remove(id);
+      if (g != null) result.add(g);
+    }
+    result.addAll(byId.values);
+    return result;
+  }
+
+  List<DayWorkoutItemProgress> _orderedItems(
+    int dayWorkoutId,
+    List<DayWorkoutItemProgress> items,
+  ) {
+    final order = _itemOrder[dayWorkoutId];
+    if (order == null) return items;
+    final byId = {for (final p in items) p.item.id: p};
+    final result = <DayWorkoutItemProgress>[];
+    for (final id in order) {
+      final p = byId.remove(id);
+      if (p != null) result.add(p);
+    }
+    result.addAll(byId.values);
+    return result;
+  }
+
   String _groupTitle(DayWorkoutGroup group, AppLocalizations l10n) {
     final name = group.workout.planName?.trim();
     if (name != null && name.isNotEmpty) return name;
@@ -40,7 +92,7 @@ class TodayWorkoutCard extends ConsumerWidget {
 
   Future<void> _pickPlan(BuildContext context, WidgetRef ref) async {
     final l10n = context.l10n;
-    if (!AppDates.isLocalToday(day)) {
+    if (!AppDates.isLocalToday(widget.day)) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.pastDayReadOnly)));
@@ -131,14 +183,14 @@ class TodayWorkoutCard extends ConsumerWidget {
     );
     if (!context.mounted || choice == null) return;
     if (choice == 'quick') {
-      await showQuickAddDayItemDialog(context: context, ref: ref, day: day);
+      await showQuickAddDayItemDialog(context: context, ref: ref, day: widget.day);
       return;
     }
     if (choice == 'quickPlan') {
       final router = GoRouter.of(context);
       // Details sheet is itself a root modal; dismiss it before the plan editor
       // so it isn't still covering Today when the user comes back.
-      if (showDetails) {
+      if (widget.showDetails) {
         Navigator.of(context, rootNavigator: true).pop();
       }
       await router.push('/records/plan');
@@ -148,7 +200,7 @@ class TodayWorkoutCard extends ConsumerWidget {
       try {
         await ref
             .read(workoutRepositoryProvider)
-            .applyPlanToDay(planId: choice.plan.id, day: day);
+            .applyPlanToDay(planId: choice.plan.id, day: widget.day);
       } catch (e) {
         if (!context.mounted) return;
         ScaffoldMessenger.of(
@@ -164,8 +216,10 @@ class TodayWorkoutCard extends ConsumerWidget {
     int? sourceDayWorkoutId,
   }) async {
     final l10n = context.l10n;
-    final from = day.subtract(const Duration(days: 1));
-    final existing = await ref.read(workoutRepositoryProvider).daySnapshot(day);
+    final from = widget.day.subtract(const Duration(days: 1));
+    final existing = await ref
+        .read(workoutRepositoryProvider)
+        .daySnapshot(widget.day);
     if (!existing.isEmpty) {
       if (!context.mounted) return;
       final ok = await showDialog<bool>(
@@ -193,7 +247,7 @@ class TodayWorkoutCard extends ConsumerWidget {
           .read(workoutRepositoryProvider)
           .copyDayWorkout(
             from: from,
-            to: day,
+            to: widget.day,
             sourceDayWorkoutId: sourceDayWorkoutId,
           );
       if (!context.mounted) return;
@@ -217,7 +271,9 @@ class TodayWorkoutCard extends ConsumerWidget {
   Future<void> _saveAsPlan(BuildContext context, WidgetRef ref) async {
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context);
-    final snap = await ref.read(workoutRepositoryProvider).daySnapshot(day);
+    final snap = await ref
+        .read(workoutRepositoryProvider)
+        .daySnapshot(widget.day);
     if (!context.mounted) return;
     if (snap.isEmpty) {
       ScaffoldMessenger.of(
@@ -236,7 +292,12 @@ class TodayWorkoutCard extends ConsumerWidget {
     final nameCtrl = TextEditingController(
       text: (existingName != null && existingName.isNotEmpty)
           ? existingName
-          : AppDates.relativeDayTitle(day, AppDates.todayLocal(), l10n, locale),
+          : AppDates.relativeDayTitle(
+              widget.day,
+              AppDates.todayLocal(),
+              l10n,
+              locale,
+            ),
     );
     final nameFocus = FocusNode();
     suppressInitialTextFocus(nameFocus);
@@ -274,7 +335,7 @@ class TodayWorkoutCard extends ConsumerWidget {
     try {
       await ref
           .read(workoutRepositoryProvider)
-          .createPlanFromDay(day: day, name: planName);
+          .createPlanFromDay(day: widget.day, name: planName);
       ref.invalidate(workoutPlansProvider);
       if (!context.mounted) return;
       ScaffoldMessenger.of(
@@ -319,6 +380,7 @@ class TodayWorkoutCard extends ConsumerWidget {
     await ref
         .read(workoutRepositoryProvider)
         .deleteDayWorkout(group.workout.id);
+    _itemOrder.remove(group.workout.id);
     ref.invalidate(workoutHistoryProvider);
     ref.invalidate(allWorkoutHistoryProvider);
   }
@@ -336,7 +398,7 @@ class TodayWorkoutCard extends ConsumerWidget {
         path: '/records/plan',
         queryParameters: {
           'id': '$planId',
-          'syncDay': CalendarDay.dayOnly(day).toIso8601String(),
+          'syncDay': CalendarDay.dayOnly(widget.day).toIso8601String(),
         },
       ).toString(),
     );
@@ -353,7 +415,7 @@ class TodayWorkoutCard extends ConsumerWidget {
     required String? summary,
   }) {
     return TodaySectionHeader(
-      title: l10n.sectionWorkout(sectionPrefix),
+      title: l10n.sectionWorkout(widget.sectionPrefix),
       summary: summary,
       addLabel: canAdd ? l10n.addTodayWorkout : null,
       onAdd: canAdd ? () => _pickPlan(context, ref) : null,
@@ -393,6 +455,225 @@ class TodayWorkoutCard extends ConsumerWidget {
     );
   }
 
+  Widget _groupTile({
+    required BuildContext context,
+    required WidgetRef ref,
+    required AppLocalizations l10n,
+    required ColorScheme scheme,
+    required DayWorkoutGroup group,
+    required bool editable,
+  }) {
+    return Dismissible(
+      key: ValueKey('day-workout-group-${group.workout.id}'),
+      direction: editable
+          ? DismissDirection.endToStart
+          : DismissDirection.none,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 16),
+        color: scheme.error,
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      confirmDismiss: (_) => _confirmRemoveGroup(context, group),
+      onDismissed: (_) => _removeGroup(ref, group),
+      child: _DayWorkoutGroupTile(
+        title: _groupTitle(group, l10n),
+        done: group.doneCount,
+        total: group.items.length,
+        onTap: group.workout.planId == null
+            ? null
+            : () => _editGroupPlan(context, group),
+        children: [
+          _itemsList(
+            context: context,
+            ref: ref,
+            l10n: l10n,
+            scheme: scheme,
+            group: group,
+            editable: editable,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Renders today's workout groups (plans); when [editable] and there's more
+  /// than one, wraps them in a drag-to-reorder list so the plan order itself
+  /// can be resequenced (independent of the per-plan exercise reordering in
+  /// [_itemsList]). The displayed order always goes through [_orderedGroups]
+  /// so a drag is reflected immediately, without waiting for the underlying
+  /// stream to re-emit.
+  Widget _groupsList({
+    required BuildContext context,
+    required WidgetRef ref,
+    required AppLocalizations l10n,
+    required ColorScheme scheme,
+    required List<DayWorkoutGroup> groups,
+    required bool editable,
+  }) {
+    final ordered = _orderedGroups(groups);
+    if (!editable || ordered.length < 2) {
+      return Column(
+        children: [
+          for (final group in ordered)
+            _groupTile(
+              context: context,
+              ref: ref,
+              l10n: l10n,
+              scheme: scheme,
+              group: group,
+              editable: editable,
+            ),
+        ],
+      );
+    }
+    return ReorderableListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      buildDefaultDragHandles: false,
+      itemCount: ordered.length,
+      onReorderItem: (oldIndex, newIndex) async {
+        final previousOrder = _groupOrder;
+        final ids = [for (final g in ordered) g.workout.id];
+        final moved = ids.removeAt(oldIndex);
+        ids.insert(newIndex, moved);
+        setState(() => _groupOrder = ids);
+        try {
+          await ref
+              .read(workoutRepositoryProvider)
+              .reorderDayWorkoutGroups(
+                day: widget.day,
+                orderedDayWorkoutIds: ids,
+              );
+        } catch (_) {
+          if (mounted) setState(() => _groupOrder = previousOrder);
+        }
+      },
+      itemBuilder: (context, i) {
+        final group = ordered[i];
+        return Row(
+          key: ValueKey('day-workout-group-row-${group.workout.id}'),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ReorderableDragStartListener(
+              index: i,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 14),
+                child: Icon(
+                  Icons.drag_handle,
+                  size: 20,
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            Expanded(
+              child: _groupTile(
+                context: context,
+                ref: ref,
+                l10n: l10n,
+                scheme: scheme,
+                group: group,
+                editable: editable,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Renders a group's items; when [editable] and there's more than one,
+  /// wraps them in a drag-to-reorder list so today's plan can be resequenced.
+  /// Like [_groupsList], the displayed order goes through [_orderedItems] so
+  /// dragging feels immediate instead of waiting on the stream round-trip.
+  Widget _itemsList({
+    required BuildContext context,
+    required WidgetRef ref,
+    required AppLocalizations l10n,
+    required ColorScheme scheme,
+    required DayWorkoutGroup group,
+    required bool editable,
+  }) {
+    final dayWorkoutId = group.workout.id;
+    final ordered = _orderedItems(dayWorkoutId, group.items);
+    if (!editable || ordered.length < 2) {
+      return Column(
+        children: [
+          for (final progress in ordered)
+            _itemTile(
+              context: context,
+              ref: ref,
+              l10n: l10n,
+              scheme: scheme,
+              progress: progress,
+              editable: editable,
+            ),
+        ],
+      );
+    }
+    return ReorderableListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      buildDefaultDragHandles: false,
+      itemCount: ordered.length,
+      onReorderItem: (oldIndex, newIndex) async {
+        final previousOrder = _itemOrder[dayWorkoutId];
+        final ids = [for (final p in ordered) p.item.id];
+        final moved = ids.removeAt(oldIndex);
+        ids.insert(newIndex, moved);
+        setState(() => _itemOrder[dayWorkoutId] = ids);
+        try {
+          await ref
+              .read(workoutRepositoryProvider)
+              .reorderDayWorkoutItems(
+                dayWorkoutId: dayWorkoutId,
+                orderedItemIds: ids,
+              );
+        } catch (_) {
+          if (mounted) {
+            setState(() {
+              if (previousOrder == null) {
+                _itemOrder.remove(dayWorkoutId);
+              } else {
+                _itemOrder[dayWorkoutId] = previousOrder;
+              }
+            });
+          }
+        }
+      },
+      itemBuilder: (context, i) {
+        final progress = ordered[i];
+        return Row(
+          key: ValueKey('day-workout-item-${progress.item.id}'),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ReorderableDragStartListener(
+              index: i,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 14),
+                child: Icon(
+                  Icons.drag_handle,
+                  size: 20,
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            Expanded(
+              child: _itemTile(
+                context: context,
+                ref: ref,
+                l10n: l10n,
+                scheme: scheme,
+                progress: progress,
+                editable: editable,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _itemTile({
     required BuildContext context,
     required WidgetRef ref,
@@ -402,7 +683,11 @@ class TodayWorkoutCard extends ConsumerWidget {
     required bool editable,
   }) {
     if (!editable) {
-      return _WorkoutItemTile(progress: progress, day: day, editable: false);
+      return _WorkoutItemTile(
+        progress: progress,
+        day: widget.day,
+        editable: false,
+      );
     }
     return Dismissible(
       key: ValueKey(progress.item.id),
@@ -446,21 +731,28 @@ class TodayWorkoutCard extends ConsumerWidget {
         ref.invalidate(workoutHistoryProvider);
         ref.invalidate(allWorkoutHistoryProvider);
       },
-      child: _WorkoutItemTile(progress: progress, day: day, editable: true),
+      child: _WorkoutItemTile(
+        progress: progress,
+        day: widget.day,
+        editable: true,
+      ),
     );
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final async = ref.watch(dayWorkoutProvider(day));
+    final async = ref.watch(dayWorkoutProvider(widget.day));
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final editable = AppDates.isLocalToday(day);
+    final visuals = AppThemeVisuals.of(context);
+    final editable = AppDates.isLocalToday(widget.day);
     final yesterdayGroups = editable
         ? (ref
                   .watch(
-                    dayWorkoutProvider(day.subtract(const Duration(days: 1))),
+                    dayWorkoutProvider(
+                      widget.day.subtract(const Duration(days: 1)),
+                    ),
                   )
                   .value
                   ?.groups ??
@@ -536,6 +828,7 @@ class TodayWorkoutCard extends ConsumerWidget {
 
         final done = snapshot.doneCount;
         final total = snapshot.items.length;
+        final orderedGroups = _orderedGroups(snapshot.groups);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -550,67 +843,70 @@ class TodayWorkoutCard extends ConsumerWidget {
               yesterdayGroups: yesterdayGroups,
               summary: '$done/$total',
             ),
-            if (!showDetails) ...[
-              for (final group in snapshot.groups)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(_groupTitle(group, l10n)),
-                  subtitle: Text(
-                    l10n.workoutProgressHint(
-                      group.doneCount,
-                      group.items.length,
+            if (!widget.showDetails) ...[
+              for (var i = 0; i < orderedGroups.length; i++) ...[
+                if (i > 0) Divider(height: 1, color: visuals.divider),
+                InkWell(
+                  onTap: () => showDayWorkoutDetails(context, widget.day),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 3,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: visuals.accent,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _groupTitle(orderedGroups[i], l10n),
+                                style: theme.textTheme.titleSmall,
+                              ),
+                              Text(
+                                l10n.workoutProgressHint(
+                                  orderedGroups[i].doneCount,
+                                  orderedGroups[i].items.length,
+                                ),
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const InkIcon(InkGlyph.arrowForward, size: 18),
+                      ],
                     ),
                   ),
-                  trailing: const InkIcon(InkGlyph.arrowForward, size: 18),
-                  onTap: () => showDayWorkoutDetails(context, day),
                 ),
+              ],
               SportProgressBar(
                 value: total == 0 ? 0 : done / total,
                 minHeight: 4,
               ),
               TextButton(
-                onPressed: () => showDayWorkoutDetails(context, day),
+                onPressed: () => showDayWorkoutDetails(context, widget.day),
                 child: Text(
                   editable ? l10n.continueRecording : l10n.viewWorkoutDetails,
                 ),
               ),
             ],
-            if (showDetails) ...[
+            if (widget.showDetails) ...[
               const SizedBox(height: 4),
-              for (final group in snapshot.groups)
-                Dismissible(
-                  key: ValueKey('day-workout-group-${group.workout.id}'),
-                  direction: editable
-                      ? DismissDirection.endToStart
-                      : DismissDirection.none,
-                  background: Container(
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.only(right: 16),
-                    color: scheme.error,
-                    child: const Icon(Icons.delete, color: Colors.white),
-                  ),
-                  confirmDismiss: (_) => _confirmRemoveGroup(context, group),
-                  onDismissed: (_) => _removeGroup(ref, group),
-                  child: _DayWorkoutGroupTile(
-                    title: _groupTitle(group, l10n),
-                    done: group.doneCount,
-                    total: group.items.length,
-                    onTap: group.workout.planId == null
-                        ? null
-                        : () => _editGroupPlan(context, group),
-                    children: [
-                      for (final progress in group.items)
-                        _itemTile(
-                          context: context,
-                          ref: ref,
-                          l10n: l10n,
-                          scheme: scheme,
-                          progress: progress,
-                          editable: editable,
-                        ),
-                    ],
-                  ),
-                ),
+              _groupsList(
+                context: context,
+                ref: ref,
+                l10n: l10n,
+                scheme: scheme,
+                groups: snapshot.groups,
+                editable: editable,
+              ),
               Text(
                 l10n.workoutProgressHint(done, total),
                 style: theme.textTheme.meta,

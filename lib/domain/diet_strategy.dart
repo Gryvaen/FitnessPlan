@@ -802,12 +802,19 @@ abstract final class StrategyDates {
 
   /// 0-based position of [date] within a [cycleLengthDays]-day cycle
   /// anchored at [cycleStart] (cycle day 0 = [cycleStart]).
+  ///
+  /// [restDaysBefore] counts 休息日-marked dates in `[cycleStart, date)`;
+  /// each one pauses the cycle for a day, so later dates take on the index
+  /// the rest day itself would have occupied. Defaults to 0 (no behavior
+  /// change when there are no rest-day markers).
   static int cycleIndexOf(
     DateTime date,
     DateTime cycleStart,
-    int cycleLengthDays,
-  ) {
-    final diff = dayOnly(date).difference(dayOnly(cycleStart)).inDays;
+    int cycleLengthDays, {
+    int restDaysBefore = 0,
+  }) {
+    final diff =
+        dayOnly(date).difference(dayOnly(cycleStart)).inDays - restDaysBefore;
     final idx = diff % cycleLengthDays;
     return idx < 0 ? idx + cycleLengthDays : idx;
   }

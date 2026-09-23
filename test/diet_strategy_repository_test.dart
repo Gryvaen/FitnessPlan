@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:diet/data/db.dart';
+import 'package:diet/data/repositories/day_marker_repository.dart';
 import 'package:diet/data/repositories/diet_strategy_repository.dart';
 import 'package:diet/domain/calendar_day.dart';
 import 'package:diet/domain/diet_plan.dart';
@@ -465,6 +466,123 @@ void main() {
         today,
       );
       expect(set, {today});
+    });
+  });
+
+  group('rest day shifts the carb cycle', () {
+    test(
+      'a marked rest day pushes the cycle index for later days back by one',
+      () async {
+        await repo.createPlan(_carbCycleDraft(today)); // 'HMLL', day0 = today
+        final cyclePlan = CarbCyclePlanner.compute(
+          referenceWeightKg: 75,
+          rates: _carbCycleRates,
+          schedule: CarbCycleSchedule.tryParse('HMLL')!,
+        );
+        final tomorrow = today.add(const Duration(days: 1));
+        final dayAfter = today.add(const Duration(days: 2));
+        final day3 = today.add(const Duration(days: 3));
+        final day4 = today.add(const Duration(days: 4));
+
+        // Unshifted: today=H(0) tomorrow=M(1) dayAfter=L(2) day3=L(3) day4=H(0)
+        expect(
+          (await repo.targetForDay(dayAfter, _profile()))!.calories,
+          closeTo(cyclePlan.dayAt(2).energy, 1e-6),
+        );
+
+        final markerRepo = DayMarkerRepository(db);
+        await markerRepo.setRestDay(tomorrow);
+
+        // dayAfter's diff (2) minus the 1 rest day before it (tomorrow) → index 1 (M).
+        final afterMark = (await repo.targetForDay(dayAfter, _profile()))!;
+        expect(afterMark.calories, closeTo(cyclePlan.dayAt(1).energy, 1e-6));
+        // day3: diff 3 - 1 = 2 → L.
+        expect(
+          (await repo.targetForDay(day3, _profile()))!.calories,
+          closeTo(cyclePlan.dayAt(2).energy, 1e-6),
+        );
+        // day4: diff 4 - 1 = 3 → L.
+        expect(
+          (await repo.targetForDay(day4, _profile()))!.calories,
+          closeTo(cyclePlan.dayAt(3).energy, 1e-6),
+        );
+      },
+    );
+
+    test('targetsBetween applies the same rest-day shift', () async {
+      await repo.createPlan(_carbCycleDraft(today));
+      final cyclePlan = CarbCyclePlanner.compute(
+        referenceWeightKg: 75,
+        rates: _carbCycleRates,
+        schedule: CarbCycleSchedule.tryParse('HMLL')!,
+      );
+      final tomorrow = today.add(const Duration(days: 1));
+      final markerRepo = DayMarkerRepository(db);
+      await markerRepo.setRestDay(tomorrow);
+
+      final map = await repo.targetsBetween(
+        today,
+        today.add(const Duration(days: 4)),
+        _profile(),
+      );
+      expect(map[today]!.calories, closeTo(cyclePlan.dayAt(0).energy, 1e-6));
+      final dayAfter = today.add(const Duration(days: 2));
+      final day3 = today.add(const Duration(days: 3));
+      final day4 = today.add(const Duration(days: 4));
+      expect(
+        map[dayAfter]!.calories,
+        closeTo(cyclePlan.dayAt(1).energy, 1e-6),
+      );
+      expect(map[day3]!.calories, closeTo(cyclePlan.dayAt(2).energy, 1e-6));
+      expect(map[day4]!.calories, closeTo(cyclePlan.dayAt(3).energy, 1e-6));
+    });
+
+    test(
+      'a rest day backfilled onto an already-past date does not shift '
+      'the cycle',
+      () async {
+        await repo.createPlan(_carbCycleDraft(today)); // 'HMLL', day0 = today
+        final cyclePlan = CarbCyclePlanner.compute(
+          referenceWeightKg: 75,
+          rates: _carbCycleRates,
+          schedule: CarbCycleSchedule.tryParse('HMLL')!,
+        );
+        final dayAfter = today.add(const Duration(days: 2)); // unshifted: L
+        final day4 = today.add(const Duration(days: 4)); // unshifted: H
+
+        final markerRepo = DayMarkerRepository(db);
+        // Backfilled well after the fact — updatedAt trails the marked date
+        // by days, unlike a contemporaneous marker — so it must not count
+        // toward the day-count progression.
+        await markerRepo.setRestDay(
+          dayAfter,
+          now: today.add(const Duration(days: 5)),
+        );
+
+        final t = (await repo.targetForDay(day4, _profile()))!;
+        expect(t.calories, closeTo(cyclePlan.dayAt(0).energy, 1e-6));
+
+        final map = await repo.targetsBetween(today, day4, _profile());
+        expect(map[day4]!.calories, closeTo(cyclePlan.dayAt(0).energy, 1e-6));
+      },
+    );
+
+    test('rest days do not affect non-carb-cycle strategies', () async {
+      await repo.createPlan(
+        DietStrategyPlanDraft(
+          kind: DietStrategyKind.balanced,
+          effectiveFrom: today,
+          referenceWeightKg: 75,
+          estimatedTdee: 2400,
+          baseEnergy: 2000,
+        ),
+      );
+      final tomorrow = today.add(const Duration(days: 1));
+      final markerRepo = DayMarkerRepository(db);
+      await markerRepo.setRestDay(tomorrow);
+      final dayAfter = today.add(const Duration(days: 2));
+      final t = (await repo.targetForDay(dayAfter, _profile()))!;
+      expect(t.calories, 2000);
     });
   });
 

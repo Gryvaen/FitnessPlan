@@ -32,6 +32,7 @@ part 'db.g.dart';
     DietStrategyPlans,
     DailyNutritionTargets,
     DayDietConfirmations,
+    DayMarkers,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -40,7 +41,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 24;
+  int get schemaVersion => 27;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -229,6 +230,12 @@ CREATE TABLE day_workouts_new (
       }
       if (from < 24) {
         await _createDateIndices();
+      }
+      if (from < 26) {
+        await _addColumnIfMissing(m, dayWorkouts, dayWorkouts.sortOrder);
+      }
+      if (from < 27) {
+        await m.createTable(dayMarkers);
       }
     },
   );

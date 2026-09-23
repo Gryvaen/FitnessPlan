@@ -185,6 +185,7 @@ class DayWorkouts extends Table {
   DateTimeColumn get date => dateTime()();
   IntColumn get planId => integer().nullable()();
   TextColumn get planName => text().nullable()();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
 }
 
 class DayWorkoutItems extends Table {
@@ -283,6 +284,21 @@ class DailyNutritionTargets extends Table {
 class DayDietConfirmations extends Table {
   TextColumn get date => text()();
   BoolColumn get complete => boolean()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {date};
+}
+
+/// Per-day 放纵餐/休息日 override marker; see `domain/day_marker.dart`. `type`
+/// stores a [DayMarkerType] name. `updatedAt` doubles as the "was this set
+/// on/before its own date" signal used to decide whether a 休息日 marker
+/// counts toward the carb-cycle day-count progression (see
+/// `restDayCountsTowardProgression`).
+@DataClassName('DayMarkerRow')
+class DayMarkers extends Table {
+  TextColumn get date => text()();
+  TextColumn get type => text()();
   DateTimeColumn get updatedAt => dateTime()();
 
   @override

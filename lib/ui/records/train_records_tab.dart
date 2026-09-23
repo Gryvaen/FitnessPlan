@@ -15,6 +15,7 @@ import '../theme/sport_chrome.dart';
 import '../widgets/form_options.dart';
 import '../widgets/search_field_focus.dart';
 import 'exercise_form_dialog.dart';
+import 'exercise_picker.dart';
 
 typedef _TrainHistoryAvailability = ({bool resolved, bool hasHistory});
 
@@ -990,11 +991,11 @@ Future<void> showQuickAddDayItemDialog({
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                AppDropdown<Exercise>(
+                ExercisePicker(
                   label: l10n.exercise,
-                  value: selected!,
-                  items: exercises,
-                  itemLabel: (e) => e.name,
+                  displayText: selected!.name,
+                  selectedId: selected!.id,
+                  exercises: exercises,
                   onChanged: (v) => setLocal(() {
                     selected = v;
                     reps = FormOptions.snapInt(

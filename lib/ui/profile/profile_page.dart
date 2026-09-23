@@ -91,6 +91,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         ref.read(mealPresetRepositoryProvider).clearAll(),
         ref.read(waterRepositoryProvider).clearAll(),
         ref.read(dietStrategyRepositoryProvider).clearAll(),
+        ref.read(dayMarkerRepositoryProvider).clearAll(),
       ]);
       await ref.read(profileProvider.notifier).clear();
       await ref.read(remindersProvider.notifier).syncSchedule();

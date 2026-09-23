@@ -423,6 +423,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get presetSaved => '套餐已保存';
 
   @override
+  String get presetNameExists => '套餐名称已存在';
+
+  @override
+  String presetNameExistsConfirm(String name) {
+    return '已存在名为“$name”的套餐，是否替换？';
+  }
+
+  @override
   String get saveAsPlan => '存为训练计划';
 
   @override
@@ -795,6 +803,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get portionNameHint => '如：一碗 / 瓶 500ml';
+
+  @override
+  String get manualGramsToggle => '手动输入克数';
+
+  @override
+  String get invalidGramsValue => '请输入大于 0 的克数';
 
   @override
   String get deleteCustomFood => '删除自定义食材';
@@ -1255,6 +1269,21 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get legendAfterGreenRed => '生效后：过去绿/红';
+
+  @override
+  String get cheatMealLabel => '放纵餐';
+
+  @override
+  String get restDayLabel => '休息日';
+
+  @override
+  String get clearMarkerLabel => '取消标记';
+
+  @override
+  String get cheatMealShortLabel => '放纵';
+
+  @override
+  String get restDayShortLabel => '休息';
 
   @override
   String get waterTapHint => '点水杯 +250 · 点杯盖 −250';

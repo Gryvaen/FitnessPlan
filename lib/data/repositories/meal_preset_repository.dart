@@ -16,6 +16,13 @@ class MealPresetRepository {
     )..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).get();
   }
 
+  Future<MealPreset?> presetByName(String name) {
+    final trimmed = name.trim();
+    return (_db.select(
+      _db.mealPresets,
+    )..where((t) => t.name.equals(trimmed))).getSingleOrNull();
+  }
+
   Future<List<MealPresetItem>> itemsFor(int presetId) {
     return (_db.select(_db.mealPresetItems)
           ..where((t) => t.presetId.equals(presetId))
@@ -26,12 +33,26 @@ class MealPresetRepository {
   Future<int> createFromEntries({
     required String name,
     required List<MealEntry> entries,
+    bool replaceExisting = false,
   }) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) throw ArgumentError('套餐名称不能为空');
     if (entries.isEmpty) throw ArgumentError('没有可保存的记录');
 
     return _db.transaction(() async {
+      if (replaceExisting) {
+        final existing = await (_db.select(
+          _db.mealPresets,
+        )..where((t) => t.name.equals(trimmed))).getSingleOrNull();
+        if (existing != null) {
+          await (_db.delete(
+            _db.mealPresetItems,
+          )..where((t) => t.presetId.equals(existing.id))).go();
+          await (_db.delete(
+            _db.mealPresets,
+          )..where((t) => t.id.equals(existing.id))).go();
+        }
+      }
       final presetId = await _db
           .into(_db.mealPresets)
           .insert(

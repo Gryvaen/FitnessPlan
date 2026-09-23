@@ -425,6 +425,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get presetSaved => 'Preset saved';
 
   @override
+  String get presetNameExists => 'Preset name already exists';
+
+  @override
+  String presetNameExistsConfirm(String name) {
+    return 'A preset named \"$name\" already exists. Replace it?';
+  }
+
+  @override
   String get saveAsPlan => 'Save as workout plan';
 
   @override
@@ -802,6 +810,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get portionNameHint => 'e.g. 1 bowl / 500 ml bottle';
+
+  @override
+  String get manualGramsToggle => 'Enter grams manually';
+
+  @override
+  String get invalidGramsValue => 'Enter a value greater than 0';
 
   @override
   String get deleteCustomFood => 'Delete custom food';
@@ -1275,6 +1289,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get legendAfterGreenRed => 'After: past green/red';
+
+  @override
+  String get cheatMealLabel => 'Cheat meal';
+
+  @override
+  String get restDayLabel => 'Rest day';
+
+  @override
+  String get clearMarkerLabel => 'Clear marker';
+
+  @override
+  String get cheatMealShortLabel => 'Cheat';
+
+  @override
+  String get restDayShortLabel => 'Rest';
 
   @override
   String get waterTapHint => 'Tap cup +250 · tap lid −250';

@@ -1,6 +1,7 @@
 export 'app_update_providers.dart';
 export 'core_providers.dart';
 export 'cultivation_providers.dart';
+export 'day_marker_providers.dart';
 export 'diet_strategy_providers.dart';
 export 'food_providers.dart';
 export 'locale_providers.dart';

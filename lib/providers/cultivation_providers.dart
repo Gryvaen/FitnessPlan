@@ -7,9 +7,11 @@ import '../data/services/steps_sync_service.dart';
 import '../domain/calendar_day.dart';
 import '../domain/cultivation.dart';
 import '../domain/cut_cultivation.dart';
+import '../domain/day_marker.dart';
 import '../domain/deficit.dart';
 import '../domain/models.dart';
 import 'core_providers.dart';
+import 'day_marker_providers.dart';
 import 'diet_strategy_providers.dart';
 import 'meal_providers.dart';
 import 'profile_providers.dart';
@@ -74,16 +76,25 @@ final _storedStepsTodayProvider = StreamProvider<int>((ref) {
 });
 
 /// 今日步数（恒为本地今天）。未成功同步（权限/失败/空读）时按 0，避免把
-/// 库里残留的昨日总量当成今日修行贡献。
+/// 库里残留的昨日总量当成今日修行贡献。休息日当天步数也归零。
 final cultivationStepsTodayProvider = Provider<int>((ref) {
+  final today = CalendarDay.todayLocal();
+  final marker = ref.watch(dayMarkerProvider(today)).value;
+  if (marker == DayMarkerType.restDay) return 0;
   final status = ref.watch(stepsSyncStatusProvider);
   if (status != StepsSyncStatus.connected) return 0;
   return ref.watch(_storedStepsTodayProvider).value ?? 0;
 });
 
-/// 指定日期的饮食 kcal 贡献，仅当日记录餐次 ≥ 2 类时计入。
+/// 指定日期的饮食 kcal 贡献，仅当日记录餐次 ≥ 2 类时计入。放纵餐/休息日
+/// 当天无条件归零。
 final cultivationDietKcalForDayProvider = Provider.autoDispose
     .family<double, DateTime>((ref, day) {
+      final marker = ref.watch(dayMarkerProvider(day)).value;
+      if (marker == DayMarkerType.cheatMeal || marker == DayMarkerType.restDay) {
+        return 0;
+      }
+
       final meals = ref.watch(mealsForDayProvider(day)).value ?? const [];
       final loggedTypes = meals.map((e) => e.mealType).toSet();
       if (loggedTypes.length < 2) return 0;
@@ -150,6 +161,7 @@ final _cultivationDbTickProvider = StreamProvider.autoDispose<int>((ref) {
           db.workoutSetLogs,
           db.dailyNutritionTargets,
           db.dietStrategyPlans,
+          db.dayMarkers,
         ]),
       )
       .map((_) => ++n);
@@ -173,6 +185,9 @@ Future<List<CultivationDayRecord>> _buildCultivationDays({
 
   final stepDays = await stepRepo.allLoggedDays();
   final mealDays = await mealRepo.mealDaySummaries(since: oldest);
+  final markers = await ref
+      .read(dayMarkerRepositoryProvider)
+      .markersBetween(oldest, newest);
   final stepsByDay = <DateTime, int>{
     for (final d in stepDays)
       if (allowedDays.contains(d.date)) d.date: d.steps,
@@ -218,13 +233,23 @@ Future<List<CultivationDayRecord>> _buildCultivationDays({
     final hasWorkout = !workout.isEmpty;
     final hasSteps = steps > 0;
     final hasDietLog = meal != null && meal.mealTypes.length >= 2;
+    // Visibility is decided from raw (pre-zeroing) activity, so a marked day
+    // with real activity still surfaces as a (zeroed) row instead of
+    // vanishing silently.
     if (!hasSteps && !hasDietLog && !hasWorkout) continue;
+
+    final marker = markers[day];
+    final zeroedStepsKcal = marker == DayMarkerType.restDay ? 0.0 : stepsKcal;
+    final zeroedDietKcal =
+        marker == DayMarkerType.cheatMeal || marker == DayMarkerType.restDay
+        ? 0.0
+        : dietKcal;
 
     out.add(
       CultivationDayRecord(
         date: day,
-        stepsKcal: stepsKcal,
-        dietKcal: dietKcal,
+        stepsKcal: zeroedStepsKcal,
+        dietKcal: zeroedDietKcal,
         workout: workout,
       ),
     );
