@@ -11,6 +11,32 @@ InkGlyph foodCategoryGlyph(String category) => switch (category) {
   _ => InkGlyph.food,
 };
 
+/// Low-saturation food colours: warmer for protein/grains, cooler for
+/// hydration/fats. The dark palette is lifted enough to stay calm and clear
+/// on graphite without becoming neon.
+Color foodCategoryColor(BuildContext context, String category) {
+  final dark = Theme.of(context).brightness == Brightness.dark;
+  return switch (category) {
+    '畜肉' ||
+    '禽肉' ||
+    '水产' ||
+    '乳类' ||
+    '蛋类' ||
+    '豆类' => dark ? const Color(0xFFD58F82) : const Color(0xFFA85F52),
+    '谷类' ||
+    '薯类' ||
+    '水果' ||
+    '糖蜜饯' => dark ? const Color(0xFFD5B46F) : const Color(0xFF9B752D),
+    '坚果' || '油脂' => dark ? const Color(0xFF9EADD0) : const Color(0xFF66779F),
+    '饮料' => dark ? const Color(0xFF79BFC0) : const Color(0xFF3E8584),
+    '自定义' => dark ? const Color(0xFFA9A0C5) : const Color(0xFF776D98),
+    _ => dark ? const Color(0xFF96B89F) : const Color(0xFF5F876A),
+  };
+}
+
+Color foodUtilityIconColor(BuildContext context) =>
+    Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: .82);
+
 /// Theme-aware ink PNG used as a food-category list marker.
 class FoodCategoryAvatar extends StatelessWidget {
   const FoodCategoryAvatar({super.key, required this.category, this.size = 40});
@@ -23,7 +49,13 @@ class FoodCategoryAvatar extends StatelessWidget {
     return SizedBox(
       width: size,
       height: size,
-      child: Center(child: InkIcon(foodCategoryGlyph(category), size: size)),
+      child: Center(
+        child: InkIcon(
+          foodCategoryGlyph(category),
+          size: size,
+          color: foodCategoryColor(context, category),
+        ),
+      ),
     );
   }
 }
