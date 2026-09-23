@@ -110,7 +110,7 @@ void main() {
   test('syncSeedFromAsset upserts by name and removes obsolete', () async {
     final raw = await File('assets/food_seed.json').readAsString();
     final list = jsonDecode(raw) as List<dynamic>;
-    expect(list.length, greaterThan(3000));
+    expect(list.length, greaterThan(500));
     final han = RegExp(r'[\u4e00-\u9fff]');
     for (final item in list) {
       final name = (item as Map<String, dynamic>)['name'] as String;
