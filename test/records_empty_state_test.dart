@@ -219,6 +219,30 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('today note uses a trailing delete icon instead of swipe', (
+    tester,
+  ) async {
+    await container
+        .read(noteRepositoryProvider)
+        .upsert(date: DateTime.now(), content: '今日便签');
+    await pump(tester, const NotesRecordsTab());
+
+    expect(find.byType(Dismissible), findsNothing);
+    final delete = find.byTooltip('删除');
+    expect(delete, findsOneWidget);
+
+    await tester.tap(delete);
+    await tester.pumpAndSettle();
+    expect(find.text('删除便签'), findsOneWidget);
+    expect(find.textContaining('今日便签'), findsWidgets);
+
+    await tester.tap(find.widgetWithText(FilledButton, '删除'));
+    await tester.pumpAndSettle();
+    expect(find.text('今日便签'), findsNothing);
+    expect(find.text('记录今天的训练感受、睡眠或饮食偏差'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('shared stamped icon keeps the Today empty-state dimensions', (
     tester,
   ) async {
