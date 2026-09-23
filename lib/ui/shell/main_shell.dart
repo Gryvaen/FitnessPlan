@@ -187,7 +187,7 @@ class _PillNavItem extends StatelessWidget {
                       InkStrokeUnderline(
                         selected: selected,
                         color: accent,
-                        width: 24,
+                        width: 34,
                       ),
                     ],
                   ),
