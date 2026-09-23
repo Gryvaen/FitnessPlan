@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/reminders_repository.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import 'workout_reminder_notifications.dart';
@@ -125,11 +126,11 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
     ReminderKind.weighIn => l10n.reminderKindWeighInDesc,
   };
 
-  IconData _icon(ReminderKind kind) => switch (kind) {
-    ReminderKind.workout => Icons.fitness_center_outlined,
-    ReminderKind.water => Icons.local_drink_outlined,
-    ReminderKind.meal => Icons.restaurant_outlined,
-    ReminderKind.weighIn => Icons.monitor_weight_outlined,
+  InkGlyph _icon(ReminderKind kind) => switch (kind) {
+    ReminderKind.workout => InkGlyph.training,
+    ReminderKind.water => InkGlyph.water,
+    ReminderKind.meal => InkGlyph.food,
+    ReminderKind.weighIn => InkGlyph.weight,
   };
 
   Color _iconColor(ReminderKind kind) => switch (kind) {
@@ -165,11 +166,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 16,
-                      color: AppColors.warning,
-                    ),
+                    InkIcon(InkGlyph.info, size: 16, color: AppColors.warning),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -179,8 +176,8 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
                         ),
                       ),
                     ),
-                    Icon(
-                      Icons.chevron_right,
+                    InkIcon(
+                      InkGlyph.chevronRight,
                       size: 16,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -205,11 +202,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
             const SizedBox(height: AppSpacing.section),
             Row(
               children: [
-                Icon(
-                  Icons.check,
-                  size: 16,
-                  color: AppColors.success,
-                ),
+                InkIcon(InkGlyph.check, size: 16, color: AppColors.success),
                 const SizedBox(width: 6),
                 Text(
                   l10n.notificationPermissionOn,
@@ -258,10 +251,10 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
               if (!granted)
                 SportListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.notifications_off_outlined),
+                  leading: const InkIcon(InkGlyph.notificationsOff),
                   title: Text(l10n.notificationPermissionRow),
                   subtitle: Text(l10n.notificationPermissionHint),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const InkIcon(InkGlyph.chevronRight),
                   onTap: () async {
                     Navigator.pop(sheetContext);
                     await ReminderNotifications.requestPermissions();
@@ -271,14 +264,14 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
               if (!_exact || !_fullScreen)
                 SportListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.alarm),
+                  leading: const InkIcon(InkGlyph.alarm),
                   title: Text(l10n.alarmAccessTitle),
                   subtitle: Text(
                     !_exact
                         ? l10n.exactAlarmMissing
                         : l10n.fullScreenAlarmMissing,
                   ),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const InkIcon(InkGlyph.chevronRight),
                   onTap: () async {
                     Navigator.pop(sheetContext);
                     await ReminderNotifications.requestPermissions();
@@ -318,7 +311,7 @@ class _ReminderTile extends StatelessWidget {
     required this.onPickSound,
   });
 
-  final IconData icon;
+  final InkGlyph icon;
   final Color iconColor;
   final String label;
   final String description;
@@ -343,16 +336,20 @@ class _ReminderTile extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SwitchListTile(
+        SportListTile(
           contentPadding: EdgeInsets.zero,
-          secondary: MenuIconBadge(icon: icon, color: iconColor),
+          leading: InkIcon(icon, color: iconColor),
           title: Text(label),
           subtitle: Text(
             setting.enabled ? l10n.reminderDailyAt(_timeText) : description,
             style: theme.textTheme.bodySmall?.copyWith(color: muted),
           ),
-          value: setting.enabled,
-          onChanged: onToggle,
+          trailing: InkToggle(
+            value: setting.enabled,
+            onChanged: onToggle,
+            semanticLabel: label,
+          ),
+          onTap: () => onToggle(!setting.enabled),
         ),
         if (setting.enabled) ...[
           Padding(
@@ -366,7 +363,7 @@ class _ReminderTile extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Row(
                       children: [
-                        Icon(Icons.schedule_outlined, size: 18, color: muted),
+                        InkIcon(InkGlyph.schedule, size: 18, color: muted),
                         const SizedBox(width: 8),
                         Text(
                           l10n.reminderTimeLabel,
@@ -374,7 +371,7 @@ class _ReminderTile extends StatelessWidget {
                         ),
                         const Spacer(),
                         Text(_timeText, style: theme.textTheme.bodyMedium),
-                        Icon(Icons.chevron_right, size: 18, color: muted),
+                        InkIcon(InkGlyph.chevronRight, size: 18, color: muted),
                       ],
                     ),
                   ),
@@ -408,7 +405,7 @@ class _ReminderTile extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: Row(
                         children: [
-                          Icon(Icons.music_note_outlined, size: 18, color: muted),
+                          InkIcon(InkGlyph.music, size: 18, color: muted),
                           const SizedBox(width: 8),
                           Text(
                             l10n.reminderSoundLabel,
@@ -423,7 +420,11 @@ class _ReminderTile extends StatelessWidget {
                               textAlign: TextAlign.end,
                             ),
                           ),
-                          Icon(Icons.chevron_right, size: 18, color: muted),
+                          InkIcon(
+                            InkGlyph.chevronRight,
+                            size: 18,
+                            color: muted,
+                          ),
                         ],
                       ),
                     ),
@@ -453,7 +454,7 @@ class _AlertModeToggle extends StatelessWidget {
         children: [
           Expanded(
             child: _AlertModeButton(
-              icon: Icons.notifications_active_outlined,
+              glyph: InkGlyph.notification,
               label: l10n.reminderAlertModeRing,
               selected: mode == ReminderAlertMode.ring,
               onTap: () => onChanged(ReminderAlertMode.ring),
@@ -462,7 +463,7 @@ class _AlertModeToggle extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: _AlertModeButton(
-              icon: Icons.vibration,
+              glyph: InkGlyph.vibration,
               label: l10n.reminderAlertModeVibrate,
               selected: mode == ReminderAlertMode.vibrate,
               onTap: () => onChanged(ReminderAlertMode.vibrate),
@@ -476,13 +477,13 @@ class _AlertModeToggle extends StatelessWidget {
 
 class _AlertModeButton extends StatelessWidget {
   const _AlertModeButton({
-    required this.icon,
+    required this.glyph,
     required this.label,
     required this.selected,
     required this.onTap,
   });
 
-  final IconData icon;
+  final InkGlyph glyph;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -503,8 +504,8 @@ class _AlertModeButton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
+              InkIcon(
+                glyph,
                 size: 16,
                 color: selected
                     ? scheme.onPrimaryContainer
@@ -589,8 +590,8 @@ class _OemReliabilityHint extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.battery_alert_outlined,
+              InkIcon(
+                InkGlyph.batteryAlert,
                 size: 18,
                 color: theme.colorScheme.onSurfaceVariant,
               ),
