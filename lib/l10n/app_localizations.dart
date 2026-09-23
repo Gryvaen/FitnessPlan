@@ -2511,6 +2511,36 @@ abstract class AppLocalizations {
   /// **'After: past green/red'**
   String get legendAfterGreenRed;
 
+  /// No description provided for @cheatMealLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cheat meal'**
+  String get cheatMealLabel;
+
+  /// No description provided for @restDayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest day'**
+  String get restDayLabel;
+
+  /// No description provided for @clearMarkerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear marker'**
+  String get clearMarkerLabel;
+
+  /// No description provided for @cheatMealShortLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cheat'**
+  String get cheatMealShortLabel;
+
+  /// No description provided for @restDayShortLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest'**
+  String get restDayShortLabel;
+
   /// No description provided for @waterTapHint.
   ///
   /// In en, this message translates to:

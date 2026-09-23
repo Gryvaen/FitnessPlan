@@ -118,7 +118,12 @@ class DietStrategyPlan {
   }
 
   /// Full-precision target for a date governed by this version.
-  DayMacroTarget targetFor(DateTime day) {
+  ///
+  /// [restDaysBeforeDay] counts 休息日-marked dates strictly before [day]
+  /// (within this plan's range); only the `carbCycle` branch uses it to
+  /// shift the day-count. `balanced`/`carbTaper` targets are date-independent
+  /// day-to-day, so rest days are structurally a no-op for them.
+  DayMacroTarget targetFor(DateTime day, {int restDaysBeforeDay = 0}) {
     switch (kind) {
       case DietStrategyKind.balanced:
         return baseline.balancedDay;
@@ -129,6 +134,7 @@ class DietStrategyPlan {
           day,
           effectiveFrom,
           plan.schedule.cycleLengthDays,
+          restDaysBefore: restDaysBeforeDay,
         );
         return plan.dayAt(index);
       case DietStrategyKind.carbTaper:

@@ -1,10 +1,12 @@
 import 'package:drift/drift.dart';
 
 import '../../domain/calendar_day.dart';
+import '../../domain/day_marker.dart';
 import '../../domain/diet_plan.dart';
 import '../../domain/diet_strategy.dart';
 import '../../domain/models.dart';
 import '../db.dart';
+import 'day_marker_repository.dart';
 
 /// Inputs for a new immutable strategy version.
 class DietStrategyPlanDraft {
@@ -497,8 +499,12 @@ class DietStrategyRepository {
 
   // ----------------------------------------------------------- resolution
 
-  DailyNutritionTarget _fromPlan(DietStrategyPlan plan, DateTime day) {
-    final t = plan.targetFor(day);
+  DailyNutritionTarget _fromPlan(
+    DietStrategyPlan plan,
+    DateTime day, {
+    int restDaysBefore = 0,
+  }) {
+    final t = plan.targetFor(day, restDaysBeforeDay: restDaysBefore);
     return DailyNutritionTarget(
       date: day,
       calories: t.energy,
@@ -515,6 +521,27 @@ class DietStrategyRepository {
           ? 'taperStage:${plan.taperStage}'
           : null,
     );
+  }
+
+  /// Count of 休息日-marked dates in `[plan.effectiveFrom, day)` that count
+  /// toward the carb-cycle day-count pause (excludes rest days backfilled
+  /// onto an already-past date, see [restDayCountsTowardProgression]). Only
+  /// meaningful for `carbCycle` plans; `0` (no query) otherwise, and `0`
+  /// for everyone until any rest day is ever marked.
+  Future<int> _restDaysBeforeForDay(DietStrategyPlan plan, DateTime day) async {
+    if (plan.kind != DietStrategyKind.carbCycle) return 0;
+    final rows =
+        await (_db.select(_db.dayMarkers)
+              ..where(
+                (t) =>
+                    t.type.equals(DayMarkerType.restDay.name) &
+                    t.date.isBiggerOrEqualValue(
+                      StrategyDates.encode(plan.effectiveFrom),
+                    ) &
+                    t.date.isSmallerThanValue(StrategyDates.encode(day)),
+              ))
+            .get();
+    return DayMarkerRepository.progressionRestDayDates(rows).length;
   }
 
   DailyNutritionTarget? _fromProfile(
@@ -563,7 +590,11 @@ class DietStrategyRepository {
 
     final plan = await planCovering(d);
     final resolved = plan != null
-        ? _fromPlan(plan, d)
+        ? _fromPlan(
+            plan,
+            d,
+            restDaysBefore: await _restDaysBeforeForDay(plan, d),
+          )
         : _fromProfile(profile, d, isPast: isPast);
     if (resolved == null) return null;
     if (isToday) {
@@ -598,6 +629,7 @@ class DietStrategyRepository {
       TableUpdateQuery.onAllTables([
         _db.dietStrategyPlans,
         _db.dailyNutritionTargets,
+        _db.dayMarkers,
       ]),
     );
     await for (final _ in updates) {
@@ -618,6 +650,12 @@ class DietStrategyRepository {
     if (e.isBefore(s)) return const {};
     final today = CalendarDay.todayLocal(now);
     final plans = await listPlans();
+    final hasCarbCycle = plans.any(
+      (p) => p.kind == DietStrategyKind.carbCycle,
+    );
+    final restDayDates = hasCarbCycle
+        ? await _allRestDayDates()
+        : const <DateTime>[];
     final snapRows =
         await (_db.select(_db.dailyNutritionTargets)..where(
               (t) => t.date.isBetweenValues(
@@ -644,11 +682,36 @@ class DietStrategyRepository {
       }
       final plan = _covering(plans, d);
       final t = plan != null
-          ? _fromPlan(plan, d)
+          ? _fromPlan(
+              plan,
+              d,
+              restDaysBefore: plan.kind == DietStrategyKind.carbCycle
+                  ? restDayDates
+                        .where(
+                          (rd) =>
+                              !rd.isBefore(plan.effectiveFrom) &&
+                              rd.isBefore(d),
+                        )
+                        .length
+                  : 0,
+            )
           : _fromProfile(profile, d, isPast: d.isBefore(today));
       if (t != null) out[d] = t;
     }
     return out;
+  }
+
+  /// All dates currently marked as 休息日 that count toward the carb-cycle
+  /// day-count progression (unordered — used to compute per-day
+  /// rest-day-before counts for carb-cycle plans). Excludes markers
+  /// backfilled onto an already-past date, see
+  /// [restDayCountsTowardProgression].
+  Future<List<DateTime>> _allRestDayDates() async {
+    final rows =
+        await (_db.select(
+          _db.dayMarkers,
+        )..where((t) => t.type.equals(DayMarkerType.restDay.name))).get();
+    return DayMarkerRepository.progressionRestDayDates(rows);
   }
 
   // -------------------------------------------------------- confirmations

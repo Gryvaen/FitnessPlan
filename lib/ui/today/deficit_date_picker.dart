@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../data/repositories/day_marker_repository.dart';
 import '../../data/repositories/meal_repository.dart';
+import '../../domain/day_marker.dart';
 import '../../domain/deficit.dart';
 import '../../domain/diet_plan.dart';
 import '../../l10n/app_localizations_ext.dart';
@@ -22,8 +24,13 @@ Future<DateTime?> showDeficitDatePicker({
   required DateTime lastDate,
   required double plannedDeficit,
   required MealRepository mealRepository,
+  required DayMarkerRepository markerRepository,
   required DailyTargetsLoader loadTargets,
   DateTime? calorieStandardSince,
+  /// How far into the future the calendar may be paged for 放纵餐/休息日
+  /// marking (long-press). Defaults to [lastDate] — pure date *selection*
+  /// (tap + Confirm) always stays bounded by [firstDate]/[lastDate].
+  DateTime? markUntil,
 }) {
   DateTime? since;
   if (calorieStandardSince != null) {
@@ -41,8 +48,12 @@ Future<DateTime?> showDeficitDatePicker({
       lastDate: DateTime(lastDate.year, lastDate.month, lastDate.day),
       plannedDeficit: plannedDeficit,
       mealRepository: mealRepository,
+      markerRepository: markerRepository,
       loadTargets: loadTargets,
       calorieStandardSince: since,
+      markUntil: markUntil == null
+          ? null
+          : DateTime(markUntil.year, markUntil.month, markUntil.day),
     ),
   );
 }
@@ -54,8 +65,10 @@ class _DeficitDatePickerDialog extends StatefulWidget {
     required this.lastDate,
     required this.plannedDeficit,
     required this.mealRepository,
+    required this.markerRepository,
     required this.loadTargets,
     this.calorieStandardSince,
+    this.markUntil,
   });
 
   final DateTime initialDate;
@@ -65,8 +78,10 @@ class _DeficitDatePickerDialog extends StatefulWidget {
   /// Today's planned deficit, shown in the formula caption.
   final double plannedDeficit;
   final MealRepository mealRepository;
+  final DayMarkerRepository markerRepository;
   final DailyTargetsLoader loadTargets;
   final DateTime? calorieStandardSince;
+  final DateTime? markUntil;
 
   @override
   State<_DeficitDatePickerDialog> createState() =>
@@ -76,8 +91,10 @@ class _DeficitDatePickerDialog extends StatefulWidget {
 class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
   late DateTime _visibleMonth;
   late DateTime _selected;
+  late DateTime _markUntil;
   Map<DateTime, double> _caloriesByDay = {};
   Map<DateTime, DailyNutritionTarget> _targetsByDay = {};
+  Map<DateTime, DayMarkerType> _markersByDay = {};
   bool _loading = true;
 
   static final _okGreen = const Color(0xFF2A9D8F);
@@ -98,6 +115,7 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
     );
     _selected = init;
     _visibleMonth = DateTime(init.year, init.month);
+    _markUntil = widget.markUntil ?? widget.lastDate;
     _loadMonth();
   }
 
@@ -110,23 +128,32 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
         : start;
     final clampedEnd = end.isAfter(widget.lastDate) ? widget.lastDate : end;
     final empty = clampedStart.isAfter(clampedEnd);
-    final results = empty
-        ? null
-        : await Future.wait([
-            widget.mealRepository.calorieTotalsBetween(
+
+    final markerClampedEnd = end.isAfter(_markUntil) ? _markUntil : end;
+    final markersEmpty = clampedStart.isAfter(markerClampedEnd);
+
+    final results = await Future.wait([
+      empty
+          ? Future.value(<DateTime, double>{})
+          : widget.mealRepository.calorieTotalsBetween(
               clampedStart,
               clampedEnd,
             ),
-            widget.loadTargets(clampedStart, clampedEnd),
-          ]);
+      empty
+          ? Future.value(<DateTime, DailyNutritionTarget>{})
+          : widget.loadTargets(clampedStart, clampedEnd),
+      markersEmpty
+          ? Future.value(<DateTime, DayMarkerType>{})
+          : widget.markerRepository.markersBetween(
+              clampedStart,
+              markerClampedEnd,
+            ),
+    ]);
     if (!mounted) return;
     setState(() {
-      _caloriesByDay = results == null
-          ? {}
-          : results[0] as Map<DateTime, double>;
-      _targetsByDay = results == null
-          ? {}
-          : results[1] as Map<DateTime, DailyNutritionTarget>;
+      _caloriesByDay = results[0] as Map<DateTime, double>;
+      _targetsByDay = results[1] as Map<DateTime, DailyNutritionTarget>;
+      _markersByDay = results[2] as Map<DateTime, DayMarkerType>;
       _loading = false;
     });
   }
@@ -134,7 +161,7 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
   void _shiftMonth(int delta) {
     final next = DateTime(_visibleMonth.year, _visibleMonth.month + delta);
     final firstMonth = DateTime(widget.firstDate.year, widget.firstDate.month);
-    final lastMonth = DateTime(widget.lastDate.year, widget.lastDate.month);
+    final lastMonth = DateTime(_markUntil.year, _markUntil.month);
     if (next.isBefore(firstMonth) || next.isAfter(lastMonth)) return;
     setState(() => _visibleMonth = next);
     _loadMonth();
@@ -143,6 +170,57 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
   bool _isSelectable(DateTime day) {
     final d = DateTime(day.year, day.month, day.day);
     return !d.isBefore(widget.firstDate) && !d.isAfter(widget.lastDate);
+  }
+
+  bool _isMarkable(DateTime day) {
+    final d = DateTime(day.year, day.month, day.day);
+    return !d.isBefore(widget.firstDate) && !d.isAfter(_markUntil);
+  }
+
+  Future<void> _showMarkerSheet(DateTime day) async {
+    final l10n = context.l10n;
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      useRootNavigator: true,
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.celebration_outlined),
+                title: Text(l10n.cheatMealLabel),
+                onTap: () => Navigator.pop(ctx, 'cheatMeal'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.bedtime_outlined),
+                title: Text(l10n.restDayLabel),
+                onTap: () => Navigator.pop(ctx, 'restDay'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.close),
+                title: Text(l10n.clearMarkerLabel),
+                onTap: () => Navigator.pop(ctx, 'clear'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (!mounted || choice == null) return;
+    switch (choice) {
+      case 'cheatMeal':
+        await widget.markerRepository.setCheatMeal(day);
+        break;
+      case 'restDay':
+        await widget.markerRepository.setRestDay(day);
+        break;
+      case 'clear':
+        await widget.markerRepository.clear(day);
+        break;
+    }
+    if (!mounted) return;
+    await _loadMonth();
   }
 
   List<String> _weekdayHeaders(Locale locale) {
@@ -171,7 +249,7 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
     ).day;
 
     final firstMonth = DateTime(widget.firstDate.year, widget.firstDate.month);
-    final lastMonth = DateTime(widget.lastDate.year, widget.lastDate.month);
+    final lastMonth = DateTime(_markUntil.year, _markUntil.month);
     final showPrev = _visibleMonth.isAfter(firstMonth);
     final showNext = _visibleMonth.isBefore(lastMonth);
     final weekdayHeaders = _weekdayHeaders(locale);
@@ -328,7 +406,12 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
                       calorieStandardSince: widget.calorieStandardSince,
                       okColor: _okGreen,
                       badColor: _badRed,
+                      marker: _markersByDay[date],
+                      markable: _isMarkable(date),
                       onTap: () => setState(() => _selected = date),
+                      onLongPress: _isMarkable(date)
+                          ? () => _showMarkerSheet(date)
+                          : null,
                     );
                   },
                 ),
@@ -434,7 +517,10 @@ class _DayCell extends StatelessWidget {
     required this.okColor,
     required this.badColor,
     required this.onTap,
+    required this.marker,
+    required this.markable,
     this.calorieStandardSince,
+    this.onLongPress,
   });
 
   final DateTime date;
@@ -450,11 +536,20 @@ class _DayCell extends StatelessWidget {
   final Color badColor;
   final VoidCallback onTap;
 
+  /// 放纵餐/休息日 marker for this day, if any.
+  final DayMarkerType? marker;
+
+  /// Whether long-press marking is allowed for this day.
+  final bool markable;
+  final VoidCallback? onLongPress;
+
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final isPast = date.isBefore(today);
     final isToday = date == today;
+    final marked = marker != null;
     final hasLog = intake != null;
     final since = calorieStandardSince;
     final t = target;
@@ -464,9 +559,11 @@ class _DayCell extends StatelessWidget {
     // empty days stay uncolored. The cell shows what's left of the day's
     // own target (target − intake); the plan-wide actual deficit — which
     // folds in the planned deficit too — is shown up top for the selected
-    // day instead (see [_DeficitDatePickerDialogState.build]).
+    // day instead (see [_DeficitDatePickerDialogState.build]). Marked days
+    // (放纵餐/休息日) show a short label instead, so verdict/remaining are
+    // skipped entirely.
     final showRemaining =
-        selectable && hasLog && t != null && (isPast || isToday);
+        !marked && selectable && hasLog && t != null && (isPast || isToday);
     final remaining = showRemaining ? (t.calories - (intake ?? 0)) : null;
     // Finalize green/red only for days whose target is a real record (not a
     // legacy estimate) and on/after the latest calorie standard. Meeting the
@@ -474,7 +571,8 @@ class _DayCell extends StatelessWidget {
     // (actual = plannedDeficit + remaining), so no need for the combined
     // figure here.
     final legacy = t?.isLegacyEstimate ?? false;
-    final useVerdict = remaining != null && isPast && !beforeStandard && !legacy;
+    final useVerdict =
+        !marked && remaining != null && isPast && !beforeStandard && !legacy;
     final met = remaining != null && remaining >= 0;
 
     Color? bg;
@@ -503,6 +601,7 @@ class _DayCell extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
         onTap: selectable ? onTap : null,
+        onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(8),
         child: DecoratedBox(
           decoration: showStandardBar
@@ -529,7 +628,22 @@ class _DayCell extends StatelessWidget {
                     color: fg,
                   ),
                 ),
-                if (remaining != null) ...[
+                if (marked) ...[
+                  const SizedBox(height: 1),
+                  Text(
+                    marker == DayMarkerType.cheatMeal
+                        ? l10n.cheatMealShortLabel
+                        : l10n.restDayShortLabel,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      height: 1.1,
+                      fontWeight: FontWeight.w600,
+                      color: fg,
+                      fontSize: 10,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.clip,
+                  ),
+                ] else if (remaining != null) ...[
                   const SizedBox(height: 1),
                   Text(
                     '${remaining.round()}',

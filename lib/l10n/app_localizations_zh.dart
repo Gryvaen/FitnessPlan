@@ -1271,6 +1271,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get legendAfterGreenRed => '生效后：过去绿/红';
 
   @override
+  String get cheatMealLabel => '放纵餐';
+
+  @override
+  String get restDayLabel => '休息日';
+
+  @override
+  String get clearMarkerLabel => '取消标记';
+
+  @override
+  String get cheatMealShortLabel => '放纵';
+
+  @override
+  String get restDayShortLabel => '休息';
+
+  @override
   String get waterTapHint => '点水杯 +250 · 点杯盖 −250';
 
   @override

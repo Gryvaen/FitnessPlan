@@ -1291,6 +1291,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get legendAfterGreenRed => 'After: past green/red';
 
   @override
+  String get cheatMealLabel => 'Cheat meal';
+
+  @override
+  String get restDayLabel => 'Rest day';
+
+  @override
+  String get clearMarkerLabel => 'Clear marker';
+
+  @override
+  String get cheatMealShortLabel => 'Cheat';
+
+  @override
+  String get restDayShortLabel => 'Rest';
+
+  @override
   String get waterTapHint => 'Tap cup +250 · tap lid −250';
 
   @override

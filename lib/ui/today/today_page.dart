@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/db.dart';
+import '../../domain/day_marker.dart';
 import '../../domain/diet_plan.dart';
 import '../../domain/diet_strategy.dart';
 import '../../domain/goal_quotes.dart';
@@ -84,8 +85,11 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     final sectionPrefix = isSelectedToday ? l10n.today : l10n.sectionThatDay;
 
     final plannedDeficit = dayTarget?.fixedPlannedDeficit ?? 0;
+    final dayMarker = ref.watch(dayMarkerProvider(day)).value;
     final strategyLabel = dayTarget == null
         ? null
+        : dayMarker == DayMarkerType.restDay
+        ? l10n.restDayLabel
         : targetChipLabel(dayTarget, profile, l10n);
     final canChooseDietStrategy =
         profile.goal == FitnessGoal.cut &&
@@ -101,8 +105,10 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         lastDate: today,
         plannedDeficit: plannedDeficit,
         mealRepository: ref.read(mealRepositoryProvider),
+        markerRepository: ref.read(dayMarkerRepositoryProvider),
         loadTargets: (start, end) => repo.targetsBetween(start, end, profile),
         calorieStandardSince: profile.calorieStandardSince,
+        markUntil: DateTime(today.year + 1, today.month, today.day),
       );
       if (picked == null) return;
       ref.read(selectedDayProvider.notifier).setDay(picked);

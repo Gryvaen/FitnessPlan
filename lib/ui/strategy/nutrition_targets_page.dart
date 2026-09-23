@@ -202,6 +202,9 @@ class _CutNutritionTargets extends ConsumerWidget {
     final today = AppDates.todayLocal();
     final activeStartsLater =
         active != null && active.effectiveFrom.isAfter(today);
+    final restDayDates = active?.kind == DietStrategyKind.carbCycle
+        ? ref.watch(restDayDatesProvider).value ?? const <DateTime>[]
+        : const <DateTime>[];
 
     return ListView(
       padding: EdgeInsets.fromLTRB(
@@ -234,6 +237,8 @@ class _CutNutritionTargets extends ConsumerWidget {
           active: active,
           locale: locale,
           activeStartsLater: activeStartsLater,
+          today: today,
+          restDayDates: restDayDates,
         ),
         if (active?.kind == DietStrategyKind.carbCycle)
           SportListTile(
@@ -291,11 +296,19 @@ class _StrategyDescription extends StatefulWidget {
     required this.active,
     required this.locale,
     required this.activeStartsLater,
+    required this.today,
+    required this.restDayDates,
   });
 
   final DietStrategyPlan? active;
   final Locale locale;
   final bool activeStartsLater;
+  final DateTime today;
+
+  /// Dates currently marked as 休息日 — keeps the carb-cycle preview below
+  /// in sync with the live (rest-day-shifted) schedule instead of forever
+  /// showing the plan's original start-date template.
+  final List<DateTime> restDayDates;
 
   @override
   State<_StrategyDescription> createState() => _StrategyDescriptionState();
@@ -380,6 +393,10 @@ class _StrategyDescriptionState extends State<_StrategyDescription> {
               key: ValueKey('active-${active.id}'),
               plan: active.carbCyclePlan!,
               cycleStart: active.effectiveFrom,
+              restDayDates: widget.restDayDates,
+              windowStart: widget.activeStartsLater
+                  ? active.effectiveFrom
+                  : widget.today,
             ),
           ],
           if (active.kind == DietStrategyKind.carbTaper) ...[

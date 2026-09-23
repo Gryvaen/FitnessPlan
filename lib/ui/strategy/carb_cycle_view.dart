@@ -17,6 +17,8 @@ class CarbCycleView extends StatelessWidget {
     required this.cycleStart,
     this.onScheduleChanged,
     this.referenceWeightFromProfile = false,
+    this.restDayDates,
+    this.windowStart,
   });
 
   final CarbCyclePlan plan;
@@ -27,6 +29,18 @@ class CarbCycleView extends StatelessWidget {
   /// (configure flow). Active-plan previews keep the shorter label.
   final bool referenceWeightFromProfile;
 
+  /// Dates marked as 休息日 on/after [cycleStart]. When non-null, the table
+  /// rolls with [windowStart] (defaults to today) instead of always starting
+  /// at [cycleStart], and each row's type/kcal reflect the actual rest-day
+  /// shifted cycle position rather than the raw unshifted template — so the
+  /// preview stays in sync instead of staying frozen at the plan's original
+  /// start date. Leave null for the pre-save configure preview, which has no
+  /// committed plan (and therefore no rest days) to shift against yet.
+  final List<DateTime>? restDayDates;
+
+  /// First date shown when [restDayDates] is set. Defaults to today.
+  final DateTime? windowStart;
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -35,6 +49,10 @@ class CarbCycleView extends StatelessWidget {
     final days = plan.integerDays();
     final today = CalendarDay.todayLocal();
     final start = CalendarDay.dayOnly(cycleStart);
+    final restDays = restDayDates;
+    final anchor = restDays == null
+        ? start
+        : CalendarDay.dayOnly(windowStart ?? today);
     final editable = onScheduleChanged != null;
 
     final counts = {
@@ -66,19 +84,7 @@ class CarbCycleView extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         for (var i = 0; i < days.length; i++)
-          _DayRow(
-            key: ValueKey('cycleDay-$i'),
-            name: AppDates.md(start.add(Duration(days: i)), locale),
-            isToday: start.add(Duration(days: i)) == today,
-            type: days[i].dayType,
-            kcal: days[i].energy.round(),
-            proteinG: days[i].proteinG.round(),
-            carbG: days[i].carbG.round(),
-            fatG: days[i].fatG.round(),
-            onTap: editable
-                ? () => onScheduleChanged!(plan.schedule.cycleDayType(i))
-                : null,
-          ),
+          _dayRow(i, days, start, anchor, restDays, today, locale, editable),
         if (editable) ...[
           const SizedBox(height: 6),
           Text(l10n.carbCycleEditHint, style: theme.textTheme.bodySmall),
@@ -120,6 +126,54 @@ class CarbCycleView extends StatelessWidget {
       ],
     );
   }
+
+  /// Row for schedule slot [i], starting from [anchor]. When [restDays] is
+  /// set, the displayed calendar date is offset from [anchor] but the actual
+  /// macros shown come from the rest-day-shifted cycle slot (not slot [i]
+  /// itself) — the tap target still cycles slot [i]'s raw type, matching the
+  /// edit affordance shown for that row.
+  Widget _dayRow(
+    int i,
+    List<DayMacroTarget> days,
+    DateTime start,
+    DateTime anchor,
+    List<DateTime>? restDays,
+    DateTime today,
+    Locale locale,
+    bool editable,
+  ) {
+    final date = anchor.add(Duration(days: i));
+    final cycleIndex = restDays == null
+        ? i
+        : StrategyDates.cycleIndexOf(
+            date,
+            start,
+            days.length,
+            restDaysBefore: restDays
+                .where((d) => !d.isBefore(start) && d.isBefore(date))
+                .length,
+          );
+    final row = days[cycleIndex];
+    // The row's own date is a marked 休息日: the underlying target is still
+    // computed from the shifted cycle slot above (so later rows shift
+    // correctly), but this row itself shouldn't claim a H/M/L carb type —
+    // the day is a rest day, not a diet day.
+    final isRestDay = restDays?.contains(date) ?? false;
+    return _DayRow(
+      key: ValueKey('cycleDay-$i'),
+      name: AppDates.md(date, locale),
+      isToday: date == today,
+      type: row.dayType,
+      isRestDay: isRestDay,
+      kcal: row.energy.round(),
+      proteinG: row.proteinG.round(),
+      carbG: row.carbG.round(),
+      fatG: row.fatG.round(),
+      onTap: editable
+          ? () => onScheduleChanged!(plan.schedule.cycleDayType(i))
+          : null,
+    );
+  }
 }
 
 class _DayRow extends StatelessWidget {
@@ -128,6 +182,7 @@ class _DayRow extends StatelessWidget {
     required this.name,
     required this.isToday,
     required this.type,
+    required this.isRestDay,
     required this.kcal,
     required this.proteinG,
     required this.carbG,
@@ -138,6 +193,11 @@ class _DayRow extends StatelessWidget {
   final String name;
   final bool isToday;
   final CarbDayType type;
+
+  /// This row's own date is marked as 休息日 — shown in place of the H/M/L
+  /// type below so the table doesn't claim a carb-day type for a day the
+  /// user has explicitly taken off.
+  final bool isRestDay;
   final int kcal;
   final int proteinG;
   final int carbG;
@@ -158,7 +218,7 @@ class _DayRow extends StatelessWidget {
     final scheme = theme.colorScheme;
     final v = AppThemeVisuals.of(context);
     final l10n = context.l10n;
-    final typeColor = _typeColor();
+    final typeColor = isRestDay ? scheme.onSurfaceVariant : _typeColor();
 
     return Material(
       color: Colors.transparent,
@@ -184,7 +244,7 @@ class _DayRow extends StatelessWidget {
                   Expanded(
                     flex: 4,
                     child: Text(
-                      type.label(l10n),
+                      isRestDay ? l10n.restDayLabel : type.label(l10n),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: typeColor,
                         fontWeight: FontWeight.w600,
