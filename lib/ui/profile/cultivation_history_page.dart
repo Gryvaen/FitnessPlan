@@ -6,6 +6,7 @@ import '../../domain/calendar_day.dart';
 import '../../domain/cut_cultivation.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import 'cultivation_labels.dart';
 
@@ -167,8 +168,8 @@ class _DayRow extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(
-                Icons.directions_walk,
+              InkIcon(
+                InkGlyph.walk,
                 size: 16,
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -180,8 +181,8 @@ class _DayRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              Icon(
-                Icons.restaurant_outlined,
+              InkIcon(
+                InkGlyph.food,
                 size: 16,
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -201,8 +202,8 @@ class _DayRow extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.fitness_center_outlined,
+                InkIcon(
+                  InkGlyph.training,
                   size: 16,
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
