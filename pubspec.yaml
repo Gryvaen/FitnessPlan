@@ -47,8 +47,13 @@ flutter:
   assets:
     - assets/food_seed.json
     - assets/cultivation/
+    - assets/ink/
     - assets/splash/
   fonts:
     - family: LXGWWenKai
       fonts:
         - asset: assets/fonts/LXGWWenKaiLite-Medium.ttf
+          weight: 500
+    - family: NotoSansSC
+      fonts:
+        - asset: assets/fonts/NotoSansSC-Variable.ttf
