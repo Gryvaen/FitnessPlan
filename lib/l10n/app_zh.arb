@@ -157,6 +157,8 @@
   "mealPresets": "常用套餐",
   "saveAsPreset": "存为套餐",
   "presetSaved": "套餐已保存",
+  "presetNameExists": "套餐名称已存在",
+  "presetNameExistsConfirm": "已存在名为“{name}”的套餐，是否替换？",
   "saveAsPlan": "存为训练计划",
   "planSaved": "训练计划已保存",
   "noWorkoutToSave": "当日无训练可保存",

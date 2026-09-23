@@ -347,10 +347,39 @@ class _MealTypeSection extends ConsumerWidget {
       nameFocus.dispose();
     });
     if (ok != true) return;
+
+    final repo = ref.read(mealPresetRepositoryProvider);
+    var replaceExisting = false;
+    final existing = await repo.presetByName(presetName);
+    if (existing != null) {
+      if (!context.mounted) return;
+      final confirmReplace = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l10n.presetNameExists),
+          content: Text(l10n.presetNameExistsConfirm(presetName.trim())),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l10n.replace),
+            ),
+          ],
+        ),
+      );
+      if (confirmReplace != true) return;
+      replaceExisting = true;
+    }
+
     try {
-      await ref
-          .read(mealPresetRepositoryProvider)
-          .createFromEntries(name: presetName, entries: entries);
+      await repo.createFromEntries(
+        name: presetName,
+        entries: entries,
+        replaceExisting: replaceExisting,
+      );
       ref.invalidate(mealPresetsProvider);
       if (!context.mounted) return;
       ScaffoldMessenger.of(

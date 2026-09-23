@@ -423,6 +423,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get presetSaved => '套餐已保存';
 
   @override
+  String get presetNameExists => '套餐名称已存在';
+
+  @override
+  String presetNameExistsConfirm(String name) {
+    return '已存在名为“$name”的套餐，是否替换？';
+  }
+
+  @override
   String get saveAsPlan => '存为训练计划';
 
   @override

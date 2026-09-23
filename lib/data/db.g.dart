@@ -5261,8 +5261,20 @@ class $DayWorkoutsTable extends DayWorkouts
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, date, planId, planName];
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, date, planId, planName, sortOrder];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -5298,6 +5310,12 @@ class $DayWorkoutsTable extends DayWorkouts
         planName.isAcceptableOrUnknown(data['plan_name']!, _planNameMeta),
       );
     }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
     return context;
   }
 
@@ -5323,6 +5341,10 @@ class $DayWorkoutsTable extends DayWorkouts
         DriftSqlType.string,
         data['${effectivePrefix}plan_name'],
       ),
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
     );
   }
 
@@ -5337,11 +5359,13 @@ class DayWorkout extends DataClass implements Insertable<DayWorkout> {
   final DateTime date;
   final int? planId;
   final String? planName;
+  final int sortOrder;
   const DayWorkout({
     required this.id,
     required this.date,
     this.planId,
     this.planName,
+    required this.sortOrder,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5354,6 +5378,7 @@ class DayWorkout extends DataClass implements Insertable<DayWorkout> {
     if (!nullToAbsent || planName != null) {
       map['plan_name'] = Variable<String>(planName);
     }
+    map['sort_order'] = Variable<int>(sortOrder);
     return map;
   }
 
@@ -5367,6 +5392,7 @@ class DayWorkout extends DataClass implements Insertable<DayWorkout> {
       planName: planName == null && nullToAbsent
           ? const Value.absent()
           : Value(planName),
+      sortOrder: Value(sortOrder),
     );
   }
 
@@ -5380,6 +5406,7 @@ class DayWorkout extends DataClass implements Insertable<DayWorkout> {
       date: serializer.fromJson<DateTime>(json['date']),
       planId: serializer.fromJson<int?>(json['planId']),
       planName: serializer.fromJson<String?>(json['planName']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
     );
   }
   @override
@@ -5390,6 +5417,7 @@ class DayWorkout extends DataClass implements Insertable<DayWorkout> {
       'date': serializer.toJson<DateTime>(date),
       'planId': serializer.toJson<int?>(planId),
       'planName': serializer.toJson<String?>(planName),
+      'sortOrder': serializer.toJson<int>(sortOrder),
     };
   }
 
@@ -5398,11 +5426,13 @@ class DayWorkout extends DataClass implements Insertable<DayWorkout> {
     DateTime? date,
     Value<int?> planId = const Value.absent(),
     Value<String?> planName = const Value.absent(),
+    int? sortOrder,
   }) => DayWorkout(
     id: id ?? this.id,
     date: date ?? this.date,
     planId: planId.present ? planId.value : this.planId,
     planName: planName.present ? planName.value : this.planName,
+    sortOrder: sortOrder ?? this.sortOrder,
   );
   DayWorkout copyWithCompanion(DayWorkoutsCompanion data) {
     return DayWorkout(
@@ -5410,6 +5440,7 @@ class DayWorkout extends DataClass implements Insertable<DayWorkout> {
       date: data.date.present ? data.date.value : this.date,
       planId: data.planId.present ? data.planId.value : this.planId,
       planName: data.planName.present ? data.planName.value : this.planName,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
     );
   }
 
@@ -5419,13 +5450,14 @@ class DayWorkout extends DataClass implements Insertable<DayWorkout> {
           ..write('id: $id, ')
           ..write('date: $date, ')
           ..write('planId: $planId, ')
-          ..write('planName: $planName')
+          ..write('planName: $planName, ')
+          ..write('sortOrder: $sortOrder')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, date, planId, planName);
+  int get hashCode => Object.hash(id, date, planId, planName, sortOrder);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5433,7 +5465,8 @@ class DayWorkout extends DataClass implements Insertable<DayWorkout> {
           other.id == this.id &&
           other.date == this.date &&
           other.planId == this.planId &&
-          other.planName == this.planName);
+          other.planName == this.planName &&
+          other.sortOrder == this.sortOrder);
 }
 
 class DayWorkoutsCompanion extends UpdateCompanion<DayWorkout> {
@@ -5441,29 +5474,34 @@ class DayWorkoutsCompanion extends UpdateCompanion<DayWorkout> {
   final Value<DateTime> date;
   final Value<int?> planId;
   final Value<String?> planName;
+  final Value<int> sortOrder;
   const DayWorkoutsCompanion({
     this.id = const Value.absent(),
     this.date = const Value.absent(),
     this.planId = const Value.absent(),
     this.planName = const Value.absent(),
+    this.sortOrder = const Value.absent(),
   });
   DayWorkoutsCompanion.insert({
     this.id = const Value.absent(),
     required DateTime date,
     this.planId = const Value.absent(),
     this.planName = const Value.absent(),
+    this.sortOrder = const Value.absent(),
   }) : date = Value(date);
   static Insertable<DayWorkout> custom({
     Expression<int>? id,
     Expression<DateTime>? date,
     Expression<int>? planId,
     Expression<String>? planName,
+    Expression<int>? sortOrder,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (date != null) 'date': date,
       if (planId != null) 'plan_id': planId,
       if (planName != null) 'plan_name': planName,
+      if (sortOrder != null) 'sort_order': sortOrder,
     });
   }
 
@@ -5472,12 +5510,14 @@ class DayWorkoutsCompanion extends UpdateCompanion<DayWorkout> {
     Value<DateTime>? date,
     Value<int?>? planId,
     Value<String?>? planName,
+    Value<int>? sortOrder,
   }) {
     return DayWorkoutsCompanion(
       id: id ?? this.id,
       date: date ?? this.date,
       planId: planId ?? this.planId,
       planName: planName ?? this.planName,
+      sortOrder: sortOrder ?? this.sortOrder,
     );
   }
 
@@ -5496,6 +5536,9 @@ class DayWorkoutsCompanion extends UpdateCompanion<DayWorkout> {
     if (planName.present) {
       map['plan_name'] = Variable<String>(planName.value);
     }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
     return map;
   }
 
@@ -5505,7 +5548,8 @@ class DayWorkoutsCompanion extends UpdateCompanion<DayWorkout> {
           ..write('id: $id, ')
           ..write('date: $date, ')
           ..write('planId: $planId, ')
-          ..write('planName: $planName')
+          ..write('planName: $planName, ')
+          ..write('sortOrder: $sortOrder')
           ..write(')'))
         .toString();
   }
@@ -12467,6 +12511,7 @@ typedef $$DayWorkoutsTableCreateCompanionBuilder =
       required DateTime date,
       Value<int?> planId,
       Value<String?> planName,
+      Value<int> sortOrder,
     });
 typedef $$DayWorkoutsTableUpdateCompanionBuilder =
     DayWorkoutsCompanion Function({
@@ -12474,6 +12519,7 @@ typedef $$DayWorkoutsTableUpdateCompanionBuilder =
       Value<DateTime> date,
       Value<int?> planId,
       Value<String?> planName,
+      Value<int> sortOrder,
     });
 
 class $$DayWorkoutsTableFilterComposer
@@ -12502,6 +12548,11 @@ class $$DayWorkoutsTableFilterComposer
 
   ColumnFilters<String> get planName => $composableBuilder(
     column: $table.planName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -12534,6 +12585,11 @@ class $$DayWorkoutsTableOrderingComposer
     column: $table.planName,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DayWorkoutsTableAnnotationComposer
@@ -12556,6 +12612,9 @@ class $$DayWorkoutsTableAnnotationComposer
 
   GeneratedColumn<String> get planName =>
       $composableBuilder(column: $table.planName, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
 }
 
 class $$DayWorkoutsTableTableManager
@@ -12593,11 +12652,13 @@ class $$DayWorkoutsTableTableManager
                 Value<DateTime> date = const Value.absent(),
                 Value<int?> planId = const Value.absent(),
                 Value<String?> planName = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
               }) => DayWorkoutsCompanion(
                 id: id,
                 date: date,
                 planId: planId,
                 planName: planName,
+                sortOrder: sortOrder,
               ),
           createCompanionCallback:
               ({
@@ -12605,11 +12666,13 @@ class $$DayWorkoutsTableTableManager
                 required DateTime date,
                 Value<int?> planId = const Value.absent(),
                 Value<String?> planName = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
               }) => DayWorkoutsCompanion.insert(
                 id: id,
                 date: date,
                 planId: planId,
                 planName: planName,
+                sortOrder: sortOrder,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

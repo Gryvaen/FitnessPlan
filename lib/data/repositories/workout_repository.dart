@@ -482,8 +482,18 @@ class WorkoutRepository {
     final start = _dayStart(day);
     return (_db.select(_db.dayWorkouts)
           ..where((t) => t.date.equals(start))
-          ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+          ..orderBy([
+            (t) => OrderingTerm.asc(t.sortOrder),
+            (t) => OrderingTerm.asc(t.id),
+          ]))
         .get();
+  }
+
+  Future<int> _nextGroupSortOrder(DateTime start) async {
+    final rows = await (_db.select(
+      _db.dayWorkouts,
+    )..where((t) => t.date.equals(start))).get();
+    return rows.length;
   }
 
   Future<DayWorkoutItemProgress> _progressForItem(DayWorkoutItem item) async {
@@ -656,6 +666,7 @@ class WorkoutRepository {
               date: start,
               planId: Value(plan.id),
               planName: Value(plan.name),
+              sortOrder: Value(await _nextGroupSortOrder(start)),
             ),
           );
       for (var i = 0; i < planItems.length; i++) {
@@ -700,6 +711,7 @@ class WorkoutRepository {
     final start = _dayStart(to);
     var itemsCopied = 0;
     await _db.transaction(() async {
+      var nextGroupSortOrder = await _nextGroupSortOrder(start);
       for (final group in groups) {
         final dayId = await _db
             .into(_db.dayWorkouts)
@@ -708,6 +720,7 @@ class WorkoutRepository {
                 date: start,
                 planId: Value(group.workout.planId),
                 planName: Value(group.workout.planName),
+                sortOrder: Value(nextGroupSortOrder++),
               ),
             );
         for (var i = 0; i < group.items.length; i++) {
@@ -784,7 +797,12 @@ class WorkoutRepository {
       } else {
         final id = await _db
             .into(_db.dayWorkouts)
-            .insert(DayWorkoutsCompanion.insert(date: start));
+            .insert(
+              DayWorkoutsCompanion.insert(
+                date: start,
+                sortOrder: Value(await _nextGroupSortOrder(start)),
+              ),
+            );
         workout = await (_db.select(
           _db.dayWorkouts,
         )..where((t) => t.id.equals(id))).getSingle();
@@ -883,6 +901,54 @@ class WorkoutRepository {
         await (_db.delete(
           _db.dayWorkouts,
         )..where((t) => t.id.equals(item.dayWorkoutId))).go();
+      }
+    });
+  }
+
+  /// Persists a new manual ordering for [day]'s workout groups (plans) —
+  /// [orderedDayWorkoutIds] is the full day-workout-id list in its new
+  /// display order.
+  Future<void> reorderDayWorkoutGroups({
+    required DateTime day,
+    required List<int> orderedDayWorkoutIds,
+  }) async {
+    CalendarDay.ensureEditableDay(day);
+    final start = _dayStart(day);
+
+    await _db.transaction(() async {
+      for (var i = 0; i < orderedDayWorkoutIds.length; i++) {
+        await (_db.update(_db.dayWorkouts)
+              ..where(
+                (t) =>
+                    t.id.equals(orderedDayWorkoutIds[i]) &
+                    t.date.equals(start),
+              ))
+            .write(DayWorkoutsCompanion(sortOrder: Value(i)));
+      }
+    });
+  }
+
+  /// Persists a new manual ordering for [dayWorkoutId]'s items — [orderedItemIds]
+  /// is the full item-id list in its new display order.
+  Future<void> reorderDayWorkoutItems({
+    required int dayWorkoutId,
+    required List<int> orderedItemIds,
+  }) async {
+    final workout = await (_db.select(
+      _db.dayWorkouts,
+    )..where((t) => t.id.equals(dayWorkoutId))).getSingleOrNull();
+    if (workout == null) return;
+    CalendarDay.ensureEditableDay(workout.date);
+
+    await _db.transaction(() async {
+      for (var i = 0; i < orderedItemIds.length; i++) {
+        await (_db.update(_db.dayWorkoutItems)
+              ..where(
+                (t) =>
+                    t.id.equals(orderedItemIds[i]) &
+                    t.dayWorkoutId.equals(dayWorkoutId),
+              ))
+            .write(DayWorkoutItemsCompanion(sortOrder: Value(i)));
       }
     });
   }

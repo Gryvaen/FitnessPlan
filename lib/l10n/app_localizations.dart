@@ -914,6 +914,18 @@ abstract class AppLocalizations {
   /// **'Preset saved'**
   String get presetSaved;
 
+  /// No description provided for @presetNameExists.
+  ///
+  /// In en, this message translates to:
+  /// **'Preset name already exists'**
+  String get presetNameExists;
+
+  /// No description provided for @presetNameExistsConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'A preset named \"{name}\" already exists. Replace it?'**
+  String presetNameExistsConfirm(String name);
+
   /// No description provided for @saveAsPlan.
   ///
   /// In en, this message translates to:
@@ -4881,13 +4893,22 @@ abstract class AppLocalizations {
   /// **'{done}/{total}'**
   String cultivationHistoryWorkoutProgress(String done, String total);
 
-  /// Current cut stretch header.
+  /// No description provided for @cultivationHistorySegmentCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current cut · since {start}'**
   String cultivationHistorySegmentCurrent(String start);
 
-  /// Past cut stretch header.
+  /// No description provided for @cultivationHistorySegmentPast.
+  ///
+  /// In en, this message translates to:
+  /// **'Cut · {start} – {end}'**
   String cultivationHistorySegmentPast(String start, String end);
 
-  /// Empty stretch placeholder.
+  /// No description provided for @cultivationHistorySegmentEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No details in this stretch'**
   String get cultivationHistorySegmentEmpty;
 
   /// No description provided for @editTrainingRecord.

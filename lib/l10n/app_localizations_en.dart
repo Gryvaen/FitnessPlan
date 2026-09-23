@@ -425,6 +425,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get presetSaved => 'Preset saved';
 
   @override
+  String get presetNameExists => 'Preset name already exists';
+
+  @override
+  String presetNameExistsConfirm(String name) {
+    return 'A preset named \"$name\" already exists. Replace it?';
+  }
+
+  @override
   String get saveAsPlan => 'Save as workout plan';
 
   @override

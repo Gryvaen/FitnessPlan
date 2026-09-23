@@ -185,6 +185,7 @@ class DayWorkouts extends Table {
   DateTimeColumn get date => dateTime()();
   IntColumn get planId => integer().nullable()();
   TextColumn get planName => text().nullable()();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
 }
 
 class DayWorkoutItems extends Table {
