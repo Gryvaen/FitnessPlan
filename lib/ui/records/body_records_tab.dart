@@ -425,6 +425,25 @@ class _SeriesChart extends StatelessWidget {
           rightTitles: const AxisTitles(
             sideTitles: SideTitles(showTitles: false),
           ),
+          // Min/max are drawn in addition to the interval ticks and sit on
+          // the padded edges, which stacks them on the nearest label.
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 44,
+              minIncluded: false,
+              maxIncluded: false,
+              getTitlesWidget: (value, meta) {
+                return SideTitleWidget(
+                  meta: meta,
+                  child: Text(
+                    meta.formattedValue,
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                );
+              },
+            ),
+          ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
