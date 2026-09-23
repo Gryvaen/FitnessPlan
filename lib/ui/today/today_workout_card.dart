@@ -800,21 +800,9 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
                 summary: l10n.noWorkoutShort,
               ),
               SportEmptyState(
-                iconWidget: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    InkIcon(
-                      InkGlyph.training,
-                      size: 52,
-                      color: scheme.onSurfaceVariant.withValues(alpha: .62),
-                      strokeWidth: 1.6,
-                    ),
-                    const Positioned(
-                      right: -8,
-                      bottom: -3,
-                      child: InkSeal('炼', size: 19),
-                    ),
-                  ],
+                iconWidget: const StampedInkEmptyIcon(
+                  glyph: InkGlyph.training,
+                  seal: '炼',
                 ),
                 title: editable
                     ? l10n.noWorkoutPlannedTitle
@@ -887,10 +875,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
                   ),
                 ),
               ],
-              SportProgressBar(
-                value: total == 0 ? 0 : done / total,
-                minHeight: 4,
-              ),
+              InkBrushProgressBar(value: total == 0 ? 0 : done / total),
               TextButton(
                 onPressed: () => showDayWorkoutDetails(context, widget.day),
                 child: Text(
@@ -1027,9 +1012,7 @@ class _WorkoutItemTile extends ConsumerWidget {
         value: item.done,
         onChanged: editable
             ? (v) {
-                ref
-                    .read(workoutRepositoryProvider)
-                    .setItemDone(item.id, v);
+                ref.read(workoutRepositoryProvider).setItemDone(item.id, v);
               }
             : null,
       ),
