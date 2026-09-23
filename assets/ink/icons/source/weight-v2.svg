@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <filter id="rough" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.018 0.08" numOctaves="2" seed="17" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.8" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+  <g fill="none" stroke="#075866" stroke-linecap="round" stroke-linejoin="round" filter="url(#rough)">
+    <!-- A low, hand-brushed scale body: broad feet and an intentionally open corner. -->
+    <path d="M48 205 C38 181 37 142 42 105 C46 74 66 54 96 50 C126 46 174 48 194 62 C213 75 219 104 216 139 C213 171 211 195 198 209 C165 216 89 217 54 209" stroke-width="12"/>
+    <path d="M57 199 C91 205 164 205 195 199" stroke-width="4" opacity=".58"/>
+    <!-- Dial bowl, painted with a heavier upper arc and a broken lower sweep. -->
+    <path d="M70 113 C82 79 111 68 138 70 C169 71 190 88 196 112" stroke-width="10"/>
+    <path d="M72 114 C91 132 164 135 195 112" stroke-width="6" opacity=".9"/>
+    <path d="M91 102 L87 91 M111 94 L109 80 M133 92 L134 77 M156 97 L160 83 M176 106 L183 95" stroke-width="5"/>
+    <!-- Needle resembles one decisive calligraphy stroke. -->
+    <path d="M133 111 C129 102 127 94 129 83" stroke-width="7"/>
+    <path d="M133 111 L143 88" stroke-width="4" opacity=".68"/>
+    <circle cx="133" cy="112" r="7" fill="#075866" stroke="none"/>
+    <!-- Dry-brush accents / ink flecks. -->
+    <path d="M54 82 C65 64 82 55 101 52" stroke-width="3" opacity=".42"/>
+    <path d="M207 155 L204 177" stroke-width="3" opacity=".38"/>
+  </g>
+  <g fill="#075866" opacity=".5">
+    <circle cx="45" cy="93" r="3"/><circle cx="211" cy="187" r="2.5"/><circle cx="76" cy="218" r="2"/>
+  </g>
+</svg>
