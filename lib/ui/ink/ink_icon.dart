@@ -124,9 +124,22 @@ class InkStrokeUnderline extends StatelessWidget {
       curve: Curves.easeOutCubic,
       builder: (context, progress, _) => SizedBox(
         width: width,
-        height: 4,
-        child: CustomPaint(
-          painter: _InkUnderlinePainter(color: color, progress: progress),
+        height: 7,
+        child: ClipRect(
+          child: Align(
+            alignment: Alignment.centerLeft,
+            widthFactor: progress,
+            child: ColorFiltered(
+              colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+              child: Image.asset(
+                'assets/ink/brush-sweep-v1.png',
+                width: width,
+                height: 7,
+                fit: BoxFit.fill,
+                filterQuality: FilterQuality.medium,
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -153,69 +166,12 @@ class InkSeal extends StatelessWidget {
       style: TextStyle(
         color: const Color(0xFFF4F1E9),
         fontFamily: 'LXGWWenKai',
+        fontWeight: FontWeight.w500,
         fontSize: size * .62,
         height: 1,
       ),
     ),
   );
-}
-
-class _InkUnderlinePainter extends CustomPainter {
-  const _InkUnderlinePainter({required this.color, required this.progress});
-
-  final Color color;
-  final double progress;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (progress <= 0) return;
-    final path = Path()
-      ..moveTo(0, size.height * .62)
-      ..cubicTo(
-        size.width * .23,
-        size.height * .22,
-        size.width * .62,
-        size.height * .82,
-        size.width,
-        size.height * .42,
-      );
-    final metric = path.computeMetrics().first;
-    final written = metric.extractPath(0, metric.length * progress);
-    canvas.drawPath(
-      written,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3.1
-        ..strokeCap = StrokeCap.round,
-    );
-    // Two dry satellite bristles make the mark read as a quick brush pass,
-    // while staying crisp at navigation-icon scale.
-    canvas.save();
-    canvas.translate(0, -1.05);
-    canvas.drawPath(
-      written,
-      Paint()
-        ..color = color.withValues(alpha: .42)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = .75
-        ..strokeCap = StrokeCap.round,
-    );
-    canvas.translate(size.width * .05, 2.1);
-    canvas.drawPath(
-      written,
-      Paint()
-        ..color = color.withValues(alpha: .28)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = .55
-        ..strokeCap = StrokeCap.round,
-    );
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant _InkUnderlinePainter old) =>
-      old.color != color || old.progress != progress;
 }
 
 class _InkIconPainter extends CustomPainter {
@@ -325,36 +281,45 @@ class _InkIconPainter extends CustomPainter {
   }
 
   void _calendar(Canvas c, Paint p) {
-    final body = Path()
-      ..moveTo(5, 7)
-      ..lineTo(5, 19)
-      ..quadraticBezierTo(5, 21, 7, 21)
-      ..lineTo(17.5, 21)
-      ..lineTo(20, 18.5)
-      ..lineTo(20, 7)
-      ..quadraticBezierTo(20, 5.5, 18.5, 5.5)
-      ..lineTo(15.5, 5.5);
-    c.drawPath(body, p);
-    c.drawLine(const Offset(8.5, 5.5), const Offset(5.5, 5.5), p);
-    c.drawLine(
-      const Offset(9, 3),
-      const Offset(9, 7.5),
-      _stroke(color, width: 1.2),
-    );
-    c.drawLine(
-      const Offset(16, 3),
-      const Offset(16, 7.5),
-      _stroke(color, width: 1.2),
-    );
-    c.drawLine(const Offset(5, 9.5), const Offset(20, 9.5), p);
+    // One continuous paper stroke, deliberately open at the upper-left.
+    final paper = Path()
+      ..moveTo(8.2, 5.5)
+      ..lineTo(18.2, 5.5)
+      ..quadraticBezierTo(20, 5.5, 20, 7.3)
+      ..lineTo(20, 17.5)
+      ..lineTo(16.6, 21)
+      ..lineTo(7, 21)
+      ..quadraticBezierTo(4.5, 21, 4.5, 18.5)
+      ..lineTo(4.5, 8.2);
+    c.drawPath(paper, p);
+
+    // Binding strokes are heavier at the paper edge and taper upward.
+    final binding = _stroke(color, width: 1.18);
     c.drawPath(
       Path()
-        ..moveTo(17.5, 21)
-        ..lineTo(17.5, 18.5)
-        ..lineTo(20, 18.5),
-      p,
+        ..moveTo(8.4, 7.4)
+        ..lineTo(8.4, 2.8),
+      binding,
     );
-    c.drawCircle(const Offset(12.5, 14.8), 1.05, Paint()..color = color);
+    c.drawPath(
+      Path()
+        ..moveTo(15.8, 7.4)
+        ..lineTo(15.8, 2.8),
+      binding,
+    );
+
+    // A broken divider leaves a quiet field for an optional weekday mark.
+    c.drawLine(const Offset(4.8, 9.2), const Offset(11.2, 9.2), p);
+    c.drawLine(const Offset(13.2, 9.2), const Offset(19.7, 9.2), p);
+
+    // Folded lower-right paper corner.
+    c.drawPath(
+      Path()
+        ..moveTo(16.6, 21)
+        ..lineTo(16.6, 17.5)
+        ..lineTo(20, 17.5),
+      _stroke(color, width: .78),
+    );
   }
 
   void _walk(Canvas c, Paint p) {
