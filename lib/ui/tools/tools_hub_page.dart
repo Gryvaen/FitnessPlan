@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations_ext.dart';
+import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 
@@ -29,42 +30,42 @@ class ToolsHubPage extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: AppSpacing.section),
           ),
           _ToolRow(
-            icon: Icons.accessibility_new_outlined,
+            glyph: InkGlyph.bodyFat,
             color: AppColors.protein,
             title: l10n.toolBodyFat,
             subtitle: l10n.toolBodyFatSub,
             onTap: () => context.push('/profile/tools/body-fat'),
           ),
           _ToolRow(
-            icon: Icons.monitor_weight_outlined,
+            glyph: InkGlyph.weight,
             color: AppColors.fat,
             title: l10n.toolBodyMetrics,
             subtitle: l10n.toolBodyMetricsSub,
             onTap: () => context.push('/profile/tools/body-metrics'),
           ),
           _ToolRow(
-            icon: Icons.restaurant_outlined,
+            glyph: InkGlyph.food,
             color: AppColors.carb,
             title: l10n.toolFoodConvert,
             subtitle: l10n.toolFoodConvertSub,
             onTap: () => context.push('/profile/tools/food-convert'),
           ),
           _ToolRow(
-            icon: Icons.timer_outlined,
+            glyph: InkGlyph.timer,
             color: AppThemeVisuals.of(context).accent,
             title: l10n.toolRestTimer,
             subtitle: l10n.toolRestTimerSub,
             onTap: () => context.push('/profile/tools/rest-timer'),
           ),
           _ToolRow(
-            icon: Icons.calculate_outlined,
+            glyph: InkGlyph.calculator,
             color: const Color(0xFF5B7C8A),
             title: l10n.toolCalculator,
             subtitle: l10n.toolCalculatorSub,
             onTap: () => context.push('/profile/tools/calculator'),
           ),
           _ToolRow(
-            icon: Icons.swap_vert,
+            glyph: InkGlyph.swapVertical,
             color: AppColors.water,
             title: l10n.toolEnergyConvert,
             subtitle: l10n.toolEnergyConvertSub,
@@ -85,14 +86,14 @@ class ToolsHubPage extends StatelessWidget {
 
 class _ToolRow extends StatelessWidget {
   const _ToolRow({
-    required this.icon,
+    required this.glyph,
     required this.color,
     required this.title,
     required this.subtitle,
     required this.onTap,
   });
 
-  final IconData icon;
+  final InkGlyph glyph;
   final Color color;
   final String title;
   final String subtitle;
@@ -102,7 +103,7 @@ class _ToolRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return SportListTile(
       contentPadding: EdgeInsets.zero,
-      leading: MenuIconBadge(icon: icon, color: color),
+      leading: InkIcon(glyph, color: color),
       title: Text(title),
       subtitle: Text(
         subtitle,
@@ -110,8 +111,8 @@ class _ToolRow extends StatelessWidget {
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
-      trailing: Icon(
-        Icons.chevron_right,
+      trailing: InkIcon(
+        InkGlyph.chevronRight,
         color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
       onTap: onTap,
