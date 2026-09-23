@@ -150,10 +150,16 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                 focusNode: _searchFocus,
                 decoration: InputDecoration(
                   hintText: l10n.searchFood,
-                  prefixIcon: const InkIcon(InkGlyph.search),
+                  prefixIcon: InkIcon(
+                    InkGlyph.search,
+                    color: foodUtilityIconColor(context),
+                  ),
                   suffixIcon: searching
                       ? IconButton(
-                          icon: const InkIcon(InkGlyph.close),
+                          icon: InkIcon(
+                            InkGlyph.close,
+                            color: foodUtilityIconColor(context),
+                          ),
                           onPressed: () {
                             _searchFocus.unfocus();
                             _searchController.clear();
@@ -365,7 +371,11 @@ class _FoodListView extends ConsumerWidget {
         if (foods.isEmpty) {
           return SingleChildScrollView(
             child: SportEmptyState(
-              iconWidget: InkIcon(emptyGlyph, size: 48),
+              iconWidget: InkIcon(
+                emptyGlyph,
+                size: 48,
+                color: foodUtilityIconColor(context),
+              ),
               title: emptyTitle,
             ),
           );
@@ -466,7 +476,11 @@ class _FoodCategoryList extends ConsumerWidget {
             if (categories.isEmpty) {
               return SingleChildScrollView(
                 child: SportEmptyState(
-                  iconWidget: const InkIcon(InkGlyph.food, size: 48),
+                  iconWidget: InkIcon(
+                    InkGlyph.food,
+                    size: 48,
+                    color: foodCategoryColor(context, ''),
+                  ),
                   title: l10n.noCategories,
                 ),
               );
@@ -491,7 +505,10 @@ class _FoodCategoryList extends ConsumerWidget {
                       l10n.nKinds(c.count),
                       style: theme.textTheme.meta,
                     ),
-                    trailing: const InkIcon(InkGlyph.chevronRight),
+                    trailing: InkIcon(
+                      InkGlyph.chevronRight,
+                      color: foodUtilityIconColor(context),
+                    ),
                     onTap: () => context.push(
                       Uri(
                         path: '/foods/category',
@@ -503,7 +520,10 @@ class _FoodCategoryList extends ConsumerWidget {
                   contentPadding: EdgeInsets.zero,
                   leading: const FoodCategoryAvatar(category: '自定义'),
                   title: Text(l10n.custom, style: theme.textTheme.bodyLarge),
-                  trailing: const InkIcon(InkGlyph.chevronRight),
+                  trailing: InkIcon(
+                    InkGlyph.chevronRight,
+                    color: foodUtilityIconColor(context),
+                  ),
                   onTap: () => context.push('/foods/custom'),
                 ),
               ],
@@ -531,7 +551,11 @@ class _FoodSearchList extends ConsumerWidget {
             if (foods.isEmpty) {
               return SingleChildScrollView(
                 child: SportEmptyState(
-                  iconWidget: const InkIcon(InkGlyph.search, size: 48),
+                  iconWidget: InkIcon(
+                    InkGlyph.search,
+                    size: 48,
+                    color: foodUtilityIconColor(context),
+                  ),
                   title: l10n.noFoodFound,
                   actionLabel: l10n.editKeywords,
                   onAction: onClearQuery,
