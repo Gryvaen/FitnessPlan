@@ -172,36 +172,44 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
             : null;
         final theme = Theme.of(context);
         final showPeriodTabs = periods.length > 1;
+        final isEmpty = logs.isEmpty;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.listPage, 8, 20, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (latest != null) ...[
-                    Text(
-                      '${latest.weightKg.toStringAsFixed(1)} kg',
-                      style: theme.textTheme.headlineLarge,
-                    ),
-                    if (previous != null) _deltaRow(context, latest, previous),
-                    if (showPeriodTabs) const SizedBox(height: 12),
+            if (!isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.listPage,
+                  8,
+                  20,
+                  0,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (latest != null) ...[
+                      Text(
+                        '${latest.weightKg.toStringAsFixed(1)} kg',
+                        style: theme.textTheme.headlineLarge,
+                      ),
+                      if (previous != null)
+                        _deltaRow(context, latest, previous),
+                      if (showPeriodTabs) const SizedBox(height: 12),
+                    ],
+                    if (showPeriodTabs)
+                      SportTabs<int>(
+                        items: {
+                          for (final p in periods)
+                            p: p == 0 ? l10n.filterAll : l10n.lastNDays(p),
+                        },
+                        selected: period,
+                        onSelected: (v) => setState(() => _period = v),
+                      ),
                   ],
-                  if (showPeriodTabs)
-                    SportTabs<int>(
-                      items: {
-                        for (final p in periods)
-                          p: p == 0 ? l10n.filterAll : l10n.lastNDays(p),
-                      },
-                      selected: period,
-                      onSelected: (v) => setState(() => _period = v),
-                    ),
-                ],
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
+            if (!isEmpty) const SizedBox(height: 8),
             Expanded(
               child: showPeriodTabs
                   ? SwipeTabView(
@@ -277,23 +285,25 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
           _SeriesPoint(date: log.date, value: log.bodyFatPct!),
     ];
     final hasBodyFatHistory = logs.any((log) => log.bodyFatPct != null);
+    final showCharts = weightSeries.isNotEmpty || hasBodyFatHistory;
 
     return ListView(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.listPage,
-        12,
+        logs.isEmpty ? 4 : 12,
         AppSpacing.listPage,
         listBottomInset(context, hasFab: false),
       ),
       children: [
-        _SeriesChart(
-          title: l10n.chartWeightTitle,
-          points: weightSeries,
-          color: scheme.primary,
-          emptyHint: l10n.chartWeightEmpty,
-        ),
+        if (weightSeries.isNotEmpty)
+          _SeriesChart(
+            title: l10n.chartWeightTitle,
+            points: weightSeries,
+            color: scheme.primary,
+            emptyHint: l10n.chartWeightEmpty,
+          ),
         if (hasBodyFatHistory) ...[
-          const SizedBox(height: AppSpacing.field),
+          if (weightSeries.isNotEmpty) const SizedBox(height: AppSpacing.field),
           _SeriesChart(
             title: l10n.chartBfTitle,
             points: bodyFatSeries,
@@ -301,7 +311,7 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
             emptyHint: l10n.chartBfEmpty,
           ),
         ],
-        const SizedBox(height: AppSpacing.section),
+        if (showCharts) const SizedBox(height: AppSpacing.section),
         Row(
           children: [
             Text(l10n.history, style: Theme.of(context).textTheme.titleMedium),
@@ -315,13 +325,11 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
         ),
         const SizedBox(height: 8),
         if (logs.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Center(
-              child: Text(
-                l10n.emptyWeightLogs,
-                style: Theme.of(context).textTheme.meta,
-              ),
+          SportEmptyState(
+            title: l10n.emptyWeightLogs,
+            iconWidget: const StampedInkEmptyIcon(
+              glyph: InkGlyph.profile,
+              seal: '身',
             ),
           ),
         ...visible.reversed.map(

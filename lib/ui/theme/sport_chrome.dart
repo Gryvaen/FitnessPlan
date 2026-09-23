@@ -193,6 +193,39 @@ class SportEmptyState extends StatelessWidget {
   }
 }
 
+/// The shared illustrated mark used by the app's primary empty states.
+///
+/// Keeps the ink glyph and its lower-right seal aligned consistently across
+/// Today and Records surfaces.
+class StampedInkEmptyIcon extends StatelessWidget {
+  const StampedInkEmptyIcon({
+    super.key,
+    required this.glyph,
+    required this.seal,
+  });
+
+  final InkGlyph glyph;
+  final String seal;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Stack(
+      key: ValueKey('stamped-empty-icon-$seal'),
+      clipBehavior: Clip.none,
+      children: [
+        InkIcon(
+          glyph,
+          size: 52,
+          color: scheme.onSurfaceVariant.withValues(alpha: .62),
+          strokeWidth: 1.6,
+        ),
+        Positioned(right: -8, bottom: -3, child: InkSeal(seal, size: 19)),
+      ],
+    );
+  }
+}
+
 class SportLoadError extends StatelessWidget {
   const SportLoadError({super.key, required this.onRetry});
   final VoidCallback onRetry;
