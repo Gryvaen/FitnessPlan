@@ -237,33 +237,44 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                       ],
                       const SizedBox(height: AppSpacing.card),
                       // Open composition: remaining, ring, and interactive cup.
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: _RemainingBlock(
-                              remain: remainCal,
-                              eaten: intake.calories,
-                              target: targetCalories,
-                              onHero: onHero,
-                              onHeroMuted: onHeroMuted,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          CalorieRing(
-                            eaten: intake.calories,
-                            target: targetCalories,
-                            over: remainCal < 0,
-                            size: 88,
-                            strokeWidth: 8,
-                            color: scheme.primary,
-                            trackColor: visuals.track,
-                            centerLabel: l10n.eatenWord,
-                            metaColor: onHeroMuted,
-                          ),
-                          const SizedBox(width: 10),
-                          _WaterCup(day: day, canAdd: isSelectedToday),
-                        ],
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          // Match the reference composition: the brush ring is
+                          // the visual anchor of this row, rather than a small
+                          // status icon between the calorie and water blocks.
+                          // Keep a slightly smaller floor for narrow devices.
+                          final ringSize = constraints.maxWidth >= 330
+                              ? 128.0
+                              : 116.0;
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: _RemainingBlock(
+                                  remain: remainCal,
+                                  eaten: intake.calories,
+                                  target: targetCalories,
+                                  onHero: onHero,
+                                  onHeroMuted: onHeroMuted,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              CalorieRing(
+                                eaten: intake.calories,
+                                target: targetCalories,
+                                over: remainCal < 0,
+                                size: ringSize,
+                                strokeWidth: 10,
+                                color: scheme.primary,
+                                trackColor: visuals.track,
+                                centerLabel: l10n.eatenWord,
+                                metaColor: onHeroMuted,
+                              ),
+                              const SizedBox(width: 10),
+                              _WaterCup(day: day, canAdd: isSelectedToday),
+                            ],
+                          );
+                        },
                       ),
                       const SizedBox(height: AppSpacing.card),
                       Divider(color: onHero.withValues(alpha: 0.10), height: 1),
