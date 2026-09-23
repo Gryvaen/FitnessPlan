@@ -66,9 +66,7 @@ class _CultivationHomeState extends ConsumerState<_CultivationHome> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final progress = ref.watch(cultivationProgressProvider);
-    final stepsKcal = stepsToKcal(
-      ref.watch(cultivationStepsTodayProvider),
-    );
+    final stepsKcal = stepsToKcal(ref.watch(cultivationStepsTodayProvider));
     final dietKcal = ref.watch(cultivationDietKcalTodayProvider);
 
     return Scaffold(
@@ -266,7 +264,7 @@ class _RealmPanel extends StatelessWidget {
               ),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 color: realm.textColor,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 12),
@@ -530,7 +528,7 @@ class _CultivationLockedView extends ConsumerWidget {
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       color: Colors.white,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -548,9 +546,9 @@ class _CultivationLockedView extends ConsumerWidget {
                       // 预选要解锁的目标；保存后由 ProfileEditPage 直接
                       // go 到境界主页，避免再一层层退回画轴/锁定页。
                       final unlock = goal ?? FitnessGoal.cut;
-                      GoRouter.of(context).push(
-                        '/profile/edit?unlockGoal=${unlock.name}',
-                      );
+                      GoRouter.of(
+                        context,
+                      ).push('/profile/edit?unlockGoal=${unlock.name}');
                     },
                     child: Text(ctaText),
                   ),
@@ -653,7 +651,7 @@ class _CultivationComingSoonHome extends StatelessWidget {
                     l10n.cultivationComingSoonTitle(goal.label(l10n)),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       color: goal.cultivationAccentColor,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: 8),
