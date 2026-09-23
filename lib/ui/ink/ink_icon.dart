@@ -57,6 +57,36 @@ enum InkGlyph {
   stop,
   swapHorizontal,
   remove,
+  target,
+  notification,
+  tools,
+  folder,
+  share,
+  language,
+  moon,
+  sun,
+  download,
+  upload,
+  meditation,
+  chart,
+  trophy,
+  lock,
+  bodyFat,
+  weight,
+  timer,
+  swapVertical,
+  pause,
+  replay,
+  history,
+  backspace,
+  alarm,
+  schedule,
+  music,
+  vibration,
+  batteryAlert,
+  notificationsOff,
+  toggleOn,
+  toggleOff,
 }
 
 class InkIcon extends StatelessWidget {
@@ -80,14 +110,22 @@ class InkIcon extends StatelessWidget {
     final theme = Theme.of(context);
     final variant = theme.brightness == Brightness.dark ? 'dark' : 'light';
     final asset = 'assets/ink/icons/$variant/${glyph.assetName}-v1.png';
+    // Dark PNG variants are treated as alpha masks. Their embedded RGB can
+    // otherwise become too dark after decoding/compositing on graphite
+    // surfaces (most visible on the food-category glyphs).
+    final effectiveColor =
+        color ??
+        (theme.brightness == Brightness.dark
+            ? theme.colorScheme.onSurface
+            : null);
     return SizedBox.square(
       dimension: size,
       child: Image.asset(
         asset,
         fit: BoxFit.contain,
         filterQuality: FilterQuality.high,
-        color: color,
-        colorBlendMode: color == null ? null : BlendMode.srcIn,
+        color: effectiveColor,
+        colorBlendMode: effectiveColor == null ? null : BlendMode.srcIn,
       ),
     );
   }
@@ -108,10 +146,62 @@ extension InkGlyphAssetName on InkGlyph {
     InkGlyph.playlistAdd => 'playlist-add',
     InkGlyph.starOutline => 'star-outline',
     InkGlyph.swapHorizontal => 'swap-horizontal',
+    InkGlyph.bodyFat => 'body-fat',
+    InkGlyph.swapVertical => 'swap-vertical',
+    InkGlyph.batteryAlert => 'battery-alert',
+    InkGlyph.notificationsOff => 'notifications-off',
+    InkGlyph.toggleOn => 'toggle-on',
+    InkGlyph.toggleOff => 'toggle-off',
     InkGlyph.expand => 'expand-more',
     InkGlyph.collapse => 'expand-less',
     _ => name,
   };
+}
+
+class InkToggle extends StatelessWidget {
+  const InkToggle({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    required this.semanticLabel,
+  });
+
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+  final String semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final disabled = onChanged == null;
+    final color = disabled
+        ? Theme.of(context).colorScheme.onSurface.withValues(alpha: .32)
+        : null;
+    return Semantics(
+      label: semanticLabel,
+      toggled: value,
+      enabled: !disabled,
+      button: true,
+      child: Tooltip(
+        message: semanticLabel,
+        excludeFromSemantics: true,
+        child: InkResponse(
+          onTap: disabled ? null : () => onChanged!(!value),
+          radius: 24,
+          child: SizedBox(
+            width: 52,
+            height: 48,
+            child: Center(
+              child: InkIcon(
+                value ? InkGlyph.toggleOn : InkGlyph.toggleOff,
+                size: 42,
+                color: color,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class InkIconButton extends StatelessWidget {
@@ -380,7 +470,37 @@ class _InkIconPainter extends CustomPainter {
           InkGlyph.star ||
           InkGlyph.starOutline ||
           InkGlyph.stop ||
-          InkGlyph.swapHorizontal:
+          InkGlyph.swapHorizontal ||
+          InkGlyph.target ||
+          InkGlyph.notification ||
+          InkGlyph.tools ||
+          InkGlyph.folder ||
+          InkGlyph.share ||
+          InkGlyph.language ||
+          InkGlyph.moon ||
+          InkGlyph.sun ||
+          InkGlyph.download ||
+          InkGlyph.upload ||
+          InkGlyph.meditation ||
+          InkGlyph.chart ||
+          InkGlyph.trophy ||
+          InkGlyph.lock ||
+          InkGlyph.bodyFat ||
+          InkGlyph.weight ||
+          InkGlyph.timer ||
+          InkGlyph.swapVertical ||
+          InkGlyph.pause ||
+          InkGlyph.replay ||
+          InkGlyph.history ||
+          InkGlyph.backspace ||
+          InkGlyph.alarm ||
+          InkGlyph.schedule ||
+          InkGlyph.music ||
+          InkGlyph.vibration ||
+          InkGlyph.batteryAlert ||
+          InkGlyph.notificationsOff ||
+          InkGlyph.toggleOn ||
+          InkGlyph.toggleOff:
         break;
       case InkGlyph.remove:
         break;
