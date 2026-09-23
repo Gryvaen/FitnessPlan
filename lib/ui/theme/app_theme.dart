@@ -105,6 +105,7 @@ extension AppTextStyles on TextTheme {
   TextStyle? get fieldLabel => labelMedium;
   TextStyle? get meta => bodySmall;
   TextStyle? get statValue => headlineSmall?.copyWith(
+    fontFamily: AppTheme.bodyFontFamily,
     fontWeight: FontWeight.w700,
     height: 1.1,
     letterSpacing: -0.5,
@@ -331,6 +332,9 @@ class AppTheme {
   /// Display / loading-page typeface (霞鹜文楷 Lite Medium).
   static const displayFontFamily = 'LXGWWenKai';
 
+  /// UI body / numeric typeface. The variable font supplies real weights.
+  static const bodyFontFamily = 'NotoSansSC';
+
   /// Soft rainbow wash used only by the loading-page ink bloom animation.
   static const oilRainbowWash = LinearGradient(
     begin: Alignment.topLeft,
@@ -494,16 +498,20 @@ class AppTheme {
   }
 
   static ThemeData _buildTheme(ColorScheme scheme, AppThemeVisuals visuals) {
-    final base = ThemeData(colorScheme: scheme, useMaterial3: true);
+    final base = ThemeData(
+      colorScheme: scheme,
+      useMaterial3: true,
+      fontFamily: bodyFontFamily,
+    );
     final text = base.textTheme.copyWith(
       titleLarge: base.textTheme.titleLarge?.copyWith(
         fontFamily: displayFontFamily,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w500,
         letterSpacing: -0.2,
       ),
       titleMedium: base.textTheme.titleMedium?.copyWith(
         fontFamily: displayFontFamily,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w500,
       ),
       titleSmall: base.textTheme.titleSmall?.copyWith(
         fontWeight: FontWeight.w600,
@@ -523,7 +531,7 @@ class AppTheme {
       ),
       headlineSmall: base.textTheme.headlineSmall?.copyWith(
         fontFamily: displayFontFamily,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w500,
         letterSpacing: -0.5,
       ),
     );
