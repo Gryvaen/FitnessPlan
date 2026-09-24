@@ -16,6 +16,25 @@ enum InkGlyph {
   carbs,
   fat,
   water,
+  foodLivestock,
+  foodPoultry,
+  foodSeafood,
+  foodDairy,
+  foodEggs,
+  foodLegumes,
+  foodGrains,
+  foodTubers,
+  foodFruit,
+  foodConfectionery,
+  foodNuts,
+  foodOils,
+  foodBeverages,
+  foodPackaged,
+  foodSnacks,
+  foodFungi,
+  foodVegetables,
+  foodSeasonings,
+  foodCustom,
   addRing,
   training,
   food,
@@ -146,6 +165,25 @@ extension InkGlyphAssetName on InkGlyph {
     InkGlyph.playlistAdd => 'playlist-add',
     InkGlyph.starOutline => 'star-outline',
     InkGlyph.swapHorizontal => 'swap-horizontal',
+    InkGlyph.foodLivestock => 'food-livestock',
+    InkGlyph.foodPoultry => 'food-poultry',
+    InkGlyph.foodSeafood => 'food-seafood',
+    InkGlyph.foodDairy => 'food-dairy',
+    InkGlyph.foodEggs => 'food-eggs',
+    InkGlyph.foodLegumes => 'food-legumes',
+    InkGlyph.foodGrains => 'food-grains',
+    InkGlyph.foodTubers => 'food-tubers',
+    InkGlyph.foodFruit => 'food-fruit',
+    InkGlyph.foodConfectionery => 'food-confectionery',
+    InkGlyph.foodNuts => 'food-nuts',
+    InkGlyph.foodOils => 'food-oils',
+    InkGlyph.foodBeverages => 'food-beverages',
+    InkGlyph.foodPackaged => 'food-packaged',
+    InkGlyph.foodSnacks => 'food-snacks',
+    InkGlyph.foodFungi => 'food-fungi',
+    InkGlyph.foodVegetables => 'food-vegetables',
+    InkGlyph.foodSeasonings => 'food-seasonings',
+    InkGlyph.foodCustom => 'food-custom',
     InkGlyph.bodyFat => 'body-fat',
     InkGlyph.swapVertical => 'swap-vertical',
     InkGlyph.batteryAlert => 'battery-alert',
@@ -450,6 +488,25 @@ class _InkIconPainter extends CustomPainter {
       case InkGlyph.profile:
         _profile(canvas, p);
       case InkGlyph.add ||
+          InkGlyph.foodLivestock ||
+          InkGlyph.foodPoultry ||
+          InkGlyph.foodSeafood ||
+          InkGlyph.foodDairy ||
+          InkGlyph.foodEggs ||
+          InkGlyph.foodLegumes ||
+          InkGlyph.foodGrains ||
+          InkGlyph.foodTubers ||
+          InkGlyph.foodFruit ||
+          InkGlyph.foodConfectionery ||
+          InkGlyph.foodNuts ||
+          InkGlyph.foodOils ||
+          InkGlyph.foodBeverages ||
+          InkGlyph.foodPackaged ||
+          InkGlyph.foodSnacks ||
+          InkGlyph.foodFungi ||
+          InkGlyph.foodVegetables ||
+          InkGlyph.foodSeasonings ||
+          InkGlyph.foodCustom ||
           InkGlyph.autoFix ||
           InkGlyph.cycle ||
           InkGlyph.bedtime ||

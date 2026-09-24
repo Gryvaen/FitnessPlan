@@ -3,11 +3,25 @@ import 'package:flutter/material.dart';
 import '../ink/ink_icon.dart';
 
 InkGlyph foodCategoryGlyph(String category) => switch (category) {
-  '畜肉' || '禽肉' || '水产' || '乳类' || '蛋类' || '豆类' => InkGlyph.protein,
-  '谷类' || '薯类' || '水果' || '糖蜜饯' => InkGlyph.carbs,
-  '坚果' || '油脂' => InkGlyph.fat,
-  '饮料' => InkGlyph.water,
-  '自定义' => InkGlyph.autoFix,
+  '畜肉' => InkGlyph.foodLivestock,
+  '禽肉' => InkGlyph.foodPoultry,
+  '水产' => InkGlyph.foodSeafood,
+  '乳类' => InkGlyph.foodDairy,
+  '蛋类' => InkGlyph.foodEggs,
+  '豆类' => InkGlyph.foodLegumes,
+  '谷类' => InkGlyph.foodGrains,
+  '薯类' => InkGlyph.foodTubers,
+  '水果' => InkGlyph.foodFruit,
+  '糖蜜饯' => InkGlyph.foodConfectionery,
+  '坚果' => InkGlyph.foodNuts,
+  '油脂' => InkGlyph.foodOils,
+  '饮料' => InkGlyph.foodBeverages,
+  '包装食品' => InkGlyph.foodPackaged,
+  '小吃' => InkGlyph.foodSnacks,
+  '菌藻' => InkGlyph.foodFungi,
+  '蔬菜' => InkGlyph.foodVegetables,
+  '调味品' => InkGlyph.foodSeasonings,
+  '自定义' => InkGlyph.foodCustom,
   _ => InkGlyph.food,
 };
 
