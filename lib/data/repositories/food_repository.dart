@@ -8,7 +8,7 @@ import '../db.dart';
 
 /// Bump when [assets/food_seed.json] content changes meaningfully,
 /// or when sync policy changes (e.g. obsolete-row deletion).
-const kFoodSeedVersion = 11;
+const kFoodSeedVersion = 12;
 
 const kFoodSearchLimit = 80;
 

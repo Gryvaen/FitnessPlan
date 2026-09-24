@@ -146,7 +146,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                   // that day is viewed again) — the title already carries
                   // the specific date, so the subtitle no longer needs to
                   // fall back to a plain date for non-today days.
-                  dateLabel: goalQuoteForDay(profile.goal, day),
+                  dateLabel: goalQuoteForDay(profile.goal, day, locale),
                   canGoPrev: canGoPrev,
                   canGoNext: canGoNext,
                   onPrev: () => ref
