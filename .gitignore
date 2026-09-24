@@ -1,6 +1,10 @@
 # Docs
 /docs/copyright/
 /design-handoff/product-redesign-v3/debug
+
+# Data
+/data
+
 # Miscellaneous
 *.class
 *.log
