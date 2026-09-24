@@ -75,6 +75,60 @@ void main() {
     expect(escapeLikePattern(r'a%b_c\d'), r'a\%b\_c\\d');
   });
 
+  test('search matches nameEn for English queries', () async {
+    await db.into(db.foodItems).insert(
+          FoodItemsCompanion.insert(
+            name: '鸡胸肉(水煮)',
+            category: '禽肉',
+            kcalPer100: 165,
+            proteinPer100: 31,
+            carbPer100: 0,
+            fatPer100: 3.6,
+            nameEn: const Value('Chicken Breast (Boiled)'),
+          ),
+        );
+    final hits = await repo.search('chicken');
+    expect(hits, hasLength(1));
+    expect(hits.first.name, '鸡胸肉(水煮)');
+  });
+
+  test('search on a foreign term does not match rows with no nameEn', () async {
+    await db.into(db.foodItems).insert(
+          FoodItemsCompanion.insert(
+            name: '豆腐',
+            category: '豆制品',
+            kcalPer100: 80,
+            proteinPer100: 8,
+            carbPer100: 3,
+            fatPer100: 4,
+          ),
+        );
+    expect(await repo.search('tofu'), isEmpty);
+  });
+
+  test('cooking-method variants sort contiguously with their base ingredient', () async {
+    // Insert in a deliberately non-adjacent order.
+    for (final name in ['鸡胸肉(烤)', '苹果', '鸡胸肉', '鸡胸肉(水煮)', '鸡胸肉(煎)']) {
+      await db.into(db.foodItems).insert(
+            FoodItemsCompanion.insert(
+              name: name,
+              category: '测试',
+              kcalPer100: 100,
+              proteinPer100: 20,
+              carbPer100: 0,
+              fatPer100: 5,
+            ),
+          );
+    }
+    final hits = await repo.search('鸡胸肉');
+    expect(hits.map((f) => f.name).toList(), [
+      '鸡胸肉',
+      '鸡胸肉(水煮)',
+      '鸡胸肉(烤)',
+      '鸡胸肉(煎)',
+    ]);
+  });
+
   test('favorites and recent foods', () async {
     final id = await db.into(db.foodItems).insert(
           FoodItemsCompanion.insert(

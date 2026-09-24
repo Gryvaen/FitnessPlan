@@ -151,12 +151,18 @@ class FoodRepository {
   }
 
   /// Empty [query] returns []. Keyword results are limited (default [kFoodSearchLimit]).
+  ///
+  /// Matches against both [FoodItem.name] and [FoodItem.nameEn] so English
+  /// keywords (e.g. "chicken") find curated foods too, even though [nameEn]
+  /// is only populated for seed foods and is null for custom entries.
   Future<List<FoodItem>> search(String query, {int limit = kFoodSearchLimit}) {
     final q = query.trim();
     if (q.isEmpty) return Future.value(const []);
     final pattern = '%${escapeLikePattern(q)}%';
     final select = _db.select(_db.foodItems)
-      ..where((t) => t.name.like(pattern, escapeChar: r'\'))
+      ..where((t) =>
+          t.name.like(pattern, escapeChar: r'\') |
+          t.nameEn.like(pattern, escapeChar: r'\'))
       ..orderBy([(t) => OrderingTerm.asc(t.name)])
       ..limit(limit);
     return select.get();
