@@ -140,6 +140,9 @@ class FoodRepository {
         await (_db.delete(
           _db.foodServings,
         )..where((t) => t.foodId.isIn(ids))).go();
+        await (_db.delete(
+          _db.hiddenRecentFoods,
+        )..where((t) => t.foodId.isIn(ids))).go();
         await (_db.delete(_db.foodItems)..where((t) => t.id.isIn(ids))).go();
       });
     }
@@ -257,6 +260,19 @@ LIMIT ?
         );
   }
 
+  /// Grams logged the last time [foodId] was added to a meal, or null if
+  /// it has never been logged. Used to prefill the grams field per-food
+  /// instead of a single app-wide default.
+  Future<double?> lastGramsFor(int foodId) async {
+    final row =
+        await (_db.select(_db.mealEntries)
+              ..where((t) => t.foodId.equals(foodId))
+              ..orderBy([(t) => OrderingTerm.desc(t.id)])
+              ..limit(1))
+            .getSingleOrNull();
+    return row?.grams;
+  }
+
   Future<int> createCustom({
     required String name,
     required double kcalPer100,
@@ -366,7 +382,7 @@ LIMIT ?
       throw StateError('只能删除自定义食材');
     }
     // Transaction (matching updateCustom above) so an app kill/crash
-    // between statements can't leave orphaned favorite/serving rows
+    // between statements can't leave orphaned favorite/serving/hidden rows
     // referencing a food id that's already gone.
     await _db.transaction(() async {
       await (_db.delete(
@@ -374,6 +390,9 @@ LIMIT ?
       )..where((t) => t.foodId.equals(id))).go();
       await (_db.delete(
         _db.foodServings,
+      )..where((t) => t.foodId.equals(id))).go();
+      await (_db.delete(
+        _db.hiddenRecentFoods,
       )..where((t) => t.foodId.equals(id))).go();
       await (_db.delete(_db.foodItems)..where((t) => t.id.equals(id))).go();
     });

@@ -60,11 +60,17 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
     final servings = food == null
         ? <FoodServing>[]
         : await repo.listServings(widget.foodId);
+    final lastGrams = food == null
+        ? null
+        : await repo.lastGramsFor(widget.foodId);
     if (!mounted) return;
     setState(() {
       _food = food;
       _servings = servings;
       _loading = false;
+      // Per-food memory: prefill with what was logged last time for this
+      // exact food, falling back to the app-wide last-used grams otherwise.
+      if (lastGrams != null) _grams = lastGrams;
     });
   }
 

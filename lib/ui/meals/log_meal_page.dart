@@ -109,13 +109,16 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
 
   Future<void> _selectFood(FoodItem food) async {
     _searchFocus.unfocus();
-    final servings = await ref
-        .read(foodRepositoryProvider)
-        .listServings(food.id);
+    final repo = ref.read(foodRepositoryProvider);
+    final servings = await repo.listServings(food.id);
+    final lastGrams = await repo.lastGramsFor(food.id);
     if (!mounted) return;
     setState(() {
       _selected = food;
       _servings = servings;
+      // Per-food memory: prefill with what was logged last time for this
+      // exact food, falling back to the app-wide last-used grams otherwise.
+      if (lastGrams != null) _grams = lastGrams;
     });
   }
 
