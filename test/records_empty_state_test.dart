@@ -215,6 +215,7 @@ void main() {
     await pump(tester, const NotesRecordsTab());
 
     expect(find.text('记录今天的训练感受、睡眠或饮食偏差'), findsOneWidget);
+    expect(find.text('写下今天的感受…'), findsNothing);
     expectStampedIcon(glyph: InkGlyph.edit, seal: '记');
     expect(tester.takeException(), isNull);
   });

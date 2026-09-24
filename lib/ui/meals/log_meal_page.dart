@@ -553,9 +553,16 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         : AppDates.md(day, locale);
 
     return PopScope(
+      canPop: _selected == null,
       onPopInvokedWithResult: (didPop, _) {
         unfocusForNavigation();
         _searchFocus.unfocus();
+        if (!didPop && _selected != null) {
+          setState(() {
+            _selected = null;
+            _servings = [];
+          });
+        }
       },
       child: Scaffold(
         appBar: AppBar(
@@ -601,13 +608,6 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                       subtitle: Text(
                         '${_selected!.kcalPer100.round()} kcal / 100g',
                         style: theme.textTheme.meta,
-                      ),
-                      trailing: TextButton(
-                        onPressed: () => setState(() {
-                          _selected = null;
-                          _servings = [];
-                        }),
-                        child: Text(l10n.change),
                       ),
                       onTap: () => _openFoodDetailKeepSelection(_selected!),
                     ),
