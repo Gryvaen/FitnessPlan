@@ -48,9 +48,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
   @override
   void initState() {
     super.initState();
-    final defaults = ref.read(formMemoryRepositoryProvider).loadMealDefaults();
     _mealType = widget.initialMealType ?? MealType.suggestedFor(DateTime.now());
-    _grams = FormOptions.snapDouble(FormOptions.mealGrams(), defaults.grams);
     _reload();
   }
 
@@ -69,8 +67,8 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
       _servings = servings;
       _loading = false;
       // Per-food memory: prefill with what was logged last time for this
-      // exact food, falling back to the app-wide last-used grams otherwise.
-      if (lastGrams != null) _grams = lastGrams;
+      // exact food, or a fixed 100g if it's never been logged before.
+      _grams = lastGrams ?? 100;
     });
   }
 

@@ -80,7 +80,6 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     if (mounted) {
       setState(() {
         _mealType = widget.initialMealType ?? memory.mealType;
-        _grams = FormOptions.snapDouble(FormOptions.mealGrams(), memory.grams);
       });
     }
     try {
@@ -117,8 +116,8 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
       _selected = food;
       _servings = servings;
       // Per-food memory: prefill with what was logged last time for this
-      // exact food, falling back to the app-wide last-used grams otherwise.
-      if (lastGrams != null) _grams = lastGrams;
+      // exact food, or a fixed 100g if it's never been logged before.
+      _grams = lastGrams ?? 100;
     });
   }
 
