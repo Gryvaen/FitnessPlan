@@ -389,22 +389,11 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     ref.invalidate(allWorkoutHistoryProvider);
   }
 
-  Future<void> _editGroupPlan(
-    BuildContext context,
-    DayWorkoutGroup group,
-  ) async {
+  void _editGroupPlan(BuildContext context, DayWorkoutGroup group) {
     final planId = group.workout.planId;
     if (planId == null) return;
-    final router = GoRouter.of(context);
-    await Navigator.of(context, rootNavigator: true).maybePop();
-    router.push(
-      Uri(
-        path: '/records/plan',
-        queryParameters: {
-          'id': '$planId',
-          'syncDay': CalendarDay.dayOnly(widget.day).toIso8601String(),
-        },
-      ).toString(),
+    Navigator.of(context, rootNavigator: true).pop(
+      _EditDayWorkoutPlan(planId: planId, day: CalendarDay.dayOnly(widget.day)),
     );
   }
 
@@ -937,8 +926,26 @@ class _DayWorkoutGroupTile extends StatelessWidget {
   );
 }
 
-Future<void> showDayWorkoutDetails(BuildContext context, DateTime day) =>
-    showModalBottomSheet<void>(
+sealed class _DayWorkoutDetailsAction {
+  const _DayWorkoutDetailsAction();
+}
+
+class _EditDayWorkoutPlan extends _DayWorkoutDetailsAction {
+  const _EditDayWorkoutPlan({required this.planId, required this.day});
+
+  final int planId;
+  final DateTime day;
+
+  String get path => Uri(
+    path: '/records/plan',
+    queryParameters: {'id': '$planId', 'syncDay': day.toIso8601String()},
+  ).toString();
+}
+
+Future<void> showDayWorkoutDetails(BuildContext context, DateTime day) async {
+  while (true) {
+    if (!context.mounted) return;
+    final action = await showModalBottomSheet<_DayWorkoutDetailsAction>(
       context: context,
       useRootNavigator: true,
       isScrollControlled: true,
@@ -959,6 +966,11 @@ Future<void> showDayWorkoutDetails(BuildContext context, DateTime day) =>
         ),
       ),
     );
+
+    if (action is! _EditDayWorkoutPlan || !context.mounted) return;
+    await context.push<void>(action.path);
+  }
+}
 
 class _WorkoutItemTile extends ConsumerWidget {
   const _WorkoutItemTile({

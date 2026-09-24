@@ -5,6 +5,7 @@ import 'package:diet/domain/models.dart';
 import 'package:diet/l10n/app_localizations.dart';
 import 'package:diet/providers/core_providers.dart';
 import 'package:diet/ui/records/plan_edit_page.dart';
+import 'package:diet/ui/today/today_workout_card.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -39,6 +40,47 @@ Widget _app(Widget child) {
   final router = GoRouter(
     initialLocation: '/plan',
     routes: [GoRoute(path: '/plan', builder: (_, _) => child)],
+  );
+  return UncontrolledProviderScope(
+    container: _container,
+    child: MaterialApp.router(
+      debugShowCheckedModeBanner: false,
+      locale: const Locale('zh'),
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      routerConfig: router,
+    ),
+  );
+}
+
+Widget _detailsNavigationApp(DateTime day) {
+  final router = GoRouter(
+    routes: [
+      GoRoute(
+        path: '/',
+        builder: (context, state) => Scaffold(
+          body: Center(
+            child: FilledButton(
+              onPressed: () => showDayWorkoutDetails(context, day),
+              child: const Text('打开训练详情'),
+            ),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/records/plan',
+        builder: (context, state) {
+          final planId = int.parse(state.uri.queryParameters['id']!);
+          final syncDay = DateTime.parse(state.uri.queryParameters['syncDay']!);
+          return PlanEditPage(planId: planId, syncDay: syncDay);
+        },
+      ),
+    ],
   );
   return UncontrolledProviderScope(
     container: _container,
@@ -106,6 +148,67 @@ void main() {
       expect(find.widgetWithText(TextField, '上肢计划'), findsOneWidget);
       expect(find.text('俯卧撑'), findsOneWidget);
       expect(find.text('深蹲'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'leaving a plan opened from workout details restores the details and '
+    'allows editing again',
+    (tester) async {
+      final pushupId = await _repo.addCustomExercise(
+        name: '俯卧撑',
+        unit: ExerciseUnit.reps,
+        category: 'chest',
+      );
+      final planId = await _repo.createPlan(
+        name: '上肢计划',
+        items: [
+          PlanDraftItem(
+            exerciseId: pushupId,
+            exerciseName: '俯卧撑',
+            targetSets: 3,
+            targetReps: 10,
+          ),
+        ],
+      );
+      final today = CalendarDay.todayLocal();
+      await _repo.applyPlanToDay(planId: planId, day: today);
+
+      await tester.pumpWidget(_detailsNavigationApp(today));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('打开训练详情'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('上肢计划'));
+      await tester.pumpAndSettle();
+      expect(find.text('编辑计划'), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.text('上肢计划'), findsOneWidget);
+      expect(find.byType(BottomSheet), findsOneWidget);
+
+      await tester.tap(find.text('上肢计划'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).first, '上肢计划 2');
+      await tester.tap(find.text('保存'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('上肢计划 2'), findsOneWidget);
+      expect(find.byType(BottomSheet), findsOneWidget);
+
+      await tester.tap(find.text('上肢计划 2'));
+      await tester.pumpAndSettle();
+      expect(find.text('编辑计划'), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      await tester.binding.handlePopRoute();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump(const Duration(milliseconds: 1));
     },
   );
 
