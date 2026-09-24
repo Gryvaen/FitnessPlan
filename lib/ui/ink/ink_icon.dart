@@ -40,6 +40,7 @@ enum InkGlyph {
   food,
   mealEmpty,
   more,
+  moreVertical,
   arrowForward,
   delete,
   check,
@@ -156,6 +157,7 @@ extension InkGlyphAssetName on InkGlyph {
     InkGlyph.chevronRight => 'chevron-right',
     InkGlyph.addRing => 'add-ring',
     InkGlyph.mealEmpty => 'meal-empty',
+    InkGlyph.moreVertical => 'more-vertical',
     InkGlyph.arrowForward => 'arrow-forward',
     InkGlyph.autoFix => 'auto-fix',
     InkGlyph.radioEmpty => 'radio-empty',
@@ -459,6 +461,8 @@ class _InkIconPainter extends CustomPainter {
         _mealEmpty(canvas, p);
       case InkGlyph.more:
         _more(canvas);
+      case InkGlyph.moreVertical:
+        _moreVertical(canvas);
       case InkGlyph.arrowForward:
         _arrowForward(canvas, p);
       case InkGlyph.delete:
@@ -791,6 +795,13 @@ class _InkIconPainter extends CustomPainter {
     c.drawOval(const Rect.fromLTWH(4, 11, 3.4, 2.4), ink);
     c.drawOval(const Rect.fromLTWH(10.3, 10.7, 3.4, 2.7), ink);
     c.drawOval(const Rect.fromLTWH(16.6, 11, 3.4, 2.4), ink);
+  }
+
+  void _moreVertical(Canvas c) {
+    final ink = Paint()..color = color;
+    c.drawOval(const Rect.fromLTWH(11, 4, 2.4, 3.4), ink);
+    c.drawOval(const Rect.fromLTWH(10.7, 10.3, 2.7, 3.4), ink);
+    c.drawOval(const Rect.fromLTWH(11, 16.6, 2.4, 3.4), ink);
   }
 
   void _arrowForward(Canvas c, Paint p) {

@@ -462,7 +462,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                               if (canSaveAsPreset)
                                 PopupMenuButton<String>(
                                   tooltip: l10n.more,
-                                  icon: const InkIcon(InkGlyph.more),
+                                  icon: const InkIcon(InkGlyph.moreVertical),
                                   onSelected: (value) => _onMealMenu(
                                     value,
                                     day,

@@ -445,7 +445,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
         if (canSaveAsPlan)
           PopupMenuButton<String>(
             tooltip: l10n.more,
-            icon: const InkIcon(InkGlyph.more),
+            icon: const InkIcon(InkGlyph.moreVertical),
             onSelected: (value) async {
               if (value == 'savePlan') {
                 await _saveAsPlan(context, ref);
