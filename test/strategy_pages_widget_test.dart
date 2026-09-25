@@ -141,6 +141,33 @@ void _expectNoLayoutErrors(WidgetTester tester) {
   expect(error, isNull, reason: 'layout error: $error');
 }
 
+Future<void> _createPlan(
+  DietStrategyKind kind, {
+  DateTime? effectiveFrom,
+}) async {
+  await _container
+      .read(dietStrategyRepositoryProvider)
+      .createPlan(
+        DietStrategyPlanDraft(
+          kind: kind,
+          effectiveFrom: effectiveFrom ?? CalendarDay.todayLocal(),
+          referenceWeightKg: 75,
+          estimatedTdee: 2400,
+          baseEnergy: 2000,
+          schedule: kind == DietStrategyKind.carbCycle
+              ? CarbCycleSchedule.defaultFor(4)
+              : null,
+          carbCycleRates: kind == DietStrategyKind.carbCycle
+              ? CarbCycleRates.defaults()
+              : null,
+          observationStart: kind == DietStrategyKind.carbTaper
+              ? CalendarDay.todayLocal()
+              : null,
+          reason: 'test',
+        ),
+      );
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -156,6 +183,108 @@ void main() {
     expect(find.text('Fat-loss strategy'), findsOneWidget);
     expect(find.text('No strategy'), findsOneWidget);
     expect(find.text('Stop strategy'), findsNothing);
+  });
+
+  testWidgets('carb-cycle actions expand with strategy details', (
+    tester,
+  ) async {
+    await _createPlan(DietStrategyKind.carbCycle);
+    await _pump(tester, '/profile/nutrition');
+
+    expect(find.text('Adjust schedule'), findsNothing);
+    expect(find.text('Stop strategy'), findsNothing);
+
+    await tester.tap(find.textContaining('A 3-5 day cycle'));
+    await _settle(tester);
+
+    expect(find.text('Adjust schedule'), findsOneWidget);
+    expect(find.text('Stop strategy'), findsOneWidget);
+
+    final strategyList = find
+        .ancestor(
+          of: find.text('Stop strategy'),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is Scrollable &&
+                widget.axisDirection == AxisDirection.down,
+          ),
+        )
+        .first;
+    final position = tester.state<ScrollableState>(strategyList).position;
+    position.jumpTo(position.maxScrollExtent);
+    await _settle(tester);
+    await tester.tap(find.text('Stop strategy'));
+    await _settle(tester);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Stop strategy'),
+      ),
+      findsWidgets,
+    );
+    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    await _settle(tester);
+
+    await tester.ensureVisible(find.text('Adjust schedule'));
+    await tester.tap(find.text('Adjust schedule'));
+    await _settle(tester);
+    expect(
+      find.byKey(const ValueKey('strategyReferenceWeight')),
+      findsOneWidget,
+    );
+    expect(find.byType(BackButton), findsOneWidget);
+    _expectNoLayoutErrors(tester);
+  });
+
+  testWidgets('carb-taper actions expand with strategy details', (
+    tester,
+  ) async {
+    await _createPlan(DietStrategyKind.carbTaper);
+    await _pump(tester, '/profile/nutrition');
+
+    expect(find.text('Taper stages'), findsNothing);
+    expect(find.text('Stop strategy'), findsNothing);
+
+    await tester.tap(find.textContaining('Start at the baseline'));
+    await _settle(tester);
+
+    expect(find.text('Taper stages'), findsOneWidget);
+    expect(find.text('Stop strategy'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Taper stages'));
+    await tester.tap(find.text('Taper stages'));
+    await _settle(tester);
+    expect(find.textContaining('Stage 0'), findsWidgets);
+    _expectNoLayoutErrors(tester);
+  });
+
+  testWidgets('scheduled strategy cancellation expands with details', (
+    tester,
+  ) async {
+    await _createPlan(
+      DietStrategyKind.carbTaper,
+      effectiveFrom: CalendarDay.todayLocal().add(const Duration(days: 1)),
+    );
+    await _pump(tester, '/profile/nutrition');
+
+    expect(find.text('Cancel scheduled change'), findsNothing);
+    await tester.tap(find.textContaining('Start at the baseline'));
+    await _settle(tester);
+    expect(find.text('Cancel scheduled change'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Cancel scheduled change'));
+    await tester.tap(find.text('Cancel scheduled change'));
+    await _settle(tester);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Cancel scheduled change'),
+      ),
+      findsWidgets,
+    );
+    _expectNoLayoutErrors(tester);
   });
 
   testWidgets('Today offers strategy selection for a cut profile', (

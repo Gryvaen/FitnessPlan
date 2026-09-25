@@ -237,36 +237,12 @@ class _CutNutritionTargets extends ConsumerWidget {
           activeStartsLater: activeStartsLater,
           today: today,
           restDayDates: restDayDates,
+          onAdjustSchedule: () => context.push(
+            '/profile/nutrition/strategy/configure?kind=carbCycle',
+          ),
+          onTaperReview: () => context.push('/profile/nutrition/taper'),
+          onStop: () => _stop(context, ref, pending: activeStartsLater),
         ),
-        if (active?.kind == DietStrategyKind.carbCycle)
-          SportListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const InkIcon(InkGlyph.calendar),
-            title: Text(l10n.adjustSchedule),
-            trailing: const InkIcon(InkGlyph.chevronRight),
-            onTap: () => context.push(
-              '/profile/nutrition/strategy/configure?kind=carbCycle',
-            ),
-          ),
-        if (active?.kind == DietStrategyKind.carbTaper)
-          SportListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const InkIcon(InkGlyph.factCheck),
-            title: Text(l10n.taperReview),
-            trailing: const InkIcon(InkGlyph.chevronRight),
-            onTap: () => context.push('/profile/nutrition/taper'),
-          ),
-        if (active != null)
-          SportListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const InkIcon(InkGlyph.stop),
-            title: Text(
-              activeStartsLater
-                  ? l10n.cancelScheduledStrategy
-                  : l10n.stopStrategy,
-            ),
-            onTap: () => _stop(context, ref, pending: activeStartsLater),
-          ),
         if (blocking.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.compact),
           for (final i in blocking)
@@ -296,6 +272,9 @@ class _StrategyDescription extends StatefulWidget {
     required this.activeStartsLater,
     required this.today,
     required this.restDayDates,
+    required this.onAdjustSchedule,
+    required this.onTaperReview,
+    required this.onStop,
   });
 
   final DietStrategyPlan? active;
@@ -307,6 +286,9 @@ class _StrategyDescription extends StatefulWidget {
   /// in sync with the live (rest-day-shifted) schedule instead of forever
   /// showing the plan's original start-date template.
   final List<DateTime> restDayDates;
+  final VoidCallback onAdjustSchedule;
+  final VoidCallback onTaperReview;
+  final VoidCallback onStop;
 
   @override
   State<_StrategyDescription> createState() => _StrategyDescriptionState();
@@ -401,6 +383,32 @@ class _StrategyDescriptionState extends State<_StrategyDescription> {
             const SizedBox(height: AppSpacing.compact),
             _TaperSummary(plan: active),
           ],
+          if (active.kind == DietStrategyKind.carbCycle)
+            SportListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const InkIcon(InkGlyph.calendar),
+              title: Text(l10n.adjustSchedule),
+              trailing: const InkIcon(InkGlyph.chevronRight),
+              onTap: widget.onAdjustSchedule,
+            ),
+          if (active.kind == DietStrategyKind.carbTaper)
+            SportListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const InkIcon(InkGlyph.factCheck),
+              title: Text(l10n.taperReview),
+              trailing: const InkIcon(InkGlyph.chevronRight),
+              onTap: widget.onTaperReview,
+            ),
+          SportListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const InkIcon(InkGlyph.stop),
+            title: Text(
+              widget.activeStartsLater
+                  ? l10n.cancelScheduledStrategy
+                  : l10n.stopStrategy,
+            ),
+            onTap: widget.onStop,
+          ),
           const SizedBox(height: AppSpacing.field),
         ],
       ],
