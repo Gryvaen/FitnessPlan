@@ -457,33 +457,8 @@ class _MealTypeSection extends ConsumerWidget {
       ],
     );
 
-    // Swipe left on the meal-type header to clear it — replaces the old
-    // "清空这一餐" menu entry with the same swipe-to-delete affordance used
-    // for individual entries below.
-    final header = canClear
-        ? Dismissible(
-            key: ValueKey('meal-header-${type.name}'),
-            direction: DismissDirection.endToStart,
-            background: Container(
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: 16),
-              color: theme.colorScheme.error,
-              child: const InkIcon(InkGlyph.delete, color: Colors.white),
-            ),
-            confirmDismiss: (_) => _confirmClearMeal(context),
-            onDismissed: (_) =>
-                ref.read(mealRepositoryProvider).deleteMealType(day, type),
-            child: headerRow,
-          )
-        : headerRow;
-
-    final content = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: AppSpacing.card),
-        header,
-        if (entries.isEmpty)
-          editable
+    final foodRows = entries.isEmpty
+        ? editable
               ? Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton.icon(
@@ -499,9 +474,42 @@ class _MealTypeSection extends ConsumerWidget {
                   ),
                 )
               : const Divider()
-        else
-          for (final m in entries)
-            _MealEntryTile(entry: m, canDismiss: editable),
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final m in entries)
+                _MealEntryTile(entry: m, canDismiss: editable),
+            ],
+          );
+
+    // Swipe left on the meal block to clear it — the header and the foods
+    // under it leave together. Individual foods keep their own swipe.
+    final section = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [headerRow, foodRows],
+    );
+    final block = canClear
+        ? Dismissible(
+            key: ValueKey('meal-header-${type.name}'),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 16),
+              color: theme.colorScheme.error,
+              child: const InkIcon(InkGlyph.delete, color: Colors.white),
+            ),
+            confirmDismiss: (_) => _confirmClearMeal(context),
+            onDismissed: (_) =>
+                ref.read(mealRepositoryProvider).deleteMealType(day, type),
+            child: section,
+          )
+        : section;
+
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: AppSpacing.card),
+        block,
       ],
     );
 
@@ -543,11 +551,17 @@ class _MealEntryTile extends ConsumerWidget {
     final scheme = theme.colorScheme;
     final l10n = context.l10n;
     final m = entry;
+    final name = watchedFoodName(
+      ref,
+      context,
+      foodId: m.foodId,
+      fallback: m.foodName,
+    );
 
     final tile = SportListTile(
       contentPadding: EdgeInsets.zero,
       title: FoodNameLink(
-        name: m.foodName,
+        name: name,
         foodId: m.foodId,
         carbG: m.carbG,
         proteinG: m.proteinG,
@@ -612,7 +626,7 @@ class _MealEntryTile extends ConsumerWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Text(
-              m.foodName,
+              name,
               style: theme.textTheme.bodyLarge,
               overflow: TextOverflow.ellipsis,
             ),
