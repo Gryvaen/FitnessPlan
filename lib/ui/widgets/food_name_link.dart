@@ -1,8 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../domain/models.dart';
+import '../../l10n/app_localizations_ext.dart';
+import '../../providers/app_providers.dart';
 import '../theme/macro_color.dart';
+
+/// Current catalog name for [foodId], or [fallback] when the food is gone
+/// or still loading.
+String watchedFoodName(
+  WidgetRef ref,
+  BuildContext context, {
+  required int foodId,
+  required String fallback,
+}) {
+  final food = ref.watch(foodByIdProvider(foodId)).asData?.value;
+  return food?.displayName(context) ?? fallback;
+}
 
 /// Path to the food detail page that won't remount [StatefulShellRoute]
 /// when the caller already sits on a root route (e.g. `/log-meal`, `/meal/:id`).

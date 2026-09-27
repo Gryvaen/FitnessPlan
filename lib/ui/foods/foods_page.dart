@@ -34,6 +34,7 @@ final _categoryCountsProvider =
 final _foodSearchProvider = FutureProvider.autoDispose<List<FoodItem>>((
   ref,
 ) async {
+  ref.watch(foodCatalogChangesProvider);
   await ref.watch(foodsSeedProvider.future);
   final q = ref.watch(_foodQueryProvider).trim();
   if (q.isEmpty) return const [];
@@ -43,6 +44,7 @@ final _foodSearchProvider = FutureProvider.autoDispose<List<FoodItem>>((
 final _recentFoodsProvider = FutureProvider.autoDispose<List<FoodItem>>((
   ref,
 ) async {
+  ref.watch(foodCatalogChangesProvider);
   ref.watch(todayMealsProvider);
   await ref.watch(foodsSeedProvider.future);
   return ref.watch(foodRepositoryProvider).recentFoods();

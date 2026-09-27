@@ -21,6 +21,7 @@ import '../theme/app_theme.dart';
 import '../theme/macro_color.dart';
 import '../theme/sport_chrome.dart';
 import '../tools/workout_reminder_notifications.dart';
+import '../widgets/food_name_link.dart';
 import '../widgets/search_field_focus.dart';
 import 'deficit_date_picker.dart';
 import 'today_section_header.dart';
@@ -733,14 +734,14 @@ class _WeeklyAverageLabel extends ConsumerWidget {
 /// Compact per-meal-type summary shown on the Today page (one row each:
 /// meal name · food list · kcal). The full per-entry list lives on
 /// [DailyMealsPage].
-class _MealGroups extends StatelessWidget {
+class _MealGroups extends ConsumerWidget {
   const _MealGroups({required this.meals, required this.onOpen});
 
   final List<MealEntry> meals;
   final VoidCallback onOpen;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final groups = <Widget>[];
@@ -785,7 +786,12 @@ class _MealGroups extends StatelessWidget {
                               ),
                             ),
                           TextSpan(
-                            text: group[i].foodName,
+                            text: watchedFoodName(
+                              ref,
+                              context,
+                              foodId: group[i].foodId,
+                              fallback: group[i].foodName,
+                            ),
                             style: TextStyle(
                               color:
                                   dominantMacroColor(

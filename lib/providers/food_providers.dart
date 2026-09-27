@@ -11,6 +11,18 @@ final favoriteFoodsProvider = StreamProvider<List<FoodItem>>((ref) {
   return ref.watch(foodRepositoryProvider).watchFavorites();
 });
 
+/// Bumps whenever the food catalog changes, so cached lists reload names.
+final foodCatalogChangesProvider = StreamProvider<int>((ref) {
+  return ref.watch(foodRepositoryProvider).watchChanges();
+});
+
+final foodByIdProvider = StreamProvider.autoDispose.family<FoodItem?, int>((
+  ref,
+  id,
+) {
+  return ref.watch(foodRepositoryProvider).watchById(id);
+});
+
 final foodFavoriteProvider = FutureProvider.autoDispose.family<bool, int>((
   ref,
   foodId,

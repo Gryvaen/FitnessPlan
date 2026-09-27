@@ -172,6 +172,15 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     if (mounted) setState(() => _recent = recent);
   }
 
+  Future<void> _refreshCachedFoods() async {
+    await _refreshFavorites();
+    await _refreshRecent();
+    final selected = _selected;
+    if (selected == null || !mounted) return;
+    final fresh = await ref.read(foodRepositoryProvider).byId(selected.id);
+    if (mounted && fresh != null) setState(() => _selected = fresh);
+  }
+
   Future<bool> _confirmSwipeDelete({
     required String title,
     required String body,
@@ -543,6 +552,11 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(foodCatalogChangesProvider, (previous, next) {
+      if (previous == null || !previous.hasValue || !next.hasValue) return;
+      if (previous.value == next.value) return;
+      _refreshCachedFoods();
+    });
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context);

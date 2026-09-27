@@ -104,10 +104,16 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
   }
 
   Future<void> _persist() async {
-    final food = _food;
     final entry = _entry;
+    var food = _food;
     if (food == null || entry == null || _saving) return;
     if (!AppDates.isLocalToday(entry.date)) return;
+    final fresh = await ref.read(foodRepositoryProvider).byId(food.id);
+    if (!mounted) return;
+    if (fresh != null) {
+      food = fresh;
+      _food = fresh;
+    }
     setState(() => _saving = true);
     try {
       await ref
@@ -299,11 +305,17 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
     final theme = Theme.of(context);
     final locale = Localizations.localeOf(context);
     final editable = AppDates.isLocalToday(entry.date);
+    final foodName = watchedFoodName(
+      ref,
+      context,
+      foodId: food.id,
+      fallback: food.displayName(context),
+    );
 
     return Scaffold(
       appBar: AppBar(
         title: FoodNameLink(
-          name: food.displayName(context),
+          name: foodName,
           foodId: food.id,
           carbG: food.carbPer100,
           proteinG: food.proteinPer100,

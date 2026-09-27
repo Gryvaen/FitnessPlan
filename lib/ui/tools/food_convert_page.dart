@@ -330,8 +330,32 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
     );
   }
 
+  Future<void> _reloadNamedFoods() async {
+    if (_query.isNotEmpty) await _search(_query);
+    if (_entries.isEmpty || !mounted) return;
+    final repo = ref.read(foodRepositoryProvider);
+    final updated = <_ConvertEntry>[];
+    for (final entry in _entries) {
+      final fresh = await repo.byId(entry.food.id);
+      updated.add(
+        fresh == null ? entry : _ConvertEntry._(entry.key, fresh, entry.grams),
+      );
+    }
+    if (!mounted) return;
+    setState(() {
+      _entries
+        ..clear()
+        ..addAll(updated);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    ref.listen(foodCatalogChangesProvider, (previous, next) {
+      if (previous == null || !previous.hasValue || !next.hasValue) return;
+      if (previous.value == next.value) return;
+      _reloadNamedFoods();
+    });
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final l10n = context.l10n;

@@ -150,6 +150,19 @@ class FoodRepository {
     await _setLocalSeedVersion(kFoodSeedVersion);
   }
 
+  /// Emits a new integer whenever any food row is inserted, updated, or deleted.
+  /// Callers that cached a [FoodItem] use this to reload the current name.
+  Stream<int> watchChanges() {
+    var version = 0;
+    return _db.select(_db.foodItems).watch().map((_) => version++);
+  }
+
+  Stream<FoodItem?> watchById(int id) {
+    return (_db.select(
+      _db.foodItems,
+    )..where((t) => t.id.equals(id))).watchSingleOrNull();
+  }
+
   /// Empty [query] returns []. Keyword results are limited (default [kFoodSearchLimit]).
   ///
   /// Matches against both [FoodItem.name] and [FoodItem.nameEn] so English
@@ -160,9 +173,11 @@ class FoodRepository {
     if (q.isEmpty) return Future.value(const []);
     final pattern = '%${escapeLikePattern(q)}%';
     final select = _db.select(_db.foodItems)
-      ..where((t) =>
-          t.name.like(pattern, escapeChar: r'\') |
-          t.nameEn.like(pattern, escapeChar: r'\'))
+      ..where(
+        (t) =>
+            t.name.like(pattern, escapeChar: r'\') |
+            t.nameEn.like(pattern, escapeChar: r'\'),
+      )
       ..orderBy([(t) => OrderingTerm.asc(t.name)])
       ..limit(limit);
     return select.get();
@@ -368,16 +383,11 @@ LIMIT ?
       // Meal / preset rows denormalize foodName at write time — keep them
       // in sync when the user renames a custom food.
       if (trimmed != food.name) {
-        await (_db.update(
-          _db.mealEntries,
-        )..where((t) => t.foodId.equals(id))).write(
-          MealEntriesCompanion(foodName: Value(trimmed)),
-        );
-        await (_db.update(
-          _db.mealPresetItems,
-        )..where((t) => t.foodId.equals(id))).write(
-          MealPresetItemsCompanion(foodName: Value(trimmed)),
-        );
+        await (_db.update(_db.mealEntries)..where((t) => t.foodId.equals(id)))
+            .write(MealEntriesCompanion(foodName: Value(trimmed)));
+        await (_db.update(_db.mealPresetItems)
+              ..where((t) => t.foodId.equals(id)))
+            .write(MealPresetItemsCompanion(foodName: Value(trimmed)));
       }
     });
   }
@@ -439,10 +449,7 @@ LIMIT ?
     if (trimmed.isEmpty) throw ArgumentError('份量名称不能为空');
     if (grams <= 0) throw ArgumentError('克数须大于 0');
     return (_db.update(_db.foodServings)..where((t) => t.id.equals(id))).write(
-      FoodServingsCompanion(
-        label: Value(trimmed),
-        grams: Value(grams),
-      ),
+      FoodServingsCompanion(label: Value(trimmed), grams: Value(grams)),
     );
   }
 

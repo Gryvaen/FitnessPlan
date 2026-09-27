@@ -74,6 +74,11 @@ class _FoodCategoryPageState extends ConsumerState<FoodCategoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(foodCatalogChangesProvider, (previous, next) {
+      if (previous == null || !previous.hasValue || !next.hasValue) return;
+      if (previous.value == next.value) return;
+      _load(reset: true);
+    });
     final theme = Theme.of(context);
     final l10n = context.l10n;
 
