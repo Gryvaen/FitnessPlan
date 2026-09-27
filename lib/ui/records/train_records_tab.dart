@@ -17,6 +17,7 @@ import '../widgets/form_options.dart';
 import '../widgets/search_field_focus.dart';
 import 'exercise_form_dialog.dart';
 import 'exercise_picker.dart';
+import 'plan_edit_page.dart';
 
 typedef _TrainHistoryAvailability = ({bool resolved, bool hasHistory});
 
@@ -63,11 +64,10 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
 
   /// 0 = recent, 1 = all (under the History sub-tab).
   int _historyScope = 0;
-  int? _planId;
   String _query = '';
   String? _category;
-  bool _starting = false;
-  bool _otherPlansExpanded = false;
+  bool _exerciseSearchOpen = false;
+  bool _categoryMenuOpen = false;
   final _exerciseSearchFocus = FocusNode();
 
   /// Last applied records URI query — kept-alive tab must re-read `sub`
@@ -79,12 +79,73 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     super.initState();
     if (widget.initialTab != null) _tab = widget.initialTab!;
     suppressInitialTextFocus(_exerciseSearchFocus);
+    _exerciseSearchFocus.addListener(_onExerciseSearchFocusChanged);
   }
 
   @override
   void dispose() {
+    _exerciseSearchFocus.removeListener(_onExerciseSearchFocusChanged);
     _exerciseSearchFocus.dispose();
     super.dispose();
+  }
+
+  void _onExerciseSearchFocusChanged() {
+    if (_exerciseSearchFocus.hasFocus || _categoryMenuOpen) return;
+    if (_query.isNotEmpty || _category != null || !_exerciseSearchOpen) return;
+    setState(() => _exerciseSearchOpen = false);
+  }
+
+  /// 点动作列表或标题行的空白处：收起搜索，并丢掉关键字和分类筛选。
+  void _discardExerciseSearch() {
+    if (_categoryMenuOpen) return;
+    if (_exerciseSearchFocus.hasFocus) _exerciseSearchFocus.unfocus();
+    if (!_exerciseSearchOpen && _query.isEmpty && _category == null) return;
+    setState(() {
+      _exerciseSearchOpen = false;
+      _query = '';
+      _category = null;
+    });
+  }
+
+  Future<void> _openExerciseCategoryMenu(BuildContext buttonContext) async {
+    final button = buttonContext.findRenderObject()! as RenderBox;
+    final overlay =
+        Navigator.of(buttonContext).overlay!.context.findRenderObject()!
+            as RenderBox;
+    final position = RelativeRect.fromRect(
+      Rect.fromPoints(
+        button.localToGlobal(Offset.zero, ancestor: overlay),
+        button.localToGlobal(
+          button.size.bottomRight(Offset.zero),
+          ancestor: overlay,
+        ),
+      ),
+      Offset.zero & overlay.size,
+    );
+    final l10n = buttonContext.l10n;
+    _categoryMenuOpen = true;
+    final selected = await showMenu<String>(
+      context: buttonContext,
+      position: position,
+      items: [
+        PopupMenuItem(value: '', child: Text(l10n.filterAll)),
+        for (final c in kExerciseCategoryOrder)
+          PopupMenuItem(
+            value: c,
+            child: Text(c.localizedExerciseCategory(l10n)),
+          ),
+      ],
+    );
+    _categoryMenuOpen = false;
+    if (!mounted) return;
+    setState(() {
+      if (selected != null) _category = selected.isEmpty ? null : selected;
+      if (!_exerciseSearchFocus.hasFocus &&
+          _query.isEmpty &&
+          _category == null) {
+        _exerciseSearchOpen = false;
+      }
+    });
   }
 
   @override
@@ -278,38 +339,15 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     showModalBottomSheet<void>(
       context: context,
       useRootNavigator: true,
+      isScrollControlled: true,
       showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: ListView.builder(
-          padding: const EdgeInsets.all(20),
-          shrinkWrap: true,
-          // Builder (not children:) so a long "全部" history only inflates
-          // the rows actually visible in the sheet, not every logged day.
-          itemCount: days.length + 1,
-          itemBuilder: (context, index) {
-            if (index == 0) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Text(
-                  title,
-                  style: Theme.of(sheetContext).textTheme.titleMedium,
-                ),
-              );
-            }
-            final day = days[index - 1];
-            return SportListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const MenuIconBadge(
-                color: AppColors.protein,
-                child: InkIcon(InkGlyph.training, color: AppColors.protein),
-              ),
-              title: Text(AppDates.md(day.date, locale)),
-              trailing: Text(_dayProgressLabel(day, l10n)),
-              onTap: !day.hasActivity
-                  ? null
-                  : () => showDayWorkoutDetails(sheetContext, day.date),
-            );
-          },
+      builder: (_) => FractionallySizedBox(
+        heightFactor: .9,
+        child: _WorkoutHistorySheet(
+          days: days,
+          locale: locale,
+          title: title,
+          labelFor: (day) => _dayProgressLabel(day, l10n),
         ),
       ),
     );
@@ -363,29 +401,6 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.saveFailed('$e'))));
-    }
-  }
-
-  Future<void> _start(WorkoutPlanSummary plan) async {
-    if (_starting) return;
-    setState(() => _starting = true);
-    final day = AppDates.todayLocal();
-    try {
-      final repo = ref.read(workoutRepositoryProvider);
-      final snapshot = await repo.daySnapshot(day);
-      if (!snapshot.groups.any((g) => g.workout.planId == plan.plan.id)) {
-        await repo.applyPlanToDay(planId: plan.plan.id, day: day);
-      }
-      if (!mounted) return;
-      await showDayWorkoutDetails(context, day);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(context.l10n.addFailed('$e'))));
-      }
-    } finally {
-      if (mounted) setState(() => _starting = false);
     }
   }
 
@@ -456,29 +471,14 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: SportTabs<int>(
-                  items: {
-                    0: l10n.tabPlans,
-                    1: l10n.exerciseLibrary,
-                    if (showHistory) 2: l10n.tabHistory,
-                  },
-                  selected: tab,
-                  onSelected: _selectTab,
-                ),
-              ),
-              if (tab != 2)
-                PlainIconAction(
-                  iconWidget: const InkIcon(InkGlyph.add),
-                  label: tab == 0 ? l10n.fabNewPlan : l10n.addExercise,
-                  onPressed: () => tab == 0
-                      ? context.push('/records/plan')
-                      : _addExercise(context, ref),
-                ),
-            ],
+          child: SportTabs<int>(
+            items: {
+              0: l10n.tabPlans,
+              1: l10n.exerciseLibrary,
+              if (showHistory) 2: l10n.tabHistory,
+            },
+            selected: tab,
+            onSelected: _selectTab,
           ),
         ),
         const SizedBox(height: 12),
@@ -503,154 +503,83 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
 
   Widget _plansPanel(BuildContext context, {required bool showHistory}) {
     final l10n = context.l10n;
-    final theme = Theme.of(context);
-    return ListView(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        12,
-        20,
-        listBottomInset(context, hasFab: false),
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ref
-            .watch(workoutPlansProvider)
-            .when(
-              loading: () => const LinearProgressIndicator(),
-              error: (e, _) => SportLoadError(
-                onRetry: () => ref.invalidate(workoutPlansProvider),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+          child: Row(
+            children: [
+              const Spacer(),
+              PlainIconAction(
+                iconWidget: const InkIcon(InkGlyph.add),
+                label: l10n.fabNewPlan,
+                onPressed: () => showPlanEditSheet(context: context),
               ),
-              data: (plans) {
-                if (plans.isEmpty) {
-                  return SportEmptyState(
-                    title: l10n.emptyPlans,
-                    iconWidget: const StampedInkEmptyIcon(
-                      glyph: InkGlyph.training,
-                      seal: '炼',
-                    ),
-                  );
-                }
-                final plan =
-                    plans.where((p) => p.plan.id == _planId).firstOrNull ??
-                    plans.first;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(l10n.currentPlan, style: theme.textTheme.bodySmall),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            plan.plan.name,
-                            style: theme.textTheme.headlineSmall,
-                          ),
-                        ),
-                        PopupMenuButton<String>(
-                          tooltip: l10n.more,
-                          icon: const InkIcon(InkGlyph.more),
-                          onSelected: (v) {
-                            if (v == 'edit') {
-                              context.push('/records/plan?id=${plan.plan.id}');
-                            }
-                            if (v == 'delete') _deletePlan(plan);
-                          },
-                          itemBuilder: (_) => [
-                            PopupMenuItem(
-                              value: 'edit',
-                              child: Text(l10n.edit),
-                            ),
-                            PopupMenuItem(
-                              value: 'delete',
-                              child: Text(l10n.delete),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Text(
-                      l10n.planSummary(
-                        plan.items.length,
-                        plan.items.fold<int>(0, (sum, i) => sum + i.targetSets),
-                      ),
-                      style: theme.textTheme.bodySmall,
-                    ),
-                    const SizedBox(height: 20),
-                    FilledButton(
-                      onPressed: _starting || plan.items.isEmpty
-                          ? null
-                          : () => _start(plan),
-                      child: Text(l10n.startRecording),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      l10n.exerciseSchedule,
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    for (var i = 0; i < plan.items.length; i++)
-                      SportListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: Text(
-                          '${i + 1}'.padLeft(2, '0'),
-                          style: theme.textTheme.bodySmall,
-                        ),
-                        title: Text(plan.items[i].exerciseName),
-                        subtitle: Text(
-                          '${plan.items[i].targetSets} × ${plan.items[i].targetReps}',
-                        ),
-                        trailing: const InkIcon(InkGlyph.chevronRight),
-                        onTap: () =>
-                            context.push('/records/plan?id=${plan.plan.id}'),
-                      ),
-                    if (plans.length > 1) ...[
-                      const SizedBox(height: 24),
-                      InkWell(
-                        onTap: () => setState(
-                          () => _otherPlansExpanded = !_otherPlansExpanded,
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  l10n.otherPlans,
-                                  style: theme.textTheme.titleMedium,
-                                ),
-                              ),
-                              InkIcon(
-                                _otherPlansExpanded
-                                    ? InkGlyph.collapse
-                                    : InkGlyph.expand,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      if (_otherPlansExpanded)
-                        for (final other in plans.where(
-                          (p) => p.plan.id != plan.plan.id,
-                        ))
-                          SportListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(other.plan.name),
-                            subtitle: Text(l10n.nExercises(other.items.length)),
-                            trailing: const InkIcon(InkGlyph.chevronRight),
-                            onTap: () =>
-                                setState(() => _planId = other.plan.id),
-                          ),
-                    ],
-                    if (showHistory)
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton(
-                          onPressed: () => _selectTab(2),
-                          child: Text(l10n.viewWorkoutHistory),
-                        ),
-                      ),
-                  ],
-                );
-              },
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              0,
+              20,
+              listBottomInset(context, hasFab: false),
             ),
+            children: [
+              ref
+                  .watch(workoutPlansProvider)
+                  .when(
+                    loading: () => const LinearProgressIndicator(),
+                    error: (e, _) => SportLoadError(
+                      onRetry: () => ref.invalidate(workoutPlansProvider),
+                    ),
+                    data: (plans) {
+                      if (plans.isEmpty) {
+                        return SportEmptyState(
+                          title: l10n.emptyPlans,
+                          iconWidget: const StampedInkEmptyIcon(
+                            glyph: InkGlyph.training,
+                            seal: '炼',
+                          ),
+                        );
+                      }
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (final plan in plans)
+                            SportListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(plan.plan.name),
+                              subtitle: Text(
+                                l10n.nExercises(plan.items.length),
+                              ),
+                              trailing: IconButton(
+                                tooltip: l10n.delete,
+                                icon: const InkIcon(InkGlyph.delete),
+                                onPressed: () => _deletePlan(plan),
+                              ),
+                              onTap: () => showPlanEditSheet(
+                                context: context,
+                                planId: plan.plan.id,
+                              ),
+                            ),
+                          if (showHistory)
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton(
+                                onPressed: () => _selectTab(2),
+                                child: Text(l10n.viewWorkoutHistory),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -775,8 +704,15 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                 child: InkIcon(InkGlyph.training, color: AppColors.protein),
               ),
               title: Text(workoutsTitle),
-              subtitle: Text(AppDates.md(latest.date, locale)),
-              trailing: Text(_dayProgressLabel(latest, l10n)),
+              // Progress sits under the date. A long multi-plan label in
+              // `trailing` sizes to the full tile width and ListTile then
+              // throws every frame ("Trailing widget consumes the entire
+              // tile width").
+              subtitle: Text(
+                '${AppDates.md(latest.date, locale)}\n${_dayProgressLabel(latest, l10n)}',
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
               onTap: () => _showWorkoutHistory(
                 context,
                 days,
@@ -792,101 +728,124 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
 
   Widget _exercisesPanel(BuildContext context) {
     final l10n = context.l10n;
-    // CustomScrollView + SliverList.builder (rather than a plain ListView
-    // wrapping a Column of every match) so filtering while typing only
-    // builds the rows actually on screen, not every match in the library —
-    // matters once a library grows past the built-ins with user customs.
-    return CustomScrollView(
-      slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-          sliver: SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+    final theme = Theme.of(context);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _discardExerciseSearch,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+            child: Row(
               children: [
-                TextField(
-                  focusNode: _exerciseSearchFocus,
-                  decoration: InputDecoration(
-                    hintText: l10n.exerciseName,
-                    prefixIcon: const InkIcon(InkGlyph.search),
-                  ),
-                  onChanged: (v) =>
-                      setState(() => _query = v.trim().toLowerCase()),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    ChoiceChip(
-                      label: Text(l10n.filterAll),
-                      selected: _category == null,
-                      onSelected: (_) => setState(() => _category = null),
-                    ),
-                    for (final c in kExerciseCategoryOrder)
-                      ChoiceChip(
-                        label: Text(c.localizedExerciseCategory(l10n)),
-                        selected: _category == c,
-                        onSelected: (_) => setState(() => _category = c),
+                if (!_exerciseSearchOpen)
+                  IconButton(
+                    key: const ValueKey('exercise-library-search'),
+                    tooltip: l10n.exerciseName,
+                    onPressed: () => setState(() => _exerciseSearchOpen = true),
+                    icon: const InkIcon(InkGlyph.search),
+                  )
+                else
+                  Expanded(
+                    child: TextField(
+                      focusNode: _exerciseSearchFocus,
+                      decoration: InputDecoration(
+                        hintText: l10n.exerciseName,
+                        prefixIcon: Builder(
+                          builder: (buttonContext) => IconButton(
+                            key: const ValueKey('exercise-category-filter'),
+                            tooltip: l10n.categories,
+                            onPressed: () =>
+                                _openExerciseCategoryMenu(buttonContext),
+                            icon: InkIcon(
+                              InkGlyph.folder,
+                              color: _category == null
+                                  ? theme.colorScheme.onSurfaceVariant
+                                  : theme.colorScheme.primary,
+                            ),
+                          ),
+                        ),
                       ),
-                  ],
+                      onChanged: (v) =>
+                          setState(() => _query = v.trim().toLowerCase()),
+                    ),
+                  ),
+                if (!_exerciseSearchOpen) const Spacer(),
+                PlainIconAction(
+                  iconWidget: const InkIcon(InkGlyph.add),
+                  label: l10n.addExercise,
+                  onPressed: () => _addExercise(context, ref),
                 ),
               ],
             ),
           ),
-        ),
-        ref
-            .watch(exercisesProvider)
-            .when(
-              loading: () => const SliverPadding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                sliver: SliverToBoxAdapter(child: LinearProgressIndicator()),
-              ),
-              error: (e, _) => SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                sliver: SliverToBoxAdapter(
-                  child: SportLoadError(
-                    onRetry: () => ref.invalidate(exercisesProvider),
-                  ),
-                ),
-              ),
-              data: (exercises) {
-                final visible = exercises
-                    .where(
-                      (e) =>
-                          (_category == null || e.category == _category) &&
-                          e.name.toLowerCase().contains(_query),
-                    )
-                    .toList();
-                if (visible.isEmpty) {
-                  return SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    sliver: SliverToBoxAdapter(
-                      child: SportEmptyState(
-                        title: l10n.noExercises,
-                        iconWidget: const StampedInkEmptyIcon(
-                          glyph: InkGlyph.training,
-                          seal: '炼',
+          Expanded(
+            // CustomScrollView + SliverList.builder (rather than a plain
+            // ListView wrapping a Column of every match) so filtering while
+            // typing only builds the rows actually on screen.
+            child: CustomScrollView(
+              slivers: [
+                ref
+                    .watch(exercisesProvider)
+                    .when(
+                      loading: () => const SliverPadding(
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        sliver: SliverToBoxAdapter(
+                          child: LinearProgressIndicator(),
                         ),
                       ),
+                      error: (e, _) => SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        sliver: SliverToBoxAdapter(
+                          child: SportLoadError(
+                            onRetry: () => ref.invalidate(exercisesProvider),
+                          ),
+                        ),
+                      ),
+                      data: (exercises) {
+                        final visible = exercises
+                            .where(
+                              (e) =>
+                                  (_category == null ||
+                                      e.category == _category) &&
+                                  e.name.toLowerCase().contains(_query),
+                            )
+                            .toList();
+                        if (visible.isEmpty) {
+                          return SliverPadding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            sliver: SliverToBoxAdapter(
+                              child: SportEmptyState(
+                                title: l10n.noExercises,
+                                iconWidget: const StampedInkEmptyIcon(
+                                  glyph: InkGlyph.training,
+                                  seal: '炼',
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                        return SliverPadding(
+                          padding: EdgeInsets.fromLTRB(
+                            20,
+                            0,
+                            20,
+                            listBottomInset(context, hasFab: false),
+                          ),
+                          sliver: SliverList.builder(
+                            itemCount: visible.length,
+                            itemBuilder: (context, index) =>
+                                _exerciseRow(context, visible[index]),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                }
-                return SliverPadding(
-                  padding: EdgeInsets.fromLTRB(
-                    20,
-                    0,
-                    20,
-                    listBottomInset(context, hasFab: false),
-                  ),
-                  sliver: SliverList.builder(
-                    itemCount: visible.length,
-                    itemBuilder: (context, index) =>
-                        _exerciseRow(context, visible[index]),
-                  ),
-                );
-              },
+              ],
             ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -940,6 +899,132 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   }
 }
 
+/// One history day. The plan progress is a wrapping line under the date.
+///
+/// A [ListTile] trailing (or an unbounded subtitle) sizes a long
+/// "计划 · 完成数" label to the full row width, then asserts every frame and
+/// freezes the sheet.
+class _HistoryDayRow extends StatelessWidget {
+  const _HistoryDayRow({
+    required this.dateLabel,
+    required this.detailLabel,
+    required this.detailStyle,
+    required this.onTap,
+  });
+
+  final String dateLabel;
+  final String detailLabel;
+  final TextStyle? detailStyle;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final divider = AppThemeVisuals.of(context).divider;
+    return Material(
+      color: Colors.transparent,
+      shape: Border(bottom: BorderSide(color: divider)),
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const MenuIconBadge(
+                color: AppColors.protein,
+                child: InkIcon(InkGlyph.training, color: AppColors.protein),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(dateLabel, style: theme.textTheme.titleSmall),
+                    const SizedBox(height: 2),
+                    Text(detailLabel, style: detailStyle),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Workout-history list. After a day is opened, every other day that shares
+/// one of that day's exercises is marked. Cardio, anaerobic, and core do
+/// not count.
+class _WorkoutHistorySheet extends StatefulWidget {
+  const _WorkoutHistorySheet({
+    required this.days,
+    required this.locale,
+    required this.title,
+    required this.labelFor,
+  });
+
+  final List<WorkoutHistoryDay> days;
+  final Locale locale;
+  final String title;
+  final String Function(WorkoutHistoryDay day) labelFor;
+
+  @override
+  State<_WorkoutHistorySheet> createState() => _WorkoutHistorySheetState();
+}
+
+class _WorkoutHistorySheetState extends State<_WorkoutHistorySheet> {
+  Set<int> _highlightExerciseIds = const {};
+
+  bool _sharesHighlight(WorkoutHistoryDay day) {
+    if (_highlightExerciseIds.isEmpty) return false;
+    return day.highlightExerciseIds.any(_highlightExerciseIds.contains);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final highlightStyle = theme.textTheme.bodyMedium?.copyWith(
+      color: theme.colorScheme.primary,
+    );
+    return SafeArea(
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        itemCount: widget.days.length + 1,
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(widget.title, style: theme.textTheme.titleMedium),
+            );
+          }
+          final day = widget.days[index - 1];
+          final highlighted = _sharesHighlight(day);
+          return _HistoryDayRow(
+            dateLabel: AppDates.md(day.date, widget.locale),
+            detailLabel: widget.labelFor(day),
+            detailStyle: highlighted
+                ? highlightStyle
+                : theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+            onTap: !day.hasActivity
+                ? null
+                : () async {
+                    await showDayWorkoutDetails(context, day.date);
+                    if (!mounted) return;
+                    setState(() {
+                      _highlightExerciseIds = day.highlightExerciseIds;
+                    });
+                  },
+          );
+        },
+      ),
+    );
+  }
+}
+
 /// Quick-add a day workout item dialog (shared with today empty state).
 ///
 /// Always presents on the root navigator so the dialog stays visible on the
@@ -966,9 +1051,23 @@ Future<void> showQuickAddDayItemDialog({
     return;
   }
 
-  Exercise? selected = exercises.first;
+  final initial = exercises.first;
+  Exercise? selected = initial;
   var sets = 3;
   var reps = 12;
+  final initialLast = await ref
+      .read(workoutRepositoryProvider)
+      .lastTargetReps(initial.id);
+  if (!context.mounted) return;
+  if (initialLast != null) {
+    reps = FormOptions.snapInt(
+      FormOptions.exerciseTargetOptions(
+        ExerciseUnit.fromStorage(initial.unit),
+        category: initial.category,
+      ),
+      initialLast,
+    );
+  }
 
   // Let any prior route (empty-plan dialog / bottom sheet) finish popping
   // before pushing onto the root overlay.
@@ -999,16 +1098,20 @@ Future<void> showQuickAddDayItemDialog({
                   displayText: selected!.name,
                   selectedId: selected!.id,
                   exercises: exercises,
-                  onChanged: (v) => setLocal(() {
-                    selected = v;
-                    reps = FormOptions.snapInt(
-                      FormOptions.exerciseTargetOptions(
+                  onChanged: (v) async {
+                    final last = await ref
+                        .read(workoutRepositoryProvider)
+                        .lastTargetReps(v.id);
+                    if (!ctx.mounted) return;
+                    setLocal(() {
+                      selected = v;
+                      final options = FormOptions.exerciseTargetOptions(
                         ExerciseUnit.fromStorage(v.unit),
                         category: v.category,
-                      ),
-                      reps,
-                    );
-                  }),
+                      );
+                      reps = FormOptions.snapInt(options, last ?? reps);
+                    });
+                  },
                 ),
                 const SizedBox(height: 12),
                 AppDropdown<int>(

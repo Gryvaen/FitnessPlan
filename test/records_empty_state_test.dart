@@ -164,6 +164,8 @@ void main() {
         );
     await pump(tester, const TrainRecordsTab(initialTab: 1));
 
+    await tester.tap(find.byKey(const ValueKey('exercise-library-search')));
+    await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '不存在的动作');
     await tester.pumpAndSettle();
 

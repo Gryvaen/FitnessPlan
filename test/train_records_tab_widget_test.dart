@@ -112,7 +112,7 @@ void main() {
   });
 
   testWidgets(
-    'exercise library search and category chips narrow the lazily-rendered list',
+    'exercise library search and category menu narrow the lazily-rendered list',
     (tester) async {
       // Matches only the exercise row, not the search TextField's own
       // echoed text once it contains the same string.
@@ -123,7 +123,14 @@ void main() {
       expect(row('杠铃卧推'), findsOneWidget);
       expect(row('深蹲'), findsOneWidget);
       expect(row('跑步机慢跑'), findsOneWidget);
+      expect(find.byType(TextField), findsNothing);
 
+      await tester.tap(find.byKey(const ValueKey('exercise-library-search')));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).focusNode!.hasFocus,
+        isFalse,
+      );
       await tester.enterText(find.byType(TextField), '深蹲');
       await tester.pumpAndSettle();
       expect(row('深蹲'), findsOneWidget);
@@ -136,17 +143,68 @@ void main() {
       expect(row('深蹲'), findsOneWidget);
       expect(row('跑步机慢跑'), findsOneWidget);
 
-      // Category filter is a ChoiceChip Wrap, unrelated to the SportTabs
-      // used by the history scope selector, so "全部" is unambiguous here
-      // (the history panel isn't mounted — no logged activity yet).
+      await tester.tap(find.byKey(const ValueKey('exercise-category-filter')));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('腿'));
       await tester.pumpAndSettle();
       expect(row('深蹲'), findsOneWidget);
       expect(row('杠铃卧推'), findsNothing);
       expect(row('跑步机慢跑'), findsNothing);
 
+      final search = find.byKey(const ValueKey('exercise-library-search'));
+      if (search.evaluate().isNotEmpty) {
+        await tester.tap(search);
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(find.byKey(const ValueKey('exercise-category-filter')));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('全部'));
       await tester.pumpAndSettle();
+      expect(row('杠铃卧推'), findsOneWidget);
+      expect(row('深蹲'), findsOneWidget);
+      expect(row('跑步机慢跑'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('exercise-library-search')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '卧推');
+      await tester.pumpAndSettle();
+      expect(row('杠铃卧推'), findsOneWidget);
+      expect(row('深蹲'), findsNothing);
+
+      // Tapping the field itself keeps the query; blank space clears it.
+      await tester.tap(find.byType(TextField));
+      await tester.pumpAndSettle();
+      expect(find.byType(TextField), findsOneWidget);
+      expect(row('杠铃卧推'), findsOneWidget);
+      expect(row('深蹲'), findsNothing);
+
+      await tester.tapAt(const Offset(200, 700));
+      await tester.pumpAndSettle();
+      expect(find.byType(TextField), findsNothing);
+      expect(row('杠铃卧推'), findsOneWidget);
+      expect(row('深蹲'), findsOneWidget);
+      expect(row('跑步机慢跑'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('exercise-library-search')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('exercise-category-filter')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('腿'));
+      await tester.pumpAndSettle();
+      expect(row('深蹲'), findsOneWidget);
+      expect(row('杠铃卧推'), findsNothing);
+
+      await tester.tap(row('深蹲'));
+      await tester.pumpAndSettle();
+      expect(find.text('取消'), findsOneWidget);
+      await tester.tap(find.text('取消'));
+      await tester.pumpAndSettle();
+      expect(row('深蹲'), findsOneWidget);
+      expect(row('杠铃卧推'), findsNothing);
+
+      await tester.tapAt(const Offset(200, 700));
+      await tester.pumpAndSettle();
+      expect(find.byType(TextField), findsNothing);
       expect(row('杠铃卧推'), findsOneWidget);
       expect(row('深蹲'), findsOneWidget);
       expect(row('跑步机慢跑'), findsOneWidget);
@@ -251,6 +309,79 @@ void main() {
           .where((w) => w.children.length == 3);
       expect(trainTabs, isNotEmpty);
       expect(trainTabs.single.index, 2);
+    },
+  );
+
+  testWidgets(
+    'a day with many plans opens the workout history sheet without a layout exception',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final today = CalendarDay.todayLocal();
+      const names = [
+        '胸部推举计划甲',
+        '背部划船计划乙',
+        '肩部推举计划丙',
+        '腿部深蹲计划丁',
+        '手臂弯举计划戊',
+        '核心卷腹计划己',
+      ];
+      for (var i = 0; i < names.length; i++) {
+        final workoutId = await _db
+            .into(_db.dayWorkouts)
+            .insert(
+              DayWorkoutsCompanion.insert(
+                date: today,
+                planId: Value(i + 1),
+                planName: Value(names[i]),
+                sortOrder: Value(i),
+              ),
+            );
+        await _db
+            .into(_db.dayWorkoutItems)
+            .insert(
+              DayWorkoutItemsCompanion.insert(
+                dayWorkoutId: workoutId,
+                exerciseId: 1,
+                exerciseName: '杠铃卧推',
+                targetSets: 1,
+                targetReps: 12,
+                done: const Value(true),
+              ),
+            );
+      }
+
+      final keepAlive = [
+        _container.listen(recentStepsProvider, (_, _) {}),
+        _container.listen(allStepsProvider, (_, _) {}),
+        _container.listen(workoutHistoryProvider, (_, _) {}),
+        _container.listen(allWorkoutHistoryProvider, (_, _) {}),
+      ];
+      addTearDown(() {
+        for (final s in keepAlive) {
+          s.close();
+        }
+      });
+      await _container.read(workoutHistoryProvider.future);
+
+      await _pump(tester, const TrainRecordsTab(initialTab: 2));
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.text('最近训练'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+
+      final sheet = find.byType(BottomSheet);
+      expect(sheet, findsOneWidget);
+      expect(
+        find.descendant(of: sheet, matching: find.textContaining('胸部推举计划甲')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: sheet, matching: find.textContaining('核心卷腹计划己')),
+        findsOneWidget,
+      );
     },
   );
 }
