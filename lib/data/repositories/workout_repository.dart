@@ -58,12 +58,23 @@ class DayWorkoutSnapshot {
   int get doneCount => items.where((e) => e.item.done).length;
 }
 
+/// Categories left out of history highlighting: cardio, anaerobic, core,
+/// plus legacy keys that were migrated into core.
+const historyHighlightExcludedCategories = {
+  'cardio',
+  'anaerobic',
+  'core',
+  'core_timed',
+  'custom',
+};
+
 class WorkoutHistoryDay {
   const WorkoutHistoryDay({
     required this.date,
     required this.sets,
     this.completedItems = const [],
     this.planSummaries = const [],
+    this.highlightExerciseIds = const {},
   });
 
   final DateTime date;
@@ -71,24 +82,33 @@ class WorkoutHistoryDay {
   final List<DayWorkoutItem> completedItems;
   final List<WorkoutHistoryPlanSummary> planSummaries;
 
+  /// Exercises on this day that can match another day in history.
+  /// Includes every day-workout item and every set log, except cardio,
+  /// anaerobic, and core.
+  final Set<int> highlightExerciseIds;
+
   bool get hasActivity => sets.isNotEmpty || completedItems.isNotEmpty;
 }
 
 /// Per-day-workout completion summary (one per [DayWorkout] on that day).
 class WorkoutHistoryPlanSummary {
   const WorkoutHistoryPlanSummary({
+    required this.planId,
     required this.planName,
     required this.doneCount,
     required this.totalCount,
   });
 
+  /// Null for a free-form day workout that was never saved as a plan.
+  final int? planId;
   final String? planName;
   final int doneCount;
   final int totalCount;
 }
 
 class _WorkoutHistoryAgg {
-  _WorkoutHistoryAgg({this.planName});
+  _WorkoutHistoryAgg({this.planId, this.planName});
+  final int? planId;
   final String? planName;
   int total = 0;
   int done = 0;
@@ -386,18 +406,14 @@ class WorkoutRepository {
     required List<PlanDraftItem> items,
     required DateTime day,
   }) async {
-    final groups = await (_db.select(_db.dayWorkouts)
-          ..where(
-            (t) =>
-                t.planId.equals(planId) & t.date.equals(_dayStart(day)),
-          ))
-        .get();
+    final groups =
+        await (_db.select(_db.dayWorkouts)..where(
+              (t) => t.planId.equals(planId) & t.date.equals(_dayStart(day)),
+            ))
+            .get();
     for (final group in groups) {
-      await (_db.update(
-        _db.dayWorkouts,
-      )..where((t) => t.id.equals(group.id))).write(
-        DayWorkoutsCompanion(planName: Value(planName)),
-      );
+      await (_db.update(_db.dayWorkouts)..where((t) => t.id.equals(group.id)))
+          .write(DayWorkoutsCompanion(planName: Value(planName)));
       final remaining = (await dayItemsFor(group.id)).toList();
       for (var i = 0; i < items.length; i++) {
         final draft = items[i];
@@ -470,10 +486,9 @@ class WorkoutRepository {
     required DateTime day,
   }) async {
     final start = _dayStart(day);
-    final groups = await (_db.select(_db.dayWorkouts)..where(
-          (t) => t.planId.equals(planId) & t.date.equals(start),
-        ))
-        .get();
+    final groups = await (_db.select(
+      _db.dayWorkouts,
+    )..where((t) => t.planId.equals(planId) & t.date.equals(start))).get();
     if (groups.isEmpty) return const [];
     return dayItemsFor(groups.first.id);
   }
@@ -615,11 +630,9 @@ class WorkoutRepository {
             _db.dayWorkouts,
           )..where((t) => t.date.isIn(starts))).watch().listen((_) => push()),
           (_db.select(_db.dayWorkoutItems)).watch().listen((_) => push()),
-          (_db.select(_db.workoutSetLogs)..where(
-                (t) => t.date.isIn(starts),
-              ))
-              .watch()
-              .listen((_) => push()),
+          (_db.select(
+            _db.workoutSetLogs,
+          )..where((t) => t.date.isIn(starts))).watch().listen((_) => push()),
         ];
         controller.onCancel = () async {
           for (final s in subs) {
@@ -774,6 +787,40 @@ class WorkoutRepository {
     });
   }
 
+  /// Last chosen reps or seconds for [exerciseId].
+  ///
+  /// Prefers the newest day-workout item (logging a set writes the chosen
+  /// count back onto that item), then the newest plan item. Null when the
+  /// exercise has never been given a target.
+  Future<int?> lastTargetReps(int exerciseId) async {
+    final dayRow =
+        await (_db.select(_db.dayWorkoutItems).join([
+                innerJoin(
+                  _db.dayWorkouts,
+                  _db.dayWorkouts.id.equalsExp(
+                    _db.dayWorkoutItems.dayWorkoutId,
+                  ),
+                ),
+              ])
+              ..where(_db.dayWorkoutItems.exerciseId.equals(exerciseId))
+              ..orderBy([
+                OrderingTerm.desc(_db.dayWorkouts.date),
+                OrderingTerm.desc(_db.dayWorkoutItems.id),
+              ])
+              ..limit(1))
+            .getSingleOrNull();
+    if (dayRow != null) {
+      return dayRow.readTable(_db.dayWorkoutItems).targetReps;
+    }
+    final planItem =
+        await (_db.select(_db.workoutPlanItems)
+              ..where((t) => t.exerciseId.equals(exerciseId))
+              ..orderBy([(t) => OrderingTerm.desc(t.id)])
+              ..limit(1))
+            .getSingleOrNull();
+    return planItem?.targetReps;
+  }
+
   Future<void> addQuickDayItem({
     required DateTime day,
     required int exerciseId,
@@ -917,12 +964,10 @@ class WorkoutRepository {
 
     await _db.transaction(() async {
       for (var i = 0; i < orderedDayWorkoutIds.length; i++) {
-        await (_db.update(_db.dayWorkouts)
-              ..where(
-                (t) =>
-                    t.id.equals(orderedDayWorkoutIds[i]) &
-                    t.date.equals(start),
-              ))
+        await (_db.update(_db.dayWorkouts)..where(
+              (t) =>
+                  t.id.equals(orderedDayWorkoutIds[i]) & t.date.equals(start),
+            ))
             .write(DayWorkoutsCompanion(sortOrder: Value(i)));
       }
     });
@@ -942,12 +987,11 @@ class WorkoutRepository {
 
     await _db.transaction(() async {
       for (var i = 0; i < orderedItemIds.length; i++) {
-        await (_db.update(_db.dayWorkoutItems)
-              ..where(
-                (t) =>
-                    t.id.equals(orderedItemIds[i]) &
-                    t.dayWorkoutId.equals(dayWorkoutId),
-              ))
+        await (_db.update(_db.dayWorkoutItems)..where(
+              (t) =>
+                  t.id.equals(orderedItemIds[i]) &
+                  t.dayWorkoutId.equals(dayWorkoutId),
+            ))
             .write(DayWorkoutItemsCompanion(sortOrder: Value(i)));
       }
     });
@@ -1121,16 +1165,33 @@ class WorkoutRepository {
         _db.dayWorkouts.id.equalsExp(_db.dayWorkoutItems.dayWorkoutId),
       ),
     ])).get();
+    final categoryById = {
+      for (final exercise in await listExercises())
+        exercise.id: exercise.category,
+    };
     final byDay = <DateTime, List<WorkoutSetLog>>{};
     final doneByDay = <DateTime, List<DayWorkoutItem>>{};
     final workoutsByDay = <DateTime, Map<int, _WorkoutHistoryAgg>>{};
+    final highlightByDay = <DateTime, Set<int>>{};
+    void considerHighlight(DateTime day, int exerciseId) {
+      final category = categoryById[exerciseId];
+      if (category == null ||
+          historyHighlightExcludedCategories.contains(category)) {
+        return;
+      }
+      highlightByDay.putIfAbsent(day, () => {}).add(exerciseId);
+    }
+
     for (final log in logs) {
-      byDay.putIfAbsent(_dayStart(log.date), () => []).add(log);
+      final day = _dayStart(log.date);
+      byDay.putIfAbsent(day, () => []).add(log);
+      considerHighlight(day, log.exerciseId);
     }
     for (final row in allItems) {
       final workout = row.readTable(_db.dayWorkouts);
       final item = row.readTable(_db.dayWorkoutItems);
       final day = _dayStart(workout.date);
+      considerHighlight(day, item.exerciseId);
       if (item.done) {
         doneByDay.putIfAbsent(day, () => []).add(item);
       }
@@ -1138,7 +1199,10 @@ class WorkoutRepository {
           .putIfAbsent(day, () => {})
           .putIfAbsent(
             workout.id,
-            () => _WorkoutHistoryAgg(planName: workout.planName),
+            () => _WorkoutHistoryAgg(
+              planId: workout.planId,
+              planName: workout.planName,
+            ),
           );
       agg.total++;
       if (item.done) agg.done++;
@@ -1159,11 +1223,15 @@ class WorkoutRepository {
           planSummaries: [
             for (final agg in (workoutsByDay[d] ?? {}).values)
               WorkoutHistoryPlanSummary(
+                planId: agg.planId,
                 planName: agg.planName,
                 doneCount: agg.done,
                 totalCount: agg.total,
               ),
           ],
+          highlightExerciseIds: Set.unmodifiable(
+            highlightByDay[d] ?? const <int>{},
+          ),
         ),
     ];
   }
