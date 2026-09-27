@@ -210,7 +210,19 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
                   ],
                 ),
               ),
-            if (!isEmpty) const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+              child: Row(
+                children: [
+                  const Spacer(),
+                  PlainIconAction(
+                    iconWidget: const InkIcon(InkGlyph.add),
+                    label: l10n.fabLogWeight,
+                    onPressed: addWeight,
+                  ),
+                ],
+              ),
+            ),
             Expanded(
               child: showPeriodTabs
                   ? SwipeTabView(
@@ -313,17 +325,7 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
           ),
         ],
         if (showCharts) const SizedBox(height: AppSpacing.section),
-        Row(
-          children: [
-            Text(l10n.history, style: Theme.of(context).textTheme.titleMedium),
-            const Spacer(),
-            IconButton(
-              tooltip: l10n.fabLogWeight,
-              onPressed: addWeight,
-              icon: const InkIcon(InkGlyph.add),
-            ),
-          ],
-        ),
+        Text(l10n.history, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         if (logs.isEmpty)
           SportEmptyState(

@@ -98,8 +98,8 @@ void main() {
     expect(find.text('体重 (kg)'), findsNothing);
     final historyTop = tester.getTopLeft(find.text('每日记录')).dy;
     final addTop = tester.getTopLeft(find.byTooltip('记体重')).dy;
-    expect(historyTop, lessThan(48));
     expect(addTop, lessThan(48));
+    expect(historyTop, greaterThan(addTop));
     expectStampedIcon(glyph: InkGlyph.profile, seal: '身');
     expect(tester.takeException(), isNull);
   });
