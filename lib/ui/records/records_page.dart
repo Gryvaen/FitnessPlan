@@ -58,7 +58,7 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
 
   void _syncFromRoute() {
     final state = GoRouterState.of(context);
-    // Nested routes like /records/plan keep this page under the shell but
+    // Nested routes like /records/notes/edit keep this page under the shell but
     // must not steal the visible segment from query params on the child.
     if (state.matchedLocation != '/records') return;
 
@@ -104,9 +104,10 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
     final path = switch (value) {
       RecordsSegment.body => '/records',
       RecordsSegment.notes => '/records?tab=notes',
-      RecordsSegment.train => _trainTab == null
-          ? '/records?tab=train'
-          : '/records?tab=train&sub=${_trainSubName(_trainTab!)}',
+      RecordsSegment.train =>
+        _trainTab == null
+            ? '/records?tab=train'
+            : '/records?tab=train&sub=${_trainSubName(_trainTab!)}',
     };
     // Mark before go so the echo from didChangeDependencies is a no-op.
     _appliedRouteKey = path.contains('?')
@@ -152,8 +153,7 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
                 branchIndex: 2,
                 keepPagesAlive: true,
                 index: _segment.index,
-                onIndexChanged: (i) =>
-                    _selectSegment(RecordsSegment.values[i]),
+                onIndexChanged: (i) => _selectSegment(RecordsSegment.values[i]),
                 children: [
                   const BodyRecordsTab(),
                   TrainRecordsTab(initialTab: _trainTab),

@@ -8,6 +8,7 @@ import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../records/log_set_sheet.dart';
 import '../ink/ink_icon.dart';
+import '../records/plan_edit_page.dart';
 import '../records/train_records_tab.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
@@ -191,13 +192,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
       return;
     }
     if (choice == 'quickPlan') {
-      final router = GoRouter.of(context);
-      // Details sheet is itself a root modal; dismiss it before the plan editor
-      // so it isn't still covering Today when the user comes back.
-      if (widget.showDetails) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
-      await router.push('/records/plan');
+      await showPlanEditSheet(context: context);
       return;
     }
     if (choice is WorkoutPlanSummary) {
@@ -389,11 +384,16 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     ref.invalidate(allWorkoutHistoryProvider);
   }
 
-  void _editGroupPlan(BuildContext context, DayWorkoutGroup group) {
+  Future<void> _editGroupPlan(
+    BuildContext context,
+    DayWorkoutGroup group,
+  ) async {
     final planId = group.workout.planId;
     if (planId == null) return;
-    Navigator.of(context, rootNavigator: true).pop(
-      _EditDayWorkoutPlan(planId: planId, day: CalendarDay.dayOnly(widget.day)),
+    await showPlanEditSheet(
+      context: context,
+      planId: planId,
+      syncDay: CalendarDay.dayOnly(widget.day),
     );
   }
 
@@ -926,50 +926,28 @@ class _DayWorkoutGroupTile extends StatelessWidget {
   );
 }
 
-sealed class _DayWorkoutDetailsAction {
-  const _DayWorkoutDetailsAction();
-}
-
-class _EditDayWorkoutPlan extends _DayWorkoutDetailsAction {
-  const _EditDayWorkoutPlan({required this.planId, required this.day});
-
-  final int planId;
-  final DateTime day;
-
-  String get path => Uri(
-    path: '/records/plan',
-    queryParameters: {'id': '$planId', 'syncDay': day.toIso8601String()},
-  ).toString();
-}
-
-Future<void> showDayWorkoutDetails(BuildContext context, DateTime day) async {
-  while (true) {
-    if (!context.mounted) return;
-    final action = await showModalBottomSheet<_DayWorkoutDetailsAction>(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (context) => FractionallySizedBox(
-        heightFactor: .9,
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: TodayWorkoutCard(
-              day: day,
-              sectionPrefix: AppDates.isLocalToday(day)
-                  ? context.l10n.today
-                  : context.l10n.sectionThatDay,
-              showDetails: true,
-            ),
+Future<void> showDayWorkoutDetails(BuildContext context, DateTime day) {
+  return showModalBottomSheet<void>(
+    context: context,
+    useRootNavigator: true,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (context) => FractionallySizedBox(
+      heightFactor: .9,
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: TodayWorkoutCard(
+            day: day,
+            sectionPrefix: AppDates.isLocalToday(day)
+                ? context.l10n.today
+                : context.l10n.sectionThatDay,
+            showDetails: true,
           ),
         ),
       ),
-    );
-
-    if (action is! _EditDayWorkoutPlan || !context.mounted) return;
-    await context.push<void>(action.path);
-  }
+    ),
+  );
 }
 
 class _WorkoutItemTile extends ConsumerWidget {

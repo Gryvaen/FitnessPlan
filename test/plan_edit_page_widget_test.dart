@@ -15,7 +15,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Reproduces the "首页今日训练 → 查看详情 → 点计划名字行" entry point
-// (today_workout_card._editGroupPlan, which pushes /records/plan?id=&syncDay=)
+// (today_workout_card._editGroupPlan, which opens the plan editor sheet)
 // to check that PlanEditPage actually pre-fills the name + exercise rows
 // instead of opening empty.
 
@@ -71,14 +71,6 @@ Widget _detailsNavigationApp(DateTime day) {
             ),
           ),
         ),
-      ),
-      GoRoute(
-        path: '/records/plan',
-        builder: (context, state) {
-          final planId = int.parse(state.uri.queryParameters['id']!);
-          final syncDay = DateTime.parse(state.uri.queryParameters['syncDay']!);
-          return PlanEditPage(planId: planId, syncDay: syncDay);
-        },
       ),
     ],
   );
@@ -182,6 +174,7 @@ void main() {
       await tester.tap(find.text('上肢计划'));
       await tester.pumpAndSettle();
       expect(find.text('编辑计划'), findsOneWidget);
+      expect(find.byType(BottomSheet), findsNWidgets(2));
 
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();

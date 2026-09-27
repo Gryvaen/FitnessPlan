@@ -22,7 +22,6 @@ import 'ui/profile/realm_guide_page.dart';
 import 'ui/profile/profile_edit_page.dart';
 import 'ui/profile/profile_page.dart';
 import 'ui/records/note_edit_page.dart';
-import 'ui/records/plan_edit_page.dart';
 import 'ui/records/records_page.dart';
 import 'ui/shell/main_shell.dart';
 import 'ui/shell/swipeable_branch_container.dart';
@@ -167,18 +166,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                   );
                 },
                 routes: [
-                  GoRoute(
-                    path: 'plan',
-                    builder: (context, state) {
-                      final idStr = state.uri.queryParameters['id'];
-                      final id = idStr == null ? null : int.tryParse(idStr);
-                      final syncDayRaw = state.uri.queryParameters['syncDay'];
-                      final syncDay = syncDayRaw == null
-                          ? null
-                          : DateTime.tryParse(syncDayRaw);
-                      return PlanEditPage(planId: id, syncDay: syncDay);
-                    },
-                  ),
                   GoRoute(
                     path: 'notes/edit',
                     builder: (context, state) {

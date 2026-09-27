@@ -14,6 +14,32 @@ import '../widgets/search_field_focus.dart';
 import 'exercise_form_dialog.dart';
 import 'exercise_picker.dart';
 
+/// New or edit a workout plan in a bottom sheet (same chrome as day-workout
+/// details): drag handle, about 90% of the screen, and lifted above the keyboard.
+Future<void> showPlanEditSheet({
+  required BuildContext context,
+  int? planId,
+  DateTime? syncDay,
+}) {
+  return showModalBottomSheet<void>(
+    context: context,
+    useRootNavigator: true,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (ctx) {
+      final bottom = MediaQuery.viewInsetsOf(ctx).bottom;
+      final maxHeight = MediaQuery.sizeOf(ctx).height * .9;
+      return Padding(
+        padding: EdgeInsets.only(bottom: bottom),
+        child: SizedBox(
+          height: (maxHeight - bottom).clamp(0.0, maxHeight),
+          child: PlanEditPage(planId: planId, syncDay: syncDay),
+        ),
+      );
+    },
+  );
+}
+
 class PlanEditPage extends ConsumerStatefulWidget {
   const PlanEditPage({super.key, this.planId, this.syncDay});
 
@@ -171,10 +197,12 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
             category: form.category,
           );
       if (!mounted) return;
-      // Also drop it straight into the plan being edited — into the first
-      // still-empty row if there is one, otherwise as a new row — instead of
-      // only adding it to the library and leaving the user to hunt it down
-      // in the exercise picker.
+      final last = await ref.read(workoutRepositoryProvider).lastTargetReps(id);
+      if (!mounted) return;
+      final options = FormOptions.exerciseTargetOptions(
+        form.unit,
+        category: form.category,
+      );
       setState(() {
         _PlanRow? emptyRow;
         for (final row in _rows) {
@@ -183,10 +211,16 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
             break;
           }
         }
+        final target = last == null ? null : FormOptions.snapInt(options, last);
         if (emptyRow != null) {
           emptyRow.exerciseId = id;
+          if (target != null) emptyRow.targetReps = target;
         } else {
-          _rows.add(_PlanRow()..exerciseId = id);
+          _rows.add(
+            _PlanRow()
+              ..exerciseId = id
+              ..targetReps = target ?? 12,
+          );
         }
       });
     } catch (e) {
@@ -252,7 +286,11 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
         );
       }
       if (!mounted) return;
-      context.pop();
+      if (ModalRoute.of(context) is ModalBottomSheetRoute) {
+        Navigator.of(context).pop();
+      } else {
+        context.pop();
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -298,9 +336,17 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
                 if (exercises.isEmpty) {
                   return _PlanNoExercisesEmpty(
                     onOpenLibrary: () {
-                      // Prefer a single go() — pop()+go() in the same frame
-                      // races go_router's page sync under StatefulShellRoute.
-                      context.go('/records?tab=train&sub=library');
+                      final router = GoRouter.of(context);
+                      // The editor (and a details sheet under it, if any) are
+                      // modal routes. Close those first, then go on the next
+                      // frame so the shell route change doesn't race the pop.
+                      Navigator.of(
+                        context,
+                        rootNavigator: true,
+                      ).popUntil((route) => route is! ModalBottomSheetRoute);
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        router.go('/records?tab=train&sub=library');
+                      });
                     },
                   );
                 }
@@ -370,7 +416,9 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
                                 row: _rows[i],
                                 exercises: exercises,
                                 canRemove: _rows.length > 1,
-                                onChanged: () => setState(() {}),
+                                onChanged: () {
+                                  if (mounted) setState(() {});
+                                },
                                 onRemove: () =>
                                     setState(() => _rows.removeAt(i)),
                               ),
@@ -444,7 +492,7 @@ class _PlanNoExercisesEmpty extends StatelessWidget {
   }
 }
 
-class _PlanRowSection extends StatelessWidget {
+class _PlanRowSection extends ConsumerWidget {
   const _PlanRowSection({
     required this.row,
     required this.exercises,
@@ -459,14 +507,24 @@ class _PlanRowSection extends StatelessWidget {
   final VoidCallback onChanged;
   final VoidCallback onRemove;
 
-  void _setExercise(Exercise exercise) {
+  Future<void> _setExercise(WidgetRef ref, Exercise exercise) async {
     row.exerciseId = exercise.id;
     row.missingExerciseName = null;
+    final last = await ref
+        .read(workoutRepositoryProvider)
+        .lastTargetReps(exercise.id);
+    if (last != null) {
+      final options = FormOptions.exerciseTargetOptions(
+        ExerciseUnit.fromStorage(exercise.unit),
+        category: exercise.category,
+      );
+      row.targetReps = FormOptions.snapInt(options, last);
+    }
     onChanged();
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final selected = _exerciseById(row.exerciseId, exercises);
     final unit = ExerciseUnit.fromStorage(
@@ -492,7 +550,7 @@ class _PlanRowSection extends StatelessWidget {
                     l10n.selectOneExercise,
                 selectedId: selected?.id,
                 exercises: exercises,
-                onChanged: _setExercise,
+                onChanged: (exercise) => _setExercise(ref, exercise),
               ),
             ),
             if (canRemove)
