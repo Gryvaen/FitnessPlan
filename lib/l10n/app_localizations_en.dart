@@ -662,6 +662,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emptyPlans => 'No plans yet — tap + to create';
 
   @override
+  String get noMatchingPlans => 'No matching plans';
+
+  @override
   String get deletePlan => 'Delete plan';
 
   @override

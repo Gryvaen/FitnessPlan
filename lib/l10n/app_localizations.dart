@@ -1370,6 +1370,12 @@ abstract class AppLocalizations {
   /// **'No plans yet — tap + to create'**
   String get emptyPlans;
 
+  /// No description provided for @noMatchingPlans.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching plans'**
+  String get noMatchingPlans;
+
   /// No description provided for @deletePlan.
   ///
   /// In en, this message translates to:

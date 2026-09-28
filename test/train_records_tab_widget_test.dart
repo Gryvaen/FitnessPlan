@@ -131,6 +131,12 @@ void main() {
         tester.widget<TextField>(find.byType(TextField)).focusNode!.hasFocus,
         isFalse,
       );
+      await tester.tapAt(const Offset(380, 24));
+      await tester.pumpAndSettle();
+      expect(find.byType(TextField), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('exercise-library-search')));
+      await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), '深蹲');
       await tester.pumpAndSettle();
       expect(row('深蹲'), findsOneWidget);
@@ -210,6 +216,127 @@ void main() {
       expect(row('跑步机慢跑'), findsOneWidget);
     },
   );
+
+  testWidgets('plan search filters the list and blank space clears it', (
+    tester,
+  ) async {
+    Finder row(String name) => find.widgetWithText(SportListTile, name);
+
+    final bench = await (_db.select(
+      _db.exercises,
+    )..where((t) => t.name.equals('杠铃卧推'))).getSingle();
+    final squat = await (_db.select(
+      _db.exercises,
+    )..where((t) => t.name.equals('深蹲'))).getSingle();
+    final upperId = await _db
+        .into(_db.workoutPlans)
+        .insert(
+          WorkoutPlansCompanion.insert(name: '上肢', createdAt: DateTime.now()),
+        );
+    await _db
+        .into(_db.workoutPlanItems)
+        .insert(
+          WorkoutPlanItemsCompanion.insert(
+            planId: upperId,
+            exerciseId: bench.id,
+            exerciseName: bench.name,
+            targetSets: 3,
+            targetReps: 12,
+          ),
+        );
+    final legsId = await _db
+        .into(_db.workoutPlans)
+        .insert(
+          WorkoutPlansCompanion.insert(name: '腿部', createdAt: DateTime.now()),
+        );
+    await _db
+        .into(_db.workoutPlanItems)
+        .insert(
+          WorkoutPlanItemsCompanion.insert(
+            planId: legsId,
+            exerciseId: squat.id,
+            exerciseName: squat.name,
+            targetSets: 3,
+            targetReps: 10,
+          ),
+        );
+
+    await _pump(tester, const TrainRecordsTab());
+
+    expect(row('上肢'), findsOneWidget);
+    expect(row('腿部'), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('plan-search')));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).focusNode!.hasFocus,
+      isFalse,
+    );
+    // Keyboard never came up. Blank space outside the plan list — here the
+    // empty area beside the sub-tabs — still closes the field.
+    await tester.tapAt(const Offset(380, 24));
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('plan-search')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '上肢');
+    await tester.pumpAndSettle();
+    expect(row('上肢'), findsOneWidget);
+    expect(row('腿部'), findsNothing);
+
+    await tester.enterText(find.byType(TextField), '不存在');
+    await tester.pumpAndSettle();
+    expect(find.text('没有匹配的计划'), findsOneWidget);
+    expect(row('上肢'), findsNothing);
+    expect(row('腿部'), findsNothing);
+
+    await tester.tapAt(const Offset(200, 700));
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsNothing);
+    expect(row('上肢'), findsOneWidget);
+    expect(row('腿部'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('plan-search')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '上肢');
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).focusNode!.hasFocus,
+      isTrue,
+    );
+    await tester.tap(find.text('动作库'));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('exercise-library-search')),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .widgetList<TextField>(find.byType(TextField))
+          .every((field) => field.focusNode?.hasFocus != true),
+      isTrue,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('exercise-library-search')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '深蹲');
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).focusNode!.hasFocus,
+      isTrue,
+    );
+    await tester.tap(find.text('计划'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('plan-search')), findsOneWidget);
+    expect(
+      tester
+          .widgetList<TextField>(find.byType(TextField))
+          .every((field) => field.focusNode?.hasFocus != true),
+      isTrue,
+    );
+  });
 
   testWidgets(
     '全部 step history sheet lists every logged day via the lazy ListView.builder',

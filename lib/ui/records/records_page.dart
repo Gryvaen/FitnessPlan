@@ -100,6 +100,9 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
 
   void _selectSegment(RecordsSegment value) {
     if (value == _segment) return;
+    // Train search fields stay mounted on the kept-alive page. Drop focus so
+    // the keyboard does not follow the user onto 身体 / 笔记.
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() => _segment = value);
     final path = switch (value) {
       RecordsSegment.body => '/records',

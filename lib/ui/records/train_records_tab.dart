@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -69,6 +70,13 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   bool _exerciseSearchOpen = false;
   bool _categoryMenuOpen = false;
   final _exerciseSearchFocus = FocusNode();
+  String _planQuery = '';
+  bool _planSearchOpen = false;
+  final _planSearchFocus = FocusNode();
+  final Object _planSearchGroup = Object();
+  final Object _exerciseSearchGroup = Object();
+  Offset? _planOutsidePointer;
+  Offset? _exerciseOutsidePointer;
 
   /// Last applied records URI query — kept-alive tab must re-read `sub`
   /// when Today / plan-edit calls `go('/records?tab=train&sub=plans')`.
@@ -80,12 +88,16 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     if (widget.initialTab != null) _tab = widget.initialTab!;
     suppressInitialTextFocus(_exerciseSearchFocus);
     _exerciseSearchFocus.addListener(_onExerciseSearchFocusChanged);
+    suppressInitialTextFocus(_planSearchFocus);
+    _planSearchFocus.addListener(_onPlanSearchFocusChanged);
   }
 
   @override
   void dispose() {
     _exerciseSearchFocus.removeListener(_onExerciseSearchFocusChanged);
     _exerciseSearchFocus.dispose();
+    _planSearchFocus.removeListener(_onPlanSearchFocusChanged);
+    _planSearchFocus.dispose();
     super.dispose();
   }
 
@@ -95,10 +107,58 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     setState(() => _exerciseSearchOpen = false);
   }
 
+  void _onPlanSearchFocusChanged() {
+    if (_planSearchFocus.hasFocus || !_planSearchOpen) return;
+    if (_planQuery.isNotEmpty) return;
+    setState(() => _planSearchOpen = false);
+  }
+
+  void _onSearchOutsideDown(PointerDownEvent event, {required bool plan}) {
+    if (plan) {
+      _planOutsidePointer = event.position;
+    } else {
+      _exerciseOutsidePointer = event.position;
+    }
+  }
+
+  void _onSearchOutsideUp(PointerUpEvent event, {required bool plan}) {
+    final down = plan ? _planOutsidePointer : _exerciseOutsidePointer;
+    if (plan) {
+      _planOutsidePointer = null;
+    } else {
+      _exerciseOutsidePointer = null;
+    }
+    if (down == null || (event.position - down).distance > kTouchSlop) return;
+    if (plan) {
+      _discardPlanSearch();
+    } else {
+      _discardExerciseSearch();
+    }
+  }
+
+  /// The field can stay focused after its panel is swiped off-screen
+  /// (pages are kept alive), which leaves the keyboard up.
+  void _dropSearchFocus(FocusNode focus) {
+    focus.unfocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (focus.hasFocus) focus.unfocus();
+    });
+  }
+
+  /// 点记录页里搜索框和结果行以外的位置：收起搜索，并丢掉关键字。
+  void _discardPlanSearch() {
+    _dropSearchFocus(_planSearchFocus);
+    if (!_planSearchOpen && _planQuery.isEmpty) return;
+    setState(() {
+      _planSearchOpen = false;
+      _planQuery = '';
+    });
+  }
+
   /// 点动作列表或标题行的空白处：收起搜索，并丢掉关键字和分类筛选。
   void _discardExerciseSearch() {
     if (_categoryMenuOpen) return;
-    if (_exerciseSearchFocus.hasFocus) _exerciseSearchFocus.unfocus();
+    _dropSearchFocus(_exerciseSearchFocus);
     if (!_exerciseSearchOpen && _query.isEmpty && _category == null) return;
     setState(() {
       _exerciseSearchOpen = false;
@@ -253,6 +313,8 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
 
   void _selectTab(int v) {
     if (v == _tab) return;
+    if (_tab == 0) _dropSearchFocus(_planSearchFocus);
+    if (_tab == 1) _dropSearchFocus(_exerciseSearchFocus);
     setState(() => _tab = v);
     final path = '/records?tab=train&sub=${_subName(v)}';
     _appliedRouteKey = '/records?tab=train&sub=${_subName(v)}';
@@ -503,84 +565,132 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
 
   Widget _plansPanel(BuildContext context, {required bool showHistory}) {
     final l10n = context.l10n;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
-          child: Row(
-            children: [
-              const Spacer(),
-              PlainIconAction(
-                iconWidget: const InkIcon(InkGlyph.add),
-                label: l10n.fabNewPlan,
-                onPressed: () => showPlanEditSheet(context: context),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: ListView(
-            padding: EdgeInsets.fromLTRB(
-              20,
-              0,
-              20,
-              listBottomInset(context, hasFab: false),
-            ),
-            children: [
-              ref
-                  .watch(workoutPlansProvider)
-                  .when(
-                    loading: () => const LinearProgressIndicator(),
-                    error: (e, _) => SportLoadError(
-                      onRetry: () => ref.invalidate(workoutPlansProvider),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _discardPlanSearch,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+            child: Row(
+              children: [
+                if (!_planSearchOpen)
+                  IconButton(
+                    key: const ValueKey('plan-search'),
+                    tooltip: l10n.planName,
+                    onPressed: () => setState(() => _planSearchOpen = true),
+                    icon: const InkIcon(InkGlyph.search),
+                  )
+                else
+                  Expanded(
+                    child: TapRegion(
+                      groupId: _planSearchGroup,
+                      onTapOutside: (event) =>
+                          _onSearchOutsideDown(event, plan: true),
+                      onTapUpOutside: (event) =>
+                          _onSearchOutsideUp(event, plan: true),
+                      child: TextField(
+                        focusNode: _planSearchFocus,
+                        decoration: InputDecoration(hintText: l10n.planName),
+                        onChanged: (v) =>
+                            setState(() => _planQuery = v.trim().toLowerCase()),
+                      ),
                     ),
-                    data: (plans) {
-                      if (plans.isEmpty) {
-                        return SportEmptyState(
-                          title: l10n.emptyPlans,
-                          iconWidget: const StampedInkEmptyIcon(
-                            glyph: InkGlyph.training,
-                            seal: '炼',
-                          ),
-                        );
-                      }
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          for (final plan in plans)
-                            SportListTile(
-                              contentPadding: EdgeInsets.zero,
-                              title: Text(plan.plan.name),
-                              subtitle: Text(
-                                l10n.nExercises(plan.items.length),
-                              ),
-                              trailing: IconButton(
-                                tooltip: l10n.delete,
-                                icon: const InkIcon(InkGlyph.delete),
-                                onPressed: () => _deletePlan(plan),
-                              ),
-                              onTap: () => showPlanEditSheet(
-                                context: context,
-                                planId: plan.plan.id,
-                              ),
-                            ),
-                          if (showHistory)
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: TextButton(
-                                onPressed: () => _selectTab(2),
-                                child: Text(l10n.viewWorkoutHistory),
-                              ),
-                            ),
-                        ],
-                      );
-                    },
                   ),
-            ],
+                if (!_planSearchOpen) const Spacer(),
+                PlainIconAction(
+                  iconWidget: const InkIcon(InkGlyph.add),
+                  label: l10n.fabNewPlan,
+                  onPressed: () => showPlanEditSheet(context: context),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                0,
+                20,
+                listBottomInset(context, hasFab: false),
+              ),
+              children: [
+                ref
+                    .watch(workoutPlansProvider)
+                    .when(
+                      loading: () => const LinearProgressIndicator(),
+                      error: (e, _) => SportLoadError(
+                        onRetry: () => ref.invalidate(workoutPlansProvider),
+                      ),
+                      data: (plans) {
+                        if (plans.isEmpty) {
+                          return SportEmptyState(
+                            title: l10n.emptyPlans,
+                            iconWidget: const StampedInkEmptyIcon(
+                              glyph: InkGlyph.training,
+                              seal: '炼',
+                            ),
+                          );
+                        }
+                        final visible = _planQuery.isEmpty
+                            ? plans
+                            : plans
+                                  .where(
+                                    (plan) => plan.plan.name
+                                        .toLowerCase()
+                                        .contains(_planQuery),
+                                  )
+                                  .toList();
+                        if (visible.isEmpty) {
+                          return SportEmptyState(
+                            title: l10n.noMatchingPlans,
+                            iconWidget: const StampedInkEmptyIcon(
+                              glyph: InkGlyph.training,
+                              seal: '炼',
+                            ),
+                          );
+                        }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            for (final plan in visible)
+                              TapRegion(
+                                groupId: _planSearchGroup,
+                                child: SportListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(plan.plan.name),
+                                  subtitle: Text(
+                                    l10n.nExercises(plan.items.length),
+                                  ),
+                                  trailing: IconButton(
+                                    tooltip: l10n.delete,
+                                    icon: const InkIcon(InkGlyph.delete),
+                                    onPressed: () => _deletePlan(plan),
+                                  ),
+                                  onTap: () => showPlanEditSheet(
+                                    context: context,
+                                    planId: plan.plan.id,
+                                  ),
+                                ),
+                              ),
+                            if (showHistory)
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: TextButton(
+                                  onPressed: () => _selectTab(2),
+                                  child: Text(l10n.viewWorkoutHistory),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -748,27 +858,34 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                   )
                 else
                   Expanded(
-                    child: TextField(
-                      focusNode: _exerciseSearchFocus,
-                      decoration: InputDecoration(
-                        hintText: l10n.exerciseName,
-                        prefixIcon: Builder(
-                          builder: (buttonContext) => IconButton(
-                            key: const ValueKey('exercise-category-filter'),
-                            tooltip: l10n.categories,
-                            onPressed: () =>
-                                _openExerciseCategoryMenu(buttonContext),
-                            icon: InkIcon(
-                              InkGlyph.folder,
-                              color: _category == null
-                                  ? theme.colorScheme.onSurfaceVariant
-                                  : theme.colorScheme.primary,
+                    child: TapRegion(
+                      groupId: _exerciseSearchGroup,
+                      onTapOutside: (event) =>
+                          _onSearchOutsideDown(event, plan: false),
+                      onTapUpOutside: (event) =>
+                          _onSearchOutsideUp(event, plan: false),
+                      child: TextField(
+                        focusNode: _exerciseSearchFocus,
+                        decoration: InputDecoration(
+                          hintText: l10n.exerciseName,
+                          prefixIcon: Builder(
+                            builder: (buttonContext) => IconButton(
+                              key: const ValueKey('exercise-category-filter'),
+                              tooltip: l10n.categories,
+                              onPressed: () =>
+                                  _openExerciseCategoryMenu(buttonContext),
+                              icon: InkIcon(
+                                InkGlyph.folder,
+                                color: _category == null
+                                    ? theme.colorScheme.onSurfaceVariant
+                                    : theme.colorScheme.primary,
+                              ),
                             ),
                           ),
                         ),
+                        onChanged: (v) =>
+                            setState(() => _query = v.trim().toLowerCase()),
                       ),
-                      onChanged: (v) =>
-                          setState(() => _query = v.trim().toLowerCase()),
                     ),
                   ),
                 if (!_exerciseSearchOpen) const Spacer(),
@@ -851,50 +968,53 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
 
   Widget _exerciseRow(BuildContext context, Exercise ex) {
     final l10n = context.l10n;
-    return SportListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(ex.name),
-      subtitle: Text(
-        '${ex.category.localizedExerciseCategory(l10n)} · ${ExerciseUnit.fromStorage(ex.unit).label(l10n, category: ex.category)}',
-      ),
-      onTap: () => _editExercise(context, ref, ex),
-      trailing: ex.isCustom
-          ? IconButton(
-              tooltip: l10n.delete,
-              icon: const InkIcon(InkGlyph.delete),
-              onPressed: () async {
-                final ok = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: Text(l10n.delete),
-                    content: Text(ex.name),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx, false),
-                        child: Text(l10n.cancel),
-                      ),
-                      FilledButton(
-                        onPressed: () => Navigator.pop(ctx, true),
-                        child: Text(l10n.delete),
-                      ),
-                    ],
-                  ),
-                );
-                if (ok != true || !context.mounted) return;
-                try {
-                  await ref
-                      .read(workoutRepositoryProvider)
-                      .deleteCustomExercise(ex.id);
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text('$e')));
+    return TapRegion(
+      groupId: _exerciseSearchGroup,
+      child: SportListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Text(ex.name),
+        subtitle: Text(
+          '${ex.category.localizedExerciseCategory(l10n)} · ${ExerciseUnit.fromStorage(ex.unit).label(l10n, category: ex.category)}',
+        ),
+        onTap: () => _editExercise(context, ref, ex),
+        trailing: ex.isCustom
+            ? IconButton(
+                tooltip: l10n.delete,
+                icon: const InkIcon(InkGlyph.delete),
+                onPressed: () async {
+                  final ok = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Text(l10n.delete),
+                      content: Text(ex.name),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: Text(l10n.cancel),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: Text(l10n.delete),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (ok != true || !context.mounted) return;
+                  try {
+                    await ref
+                        .read(workoutRepositoryProvider)
+                        .deleteCustomExercise(ex.id);
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('$e')));
+                    }
                   }
-                }
-              },
-            )
-          : const InkIcon(InkGlyph.chevronRight),
+                },
+              )
+            : const InkIcon(InkGlyph.chevronRight),
+      ),
     );
   }
 }

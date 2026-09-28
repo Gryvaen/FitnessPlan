@@ -233,6 +233,7 @@
   "exerciseCategoryOther": "其他",
   "workoutPlans": "训练计划",
   "emptyPlans": "还没有计划，点加号新建",
+  "noMatchingPlans": "没有匹配的计划",
   "deletePlan": "删除计划",
   "noExercisesInPlan": "无动作",
   "workoutHistory": "最近训练",

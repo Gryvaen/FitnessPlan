@@ -237,6 +237,7 @@
   "exerciseCategoryOther": "Other",
   "workoutPlans": "Workout plans",
   "emptyPlans": "No plans yet — tap + to create",
+  "noMatchingPlans": "No matching plans",
   "deletePlan": "Delete plan",
   "noExercisesInPlan": "No exercises",
   "workoutHistory": "Recent workouts",

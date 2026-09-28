@@ -659,6 +659,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get emptyPlans => '还没有计划，点加号新建';
 
   @override
+  String get noMatchingPlans => '没有匹配的计划';
+
+  @override
   String get deletePlan => '删除计划';
 
   @override
