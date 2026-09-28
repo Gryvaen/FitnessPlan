@@ -42,9 +42,8 @@ class _MainShellState extends ConsumerState<MainShell>
     }
   }
 
-  /// Throttled background check so the update icon's red dot can show up
-  /// without the user having to remember to tap "check for update"
-  /// themselves — see [AppUpdateNotifier.silentCheckForUpdate].
+  /// Checks for a newer release on every launch and resume so the update
+  /// icon's red dot can show up without a manual tap.
   Future<void> _checkForUpdateSilently() async {
     if (defaultTargetPlatform != TargetPlatform.android) return;
     final info = await PackageInfo.fromPlatform();

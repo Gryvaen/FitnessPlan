@@ -66,13 +66,8 @@ final appUpdateProvider = NotifierProvider<AppUpdateNotifier, AppUpdateStatus>(
 );
 
 class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
-  static const _kLastCheckedAt = 'app_update_last_checked_at';
   static const _kAvailableVersion = 'app_update_available_version';
   static const _kPendingDownloadId = 'app_update_pending_download_id';
-
-  /// Silent checks are throttled to once a day; a manual tap always forces
-  /// a fresh check regardless of this window.
-  static const _checkThrottle = Duration(hours: 24);
 
   Timer? _pollTimer;
 
@@ -118,24 +113,14 @@ class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
     }
   }
 
-  /// Background check on app launch / resume: throttled, and never surfaces
-  /// errors or dialogs — it only updates the cached [AppUpdateStatus.
-  /// availableVersion] that the red dot reads. Pass [force] to bypass the
-  /// throttle (not currently used, kept for a future "check now" action).
+  /// Background check on every app launch and resume. Never surfaces errors
+  /// or dialogs — it only updates the cached [AppUpdateStatus.availableVersion]
+  /// that the red dot reads.
   Future<void> silentCheckForUpdate(
     String localVersion,
-    String localBuildNumber, {
-    bool force = false,
-  }) async {
+    String localBuildNumber,
+  ) async {
     if (!_isAndroid || state.isBusy) return;
-    final prefs = ref.read(sharedPreferencesProvider);
-    final lastChecked = prefs.getInt(_kLastCheckedAt);
-    final now = DateTime.now().millisecondsSinceEpoch;
-    if (!force &&
-        lastChecked != null &&
-        now - lastChecked < _checkThrottle.inMilliseconds) {
-      return;
-    }
     try {
       await _fetchAndRecord(localVersion, localBuildNumber);
     } catch (_) {
@@ -168,8 +153,8 @@ class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
     }
   }
 
-  /// Fetches the latest release and updates the cached available-version /
-  /// last-checked bookkeeping the red dot reads. Returns the release when
+  /// Fetches the latest release and updates the cached available-version
+  /// the red dot reads. Returns the release when
   /// it's newer than [localVersion] *and* has a matching APK asset;
   /// otherwise null (and the cache is cleared either way it isn't).
   Future<LatestRelease?> _fetchAndRecord(
@@ -179,7 +164,6 @@ class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
     final repo = ref.read(appUpdateRepositoryProvider);
     final prefs = ref.read(sharedPreferencesProvider);
     final latest = await repo.fetchLatest(localVersion: localVersion);
-    await prefs.setInt(_kLastCheckedAt, DateTime.now().millisecondsSinceEpoch);
     final isNewer = AppUpdateLogic.isNewer(localVersion, latest.version);
     final asset = isNewer
         ? AppUpdateLogic.pickApkAsset(

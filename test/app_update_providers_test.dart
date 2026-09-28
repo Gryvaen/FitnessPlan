@@ -130,19 +130,11 @@ void main() {
       expect(container.read(appUpdateProvider).hasUpdateAvailable, isFalse);
     });
 
-    test('is throttled to one real check within the window', () async {
+    test('checks again on every call, including a second entry', () async {
       repo.nextRelease = _release('2.0.0');
       final notifier = container.read(appUpdateProvider.notifier);
       await notifier.silentCheckForUpdate('1.0.0', '2008');
       await notifier.silentCheckForUpdate('1.0.0', '2008');
-      expect(repo.fetchLatestCalls, 1);
-    });
-
-    test('force bypasses the throttle', () async {
-      repo.nextRelease = _release('2.0.0');
-      final notifier = container.read(appUpdateProvider.notifier);
-      await notifier.silentCheckForUpdate('1.0.0', '2008');
-      await notifier.silentCheckForUpdate('1.0.0', '2008', force: true);
       expect(repo.fetchLatestCalls, 2);
     });
 
