@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../data/db.dart';
 import '../../data/repositories/workout_repository.dart';
 import '../../domain/calendar_day.dart';
 import '../../l10n/app_localizations_ext.dart';
@@ -146,41 +147,8 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     final choice = await showModalBottomSheet<Object>(
       context: context,
       useRootNavigator: true,
-      builder: (ctx) => SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const InkIcon(InkGlyph.add),
-                title: Text(l10n.quickAddExercise),
-                onTap: () => Navigator.pop(ctx, 'quick'),
-              ),
-              ListTile(
-                leading: const InkIcon(InkGlyph.playlistAdd),
-                title: Text(l10n.quickAddPlan),
-                onTap: () => Navigator.pop(ctx, 'quickPlan'),
-              ),
-              const Divider(height: 1),
-              for (final p in plans)
-                ListTile(
-                  title: Text(p.plan.name),
-                  subtitle: Text(
-                    p.items
-                        .map(
-                          (i) =>
-                              '${i.exerciseName} ${i.targetSets}×${i.targetReps}',
-                        )
-                        .join(' · '),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  onTap: () => Navigator.pop(ctx, p),
-                ),
-            ],
-          ),
-        ),
-      ),
+      isScrollControlled: true,
+      builder: (ctx) => _TodayPlanPickerSheet(plans: plans),
     );
     if (!context.mounted || choice == null) return;
     if (choice == 'quick') {
@@ -1108,6 +1076,116 @@ class _InkDoneToggle extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Plan list from today's workout "+". Plans sit under the library categories
+/// of their exercises (same section headers as the exercise picker). Plans
+/// with more than one exercise never appear under core / cardio / anaerobic.
+class _TodayPlanPickerSheet extends ConsumerWidget {
+  const _TodayPlanPickerSheet({required this.plans});
+
+  final List<WorkoutPlanSummary> plans;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final categoryById = {
+      for (final exercise
+          in ref.watch(exercisesProvider).asData?.value ?? const <Exercise>[])
+        exercise.id: exercise.category,
+    };
+    final byCategory = <String, List<WorkoutPlanSummary>>{};
+    final uncategorized = <WorkoutPlanSummary>[];
+    for (final plan in plans) {
+      final categories = <String>{
+        for (final item in plan.items)
+          if (categoryById[item.exerciseId] case final String category)
+            if (plan.matchesExerciseCategory(category, categoryById)) category,
+      };
+      if (categories.isEmpty) {
+        uncategorized.add(plan);
+        continue;
+      }
+      for (final category in categories) {
+        byCategory.putIfAbsent(category, () => []).add(plan);
+      }
+    }
+    final orderedCategories = [
+      for (final category in kExerciseCategoryOrder)
+        if (byCategory[category]?.isNotEmpty ?? false) category,
+      for (final category in byCategory.keys)
+        if (!kExerciseCategoryOrder.contains(category) &&
+            byCategory[category]!.isNotEmpty)
+          category,
+    ];
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.4,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) => SafeArea(
+        child: ListView(
+          controller: scrollController,
+          children: [
+            ListTile(
+              leading: const InkIcon(InkGlyph.add),
+              title: Text(l10n.quickAddExercise),
+              onTap: () => Navigator.pop(context, 'quick'),
+            ),
+            ListTile(
+              leading: const InkIcon(InkGlyph.playlistAdd),
+              title: Text(l10n.quickAddPlan),
+              onTap: () => Navigator.pop(context, 'quickPlan'),
+            ),
+            const Divider(height: 1),
+            for (final category in orderedCategories) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                child: Text(
+                  category.localizedExerciseCategory(l10n),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+              for (final plan in byCategory[category]!)
+                _planTile(context, plan),
+            ],
+            if (uncategorized.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                child: Text(
+                  l10n.exerciseCategoryOther,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+              for (final plan in uncategorized) _planTile(context, plan),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _planTile(BuildContext context, WorkoutPlanSummary plan) {
+    return ListTile(
+      title: Text(plan.plan.name),
+      subtitle: Text(
+        plan.items
+            .map(
+              (item) =>
+                  '${item.exerciseName} ${item.targetSets}×${item.targetReps}',
+            )
+            .join(' · '),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      onTap: () => Navigator.pop(context, plan),
     );
   }
 }

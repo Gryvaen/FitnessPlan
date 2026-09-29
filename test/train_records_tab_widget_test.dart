@@ -300,6 +300,89 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('plan-search')));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('plan-category-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('腿'));
+    await tester.pumpAndSettle();
+    expect(row('腿部'), findsOneWidget);
+    expect(row('上肢'), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('plan-category-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('全部'));
+    await tester.pumpAndSettle();
+    expect(row('上肢'), findsOneWidget);
+    expect(row('腿部'), findsOneWidget);
+    await tester.tapAt(const Offset(200, 700));
+    await tester.pumpAndSettle();
+
+    final plank = await _db
+        .into(_db.exercises)
+        .insertReturning(
+          ExercisesCompanion.insert(
+            name: '平板支撑',
+            unit: 'seconds',
+            category: const Value('core'),
+          ),
+        );
+    final coreOnlyId = await _db
+        .into(_db.workoutPlans)
+        .insert(
+          WorkoutPlansCompanion.insert(name: '核心单练', createdAt: DateTime.now()),
+        );
+    await _db
+        .into(_db.workoutPlanItems)
+        .insert(
+          WorkoutPlanItemsCompanion.insert(
+            planId: coreOnlyId,
+            exerciseId: plank.id,
+            exerciseName: plank.name,
+            targetSets: 3,
+            targetReps: 60,
+          ),
+        );
+    final mixedId = await _db
+        .into(_db.workoutPlans)
+        .insert(
+          WorkoutPlansCompanion.insert(name: '腿加核心', createdAt: DateTime.now()),
+        );
+    await _db
+        .into(_db.workoutPlanItems)
+        .insert(
+          WorkoutPlanItemsCompanion.insert(
+            planId: mixedId,
+            exerciseId: squat.id,
+            exerciseName: squat.name,
+            targetSets: 3,
+            targetReps: 10,
+          ),
+        );
+    await _db
+        .into(_db.workoutPlanItems)
+        .insert(
+          WorkoutPlanItemsCompanion.insert(
+            planId: mixedId,
+            exerciseId: plank.id,
+            exerciseName: plank.name,
+            targetSets: 3,
+            targetReps: 45,
+          ),
+        );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('plan-search')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('plan-category-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('核心'));
+    await tester.pumpAndSettle();
+    expect(row('核心单练'), findsOneWidget);
+    expect(row('腿加核心'), findsNothing);
+    expect(row('上肢'), findsNothing);
+    await tester.tapAt(const Offset(200, 700));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('plan-search')));
+    await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '上肢');
     await tester.pumpAndSettle();
     expect(

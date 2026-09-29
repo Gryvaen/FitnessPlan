@@ -119,7 +119,26 @@ class WorkoutPlanSummary {
 
   final WorkoutPlan plan;
   final List<WorkoutPlanItem> items;
+
+  /// Whether this plan belongs under [category] when filtering/grouping.
+  ///
+  /// Multi-exercise plans never count as core / cardio / anaerobic — those
+  /// labels are reserved for single-exercise plans of that type.
+  bool matchesExerciseCategory(
+    String category,
+    Map<int, String> categoryByExerciseId,
+  ) {
+    if (kSoloPlanCategories.contains(category) && items.length > 1) {
+      return false;
+    }
+    return items.any(
+      (item) => categoryByExerciseId[item.exerciseId] == category,
+    );
+  }
 }
+
+/// Categories that only apply when a plan has exactly one exercise.
+const kSoloPlanCategories = {'cardio', 'anaerobic', 'core'};
 
 class CopyDayWorkoutResult {
   const CopyDayWorkoutResult({

@@ -1006,4 +1006,49 @@ void main() {
       expect(on(older).highlightExerciseIds, isEmpty);
     },
   );
+
+  test('multi-exercise plans do not match core/cardio/anaerobic filters', () {
+    final solo = WorkoutPlanSummary(
+      plan: WorkoutPlan(id: 1, name: '核心', createdAt: DateTime(2026)),
+      items: [
+        WorkoutPlanItem(
+          id: 1,
+          planId: 1,
+          exerciseId: 10,
+          exerciseName: '平板支撑',
+          targetSets: 3,
+          targetReps: 60,
+          sortOrder: 0,
+        ),
+      ],
+    );
+    final mixed = WorkoutPlanSummary(
+      plan: WorkoutPlan(id: 2, name: '混合', createdAt: DateTime(2026)),
+      items: [
+        WorkoutPlanItem(
+          id: 2,
+          planId: 2,
+          exerciseId: 20,
+          exerciseName: '深蹲',
+          targetSets: 3,
+          targetReps: 10,
+          sortOrder: 0,
+        ),
+        WorkoutPlanItem(
+          id: 3,
+          planId: 2,
+          exerciseId: 10,
+          exerciseName: '平板支撑',
+          targetSets: 3,
+          targetReps: 45,
+          sortOrder: 1,
+        ),
+      ],
+    );
+    const byId = {10: 'core', 20: 'legs'};
+
+    expect(solo.matchesExerciseCategory('core', byId), isTrue);
+    expect(mixed.matchesExerciseCategory('core', byId), isFalse);
+    expect(mixed.matchesExerciseCategory('legs', byId), isTrue);
+  });
 }

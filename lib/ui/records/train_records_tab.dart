@@ -67,6 +67,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   int _historyScope = 0;
   String _query = '';
   String? _category;
+  String? _planCategory;
   bool _exerciseSearchOpen = false;
   bool _categoryMenuOpen = false;
   final _exerciseSearchFocus = FocusNode();
@@ -108,8 +109,10 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   }
 
   void _onPlanSearchFocusChanged() {
-    if (_planSearchFocus.hasFocus || !_planSearchOpen) return;
-    if (_planQuery.isNotEmpty) return;
+    if (_planSearchFocus.hasFocus || _categoryMenuOpen || !_planSearchOpen) {
+      return;
+    }
+    if (_planQuery.isNotEmpty || _planCategory != null) return;
     setState(() => _planSearchOpen = false);
   }
 
@@ -145,13 +148,17 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     });
   }
 
-  /// 点记录页里搜索框和结果行以外的位置：收起搜索，并丢掉关键字。
+  /// 点记录页里搜索框和结果行以外的位置：收起搜索，并丢掉关键字和分类。
   void _discardPlanSearch() {
+    if (_categoryMenuOpen) return;
     _dropSearchFocus(_planSearchFocus);
-    if (!_planSearchOpen && _planQuery.isEmpty) return;
+    if (!_planSearchOpen && _planQuery.isEmpty && _planCategory == null) {
+      return;
+    }
     setState(() {
       _planSearchOpen = false;
       _planQuery = '';
+      _planCategory = null;
     });
   }
 
@@ -167,7 +174,10 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     });
   }
 
-  Future<void> _openExerciseCategoryMenu(BuildContext buttonContext) async {
+  Future<void> _openCategoryMenu(
+    BuildContext buttonContext, {
+    required void Function(String? category) apply,
+  }) async {
     final button = buttonContext.findRenderObject()! as RenderBox;
     final overlay =
         Navigator.of(buttonContext).overlay!.context.findRenderObject()!
@@ -199,12 +209,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     _categoryMenuOpen = false;
     if (!mounted) return;
     setState(() {
-      if (selected != null) _category = selected.isEmpty ? null : selected;
-      if (!_exerciseSearchFocus.hasFocus &&
-          _query.isEmpty &&
-          _category == null) {
-        _exerciseSearchOpen = false;
-      }
+      if (selected != null) apply(selected.isEmpty ? null : selected);
     });
   }
 
@@ -565,6 +570,12 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
 
   Widget _plansPanel(BuildContext context, {required bool showHistory}) {
     final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final categoryById = {
+      for (final exercise
+          in ref.watch(exercisesProvider).asData?.value ?? const <Exercise>[])
+        exercise.id: exercise.category,
+    };
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: _discardPlanSearch,
@@ -592,7 +603,32 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                           _onSearchOutsideUp(event, plan: true),
                       child: TextField(
                         focusNode: _planSearchFocus,
-                        decoration: InputDecoration(hintText: l10n.planName),
+                        decoration: InputDecoration(
+                          hintText: l10n.planName,
+                          prefixIcon: Builder(
+                            builder: (buttonContext) => IconButton(
+                              key: const ValueKey('plan-category-filter'),
+                              tooltip: l10n.categories,
+                              onPressed: () => _openCategoryMenu(
+                                buttonContext,
+                                apply: (category) {
+                                  _planCategory = category;
+                                  if (!_planSearchFocus.hasFocus &&
+                                      _planQuery.isEmpty &&
+                                      _planCategory == null) {
+                                    _planSearchOpen = false;
+                                  }
+                                },
+                              ),
+                              icon: InkIcon(
+                                InkGlyph.folder,
+                                color: _planCategory == null
+                                    ? theme.colorScheme.onSurfaceVariant
+                                    : theme.colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ),
                         onChanged: (v) =>
                             setState(() => _planQuery = v.trim().toLowerCase()),
                       ),
@@ -633,15 +669,18 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                             ),
                           );
                         }
-                        final visible = _planQuery.isEmpty
-                            ? plans
-                            : plans
-                                  .where(
-                                    (plan) => plan.plan.name
-                                        .toLowerCase()
-                                        .contains(_planQuery),
-                                  )
-                                  .toList();
+                        final visible = plans.where((plan) {
+                          final nameOk =
+                              _planQuery.isEmpty ||
+                              plan.plan.name.toLowerCase().contains(_planQuery);
+                          if (!nameOk) return false;
+                          final category = _planCategory;
+                          if (category == null) return true;
+                          return plan.matchesExerciseCategory(
+                            category,
+                            categoryById,
+                          );
+                        }).toList();
                         if (visible.isEmpty) {
                           return SportEmptyState(
                             title: l10n.noMatchingPlans,
@@ -872,8 +911,17 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                             builder: (buttonContext) => IconButton(
                               key: const ValueKey('exercise-category-filter'),
                               tooltip: l10n.categories,
-                              onPressed: () =>
-                                  _openExerciseCategoryMenu(buttonContext),
+                              onPressed: () => _openCategoryMenu(
+                                buttonContext,
+                                apply: (category) {
+                                  _category = category;
+                                  if (!_exerciseSearchFocus.hasFocus &&
+                                      _query.isEmpty &&
+                                      _category == null) {
+                                    _exerciseSearchOpen = false;
+                                  }
+                                },
+                              ),
                               icon: InkIcon(
                                 InkGlyph.folder,
                                 color: _category == null
