@@ -1225,7 +1225,6 @@
     }
   },
   "untitledWorkoutGroup": "其他",
-  "moveToOther": "移到其他",
   "removeDayWorkout": "移除该计划",
   "confirmRemoveDayWorkout": "确定从今日训练中移除「{name}」及其全部动作？",
   "@confirmRemoveDayWorkout": {
@@ -2086,6 +2085,8 @@
   "planProgress": "{planName} · {done}/{total}",
   "viewWorkoutHistory": "查看训练历史",
   "viewHistoryRecords": "查看历史记录",
+  "recentMeals": "最近饮食",
+  "allMeals": "全部饮食",
   "setsWithReps": "{sets} × {reps}",
   "recentSteps": "最近步数",
   "allSteps": "全部步数",

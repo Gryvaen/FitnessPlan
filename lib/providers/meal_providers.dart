@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/db.dart';
+import '../data/repositories/meal_repository.dart';
 import '../domain/calendar_day.dart';
 import '../domain/models.dart';
 import 'core_providers.dart';
@@ -86,3 +87,17 @@ final mealsForDayProvider = StreamProvider.autoDispose
     .family<List<MealEntry>, DateTime>((ref, day) {
       return ref.watch(mealRepositoryProvider).watchForDay(day);
     });
+
+/// Last 14 local calendar days of meals, including empty days.
+final mealHistoryProvider = StreamProvider.autoDispose<List<MealHistoryDay>>((
+  ref,
+) {
+  return ref.watch(mealRepositoryProvider).watchRecentMealCalendarHistory();
+});
+
+/// Every day that has at least one meal entry, newest first.
+final allMealHistoryProvider = StreamProvider.autoDispose<List<MealHistoryDay>>(
+  (ref) {
+    return ref.watch(mealRepositoryProvider).watchAllMealHistory();
+  },
+);

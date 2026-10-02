@@ -24,6 +24,7 @@ Future<void> openSheet(
                 context: context,
                 ref: ref,
                 day: DateTime.now(),
+                exerciseId: 1,
                 exerciseName: '哑铃卧推',
                 unit: unit,
                 dayWorkoutItemId: 1,

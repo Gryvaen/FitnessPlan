@@ -380,6 +380,28 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     }
   }
 
+  Future<void> _persistItemOrder(int dayWorkoutId, List<int> ids) async {
+    final previousOrder = _itemOrder[dayWorkoutId];
+    setState(() => _itemOrder[dayWorkoutId] = List<int>.from(ids));
+    try {
+      await ref
+          .read(workoutRepositoryProvider)
+          .reorderDayWorkoutItems(
+            dayWorkoutId: dayWorkoutId,
+            orderedItemIds: ids,
+          );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        if (previousOrder == null) {
+          _itemOrder.remove(dayWorkoutId);
+        } else {
+          _itemOrder[dayWorkoutId] = previousOrder;
+        }
+      });
+    }
+  }
+
   Future<void> _removeGroup(WidgetRef ref, DayWorkoutGroup group) async {
     await ref
         .read(workoutRepositoryProvider)
@@ -461,6 +483,29 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     required DayWorkoutGroup group,
     required bool editable,
   }) {
+    if (editable && !_isOtherGroup(group)) {
+      return _NamedPlanDragGroup(
+        group: group,
+        items: _orderedItems(group.workout.id, group.items),
+        title: _groupTitle(group, l10n),
+        scheme: scheme,
+        onEditPlan: group.workout.planId == null
+            ? null
+            : () => _editGroupPlan(context, group),
+        confirmDismiss: () => _confirmRemoveGroup(context, group),
+        onDismissed: () => _removeGroup(ref, group),
+        onReorder: (ids) => _persistItemOrder(group.workout.id, ids),
+        onMoveOut: (progress) => _moveItemToOther(context, ref, progress),
+        tileBuilder: (progress) => _itemTile(
+          context: context,
+          ref: ref,
+          l10n: l10n,
+          scheme: scheme,
+          progress: progress,
+          editable: true,
+        ),
+      );
+    }
     return Dismissible(
       key: ValueKey('day-workout-group-${group.workout.id}'),
       direction: editable ? DismissDirection.endToStart : DismissDirection.none,
@@ -578,10 +623,8 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     );
   }
 
-  /// Renders a group's items; when [editable] and there's more than one,
-  /// wraps them in a drag-to-reorder list so today's plan can be resequenced.
-  /// Like [_groupsList], the displayed order goes through [_orderedItems] so
-  /// dragging feels immediate instead of waiting on the stream round-trip.
+  /// Renders items for an untitled group, or a plan that is not editable today.
+  /// Named plans use [_NamedPlanDragGroup] so an exercise can be dragged out.
   Widget _itemsList({
     required BuildContext context,
     required WidgetRef ref,
@@ -603,7 +646,6 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
               scheme: scheme,
               progress: progress,
               editable: editable,
-              canMoveToOther: !_isOtherGroup(group),
             ),
         ],
       );
@@ -614,29 +656,10 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
       buildDefaultDragHandles: false,
       itemCount: ordered.length,
       onReorderItem: (oldIndex, newIndex) async {
-        final previousOrder = _itemOrder[dayWorkoutId];
         final ids = [for (final p in ordered) p.item.id];
         final moved = ids.removeAt(oldIndex);
         ids.insert(newIndex, moved);
-        setState(() => _itemOrder[dayWorkoutId] = ids);
-        try {
-          await ref
-              .read(workoutRepositoryProvider)
-              .reorderDayWorkoutItems(
-                dayWorkoutId: dayWorkoutId,
-                orderedItemIds: ids,
-              );
-        } catch (_) {
-          if (mounted) {
-            setState(() {
-              if (previousOrder == null) {
-                _itemOrder.remove(dayWorkoutId);
-              } else {
-                _itemOrder[dayWorkoutId] = previousOrder;
-              }
-            });
-          }
-        }
+        await _persistItemOrder(dayWorkoutId, ids);
       },
       itemBuilder: (context, i) {
         final progress = ordered[i];
@@ -663,7 +686,6 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
                 scheme: scheme,
                 progress: progress,
                 editable: editable,
-                canMoveToOther: !_isOtherGroup(group),
               ),
             ),
           ],
@@ -679,11 +701,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     required ColorScheme scheme,
     required DayWorkoutItemProgress progress,
     required bool editable,
-    required bool canMoveToOther,
   }) {
-    final onMoveToOther = editable && canMoveToOther
-        ? () => _moveItemToOther(context, ref, progress)
-        : null;
     if (!editable) {
       return _WorkoutItemTile(
         progress: progress,
@@ -737,7 +755,6 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
         progress: progress,
         day: widget.day,
         editable: true,
-        onMoveToOther: onMoveToOther,
       ),
     );
   }
@@ -882,12 +899,6 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
                 ),
               ],
               InkBrushProgressBar(value: total == 0 ? 0 : done / total),
-              TextButton(
-                onPressed: () => showDayWorkoutDetails(context, widget.day),
-                child: Text(
-                  editable ? l10n.continueRecording : l10n.viewWorkoutDetails,
-                ),
-              ),
               _historyLink(context),
             ],
             if (widget.showDetails) ...[
@@ -908,6 +919,155 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
           ],
         );
       },
+    );
+  }
+}
+
+/// Named plan block. Dragging an exercise by its handle reorders it while the
+/// pointer stays inside the block; releasing outside moves it to 「其他」.
+class _NamedPlanDragGroup extends StatefulWidget {
+  const _NamedPlanDragGroup({
+    required this.group,
+    required this.items,
+    required this.title,
+    required this.scheme,
+    required this.onEditPlan,
+    required this.confirmDismiss,
+    required this.onDismissed,
+    required this.onReorder,
+    required this.onMoveOut,
+    required this.tileBuilder,
+  });
+
+  final DayWorkoutGroup group;
+  final List<DayWorkoutItemProgress> items;
+  final String title;
+  final ColorScheme scheme;
+  final VoidCallback? onEditPlan;
+  final Future<bool> Function() confirmDismiss;
+  final VoidCallback onDismissed;
+  final Future<void> Function(List<int> orderedIds) onReorder;
+  final Future<void> Function(DayWorkoutItemProgress progress) onMoveOut;
+  final Widget Function(DayWorkoutItemProgress progress) tileBuilder;
+
+  @override
+  State<_NamedPlanDragGroup> createState() => _NamedPlanDragGroupState();
+}
+
+class _NamedPlanDragGroupState extends State<_NamedPlanDragGroup> {
+  final Map<int, GlobalKey> _rowKeys = {};
+
+  GlobalKey _rowKey(int id) => _rowKeys.putIfAbsent(id, GlobalKey.new);
+
+  int _indexFor(Offset global) {
+    final items = widget.items;
+    if (items.isEmpty) return 0;
+    var sawBox = false;
+    for (var i = 0; i < items.length; i++) {
+      final box =
+          _rowKey(items[i].item.id).currentContext?.findRenderObject()
+              as RenderBox?;
+      if (box == null || !box.hasSize) continue;
+      sawBox = true;
+      final mid = box.localToGlobal(Offset.zero).dy + box.size.height / 2;
+      if (global.dy < mid) return i;
+    }
+    if (!sawBox) return 0;
+    return items.length - 1;
+  }
+
+  void _dropInside(int itemId, Offset global) {
+    final items = widget.items;
+    final oldIndex = items.indexWhere((progress) => progress.item.id == itemId);
+    if (oldIndex < 0) return;
+    final newIndex = _indexFor(global);
+    if (newIndex == oldIndex) return;
+    final ids = [for (final progress in items) progress.item.id];
+    final moved = ids.removeAt(oldIndex);
+    ids.insert(newIndex, moved);
+    widget.onReorder(ids);
+  }
+
+  Widget _handleIcon() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: InkIcon(
+        InkGlyph.dragHandle,
+        size: 20,
+        color: widget.scheme.onSurfaceVariant,
+      ),
+    );
+  }
+
+  Widget _feedback(DayWorkoutItemProgress progress) {
+    final box =
+        _rowKey(progress.item.id).currentContext?.findRenderObject()
+            as RenderBox?;
+    final width = box != null && box.hasSize ? box.size.width : 240.0;
+    return Material(
+      elevation: 6,
+      color: Theme.of(context).colorScheme.surface,
+      child: SizedBox(
+        width: width,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Text(progress.item.exerciseName),
+        ),
+      ),
+    );
+  }
+
+  Widget _handle(DayWorkoutItemProgress progress) {
+    return Draggable<int>(
+      key: ValueKey('day-workout-item-handle-${progress.item.id}'),
+      data: progress.item.id,
+      dragAnchorStrategy: pointerDragAnchorStrategy,
+      feedback: _feedback(progress),
+      childWhenDragging: Opacity(opacity: 0.35, child: _handleIcon()),
+      onDragEnd: (details) {
+        if (details.wasAccepted) return;
+        widget.onMoveOut(progress);
+      },
+      child: _handleIcon(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final itemIds = {for (final progress in widget.items) progress.item.id};
+    return DragTarget<int>(
+      onWillAcceptWithDetails: (details) => itemIds.contains(details.data),
+      onAcceptWithDetails: (details) =>
+          _dropInside(details.data, details.offset),
+      builder: (context, _, _) => Dismissible(
+        key: ValueKey('day-workout-group-${widget.group.workout.id}'),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 16),
+          color: widget.scheme.error,
+          child: const InkIcon(InkGlyph.delete, color: Colors.white),
+        ),
+        confirmDismiss: (_) => widget.confirmDismiss(),
+        onDismissed: (_) => widget.onDismissed(),
+        child: _DayWorkoutGroupTile(
+          title: widget.title,
+          done: widget.group.doneCount,
+          total: widget.items.length,
+          onTap: widget.onEditPlan,
+          children: [
+            for (final progress in widget.items)
+              Row(
+                key: _rowKey(progress.item.id),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _handle(progress),
+                  Expanded(child: widget.tileBuilder(progress)),
+                ],
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -973,13 +1133,11 @@ class _WorkoutItemTile extends ConsumerWidget {
     required this.progress,
     required this.day,
     required this.editable,
-    this.onMoveToOther,
   });
 
   final DayWorkoutItemProgress progress;
   final DateTime day;
   final bool editable;
-  final VoidCallback? onMoveToOther;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1071,18 +1229,6 @@ class _WorkoutItemTile extends ConsumerWidget {
           ],
         ],
       ),
-      trailing: onMoveToOther == null
-          ? null
-          : TextButton(
-              key: ValueKey('move-to-other-${item.id}'),
-              onPressed: onMoveToOther,
-              style: TextButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-              ),
-              child: Text(l10n.moveToOther),
-            ),
       enabled: editable,
       onTap: !editable
           ? null
@@ -1091,6 +1237,7 @@ class _WorkoutItemTile extends ConsumerWidget {
                 context: context,
                 ref: ref,
                 day: day,
+                exerciseId: item.exerciseId,
                 exerciseName: item.exerciseName,
                 unit: progress.unit,
                 category: progress.category,

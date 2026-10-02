@@ -1254,7 +1254,6 @@
     }
   },
   "untitledWorkoutGroup": "Other",
-  "moveToOther": "Move to Other",
   "removeDayWorkout": "Remove this plan",
   "confirmRemoveDayWorkout": "Remove \"{name}\" and all its exercises from today's workout?",
   "@confirmRemoveDayWorkout": {
@@ -2139,6 +2138,8 @@
   "@planProgress": {"placeholders": {"planName": {"type": "String"}, "done": {"type": "int"}, "total": {"type": "int"}}},
   "viewWorkoutHistory": "View workout history",
   "viewHistoryRecords": "View history",
+  "recentMeals": "Recent meals",
+  "allMeals": "All meals",
   "setsWithReps": "{sets} × {reps}",
   "@setsWithReps": {"placeholders": {"sets": {"type": "int"}, "reps": {"type": "String"}}},
   "recentSteps": "Recent steps",

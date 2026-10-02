@@ -14,7 +14,6 @@ class ExercisePicker extends StatelessWidget {
     required this.selectedId,
     required this.exercises,
     required this.onChanged,
-    this.onDoubleTap,
   });
 
   final String label;
@@ -22,9 +21,6 @@ class ExercisePicker extends StatelessWidget {
   final int? selectedId;
   final List<Exercise> exercises;
   final ValueChanged<Exercise> onChanged;
-
-  /// Double-tap the name to rename the exercise in place.
-  final VoidCallback? onDoubleTap;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +31,6 @@ class ExercisePicker extends StatelessWidget {
         border: const OutlineInputBorder(),
       ),
       child: InkWell(
-        onDoubleTap: onDoubleTap,
         onTap: () async {
           final picked = await showModalBottomSheet<Exercise>(
             context: context,

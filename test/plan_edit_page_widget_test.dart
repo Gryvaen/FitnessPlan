@@ -270,48 +270,76 @@ void main() {
     },
   );
 
-  testWidgets('double-tapping an exercise name renames it everywhere', (
-    tester,
-  ) async {
-    final pushupId = await _repo.addCustomExercise(
-      name: '俯卧撑',
-      unit: ExerciseUnit.reps,
-      category: 'chest',
-    );
-    final planId = await _repo.createPlan(
-      name: '上肢计划',
-      items: [
-        PlanDraftItem(
-          exerciseId: pushupId,
-          exerciseName: '俯卧撑',
-          targetSets: 3,
-          targetReps: 10,
+  testWidgets(
+    'double-tapping the name in the training record renames it everywhere',
+    (tester) async {
+      final pushupId = await _repo.addCustomExercise(
+        name: '俯卧撑',
+        unit: ExerciseUnit.reps,
+        category: 'chest',
+      );
+      final planId = await _repo.createPlan(
+        name: '上肢计划',
+        items: [
+          PlanDraftItem(
+            exerciseId: pushupId,
+            exerciseName: '俯卧撑',
+            targetSets: 3,
+            targetReps: 10,
+          ),
+        ],
+      );
+      final today = CalendarDay.todayLocal();
+      await _repo.applyPlanToDay(planId: planId, day: today);
+      await _repo.logSet(
+        day: today,
+        exerciseId: pushupId,
+        exerciseName: '俯卧撑',
+        dayWorkoutItemId: (await _repo.daySnapshot(today)).items.single.item.id,
+        reps: 10,
+      );
+
+      await tester.pumpWidget(
+        _app(
+          Scaffold(
+            body: TodayWorkoutCard(
+              day: today,
+              sectionPrefix: '今日',
+              showDetails: true,
+            ),
+          ),
         ),
-      ],
-    );
-    final today = CalendarDay.todayLocal();
-    await _repo.applyPlanToDay(planId: planId, day: today);
+      );
+      await tester.pumpAndSettle();
 
-    await tester.pumpWidget(_app(PlanEditPage(planId: planId, syncDay: today)));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('俯卧撑'));
+      await tester.pumpAndSettle();
+      expect(find.text('编辑训练记录'), findsOneWidget);
 
-    await tester.tap(find.text('俯卧撑'));
-    await tester.pump(const Duration(milliseconds: 50));
-    await tester.tap(find.text('俯卧撑'));
-    await tester.pumpAndSettle();
+      final name = find.byKey(const ValueKey('record-exercise-name'));
+      await tester.tap(name);
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(name);
+      await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(FilledButton, '保存'), findsOneWidget);
-    await tester.enterText(find.byType(TextField).last, '宽距俯卧撑');
-    await tester.tap(find.widgetWithText(FilledButton, '保存'));
-    await tester.pumpAndSettle();
+      expect(find.widgetWithText(FilledButton, '保存'), findsOneWidget);
+      await tester.enterText(find.byType(TextField).last, '宽距俯卧撑');
+      await tester.tap(find.widgetWithText(FilledButton, '保存'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('宽距俯卧撑'), findsOneWidget);
-    expect((await _repo.exerciseById(pushupId))?.name, '宽距俯卧撑');
-    expect(
-      (await _repo.daySnapshot(today)).items.single.item.exerciseName,
-      '宽距俯卧撑',
-    );
-    final plans = await _repo.listPlanSummaries();
-    expect(plans.single.items.single.exerciseName, '宽距俯卧撑');
-  });
+      expect(find.text('宽距俯卧撑'), findsWidgets);
+      final exercise = await (_db.select(
+        _db.exercises,
+      )..where((t) => t.id.equals(pushupId))).getSingle();
+      expect(exercise.name, '宽距俯卧撑');
+      expect(
+        (await _repo.daySnapshot(today)).items.single.item.exerciseName,
+        '宽距俯卧撑',
+      );
+      final plans = await _repo.listPlanSummaries();
+      expect(plans.single.items.single.exerciseName, '宽距俯卧撑');
+      final logs = await _db.select(_db.workoutSetLogs).get();
+      expect(logs.single.exerciseName, '宽距俯卧撑');
+    },
+  );
 }

@@ -4,6 +4,31 @@ import '../../domain/calendar_day.dart';
 import '../../domain/models.dart';
 import '../db.dart';
 
+/// One calendar day of logged meals, newest-first when listed as history.
+class MealHistoryDay {
+  const MealHistoryDay({
+    required this.date,
+    this.calories = 0,
+    this.mealTypes = const [],
+    this.foodIds = const {},
+  });
+
+  final DateTime date;
+  final double calories;
+
+  /// Meal slots that have at least one entry, in [MealType] order.
+  final List<MealType> mealTypes;
+  final Set<int> foodIds;
+
+  bool get hasActivity => foodIds.isNotEmpty;
+}
+
+class _MealHistoryAgg {
+  double calories = 0;
+  final mealTypes = <MealType>{};
+  final foodIds = <int>{};
+}
+
 class CopyDayResult {
   const CopyDayResult({required this.copied, required this.skippedMissingFood});
 
@@ -124,7 +149,10 @@ class MealRepository {
 
   /// Moves an existing entry to a different meal type (e.g. drag-and-drop
   /// between sections), keeping its food/grams/macros unchanged.
-  Future<void> moveMealType({required int id, required MealType mealType}) async {
+  Future<void> moveMealType({
+    required int id,
+    required MealType mealType,
+  }) async {
     final existing = await byId(id);
     if (existing == null) return;
     CalendarDay.ensureEditableDay(existing.date);
@@ -266,4 +294,72 @@ class MealRepository {
   }
 
   Future<void> clearAll() => _db.delete(_db.mealEntries).go();
+
+  /// Days that have at least one meal entry, newest first.
+  Future<List<MealHistoryDay>> allMealHistory() async {
+    final rows = await _db.select(_db.mealEntries).get();
+    return _activeMealHistory(rows);
+  }
+
+  /// [limitDays] local calendar days ending today, newest first.
+  /// Days with no meals are empty placeholders.
+  Future<List<MealHistoryDay>> recentMealCalendarHistory({
+    int limitDays = 14,
+  }) async {
+    final rows = await _db.select(_db.mealEntries).get();
+    return _calendarMealHistory(rows, limitDays);
+  }
+
+  Stream<List<MealHistoryDay>> watchAllMealHistory() {
+    return _db.select(_db.mealEntries).watch().map(_activeMealHistory);
+  }
+
+  Stream<List<MealHistoryDay>> watchRecentMealCalendarHistory({
+    int limitDays = 14,
+  }) {
+    return _db
+        .select(_db.mealEntries)
+        .watch()
+        .map((rows) => _calendarMealHistory(rows, limitDays));
+  }
+
+  List<MealHistoryDay> _activeMealHistory(List<MealEntry> rows) {
+    final byDay = <DateTime, _MealHistoryAgg>{};
+    for (final row in rows) {
+      final day = _dayStart(row.date);
+      final agg = byDay.putIfAbsent(day, _MealHistoryAgg.new);
+      agg.calories += row.calories;
+      agg.foodIds.add(row.foodId);
+      final type = MealType.tryParse(row.mealType);
+      if (type != null) agg.mealTypes.add(type);
+    }
+    final days = byDay.keys.toList()..sort((a, b) => b.compareTo(a));
+    return [
+      for (final day in days)
+        MealHistoryDay(
+          date: day,
+          calories: byDay[day]!.calories,
+          mealTypes: [
+            for (final type in MealType.values)
+              if (byDay[day]!.mealTypes.contains(type)) type,
+          ],
+          foodIds: Set.unmodifiable(byDay[day]!.foodIds),
+        ),
+    ];
+  }
+
+  List<MealHistoryDay> _calendarMealHistory(
+    List<MealEntry> rows,
+    int limitDays,
+  ) {
+    final byDate = {for (final day in _activeMealHistory(rows)) day.date: day};
+    final today = CalendarDay.todayLocal();
+    return [
+      for (var i = 0; i < limitDays; i++)
+        byDate[CalendarDay.dayOnly(today.subtract(Duration(days: i)))] ??
+            MealHistoryDay(
+              date: CalendarDay.dayOnly(today.subtract(Duration(days: i))),
+            ),
+    ];
+  }
 }

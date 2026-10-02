@@ -130,17 +130,18 @@ void main() {
     expect(legs, lessThan(lower));
   });
 
-  testWidgets('a planned exercise can be moved out into 其他', (tester) async {
+  testWidgets('dragging a planned exercise out of its plan files it under 其他', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(412, 915));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     final repo = _container.read(workoutRepositoryProvider);
+    final day = CalendarDay.todayLocal();
     final plans = await repo.listPlanSummaries();
     final upper = plans.firstWhere((plan) => plan.plan.name == '上肢');
-    await repo.applyPlanToDay(
-      planId: upper.plan.id,
-      day: CalendarDay.todayLocal(),
-    );
+    await repo.applyPlanToDay(planId: upper.plan.id, day: day);
+    final itemId = (await repo.daySnapshot(day)).items.single.item.id;
 
     await tester.pumpWidget(
       UncontrolledProviderScope(
@@ -157,7 +158,7 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: TodayWorkoutCard(
-              day: CalendarDay.todayLocal(),
+              day: day,
               sectionPrefix: '今日',
               showDetails: true,
             ),
@@ -168,14 +169,20 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('上肢'), findsOneWidget);
-    expect(find.text('移到其他'), findsOneWidget);
+    expect(find.text('移到其他'), findsNothing);
     expect(find.text('其他'), findsNothing);
 
-    await tester.tap(find.text('移到其他'));
+    final handle = find.byKey(ValueKey('day-workout-item-handle-$itemId'));
+    final gesture = await tester.startGesture(tester.getCenter(handle));
+    await tester.pump();
+    await gesture.moveBy(const Offset(0, 40));
+    await tester.pump();
+    await gesture.moveBy(const Offset(0, 500));
+    await tester.pump();
+    await gesture.up();
     await tester.pumpAndSettle();
 
     expect(find.text('上肢'), findsNothing);
-    expect(find.text('移到其他'), findsNothing);
     expect(find.text('其他'), findsOneWidget);
     expect(find.text('杠铃卧推'), findsOneWidget);
   });

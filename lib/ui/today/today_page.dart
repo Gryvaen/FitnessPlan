@@ -488,7 +488,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                               l10n.loadFailed('$e'),
                               style: theme.textTheme.meta,
                             ),
-                            data: (meals) => meals.isEmpty
+                            data: (logged) => logged.isEmpty
                                 ? SportEmptyState(
                                     iconWidget: const StampedInkEmptyIcon(
                                       glyph: InkGlyph.mealEmpty,
@@ -501,25 +501,21 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                                         ? l10n.noMealsHint
                                         : l10n.pastDayReadOnly,
                                   )
-                                : Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      _MealGroups(
-                                        meals: meals,
-                                        onOpen: () =>
-                                            context.push(dailyMealsPath(day)),
-                                      ),
-                                      Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: TextButton(
-                                          onPressed: () =>
-                                              context.push(dailyMealsPath(day)),
-                                          child: Text(l10n.viewDayRecords),
-                                        ),
-                                      ),
-                                    ],
+                                : _MealGroups(
+                                    meals: logged,
+                                    onOpen: () =>
+                                        context.push(dailyMealsPath(day)),
                                   ),
+                          ),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton(
+                              onPressed: () {
+                                unfocusForNavigation();
+                                context.go('/foods?tab=history');
+                              },
+                              child: Text(l10n.viewHistoryRecords),
+                            ),
                           ),
                         ],
                       );

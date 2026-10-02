@@ -3399,12 +3399,6 @@ abstract class AppLocalizations {
   /// **'Other'**
   String get untitledWorkoutGroup;
 
-  /// No description provided for @moveToOther.
-  ///
-  /// In en, this message translates to:
-  /// **'Move to Other'**
-  String get moveToOther;
-
   /// No description provided for @removeDayWorkout.
   ///
   /// In en, this message translates to:
@@ -4340,6 +4334,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View history'**
   String get viewHistoryRecords;
+
+  /// No description provided for @recentMeals.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent meals'**
+  String get recentMeals;
+
+  /// No description provided for @allMeals.
+  ///
+  /// In en, this message translates to:
+  /// **'All meals'**
+  String get allMeals;
 
   /// No description provided for @setsWithReps.
   ///

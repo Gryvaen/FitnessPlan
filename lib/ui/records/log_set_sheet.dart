@@ -15,6 +15,7 @@ Future<bool> showLogSetSheet({
   required BuildContext context,
   required WidgetRef ref,
   required DateTime day,
+  required int exerciseId,
   required String exerciseName,
   required ExerciseUnit unit,
   String? category,
@@ -38,6 +39,7 @@ Future<bool> showLogSetSheet({
     isScrollControlled: true,
     showDragHandle: true,
     builder: (ctx) => _EditProgressSheet(
+      exerciseId: exerciseId,
       exerciseName: exerciseName,
       unit: unit,
       category: category,
@@ -80,8 +82,9 @@ Future<bool> showLogSetSheet({
   return result == true;
 }
 
-class _EditProgressSheet extends StatefulWidget {
+class _EditProgressSheet extends ConsumerStatefulWidget {
   const _EditProgressSheet({
+    required this.exerciseId,
     required this.exerciseName,
     required this.unit,
     this.category,
@@ -94,6 +97,7 @@ class _EditProgressSheet extends StatefulWidget {
     required this.onSave,
   });
 
+  final int exerciseId;
   final String exerciseName;
   final ExerciseUnit unit;
   final String? category;
@@ -113,12 +117,13 @@ class _EditProgressSheet extends StatefulWidget {
   onSave;
 
   @override
-  State<_EditProgressSheet> createState() => _EditProgressSheetState();
+  ConsumerState<_EditProgressSheet> createState() => _EditProgressSheetState();
 }
 
-class _EditProgressSheetState extends State<_EditProgressSheet> {
+class _EditProgressSheetState extends ConsumerState<_EditProgressSheet> {
   late int _completedSets;
   late int _perSetValue;
+  late String _exerciseName;
 
   /// Which unit the value currently in [_weightKg] was last typed in — kept
   /// only to persist as `actualWeightUnit`; both KG and LBS fields are
@@ -167,6 +172,41 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
     );
     _weightUnit = GymWeightUnit.parse(widget.initialActualWeightUnit);
     _weightKg = widget.initialActualWeightKg;
+    _exerciseName = widget.exerciseName;
+  }
+
+  Future<void> _renameExercise() async {
+    if (_saving) return;
+    final l10n = context.l10n;
+    final name = await showDialog<String>(
+      context: context,
+      useRootNavigator: true,
+      builder: (ctx) => _RenameExerciseDialog(initialName: _exerciseName),
+    );
+    if (name == null || !mounted) return;
+    final trimmed = name.trim();
+    if (trimmed.isEmpty || trimmed == _exerciseName) return;
+    setState(() => _saving = true);
+    try {
+      final repo = ref.read(workoutRepositoryProvider);
+      final exercise = await repo.exerciseById(widget.exerciseId);
+      if (exercise == null) throw StateError('动作不存在');
+      await repo.updateExercise(
+        id: exercise.id,
+        name: trimmed,
+        unit: ExerciseUnit.fromStorage(exercise.unit),
+        category: exercise.category,
+      );
+      if (mounted) setState(() => _exerciseName = trimmed);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.saveFailed('$e'))));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
@@ -241,10 +281,14 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          widget.exerciseName,
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w500,
+                        GestureDetector(
+                          key: const ValueKey('record-exercise-name'),
+                          onDoubleTap: _saving ? null : _renameExercise,
+                          child: Text(
+                            _exerciseName,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -485,6 +529,60 @@ class _EditProgressSheetState extends State<_EditProgressSheet> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _RenameExerciseDialog extends StatefulWidget {
+  const _RenameExerciseDialog({required this.initialName});
+
+  final String initialName;
+
+  @override
+  State<_RenameExerciseDialog> createState() => _RenameExerciseDialogState();
+}
+
+class _RenameExerciseDialogState extends State<_RenameExerciseDialog> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initialName,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: widget.initialName.length,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() => Navigator.pop(context, _controller.text);
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AlertDialog(
+      title: Text(l10n.exerciseName),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        decoration: InputDecoration(labelText: l10n.exerciseName),
+        textInputAction: TextInputAction.done,
+        onSubmitted: (_) => _submit(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(onPressed: _submit, child: Text(l10n.save)),
+      ],
     );
   }
 }

@@ -518,60 +518,6 @@ class _PlanNoExercisesEmpty extends StatelessWidget {
   }
 }
 
-class _RenameExerciseDialog extends StatefulWidget {
-  const _RenameExerciseDialog({required this.initialName});
-
-  final String initialName;
-
-  @override
-  State<_RenameExerciseDialog> createState() => _RenameExerciseDialogState();
-}
-
-class _RenameExerciseDialogState extends State<_RenameExerciseDialog> {
-  late final TextEditingController _controller = TextEditingController(
-    text: widget.initialName,
-  );
-
-  @override
-  void initState() {
-    super.initState();
-    _controller.selection = TextSelection(
-      baseOffset: 0,
-      extentOffset: widget.initialName.length,
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _submit() => Navigator.pop(context, _controller.text);
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return AlertDialog(
-      title: Text(l10n.exerciseName),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        decoration: InputDecoration(labelText: l10n.exerciseName),
-        textInputAction: TextInputAction.done,
-        onSubmitted: (_) => _submit(),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(l10n.cancel),
-        ),
-        FilledButton(onPressed: _submit, child: Text(l10n.save)),
-      ],
-    );
-  }
-}
-
 class _PlanRowSection extends ConsumerWidget {
   const _PlanRowSection({
     required this.row,
@@ -610,37 +556,6 @@ class _PlanRowSection extends ConsumerWidget {
     onChanged();
   }
 
-  Future<void> _renameExercise(
-    BuildContext context,
-    WidgetRef ref,
-    Exercise exercise,
-  ) async {
-    final l10n = context.l10n;
-    final name = await showDialog<String>(
-      context: context,
-      useRootNavigator: true,
-      builder: (ctx) => _RenameExerciseDialog(initialName: exercise.name),
-    );
-    if (name == null || !context.mounted) return;
-    final trimmed = name.trim();
-    if (trimmed.isEmpty || trimmed == exercise.name) return;
-    try {
-      await ref
-          .read(workoutRepositoryProvider)
-          .updateExercise(
-            id: exercise.id,
-            name: trimmed,
-            unit: ExerciseUnit.fromStorage(exercise.unit),
-            category: exercise.category,
-          );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.saveFailed('$e'))));
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
@@ -669,9 +584,6 @@ class _PlanRowSection extends ConsumerWidget {
                 selectedId: selected?.id,
                 exercises: exercises,
                 onChanged: (exercise) => _setExercise(ref, exercise),
-                onDoubleTap: selected == null
-                    ? null
-                    : () => _renameExercise(context, ref, selected),
               ),
             ),
             if (canRemove)

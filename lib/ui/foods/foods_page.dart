@@ -13,6 +13,7 @@ import '../theme/sport_chrome.dart';
 import '../widgets/food_name_link.dart';
 import '../widgets/search_field_focus.dart';
 import 'food_category_art.dart';
+import 'food_history_tab.dart';
 
 final _foodQueryProvider = NotifierProvider<_QueryNotifier, String>(
   _QueryNotifier.new,
@@ -50,7 +51,7 @@ final _recentFoodsProvider = FutureProvider.autoDispose<List<FoodItem>>((
   return ref.watch(foodRepositoryProvider).recentFoods();
 });
 
-enum _FoodsTab { recent, favorites, categories }
+enum _FoodsTab { recent, favorites, categories, history }
 
 class FoodsPage extends ConsumerStatefulWidget {
   const FoodsPage({super.key});
@@ -64,6 +65,7 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
   final _searchController = TextEditingController();
   final _searchFocus = FocusNode();
   bool _pickedInitialTab = false;
+  var _ignoredMissingHistory = false;
 
   @override
   void initState() {
@@ -80,14 +82,36 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
 
   void _setQuery(String v) => ref.read(_foodQueryProvider.notifier).set(v);
 
+  bool _routeWantsHistory() {
+    if (GoRouter.maybeOf(context) == null) return false;
+    final state = GoRouterState.of(context);
+    if (state.matchedLocation != '/foods') return false;
+    return state.uri.queryParameters['tab'] == 'history';
+  }
+
+  void _selectFoodsTab(_FoodsTab tab) {
+    unfocusForNavigation();
+    _searchFocus.unfocus();
+    if (tab != _tab) setState(() => _tab = tab);
+    if (GoRouter.maybeOf(context) == null) return;
+    final state = GoRouterState.of(context);
+    if (state.matchedLocation != '/foods') return;
+    final wantsHistory = tab == _FoodsTab.history;
+    final hasHistoryQuery = state.uri.queryParameters['tab'] == 'history';
+    if (wantsHistory == hasHistoryQuery) return;
+    context.go(wantsHistory ? '/foods?tab=history' : '/foods');
+  }
+
   List<_FoodsTab> _visibleTabs({
     required bool hasRecent,
     required bool hasFavorites,
+    required bool showHistory,
   }) {
     return [
       if (hasRecent) _FoodsTab.recent,
       if (hasFavorites) _FoodsTab.favorites,
       _FoodsTab.categories,
+      if (showHistory) _FoodsTab.history,
     ];
   }
 
@@ -105,13 +129,48 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
       data: (v) => v.isNotEmpty,
       orElse: () => false,
     );
+    final recentHistory = ref.watch(mealHistoryProvider);
+    final allHistory = ref.watch(allMealHistoryProvider);
+    final historyResolved = recentHistory.hasValue && allHistory.hasValue;
+    final showHistory = mealHistoryScopes(
+      recent: recentHistory.value ?? const [],
+      all: allHistory.value ?? const [],
+    ).isNotEmpty;
+    final routeWantsHistory = _routeWantsHistory();
     final visible = _visibleTabs(
       hasRecent: hasRecent,
       hasFavorites: hasFavorites,
+      showHistory: showHistory,
     );
 
     var effectiveTab = visible.contains(_tab) ? _tab : visible.last;
-    if (!_pickedInitialTab && recentAsync.hasValue && favAsync.hasValue) {
+    if (routeWantsHistory && showHistory && _tab != _FoodsTab.history) {
+      effectiveTab = _FoodsTab.history;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _tab == _FoodsTab.history) return;
+        setState(() {
+          _pickedInitialTab = true;
+          _tab = _FoodsTab.history;
+        });
+      });
+    } else if (routeWantsHistory &&
+        historyResolved &&
+        !showHistory &&
+        !_ignoredMissingHistory) {
+      _ignoredMissingHistory = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || GoRouter.maybeOf(context) == null) return;
+        final state = GoRouterState.of(context);
+        if (state.matchedLocation != '/foods' ||
+            state.uri.queryParameters['tab'] != 'history') {
+          return;
+        }
+        context.go('/foods');
+      });
+    } else if (!_pickedInitialTab &&
+        recentAsync.hasValue &&
+        favAsync.hasValue &&
+        !routeWantsHistory) {
       effectiveTab = visible.first;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || _pickedInitialTab) return;
@@ -120,9 +179,10 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
           _tab = visible.first;
         });
       });
-    } else if (effectiveTab != _tab) {
+    } else if (effectiveTab != _tab &&
+        !(routeWantsHistory && !historyResolved)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
+        if (!mounted || visible.contains(_tab)) return;
         setState(() => _tab = effectiveTab);
       });
     }
@@ -186,14 +246,11 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                         _FoodsTab.recent => l10n.tabRecent,
                         _FoodsTab.favorites => l10n.favorites,
                         _FoodsTab.categories => l10n.categories,
+                        _FoodsTab.history => l10n.tabHistory,
                       },
                   },
                   selected: effectiveTab,
-                  onSelected: (v) {
-                    unfocusForNavigation();
-                    _searchFocus.unfocus();
-                    setState(() => _tab = v);
-                  },
+                  onSelected: _selectFoodsTab,
                 ),
               ),
             ],
@@ -212,11 +269,7 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                         branchIndex: 1,
                         keepPagesAlive: true,
                         index: tabIndex,
-                        onIndexChanged: (i) {
-                          unfocusForNavigation();
-                          _searchFocus.unfocus();
-                          setState(() => _tab = visible[i]);
-                        },
+                        onIndexChanged: (i) => _selectFoodsTab(visible[i]),
                         children: [
                           for (final t in visible)
                             KeyedSubtree(
@@ -311,6 +364,7 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                                 ),
                                 _FoodsTab.categories =>
                                   const _FoodCategoryList(),
+                                _FoodsTab.history => const FoodHistoryTab(),
                               },
                             ),
                         ],

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:diet/data/db.dart';
 import 'package:diet/data/repositories/meal_repository.dart';
+import 'package:diet/domain/calendar_day.dart';
 import 'package:diet/domain/models.dart';
 import 'package:diet/domain/deficit.dart';
 
@@ -20,7 +21,9 @@ Future<void> _seedMeal(
     carbPer100: food.carbPer100,
     fatPer100: food.fatPer100,
   );
-  await db.into(db.mealEntries).insert(
+  await db
+      .into(db.mealEntries)
+      .insert(
         MealEntriesCompanion.insert(
           date: DateTime(date.year, date.month, date.day),
           mealType: mealType.name,
@@ -34,6 +37,7 @@ Future<void> _seedMeal(
         ),
       );
 }
+
 void main() {
   test('actualDailyDeficit = planned + remaining', () {
     // planned 500, target 1800, ate 1600 → remain 200 → actual 700
@@ -63,49 +67,40 @@ void main() {
     // 欠摄入 → 实际 ≥ 计划 → 绿
     expect(
       actualDailyDeficit(
-        plannedDeficit: planned,
-        targetCalories: target,
-        intakeCalories: 1600,
-      ) >=
+            plannedDeficit: planned,
+            targetCalories: target,
+            intakeCalories: 1600,
+          ) >=
           planned,
       isTrue,
     );
     // 恰好达标（摄入=目标）→ 实际==计划 → 绿
     expect(
       actualDailyDeficit(
-        plannedDeficit: planned,
-        targetCalories: target,
-        intakeCalories: 1800,
-      ) >=
+            plannedDeficit: planned,
+            targetCalories: target,
+            intakeCalories: 1800,
+          ) >=
           planned,
       isTrue,
     );
     // 超目标 → 实际 < 计划 → 红
     expect(
       actualDailyDeficit(
-        plannedDeficit: planned,
-        targetCalories: target,
-        intakeCalories: 2000,
-      ) >=
+            plannedDeficit: planned,
+            targetCalories: target,
+            intakeCalories: 2000,
+          ) >=
           planned,
       isFalse,
     );
   });
 
   test('cultivationDietContribution = TDEE − intake', () {
-    expect(
-      cultivationDietContribution(tdee: 2400, intakeCalories: 2000),
-      400,
-    );
+    expect(cultivationDietContribution(tdee: 2400, intakeCalories: 2000), 400);
     // Between target and TDEE still shrinks with intake (no buffered floor).
-    expect(
-      cultivationDietContribution(tdee: 2400, intakeCalories: 2200),
-      200,
-    );
-    expect(
-      cultivationDietContribution(tdee: 2400, intakeCalories: 2600),
-      -200,
-    );
+    expect(cultivationDietContribution(tdee: 2400, intakeCalories: 2200), 200);
+    expect(cultivationDietContribution(tdee: 2400, intakeCalories: 2600), -200);
   });
 
   test('with zero planned deficit, actualDailyDeficit is remaining only', () {
@@ -128,7 +123,9 @@ void main() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
     repo = MealRepository(db);
 
-    final riceId = await db.into(db.foodItems).insert(
+    final riceId = await db
+        .into(db.foodItems)
+        .insert(
           FoodItemsCompanion.insert(
             name: '测试米饭',
             category: '测试',
@@ -138,7 +135,9 @@ void main() {
             fatPer100: 0.5,
           ),
         );
-    final chickenId = await db.into(db.foodItems).insert(
+    final chickenId = await db
+        .into(db.foodItems)
+        .insert(
           FoodItemsCompanion.insert(
             name: '测试鸡胸',
             category: '测试',
@@ -148,11 +147,12 @@ void main() {
             fatPer100: 2,
           ),
         );
-    rice = await (db.select(db.foodItems)..where((t) => t.id.equals(riceId)))
-        .getSingle();
-    chicken =
-        await (db.select(db.foodItems)..where((t) => t.id.equals(chickenId)))
-            .getSingle();
+    rice = await (db.select(
+      db.foodItems,
+    )..where((t) => t.id.equals(riceId))).getSingle();
+    chicken = await (db.select(
+      db.foodItems,
+    )..where((t) => t.id.equals(chickenId))).getSingle();
   });
 
   tearDown(() async {
@@ -288,4 +288,48 @@ void main() {
     expect(map[day1], closeTo(220, 0.01)); // 100 + 120
     expect(map[day2], closeTo(200, 0.01));
   });
+
+  test(
+    'meal history pads recent days and keeps food ids on active days',
+    () async {
+      final today = CalendarDay.todayLocal();
+      final older = today.subtract(const Duration(days: 20));
+      await _seedMeal(
+        db,
+        date: today,
+        mealType: MealType.breakfast,
+        food: rice,
+        grams: 200,
+      );
+      await _seedMeal(
+        db,
+        date: today,
+        mealType: MealType.lunch,
+        food: chicken,
+        grams: 100,
+      );
+      await _seedMeal(
+        db,
+        date: older,
+        mealType: MealType.dinner,
+        food: rice,
+        grams: 100,
+      );
+
+      final recent = await repo.recentMealCalendarHistory();
+      expect(recent, hasLength(14));
+      expect(recent.first.date, today);
+      expect(recent.first.hasActivity, isTrue);
+      expect(recent.first.foodIds, {rice.id, chicken.id});
+      expect(recent.first.mealTypes, [MealType.breakfast, MealType.lunch]);
+      expect(recent.first.calories, closeTo(320, 0.01));
+      expect(recent[1].hasActivity, isFalse);
+      expect(recent.map((day) => day.date), isNot(contains(older)));
+
+      final all = await repo.allMealHistory();
+      expect(all.map((day) => day.date), [today, older]);
+      expect(all.last.foodIds, {rice.id});
+      expect(all.last.mealTypes, [MealType.dinner]);
+    },
+  );
 }
