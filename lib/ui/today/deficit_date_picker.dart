@@ -280,6 +280,22 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
             intakeCalories: selectedIntake,
           )
         : selectedTarget.calories - selectedIntake;
+    final selectedMarker = _markersByDay[_selected];
+    final headerText = switch (selectedMarker) {
+      DayMarkerType.cheatMeal => l10n.cheatMealShortLabel,
+      DayMarkerType.restDay => l10n.restDayShortLabel,
+      null =>
+        selectedActual == null
+            ? (dayPlanned != null
+                  ? l10n.actualDeficitFormula('${dayPlanned.round()}')
+                  : l10n.calendarRemainingHint)
+            : dayPlanned != null
+            ? l10n.actualDeficitForDay(
+                AppDates.relativeDayTitle(_selected, today, l10n, locale),
+                '${selectedActual.round()}',
+              )
+            : l10n.remainingCaloriesLine('${selectedActual.round()}'),
+    };
 
     return AlertDialog(
       titlePadding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
@@ -310,21 +326,7 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                selectedActual == null
-                    ? (dayPlanned != null
-                          ? l10n.actualDeficitFormula('${dayPlanned.round()}')
-                          : l10n.calendarRemainingHint)
-                    : dayPlanned != null
-                    ? l10n.actualDeficitForDay(
-                        AppDates.relativeDayTitle(
-                          _selected,
-                          today,
-                          l10n,
-                          locale,
-                        ),
-                        '${selectedActual.round()}',
-                      )
-                    : l10n.remainingCaloriesLine('${selectedActual.round()}'),
+                headerText,
                 style: theme.textTheme.labelSmall,
                 textAlign: TextAlign.center,
               ),

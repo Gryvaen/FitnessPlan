@@ -7,6 +7,13 @@ import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../db.dart';
 
+class ExerciseTargetChoice {
+  const ExerciseTargetChoice({required this.sets, required this.reps});
+
+  final int sets;
+  final int reps;
+}
+
 class PlanDraftItem {
   const PlanDraftItem({
     required this.exerciseId,
@@ -266,13 +273,28 @@ class WorkoutRepository {
     if (duplicate != null && duplicate.id != id) {
       throw StateError('已存在同名动作，请换一个名称');
     }
-    await (_db.update(_db.exercises)..where((t) => t.id.equals(id))).write(
-      ExercisesCompanion(
-        name: Value(trimmed),
-        unit: Value(unit.name),
-        category: Value(category),
-      ),
-    );
+    final nameChanged = trimmed != existing.name;
+    await _db.transaction(() async {
+      await (_db.update(_db.exercises)..where((t) => t.id.equals(id))).write(
+        ExercisesCompanion(
+          name: Value(trimmed),
+          unit: Value(unit.name),
+          category: Value(category),
+        ),
+      );
+      if (!nameChanged) return;
+      // Names are copied onto plans, today's items, and set logs. Keep those
+      // copies in step so a rename shows up everywhere at once.
+      await (_db.update(_db.workoutPlanItems)
+            ..where((t) => t.exerciseId.equals(id)))
+          .write(WorkoutPlanItemsCompanion(exerciseName: Value(trimmed)));
+      await (_db.update(_db.dayWorkoutItems)
+            ..where((t) => t.exerciseId.equals(id)))
+          .write(DayWorkoutItemsCompanion(exerciseName: Value(trimmed)));
+      await (_db.update(_db.workoutSetLogs)
+            ..where((t) => t.exerciseId.equals(id)))
+          .write(WorkoutSetLogsCompanion(exerciseName: Value(trimmed)));
+    });
     _exerciseCache.remove(id);
   }
 
@@ -806,12 +828,12 @@ class WorkoutRepository {
     });
   }
 
-  /// Last chosen reps or seconds for [exerciseId].
+  /// Last chosen sets and reps/seconds for [exerciseId].
   ///
   /// Prefers the newest day-workout item (logging a set writes the chosen
   /// count back onto that item), then the newest plan item. Null when the
   /// exercise has never been given a target.
-  Future<int?> lastTargetReps(int exerciseId) async {
+  Future<ExerciseTargetChoice?> lastExerciseTargets(int exerciseId) async {
     final dayRow =
         await (_db.select(_db.dayWorkoutItems).join([
                 innerJoin(
@@ -829,7 +851,8 @@ class WorkoutRepository {
               ..limit(1))
             .getSingleOrNull();
     if (dayRow != null) {
-      return dayRow.readTable(_db.dayWorkoutItems).targetReps;
+      final item = dayRow.readTable(_db.dayWorkoutItems);
+      return ExerciseTargetChoice(sets: item.targetSets, reps: item.targetReps);
     }
     final planItem =
         await (_db.select(_db.workoutPlanItems)
@@ -837,7 +860,16 @@ class WorkoutRepository {
               ..orderBy([(t) => OrderingTerm.desc(t.id)])
               ..limit(1))
             .getSingleOrNull();
-    return planItem?.targetReps;
+    if (planItem == null) return null;
+    return ExerciseTargetChoice(
+      sets: planItem.targetSets,
+      reps: planItem.targetReps,
+    );
+  }
+
+  /// Last chosen reps or seconds for [exerciseId]. See [lastExerciseTargets].
+  Future<int?> lastTargetReps(int exerciseId) async {
+    return (await lastExerciseTargets(exerciseId))?.reps;
   }
 
   Future<void> addQuickDayItem({
@@ -896,12 +928,31 @@ class WorkoutRepository {
 
     if (!done) {
       await _db.transaction(() async {
-        await (_db.delete(
-          _db.workoutSetLogs,
-        )..where((t) => t.dayWorkoutItemId.equals(dayWorkoutItemId))).go();
-        await (_db.update(_db.dayWorkoutItems)
-              ..where((t) => t.id.equals(dayWorkoutItemId)))
-            .write(const DayWorkoutItemsCompanion(done: Value(false)));
+        final item = await (_db.select(
+          _db.dayWorkoutItems,
+        )..where((t) => t.id.equals(dayWorkoutItemId))).getSingleOrNull();
+        if (item == null) return;
+
+        // Checking remembers how many sets were already logged and fills the
+        // rest. Unchecking puts that count back; it does not zero the item.
+        final restore = item.setsBeforeDone;
+        if (restore != null) {
+          final logs = await _setsForDayItem(dayWorkoutItemId);
+          if (logs.length > restore) {
+            final dropIds = [for (final log in logs.skip(restore)) log.id];
+            await (_db.delete(
+              _db.workoutSetLogs,
+            )..where((t) => t.id.isIn(dropIds))).go();
+          }
+        }
+        await (_db.update(
+          _db.dayWorkoutItems,
+        )..where((t) => t.id.equals(dayWorkoutItemId))).write(
+          const DayWorkoutItemsCompanion(
+            done: Value(false),
+            setsBeforeDone: Value(null),
+          ),
+        );
       });
       return;
     }
@@ -938,10 +989,91 @@ class WorkoutRepository {
         }
       }
 
-      await (_db.update(_db.dayWorkoutItems)
-            ..where((t) => t.id.equals(dayWorkoutItemId)))
-          .write(const DayWorkoutItemsCompanion(done: Value(true)));
+      await (_db.update(
+        _db.dayWorkoutItems,
+      )..where((t) => t.id.equals(dayWorkoutItemId))).write(
+        DayWorkoutItemsCompanion(
+          done: const Value(true),
+          // A second check while already done must not overwrite the
+          // count captured the first time.
+          setsBeforeDone: item.done ? const Value.absent() : Value(existing),
+        ),
+      );
     });
+  }
+
+  /// Moves one exercise out of its plan group into today's untitled group
+  /// ("其他"). Set logs, completion, weight, and notes stay on the same item.
+  /// The saved plan template is left unchanged. An empty source group is removed.
+  Future<void> moveDayWorkoutItemToOther(int dayWorkoutItemId) async {
+    final day = await _dayForWorkoutItem(dayWorkoutItemId);
+    if (day == null) return;
+    CalendarDay.ensureEditableDay(day);
+    final start = _dayStart(day);
+
+    await _db.transaction(() async {
+      final item = await (_db.select(
+        _db.dayWorkoutItems,
+      )..where((t) => t.id.equals(dayWorkoutItemId))).getSingleOrNull();
+      if (item == null) return;
+
+      final source = await (_db.select(
+        _db.dayWorkouts,
+      )..where((t) => t.id.equals(item.dayWorkoutId))).getSingleOrNull();
+      if (source == null || _isUntitledDayWorkout(source)) return;
+
+      final groups =
+          await (_db.select(_db.dayWorkouts)
+                ..where((t) => t.date.equals(start))
+                ..orderBy([
+                  (t) => OrderingTerm.asc(t.sortOrder),
+                  (t) => OrderingTerm.asc(t.id),
+                ]))
+              .get();
+      DayWorkout? existingOther;
+      for (final group in groups) {
+        if (_isUntitledDayWorkout(group)) {
+          existingOther = group;
+          break;
+        }
+      }
+
+      final int otherId;
+      if (existingOther != null) {
+        otherId = existingOther.id;
+      } else {
+        otherId = await _db
+            .into(_db.dayWorkouts)
+            .insert(
+              DayWorkoutsCompanion.insert(
+                date: start,
+                sortOrder: Value(groups.length),
+              ),
+            );
+      }
+
+      final otherItems = await dayItemsFor(otherId);
+      await (_db.update(
+        _db.dayWorkoutItems,
+      )..where((t) => t.id.equals(item.id))).write(
+        DayWorkoutItemsCompanion(
+          dayWorkoutId: Value(otherId),
+          sortOrder: Value(otherItems.length),
+        ),
+      );
+
+      final remaining = await dayItemsFor(source.id);
+      if (remaining.isEmpty) {
+        await (_db.delete(
+          _db.dayWorkouts,
+        )..where((t) => t.id.equals(source.id))).go();
+      }
+    });
+  }
+
+  bool _isUntitledDayWorkout(DayWorkout workout) {
+    final name = workout.planName?.trim();
+    return name == null || name.isEmpty;
   }
 
   /// Removes one day-workout item and its set logs; drops empty day row.
@@ -1049,6 +1181,7 @@ class WorkoutRepository {
         DayWorkoutItemsCompanion(
           targetReps: Value(perSetValue),
           done: Value(completedSets >= item.targetSets),
+          setsBeforeDone: const Value(null),
           actualWeightKg: Value(actualWeightKg),
           actualWeightUnit: Value(unitLabel),
           note: Value(

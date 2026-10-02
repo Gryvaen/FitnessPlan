@@ -129,4 +129,54 @@ void main() {
     expect(upper, lessThan(legs));
     expect(legs, lessThan(lower));
   });
+
+  testWidgets('a planned exercise can be moved out into 其他', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(412, 915));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repo = _container.read(workoutRepositoryProvider);
+    final plans = await repo.listPlanSummaries();
+    final upper = plans.firstWhere((plan) => plan.plan.name == '上肢');
+    await repo.applyPlanToDay(
+      planId: upper.plan.id,
+      day: CalendarDay.todayLocal(),
+    );
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: _container,
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          locale: const Locale('zh'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: TodayWorkoutCard(
+              day: CalendarDay.todayLocal(),
+              sectionPrefix: '今日',
+              showDetails: true,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('上肢'), findsOneWidget);
+    expect(find.text('移到其他'), findsOneWidget);
+    expect(find.text('其他'), findsNothing);
+
+    await tester.tap(find.text('移到其他'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('上肢'), findsNothing);
+    expect(find.text('移到其他'), findsNothing);
+    expect(find.text('其他'), findsOneWidget);
+    expect(find.text('杠铃卧推'), findsOneWidget);
+  });
 }

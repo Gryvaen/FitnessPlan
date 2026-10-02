@@ -1894,6 +1894,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get untitledWorkoutGroup => 'Other';
 
   @override
+  String get moveToOther => 'Move to Other';
+
+  @override
   String get removeDayWorkout => 'Remove this plan';
 
   @override
@@ -2450,6 +2453,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get viewWorkoutHistory => 'View workout history';
+
+  @override
+  String get viewHistoryRecords => 'View history';
 
   @override
   String setsWithReps(int sets, String reps) {

@@ -83,6 +83,10 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   /// when Today / plan-edit calls `go('/records?tab=train&sub=plans')`.
   String? _appliedRouteKey;
 
+  /// Add/edit dialogs sit outside the library search group. Their buttons
+  /// would otherwise count as an outside tap and snap the filter back to 全部.
+  var _exerciseDialogDepth = 0;
+
   @override
   void initState() {
     super.initState();
@@ -162,9 +166,22 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     });
   }
 
+  void _beginExerciseDialog() {
+    _exerciseDialogDepth++;
+  }
+
+  void _endExerciseDialog() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_exerciseDialogDepth > 0) _exerciseDialogDepth--;
+    });
+  }
+
   /// 点动作列表或标题行的空白处：收起搜索，并丢掉关键字和分类筛选。
   void _discardExerciseSearch() {
-    if (_categoryMenuOpen) return;
+    if (_categoryMenuOpen || _exerciseDialogDepth > 0) return;
+    final route = ModalRoute.of(context);
+    if (route != null && !route.isCurrent) return;
     _dropSearchFocus(_exerciseSearchFocus);
     if (!_exerciseSearchOpen && _query.isEmpty && _category == null) return;
     setState(() {
@@ -422,10 +439,17 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
 
   Future<void> _addExercise(BuildContext context, WidgetRef ref) async {
     final l10n = context.l10n;
-    final form = await showExerciseFormDialog(
-      context: context,
-      defaultCategory: _category ?? 'chest',
-    );
+    final memory = ref.read(formMemoryRepositoryProvider);
+    _beginExerciseDialog();
+    final ExerciseFormData? form;
+    try {
+      form = await showExerciseFormDialog(
+        context: context,
+        defaultCategory: _category ?? memory.loadExerciseCategory(),
+      );
+    } finally {
+      _endExerciseDialog();
+    }
     if (form == null || !context.mounted) return;
     try {
       await ref
@@ -435,6 +459,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
             unit: form.unit,
             category: form.category,
           );
+      await memory.saveExerciseCategory(form.category);
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(
@@ -449,10 +474,13 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     Exercise exercise,
   ) async {
     final l10n = context.l10n;
-    final form = await showExerciseFormDialog(
-      context: context,
-      exercise: exercise,
-    );
+    _beginExerciseDialog();
+    final ExerciseFormData? form;
+    try {
+      form = await showExerciseFormDialog(context: context, exercise: exercise);
+    } finally {
+      _endExerciseDialog();
+    }
     if (form == null || !context.mounted) return;
     try {
       await ref
@@ -1221,19 +1249,25 @@ Future<void> showQuickAddDayItemDialog({
 
   final initial = exercises.first;
   Exercise? selected = initial;
-  var sets = 3;
-  var reps = 12;
+  final memory = ref.read(formMemoryRepositoryProvider).loadWorkoutTargets();
+  final initialUnit = ExerciseUnit.fromStorage(initial.unit);
+  var sets = FormOptions.snapInt(FormOptions.targetSets, memory.sets);
+  var reps = FormOptions.snapInt(
+    FormOptions.exerciseTargetOptions(initialUnit, category: initial.category),
+    memory.valueFor(initialUnit, category: initial.category),
+  );
   final initialLast = await ref
       .read(workoutRepositoryProvider)
-      .lastTargetReps(initial.id);
+      .lastExerciseTargets(initial.id);
   if (!context.mounted) return;
   if (initialLast != null) {
+    sets = FormOptions.snapInt(FormOptions.targetSets, initialLast.sets);
     reps = FormOptions.snapInt(
       FormOptions.exerciseTargetOptions(
-        ExerciseUnit.fromStorage(initial.unit),
+        initialUnit,
         category: initial.category,
       ),
-      initialLast,
+      initialLast.reps,
     );
   }
 
@@ -1269,15 +1303,30 @@ Future<void> showQuickAddDayItemDialog({
                   onChanged: (v) async {
                     final last = await ref
                         .read(workoutRepositoryProvider)
-                        .lastTargetReps(v.id);
+                        .lastExerciseTargets(v.id);
                     if (!ctx.mounted) return;
+                    final remembered = ref
+                        .read(formMemoryRepositoryProvider)
+                        .loadWorkoutTargets();
                     setLocal(() {
                       selected = v;
+                      final pickedUnit = ExerciseUnit.fromStorage(v.unit);
                       final options = FormOptions.exerciseTargetOptions(
-                        ExerciseUnit.fromStorage(v.unit),
+                        pickedUnit,
                         category: v.category,
                       );
-                      reps = FormOptions.snapInt(options, last ?? reps);
+                      sets = FormOptions.snapInt(
+                        FormOptions.targetSets,
+                        last?.sets ?? remembered.sets,
+                      );
+                      reps = FormOptions.snapInt(
+                        options,
+                        last?.reps ??
+                            remembered.valueFor(
+                              pickedUnit,
+                              category: v.category,
+                            ),
+                      );
                     });
                   },
                 ),
@@ -1286,14 +1335,34 @@ Future<void> showQuickAddDayItemDialog({
                   label: l10n.targetSets,
                   value: FormOptions.snapInt(FormOptions.targetSets, sets),
                   items: FormOptions.targetSets,
-                  onChanged: (v) => setLocal(() => sets = v),
+                  onChanged: (v) {
+                    setLocal(() => sets = v);
+                    ref
+                        .read(formMemoryRepositoryProvider)
+                        .saveWorkoutTargets(
+                          sets: v,
+                          value: reps,
+                          unit: unit,
+                          category: category,
+                        );
+                  },
                 ),
                 const SizedBox(height: 12),
                 AppDropdown<int>(
                   label: unit.targetLabel(l10n, category: category),
                   value: FormOptions.snapInt(targetOptions, reps),
                   items: targetOptions,
-                  onChanged: (v) => setLocal(() => reps = v),
+                  onChanged: (v) {
+                    setLocal(() => reps = v);
+                    ref
+                        .read(formMemoryRepositoryProvider)
+                        .saveWorkoutTargets(
+                          sets: sets,
+                          value: v,
+                          unit: unit,
+                          category: category,
+                        );
+                  },
                 ),
               ],
             ),

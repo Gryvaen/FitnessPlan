@@ -86,6 +86,20 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     return result;
   }
 
+  Widget _historyLink(BuildContext context) {
+    if (widget.showDetails) return const SizedBox.shrink();
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton(
+        onPressed: () {
+          unfocusForNavigation();
+          context.go('/records?tab=train&sub=history');
+        },
+        child: Text(context.l10n.viewHistoryRecords),
+      ),
+    );
+  }
+
   String _groupTitle(DayWorkoutGroup group, AppLocalizations l10n) {
     final name = group.workout.planName?.trim();
     if (name != null && name.isNotEmpty) return name;
@@ -343,6 +357,29 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     return ok == true;
   }
 
+  bool _isOtherGroup(DayWorkoutGroup group) {
+    final name = group.workout.planName?.trim();
+    return name == null || name.isEmpty;
+  }
+
+  Future<void> _moveItemToOther(
+    BuildContext context,
+    WidgetRef ref,
+    DayWorkoutItemProgress progress,
+  ) async {
+    final l10n = context.l10n;
+    try {
+      await ref
+          .read(workoutRepositoryProvider)
+          .moveDayWorkoutItemToOther(progress.item.id);
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.addFailed('$e'))));
+    }
+  }
+
   Future<void> _removeGroup(WidgetRef ref, DayWorkoutGroup group) async {
     await ref
         .read(workoutRepositoryProvider)
@@ -566,6 +603,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
               scheme: scheme,
               progress: progress,
               editable: editable,
+              canMoveToOther: !_isOtherGroup(group),
             ),
         ],
       );
@@ -625,6 +663,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
                 scheme: scheme,
                 progress: progress,
                 editable: editable,
+                canMoveToOther: !_isOtherGroup(group),
               ),
             ),
           ],
@@ -640,7 +679,11 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     required ColorScheme scheme,
     required DayWorkoutItemProgress progress,
     required bool editable,
+    required bool canMoveToOther,
   }) {
+    final onMoveToOther = editable && canMoveToOther
+        ? () => _moveItemToOther(context, ref, progress)
+        : null;
     if (!editable) {
       return _WorkoutItemTile(
         progress: progress,
@@ -694,6 +737,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
         progress: progress,
         day: widget.day,
         editable: true,
+        onMoveToOther: onMoveToOther,
       ),
     );
   }
@@ -737,9 +781,13 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
             height: 48,
             child: Center(child: CircularProgressIndicator()),
           ),
+          _historyLink(context),
         ],
       ),
-      error: (e, _) => Text(l10n.workoutLoadFailed('$e')),
+      error: (e, _) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [Text(l10n.workoutLoadFailed('$e')), _historyLink(context)],
+      ),
       data: (snapshot) {
         final canSaveAsPlan = !snapshot.isEmpty;
         if (snapshot.isEmpty) {
@@ -768,6 +816,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
                     ? l10n.noWorkoutPlannedHint
                     : l10n.pastDayReadOnly,
               ),
+              _historyLink(context),
             ],
           );
         }
@@ -839,6 +888,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
                   editable ? l10n.continueRecording : l10n.viewWorkoutDetails,
                 ),
               ),
+              _historyLink(context),
             ],
             if (widget.showDetails) ...[
               const SizedBox(height: 4),
@@ -923,11 +973,13 @@ class _WorkoutItemTile extends ConsumerWidget {
     required this.progress,
     required this.day,
     required this.editable,
+    this.onMoveToOther,
   });
 
   final DayWorkoutItemProgress progress;
   final DateTime day;
   final bool editable;
+  final VoidCallback? onMoveToOther;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1019,6 +1071,18 @@ class _WorkoutItemTile extends ConsumerWidget {
           ],
         ],
       ),
+      trailing: onMoveToOther == null
+          ? null
+          : TextButton(
+              key: ValueKey('move-to-other-${item.id}'),
+              onPressed: onMoveToOther,
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              child: Text(l10n.moveToOther),
+            ),
       enabled: editable,
       onTap: !editable
           ? null

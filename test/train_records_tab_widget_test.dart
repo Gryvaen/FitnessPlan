@@ -217,6 +217,31 @@ void main() {
     },
   );
 
+  testWidgets('saving an exercise edit keeps the category filter', (
+    tester,
+  ) async {
+    Finder row(String name) => find.widgetWithText(SportListTile, name);
+
+    await _pump(tester, const TrainRecordsTab(initialTab: 1));
+    await tester.tap(find.byKey(const ValueKey('exercise-library-search')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('exercise-category-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('腿'));
+    await tester.pumpAndSettle();
+    expect(row('深蹲'), findsOneWidget);
+    expect(row('杠铃卧推'), findsNothing);
+
+    await tester.tap(row('深蹲'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, '保存'));
+    await tester.pumpAndSettle();
+
+    expect(row('深蹲'), findsOneWidget);
+    expect(row('杠铃卧推'), findsNothing);
+    expect(row('跑步机慢跑'), findsNothing);
+  });
+
   testWidgets('plan search filters the list and blank space clears it', (
     tester,
   ) async {

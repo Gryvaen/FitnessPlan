@@ -96,14 +96,23 @@ _PlanRow _rowFromItem(
 class _PlanEditPageState extends ConsumerState<PlanEditPage> {
   final _nameCtrl = TextEditingController();
   final _nameFocus = FocusNode();
-  final _rows = <_PlanRow>[_PlanRow()];
+  final _rows = <_PlanRow>[];
   var _loading = false;
   var _saving = false;
+
+  _PlanRow _draftRow() {
+    final memory = ref.read(formMemoryRepositoryProvider).loadWorkoutTargets();
+    return _PlanRow(
+      targetSets: FormOptions.snapInt(FormOptions.targetSets, memory.sets),
+      targetReps: memory.reps,
+    );
+  }
 
   @override
   void initState() {
     super.initState();
     suppressInitialTextFocus(_nameFocus);
+    _rows.add(_draftRow());
     if (widget.planId != null) {
       _loadExisting();
     }
@@ -166,7 +175,7 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
                     ),
                 ],
         );
-      if (_rows.isEmpty) _rows.add(_PlanRow());
+      if (_rows.isEmpty) _rows.add(_draftRow());
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -186,7 +195,11 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
 
   Future<void> _addExerciseToLibrary() async {
     final l10n = context.l10n;
-    final form = await showExerciseFormDialog(context: context);
+    final memoryRepo = ref.read(formMemoryRepositoryProvider);
+    final form = await showExerciseFormDialog(
+      context: context,
+      defaultCategory: memoryRepo.loadExerciseCategory(),
+    );
     if (form == null || !mounted) return;
     try {
       final id = await ref
@@ -196,13 +209,17 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
             unit: form.unit,
             category: form.category,
           );
+      await memoryRepo.saveExerciseCategory(form.category);
       if (!mounted) return;
-      final last = await ref.read(workoutRepositoryProvider).lastTargetReps(id);
+      final last = await ref
+          .read(workoutRepositoryProvider)
+          .lastExerciseTargets(id);
       if (!mounted) return;
       final options = FormOptions.exerciseTargetOptions(
         form.unit,
         category: form.category,
       );
+      final memory = memoryRepo.loadWorkoutTargets();
       setState(() {
         _PlanRow? emptyRow;
         for (final row in _rows) {
@@ -211,15 +228,24 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
             break;
           }
         }
-        final target = last == null ? null : FormOptions.snapInt(options, last);
+        final targetSets = FormOptions.snapInt(
+          FormOptions.targetSets,
+          last?.sets ?? memory.sets,
+        );
+        final targetReps = FormOptions.snapInt(
+          options,
+          last?.reps ?? memory.valueFor(form.unit, category: form.category),
+        );
         if (emptyRow != null) {
           emptyRow.exerciseId = id;
-          if (target != null) emptyRow.targetReps = target;
+          emptyRow.targetSets = targetSets;
+          emptyRow.targetReps = targetReps;
         } else {
           _rows.add(
             _PlanRow()
               ..exerciseId = id
-              ..targetReps = target ?? 12,
+              ..targetSets = targetSets
+              ..targetReps = targetReps,
           );
         }
       });
@@ -428,7 +454,7 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
                       ),
                     ),
                     OutlinedButton.icon(
-                      onPressed: () => setState(() => _rows.add(_PlanRow())),
+                      onPressed: () => setState(() => _rows.add(_draftRow())),
                       icon: const InkIcon(InkGlyph.add),
                       label: Text(l10n.addExercise),
                     ),
@@ -492,6 +518,60 @@ class _PlanNoExercisesEmpty extends StatelessWidget {
   }
 }
 
+class _RenameExerciseDialog extends StatefulWidget {
+  const _RenameExerciseDialog({required this.initialName});
+
+  final String initialName;
+
+  @override
+  State<_RenameExerciseDialog> createState() => _RenameExerciseDialogState();
+}
+
+class _RenameExerciseDialogState extends State<_RenameExerciseDialog> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initialName,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: widget.initialName.length,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() => Navigator.pop(context, _controller.text);
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AlertDialog(
+      title: Text(l10n.exerciseName),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        decoration: InputDecoration(labelText: l10n.exerciseName),
+        textInputAction: TextInputAction.done,
+        onSubmitted: (_) => _submit(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(onPressed: _submit, child: Text(l10n.save)),
+      ],
+    );
+  }
+}
+
 class _PlanRowSection extends ConsumerWidget {
   const _PlanRowSection({
     required this.row,
@@ -510,17 +590,55 @@ class _PlanRowSection extends ConsumerWidget {
   Future<void> _setExercise(WidgetRef ref, Exercise exercise) async {
     row.exerciseId = exercise.id;
     row.missingExerciseName = null;
+    final unit = ExerciseUnit.fromStorage(exercise.unit);
+    final options = FormOptions.exerciseTargetOptions(
+      unit,
+      category: exercise.category,
+    );
+    final memory = ref.read(formMemoryRepositoryProvider).loadWorkoutTargets();
     final last = await ref
         .read(workoutRepositoryProvider)
-        .lastTargetReps(exercise.id);
-    if (last != null) {
-      final options = FormOptions.exerciseTargetOptions(
-        ExerciseUnit.fromStorage(exercise.unit),
-        category: exercise.category,
-      );
-      row.targetReps = FormOptions.snapInt(options, last);
-    }
+        .lastExerciseTargets(exercise.id);
+    row.targetSets = FormOptions.snapInt(
+      FormOptions.targetSets,
+      last?.sets ?? memory.sets,
+    );
+    row.targetReps = FormOptions.snapInt(
+      options,
+      last?.reps ?? memory.valueFor(unit, category: exercise.category),
+    );
     onChanged();
+  }
+
+  Future<void> _renameExercise(
+    BuildContext context,
+    WidgetRef ref,
+    Exercise exercise,
+  ) async {
+    final l10n = context.l10n;
+    final name = await showDialog<String>(
+      context: context,
+      useRootNavigator: true,
+      builder: (ctx) => _RenameExerciseDialog(initialName: exercise.name),
+    );
+    if (name == null || !context.mounted) return;
+    final trimmed = name.trim();
+    if (trimmed.isEmpty || trimmed == exercise.name) return;
+    try {
+      await ref
+          .read(workoutRepositoryProvider)
+          .updateExercise(
+            id: exercise.id,
+            name: trimmed,
+            unit: ExerciseUnit.fromStorage(exercise.unit),
+            category: exercise.category,
+          );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.saveFailed('$e'))));
+    }
   }
 
   @override
@@ -551,6 +669,9 @@ class _PlanRowSection extends ConsumerWidget {
                 selectedId: selected?.id,
                 exercises: exercises,
                 onChanged: (exercise) => _setExercise(ref, exercise),
+                onDoubleTap: selected == null
+                    ? null
+                    : () => _renameExercise(context, ref, selected),
               ),
             ),
             if (canRemove)
@@ -569,6 +690,14 @@ class _PlanRowSection extends ConsumerWidget {
           onChanged: (v) {
             row.targetSets = v;
             onChanged();
+            ref
+                .read(formMemoryRepositoryProvider)
+                .saveWorkoutTargets(
+                  sets: row.targetSets,
+                  value: row.targetReps,
+                  unit: unit,
+                  category: category,
+                );
           },
         ),
         const SizedBox(height: 12),
@@ -579,6 +708,14 @@ class _PlanRowSection extends ConsumerWidget {
           onChanged: (v) {
             row.targetReps = v;
             onChanged();
+            ref
+                .read(formMemoryRepositoryProvider)
+                .saveWorkoutTargets(
+                  sets: row.targetSets,
+                  value: row.targetReps,
+                  unit: unit,
+                  category: category,
+                );
           },
         ),
       ],

@@ -1868,6 +1868,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get untitledWorkoutGroup => '其他';
 
   @override
+  String get moveToOther => '移到其他';
+
+  @override
   String get removeDayWorkout => '移除该计划';
 
   @override
@@ -2404,6 +2407,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get viewWorkoutHistory => '查看训练历史';
+
+  @override
+  String get viewHistoryRecords => '查看历史记录';
 
   @override
   String setsWithReps(int sets, String reps) {

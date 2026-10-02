@@ -5735,6 +5735,17 @@ class $DayWorkoutItemsTable extends DayWorkoutItems
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _setsBeforeDoneMeta = const VerificationMeta(
+    'setsBeforeDone',
+  );
+  @override
+  late final GeneratedColumn<int> setsBeforeDone = GeneratedColumn<int>(
+    'sets_before_done',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -5748,6 +5759,7 @@ class $DayWorkoutItemsTable extends DayWorkoutItems
     actualWeightKg,
     actualWeightUnit,
     note,
+    setsBeforeDone,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5846,6 +5858,15 @@ class $DayWorkoutItemsTable extends DayWorkoutItems
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
       );
     }
+    if (data.containsKey('sets_before_done')) {
+      context.handle(
+        _setsBeforeDoneMeta,
+        setsBeforeDone.isAcceptableOrUnknown(
+          data['sets_before_done']!,
+          _setsBeforeDoneMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -5899,6 +5920,10 @@ class $DayWorkoutItemsTable extends DayWorkoutItems
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       ),
+      setsBeforeDone: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sets_before_done'],
+      ),
     );
   }
 
@@ -5926,6 +5951,10 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
 
   /// Optional per-exercise reflection ("心得") for this day.
   final String? note;
+
+  /// Set count just before the done checkbox filled the rest. Unchecking
+  /// restores this many sets instead of wiping the item back to zero.
+  final int? setsBeforeDone;
   const DayWorkoutItem({
     required this.id,
     required this.dayWorkoutId,
@@ -5938,6 +5967,7 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
     this.actualWeightKg,
     this.actualWeightUnit,
     this.note,
+    this.setsBeforeDone,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5959,6 +5989,9 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
     }
+    if (!nullToAbsent || setsBeforeDone != null) {
+      map['sets_before_done'] = Variable<int>(setsBeforeDone);
+    }
     return map;
   }
 
@@ -5979,6 +6012,9 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
           ? const Value.absent()
           : Value(actualWeightUnit),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      setsBeforeDone: setsBeforeDone == null && nullToAbsent
+          ? const Value.absent()
+          : Value(setsBeforeDone),
     );
   }
 
@@ -5999,6 +6035,7 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
       actualWeightKg: serializer.fromJson<double?>(json['actualWeightKg']),
       actualWeightUnit: serializer.fromJson<String?>(json['actualWeightUnit']),
       note: serializer.fromJson<String?>(json['note']),
+      setsBeforeDone: serializer.fromJson<int?>(json['setsBeforeDone']),
     );
   }
   @override
@@ -6016,6 +6053,7 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
       'actualWeightKg': serializer.toJson<double?>(actualWeightKg),
       'actualWeightUnit': serializer.toJson<String?>(actualWeightUnit),
       'note': serializer.toJson<String?>(note),
+      'setsBeforeDone': serializer.toJson<int?>(setsBeforeDone),
     };
   }
 
@@ -6031,6 +6069,7 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
     Value<double?> actualWeightKg = const Value.absent(),
     Value<String?> actualWeightUnit = const Value.absent(),
     Value<String?> note = const Value.absent(),
+    Value<int?> setsBeforeDone = const Value.absent(),
   }) => DayWorkoutItem(
     id: id ?? this.id,
     dayWorkoutId: dayWorkoutId ?? this.dayWorkoutId,
@@ -6047,6 +6086,9 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
         ? actualWeightUnit.value
         : this.actualWeightUnit,
     note: note.present ? note.value : this.note,
+    setsBeforeDone: setsBeforeDone.present
+        ? setsBeforeDone.value
+        : this.setsBeforeDone,
   );
   DayWorkoutItem copyWithCompanion(DayWorkoutItemsCompanion data) {
     return DayWorkoutItem(
@@ -6075,6 +6117,9 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
           ? data.actualWeightUnit.value
           : this.actualWeightUnit,
       note: data.note.present ? data.note.value : this.note,
+      setsBeforeDone: data.setsBeforeDone.present
+          ? data.setsBeforeDone.value
+          : this.setsBeforeDone,
     );
   }
 
@@ -6091,7 +6136,8 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
           ..write('done: $done, ')
           ..write('actualWeightKg: $actualWeightKg, ')
           ..write('actualWeightUnit: $actualWeightUnit, ')
-          ..write('note: $note')
+          ..write('note: $note, ')
+          ..write('setsBeforeDone: $setsBeforeDone')
           ..write(')'))
         .toString();
   }
@@ -6109,6 +6155,7 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
     actualWeightKg,
     actualWeightUnit,
     note,
+    setsBeforeDone,
   );
   @override
   bool operator ==(Object other) =>
@@ -6124,7 +6171,8 @@ class DayWorkoutItem extends DataClass implements Insertable<DayWorkoutItem> {
           other.done == this.done &&
           other.actualWeightKg == this.actualWeightKg &&
           other.actualWeightUnit == this.actualWeightUnit &&
-          other.note == this.note);
+          other.note == this.note &&
+          other.setsBeforeDone == this.setsBeforeDone);
 }
 
 class DayWorkoutItemsCompanion extends UpdateCompanion<DayWorkoutItem> {
@@ -6139,6 +6187,7 @@ class DayWorkoutItemsCompanion extends UpdateCompanion<DayWorkoutItem> {
   final Value<double?> actualWeightKg;
   final Value<String?> actualWeightUnit;
   final Value<String?> note;
+  final Value<int?> setsBeforeDone;
   const DayWorkoutItemsCompanion({
     this.id = const Value.absent(),
     this.dayWorkoutId = const Value.absent(),
@@ -6151,6 +6200,7 @@ class DayWorkoutItemsCompanion extends UpdateCompanion<DayWorkoutItem> {
     this.actualWeightKg = const Value.absent(),
     this.actualWeightUnit = const Value.absent(),
     this.note = const Value.absent(),
+    this.setsBeforeDone = const Value.absent(),
   });
   DayWorkoutItemsCompanion.insert({
     this.id = const Value.absent(),
@@ -6164,6 +6214,7 @@ class DayWorkoutItemsCompanion extends UpdateCompanion<DayWorkoutItem> {
     this.actualWeightKg = const Value.absent(),
     this.actualWeightUnit = const Value.absent(),
     this.note = const Value.absent(),
+    this.setsBeforeDone = const Value.absent(),
   }) : dayWorkoutId = Value(dayWorkoutId),
        exerciseId = Value(exerciseId),
        exerciseName = Value(exerciseName),
@@ -6181,6 +6232,7 @@ class DayWorkoutItemsCompanion extends UpdateCompanion<DayWorkoutItem> {
     Expression<double>? actualWeightKg,
     Expression<String>? actualWeightUnit,
     Expression<String>? note,
+    Expression<int>? setsBeforeDone,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -6194,6 +6246,7 @@ class DayWorkoutItemsCompanion extends UpdateCompanion<DayWorkoutItem> {
       if (actualWeightKg != null) 'actual_weight_kg': actualWeightKg,
       if (actualWeightUnit != null) 'actual_weight_unit': actualWeightUnit,
       if (note != null) 'note': note,
+      if (setsBeforeDone != null) 'sets_before_done': setsBeforeDone,
     });
   }
 
@@ -6209,6 +6262,7 @@ class DayWorkoutItemsCompanion extends UpdateCompanion<DayWorkoutItem> {
     Value<double?>? actualWeightKg,
     Value<String?>? actualWeightUnit,
     Value<String?>? note,
+    Value<int?>? setsBeforeDone,
   }) {
     return DayWorkoutItemsCompanion(
       id: id ?? this.id,
@@ -6222,6 +6276,7 @@ class DayWorkoutItemsCompanion extends UpdateCompanion<DayWorkoutItem> {
       actualWeightKg: actualWeightKg ?? this.actualWeightKg,
       actualWeightUnit: actualWeightUnit ?? this.actualWeightUnit,
       note: note ?? this.note,
+      setsBeforeDone: setsBeforeDone ?? this.setsBeforeDone,
     );
   }
 
@@ -6261,6 +6316,9 @@ class DayWorkoutItemsCompanion extends UpdateCompanion<DayWorkoutItem> {
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (setsBeforeDone.present) {
+      map['sets_before_done'] = Variable<int>(setsBeforeDone.value);
+    }
     return map;
   }
 
@@ -6277,7 +6335,8 @@ class DayWorkoutItemsCompanion extends UpdateCompanion<DayWorkoutItem> {
           ..write('done: $done, ')
           ..write('actualWeightKg: $actualWeightKg, ')
           ..write('actualWeightUnit: $actualWeightUnit, ')
-          ..write('note: $note')
+          ..write('note: $note, ')
+          ..write('setsBeforeDone: $setsBeforeDone')
           ..write(')'))
         .toString();
   }
@@ -13045,6 +13104,7 @@ typedef $$DayWorkoutItemsTableCreateCompanionBuilder =
       Value<double?> actualWeightKg,
       Value<String?> actualWeightUnit,
       Value<String?> note,
+      Value<int?> setsBeforeDone,
     });
 typedef $$DayWorkoutItemsTableUpdateCompanionBuilder =
     DayWorkoutItemsCompanion Function({
@@ -13059,6 +13119,7 @@ typedef $$DayWorkoutItemsTableUpdateCompanionBuilder =
       Value<double?> actualWeightKg,
       Value<String?> actualWeightUnit,
       Value<String?> note,
+      Value<int?> setsBeforeDone,
     });
 
 class $$DayWorkoutItemsTableFilterComposer
@@ -13122,6 +13183,11 @@ class $$DayWorkoutItemsTableFilterComposer
 
   ColumnFilters<String> get note => $composableBuilder(
     column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get setsBeforeDone => $composableBuilder(
+    column: $table.setsBeforeDone,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -13189,6 +13255,11 @@ class $$DayWorkoutItemsTableOrderingComposer
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get setsBeforeDone => $composableBuilder(
+    column: $table.setsBeforeDone,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DayWorkoutItemsTableAnnotationComposer
@@ -13246,6 +13317,11 @@ class $$DayWorkoutItemsTableAnnotationComposer
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<int> get setsBeforeDone => $composableBuilder(
+    column: $table.setsBeforeDone,
+    builder: (column) => column,
+  );
 }
 
 class $$DayWorkoutItemsTableTableManager
@@ -13296,6 +13372,7 @@ class $$DayWorkoutItemsTableTableManager
                 Value<double?> actualWeightKg = const Value.absent(),
                 Value<String?> actualWeightUnit = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<int?> setsBeforeDone = const Value.absent(),
               }) => DayWorkoutItemsCompanion(
                 id: id,
                 dayWorkoutId: dayWorkoutId,
@@ -13308,6 +13385,7 @@ class $$DayWorkoutItemsTableTableManager
                 actualWeightKg: actualWeightKg,
                 actualWeightUnit: actualWeightUnit,
                 note: note,
+                setsBeforeDone: setsBeforeDone,
               ),
           createCompanionCallback:
               ({
@@ -13322,6 +13400,7 @@ class $$DayWorkoutItemsTableTableManager
                 Value<double?> actualWeightKg = const Value.absent(),
                 Value<String?> actualWeightUnit = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<int?> setsBeforeDone = const Value.absent(),
               }) => DayWorkoutItemsCompanion.insert(
                 id: id,
                 dayWorkoutId: dayWorkoutId,
@@ -13334,6 +13413,7 @@ class $$DayWorkoutItemsTableTableManager
                 actualWeightKg: actualWeightKg,
                 actualWeightUnit: actualWeightUnit,
                 note: note,
+                setsBeforeDone: setsBeforeDone,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

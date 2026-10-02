@@ -210,6 +210,10 @@ class DayWorkoutItems extends Table {
 
   /// Optional per-exercise reflection ("心得") for this day.
   TextColumn get note => text().nullable()();
+
+  /// Set count just before the done checkbox filled the rest. Unchecking
+  /// restores this many sets instead of wiping the item back to zero.
+  IntColumn get setsBeforeDone => integer().nullable()();
 }
 
 class WorkoutSetLogs extends Table {

@@ -417,7 +417,10 @@ LIMIT ?
   Future<List<FoodServing>> listServings(int foodId) {
     return (_db.select(_db.foodServings)
           ..where((t) => t.foodId.equals(foodId))
-          ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+          ..orderBy([
+            (t) => OrderingTerm.asc(t.grams),
+            (t) => OrderingTerm.asc(t.id),
+          ]))
         .get();
   }
 
