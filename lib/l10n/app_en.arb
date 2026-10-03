@@ -2110,6 +2110,7 @@
   "stepsNotSynced": "Not synced",
   "appTagline": "Track food, training and progress",
   "selectDate": "Select date",
+  "backToToday": "Back to today",
   "noWorkoutPlannedTitle": "No workout planned yet",
   "noWorkoutPlannedHint": "Tap + to add your first workout plan",
   "noMealsTitle": "No meals logged yet",

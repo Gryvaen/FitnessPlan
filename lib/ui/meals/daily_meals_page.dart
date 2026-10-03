@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -13,13 +14,33 @@ import '../theme/sport_chrome.dart';
 import '../widgets/food_name_link.dart';
 import '../widgets/search_field_focus.dart';
 
-/// Route to the full daily food-log page (board 01.04).
+/// Route to the per-day food log.
 String dailyMealsPath(DateTime day) {
   final key = DateFormat('yyyy-MM-dd').format(AppDates.dayOnly(day));
   return '/day-meals?date=$key';
 }
 
-/// Full per-day food log: every meal type with its entries (or an "add"
+/// A routed bottom sheet keeps the existing `/day-meals` navigation contract:
+/// callers can push it, replace it when changing dates, and return to it from
+/// meal entry/details without maintaining a separate sheet state.
+class DailyMealsSheetPage extends Page<void> {
+  const DailyMealsSheetPage({super.key, required this.date});
+
+  final DateTime date;
+
+  @override
+  Route<void> createRoute(BuildContext context) => ModalBottomSheetRoute<void>(
+    settings: this,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (_) => FractionallySizedBox(
+      heightFactor: .9,
+      child: SafeArea(child: DailyMealsPage(date: date)),
+    ),
+  );
+}
+
+/// Per-day food log content: every meal type with its entries (or an "add"
 /// affordance when a type has none). History dates are read-only and use
 /// their stored records.
 class DailyMealsPage extends ConsumerWidget {
@@ -43,101 +64,119 @@ class DailyMealsPage extends ConsumerWidget {
 
     void go(DateTime d) => context.pushReplacement(dailyMealsPath(d));
 
-    return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 0,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              tooltip: l10n.prevDay,
-              visualDensity: VisualDensity.compact,
-              onPressed: day.isAfter(earliest)
-                  ? () => go(day.subtract(const Duration(days: 1)))
-                  : null,
-              icon: const InkIcon(InkGlyph.chevronLeft),
-            ),
-            Text(AppDates.mdWithWeekday(day, locale)),
-            IconButton(
-              tooltip: l10n.nextDay,
-              visualDensity: VisualDensity.compact,
-              onPressed: day.isBefore(today)
-                  ? () => go(day.add(const Duration(days: 1)))
-                  : null,
-              icon: const InkIcon(InkGlyph.chevronRight),
-            ),
-          ],
-        ),
-      ),
-      body: mealsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => SportLoadError(
-          onRetry: () => ref.invalidate(mealsForDayProvider(day)),
-        ),
-        data: (meals) {
-          final total = meals.fold<double>(0, (s, m) => s + m.calories);
-          return ListView(
-            padding: EdgeInsets.fromLTRB(
-              AppSpacing.listPage,
-              8,
-              AppSpacing.listPage,
-              listBottomInset(context, hasFab: false),
-            ),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.listPage),
+          child: Row(
             children: [
-              Row(
+              IconButton(
+                tooltip: l10n.prevDay,
+                visualDensity: VisualDensity.compact,
+                onPressed: day.isAfter(earliest)
+                    ? () => go(day.subtract(const Duration(days: 1)))
+                    : null,
+                icon: const InkIcon(InkGlyph.chevronLeft),
+              ),
+              Expanded(
+                child: _DayTitle(
+                  label: AppDates.mdWithWeekday(day, locale),
+                  backToTodayTooltip: day.isBefore(today)
+                      ? l10n.backToToday
+                      : null,
+                  onBackToToday: day.isBefore(today)
+                      ? () {
+                          HapticFeedback.selectionClick();
+                          go(today);
+                        }
+                      : null,
+                ),
+              ),
+              if (day.isBefore(today))
+                IconButton(
+                  tooltip: l10n.nextDay,
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => go(day.add(const Duration(days: 1))),
+                  icon: const InkIcon(InkGlyph.chevronRight),
+                )
+              else
+                const SizedBox(width: 40),
+            ],
+          ),
+        ),
+        Expanded(
+          child: mealsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => SportLoadError(
+              onRetry: () => ref.invalidate(mealsForDayProvider(day)),
+            ),
+            data: (meals) {
+              final total = meals.fold<double>(0, (s, m) => s + m.calories);
+              return ListView(
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.listPage,
+                  8,
+                  AppSpacing.listPage,
+                  AppSpacing.section,
+                ),
                 children: [
-                  Expanded(
-                    child: Text(
-                      l10n.mealsRecordSection,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ),
-                  Text(
-                    '${total.round()} kcal',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  if (editable && yesterdayMeals.isNotEmpty)
-                    IconButton(
-                      tooltip: l10n.copyYesterday,
-                      visualDensity: VisualDensity.compact,
-                      icon: const InkIcon(InkGlyph.copy, size: 18),
-                      onPressed: () => copyYesterdayMealType(
-                        context,
-                        ref,
-                        day,
-                        yesterdayMeals,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          l10n.mealsRecordSection,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
                       ),
-                    ),
-                  if (editable)
-                    PlainIconAction(
-                      iconWidget: const InkIcon(InkGlyph.add),
-                      label: l10n.logMeal,
-                      onPressed: () {
-                        unfocusForNavigation();
-                        context.push(
-                          '/log-meal?mealType=${MealType.suggestedFor(DateTime.now()).name}'
-                          '&openDayMealsAfterSearchAdd=0',
-                        );
-                      },
+                      Text(
+                        '${total.round()} kcal',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      if (editable && yesterdayMeals.isNotEmpty)
+                        IconButton(
+                          tooltip: l10n.copyYesterday,
+                          visualDensity: VisualDensity.compact,
+                          icon: const InkIcon(InkGlyph.copy, size: 18),
+                          onPressed: () => copyYesterdayMealType(
+                            context,
+                            ref,
+                            day,
+                            yesterdayMeals,
+                          ),
+                        ),
+                      if (editable)
+                        PlainIconAction(
+                          iconWidget: const InkIcon(InkGlyph.add),
+                          label: l10n.logMeal,
+                          onPressed: () {
+                            unfocusForNavigation();
+                            context.push(
+                              '/log-meal?mealType=${MealType.suggestedFor(DateTime.now()).name}'
+                              '&openDayMealsAfterSearchAdd=0',
+                            );
+                          },
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  for (final type in MealType.values)
+                    _MealTypeSection(
+                      day: day,
+                      type: type,
+                      entries:
+                          meals.where((m) => m.mealType == type.name).toList()
+                            ..sort((a, b) => a.calories.compareTo(b.calories)),
+                      editable: editable,
+                      canCopyYesterday:
+                          editable &&
+                          yesterdayMeals.any((m) => m.mealType == type.name),
                     ),
                 ],
-              ),
-              const SizedBox(height: 4),
-              for (final type in MealType.values)
-                _MealTypeSection(
-                  day: day,
-                  type: type,
-                  entries: meals.where((m) => m.mealType == type.name).toList()
-                    ..sort((a, b) => a.calories.compareTo(b.calories)),
-                  editable: editable,
-                  canCopyYesterday:
-                      editable &&
-                      yesterdayMeals.any((m) => m.mealType == type.name),
-                ),
-            ],
-          );
-        },
-      ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -635,6 +674,38 @@ class _MealEntryTile extends ConsumerWidget {
       ),
       childWhenDragging: Opacity(opacity: 0.3, child: dismissible),
       child: dismissible,
+    );
+  }
+}
+
+class _DayTitle extends StatelessWidget {
+  const _DayTitle({
+    required this.label,
+    required this.backToTodayTooltip,
+    required this.onBackToToday,
+  });
+
+  final String label;
+  final String? backToTodayTooltip;
+  final VoidCallback? onBackToToday;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Text(
+      label,
+      textAlign: TextAlign.center,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: Theme.of(context).textTheme.titleMedium,
+    );
+    if (onBackToToday == null) return text;
+    return Tooltip(
+      message: backToTodayTooltip ?? '',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onLongPress: onBackToToday,
+        child: text,
+      ),
     );
   }
 }

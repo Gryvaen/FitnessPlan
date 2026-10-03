@@ -348,10 +348,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/day-meals',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final raw = state.uri.queryParameters['date'];
           final parsed = raw == null ? null : DateTime.tryParse(raw);
-          return DailyMealsPage(date: parsed ?? AppDates.todayLocal());
+          return DailyMealsSheetPage(
+            key: state.pageKey,
+            date: parsed ?? AppDates.todayLocal(),
+          );
         },
       ),
       GoRoute(

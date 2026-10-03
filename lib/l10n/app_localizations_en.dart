@@ -2378,6 +2378,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectDate => 'Select date';
 
   @override
+  String get backToToday => 'Back to today';
+
+  @override
   String get noWorkoutPlannedTitle => 'No workout planned yet';
 
   @override

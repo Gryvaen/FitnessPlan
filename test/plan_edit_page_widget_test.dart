@@ -2,8 +2,9 @@ import 'package:diet/data/db.dart';
 import 'package:diet/data/repositories/workout_repository.dart';
 import 'package:diet/domain/calendar_day.dart';
 import 'package:diet/domain/models.dart';
-import 'package:diet/l10n/app_localizations.dart';
+import 'package:diet/l10n/app_localizations_ext.dart';
 import 'package:diet/providers/core_providers.dart';
+import 'package:diet/providers/workout_providers.dart';
 import 'package:diet/ui/records/plan_edit_page.dart';
 import 'package:diet/ui/today/today_workout_card.dart';
 import 'package:drift/native.dart';
@@ -58,7 +59,7 @@ Widget _app(Widget child) {
   );
 }
 
-Widget _detailsNavigationApp(DateTime day) {
+Widget _detailsNavigationApp(DateTime day, {ProviderContainer? container}) {
   final router = GoRouter(
     routes: [
       GoRoute(
@@ -75,7 +76,7 @@ Widget _detailsNavigationApp(DateTime day) {
     ],
   );
   return UncontrolledProviderScope(
-    container: _container,
+    container: container ?? _container,
     child: MaterialApp.router(
       debugShowCheckedModeBanner: false,
       locale: const Locale('zh'),
@@ -96,6 +97,122 @@ void main() {
   tearDown(() async {
     _container.dispose();
     await _db.close();
+  });
+
+  testWidgets('training detail sheet switches dates and loads that day', (
+    tester,
+  ) async {
+    final today = CalendarDay.todayLocal();
+    final yesterday = DateTime(today.year, today.month, today.day - 1);
+    final workoutId = await _db
+        .into(_db.dayWorkouts)
+        .insert(DayWorkoutsCompanion.insert(date: yesterday));
+    await _db
+        .into(_db.dayWorkoutItems)
+        .insert(
+          DayWorkoutItemsCompanion.insert(
+            dayWorkoutId: workoutId,
+            exerciseId: 1,
+            exerciseName: '昨日测试动作',
+            targetSets: 1,
+            targetReps: 10,
+          ),
+        );
+    final yesterdaySnapshot = await _repo.daySnapshot(yesterday);
+    final container = ProviderContainer(
+      overrides: [
+        dayWorkoutProvider.overrideWith(
+          (ref, day) => Stream.value(
+            CalendarDay.dayOnly(day) == yesterday
+                ? yesterdaySnapshot
+                : const DayWorkoutSnapshot(),
+          ),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(_detailsNavigationApp(today, container: container));
+    await tester.tap(find.text('打开训练详情'));
+    await tester.pumpAndSettle();
+    expect(find.text('今日训练'), findsOneWidget);
+    expect(find.text('昨日测试动作'), findsNothing);
+    expect(find.byTooltip('后一天'), findsNothing);
+    expect(find.byTooltip('回到今日'), findsNothing);
+
+    await tester.tap(find.byTooltip('前一天'));
+    await tester.pumpAndSettle();
+    expect(find.text('当日训练'), findsOneWidget);
+    expect(find.text('昨日测试动作'), findsWidgets);
+    expect(
+      find.text(AppDates.mdWithWeekday(yesterday, const Locale('zh'))),
+      findsOneWidget,
+    );
+
+    await tester.longPress(find.byTooltip('回到今日'));
+    await tester.pumpAndSettle();
+    expect(find.text('今日训练'), findsOneWidget);
+    expect(find.byTooltip('后一天'), findsNothing);
+
+    await tester.tap(find.byTooltip('前一天'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('后一天'));
+    await tester.pumpAndSettle();
+    expect(find.text('今日训练'), findsOneWidget);
+    expect(find.text('昨日测试动作'), findsNothing);
+    Navigator.of(tester.element(find.byType(TodayWorkoutCard))).pop();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('training detail sheet stops at the one-year boundary', (
+    tester,
+  ) async {
+    final today = CalendarDay.todayLocal();
+    final earliest = DateTime(today.year - 1, today.month, today.day);
+    final container = ProviderContainer(
+      overrides: [
+        dayWorkoutProvider.overrideWith(
+          (ref, day) => Stream.value(const DayWorkoutSnapshot()),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      _detailsNavigationApp(earliest, container: container),
+    );
+    await tester.tap(find.text('打开训练详情'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(
+      find.text(AppDates.mdWithWeekday(earliest, const Locale('zh'))),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .widget<IconButton>(
+            find.ancestor(
+              of: find.byTooltip('前一天'),
+              matching: find.byType(IconButton),
+            ),
+          )
+          .onPressed,
+      isNull,
+    );
+    await tester.tap(find.byTooltip('后一天'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(
+      find.text(
+        AppDates.mdWithWeekday(
+          DateTime(earliest.year, earliest.month, earliest.day + 1),
+          const Locale('zh'),
+        ),
+      ),
+      findsOneWidget,
+    );
+    Navigator.of(tester.element(find.byType(TodayWorkoutCard))).pop();
+    await tester.pumpAndSettle();
   });
 
   testWidgets(

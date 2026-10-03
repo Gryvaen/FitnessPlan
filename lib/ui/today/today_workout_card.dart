@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -1109,20 +1110,105 @@ Future<void> showDayWorkoutDetails(BuildContext context, DateTime day) {
     showDragHandle: true,
     builder: (context) => FractionallySizedBox(
       heightFactor: .9,
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: TodayWorkoutCard(
-            day: day,
-            sectionPrefix: AppDates.isLocalToday(day)
-                ? context.l10n.today
-                : context.l10n.sectionThatDay,
-            showDetails: true,
-          ),
-        ),
-      ),
+      child: _DayWorkoutDetailsSheet(initialDay: day),
     ),
   );
+}
+
+class _DayWorkoutDetailsSheet extends StatefulWidget {
+  const _DayWorkoutDetailsSheet({required this.initialDay});
+
+  final DateTime initialDay;
+
+  @override
+  State<_DayWorkoutDetailsSheet> createState() =>
+      _DayWorkoutDetailsSheetState();
+}
+
+class _DayWorkoutDetailsSheetState extends State<_DayWorkoutDetailsSheet> {
+  late DateTime _day = AppDates.dayOnly(widget.initialDay);
+  final _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _shiftDay(int delta) {
+    setState(() => _day = DateTime(_day.year, _day.month, _day.day + delta));
+    if (_scrollController.hasClients) _scrollController.jumpTo(0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final today = AppDates.todayLocal();
+    final earliest = DateTime(today.year - 1, today.month, today.day);
+    final locale = Localizations.localeOf(context);
+    return SafeArea(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.listPage,
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  tooltip: l10n.prevDay,
+                  visualDensity: VisualDensity.compact,
+                  onPressed: _day.isAfter(earliest)
+                      ? () => _shiftDay(-1)
+                      : null,
+                  icon: const InkIcon(InkGlyph.chevronLeft),
+                ),
+                Expanded(
+                  child: _DayTitle(
+                    label: AppDates.mdWithWeekday(_day, locale),
+                    backToTodayTooltip: _day.isBefore(today)
+                        ? l10n.backToToday
+                        : null,
+                    onBackToToday: _day.isBefore(today)
+                        ? () {
+                            HapticFeedback.selectionClick();
+                            setState(() => _day = today);
+                            if (_scrollController.hasClients) {
+                              _scrollController.jumpTo(0);
+                            }
+                          }
+                        : null,
+                  ),
+                ),
+                if (_day.isBefore(today))
+                  IconButton(
+                    tooltip: l10n.nextDay,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => _shiftDay(1),
+                    icon: const InkIcon(InkGlyph.chevronRight),
+                  )
+                else
+                  const SizedBox(width: 40),
+              ],
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(20),
+              child: TodayWorkoutCard(
+                day: _day,
+                sectionPrefix: AppDates.isLocalToday(_day)
+                    ? l10n.today
+                    : l10n.sectionThatDay,
+                showDetails: true,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _WorkoutItemTile extends ConsumerWidget {
@@ -1377,6 +1463,38 @@ class _TodayPlanPickerSheet extends ConsumerWidget {
         overflow: TextOverflow.ellipsis,
       ),
       onTap: () => Navigator.pop(context, plan),
+    );
+  }
+}
+
+class _DayTitle extends StatelessWidget {
+  const _DayTitle({
+    required this.label,
+    required this.backToTodayTooltip,
+    required this.onBackToToday,
+  });
+
+  final String label;
+  final String? backToTodayTooltip;
+  final VoidCallback? onBackToToday;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Text(
+      label,
+      textAlign: TextAlign.center,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: Theme.of(context).textTheme.titleMedium,
+    );
+    if (onBackToToday == null) return text;
+    return Tooltip(
+      message: backToTodayTooltip ?? '',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onLongPress: onBackToToday,
+        child: text,
+      ),
     );
   }
 }

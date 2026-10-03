@@ -94,7 +94,8 @@ class WorkoutHistoryDay {
   /// anaerobic, and core.
   final Set<int> highlightExerciseIds;
 
-  bool get hasActivity => sets.isNotEmpty || completedItems.isNotEmpty;
+  bool get hasActivity =>
+      sets.isNotEmpty || completedItems.isNotEmpty || planSummaries.isNotEmpty;
 }
 
 /// Per-day-workout completion summary (one per [DayWorkout] on that day).
@@ -1560,23 +1561,21 @@ class WorkoutRepository {
       .customSelect(
         'SELECT date FROM workout_set_logs UNION '
         'SELECT day_workouts.date FROM day_workouts '
-        'JOIN day_workout_items ON day_workout_items.day_workout_id = day_workouts.id '
-        'WHERE day_workout_items.done = 1',
+        'JOIN day_workout_items ON day_workout_items.day_workout_id = day_workouts.id',
         readsFrom: {_db.workoutSetLogs, _db.dayWorkouts, _db.dayWorkoutItems},
       )
       .watch()
       .asyncMap((_) => recentHistory(limitDays: limitDays));
 
   /// Continuous local calendar days ending today (newest first).
-  /// Days without sets / completed items are empty placeholders.
+  /// Days without added items or set logs are empty placeholders.
   Stream<List<WorkoutHistoryDay>> watchRecentCalendarHistory({
     int limitDays = 14,
   }) => _db
       .customSelect(
         'SELECT date FROM workout_set_logs UNION '
         'SELECT day_workouts.date FROM day_workouts '
-        'JOIN day_workout_items ON day_workout_items.day_workout_id = day_workouts.id '
-        'WHERE day_workout_items.done = 1',
+        'JOIN day_workout_items ON day_workout_items.day_workout_id = day_workouts.id',
         readsFrom: {_db.workoutSetLogs, _db.dayWorkouts, _db.dayWorkoutItems},
       )
       .watch()
@@ -1634,12 +1633,13 @@ class WorkoutRepository {
       agg.total++;
       if (item.done) agg.done++;
     }
-    // A day only counts as history once something actually happened (a set
-    // log, or a completed item) — an applied-but-untouched plan alone
-    // doesn't; `workoutsByDay` is only consulted below to summarize days
-    // that already qualify.
-    final days = {...byDay.keys, ...doneByDay.keys}.toList()
-      ..sort((a, b) => b.compareTo(a));
+    // A plan or quick-added day item enters history immediately, including
+    // when its completed exercise count is still zero.
+    final days = {
+      ...byDay.keys,
+      ...doneByDay.keys,
+      ...workoutsByDay.keys,
+    }.toList()..sort((a, b) => b.compareTo(a));
     final selected = limitDays == null ? days : days.take(limitDays);
     return [
       for (final d in selected)

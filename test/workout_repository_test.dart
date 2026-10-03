@@ -72,7 +72,7 @@ void main() {
     },
   );
 
-  test('checking done records target sets so the day enters history', () async {
+  test('adding a plan enters history with zero completed exercises', () async {
     final exercise = await addTestExercise(repo, name: 'Walkout');
     final plan = await repo.createPlan(
       name: 'Today',
@@ -86,15 +86,20 @@ void main() {
       ],
     );
     final day = CalendarDay.todayLocal();
-    await repo.applyPlanToDay(planId: plan, day: day);
-    final item = (await repo.daySnapshot(day)).items.single.item;
     final events = StreamIterator(repo.watchRecentHistory());
     try {
       expect(await events.moveNext(), isTrue);
-      expect(
-        events.current,
-        isEmpty,
-      ); // A plan alone is not completed training.
+      expect(events.current, isEmpty);
+      await repo.applyPlanToDay(planId: plan, day: day);
+      final item = (await repo.daySnapshot(day)).items.single.item;
+      expect(await events.moveNext(), isTrue);
+      expect(events.current, hasLength(1));
+      expect(events.current.single.hasActivity, isTrue);
+      expect(events.current.single.sets, isEmpty);
+      expect(events.current.single.completedItems, isEmpty);
+      expect(events.current.single.planSummaries.single.doneCount, 0);
+      expect(events.current.single.planSummaries.single.totalCount, 1);
+      expect((await repo.recentCalendarHistory()).first.hasActivity, isTrue);
       await repo.setItemDone(item.id, true);
       expect(await events.moveNext(), isTrue);
       expect(events.current.single.sets, hasLength(3));
@@ -103,10 +108,12 @@ void main() {
         'Walkout',
       );
       await repo.setItemDone(item.id, false);
-      // Unchecking clears the done flag AND the auto-filled sets it created,
-      // so a day with nothing else logged drops out of history entirely.
+      // Unchecking clears the auto-filled sets but keeps the added plan in
+      // history with zero completed exercises.
       expect(await events.moveNext(), isTrue);
-      expect(events.current, isEmpty);
+      expect(events.current.single.sets, isEmpty);
+      expect(events.current.single.completedItems, isEmpty);
+      expect(events.current.single.planSummaries.single.doneCount, 0);
     } finally {
       await events.cancel();
     }

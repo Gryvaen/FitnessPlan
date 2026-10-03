@@ -8,6 +8,7 @@ import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
+import '../theme/macro_color.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/food_name_link.dart';
 import '../widgets/form_options.dart';
@@ -408,14 +409,15 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
   Widget _foodTile(FoodItem f, {String? badge}) {
     final theme = Theme.of(context);
     return ListTile(
-      title: FoodNameLink(
-        name: f.displayName(context),
-        foodId: f.id,
-        carbG: f.carbPer100,
-        proteinG: f.proteinPer100,
-        fatG: f.fatPer100,
-        style: theme.textTheme.bodyLarge,
-        onTap: () => _openFoodDetailFromSearch(f),
+      title: Text(
+        f.displayName(context),
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: dominantMacroColor(
+            carbG: f.carbPer100,
+            proteinG: f.proteinPer100,
+            fatG: f.fatPer100,
+          ),
+        ),
       ),
       subtitle: Text(
         [?badge, f.category, '${f.kcalPer100.round()} kcal/100g'].join(' · '),

@@ -575,6 +575,7 @@ void main() {
       await _container.read(allWorkoutHistoryProvider.future);
 
       await _pump(tester, const TrainRecordsTab(initialTab: 2));
+      expect(find.text('最近训练'), findsNothing);
 
       // Two scopes are now available ("最近"/"全部", 13 days apart) — jump
       // straight to "全部" via the scope chip, distinct from the top-level
@@ -637,6 +638,61 @@ void main() {
           .where((w) => w.children.length == 3);
       expect(trainTabs, isNotEmpty);
       expect(trainTabs.single.index, 2);
+    },
+  );
+
+  testWidgets(
+    'an added training plan appears in history with zero completed actions',
+    (tester) async {
+      final today = CalendarDay.todayLocal();
+      final workoutId = await _db
+          .into(_db.dayWorkouts)
+          .insert(
+            DayWorkoutsCompanion.insert(
+              date: today,
+              planId: const Value(1),
+              planName: const Value('今日测试计划'),
+            ),
+          );
+      await _db
+          .into(_db.dayWorkoutItems)
+          .insert(
+            DayWorkoutItemsCompanion.insert(
+              dayWorkoutId: workoutId,
+              exerciseId: 1,
+              exerciseName: '杠铃卧推',
+              targetSets: 1,
+              targetReps: 12,
+            ),
+          );
+
+      final keepAlive = [
+        _container.listen(recentStepsProvider, (_, _) {}),
+        _container.listen(allStepsProvider, (_, _) {}),
+        _container.listen(workoutHistoryProvider, (_, _) {}),
+        _container.listen(allWorkoutHistoryProvider, (_, _) {}),
+      ];
+      addTearDown(() {
+        for (final subscription in keepAlive) {
+          subscription.close();
+        }
+      });
+      await _container.read(workoutHistoryProvider.future);
+      await _container.read(allWorkoutHistoryProvider.future);
+
+      await _pump(tester, const TrainRecordsTab(initialTab: 2));
+      expect(find.text('最近训练'), findsOneWidget);
+      expect(find.textContaining('今日测试计划 · 0/1'), findsOneWidget);
+
+      await tester.tap(find.text('最近训练'));
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.textContaining('今日测试计划 · 0/1'),
+        ),
+        findsOneWidget,
+      );
     },
   );
 

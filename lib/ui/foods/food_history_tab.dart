@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/repositories/meal_repository.dart';
+import '../../domain/calendar_day.dart';
+import '../../domain/diet_plan.dart';
+import '../../domain/diet_strategy.dart';
+import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../ink/ink_icon.dart';
@@ -34,8 +38,8 @@ String mealHistoryLabel(MealHistoryDay day, AppLocalizations l10n) {
 }
 
 /// Diet history for the foods page. Matches the train-records history:
-/// a recent/all scope, one summary row, then a day list that highlights
-/// other days sharing a food from the day just opened.
+/// a recent/all scope, one summary row, then a day list that groups days
+/// by their carb-cycle type when a cut-goal carb-cycle plan is selected.
 class FoodHistoryTab extends ConsumerStatefulWidget {
   const FoodHistoryTab({super.key});
 
@@ -209,7 +213,41 @@ class _MealHistoryScopeList extends ConsumerWidget {
   }
 }
 
-class _MealHistorySheet extends StatefulWidget {
+/// Only a resolved carb-cycle target can supply a history highlight group.
+CarbDayType? mealHistoryCarbDayType({
+  required FitnessGoal? goal,
+  required DietStrategyKind? selectedStrategy,
+  required DailyNutritionTarget? target,
+}) {
+  if (goal != FitnessGoal.cut ||
+      selectedStrategy != DietStrategyKind.carbCycle ||
+      target?.strategy != DietStrategyKind.carbCycle) {
+    return null;
+  }
+  return target?.dayType;
+}
+
+bool mealHistoryHighlightsDay({
+  required FitnessGoal? goal,
+  required DietStrategyKind? selectedStrategy,
+  required DailyNutritionTarget? selectedTarget,
+  required DailyNutritionTarget? dayTarget,
+}) {
+  final selectedType = mealHistoryCarbDayType(
+    goal: goal,
+    selectedStrategy: selectedStrategy,
+    target: selectedTarget,
+  );
+  return selectedType != null &&
+      mealHistoryCarbDayType(
+            goal: goal,
+            selectedStrategy: selectedStrategy,
+            target: dayTarget,
+          ) ==
+          selectedType;
+}
+
+class _MealHistorySheet extends ConsumerStatefulWidget {
   const _MealHistorySheet({
     required this.days,
     required this.locale,
@@ -223,15 +261,25 @@ class _MealHistorySheet extends StatefulWidget {
   final String Function(MealHistoryDay day) labelFor;
 
   @override
-  State<_MealHistorySheet> createState() => _MealHistorySheetState();
+  ConsumerState<_MealHistorySheet> createState() => _MealHistorySheetState();
 }
 
-class _MealHistorySheetState extends State<_MealHistorySheet> {
-  Set<int> _highlightFoodIds = const {};
+class _MealHistorySheetState extends ConsumerState<_MealHistorySheet> {
+  DateTime? _selectedDay;
+  late Future<Map<DateTime, DailyNutritionTarget>> _targets;
 
-  bool _sharesHighlight(MealHistoryDay day) {
-    if (_highlightFoodIds.isEmpty) return false;
-    return day.foodIds.any(_highlightFoodIds.contains);
+  @override
+  void initState() {
+    super.initState();
+    _targets = _loadTargets();
+  }
+
+  Future<Map<DateTime, DailyNutritionTarget>> _loadTargets() {
+    if (widget.days.isEmpty) return Future.value(const {});
+    final dates = widget.days.map((day) => day.date).toList()..sort();
+    return ref
+        .read(dietStrategyRepositoryProvider)
+        .targetsBetween(dates.first, dates.last, ref.read(profileProvider));
   }
 
   @override
@@ -243,30 +291,49 @@ class _MealHistorySheetState extends State<_MealHistorySheet> {
     final muted = theme.textTheme.bodySmall?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
+    final goal = ref.watch(profileProvider)?.goal;
+    final selectedStrategy = ref.watch(activeDietPlanProvider).value?.kind;
     return SafeArea(
-      child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        itemCount: widget.days.length + 1,
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(widget.title, style: theme.textTheme.titleMedium),
-            );
-          }
-          final day = widget.days[index - 1];
-          final highlighted = _sharesHighlight(day);
-          return _MealHistoryDayRow(
-            dateLabel: AppDates.md(day.date, widget.locale),
-            detailLabel: widget.labelFor(day),
-            detailStyle: highlighted ? highlightStyle : muted,
-            onTap: !day.hasActivity
-                ? null
-                : () async {
-                    await context.push(dailyMealsPath(day.date));
-                    if (!mounted) return;
-                    setState(() => _highlightFoodIds = day.foodIds);
-                  },
+      child: FutureBuilder<Map<DateTime, DailyNutritionTarget>>(
+        future: _targets,
+        builder: (context, snapshot) {
+          final targets =
+              snapshot.data ?? const <DateTime, DailyNutritionTarget>{};
+          return ListView.builder(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            itemCount: widget.days.length + 1,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(widget.title, style: theme.textTheme.titleMedium),
+                );
+              }
+              final day = widget.days[index - 1];
+              final highlighted = mealHistoryHighlightsDay(
+                goal: goal,
+                selectedStrategy: selectedStrategy,
+                selectedTarget: _selectedDay == null
+                    ? null
+                    : targets[_selectedDay],
+                dayTarget: targets[CalendarDay.dayOnly(day.date)],
+              );
+              return _MealHistoryDayRow(
+                dateLabel: AppDates.md(day.date, widget.locale),
+                detailLabel: widget.labelFor(day),
+                detailStyle: highlighted ? highlightStyle : muted,
+                onTap: !day.hasActivity
+                    ? null
+                    : () async {
+                        setState(
+                          () => _selectedDay = CalendarDay.dayOnly(day.date),
+                        );
+                        await context.push(dailyMealsPath(day.date));
+                        if (!mounted) return;
+                        setState(() => _targets = _loadTargets());
+                      },
+              );
+            },
           );
         },
       ),

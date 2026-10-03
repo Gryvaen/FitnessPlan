@@ -874,6 +874,11 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
           data: (days) {
             // Recent always has 14 calendar rows (empty days show「无」).
             // All only lists days that actually have activity.
+            // The padded recent list must not create a workout-history entry
+            // before any training has actually been recorded.
+            if (!all && !days.any((day) => day.hasActivity)) {
+              return const SizedBox.shrink();
+            }
             if (all && days.isEmpty) {
               return SportEmptyState(
                 title: l10n.noSetLogs,

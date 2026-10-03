@@ -1,4 +1,5 @@
 import 'package:diet/data/db.dart';
+import 'package:diet/data/repositories/food_repository.dart';
 import 'package:diet/l10n/app_localizations.dart';
 import 'package:diet/providers/app_providers.dart';
 import 'package:diet/ui/meals/log_meal_page.dart';
@@ -46,6 +47,7 @@ void main() {
             fatG: 2.4,
           ),
         );
+    await FoodRepository(db).toggleFavorite(foodId);
 
     final container = ProviderContainer(
       overrides: [
@@ -87,8 +89,29 @@ void main() {
 
     await tester.tap(find.text('打开记一笔'));
     await tester.pumpAndSettle();
+    final recent = find.byKey(ValueKey('recent-$foodId'));
+    final favorite = find.byKey(ValueKey('fav-$foodId'));
+    expect(recent, findsOneWidget);
+    expect(favorite, findsOneWidget);
+    await tester.tap(find.descendant(of: recent, matching: find.text('测试鸡胸肉')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('克数'), findsOneWidget);
+    expect(find.text('更改'), findsNothing);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(of: favorite, matching: find.text('测试鸡胸肉')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('克数'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
     final foodTile = find.ancestor(
-      of: find.text('测试鸡胸肉').last,
+      of: find.descendant(of: recent, matching: find.text('测试鸡胸肉')),
       matching: find.byType(ListTile),
     );
     final tileRect = tester.getRect(foodTile);
@@ -99,6 +122,18 @@ void main() {
     expect(find.text('更改'), findsNothing);
 
     await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    await tester.drag(recent, const Offset(-400, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('确定将 测试鸡胸肉 移出最近记录？再次记录后会重新出现。'), findsOneWidget);
+    await tester.tap(find.text('取消'));
+    await tester.pumpAndSettle();
+
+    await tester.drag(favorite, const Offset(-400, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('确定取消收藏「测试鸡胸肉」？'), findsOneWidget);
+    await tester.tap(find.text('取消'));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('记一笔'), findsOneWidget);

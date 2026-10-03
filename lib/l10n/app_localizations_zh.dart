@@ -2332,6 +2332,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get selectDate => '选择日期';
 
   @override
+  String get backToToday => '回到今日';
+
+  @override
   String get noWorkoutPlannedTitle => '还没有安排训练';
 
   @override

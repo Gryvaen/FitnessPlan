@@ -4209,6 +4209,12 @@ abstract class AppLocalizations {
   /// **'Select date'**
   String get selectDate;
 
+  /// No description provided for @backToToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to today'**
+  String get backToToday;
+
   /// No description provided for @noWorkoutPlannedTitle.
   ///
   /// In en, this message translates to:

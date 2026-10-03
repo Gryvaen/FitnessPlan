@@ -2064,6 +2064,7 @@
   "stepsNotSynced": "未同步",
   "appTagline": "记录饮食训练与变化",
   "selectDate": "选择日期",
+  "backToToday": "回到今日",
   "noWorkoutPlannedTitle": "还没有安排训练",
   "noWorkoutPlannedHint": "点击 + 添加你的第一个训练计划",
   "noMealsTitle": "还没有记录饮食",
