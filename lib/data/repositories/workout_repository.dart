@@ -308,13 +308,14 @@ class WorkoutRepository {
   }
 
   Future<List<WorkoutPlanSummary>> listPlanSummaries() async {
+    await discardRetiredOtherPlan();
     final plans = await (_db.select(
       _db.workoutPlans,
     )..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).get();
     if (plans.isEmpty) return const [];
 
-    // One batched query for every plan's items instead of one per plan —
-    // this reruns on every workoutPlans table write (watchPlans().asyncMap).
+    // One batched query for every plan's items instead of one per plan.
+    // [watchPlanSummaries] reruns this when either table changes.
     final planIds = [for (final p in plans) p.id];
     final allItems =
         await (_db.select(_db.workoutPlanItems)
@@ -335,6 +336,49 @@ class WorkoutRepository {
     return (_db.select(
       _db.workoutPlans,
     )..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).watch();
+  }
+
+  /// Plan list with exercise counts. Emits when a plan row or a template
+  /// exercise row changes, so dragging an exercise in or out updates the
+  /// count without waiting for the plan itself to be rewritten.
+  Stream<List<WorkoutPlanSummary>> watchPlanSummaries() {
+    late final StreamController<List<WorkoutPlanSummary>> controller;
+    var pushing = false;
+    var dirty = false;
+
+    Future<void> push() async {
+      if (controller.isClosed) return;
+      if (pushing) {
+        dirty = true;
+        return;
+      }
+      pushing = true;
+      try {
+        do {
+          dirty = false;
+          if (controller.isClosed) return;
+          controller.add(await listPlanSummaries());
+        } while (dirty && !controller.isClosed);
+      } finally {
+        pushing = false;
+      }
+    }
+
+    controller = StreamController<List<WorkoutPlanSummary>>(
+      onListen: () {
+        final subs = <StreamSubscription<dynamic>>[
+          watchPlans().listen((_) => push()),
+          _db.select(_db.workoutPlanItems).watch().listen((_) => push()),
+        ];
+        controller.onCancel = () async {
+          for (final s in subs) {
+            await s.cancel();
+          }
+        };
+        push();
+      },
+    );
+    return controller.stream;
   }
 
   Future<List<WorkoutPlanItem>> itemsFor(int planId) {
@@ -1002,9 +1046,32 @@ class WorkoutRepository {
     });
   }
 
+  static const _retiredOtherPlanMetaKey = 'other_workout_plan_id';
+
+  /// Removes the catch-all plan created by an earlier build. 「其他」 is only
+  /// today's untitled group, not a saved template.
+  Future<void> discardRetiredOtherPlan() async {
+    final row = await (_db.select(
+      _db.appMeta,
+    )..where((t) => t.key.equals(_retiredOtherPlanMetaKey))).getSingleOrNull();
+    if (row == null) return;
+    final id = int.tryParse(row.value);
+    if (id != null) {
+      await (_db.update(_db.dayWorkouts)..where((t) => t.planId.equals(id)))
+          .write(const DayWorkoutsCompanion(planId: Value(null)));
+      await (_db.delete(
+        _db.workoutPlanItems,
+      )..where((t) => t.planId.equals(id))).go();
+      await (_db.delete(_db.workoutPlans)..where((t) => t.id.equals(id))).go();
+    }
+    await (_db.delete(
+      _db.appMeta,
+    )..where((t) => t.key.equals(_retiredOtherPlanMetaKey))).go();
+  }
+
   /// Moves one exercise out of its plan group into today's untitled group
-  /// ("其他"). Set logs, completion, weight, and notes stay on the same item.
-  /// The saved plan template is left unchanged. An empty source group is removed.
+  /// ("其他"). Progress stays on the same row. The source plan template loses
+  /// this exercise. 「其他」 itself is not a plan template.
   Future<void> moveDayWorkoutItemToOther(int dayWorkoutItemId) async {
     final day = await _dayForWorkoutItem(dayWorkoutItemId);
     if (day == null) return;
@@ -1016,59 +1083,230 @@ class WorkoutRepository {
         _db.dayWorkoutItems,
       )..where((t) => t.id.equals(dayWorkoutItemId))).getSingleOrNull();
       if (item == null) return;
-
       final source = await (_db.select(
         _db.dayWorkouts,
       )..where((t) => t.id.equals(item.dayWorkoutId))).getSingleOrNull();
       if (source == null || _isUntitledDayWorkout(source)) return;
-
-      final groups =
-          await (_db.select(_db.dayWorkouts)
-                ..where((t) => t.date.equals(start))
-                ..orderBy([
-                  (t) => OrderingTerm.asc(t.sortOrder),
-                  (t) => OrderingTerm.asc(t.id),
-                ]))
-              .get();
-      DayWorkout? existingOther;
-      for (final group in groups) {
-        if (_isUntitledDayWorkout(group)) {
-          existingOther = group;
-          break;
-        }
-      }
-
-      final int otherId;
-      if (existingOther != null) {
-        otherId = existingOther.id;
-      } else {
-        otherId = await _db
-            .into(_db.dayWorkouts)
-            .insert(
-              DayWorkoutsCompanion.insert(
-                date: start,
-                sortOrder: Value(groups.length),
-              ),
-            );
-      }
-
-      final otherItems = await dayItemsFor(otherId);
-      await (_db.update(
-        _db.dayWorkoutItems,
-      )..where((t) => t.id.equals(item.id))).write(
-        DayWorkoutItemsCompanion(
-          dayWorkoutId: Value(otherId),
-          sortOrder: Value(otherItems.length),
-        ),
+      final otherGroupId = await _ensureUntitledDayGroup(start);
+      await _moveItemOntoGroup(
+        item: item,
+        source: source,
+        targetDayWorkoutId: otherGroupId,
       );
-
-      final remaining = await dayItemsFor(source.id);
-      if (remaining.isEmpty) {
-        await (_db.delete(
-          _db.dayWorkouts,
-        )..where((t) => t.id.equals(source.id))).go();
-      }
     });
+  }
+
+  /// Moves one exercise onto [targetDayWorkoutId], including from one named
+  /// plan to another. Progress stays on the same row. A named plan's template
+  /// gains or loses the exercise, and an existing row picks up today's sets
+  /// and reps. An untitled 「其他」 group has no template. An emptied source
+  /// day group is removed.
+  Future<void> moveDayWorkoutItemIntoPlan({
+    required int dayWorkoutItemId,
+    required int targetDayWorkoutId,
+  }) async {
+    final day = await _dayForWorkoutItem(dayWorkoutItemId);
+    if (day == null) return;
+    CalendarDay.ensureEditableDay(day);
+    final start = _dayStart(day);
+
+    await _db.transaction(() async {
+      final item = await (_db.select(
+        _db.dayWorkoutItems,
+      )..where((t) => t.id.equals(dayWorkoutItemId))).getSingleOrNull();
+      if (item == null) return;
+      final source = await (_db.select(
+        _db.dayWorkouts,
+      )..where((t) => t.id.equals(item.dayWorkoutId))).getSingleOrNull();
+      if (source == null || source.id == targetDayWorkoutId) return;
+
+      final target = await (_db.select(
+        _db.dayWorkouts,
+      )..where((t) => t.id.equals(targetDayWorkoutId))).getSingleOrNull();
+      if (target == null || _dayStart(target.date) != start) return;
+
+      final int resolvedTargetId;
+      if (_isUntitledDayWorkout(target)) {
+        resolvedTargetId = await _ensureUntitledDayGroup(start);
+      } else if (target.planId == null) {
+        return;
+      } else {
+        resolvedTargetId = target.id;
+      }
+      if (source.id == resolvedTargetId) return;
+      await _moveItemOntoGroup(
+        item: item,
+        source: source,
+        targetDayWorkoutId: resolvedTargetId,
+      );
+    });
+  }
+
+  /// Today's untitled group. It is not linked to a saved plan.
+  Future<int> _ensureUntitledDayGroup(DateTime start) async {
+    final groups =
+        await (_db.select(_db.dayWorkouts)
+              ..where((t) => t.date.equals(start))
+              ..orderBy([
+                (t) => OrderingTerm.asc(t.sortOrder),
+                (t) => OrderingTerm.asc(t.id),
+              ]))
+            .get();
+    for (final group in groups) {
+      if (!_isUntitledDayWorkout(group)) continue;
+      if (group.planId != null) {
+        await (_db.update(_db.dayWorkouts)..where((t) => t.id.equals(group.id)))
+            .write(const DayWorkoutsCompanion(planId: Value(null)));
+      }
+      return group.id;
+    }
+    return _db
+        .into(_db.dayWorkouts)
+        .insert(
+          DayWorkoutsCompanion.insert(
+            date: start,
+            sortOrder: Value(groups.length),
+          ),
+        );
+  }
+
+  Future<void> _moveItemOntoGroup({
+    required DayWorkoutItem item,
+    required DayWorkout source,
+    required int targetDayWorkoutId,
+  }) async {
+    final target = await (_db.select(
+      _db.dayWorkouts,
+    )..where((t) => t.id.equals(targetDayWorkoutId))).getSingleOrNull();
+    if (target == null) return;
+
+    final targetItems = await dayItemsFor(target.id);
+    await (_db.update(
+      _db.dayWorkoutItems,
+    )..where((t) => t.id.equals(item.id))).write(
+      DayWorkoutItemsCompanion(
+        dayWorkoutId: Value(target.id),
+        sortOrder: Value(targetItems.length),
+      ),
+    );
+
+    final sourcePlanId = source.planId;
+    if (sourcePlanId != null) {
+      await _removeExerciseFromPlanTemplate(
+        planId: sourcePlanId,
+        exerciseId: item.exerciseId,
+      );
+    }
+    final targetPlanId = target.planId;
+    if (targetPlanId != null) {
+      await _appendExerciseToPlanTemplate(planId: targetPlanId, item: item);
+    }
+
+    final remaining = await dayItemsFor(source.id);
+    if (remaining.isEmpty) {
+      await (_db.delete(
+        _db.dayWorkouts,
+      )..where((t) => t.id.equals(source.id))).go();
+    }
+  }
+
+  Future<void> _appendExerciseToPlanTemplate({
+    required int planId,
+    required DayWorkoutItem item,
+  }) async {
+    final template = await itemsFor(planId);
+    if (template.any((row) => row.exerciseId == item.exerciseId)) {
+      await _writePlanItemTargets(
+        planId: planId,
+        exerciseId: item.exerciseId,
+        targetSets: item.targetSets,
+        targetReps: item.targetReps,
+      );
+      return;
+    }
+    await _db
+        .into(_db.workoutPlanItems)
+        .insert(
+          WorkoutPlanItemsCompanion.insert(
+            planId: planId,
+            exerciseId: item.exerciseId,
+            exerciseName: item.exerciseName,
+            targetSets: item.targetSets,
+            targetReps: item.targetReps,
+            sortOrder: Value(template.length),
+          ),
+        );
+  }
+
+  /// Updates sets and reps on the template row for [exerciseId]. Leaves every
+  /// other template exercise in place.
+  Future<void> _writePlanItemTargets({
+    required int planId,
+    required int exerciseId,
+    required int targetSets,
+    required int targetReps,
+  }) async {
+    await (_db.update(_db.workoutPlanItems)..where(
+          (t) => t.planId.equals(planId) & t.exerciseId.equals(exerciseId),
+        ))
+        .write(
+          WorkoutPlanItemsCompanion(
+            targetSets: Value(targetSets),
+            targetReps: Value(targetReps),
+          ),
+        );
+  }
+
+  /// Today's order becomes the template order for exercises that are on both.
+  /// Template exercises missing from today keep their relative order and sit
+  /// after the ones trained today.
+  Future<void> _syncPlanItemOrderFromDay({
+    required int planId,
+    required int dayWorkoutId,
+  }) async {
+    final dayItems = await dayItemsFor(dayWorkoutId);
+    final template = await itemsFor(planId);
+    final templateIds = {for (final row in template) row.exerciseId};
+    final todayIds = <int>[];
+    for (final item in dayItems) {
+      if (!templateIds.contains(item.exerciseId)) continue;
+      if (todayIds.contains(item.exerciseId)) continue;
+      todayIds.add(item.exerciseId);
+    }
+    final todaySet = todayIds.toSet();
+    var order = 0;
+    for (final exerciseId in todayIds) {
+      await (_db.update(_db.workoutPlanItems)..where(
+            (t) => t.planId.equals(planId) & t.exerciseId.equals(exerciseId),
+          ))
+          .write(WorkoutPlanItemsCompanion(sortOrder: Value(order)));
+      order++;
+    }
+    for (final row in template) {
+      if (todaySet.contains(row.exerciseId)) continue;
+      await (_db.update(
+        _db.workoutPlanItems,
+      )..where((t) => t.id.equals(row.id))).write(
+        WorkoutPlanItemsCompanion(sortOrder: Value(order)),
+      );
+      order++;
+    }
+  }
+
+  Future<void> _removeExerciseFromPlanTemplate({
+    required int planId,
+    required int exerciseId,
+  }) async {
+    await (_db.delete(_db.workoutPlanItems)..where(
+          (t) => t.planId.equals(planId) & t.exerciseId.equals(exerciseId),
+        ))
+        .go();
+    final left = await itemsFor(planId);
+    if (left.isEmpty) {
+      await (_db.delete(
+        _db.workoutPlans,
+      )..where((t) => t.id.equals(planId))).go();
+    }
   }
 
   bool _isUntitledDayWorkout(DayWorkout workout) {
@@ -1076,7 +1314,9 @@ class WorkoutRepository {
     return name == null || name.isEmpty;
   }
 
-  /// Removes one day-workout item and its set logs; drops empty day row.
+  /// Removes one day-workout item and its set logs; drops an empty day row.
+  /// A named plan also loses this exercise from its template, matching a drag
+  /// out to 「其他」. An emptied template is deleted. 「其他」 has no template.
   Future<void> deleteDayWorkoutItem(int dayWorkoutItemId) async {
     final day = await _dayForWorkoutItem(dayWorkoutItemId);
     if (day == null) return;
@@ -1086,6 +1326,9 @@ class WorkoutRepository {
         _db.dayWorkoutItems,
       )..where((t) => t.id.equals(dayWorkoutItemId))).getSingleOrNull();
       if (item == null) return;
+      final workout = await (_db.select(
+        _db.dayWorkouts,
+      )..where((t) => t.id.equals(item.dayWorkoutId))).getSingleOrNull();
 
       await (_db.delete(
         _db.workoutSetLogs,
@@ -1099,6 +1342,13 @@ class WorkoutRepository {
         await (_db.delete(
           _db.dayWorkouts,
         )..where((t) => t.id.equals(item.dayWorkoutId))).go();
+      }
+      final planId = workout?.planId;
+      if (planId != null) {
+        await _removeExerciseFromPlanTemplate(
+          planId: planId,
+          exerciseId: item.exerciseId,
+        );
       }
     });
   }
@@ -1144,6 +1394,13 @@ class WorkoutRepository {
                   t.dayWorkoutId.equals(dayWorkoutId),
             ))
             .write(DayWorkoutItemsCompanion(sortOrder: Value(i)));
+      }
+      final planId = workout.planId;
+      if (planId != null) {
+        await _syncPlanItemOrderFromDay(
+          planId: planId,
+          dayWorkoutId: dayWorkoutId,
+        );
       }
     });
   }
@@ -1210,6 +1467,19 @@ class WorkoutRepository {
                 dayWorkoutItemId: Value(dayWorkoutItemId),
               ),
             );
+      }
+
+      final workout = await (_db.select(
+        _db.dayWorkouts,
+      )..where((t) => t.id.equals(item.dayWorkoutId))).getSingleOrNull();
+      final planId = workout?.planId;
+      if (planId != null) {
+        await _writePlanItemTargets(
+          planId: planId,
+          exerciseId: item.exerciseId,
+          targetSets: item.targetSets,
+          targetReps: perSetValue,
+        );
       }
     });
   }

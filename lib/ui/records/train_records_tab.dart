@@ -84,7 +84,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   String? _appliedRouteKey;
 
   /// Add/edit dialogs sit outside the library search group. Their buttons
-  /// would otherwise count as an outside tap and snap the filter back to 全部.
+  /// would otherwise count as an outside tap and clear the search keyword.
   var _exerciseDialogDepth = 0;
 
   @override
@@ -152,17 +152,16 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     });
   }
 
-  /// 点记录页里搜索框和结果行以外的位置：收起搜索，并丢掉关键字和分类。
+  /// 点记录页里搜索框和结果行以外的位置：清掉关键字。
+  /// 已选分类保留，搜索框也不收起。
   void _discardPlanSearch() {
     if (_categoryMenuOpen) return;
     _dropSearchFocus(_planSearchFocus);
-    if (!_planSearchOpen && _planQuery.isEmpty && _planCategory == null) {
-      return;
-    }
+    if (!_planSearchOpen && _planQuery.isEmpty) return;
+    if (_planCategory != null && _planQuery.isEmpty) return;
     setState(() {
-      _planSearchOpen = false;
       _planQuery = '';
-      _planCategory = null;
+      if (_planCategory == null) _planSearchOpen = false;
     });
   }
 
@@ -177,17 +176,18 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     });
   }
 
-  /// 点动作列表或标题行的空白处：收起搜索，并丢掉关键字和分类筛选。
+  /// 点动作列表或标题行的空白处：清掉关键字。
+  /// 已选分类保留，搜索框也不收起。
   void _discardExerciseSearch() {
     if (_categoryMenuOpen || _exerciseDialogDepth > 0) return;
     final route = ModalRoute.of(context);
     if (route != null && !route.isCurrent) return;
     _dropSearchFocus(_exerciseSearchFocus);
-    if (!_exerciseSearchOpen && _query.isEmpty && _category == null) return;
+    if (!_exerciseSearchOpen && _query.isEmpty) return;
+    if (_category != null && _query.isEmpty) return;
     setState(() {
-      _exerciseSearchOpen = false;
       _query = '';
-      _category = null;
+      if (_category == null) _exerciseSearchOpen = false;
     });
   }
 
@@ -698,9 +698,9 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                           );
                         }
                         final visible = plans.where((plan) {
+                          final name = plan.plan.name.toLowerCase();
                           final nameOk =
-                              _planQuery.isEmpty ||
-                              plan.plan.name.toLowerCase().contains(_planQuery);
+                              _planQuery.isEmpty || name.contains(_planQuery);
                           if (!nameOk) return false;
                           final category = _planCategory;
                           if (category == null) return true;
@@ -965,10 +965,13 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                     ),
                   ),
                 if (!_exerciseSearchOpen) const Spacer(),
-                PlainIconAction(
-                  iconWidget: const InkIcon(InkGlyph.add),
-                  label: l10n.addExercise,
-                  onPressed: () => _addExercise(context, ref),
+                TapRegion(
+                  groupId: _exerciseSearchGroup,
+                  child: PlainIconAction(
+                    iconWidget: const InkIcon(InkGlyph.add),
+                    label: l10n.addExercise,
+                    onPressed: () => _addExercise(context, ref),
+                  ),
                 ),
               ],
             ),

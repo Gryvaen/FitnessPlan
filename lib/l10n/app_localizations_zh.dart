@@ -868,6 +868,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get invalidGramsValue => '请输入大于 0 的克数';
 
   @override
+  String get manualWeightToggle => '手动输入体重';
+
+  @override
+  String get invalidWeightValue => '请输入大于 0 的体重';
+
+  @override
   String get deleteCustomFood => '删除自定义食材';
 
   @override

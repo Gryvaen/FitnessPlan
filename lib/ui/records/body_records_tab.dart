@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -191,7 +192,7 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
                   children: [
                     if (latest != null) ...[
                       Text(
-                        '${latest.weightKg.toStringAsFixed(1)} kg',
+                        '${latest.weightKg.toStringAsFixed(2)} kg',
                         style: theme.textTheme.headlineLarge,
                       ),
                       if (previous != null)
@@ -268,7 +269,7 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
         ),
         const SizedBox(width: 4),
         Text(
-          '${up ? '+' : ''}${delta.toStringAsFixed(1)} kg · '
+          '${up ? '+' : ''}${delta.toStringAsFixed(2)} kg · '
           '${context.l10n.sincePreviousRecord}',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
         ),
@@ -339,7 +340,7 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
           (log) => SportListTile(
             key: ValueKey(log.id),
             title: Text(
-              '${log.weightKg.toStringAsFixed(1)} kg',
+              '${log.weightKg.toStringAsFixed(2)} kg',
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             subtitle: Text(
@@ -645,6 +646,9 @@ class _WeightLogDialog extends StatefulWidget {
 class _WeightLogDialogState extends State<_WeightLogDialog> {
   late double _weightKg;
   double? _bodyFatPct;
+  final _manualCtrl = TextEditingController();
+  bool _useManual = false;
+  String? _manualError;
 
   @override
   void initState() {
@@ -659,14 +663,29 @@ class _WeightLogDialogState extends State<_WeightLogDialog> {
         : FormOptions.snapDouble(FormOptions.bodyFatPct(), bodyFat);
   }
 
+  @override
+  void dispose() {
+    _manualCtrl.dispose();
+    super.dispose();
+  }
+
   void _persistExtras() {
     widget.onExtrasChanged(_bodyFatPct);
   }
 
   void _submit() {
+    var weightKg = _weightKg;
+    if (_useManual) {
+      final parsed = double.tryParse(_manualCtrl.text.trim());
+      if (parsed == null || parsed <= 0) {
+        setState(() => _manualError = context.l10n.invalidWeightValue);
+        return;
+      }
+      weightKg = (parsed * 100).round() / 100;
+    }
     Navigator.pop(
       context,
-      _WeightLogDraft(weightKg: _weightKg, bodyFatPct: _bodyFatPct),
+      _WeightLogDraft(weightKg: weightKg, bodyFatPct: _bodyFatPct),
     );
   }
 
@@ -699,6 +718,57 @@ class _WeightLogDialogState extends State<_WeightLogDialog> {
                 _persistExtras();
               },
             ),
+            InkWell(
+              onTap: () => setState(() {
+                _useManual = !_useManual;
+                if (!_useManual) {
+                  _manualCtrl.clear();
+                  _manualError = null;
+                }
+              }),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    const Expanded(child: Divider(height: 1)),
+                    InkIcon(
+                      _useManual ? InkGlyph.collapse : InkGlyph.expand,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (_useManual)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: TextField(
+                  controller: _manualCtrl,
+                  autofocus: true,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  inputFormatters: [
+                    TextInputFormatter.withFunction((oldValue, newValue) {
+                      if (RegExp(r'^\d*\.?\d{0,2}$').hasMatch(newValue.text)) {
+                        return newValue;
+                      }
+                      return oldValue;
+                    }),
+                  ],
+                  decoration: InputDecoration(
+                    labelText: l10n.manualWeightToggle,
+                    suffixText: 'kg',
+                    errorText: _manualError,
+                  ),
+                  onChanged: (_) {
+                    if (_manualError != null) {
+                      setState(() => _manualError = null);
+                    }
+                  },
+                ),
+              ),
           ],
         ),
       ),

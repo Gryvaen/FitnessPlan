@@ -12,7 +12,7 @@ final exercisesProvider = StreamProvider<List<Exercise>>((ref) {
 final workoutPlansProvider =
     StreamProvider.autoDispose<List<WorkoutPlanSummary>>((ref) {
       final repo = ref.watch(workoutRepositoryProvider);
-      return repo.watchPlans().asyncMap((_) => repo.listPlanSummaries());
+      return repo.watchPlanSummaries();
     });
 
 final todayWorkoutProvider = StreamProvider<DayWorkoutSnapshot>((ref) {

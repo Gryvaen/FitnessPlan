@@ -151,6 +151,7 @@ void main() {
 
       await tester.tap(find.byKey(const ValueKey('exercise-category-filter')));
       await tester.pumpAndSettle();
+      expect(find.text('其他'), findsNothing);
       await tester.tap(find.text('腿'));
       await tester.pumpAndSettle();
       expect(row('深蹲'), findsOneWidget);
@@ -210,12 +211,35 @@ void main() {
 
       await tester.tapAt(const Offset(200, 700));
       await tester.pumpAndSettle();
-      expect(find.byType(TextField), findsNothing);
-      expect(row('杠铃卧推'), findsOneWidget);
+      expect(find.byType(TextField), findsOneWidget);
       expect(row('深蹲'), findsOneWidget);
-      expect(row('跑步机慢跑'), findsOneWidget);
+      expect(row('杠铃卧推'), findsNothing);
+      expect(row('跑步机慢跑'), findsNothing);
     },
   );
+
+  testWidgets('add exercise uses the selected category filter', (tester) async {
+    Finder row(String name) => find.widgetWithText(SportListTile, name);
+
+    await _pump(tester, const TrainRecordsTab(initialTab: 1));
+    await tester.tap(find.byKey(const ValueKey('exercise-library-search')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('exercise-category-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('腿'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('添加动作'));
+    await tester.pumpAndSettle();
+    expect(find.text('腿'), findsOneWidget);
+
+    await tester.tap(find.text('取消'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsOneWidget);
+    expect(row('深蹲'), findsOneWidget);
+    expect(row('杠铃卧推'), findsNothing);
+    expect(row('跑步机慢跑'), findsNothing);
+  });
 
   testWidgets('saving an exercise edit keeps the category filter', (
     tester,
@@ -327,6 +351,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('plan-category-filter')));
     await tester.pumpAndSettle();
+    expect(find.text('其他'), findsNothing);
     await tester.tap(find.text('腿'));
     await tester.pumpAndSettle();
     expect(row('腿部'), findsOneWidget);
@@ -405,7 +430,15 @@ void main() {
     expect(row('上肢'), findsNothing);
     await tester.tapAt(const Offset(200, 700));
     await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsOneWidget);
+    expect(row('核心单练'), findsOneWidget);
+    expect(row('腿加核心'), findsNothing);
+    expect(row('上肢'), findsNothing);
 
+    await tester.tap(find.byKey(const ValueKey('plan-category-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('全部'));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('plan-search')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '上肢');

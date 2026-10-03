@@ -1778,6 +1778,18 @@ abstract class AppLocalizations {
   /// **'Enter a value greater than 0'**
   String get invalidGramsValue;
 
+  /// No description provided for @manualWeightToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter weight manually'**
+  String get manualWeightToggle;
+
+  /// No description provided for @invalidWeightValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a weight greater than 0'**
+  String get invalidWeightValue;
+
   /// No description provided for @deleteCustomFood.
   ///
   /// In en, this message translates to:

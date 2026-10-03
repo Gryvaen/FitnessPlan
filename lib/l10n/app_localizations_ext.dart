@@ -55,17 +55,19 @@ extension ExerciseUnitL10n on ExerciseUnit {
   String targetLabel(AppLocalizations l10n, {String? category}) =>
       switch (this) {
         ExerciseUnit.reps => l10n.targetReps,
-        ExerciseUnit.seconds => usesMinutes(category: category)
-            ? l10n.targetMinutes
-            : l10n.targetSeconds,
+        ExerciseUnit.seconds =>
+          usesMinutes(category: category)
+              ? l10n.targetMinutes
+              : l10n.targetSeconds,
       };
 
   String perSetLabel(AppLocalizations l10n, {String? category}) =>
       switch (this) {
         ExerciseUnit.reps => l10n.trainingRepsPerSet,
-        ExerciseUnit.seconds => usesMinutes(category: category)
-            ? l10n.trainingMinutesPerSet
-            : l10n.trainingSecondsPerSet,
+        ExerciseUnit.seconds =>
+          usesMinutes(category: category)
+              ? l10n.trainingMinutesPerSet
+              : l10n.trainingSecondsPerSet,
       };
 
   String unitChoiceLabel(AppLocalizations l10n, {String? category}) =>
@@ -257,7 +259,7 @@ extension ExerciseCategoryL10n on String {
       'shoulders_arms' => l10n.exerciseCategoryArms,
       'core_timed' => l10n.exerciseCategoryCore,
       'custom' => l10n.exerciseCategoryCore,
-      'other' => l10n.exerciseCategoryCore,
+      'other' => l10n.exerciseCategoryOther,
       _ => this,
     };
   }

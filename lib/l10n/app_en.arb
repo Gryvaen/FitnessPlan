@@ -312,6 +312,8 @@
   "portionNameHint": "e.g. 1 bowl / 500 ml bottle",
   "manualGramsToggle": "Enter grams manually",
   "invalidGramsValue": "Enter a value greater than 0",
+  "manualWeightToggle": "Enter weight manually",
+  "invalidWeightValue": "Enter a weight greater than 0",
   "deleteCustomFood": "Delete custom food",
   "deleteCustomFoodBody": "Delete? Past logs keep the name.",
   "noPortionsHint": "None yet — quick-pick when logging",

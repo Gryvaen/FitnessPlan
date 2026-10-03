@@ -319,7 +319,7 @@ void main() {
   );
 
   test(
-    'moveDayWorkoutItemToOther keeps progress and the plan template',
+    'moveDayWorkoutItemToOther keeps progress and syncs both templates',
     () async {
       final pushup = await addTestExercise(repo, name: '俯卧撑');
       final squat = await addTestExercise(repo, name: '深蹲', category: 'legs');
@@ -362,9 +362,60 @@ void main() {
       expect(other.items.single.completedSets, 4);
 
       final template = await repo.itemsFor(planId);
-      expect(template.map((e) => e.exerciseName), ['俯卧撑', '深蹲']);
+      expect(template.map((e) => e.exerciseName), ['俯卧撑']);
+      expect((await repo.listPlanSummaries()).map((plan) => plan.plan.name), [
+        '上肢',
+      ]);
     },
   );
+
+  test('plan summary stream drops an exercise moved out of the template', () async {
+    final pushup = await addTestExercise(repo, name: '俯卧撑');
+    final squat = await addTestExercise(repo, name: '深蹲', category: 'legs');
+    final planId = await repo.createPlan(
+      name: '上肢',
+      items: [
+        PlanDraftItem(
+          exerciseId: pushup.id,
+          exerciseName: pushup.name,
+          targetSets: 3,
+          targetReps: 10,
+        ),
+        PlanDraftItem(
+          exerciseId: squat.id,
+          exerciseName: squat.name,
+          targetSets: 4,
+          targetReps: 8,
+        ),
+      ],
+    );
+    final events = StreamIterator(repo.watchPlanSummaries());
+    try {
+      expect(await events.moveNext(), isTrue);
+      expect(events.current.single.items, hasLength(2));
+
+      final day = CalendarDay.todayLocal();
+      await repo.applyPlanToDay(planId: planId, day: day);
+      final before = await repo.daySnapshot(day);
+      final squatItem = before.items
+          .firstWhere((e) => e.item.exerciseName == '深蹲')
+          .item;
+      await repo.moveDayWorkoutItemToOther(squatItem.id);
+
+      var length = events.current.single.items.length;
+      for (var i = 0; length != 1 && i < 8; i++) {
+        expect(
+          await events.moveNext().timeout(const Duration(seconds: 2)),
+          isTrue,
+        );
+        length = events.current.single.items.length;
+      }
+      expect(length, 1);
+      expect(events.current.single.plan.name, '上肢');
+    } finally {
+      await events.cancel();
+    }
+  });
 
   test('moveDayWorkoutItemToOther drops an emptied plan group', () async {
     final pushup = await addTestExercise(repo, name: '俯卧撑');
@@ -388,8 +439,10 @@ void main() {
     final after = await repo.daySnapshot(day);
     expect(after.groups, hasLength(1));
     expect(after.groups.single.workout.planName, isNull);
+    expect(after.groups.single.workout.planId, isNull);
     expect(after.groups.single.items.single.item.id, itemId);
-    expect(await repo.itemsFor(planId), hasLength(1));
+    expect(await repo.itemsFor(planId), isEmpty);
+    expect(await repo.listPlanSummaries(), isEmpty);
   });
 
   test(
@@ -436,6 +489,351 @@ void main() {
       ]);
     },
   );
+
+  test(
+    'moveDayWorkoutItemIntoPlan keeps a template row that is already there',
+    () async {
+      final pushup = await addTestExercise(repo, name: '俯卧撑');
+      final squat = await addTestExercise(repo, name: '深蹲', category: 'legs');
+      final planId = await repo.createPlan(
+        name: '上肢',
+        items: [
+          PlanDraftItem(
+            exerciseId: pushup.id,
+            exerciseName: pushup.name,
+            targetSets: 3,
+            targetReps: 10,
+          ),
+          PlanDraftItem(
+            exerciseId: squat.id,
+            exerciseName: squat.name,
+            targetSets: 4,
+            targetReps: 8,
+          ),
+        ],
+      );
+      final day = CalendarDay.todayLocal();
+      await repo.applyPlanToDay(planId: planId, day: day);
+      final before = await repo.daySnapshot(day);
+      final squatItem = before.items
+          .firstWhere((e) => e.item.exerciseName == '深蹲')
+          .item;
+      await repo.setItemDone(squatItem.id, true);
+      await repo.moveDayWorkoutItemToOther(squatItem.id);
+      final parked = await repo.daySnapshot(day);
+      final planGroupId = parked.groups.first.workout.id;
+
+      await repo.moveDayWorkoutItemIntoPlan(
+        dayWorkoutItemId: squatItem.id,
+        targetDayWorkoutId: planGroupId,
+      );
+
+      final after = await repo.daySnapshot(day);
+      expect(after.groups, hasLength(1));
+      expect(after.groups.single.workout.planName, '上肢');
+      expect(after.groups.single.items.map((e) => e.item.exerciseName), [
+        '俯卧撑',
+        '深蹲',
+      ]);
+      final moved = after.groups.single.items.last;
+      expect(moved.item.id, squatItem.id);
+      expect(moved.item.done, isTrue);
+      expect(moved.completedSets, 4);
+      expect((await repo.itemsFor(planId)).map((e) => e.exerciseName), [
+        '俯卧撑',
+        '深蹲',
+      ]);
+    },
+  );
+
+  test(
+    'moveDayWorkoutItemIntoPlan appends a new exercise onto the plan template',
+    () async {
+      final pushup = await addTestExercise(repo, name: '俯卧撑');
+      final plank = await addTestExercise(
+        repo,
+        name: '平板支撑',
+        unit: ExerciseUnit.seconds,
+        category: 'core',
+      );
+      final planId = await repo.createPlan(
+        name: '上肢',
+        items: [
+          PlanDraftItem(
+            exerciseId: pushup.id,
+            exerciseName: pushup.name,
+            targetSets: 3,
+            targetReps: 10,
+          ),
+        ],
+      );
+      final day = CalendarDay.todayLocal();
+      await repo.applyPlanToDay(planId: planId, day: day);
+      await repo.addQuickDayItem(
+        day: day,
+        exerciseId: plank.id,
+        targetSets: 2,
+        targetReps: 45,
+      );
+      final before = await repo.daySnapshot(day);
+      final plankItem = before.groups.last.items.single.item;
+      final planGroupId = before.groups.first.workout.id;
+
+      await repo.moveDayWorkoutItemIntoPlan(
+        dayWorkoutItemId: plankItem.id,
+        targetDayWorkoutId: planGroupId,
+      );
+
+      final after = await repo.daySnapshot(day);
+      expect(after.groups, hasLength(1));
+      expect(after.groups.single.items.map((e) => e.item.exerciseName), [
+        '俯卧撑',
+        '平板支撑',
+      ]);
+      expect(after.groups.single.items.last.item.id, plankItem.id);
+      final template = await repo.itemsFor(planId);
+      expect(template.map((e) => e.exerciseName), ['俯卧撑', '平板支撑']);
+      expect(template.last.targetSets, 2);
+      expect(template.last.targetReps, 45);
+      expect((await repo.listPlanSummaries()).map((plan) => plan.plan.name), [
+        '上肢',
+      ]);
+    },
+  );
+
+  test(
+    'moving an exercise already in the template updates its sets and reps',
+    () async {
+      final pushup = await addTestExercise(repo, name: '俯卧撑');
+      final squat = await addTestExercise(repo, name: '深蹲', category: 'legs');
+      final lunge = await addTestExercise(repo, name: '弓步', category: 'legs');
+      final upperId = await repo.createPlan(
+        name: '上肢',
+        items: [
+          PlanDraftItem(
+            exerciseId: pushup.id,
+            exerciseName: pushup.name,
+            targetSets: 3,
+            targetReps: 10,
+          ),
+          PlanDraftItem(
+            exerciseId: squat.id,
+            exerciseName: squat.name,
+            targetSets: 4,
+            targetReps: 8,
+          ),
+        ],
+      );
+      final legsId = await repo.createPlan(
+        name: '腿部',
+        items: [
+          PlanDraftItem(
+            exerciseId: lunge.id,
+            exerciseName: lunge.name,
+            targetSets: 2,
+            targetReps: 10,
+          ),
+          PlanDraftItem(
+            exerciseId: squat.id,
+            exerciseName: squat.name,
+            targetSets: 3,
+            targetReps: 6,
+          ),
+        ],
+      );
+      final day = CalendarDay.todayLocal();
+      await repo.applyPlanToDay(planId: upperId, day: day);
+      await repo.applyPlanToDay(planId: legsId, day: day);
+      final before = await repo.daySnapshot(day);
+      final squatItem = before.items
+          .firstWhere((e) => e.item.exerciseName == '深蹲')
+          .item;
+      await (db.update(db.dayWorkoutItems)..where(
+            (t) => t.id.equals(squatItem.id),
+          ))
+          .write(
+            const DayWorkoutItemsCompanion(
+              targetSets: Value(5),
+              targetReps: Value(12),
+            ),
+          );
+      final legsGroupId = before.groups
+          .firstWhere((g) => g.workout.planName == '腿部')
+          .workout
+          .id;
+
+      await repo.moveDayWorkoutItemIntoPlan(
+        dayWorkoutItemId: squatItem.id,
+        targetDayWorkoutId: legsGroupId,
+      );
+
+      final legs = await repo.itemsFor(legsId);
+      expect(legs.map((e) => e.exerciseName), ['弓步', '深蹲']);
+      final moved = legs.last;
+      expect(moved.targetSets, 5);
+      expect(moved.targetReps, 12);
+      expect(moved.note, isNull);
+      final upper = await repo.itemsFor(upperId);
+      expect(upper.map((e) => e.exerciseName), ['俯卧撑']);
+      expect(upper.single.targetSets, 3);
+      expect(upper.single.targetReps, 10);
+    },
+  );
+
+  test(
+    'logging a set writes the new reps back onto the plan template',
+    () async {
+      final pushup = await addTestExercise(repo, name: '俯卧撑');
+      final squat = await addTestExercise(repo, name: '深蹲', category: 'legs');
+      final planId = await repo.createPlan(
+        name: '上肢',
+        items: [
+          PlanDraftItem(
+            exerciseId: pushup.id,
+            exerciseName: pushup.name,
+            targetSets: 3,
+            targetReps: 10,
+          ),
+          PlanDraftItem(
+            exerciseId: squat.id,
+            exerciseName: squat.name,
+            targetSets: 4,
+            targetReps: 8,
+          ),
+        ],
+      );
+      final day = CalendarDay.todayLocal();
+      await repo.applyPlanToDay(planId: planId, day: day);
+      final snap = await repo.daySnapshot(day);
+      final pushupItem = snap.items
+          .firstWhere((e) => e.item.exerciseName == '俯卧撑')
+          .item;
+      final squatItem = snap.items
+          .firstWhere((e) => e.item.exerciseName == '深蹲')
+          .item;
+      // Drop it from today only, so the template row can stay and prove a
+      // logged set does not remove the other planned exercise.
+      await (db.delete(
+        db.dayWorkoutItems,
+      )..where((t) => t.id.equals(squatItem.id))).go();
+
+      await repo.updateDayItemProgress(
+        dayWorkoutItemId: pushupItem.id,
+        day: day,
+        completedSets: 2,
+        perSetValue: 15,
+        unit: ExerciseUnit.reps,
+        note: '今天的心得',
+      );
+
+      final template = await repo.itemsFor(planId);
+      expect(template.map((e) => e.exerciseName), ['俯卧撑', '深蹲']);
+      expect(template.first.targetSets, 3);
+      expect(template.first.targetReps, 15);
+      expect(template.first.note, isNull);
+      expect(template.last.targetSets, 4);
+      expect(template.last.targetReps, 8);
+      final dayAfter = await repo.daySnapshot(day);
+      expect(dayAfter.items.single.item.note, '今天的心得');
+    },
+  );
+
+  test('moving between plans updates both templates', () async {
+    final bench = await addTestExercise(repo, name: '杠铃卧推', category: 'chest');
+    final squat = await addTestExercise(repo, name: '深蹲', category: 'legs');
+    final upperId = await repo.createPlan(
+      name: '上肢',
+      items: [
+        PlanDraftItem(
+          exerciseId: bench.id,
+          exerciseName: bench.name,
+          targetSets: 3,
+          targetReps: 12,
+        ),
+      ],
+    );
+    final legsId = await repo.createPlan(
+      name: '腿部',
+      items: [
+        PlanDraftItem(
+          exerciseId: squat.id,
+          exerciseName: squat.name,
+          targetSets: 4,
+          targetReps: 8,
+        ),
+      ],
+    );
+    final day = CalendarDay.todayLocal();
+    await repo.applyPlanToDay(planId: upperId, day: day);
+    await repo.applyPlanToDay(planId: legsId, day: day);
+    final before = await repo.daySnapshot(day);
+    final upperGroupId = before.groups.first.workout.id;
+    final squatItem = before.groups.last.items.single.item;
+
+    await repo.moveDayWorkoutItemIntoPlan(
+      dayWorkoutItemId: squatItem.id,
+      targetDayWorkoutId: upperGroupId,
+    );
+
+    final after = await repo.daySnapshot(day);
+    expect(after.groups, hasLength(1));
+    expect(after.groups.single.workout.planName, '上肢');
+    expect(after.groups.single.items.map((e) => e.item.exerciseName), [
+      '杠铃卧推',
+      '深蹲',
+    ]);
+    expect(after.groups.single.items.last.item.id, squatItem.id);
+    expect((await repo.itemsFor(upperId)).map((e) => e.exerciseName), [
+      '杠铃卧推',
+      '深蹲',
+    ]);
+    expect(await repo.itemsFor(legsId), isEmpty);
+    expect((await repo.listPlanSummaries()).map((plan) => plan.plan.name), [
+      '上肢',
+    ]);
+  });
+
+  test('listing plans drops a retired 其他 template', () async {
+    final planId = await db
+        .into(db.workoutPlans)
+        .insert(
+          WorkoutPlansCompanion.insert(name: '其他', createdAt: DateTime.now()),
+        );
+    await db
+        .into(db.appMeta)
+        .insert(
+          AppMetaCompanion.insert(
+            key: 'other_workout_plan_id',
+            value: '$planId',
+          ),
+        );
+    await db
+        .into(db.workoutPlanItems)
+        .insert(
+          WorkoutPlanItemsCompanion.insert(
+            planId: planId,
+            exerciseId: 1,
+            exerciseName: '平板支撑',
+            targetSets: 1,
+            targetReps: 30,
+          ),
+        );
+    final dayId = await db
+        .into(db.dayWorkouts)
+        .insert(
+          DayWorkoutsCompanion.insert(
+            date: CalendarDay.todayLocal(),
+            planId: Value(planId),
+          ),
+        );
+
+    expect(await repo.listPlanSummaries(), isEmpty);
+    final day = await (db.select(
+      db.dayWorkouts,
+    )..where((t) => t.id.equals(dayId))).getSingle();
+    expect(day.planId, isNull);
+    expect(day.planName, isNull);
+  });
 
   test('moveDayWorkoutItemToOther leaves an item already in 其他', () async {
     final plank = await addTestExercise(
@@ -523,8 +921,7 @@ void main() {
     },
   );
 
-  test('dayItemsForPlanOnDay reflects an item removed from today, not the '
-      'saved template', () async {
+  test('dayItemsForPlanOnDay reflects an item removed from today', () async {
     final pushup = await addTestExercise(repo, name: '俯卧撑');
     final squat = await addTestExercise(repo, name: '深蹲', category: 'legs');
     final planId = await repo.createPlan(
@@ -551,8 +948,6 @@ void main() {
         .firstWhere((e) => e.item.exerciseName == '深蹲')
         .item
         .id;
-    // Remove it for today only (e.g. swiping it away on Today), leaving the
-    // saved template untouched.
     await repo.deleteDayWorkoutItem(squatItemId);
 
     final dayItems = await repo.dayItemsForPlanOnDay(
@@ -562,8 +957,68 @@ void main() {
     expect(dayItems.map((e) => e.exerciseName), ['俯卧撑']);
 
     final templateItems = await repo.itemsFor(planId);
-    expect(templateItems.map((e) => e.exerciseName), ['俯卧撑', '深蹲']);
+    expect(templateItems.map((e) => e.exerciseName), ['俯卧撑']);
   });
+
+  test(
+    'deleting a planned exercise drops it from the template, not an untitled one',
+    () async {
+      final pushup = await addTestExercise(repo, name: '俯卧撑');
+      final squat = await addTestExercise(repo, name: '深蹲', category: 'legs');
+      final plank = await addTestExercise(
+        repo,
+        name: '平板支撑',
+        unit: ExerciseUnit.seconds,
+        category: 'core',
+      );
+      final planId = await repo.createPlan(
+        name: '上肢',
+        items: [
+          PlanDraftItem(
+            exerciseId: pushup.id,
+            exerciseName: pushup.name,
+            targetSets: 3,
+            targetReps: 10,
+          ),
+          PlanDraftItem(
+            exerciseId: squat.id,
+            exerciseName: squat.name,
+            targetSets: 4,
+            targetReps: 8,
+          ),
+        ],
+      );
+      final day = CalendarDay.todayLocal();
+      await repo.applyPlanToDay(planId: planId, day: day);
+      await repo.addQuickDayItem(
+        day: day,
+        exerciseId: plank.id,
+        targetSets: 2,
+        targetReps: 45,
+      );
+      final before = await repo.daySnapshot(day);
+      final squatItem = before.items
+          .firstWhere((e) => e.item.exerciseName == '深蹲')
+          .item;
+      final plankItem = before.items
+          .firstWhere((e) => e.item.exerciseName == '平板支撑')
+          .item;
+
+      await repo.deleteDayWorkoutItem(squatItem.id);
+      await repo.deleteDayWorkoutItem(plankItem.id);
+
+      expect((await repo.itemsFor(planId)).map((e) => e.exerciseName), [
+        '俯卧撑',
+      ]);
+      expect((await repo.listPlanSummaries()).map((plan) => plan.plan.name), [
+        '上肢',
+      ]);
+      final after = await repo.daySnapshot(day);
+      expect(after.groups, hasLength(1));
+      expect(after.groups.single.workout.planName, '上肢');
+      expect(after.items.map((e) => e.item.exerciseName), ['俯卧撑']);
+    },
+  );
 
   test(
     'dayItemsForPlanOnDay is empty when the plan was not applied to that day',

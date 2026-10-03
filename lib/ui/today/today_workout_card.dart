@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -47,6 +48,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
   // reordered locally yet (new items, or on first load).
   List<int>? _groupOrder;
   final Map<int, List<int>> _itemOrder = {};
+  final Map<int, GlobalKey> _planGroupKeys = {};
 
   @override
   void didUpdateWidget(covariant TodayWorkoutCard oldWidget) {
@@ -362,6 +364,44 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     return name == null || name.isEmpty;
   }
 
+  GlobalKey _planGroupKey(int dayWorkoutId) {
+    return _planGroupKeys.putIfAbsent(dayWorkoutId, GlobalKey.new);
+  }
+
+  DayWorkoutGroup? _groupAt(List<DayWorkoutGroup> groups, Offset pointer) {
+    for (final group in groups) {
+      final box =
+          _planGroupKey(group.workout.id).currentContext?.findRenderObject()
+              as RenderBox?;
+      if (box == null || !box.attached || !box.hasSize) continue;
+      final rect = box.localToGlobal(Offset.zero) & box.size;
+      if (rect.contains(pointer)) return group;
+    }
+    return null;
+  }
+
+  Future<void> _moveItemIntoPlan(
+    BuildContext context,
+    WidgetRef ref,
+    DayWorkoutItemProgress progress,
+    DayWorkoutGroup target,
+  ) async {
+    final l10n = context.l10n;
+    try {
+      await ref
+          .read(workoutRepositoryProvider)
+          .moveDayWorkoutItemIntoPlan(
+            dayWorkoutItemId: progress.item.id,
+            targetDayWorkoutId: target.workout.id,
+          );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.addFailed('$e'))));
+    }
+  }
+
   Future<void> _moveItemToOther(
     BuildContext context,
     WidgetRef ref,
@@ -481,31 +521,9 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     required AppLocalizations l10n,
     required ColorScheme scheme,
     required DayWorkoutGroup group,
+    required List<DayWorkoutGroup> groups,
     required bool editable,
   }) {
-    if (editable && !_isOtherGroup(group)) {
-      return _NamedPlanDragGroup(
-        group: group,
-        items: _orderedItems(group.workout.id, group.items),
-        title: _groupTitle(group, l10n),
-        scheme: scheme,
-        onEditPlan: group.workout.planId == null
-            ? null
-            : () => _editGroupPlan(context, group),
-        confirmDismiss: () => _confirmRemoveGroup(context, group),
-        onDismissed: () => _removeGroup(ref, group),
-        onReorder: (ids) => _persistItemOrder(group.workout.id, ids),
-        onMoveOut: (progress) => _moveItemToOther(context, ref, progress),
-        tileBuilder: (progress) => _itemTile(
-          context: context,
-          ref: ref,
-          l10n: l10n,
-          scheme: scheme,
-          progress: progress,
-          editable: true,
-        ),
-      );
-    }
     return Dismissible(
       key: ValueKey('day-workout-group-${group.workout.id}'),
       direction: editable ? DismissDirection.endToStart : DismissDirection.none,
@@ -518,6 +536,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
       confirmDismiss: (_) => _confirmRemoveGroup(context, group),
       onDismissed: (_) => _removeGroup(ref, group),
       child: _DayWorkoutGroupTile(
+        groupKey: _planGroupKey(group.workout.id),
         title: _groupTitle(group, l10n),
         done: group.doneCount,
         total: group.items.length,
@@ -532,6 +551,21 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
             scheme: scheme,
             group: group,
             editable: editable,
+            onReleaseOutside: editable
+                ? (progress, pointer) {
+                    final hit = _groupAt(groups, pointer);
+                    if (hit != null && hit.workout.id == group.workout.id) {
+                      return false;
+                    }
+                    if (hit != null) {
+                      _moveItemIntoPlan(context, ref, progress, hit);
+                      return true;
+                    }
+                    if (_isOtherGroup(group)) return false;
+                    _moveItemToOther(context, ref, progress);
+                    return true;
+                  }
+                : null,
           ),
         ],
       ),
@@ -563,6 +597,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
               l10n: l10n,
               scheme: scheme,
               group: group,
+              groups: ordered,
               editable: editable,
             ),
         ],
@@ -614,6 +649,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
                 l10n: l10n,
                 scheme: scheme,
                 group: group,
+                groups: ordered,
                 editable: editable,
               ),
             ),
@@ -623,8 +659,10 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     );
   }
 
-  /// Renders items for an untitled group, or a plan that is not editable today.
-  /// Named plans use [_NamedPlanDragGroup] so an exercise can be dragged out.
+  /// Exercise rows for one group. Editable groups always show a drag handle.
+  /// Releasing inside the list only reorders that group. Releasing on another
+  /// group moves the exercise there. Releasing outside every group files it
+  /// under 「其他」.
   Widget _itemsList({
     required BuildContext context,
     required WidgetRef ref,
@@ -632,10 +670,12 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     required ColorScheme scheme,
     required DayWorkoutGroup group,
     required bool editable,
+    required bool Function(DayWorkoutItemProgress progress, Offset pointer)?
+    onReleaseOutside,
   }) {
     final dayWorkoutId = group.workout.id;
     final ordered = _orderedItems(dayWorkoutId, group.items);
-    if (!editable || ordered.length < 2) {
+    if (!editable || ordered.isEmpty) {
       return Column(
         children: [
           for (final progress in ordered)
@@ -650,47 +690,19 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
         ],
       );
     }
-    return ReorderableListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      buildDefaultDragHandles: false,
-      itemCount: ordered.length,
-      onReorderItem: (oldIndex, newIndex) async {
-        final ids = [for (final p in ordered) p.item.id];
-        final moved = ids.removeAt(oldIndex);
-        ids.insert(newIndex, moved);
-        await _persistItemOrder(dayWorkoutId, ids);
-      },
-      itemBuilder: (context, i) {
-        final progress = ordered[i];
-        return Row(
-          key: ValueKey('day-workout-item-${progress.item.id}'),
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ReorderableDragStartListener(
-              index: i,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 14),
-                child: InkIcon(
-                  InkGlyph.dragHandle,
-                  size: 20,
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-            Expanded(
-              child: _itemTile(
-                context: context,
-                ref: ref,
-                l10n: l10n,
-                scheme: scheme,
-                progress: progress,
-                editable: editable,
-              ),
-            ),
-          ],
-        );
-      },
+    return _ExerciseReorderList(
+      items: ordered,
+      scheme: scheme,
+      onReorder: (ids) => _persistItemOrder(dayWorkoutId, ids),
+      onReleaseOutside: onReleaseOutside,
+      tileBuilder: (progress) => _itemTile(
+        context: context,
+        ref: ref,
+        l10n: l10n,
+        scheme: scheme,
+        progress: progress,
+        editable: editable,
+      ),
     );
   }
 
@@ -923,163 +935,147 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
   }
 }
 
-/// Named plan block. Dragging an exercise by its handle reorders it while the
-/// pointer stays inside the block; releasing outside moves it to 「其他」.
-class _NamedPlanDragGroup extends StatefulWidget {
-  const _NamedPlanDragGroup({
-    required this.group,
+/// Same drag handle and lifted-row proxy as a normal reorder list.
+///
+/// Releasing inside the list saves the new order. Releasing outside asks
+/// [onReleaseOutside] whether the exercise moved to another group; that
+/// callback skips the in-list reorder when it returns true. The proxy itself
+/// stays inside the list; the pointer does not.
+class _ExerciseReorderList extends StatefulWidget {
+  const _ExerciseReorderList({
     required this.items,
-    required this.title,
     required this.scheme,
-    required this.onEditPlan,
-    required this.confirmDismiss,
-    required this.onDismissed,
     required this.onReorder,
-    required this.onMoveOut,
+    required this.onReleaseOutside,
     required this.tileBuilder,
   });
 
-  final DayWorkoutGroup group;
   final List<DayWorkoutItemProgress> items;
-  final String title;
   final ColorScheme scheme;
-  final VoidCallback? onEditPlan;
-  final Future<bool> Function() confirmDismiss;
-  final VoidCallback onDismissed;
   final Future<void> Function(List<int> orderedIds) onReorder;
-  final Future<void> Function(DayWorkoutItemProgress progress) onMoveOut;
+  final bool Function(DayWorkoutItemProgress progress, Offset pointer)?
+  onReleaseOutside;
   final Widget Function(DayWorkoutItemProgress progress) tileBuilder;
 
   @override
-  State<_NamedPlanDragGroup> createState() => _NamedPlanDragGroupState();
+  State<_ExerciseReorderList> createState() => _ExerciseReorderListState();
 }
 
-class _NamedPlanDragGroupState extends State<_NamedPlanDragGroup> {
-  final Map<int, GlobalKey> _rowKeys = {};
+class _ExerciseReorderListState extends State<_ExerciseReorderList> {
+  static const _moveOutSlop = 8.0;
 
-  GlobalKey _rowKey(int id) => _rowKeys.putIfAbsent(id, GlobalKey.new);
+  final _listKey = GlobalKey();
+  Offset? _pointer;
+  int? _dragIndex;
+  var _tracking = false;
+  var _movedOut = false;
 
-  int _indexFor(Offset global) {
-    final items = widget.items;
-    if (items.isEmpty) return 0;
-    var sawBox = false;
-    for (var i = 0; i < items.length; i++) {
-      final box =
-          _rowKey(items[i].item.id).currentContext?.findRenderObject()
-              as RenderBox?;
-      if (box == null || !box.hasSize) continue;
-      sawBox = true;
-      final mid = box.localToGlobal(Offset.zero).dy + box.size.height / 2;
-      if (global.dy < mid) return i;
+  void _onPointer(PointerEvent event) {
+    _pointer = event.position;
+    if (event is PointerUpEvent || event is PointerCancelEvent) {
+      _stopTracking();
     }
-    if (!sawBox) return 0;
-    return items.length - 1;
   }
 
-  void _dropInside(int itemId, Offset global) {
-    final items = widget.items;
-    final oldIndex = items.indexWhere((progress) => progress.item.id == itemId);
-    if (oldIndex < 0) return;
-    final newIndex = _indexFor(global);
-    if (newIndex == oldIndex) return;
-    final ids = [for (final progress in items) progress.item.id];
-    final moved = ids.removeAt(oldIndex);
-    ids.insert(newIndex, moved);
-    widget.onReorder(ids);
+  void _startTracking(int index) {
+    _dragIndex = index;
+    _pointer = null;
+    _movedOut = false;
+    if (_tracking) return;
+    _tracking = true;
+    GestureBinding.instance.pointerRouter.addGlobalRoute(_onPointer);
   }
 
-  Widget _handleIcon() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 14),
-      child: InkIcon(
-        InkGlyph.dragHandle,
-        size: 20,
-        color: widget.scheme.onSurfaceVariant,
-      ),
+  void _stopTracking() {
+    if (!_tracking) return;
+    _tracking = false;
+    GestureBinding.instance.pointerRouter.removeGlobalRoute(_onPointer);
+  }
+
+  bool _pointerLeftList() {
+    final pointer = _pointer;
+    final box = _listKey.currentContext?.findRenderObject() as RenderBox?;
+    if (pointer == null || box == null || !box.attached || !box.hasSize) {
+      return false;
+    }
+    final rect = (box.localToGlobal(Offset.zero) & box.size).inflate(
+      _moveOutSlop,
     );
+    return !rect.contains(pointer);
   }
 
-  Widget _feedback(DayWorkoutItemProgress progress) {
-    final box =
-        _rowKey(progress.item.id).currentContext?.findRenderObject()
-            as RenderBox?;
-    final width = box != null && box.hasSize ? box.size.width : 240.0;
-    return Material(
-      elevation: 6,
-      color: Theme.of(context).colorScheme.surface,
-      child: SizedBox(
-        width: width,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Text(progress.item.exerciseName),
-        ),
-      ),
-    );
+  void _finishDrag() {
+    final index = _dragIndex;
+    final pointer = _pointer;
+    final left = _pointerLeftList();
+    _stopTracking();
+    if (index == null || index < 0 || index >= widget.items.length) return;
+    if (!left || pointer == null) return;
+    final moved =
+        widget.onReleaseOutside?.call(widget.items[index], pointer) ?? false;
+    if (moved) _movedOut = true;
   }
 
-  Widget _handle(DayWorkoutItemProgress progress) {
-    return Draggable<int>(
-      key: ValueKey('day-workout-item-handle-${progress.item.id}'),
-      data: progress.item.id,
-      dragAnchorStrategy: pointerDragAnchorStrategy,
-      feedback: _feedback(progress),
-      childWhenDragging: Opacity(opacity: 0.35, child: _handleIcon()),
-      onDragEnd: (details) {
-        if (details.wasAccepted) return;
-        widget.onMoveOut(progress);
-      },
-      child: _handleIcon(),
-    );
+  @override
+  void dispose() {
+    _stopTracking();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final itemIds = {for (final progress in widget.items) progress.item.id};
-    return DragTarget<int>(
-      onWillAcceptWithDetails: (details) => itemIds.contains(details.data),
-      onAcceptWithDetails: (details) =>
-          _dropInside(details.data, details.offset),
-      builder: (context, _, _) => Dismissible(
-        key: ValueKey('day-workout-group-${widget.group.workout.id}'),
-        direction: DismissDirection.endToStart,
-        background: Container(
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 16),
-          color: widget.scheme.error,
-          child: const InkIcon(InkGlyph.delete, color: Colors.white),
-        ),
-        confirmDismiss: (_) => widget.confirmDismiss(),
-        onDismissed: (_) => widget.onDismissed(),
-        child: _DayWorkoutGroupTile(
-          title: widget.title,
-          done: widget.group.doneCount,
-          total: widget.items.length,
-          onTap: widget.onEditPlan,
+    final items = widget.items;
+    return ReorderableListView.builder(
+      key: _listKey,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      buildDefaultDragHandles: false,
+      itemCount: items.length,
+      onReorderStart: _startTracking,
+      onReorderEnd: (_) => _finishDrag(),
+      onReorderItem: (oldIndex, newIndex) async {
+        if (!mounted || _movedOut) return;
+        final ids = [for (final progress in items) progress.item.id];
+        final moved = ids.removeAt(oldIndex);
+        ids.insert(newIndex, moved);
+        await widget.onReorder(ids);
+      },
+      itemBuilder: (context, i) {
+        final progress = items[i];
+        return Row(
+          key: ValueKey('day-workout-item-${progress.item.id}'),
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            for (final progress in widget.items)
-              Row(
-                key: _rowKey(progress.item.id),
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _handle(progress),
-                  Expanded(child: widget.tileBuilder(progress)),
-                ],
+            ReorderableDragStartListener(
+              key: ValueKey('day-workout-item-handle-${progress.item.id}'),
+              index: i,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 14),
+                child: InkIcon(
+                  InkGlyph.dragHandle,
+                  size: 20,
+                  color: widget.scheme.onSurfaceVariant,
+                ),
               ),
+            ),
+            Expanded(child: widget.tileBuilder(progress)),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
 class _DayWorkoutGroupTile extends StatelessWidget {
   const _DayWorkoutGroupTile({
+    required this.groupKey,
     required this.title,
     required this.done,
     required this.total,
     required this.children,
     required this.onTap,
   });
+  final Key? groupKey;
   final String title;
   final int done;
   final int total;
@@ -1087,6 +1083,7 @@ class _DayWorkoutGroupTile extends StatelessWidget {
   final VoidCallback? onTap;
   @override
   Widget build(BuildContext context) => Column(
+    key: groupKey,
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       ListTile(
@@ -1309,7 +1306,6 @@ class _TodayPlanPickerSheet extends ConsumerWidget {
         exercise.id: exercise.category,
     };
     final byCategory = <String, List<WorkoutPlanSummary>>{};
-    final uncategorized = <WorkoutPlanSummary>[];
     for (final plan in plans) {
       final categories = <String>{
         for (final item in plan.items)
@@ -1317,7 +1313,7 @@ class _TodayPlanPickerSheet extends ConsumerWidget {
             if (plan.matchesExerciseCategory(category, categoryById)) category,
       };
       if (categories.isEmpty) {
-        uncategorized.add(plan);
+        byCategory.putIfAbsent('other', () => []).add(plan);
         continue;
       }
       for (final category in categories) {
@@ -1364,18 +1360,6 @@ class _TodayPlanPickerSheet extends ConsumerWidget {
               ),
               for (final plan in byCategory[category]!)
                 _planTile(context, plan),
-            ],
-            if (uncategorized.isNotEmpty) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-                child: Text(
-                  l10n.exerciseCategoryOther,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-              ),
-              for (final plan in uncategorized) _planTile(context, plan),
             ],
           ],
         ),

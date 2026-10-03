@@ -875,6 +875,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invalidGramsValue => 'Enter a value greater than 0';
 
   @override
+  String get manualWeightToggle => 'Enter weight manually';
+
+  @override
+  String get invalidWeightValue => 'Enter a weight greater than 0';
+
+  @override
   String get deleteCustomFood => 'Delete custom food';
 
   @override
