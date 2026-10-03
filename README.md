@@ -27,13 +27,9 @@
 <br>
 
 <p>
-  <img src="./design-handoff/display/today.png" width="290" alt="今日：剩余热量、营养素、饮水与训练">
+  <img src="./design/display/today.png" width="290" alt="今日：剩余热量、营养素、饮水与训练">
   &nbsp;&nbsp;
-  <img src="./design-handoff/display/me.png" width="290" alt="我的：修仙境界、档案与工具">
-</p>
-
-<p>
-  <sub>「我的」页截图上的版本号早于当前源码 2.5.3。</sub>
+  <img src="./design/display/me.png" width="290" alt="我的：修仙境界、档案与工具">
 </p>
 
 </div>
@@ -50,13 +46,25 @@
 
 Mifflin–St Jeor 算出基础代谢、每日消耗，以及蛋白质、碳水和脂肪。内置 637 条中国大陆常见食材，18 个分类，每 100 克 10 项营养素。记一笔，当天剩余配额就减下去，饮水也记在同一天。
 
+<p align="center">
+  <img src="./design/display/food.png" width="250" alt="食材分类">
+</p>
+
 ### 训练
 
 动作库、训练计划、组数和次数。今天练什么、做了几组，都写在本机。
 
+<p align="center">
+  <img src="./design/display/exercise.png" width="250" alt="动作库">
+</p>
+
 ### 身体
 
 体重曲线、体脂百分比，以及最近几次体重几乎不动时的平台期提示。步数来自 Health Connect / HealthKit；安卓没有权限时，回退到手机传感器。
+
+<p align="center">
+  <img src="./design/display/body.png" width="250" alt="体重曲线">
+</p>
 
 ### 修仙
 
@@ -194,7 +202,7 @@ flutter test
 flutter build ipa --release
 ```
 
-当前 Release 只有 Android APK。Linux 模拟器见 [docs/模拟器与运行说明.md](docs/模拟器与运行说明.md)。
+当前 Release 只有 Android APK。Linux 模拟器见 [docs/android-emulator.md](docs/android-emulator.md)。
 
 ## 方向
 

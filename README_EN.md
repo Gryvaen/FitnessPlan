@@ -27,13 +27,9 @@
 <br>
 
 <p>
-  <img src="./design-handoff/display/today.png" width="290" alt="Today: remaining calories, macros, water, and training">
+  <img src="./design/display/today.png" width="290" alt="Today: remaining calories, macros, water, and training">
   &nbsp;&nbsp;
-  <img src="./design-handoff/display/me.png" width="290" alt="Profile: cultivation realm, body stats, and tools">
-</p>
-
-<p>
-  <sub>The version label on the profile screenshot is older than the current source, 2.5.3.</sub>
+  <img src="./design/display/me.png" width="290" alt="Profile: cultivation realm, body stats, and tools">
 </p>
 
 </div>
@@ -50,13 +46,25 @@ It turns body stats into a daily calorie and macro budget, logs meals from a loc
 
 Mifflin–St Jeor produces BMR, TDEE, and protein, carbs, and fat. The built-in library has 637 common Mainland China foods in 18 categories, with 10 nutrients per 100 g. Logging a meal spends today's budget. Water is recorded on the same day.
 
+<p align="center">
+  <img src="./design/display/food.png" width="250" alt="Food categories">
+</p>
+
 ### Train
 
 An exercise library, training plans, and sets. What you do today stays on the device.
 
+<p align="center">
+  <img src="./design/display/exercise.png" width="250" alt="Exercise library">
+</p>
+
 ### Progress
 
 A weight chart, body-fat percentage, and a hint when recent weigh-ins barely move. Steps come from Health Connect or HealthKit. On Android, a missing permission falls back to the phone sensor.
+
+<p align="center">
+  <img src="./design/display/body.png" width="250" alt="Weight chart">
+</p>
 
 ### Cultivate
 
@@ -194,7 +202,7 @@ See [android/key.properties.example](android/key.properties.example). iOS needs 
 flutter build ipa --release
 ```
 
-Releases here are Android APKs only. Linux emulator notes are in [docs/模拟器与运行说明.md](docs/模拟器与运行说明.md) (Chinese).
+Releases here are Android APKs only. Linux emulator notes are in [docs/android-emulator.md](docs/android-emulator.md) (Chinese).
 
 ## Roadmap
 
