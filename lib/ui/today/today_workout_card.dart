@@ -1289,8 +1289,8 @@ class _InkDoneToggle extends StatelessWidget {
 }
 
 /// Plan list from today's workout "+". Plans sit under the library categories
-/// of their exercises (same section headers as the exercise picker). Plans
-/// with more than one exercise never appear under core / cardio / anaerobic.
+/// of their exercises (same section headers as the exercise picker). A plan
+/// with no resolvable category is omitted here; the plan list still shows it.
 class _TodayPlanPickerSheet extends ConsumerWidget {
   const _TodayPlanPickerSheet({required this.plans});
 
@@ -1312,10 +1312,6 @@ class _TodayPlanPickerSheet extends ConsumerWidget {
           if (categoryById[item.exerciseId] case final String category)
             if (plan.matchesExerciseCategory(category, categoryById)) category,
       };
-      if (categories.isEmpty) {
-        byCategory.putIfAbsent('other', () => []).add(plan);
-        continue;
-      }
       for (final category in categories) {
         byCategory.putIfAbsent(category, () => []).add(plan);
       }

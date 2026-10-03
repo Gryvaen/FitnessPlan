@@ -200,13 +200,18 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
                       if (showPeriodTabs) const SizedBox(height: 12),
                     ],
                     if (showPeriodTabs)
-                      SportTabs<int>(
-                        items: {
+                      Wrap(
+                        spacing: 8,
+                        children: [
                           for (final p in periods)
-                            p: p == 0 ? l10n.filterAll : l10n.lastNDays(p),
-                        },
-                        selected: period,
-                        onSelected: (v) => setState(() => _period = v),
+                            ChoiceChip(
+                              label: Text(
+                                p == 0 ? l10n.filterAll : l10n.lastNDays(p),
+                              ),
+                              selected: period == p,
+                              onSelected: (_) => setState(() => _period = p),
+                            ),
+                        ],
                       ),
                   ],
                 ),
@@ -227,6 +232,7 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
             Expanded(
               child: showPeriodTabs
                   ? SwipeTabView(
+                      navigation: SwipeTabNavigation.tapOnly,
                       keepPagesAlive: true,
                       index: periods
                           .indexOf(period)

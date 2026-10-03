@@ -566,19 +566,26 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-          child: SportTabs<int>(
-            items: {
-              0: l10n.tabPlans,
-              1: l10n.exerciseLibrary,
-              if (showHistory) 2: l10n.tabHistory,
-            },
-            selected: tab,
-            onSelected: _selectTab,
+          child: Wrap(
+            spacing: 8,
+            children: [
+              for (final entry in {
+                0: l10n.tabPlans,
+                1: l10n.exerciseLibrary,
+                if (showHistory) 2: l10n.tabHistory,
+              }.entries)
+                ChoiceChip(
+                  label: Text(entry.value),
+                  selected: tab == entry.key,
+                  onSelected: (_) => _selectTab(entry.key),
+                ),
+            ],
           ),
         ),
         const SizedBox(height: 12),
         Expanded(
           child: SwipeTabView(
+            navigation: SwipeTabNavigation.tapOnly,
             keepPagesAlive: true,
             index: tab,
             onIndexChanged: (i) {
@@ -770,19 +777,23 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
         if (showScopeTabs)
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-            child: SportTabs<int>(
-              items: {
+            child: Wrap(
+              spacing: 8,
+              children: [
                 for (final s in scopes)
-                  s: s == 0 ? l10n.tabRecent : l10n.filterAll,
-              },
-              selected: scope,
-              onSelected: _setHistoryScope,
+                  ChoiceChip(
+                    label: Text(s == 0 ? l10n.tabRecent : l10n.filterAll),
+                    selected: scope == s,
+                    onSelected: (_) => _setHistoryScope(s),
+                  ),
+              ],
             ),
           ),
         if (showScopeTabs) const SizedBox(height: 8),
         Expanded(
           child: showScopeTabs
               ? SwipeTabView(
+                  navigation: SwipeTabNavigation.tapOnly,
                   keepPagesAlive: true,
                   index: scopes.indexOf(scope).clamp(0, scopes.length - 1),
                   onIndexChanged: (i) => _setHistoryScope(scopes[i]),

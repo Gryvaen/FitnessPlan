@@ -63,6 +63,7 @@ class _MainShellState extends ConsumerState<MainShell>
   bool _nudge(int delta) {
     final target = widget.navigationShell.currentIndex + delta;
     if (target < 0 || target >= 4) return false;
+    FocusManager.instance.primaryFocus?.unfocus();
     widget.navigationShell.goBranch(target);
     return true;
   }

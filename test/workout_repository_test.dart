@@ -1646,7 +1646,7 @@ void main() {
     },
   );
 
-  test('multi-exercise plans do not match core/cardio/anaerobic filters', () {
+  test('core cardio and anaerobic match only when every exercise is that type', () {
     final solo = WorkoutPlanSummary(
       plan: WorkoutPlan(id: 1, name: '核心', createdAt: DateTime(2026)),
       items: [
@@ -1658,6 +1658,29 @@ void main() {
           targetSets: 3,
           targetReps: 60,
           sortOrder: 0,
+        ),
+      ],
+    );
+    final pureCore = WorkoutPlanSummary(
+      plan: WorkoutPlan(id: 3, name: '核心循环', createdAt: DateTime(2026)),
+      items: [
+        WorkoutPlanItem(
+          id: 4,
+          planId: 3,
+          exerciseId: 10,
+          exerciseName: '平板支撑',
+          targetSets: 3,
+          targetReps: 60,
+          sortOrder: 0,
+        ),
+        WorkoutPlanItem(
+          id: 5,
+          planId: 3,
+          exerciseId: 11,
+          exerciseName: '卷腹',
+          targetSets: 3,
+          targetReps: 15,
+          sortOrder: 1,
         ),
       ],
     );
@@ -1684,9 +1707,11 @@ void main() {
         ),
       ],
     );
-    const byId = {10: 'core', 20: 'legs'};
+    const byId = {10: 'core', 11: 'core', 20: 'legs'};
 
     expect(solo.matchesExerciseCategory('core', byId), isTrue);
+    expect(pureCore.matchesExerciseCategory('core', byId), isTrue);
+    expect(pureCore.matchesExerciseCategory('legs', byId), isFalse);
     expect(mixed.matchesExerciseCategory('core', byId), isFalse);
     expect(mixed.matchesExerciseCategory('legs', byId), isTrue);
   });

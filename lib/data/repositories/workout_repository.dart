@@ -129,22 +129,27 @@ class WorkoutPlanSummary {
 
   /// Whether this plan belongs under [category] when filtering/grouping.
   ///
-  /// Multi-exercise plans never count as core / cardio / anaerobic — those
-  /// labels are reserved for single-exercise plans of that type.
+  /// Core, cardio, and anaerobic match only when every exercise with a known
+  /// category is that type. A mixed plan (squat + plank) stays out of core.
+  /// Other categories match when any exercise is that type.
   bool matchesExerciseCategory(
     String category,
     Map<int, String> categoryByExerciseId,
   ) {
-    if (kSoloPlanCategories.contains(category) && items.length > 1) {
-      return false;
+    final known = [
+      for (final item in items)
+        if (categoryByExerciseId[item.exerciseId] case final String value)
+          value,
+    ];
+    if (known.isEmpty) return false;
+    if (kSoloPlanCategories.contains(category)) {
+      return known.every((value) => value == category);
     }
-    return items.any(
-      (item) => categoryByExerciseId[item.exerciseId] == category,
-    );
+    return known.contains(category);
   }
 }
 
-/// Categories that only apply when a plan has exactly one exercise.
+/// Core, cardio, and anaerobic match only when the whole plan is that type.
 const kSoloPlanCategories = {'cardio', 'anaerobic', 'core'};
 
 class CopyDayWorkoutResult {

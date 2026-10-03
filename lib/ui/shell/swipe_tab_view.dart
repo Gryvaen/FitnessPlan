@@ -77,6 +77,7 @@ mixin _ParentDragHandoff<T extends StatefulWidget> on State<T> {
 
   void _unregisterFromParent() {
     final parent = _parentHandoff;
+    _parentHandoff = null;
     if (parent != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         parent.onActiveChildDelta(-1);
@@ -133,6 +134,9 @@ class _SwipeGestureBarrierState extends State<SwipeGestureBarrier> {
   }
 }
 
+/// Where a horizontal drag from a tab panel should navigate.
+enum SwipeTabNavigation { tabs, shell, tapOnly }
+
 /// A swipeable set of tab panels that chains outward: a horizontal drag pages
 /// through the panels here first, and only once dragged past the first / last
 /// panel does it hand off — to an enclosing [SwipeTabView] if there is one,
@@ -142,10 +146,14 @@ class _SwipeGestureBarrierState extends State<SwipeGestureBarrier> {
 ///
 /// Pass [branchIndex] for the pager that fills a bottom-nav branch so it can
 /// hand off to [ShellSwipe]; nested pagers hand off to their parent instead.
+/// [SwipeTabNavigation.shell] sends a drag directly to the bottom-nav branch.
+/// [SwipeTabNavigation.tapOnly] leaves the drag to an enclosing pager, while
+/// keeping this view's panels selectable through visible controls.
 class SwipeTabView extends StatefulWidget {
   const SwipeTabView({
     super.key,
     this.branchIndex,
+    this.navigation = SwipeTabNavigation.tabs,
     this.keepPagesAlive = true,
     required this.index,
     required this.onIndexChanged,
@@ -153,6 +161,7 @@ class SwipeTabView extends StatefulWidget {
   });
 
   final int? branchIndex;
+  final SwipeTabNavigation navigation;
 
   /// Retain visited panels, including their locally selected nested tabs.
   /// Defaults to true so tab switches stay smooth across the app.
@@ -197,7 +206,9 @@ class _SwipeTabViewState extends State<SwipeTabView>
     super.initState();
     _settledPage = widget.index;
     _controller = PageController(initialPage: widget.index);
-    _registerWithParent();
+    if (widget.navigation != SwipeTabNavigation.tapOnly) {
+      _registerWithParent();
+    }
   }
 
   void _onActiveChildDelta(int page, int delta) {
@@ -214,6 +225,14 @@ class _SwipeTabViewState extends State<SwipeTabView>
   @override
   void didUpdateWidget(covariant SwipeTabView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.navigation != oldWidget.navigation) {
+      if (oldWidget.navigation != SwipeTabNavigation.tapOnly) {
+        _unregisterFromParent();
+      }
+      if (widget.navigation != SwipeTabNavigation.tapOnly) {
+        _registerWithParent();
+      }
+    }
     if (widget.index == oldWidget.index) return;
     if (!_controller.hasClients) {
       _settledPage = widget.index;
@@ -269,6 +288,9 @@ class _SwipeTabViewState extends State<SwipeTabView>
 
   /// Try to page this view by [delta]; forward the hand-off out if we can't.
   bool _stepSelf(int delta) {
+    if (widget.navigation == SwipeTabNavigation.shell) {
+      return ShellSwipe.read(context)?.nudge(delta) ?? false;
+    }
     // Consume another handoff while the previous one is still animating.
     // Otherwise its completion can overwrite a newer destination.
     if (_syncing) return true;
@@ -330,26 +352,33 @@ class _SwipeTabViewState extends State<SwipeTabView>
 
   @override
   Widget build(BuildContext context) {
+    final tapOnly = widget.navigation == SwipeTabNavigation.tapOnly;
     final ownsDrag = (_activeNestedChildren[_settledPage] ?? 0) == 0;
+    final pager = PageView.builder(
+      controller: _controller,
+      physics: const NeverScrollableScrollPhysics(),
+      onPageChanged: _onPageChanged,
+      itemCount: widget.children.length,
+      itemBuilder: (_, i) {
+        final page = widget.keepPagesAlive
+            ? _RetainedTab(child: widget.children[i])
+            : widget.children[i];
+        if (tapOnly) return page;
+        return _TabHandoff(
+          step: _stepSelf,
+          onActiveChildDelta: (delta) => _onActiveChildDelta(i, delta),
+          child: page,
+        );
+      },
+    );
+    if (tapOnly) return pager;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onHorizontalDragStart: ownsDrag ? _onDragStart : null,
       onHorizontalDragUpdate: ownsDrag ? _onDragUpdate : null,
       onHorizontalDragEnd: ownsDrag ? _onDragEnd : null,
       onHorizontalDragCancel: ownsDrag ? () => _acceptDrag = false : null,
-      child: PageView.builder(
-        controller: _controller,
-        physics: const NeverScrollableScrollPhysics(),
-        onPageChanged: _onPageChanged,
-        itemCount: widget.children.length,
-        itemBuilder: (_, i) => _TabHandoff(
-          step: _stepSelf,
-          onActiveChildDelta: (delta) => _onActiveChildDelta(i, delta),
-          child: widget.keepPagesAlive
-              ? _RetainedTab(child: widget.children[i])
-              : widget.children[i],
-        ),
-      ),
+      child: pager,
     );
   }
 }

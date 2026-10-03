@@ -372,16 +372,23 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                     ),
                   ),
                   if (searching)
-                    _FoodSearchList(
-                      openDetail: (context, foodId) => withoutSearchFocus(
-                        focus: _searchFocus,
-                        action: () => openFoodDetail(context, foodId),
-                      ),
-                      onClearQuery: () {
-                        _searchFocus.unfocus();
-                        _searchController.clear();
-                        _setQuery('');
-                      },
+                    SwipeTabView(
+                      navigation: SwipeTabNavigation.shell,
+                      index: 0,
+                      onIndexChanged: (_) {},
+                      children: [
+                        _FoodSearchList(
+                          openDetail: (context, foodId) => withoutSearchFocus(
+                            focus: _searchFocus,
+                            action: () => openFoodDetail(context, foodId),
+                          ),
+                          onClearQuery: () {
+                            _searchFocus.unfocus();
+                            _searchController.clear();
+                            _setQuery('');
+                          },
+                        ),
+                      ],
                     ),
                 ],
               ),

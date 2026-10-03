@@ -126,7 +126,7 @@ void main() {
         findsOneWidget,
       );
     }
-    expect(find.text('70.5 kg'), findsWidgets);
+    expect(find.text('70.50 kg'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 
@@ -200,10 +200,7 @@ void main() {
     ]);
     await pump(tester, const TrainRecordsTab(initialTab: 2));
 
-    final scopeTabs = tester
-        .widgetList<SportTabs<int>>(find.byType(SportTabs<int>))
-        .firstWhere((tabs) => tabs.items.values.contains('全部'));
-    scopeTabs.onSelected(1);
+    await tester.tap(find.widgetWithText(ChoiceChip, '全部'));
     await tester.pumpAndSettle();
 
     expect(find.text('暂无组次记录'), findsOneWidget);

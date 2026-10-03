@@ -101,19 +101,23 @@ class _FoodHistoryTabState extends ConsumerState<FoodHistoryTab> {
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.listPage,
             ),
-            child: SportTabs<int>(
-              items: {
+            child: Wrap(
+              spacing: 8,
+              children: [
                 for (final s in scopes)
-                  s: s == 0 ? l10n.tabRecent : l10n.filterAll,
-              },
-              selected: scope,
-              onSelected: _setScope,
+                  ChoiceChip(
+                    label: Text(s == 0 ? l10n.tabRecent : l10n.filterAll),
+                    selected: scope == s,
+                    onSelected: (_) => _setScope(s),
+                  ),
+              ],
             ),
           ),
         if (showScopeTabs) const SizedBox(height: 8),
         Expanded(
           child: showScopeTabs
               ? SwipeTabView(
+                  navigation: SwipeTabNavigation.tapOnly,
                   keepPagesAlive: true,
                   index: scopes.indexOf(scope).clamp(0, scopes.length - 1),
                   onIndexChanged: (i) => _setScope(scopes[i]),

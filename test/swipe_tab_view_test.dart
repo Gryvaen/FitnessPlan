@@ -3,6 +3,167 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('tap-only filters hand swipes to the outer tab then shell', (
+    tester,
+  ) async {
+    var branch = 1;
+    var outer = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) => ShellSwipe(
+            currentBranch: branch,
+            branchCount: 4,
+            onNudge: (delta) {
+              final target = branch + delta;
+              if (target < 0 || target >= 4) return false;
+              setState(() => branch = target);
+              return true;
+            },
+            child: Scaffold(
+              body: Stack(
+                children: [
+                  Offstage(
+                    offstage: branch != 1,
+                    child: SwipeTabView(
+                      branchIndex: 1,
+                      index: outer,
+                      onIndexChanged: (i) => setState(() => outer = i),
+                      children: const [
+                        _TapOnlyGroup(),
+                        Center(child: Text('Outer next')),
+                      ],
+                    ),
+                  ),
+                  if (branch != 1)
+                    SwipeTabView(
+                      navigation: SwipeTabNavigation.shell,
+                      index: 0,
+                      onIndexChanged: (_) {},
+                      children: [Center(child: Text('Branch $branch'))],
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Nested tab 1'));
+    await tester.pumpAndSettle();
+    expect(find.text('Nested page 1').hitTestable(), findsOneWidget);
+
+    await tester.flingFrom(const Offset(400, 350), const Offset(-300, 0), 6000);
+    await tester.pumpAndSettle();
+    expect(outer, 1);
+    expect(branch, 1);
+    expect(find.text('Outer next').hitTestable(), findsOneWidget);
+
+    await tester.flingFrom(const Offset(400, 350), const Offset(300, 0), 6000);
+    await tester.pumpAndSettle();
+    expect(outer, 0);
+    expect(branch, 1);
+    expect(find.text('Nested page 1').hitTestable(), findsOneWidget);
+
+    await tester.flingFrom(const Offset(400, 350), const Offset(300, 0), 6000);
+    await tester.pumpAndSettle();
+    expect(branch, 0);
+    expect(outer, 0);
+    await tester.flingFrom(const Offset(400, 350), const Offset(300, 0), 6000);
+    await tester.pumpAndSettle();
+    expect(branch, 0);
+
+    await tester.flingFrom(const Offset(400, 350), const Offset(-300, 0), 6000);
+    await tester.pumpAndSettle();
+    expect(branch, 1);
+    expect(find.text('Nested page 1').hitTestable(), findsOneWidget);
+  });
+
+  testWidgets('one-panel search results also navigate the shell', (
+    tester,
+  ) async {
+    var branch = 1;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) => ShellSwipe(
+            currentBranch: branch,
+            branchCount: 4,
+            onNudge: (delta) {
+              setState(() => branch += delta);
+              return true;
+            },
+            child: Scaffold(
+              body: SwipeTabView(
+                navigation: SwipeTabNavigation.shell,
+                index: 0,
+                onIndexChanged: (_) {},
+                children: const [Center(child: Text('Search results'))],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.flingFrom(const Offset(400, 350), const Offset(-300, 0), 6000);
+    await tester.pumpAndSettle();
+    expect(branch, 2);
+  });
+
+  testWidgets('two tap-only levels leave their filters unchanged on swipe', (
+    tester,
+  ) async {
+    var outer = 0;
+    var filter = 1;
+    var scope = 1;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) => Scaffold(
+            body: SwipeTabView(
+              index: outer,
+              onIndexChanged: (i) => setState(() => outer = i),
+              children: [
+                SwipeTabView(
+                  navigation: SwipeTabNavigation.tapOnly,
+                  index: filter,
+                  onIndexChanged: (i) => setState(() => filter = i),
+                  children: [
+                    const Center(child: Text('Plans')),
+                    SwipeTabView(
+                      navigation: SwipeTabNavigation.tapOnly,
+                      index: scope,
+                      onIndexChanged: (i) => setState(() => scope = i),
+                      children: const [
+                        Center(child: Text('Recent history')),
+                        Center(child: Text('All history')),
+                      ],
+                    ),
+                  ],
+                ),
+                const Center(child: Text('Next top-level tab')),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('All history').hitTestable(), findsOneWidget);
+
+    await tester.flingFrom(const Offset(400, 350), const Offset(-300, 0), 6000);
+    await tester.pumpAndSettle();
+    expect(outer, 1);
+    expect(filter, 1);
+    expect(scope, 1);
+
+    await tester.flingFrom(const Offset(400, 350), const Offset(300, 0), 6000);
+    await tester.pumpAndSettle();
+    expect(find.text('All history').hitTestable(), findsOneWidget);
+  });
+
   testWidgets('three levels hand off only after a separate edge gesture', (
     tester,
   ) async {
@@ -108,6 +269,64 @@ void main() {
     await tester.flingFrom(const Offset(400, 350), const Offset(-300, 0), 6000);
     await tester.pumpAndSettle();
     expect(selected, 1);
+  });
+
+  testWidgets('row swipe inside tap-only filter does not switch outer tab', (
+    tester,
+  ) async {
+    var outer = 0;
+    var confirmations = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) => Scaffold(
+            body: SwipeTabView(
+              index: outer,
+              onIndexChanged: (i) => setState(() => outer = i),
+              children: [
+                SwipeTabView(
+                  navigation: SwipeTabNavigation.tapOnly,
+                  index: 0,
+                  onIndexChanged: (_) {},
+                  children: [
+                    Column(
+                      children: [
+                        SwipeGestureBarrier(
+                          child: Dismissible(
+                            key: const ValueKey('filtered-row'),
+                            direction: DismissDirection.endToStart,
+                            confirmDismiss: (_) async {
+                              confirmations++;
+                              return false;
+                            },
+                            child: const SizedBox(
+                              height: 100,
+                              width: double.infinity,
+                              child: Text('Filtered row'),
+                            ),
+                          ),
+                        ),
+                        const Expanded(child: SizedBox.expand()),
+                      ],
+                    ),
+                  ],
+                ),
+                const Center(child: Text('Next tab')),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.dragFrom(const Offset(700, 50), const Offset(-600, 0));
+    await tester.pumpAndSettle();
+    expect(confirmations, 1);
+    expect(outer, 0);
+
+    await tester.flingFrom(const Offset(400, 350), const Offset(-300, 0), 6000);
+    await tester.pumpAndSettle();
+    expect(outer, 1);
   });
 
   for (final direction in [-1.0, 1.0]) {
@@ -320,6 +539,38 @@ void main() {
       },
     );
   }
+}
+
+class _TapOnlyGroup extends StatefulWidget {
+  const _TapOnlyGroup();
+
+  @override
+  State<_TapOnlyGroup> createState() => _TapOnlyGroupState();
+}
+
+class _TapOnlyGroupState extends State<_TapOnlyGroup> {
+  int selected = 0;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      TextButton(
+        onPressed: () => setState(() => selected = 1),
+        child: const Text('Nested tab 1'),
+      ),
+      Expanded(
+        child: SwipeTabView(
+          navigation: SwipeTabNavigation.tapOnly,
+          index: selected,
+          onIndexChanged: (i) => setState(() => selected = i),
+          children: const [
+            Center(child: Text('Nested page 0')),
+            Center(child: Text('Nested page 1')),
+          ],
+        ),
+      ),
+    ],
+  );
 }
 
 class _RememberingGroup extends StatefulWidget {

@@ -111,6 +111,70 @@ void main() {
     await _db.close();
   });
 
+  testWidgets('training filters use taps and swipe the parent segment', (
+    tester,
+  ) async {
+    var branch = 2;
+    var segment = 1;
+    await _pump(
+      tester,
+      StatefulBuilder(
+        builder: (context, setState) => ShellSwipe(
+          currentBranch: branch,
+          branchCount: 4,
+          onNudge: (delta) {
+            setState(() => branch += delta);
+            return true;
+          },
+          child: SwipeTabView(
+            branchIndex: 2,
+            index: segment,
+            onIndexChanged: (i) => setState(() => segment = i),
+            children: const [
+              Center(child: Text('Body segment')),
+              TrainRecordsTab(),
+              Center(child: Text('Notes segment')),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.widgetWithText(ChoiceChip, '动作库'));
+    await tester.pumpAndSettle();
+    expect(find.text('杠铃卧推'), findsOneWidget);
+
+    await tester.flingFrom(const Offset(200, 500), const Offset(-180, 0), 2000);
+    await tester.pumpAndSettle();
+    expect(segment, 2);
+    expect(branch, 2);
+
+    await tester.flingFrom(const Offset(200, 500), const Offset(180, 0), 2000);
+    await tester.pumpAndSettle();
+    expect(segment, 1);
+    expect(find.text('杠铃卧推'), findsOneWidget);
+    expect(
+      tester
+          .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '动作库'))
+          .selected,
+      isTrue,
+    );
+  });
+
+  testWidgets('training filter chips wrap at large text sizes', (tester) async {
+    await _pump(
+      tester,
+      const MediaQuery(
+        data: MediaQueryData(textScaler: TextScaler.linear(2)),
+        child: TrainRecordsTab(),
+      ),
+    );
+
+    expect(find.widgetWithText(ChoiceChip, '计划'), findsOneWidget);
+    expect(find.widgetWithText(ChoiceChip, '动作库'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'exercise library search and category menu narrow the lazily-rendered list',
     (tester) async {
@@ -513,13 +577,9 @@ void main() {
       await _pump(tester, const TrainRecordsTab(initialTab: 2));
 
       // Two scopes are now available ("最近"/"全部", 13 days apart) — jump
-      // straight to "全部" via the scope SportTabs (disambiguated from the
-      // top-level 计划/动作库/历史 SportTabs by its item labels) rather than
-      // tapping possibly-ambiguous "全部" text.
-      final scopeTabs = tester
-          .widgetList<SportTabs<int>>(find.byType(SportTabs<int>))
-          .firstWhere((w) => w.items.values.contains('全部'));
-      scopeTabs.onSelected(1);
+      // straight to "全部" via the scope chip, distinct from the top-level
+      // 计划/动作库/历史 tabs.
+      await tester.tap(find.widgetWithText(ChoiceChip, '全部'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('全部步数'));

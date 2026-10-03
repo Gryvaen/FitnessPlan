@@ -1,390 +1,370 @@
-# 健身饮食 / Fitness Plan
+<div align="center">
 
-[![CI](https://github.com/Gryvaen/FitnessPlan/actions/workflows/ci.yml/badge.svg)](https://github.com/Gryvaen/FitnessPlan/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/license-Personal%20Free%20%2F%20Commercial%20Paid-blue)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/Gryvaen/FitnessPlan?include_prereleases)](../../releases)
-[![Flutter](https://img.shields.io/badge/Flutter-Dart%20%5E3.12.2-02569B?logo=flutter&logoColor=white)](https://docs.flutter.dev/get-started/install)
-[![Donate](https://img.shields.io/badge/Donate-支付宝-1677FF?style=flat&logo=alipay&logoColor=white)](docs/donate.md)
+<img src="./assets/branding/fitness-plan-logo.png" width="120" alt="Fitness Plan">
 
-[English ↓](#english)
+<h1 id="fitness-plan">Fitness Plan</h1>
 
-纯本地 Flutter 健身饮食助手：按身体数据计算每日热量与三大营养素，内置常见食材库，支持饮食记账与体重记录。全部数据保存在设备本地，无需登录、无云端。
+<p>
+  <strong>本地健身饮食助手。热量、食材和训练都留在设备上；减脂时，缺口会变成修仙境界。</strong>
+</p>
+
+<p>An offline Flutter app for calories, food logging, and training. While you cut, the deficit advances a cultivation realm.</p>
+
+<p>
+  <a href="https://github.com/Gryvaen/FitnessPlan/actions/workflows/ci.yml"><img src="https://github.com/Gryvaen/FitnessPlan/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/Gryvaen/FitnessPlan/releases"><img src="https://img.shields.io/github/v/release/Gryvaen/FitnessPlan?include_prereleases&color=0F6E6B" alt="Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Personal%20Free%20%2F%20Commercial%20Paid-0F6E6B" alt="License"></a>
+  <a href="https://github.com/Gryvaen/FitnessPlan/stargazers"><img src="https://img.shields.io/github/stars/Gryvaen/FitnessPlan?style=flat&color=0F6E6B" alt="Stars"></a>
+</p>
+
+<p>
+  <a href="#features">功能</a> ·
+  <a href="#preview">界面</a> ·
+  <a href="#install">安装</a> ·
+  <a href="#usage">运行</a> ·
+  <a href="#architecture">架构</a> ·
+  <a href="#english">English</a>
+</p>
+
+</div>
+
+> 按身体数据计算每日热量和三大营养素，用内置食材库记账，并记录体重与训练。全部数据在本机 SQLite 里，不登录、不上云。
 
 ## 目录
 
-- [功能](#功能)
-- [技术栈](#技术栈)
-- [环境要求](#环境要求)
-- [快速开始](#快速开始)
-- [开发工作流](#开发工作流)
-- [项目结构](#项目结构)
-- [测试](#测试)
-- [发布 / 下载](#发布--github-release)
-- [贡献](#贡献)
-- [赞助](#赞助--donate)
-- [许可证](#许可证)
+- [功能](#features)
+- [界面](#preview)
+- [安装](#install)
+- [运行](#usage)
+- [技术栈](#stack)
+- [架构](#architecture)
+- [项目结构](#structure)
+- [开发](#dev)
+- [方向](#roadmap)
+- [贡献](#contributing)
+- [赞助](#donate)
+- [许可证](#license)
+- [English](#english)
+
+<a id="features"></a>
 
 ## 功能
 
-- 录入性别、年龄、身高、体重、活动量与目标（减脂 / 维持 / 增肌）
-- Mifflin–St Jeor 算法：BMR → TDEE → 每日热量与碳水 / 蛋白质 / 脂肪
-- 减脂策略：循环碳水 / 碳水递减等策略配置，按日给出目标
-- 584 条中国大陆常见食材营养数据（每 100g，含热量 / 蛋白质 / 碳水 / 脂肪 / 酒精 / 纤维 / 钠 / 糖 / 饱和脂肪 / 钙共 10 个字段），记一笔饮食自动扣减当日剩余配额
-- 按日查看历史饮食与配额（含缺口日历选择）；支持历史日补记
-- 体重记录与折线图；体脂率与身体围度；减脂平台期提示
-- 训练记录：动作库、训练计划、组数 / 次数记录
-- 每日步数（Health Connect / HealthKit，安卓无权限时回退到传感器计步，支持历史补齐）
-- 随记
-- 提醒：训练 / 饮水 / 饮食 / 称重，各自独立的提醒时间与重复星期
-- 工具箱：体脂率、身体围度、计算器、千卡 / 千焦换算、食物单位换算、休息计时器
-- 多套主题配色；中 / 英文界面
-- App 内检查更新（GitHub Release）
-- 全部数据本地保存，无需登录、无云端
+四个主页面：今日、食材、记录、我的。
+
+<table>
+<tr>
+<td width="33%" align="center">
+
+### 热量账本
+
+Mifflin–St Jeor 计算 BMR、TDEE，以及蛋白质、碳水、脂肪。记一笔饮食，当天剩余配额自动扣减，饮水一并记下。
+
+</td>
+<td width="33%" align="center">
+
+### 减脂策略
+
+均衡、碳水循环、碳水递减按日给出目标。最近体重几乎不动时，会提示可能的平台期。
+
+</td>
+<td width="33%" align="center">
+
+### 食材库
+
+637 条中国大陆常见食材，18 个分类。每 100 克含热量、蛋白质、碳水、脂肪、酒精、纤维、钠、糖、饱和脂肪、钙。支持自定义、收藏和历史补记。
+
+</td>
+</tr>
+<tr>
+<td width="33%" align="center">
+
+### 训练与身体
+
+动作库、训练计划、组数与次数。体重曲线、体脂百分比、便签，以及 Health Connect / HealthKit 步数（安卓无权限时回退到传感器）。
+
+</td>
+<td width="33%" align="center">
+
+### 修仙境界
+
+减脂目标下，累计热量缺口换成练气、筑基、结丹、元婴、化神。7,700 kcal 计为 1 kg。增肌和维持的境界页仍是占位。
+
+</td>
+<td width="33%" align="center">
+
+### 只在本地
+
+Drift / SQLite 保存全部记录，可导出、导入备份。中英界面，浅色与石墨灰两套主题。训练、饮水、饮食、称重提醒各自独立。
+
+</td>
+</tr>
+</table>
+
+工具箱里还有美国海军围度法体脂、BMI 与腰高比、食物单位换算、千卡 / 千焦换算、计算器和休息计时器。某一天可以标成放纵餐或休息日，修仙进度会按规则跳过对应热量。
+
+策略参数面向一般健康成年人的自助估算，不是临床处方。
+
+<a id="preview"></a>
+
+## 界面
+
+<p align="center">
+  <img src="./design-handoff/display/today.png" width="270" alt="今日页：剩余热量、营养素、饮水和训练">
+  &nbsp;&nbsp;
+  <img src="./design-handoff/display/me.png" width="270" alt="我的页：修仙境界、档案、营养目标和工具箱">
+</p>
+
+<p align="center">
+  <sub>今日，以及「我的」里的境界入口。截图来自 <code>design-handoff/display/</code>，「我的」页上的版本号早于当前源码（<code>pubspec.yaml</code> 为 2.5.3）。食物分类旧图与现在的 637 条种子不一致，所以没有放。</sub>
+</p>
+
+<a id="install"></a>
+
+## 安装
+
+### 直接安装 Android
+
+从 [Releases](https://github.com/Gryvaen/FitnessPlan/releases) 下载 APK。应用内更新也只检查这里的 Android 包。
+
+| 文件 | 说明 |
+|------|------|
+| `FitnessPlan-*-android-arm64-v8a.apk` | 大多数真机用这个 |
+| `FitnessPlan-*-android.apk` | 通用包，体积更大 |
+| `FitnessPlan-*-android-armeabi-v7a.apk` | 较老的 32 位 ARM |
+| `FitnessPlan-*-android-x86_64.apk` | 模拟器或 x86 设备 |
+
+iOS 安装包需要在 macOS 上用 Xcode 构建，当前 Release 不提供 IPA。
+
+### 从源码运行
+
+需要与 `pubspec.yaml` 里 Dart SDK `^3.12.2` 匹配的 [Flutter](https://docs.flutter.dev/get-started/install)。工程带有 Android、iOS、Linux、macOS、Windows 和 Web 目标。Linux 上连接模拟器的步骤见 [docs/模拟器与运行说明.md](docs/模拟器与运行说明.md)。
+
+```bash
+git clone https://github.com/Gryvaen/FitnessPlan.git
+cd FitnessPlan
+flutter pub get
+flutter run
+```
+
+指定设备：
+
+```bash
+flutter devices
+flutter run -d linux
+flutter build apk --debug
+```
+
+<a id="usage"></a>
+
+## 运行
+
+首次打开会进入引导：填写性别、年龄、身高、体重、活动量和目标（减脂 / 维持 / 增肌）。完成后，今日页给出当天热量和营养素。
+
+日常用法：
+
+1. 在食材页搜索或按分类选食物，记入早、午、晚或加餐。
+2. 在记录页写下体重、训练计划和组数，或写一条便签。
+3. 在「我的」里查看营养目标、提醒、工具箱；减脂时进入境界页看进度。
+
+本机打正式 Android 包（需先配置签名，`key.properties` 和 `*.jks` 已忽略，不要提交）：
+
+```bash
+./tool/create_release_keystore.sh   # 仅首次
+./tool/build_release_apk.sh         # analyze、test，产物到 dist/
+```
+
+签名示例见 [android/key.properties.example](android/key.properties.example)。在 Mac 上可以：
+
+```bash
+flutter build ipa --release
+```
+
+<a id="stack"></a>
 
 ## 技术栈
 
+<p align="center">
+  <img src="https://skillicons.dev/icons?i=flutter,dart,sqlite,android,apple,linux,windows&theme=light" alt="Flutter, Dart, SQLite, Android, Apple, Linux, Windows">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Riverpod-3-02569B?style=flat" alt="Riverpod">
+  <img src="https://img.shields.io/badge/Drift-SQLite-0F6E6B?style=flat" alt="Drift">
+  <img src="https://img.shields.io/badge/go__router-17-455A64?style=flat" alt="go_router">
+  <img src="https://img.shields.io/badge/l10n-中文%20%2F%20English-5C6BC0?style=flat" alt="中文 / English">
+</p>
+
 | 依赖 | 版本 | 用途 |
 |------|------|------|
-| Flutter | Dart SDK `^3.12.2` | 跨平台 UI 框架（Material Design） |
-| flutter_riverpod | `^3.3.2` | 状态管理 |
-| go_router | `^17.3.0` | 路由导航 |
-| drift | `^2.34.2` | 本地数据库（SQLite） |
-| fl_chart | `^1.2.0` | 体重曲线等图表 |
-| shared_preferences | `^2.5.5` | 用户配置存储 |
-| health | `^13.3.1` | Health Connect / HealthKit 步数同步 |
-| flutter_local_notifications | `^22.0.1` | 本地提醒推送 |
-| permission_handler | `^12.0.3` | 运行时权限 |
-| package_info_plus / http / open_filex | 见 `pubspec.yaml` | App 内检查更新 / 下载 / 安装 |
-| share_plus / file_picker | 见 `pubspec.yaml` | 分享与文件导入导出 |
+| Flutter / Dart | SDK `^3.12.2` | UI。正文字体是霞鹜文楷与思源黑体 |
+| flutter_riverpod | `^3.3.2` | 状态 |
+| go_router | `^17.3.0` | 路由与底部四个分页 |
+| drift | `^2.34.2` | 本地 SQLite |
+| fl_chart | `^1.2.0` | 体重等图表 |
+| health | `^13.3.1` | Health Connect / HealthKit 步数 |
+| flutter_local_notifications | `^22.0.1` | 本地提醒 |
+| shared_preferences | `^2.5.5` | 主题、语言等轻量配置 |
 
-开发依赖：`drift_dev ^2.34.0`（代码生成）、`build_runner ^2.15.1`、`flutter_lints ^6.0.0`（静态检查规则见 [analysis_options.yaml](analysis_options.yaml)）。
+底部导航和大部分页面使用项目内的水墨图标（`assets/ink/`）。
 
-## 环境要求
+<a id="architecture"></a>
 
-- [Flutter](https://docs.flutter.dev/get-started/install) SDK（与 `pubspec.yaml` 中的 Dart SDK 约束 `^3.12.2` 保持一致）
-- 可选：Android 模拟器 / 真机，或 Linux / macOS / Windows / Web 桌面目标
-- Linux 模拟器与真机调试的详细步骤见 [docs/模拟器与运行说明.md](docs/模拟器与运行说明.md)
+## 架构
 
-## 快速开始
+计算与界面分开。热量、减脂策略、平台期和修仙进度都在 `lib/domain/`，不依赖 Flutter。页面通过 Riverpod 读写仓库，仓库再落到 Drift 或系统能力。
 
-```bash
-git clone git@github.com:Gryvaen/FitnessPlan.git
-cd FitnessPlan
-flutter pub get
-flutter run                 # 自动选择已连接设备
-flutter run -d linux        # Linux 桌面调试
-flutter build apk --debug   # 打安卓包
-flutter analyze --no-fatal-infos
-flutter test
+```mermaid
+flowchart LR
+  UI["lib/ui<br/>今日 · 食材 · 记录 · 我的"] --> P["lib/providers"]
+  UI --> D["lib/domain<br/>热量 · 策略 · 境界"]
+  P --> D
+  P --> R["lib/data<br/>repositories"]
+  R --> DB[("Drift / SQLite")]
+  R --> N["步数 · 本地通知 · 应用更新"]
 ```
 
-### PATH 示例（可选）
+安卓上的应用更新只在启动和回到前台时静默查询 GitHub Release。桌面和 Web 没有健康存储，步数同步会标成不支持。
 
-```bash
-export PATH="$HOME/development/flutter/bin:$HOME/Android/Sdk/emulator:$HOME/Android/Sdk/platform-tools:$PATH"
-export JAVA_HOME="$HOME/development/jdk-21"   # 安卓构建用
-export ANDROID_HOME="$HOME/Android/Sdk"
-export ANDROID_SDK_ROOT="$HOME/Android/Sdk"
+<a id="structure"></a>
+
+## 项目结构
+
+```text
+FitnessPlan/
+├── lib/
+│   ├── domain/          # 热量、策略、境界、体脂等纯计算
+│   ├── data/            # Drift 表、仓库、步数与提醒桥接
+│   ├── providers/       # Riverpod
+│   ├── ui/              # 今日、食材、记录、策略、工具、境界、主题
+│   ├── features/        # 开屏动画
+│   └── l10n/            # 中英 ARB 与生成代码
+├── assets/
+│   ├── food_seed.json   # 637 条食材种子
+│   ├── branding/        # Logo
+│   ├── cultivation/     # 境界原画
+│   ├── ink/             # 水墨图标
+│   └── fonts/
+├── android/ ios/ linux/ macos/ windows/ web/
+├── test/                # 算法、仓库、widget 测试
+├── tool/                # 发布脚本；旧的食材合并脚本仅作参考
+├── docs/                # 运行说明、赞助
+├── design-handoff/      # 设计稿，不打进安装包
+└── .github/workflows/ci.yml
 ```
 
-## 开发工作流
+<a id="dev"></a>
 
-**数据库（Drift）** — 修改 `lib/data` 下的表结构后需重新生成代码：
+## 开发
+
+改 `lib/data` 里的表之后：
 
 ```bash
 dart run build_runner build
 ```
 
-**食材种子** — [assets/food_seed.json](assets/food_seed.json)：584 条中国大陆常见食材，AI 生成并校对，每条 10 个字段（热量 / 蛋白质 / 碳水 / 脂肪 / 酒精 / 纤维 / 钠 / 糖 / 饱和脂肪 / 钙，每 100g）。[tool/build_food_seed.py](tool/build_food_seed.py)（合并 CFCT / Sanotsu / Open Food Facts）已废弃，仅存历史参考。
-
-改动后需同步提高 [lib/data/repositories/food_repository.dart](lib/data/repositories/food_repository.dart) 中的 `kFoodSeedVersion`（当前 `10`），否则已安装设备不会重新同步。
-
-**多语言（l10n）** — 文案位于 [lib/l10n/app_zh.arb](lib/l10n/app_zh.arb)（中文）与 [lib/l10n/app_en.arb](lib/l10n/app_en.arb)（英文，作为模板文件），生成配置见 [l10n.yaml](l10n.yaml)。新增/修改文案后：
+改 [lib/l10n/app_zh.arb](lib/l10n/app_zh.arb) 或模板 [lib/l10n/app_en.arb](lib/l10n/app_en.arb) 之后：
 
 ```bash
-flutter gen-l10n   # 或执行 flutter pub get / flutter run 时会自动触发生成
+flutter gen-l10n
 ```
 
-## 项目结构
+`flutter pub get` 和 `flutter run` 也会触发生成。配置在 [l10n.yaml](l10n.yaml)。
 
-```
-lib/
-  domain/          # 热量算法与领域模型
-  data/            # Drift DB、仓库、原生服务桥接（步数、提醒）
-  providers/       # Riverpod providers
-  features/        # 新的按功能划分结构（目前仅 loading/）
-  l10n/            # 本地化 ARB 源文件与生成代码
-  ui/              # 页面与组件
-    today/         # 今日配额
-    meals/         # 饮食记录
-    foods/         # 食材库
-    records/       # 体重 / 训练 / 随记
-    strategy/      # 减脂策略
-    tools/         # 工具箱、提醒设置
-    theme/         # 主题与共享 UI 组件
-    profile/       # 个人资料、我的
-    onboarding/    # 首次引导
-    shell/         # 应用外壳、底部导航等
-    ink/           # 水墨风格图标与视觉资源
-    loading/       # 加载 / 过渡页面
-    widgets/       # 通用组件
-assets/
-  food_seed.json   # 食材种子数据
-test/              # 单元、组件与截图（golden）测试
-```
+食材种子是 [assets/food_seed.json](assets/food_seed.json)。改完要把 [lib/data/repositories/food_repository.dart](lib/data/repositories/food_repository.dart) 里的 `kFoodSeedVersion` 加一（当前 `13`），已安装的设备才会重新同步。`tool/build_food_seed.py` 已废弃，只留作历史参考。
 
-## 测试
+只看开屏、不进首页：
 
 ```bash
-flutter analyze --no-fatal-infos
-flutter test
+flutter run --dart-define=LOADING_LAB=true
 ```
 
-`test/` 覆盖领域算法单测、仓库 / provider 测试、widget 测试，以及守护关键页面视觉一致性的 `*_screenshots_test.dart` 截图（golden）测试。CI（[.github/workflows/ci.yml](.github/workflows/ci.yml)）在每次 push 到 `main`/`master` 及每个 PR 上运行相同检查。
+<a id="roadmap"></a>
 
-## 发布 / GitHub Release
+## 方向
 
-Android APK 可从仓库的 [Releases](../../releases) 下载。
+代码里已经写明、但还没做完的只有境界体系的另外两条线：
 
-| 文件 | 说明 |
-|------|------|
-| `FitnessPlan-*-android-arm64-v8a.apk` | **推荐**：绝大多数真机 |
-| `FitnessPlan-*-android.apk` | 通用包（体积更大） |
-| `FitnessPlan-*-android-armeabi-v7a.apk` | 较老的 32 位 ARM |
-| `FitnessPlan-*-android-x86_64.apk` | 模拟器 / x86 设备 |
+- [x] 减脂修仙：练气 → 筑基 → 结丹 → 元婴 → 化神
+- [x] 本地饮食、训练、身体记录、提醒，以及 Android Release
+- [ ] 增肌、维持的境界玩法（入口在，内容仍是占位页）
 
-本机重新打包（需先配置正式签名）：
-
-```bash
-./tool/create_release_keystore.sh   # 首次：生成 upload-keystore.jks + key.properties
-./tool/build_release_apk.sh         # analyze + test + 打 release APK → dist/
-# 产物在 dist/
-```
-
-签名配置见 [android/key.properties.example](android/key.properties.example)；`key.properties` 与 `*.jks` 已在 `.gitignore` 中忽略。
-
-### 关于 iOS
-
-Linux 无法构建 iOS / IPA，需 macOS + Xcode，且分发通常还需 Apple Developer 账号（TestFlight / App Store）。因此 Release 目前只提供 Android APK。在 Mac 上可执行：
-
-```bash
-flutter build ipa --release
-# 产物：build/ios/ipa/*.ipa（需配置签名）
-```
+<a id="contributing"></a>
 
 ## 贡献
 
-提交 PR 前请本地跑通（与 CI 一致）：
+提交前在本地跑与 CI 相同的检查。CI 在推送到 `main` / `master` 以及每个 PR 上执行 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)。
 
 ```bash
 flutter analyze --no-fatal-infos
 flutter test
 ```
 
-代码风格遵循 `flutter_lints`（[analysis_options.yaml](analysis_options.yaml)），无自定义规则。
+风格遵循 `flutter_lints`，规则见 [analysis_options.yaml](analysis_options.yaml)。版权材料用的截图测试默认跳过（见 [dart_test.yaml](dart_test.yaml)）。
 
-## 赞助 / Donate
+<a id="donate"></a>
 
-如果这个项目对你有帮助，欢迎 [支付宝赞助](docs/donate.md)。
+## 赞助
+
+如果这个项目有用，可以 [用支付宝赞助](docs/donate.md)。
+
+<a id="license"></a>
 
 ## 许可证
 
-个人 / 非商业使用免费；商业使用需另行付费授权，请通过 GitHub Issues 联系。
-详见 [LICENSE](LICENSE)。
+个人、教育和其它非商业用途免费。商业使用需要另行授权，请通过 GitHub Issues 联系。详见 [LICENSE](LICENSE)。
 
 ---
 
 <a id="english"></a>
 
-# English
+## English
 
-[← 中文](#健身饮食--fitness-plan)
+[← 中文](#fitness-plan)
 
-[![CI](https://github.com/Gryvaen/FitnessPlan/actions/workflows/ci.yml/badge.svg)](https://github.com/Gryvaen/FitnessPlan/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/license-Personal%20Free%20%2F%20Commercial%20Paid-blue)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/Gryvaen/FitnessPlan?include_prereleases)](../../releases)
-[![Donate](https://img.shields.io/badge/Donate-Alipay-1677FF?style=flat&logo=alipay&logoColor=white)](docs/donate.md)
+Fully offline fitness and nutrition app. It turns body stats into a daily calorie and macro budget, ships a Mainland China food database, and stores meals, weight, and workouts on device. No account, no cloud.
 
-A fully offline Flutter fitness & nutrition app. It calculates daily calorie and macro targets from your body stats, ships with a built-in food database, and lets you log meals and weight — all stored on device, no accounts, no cloud.
+While the goal is fat loss, cumulative deficit is mapped onto a cultivation realm: Qi Refining, Foundation, Core Formation, Nascent Soul, Divine Transformation. 7,700 kcal counts as 1 kg. Bulk and maintain still open a placeholder realm screen.
 
-## Table of Contents
+### Features
 
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Requirements](#requirements)
-- [Quick Start](#quick-start)
-- [Development](#development)
-- [Project Structure](#project-structure)
-- [Testing](#testing)
-- [Downloads / GitHub Release](#downloads--github-release)
-- [Contributing](#contributing)
-- [Donate](#donate)
-- [License](#license)
+- Mifflin–St Jeor: BMR, TDEE, protein / carbs / fat, plus water
+- Fat-loss strategies: balanced, carb cycling, carb tapering, with plateau hints
+- 637 common Mainland China foods in 18 categories, 10 nutrients per 100 g, custom foods, favorites, and backfill
+- Exercise library, training plans, set logging, weight chart, body-fat %, notes
+- Steps via Health Connect / HealthKit, with an Android sensor fallback
+- Reminders for workout, water, meals, and weigh-in
+- Toolbox: Navy body-fat estimate, BMI, unit conversion, kcal/kJ, calculator, rest timer
+- Chinese and English UI, light and graphite themes
+- JSON backup import / export, and in-app Android updates from GitHub Releases
 
-## Features
+Strategy numbers are self-service estimates for generally healthy adults, not a clinical prescription.
 
-- Enter sex, age, height, weight, activity level, and goal (cut / maintain / bulk)
-- Mifflin–St Jeor: BMR → TDEE → daily calories and carbs / protein / fat
-- Fat-loss strategies: carb cycling / carb tapering, with day-by-day targets
-- 584 common Mainland China foods with nutrition data (per 100g, 10 fields: calories / protein / carbs / fat / alcohol / fiber / sodium / sugar / saturated fat / calcium); log a meal to auto-deduct from today's budget
-- Browse past days' meals and budgets (with a deficit date picker); backfill past days
-- Weight logs with a line chart; body fat % and body measurements; plateau hints when cutting
-- Workout tracking: exercise library, training plans, set/rep logging
-- Daily steps (Health Connect / HealthKit, falling back to the device sensor on Android when permission isn't granted), with history backfill
-- Freeform notes
-- Reminders: workout / water / meal / weigh-in, each with its own time and repeat days
-- Toolbox: body fat, body measurements, calculator, kcal/kJ conversion, food unit conversion, rest timer
-- Multiple color themes; Chinese / English UI
-- In-app update check (GitHub Releases)
-- Fully local storage — no accounts, no cloud
+### Install and run
 
-## Tech Stack
-
-| Dependency | Version | Purpose |
-|------|------|------|
-| Flutter | Dart SDK `^3.12.2` | Cross-platform UI framework (Material Design) |
-| flutter_riverpod | `^3.3.2` | State management |
-| go_router | `^17.3.0` | Navigation |
-| drift | `^2.34.2` | Local database (SQLite) |
-| fl_chart | `^1.2.0` | Weight charts |
-| shared_preferences | `^2.5.5` | Profile settings |
-| health | `^13.3.1` | Health Connect / HealthKit step sync |
-| flutter_local_notifications | `^22.0.1` | Local reminder notifications |
-| permission_handler | `^12.0.3` | Runtime permissions |
-| package_info_plus / http / open_filex | see `pubspec.yaml` | In-app update check / download / install |
-| share_plus / file_picker | see `pubspec.yaml` | Sharing and file import/export |
-
-Dev dependencies: `drift_dev ^2.34.0` (codegen), `build_runner ^2.15.1`, `flutter_lints ^6.0.0` (see [analysis_options.yaml](analysis_options.yaml)).
-
-## Requirements
-
-- [Flutter](https://docs.flutter.dev/get-started/install) SDK (match the Dart SDK constraint `^3.12.2` in `pubspec.yaml`)
-- Optional: Android emulator / device, or Linux / macOS / Windows / Web targets
-- For Linux emulator/device setup details, see [docs/模拟器与运行说明.md](docs/模拟器与运行说明.md) (Chinese)
-
-## Quick Start
+Download an Android APK from [Releases](https://github.com/Gryvaen/FitnessPlan/releases). `FitnessPlan-*-android-arm64-v8a.apk` fits most phones.
 
 ```bash
-git clone git@github.com:Gryvaen/FitnessPlan.git
+git clone https://github.com/Gryvaen/FitnessPlan.git
 cd FitnessPlan
 flutter pub get
-flutter run                 # pick a connected device
-flutter run -d linux        # Linux desktop
-flutter build apk --debug   # Android APK
-flutter analyze --no-fatal-infos
-flutter test
+flutter run
 ```
 
-### PATH setup (optional)
-
-```bash
-export PATH="$HOME/development/flutter/bin:$HOME/Android/Sdk/emulator:$HOME/Android/Sdk/platform-tools:$PATH"
-export JAVA_HOME="$HOME/development/jdk-21"   # for Android builds
-export ANDROID_HOME="$HOME/Android/Sdk"
-export ANDROID_SDK_ROOT="$HOME/Android/Sdk"
-```
-
-## Development
-
-**Database (Drift)** — after changing table schemas under `lib/data`, regenerate code:
-
-```bash
-dart run build_runner build
-```
-
-**Food seed** — [assets/food_seed.json](assets/food_seed.json): 584 common Mainland China foods, AI-generated and reviewed, 10 fields per entry (calories / protein / carbs / fat / alcohol / fiber / sodium / sugar / saturated fat / calcium, per 100g). [tool/build_food_seed.py](tool/build_food_seed.py) (merges CFCT / Sanotsu / Open Food Facts) is deprecated, kept for historical reference only.
-
-After changes, bump `kFoodSeedVersion` (currently `10`) in [lib/data/repositories/food_repository.dart](lib/data/repositories/food_repository.dart) so existing installs re-sync.
-
-**Localization (l10n)** — strings live in [lib/l10n/app_zh.arb](lib/l10n/app_zh.arb) (Chinese) and [lib/l10n/app_en.arb](lib/l10n/app_en.arb) (English, the template file); generation is configured in [l10n.yaml](l10n.yaml). After editing strings:
-
-```bash
-flutter gen-l10n   # or it's triggered automatically by flutter pub get / flutter run
-```
-
-## Project Structure
-
-```
-lib/
-  domain/          # calorie math & domain models
-  data/            # database, repositories, native service bridges (steps, reminders)
-  providers/       # Riverpod providers
-  features/        # newer feature-first structure (currently just loading/)
-  l10n/            # localization ARB sources & generated code
-  ui/              # screens & widgets
-    today/         # today's budget
-    meals/         # meal logging
-    foods/         # food library
-    records/       # weight / workouts / notes
-    strategy/      # fat-loss strategies
-    tools/         # toolbox, reminder settings
-    theme/         # theming & shared UI widgets
-    profile/       # profile, "me" tab
-    onboarding/    # onboarding
-    shell/         # app shell, bottom navigation, etc.
-    ink/           # ink-style icons and visual assets
-    loading/       # loading / transition screens
-    widgets/       # shared widgets
-assets/
-  food_seed.json   # food seed data
-test/              # unit, widget, and screenshot (golden) tests
-```
-
-## Testing
+Dart SDK constraint: `^3.12.2`. After the first launch, enter sex, age, height, weight, activity, and a goal (cut / maintain / bulk).
 
 ```bash
 flutter analyze --no-fatal-infos
 flutter test
+./tool/build_release_apk.sh    # signed release APKs → dist/
 ```
 
-`test/` covers domain algorithm unit tests, repository/provider tests, widget tests, and `*_screenshots_test.dart` golden tests guarding key screens' visual consistency. CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs the same checks on every push to `main`/`master` and every PR.
+iOS builds need macOS and Xcode (`flutter build ipa --release`). This repo's releases are Android-only.
 
-## Downloads / GitHub Release
+Bump `kFoodSeedVersion` (currently `13`) after editing `assets/food_seed.json`. Regenerate Drift with `dart run build_runner build`.
 
-Get Android APKs from [Releases](../../releases).
+### License
 
-| File | Notes |
-|------|--------|
-| `FitnessPlan-*-android-arm64-v8a.apk` | **Recommended** for most phones |
-| `FitnessPlan-*-android.apk` | Universal (larger) |
-| `FitnessPlan-*-android-armeabi-v7a.apk` | Older 32-bit ARM |
-| `FitnessPlan-*-android-x86_64.apk` | Emulators / x86 |
+Free for personal and other non-commercial use. Commercial use needs a paid license; contact via GitHub Issues. See [LICENSE](LICENSE).
 
-Rebuild locally (release signing required):
-
-```bash
-./tool/create_release_keystore.sh   # first time
-./tool/build_release_apk.sh         # analyze + test + release APKs → dist/
-# outputs in dist/
-```
-
-See [android/key.properties.example](android/key.properties.example). Do not commit `key.properties` or `*.jks`.
-
-### iOS
-
-iOS / IPA can't be built on Linux — needs macOS + Xcode, and distribution usually needs an Apple Developer account (TestFlight / App Store). Releases here are Android-only for now. On a Mac:
-
-```bash
-flutter build ipa --release
-# output: build/ios/ipa/*.ipa (signing required)
-```
-
-## Contributing
-
-Before submitting a PR, run locally (matches CI):
-
-```bash
-flutter analyze --no-fatal-infos
-flutter test
-```
-
-Code style follows `flutter_lints` ([analysis_options.yaml](analysis_options.yaml)), no custom rules.
-
-## Donate
-
-If this project helps you, please [donate via Alipay](docs/donate.md).
-
-## License
-
-Free for personal / non-commercial use. Commercial use requires a paid
-license — contact via GitHub Issues. See [LICENSE](LICENSE) for details.
+[Donate via Alipay](docs/donate.md).
