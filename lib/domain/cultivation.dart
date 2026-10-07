@@ -6,6 +6,7 @@
 /// 不再突破。每个大境界再分 9 层小境界，按境界内的等效减重量线性均分。
 library;
 
+const double kCheatMealCultivationPenaltyKcal = -1000;
 const double kKcalPerKg = 7700;
 const int kCultivationLayers = 9;
 

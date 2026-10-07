@@ -1010,6 +1010,102 @@ abstract class AppLocalizations {
   /// **'Meal presets'**
   String get mealPresets;
 
+  /// No description provided for @presetsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Presets'**
+  String get presetsTab;
+
+  /// No description provided for @collectionItems.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} items'**
+  String collectionItems(int count);
+
+  /// No description provided for @noPresets.
+  ///
+  /// In en, this message translates to:
+  /// **'No meal presets yet'**
+  String get noPresets;
+
+  /// No description provided for @presetAddToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to today'**
+  String get presetAddToday;
+
+  /// No description provided for @presetEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit preset'**
+  String get presetEdit;
+
+  /// No description provided for @presetAddFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Add food'**
+  String get presetAddFood;
+
+  /// No description provided for @presetEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'This preset has no foods'**
+  String get presetEmpty;
+
+  /// No description provided for @presetNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a preset name'**
+  String get presetNameRequired;
+
+  /// No description provided for @confirmDeletePresetFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this food from the preset?'**
+  String get confirmDeletePresetFood;
+
+  /// No description provided for @confirmClearPresetMeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove all foods in {meal} from the preset?'**
+  String confirmClearPresetMeal(String meal);
+
+  /// No description provided for @presetItemsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one food'**
+  String get presetItemsRequired;
+
+  /// No description provided for @presetGramsInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Grams must be greater than zero'**
+  String get presetGramsInvalid;
+
+  /// No description provided for @presetUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Preset updated'**
+  String get presetUpdated;
+
+  /// No description provided for @presetNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Preset not found'**
+  String get presetNotFound;
+
+  /// No description provided for @presetAppliedResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Added {added}, skipped {duplicate} duplicates and {missing} missing foods'**
+  String presetAppliedResult(int added, int duplicate, int missing);
+
+  /// No description provided for @presetFoodSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search foods to add'**
+  String get presetFoodSearch;
+
   /// No description provided for @saveAsPreset.
   ///
   /// In en, this message translates to:
@@ -1055,13 +1151,13 @@ abstract class AppLocalizations {
   /// No description provided for @copyYesterday.
   ///
   /// In en, this message translates to:
-  /// **'Copy yesterday'**
+  /// **'Append yesterday'**
   String get copyYesterday;
 
   /// No description provided for @copyNamed.
   ///
   /// In en, this message translates to:
-  /// **'Copy {name}'**
+  /// **'Append {name}'**
   String copyNamed(String name);
 
   /// No description provided for @yesterdayNamed.
@@ -1073,20 +1169,38 @@ abstract class AppLocalizations {
   /// No description provided for @copyYesterdayWorkout.
   ///
   /// In en, this message translates to:
-  /// **'Copy yesterday\'s workout'**
+  /// **'Append yesterday\'s workout'**
   String get copyYesterdayWorkout;
 
   /// No description provided for @copyYesterdayWorkoutConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Today already has a workout plan; append yesterday\'s?'**
+  /// **'Append yesterday\'s plans whose names are not already in today\'s workout?'**
   String get copyYesterdayWorkoutConfirm;
 
   /// No description provided for @copiedWorkoutItems.
   ///
   /// In en, this message translates to:
-  /// **'Copied {n} exercises'**
+  /// **'Appended {n} exercises'**
   String copiedWorkoutItems(int n);
+
+  /// No description provided for @skippedDuplicatePlans.
+  ///
+  /// In en, this message translates to:
+  /// **', skipped {n} plans with the same name'**
+  String skippedDuplicatePlans(int n);
+
+  /// No description provided for @nothingNewToAppend.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing new to append; names already exist today'**
+  String get nothingNewToAppend;
+
+  /// No description provided for @skippedDuplicateFoods.
+  ///
+  /// In en, this message translates to:
+  /// **', skipped {n} foods with the same name'**
+  String skippedDuplicateFoods(int n);
 
   /// No description provided for @yesterdayNoWorkout.
   ///
@@ -2802,7 +2916,7 @@ abstract class AppLocalizations {
   /// No description provided for @copyYesterdayConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Day already has logs; append yesterday\'s meals?'**
+  /// **'Append yesterday\'s foods that are not already in this meal?'**
   String get copyYesterdayConfirm;
 
   /// No description provided for @activitySedentary.
@@ -3084,7 +3198,7 @@ abstract class AppLocalizations {
   /// No description provided for @copiedItems.
   ///
   /// In en, this message translates to:
-  /// **'Copied {n}{skip}'**
+  /// **'Appended {n}{skip}'**
   String copiedItems(int n, String skip);
 
   /// No description provided for @skippedMissingFoods.
@@ -4833,6 +4947,12 @@ abstract class AppLocalizations {
   /// **'Diet {kcal} kcal'**
   String cultivationDietContribution(String kcal);
 
+  /// No description provided for @cultivationCheatPenalty.
+  ///
+  /// In en, this message translates to:
+  /// **'Cheat day default {kcal} kcal'**
+  String cultivationCheatPenalty(String kcal);
+
   /// No description provided for @cultivationLayerBadge.
   ///
   /// In en, this message translates to:
@@ -5016,7 +5136,7 @@ abstract class AppLocalizations {
   /// No description provided for @realmGuideFootnoteBody.
   ///
   /// In en, this message translates to:
-  /// **'① Steps × 0.04 kcal/step; ② diet, counted only when at least 2 distinct meal types are logged that day (breakfast/lunch/dinner/snack) — diet contribution = today\'s TDEE − today\'s intake (eating less yields a larger surplus; exceeding TDEE yields a negative setback).'**
+  /// **'On regular days: ① steps × 0.04 kcal/step; ② diet counts after at least 2 distinct meal types are logged, contributing TDEE − intake. A cheat day contributes a fixed −1000 kcal, without steps or diet; a rest day still contributes 0 kcal.'**
   String get realmGuideFootnoteBody;
 
   /// No description provided for @realmGuideFootnoteNote.

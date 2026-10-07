@@ -136,7 +136,7 @@ class DailyMealsPage extends ConsumerWidget {
                         IconButton(
                           tooltip: l10n.copyYesterday,
                           visualDensity: VisualDensity.compact,
-                          icon: const InkIcon(InkGlyph.copy, size: 18),
+                          icon: const InkIcon(InkGlyph.add, size: 18),
                           onPressed: () => copyYesterdayMealType(
                             context,
                             ref,
@@ -206,7 +206,7 @@ Future<void> copyYesterdayMealType(
         children: [
           for (final t in available)
             ListTile(
-              leading: const InkIcon(InkGlyph.copy),
+              leading: const InkIcon(InkGlyph.add),
               title: Text(l10n.yesterdayNamed(t.label(l10n))),
               onTap: () => Navigator.pop(ctx, t),
             ),
@@ -263,12 +263,19 @@ Future<void> copyMealTypeFromYesterday({
   final skip = result.skippedMissingFood > 0
       ? l10n.skippedItems(result.skippedMissingFood)
       : '';
+  final duplicateSkip = result.skippedDuplicate > 0
+      ? l10n.skippedDuplicateFoods(result.skippedDuplicate)
+      : '';
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text(
-        result.copied == 0 && result.skippedMissingFood == 0
+        result.copied == 0 &&
+                result.skippedDuplicate > 0 &&
+                result.skippedMissingFood == 0
+            ? l10n.nothingNewToAppend
+            : result.copied == 0 && result.skippedMissingFood == 0
             ? l10n.yesterdayNoLogs
-            : l10n.copiedItems(result.copied, skip),
+            : l10n.copiedItems(result.copied, '$skip$duplicateSkip'),
       ),
     ),
   );
@@ -320,12 +327,19 @@ class _MealTypeSection extends ConsumerWidget {
     final skip = result.skippedMissingFood > 0
         ? l10n.skippedItems(result.skippedMissingFood)
         : '';
+    final duplicateSkip = result.skippedDuplicate > 0
+        ? l10n.skippedDuplicateFoods(result.skippedDuplicate)
+        : '';
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          result.copied == 0 && result.skippedMissingFood == 0
+          result.copied == 0 &&
+                  result.skippedDuplicate > 0 &&
+                  result.skippedMissingFood == 0
+              ? l10n.nothingNewToAppend
+              : result.copied == 0 && result.skippedMissingFood == 0
               ? l10n.yesterdayNoLogs
-              : l10n.copiedItems(result.copied, skip),
+              : l10n.copiedItems(result.copied, '$skip$duplicateSkip'),
         ),
       ),
     );

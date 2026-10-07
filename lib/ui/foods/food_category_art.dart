@@ -22,6 +22,8 @@ InkGlyph foodCategoryGlyph(String category) => switch (category) {
   '蔬菜' => InkGlyph.foodVegetables,
   '调味品' => InkGlyph.foodSeasonings,
   '自定义' => InkGlyph.foodCustom,
+  '收藏' => InkGlyph.star,
+  '套餐' => InkGlyph.restaurant,
   _ => InkGlyph.food,
 };
 
@@ -44,6 +46,8 @@ Color foodCategoryColor(BuildContext context, String category) {
     '坚果' || '油脂' => dark ? const Color(0xFF9EADD0) : const Color(0xFF66779F),
     '饮料' => dark ? const Color(0xFF79BFC0) : const Color(0xFF3E8584),
     '自定义' => dark ? const Color(0xFFA9A0C5) : const Color(0xFF776D98),
+    '收藏' => dark ? const Color(0xFFD5B46F) : const Color(0xFF9B752D),
+    '套餐' => dark ? const Color(0xFF79BFC0) : const Color(0xFF3E8584),
     _ => dark ? const Color(0xFF96B89F) : const Color(0xFF5F876A),
   };
 }

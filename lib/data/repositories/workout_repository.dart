@@ -157,10 +157,12 @@ class CopyDayWorkoutResult {
   const CopyDayWorkoutResult({
     required this.groupsCopied,
     required this.itemsCopied,
+    required this.groupsSkippedDuplicate,
   });
 
   final int groupsCopied;
   final int itemsCopied;
+  final int groupsSkippedDuplicate;
 }
 
 class WorkoutRepository {
@@ -748,6 +750,33 @@ class WorkoutRepository {
     return rows.length;
   }
 
+  /// Most recent earlier day on which this exercise was actually performed.
+  Future<DayWorkoutItem?> _lastTrainedItem(int exerciseId, DateTime day) async {
+    final rows =
+        await (_db.select(_db.dayWorkoutItems).join([
+                innerJoin(
+                  _db.dayWorkouts,
+                  _db.dayWorkouts.id.equalsExp(
+                    _db.dayWorkoutItems.dayWorkoutId,
+                  ),
+                ),
+              ])
+              ..where(
+                _db.dayWorkoutItems.exerciseId.equals(exerciseId) &
+                    _db.dayWorkouts.date.isSmallerThanValue(_dayStart(day)),
+              )
+              ..orderBy([
+                OrderingTerm.desc(_db.dayWorkouts.date),
+                OrderingTerm.desc(_db.dayWorkoutItems.id),
+              ]))
+            .get();
+    for (final row in rows) {
+      final item = row.readTable(_db.dayWorkoutItems);
+      if (item.done || await _countSetsForDayItem(item.id) > 0) return item;
+    }
+    return null;
+  }
+
   /// Appends a plan snapshot as a new day-workout group (does not clear existing).
   Future<void> applyPlanToDay({
     required int planId,
@@ -775,6 +804,7 @@ class WorkoutRepository {
           );
       for (var i = 0; i < planItems.length; i++) {
         final item = planItems[i];
+        final previous = await _lastTrainedItem(item.exerciseId, start);
         await _db
             .into(_db.dayWorkoutItems)
             .insert(
@@ -782,8 +812,10 @@ class WorkoutRepository {
                 dayWorkoutId: dayId,
                 exerciseId: item.exerciseId,
                 exerciseName: item.exerciseName,
-                targetSets: item.targetSets,
-                targetReps: item.targetReps,
+                targetSets: previous?.targetSets ?? item.targetSets,
+                targetReps: previous?.targetReps ?? item.targetReps,
+                actualWeightKg: Value(previous?.actualWeightKg),
+                actualWeightUnit: Value(previous?.actualWeightUnit),
                 sortOrder: Value(i),
               ),
             );
@@ -791,9 +823,8 @@ class WorkoutRepository {
     });
   }
 
-  /// Copies [from]'s day-workout groups (exercises + set/rep targets) onto
-  /// [to] as new, unfinished groups — mirrors [MealRepository.copyDay] for
-  /// training. Does not carry over `done`/set-log progress; [to] starts fresh.
+  /// Appends [from]'s day-workout groups absent by plan name on [to]. New
+  /// groups carry exercise targets but no `done`/set-log progress.
   ///
   /// When [sourceDayWorkoutId] is set, only that group is copied.
   Future<CopyDayWorkoutResult> copyDayWorkout({
@@ -809,14 +840,27 @@ class WorkoutRepository {
               .where((g) => g.workout.id == sourceDayWorkoutId)
               .toList(growable: false);
     if (groups.isEmpty) {
-      return const CopyDayWorkoutResult(groupsCopied: 0, itemsCopied: 0);
+      return const CopyDayWorkoutResult(
+        groupsCopied: 0,
+        itemsCopied: 0,
+        groupsSkippedDuplicate: 0,
+      );
     }
 
     final start = _dayStart(to);
     var itemsCopied = 0;
+    var groupsCopied = 0;
+    var groupsSkippedDuplicate = 0;
     await _db.transaction(() async {
       var nextGroupSortOrder = await _nextGroupSortOrder(start);
+      final existing = await dayWorkoutsFor(start);
+      String nameKey(String? name) => name?.trim() ?? '';
+      final names = {for (final group in existing) nameKey(group.planName)};
       for (final group in groups) {
+        if (!names.add(nameKey(group.workout.planName))) {
+          groupsSkippedDuplicate++;
+          continue;
+        }
         final dayId = await _db
             .into(_db.dayWorkouts)
             .insert(
@@ -843,11 +887,13 @@ class WorkoutRepository {
               );
           itemsCopied++;
         }
+        groupsCopied++;
       }
     });
     return CopyDayWorkoutResult(
-      groupsCopied: groups.length,
+      groupsCopied: groupsCopied,
       itemsCopied: itemsCopied,
+      groupsSkippedDuplicate: groupsSkippedDuplicate,
     );
   }
 
@@ -1290,11 +1336,9 @@ class WorkoutRepository {
     }
     for (final row in template) {
       if (todaySet.contains(row.exerciseId)) continue;
-      await (_db.update(
-        _db.workoutPlanItems,
-      )..where((t) => t.id.equals(row.id))).write(
-        WorkoutPlanItemsCompanion(sortOrder: Value(order)),
-      );
+      await (_db.update(_db.workoutPlanItems)
+            ..where((t) => t.id.equals(row.id)))
+          .write(WorkoutPlanItemsCompanion(sortOrder: Value(order)));
       order++;
     }
   }

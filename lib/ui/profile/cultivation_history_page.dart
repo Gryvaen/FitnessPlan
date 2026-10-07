@@ -197,6 +197,17 @@ class _DayRow extends StatelessWidget {
               ),
             ],
           ),
+          if (record.cheatPenaltyKcal != 0) ...[
+            const SizedBox(height: 8),
+            Text(
+              l10n.cultivationCheatPenalty(
+                formatSignedKcal(record.cheatPenaltyKcal),
+              ),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ],
           if (!record.workout.isEmpty) ...[
             const SizedBox(height: 8),
             Row(

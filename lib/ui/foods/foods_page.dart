@@ -28,6 +28,7 @@ class _QueryNotifier extends Notifier<String> {
 
 final _categoryCountsProvider =
     FutureProvider.autoDispose<List<FoodCategoryCount>>((ref) async {
+      ref.watch(foodCatalogChangesProvider);
       await ref.watch(foodsSeedProvider.future);
       return ref.watch(foodRepositoryProvider).categoryCounts();
     });
@@ -51,7 +52,7 @@ final _recentFoodsProvider = FutureProvider.autoDispose<List<FoodItem>>((
   return ref.watch(foodRepositoryProvider).recentFoods();
 });
 
-enum _FoodsTab { recent, favorites, categories, history }
+enum _FoodsTab { recent, categories, history }
 
 class FoodsPage extends ConsumerStatefulWidget {
   const FoodsPage({super.key});
@@ -104,12 +105,10 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
 
   List<_FoodsTab> _visibleTabs({
     required bool hasRecent,
-    required bool hasFavorites,
     required bool showHistory,
   }) {
     return [
       if (hasRecent) _FoodsTab.recent,
-      if (hasFavorites) _FoodsTab.favorites,
       _FoodsTab.categories,
       if (showHistory) _FoodsTab.history,
     ];
@@ -120,12 +119,7 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
     final l10n = context.l10n;
     final searching = ref.watch(_foodQueryProvider).trim().isNotEmpty;
     final recentAsync = ref.watch(_recentFoodsProvider);
-    final favAsync = ref.watch(favoriteFoodsProvider);
     final hasRecent = recentAsync.maybeWhen(
-      data: (v) => v.isNotEmpty,
-      orElse: () => false,
-    );
-    final hasFavorites = favAsync.maybeWhen(
       data: (v) => v.isNotEmpty,
       orElse: () => false,
     );
@@ -139,7 +133,6 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
     final routeWantsHistory = _routeWantsHistory();
     final visible = _visibleTabs(
       hasRecent: hasRecent,
-      hasFavorites: hasFavorites,
       showHistory: showHistory,
     );
 
@@ -169,7 +162,6 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
       });
     } else if (!_pickedInitialTab &&
         recentAsync.hasValue &&
-        favAsync.hasValue &&
         !routeWantsHistory) {
       effectiveTab = visible.first;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -244,7 +236,6 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                     for (final t in visible)
                       t: switch (t) {
                         _FoodsTab.recent => l10n.tabRecent,
-                        _FoodsTab.favorites => l10n.favorites,
                         _FoodsTab.categories => l10n.categories,
                         _FoodsTab.history => l10n.tabHistory,
                       },
@@ -317,49 +308,6 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                                         .read(foodRepositoryProvider)
                                         .hideFromRecent(food.id);
                                     ref.invalidate(_recentFoodsProvider);
-                                  },
-                                ),
-                                _FoodsTab.favorites => _FoodListView(
-                                  watch: (ref) =>
-                                      ref.watch(favoriteFoodsProvider),
-                                  emptyGlyph: InkGlyph.starOutline,
-                                  emptyTitle: l10n.noFavorites,
-                                  openDetail: (context, foodId) =>
-                                      withoutSearchFocus(
-                                        focus: _searchFocus,
-                                        action: () =>
-                                            openFoodDetail(context, foodId),
-                                      ),
-                                  onLongPress: (context, ref, food) async {
-                                    final confirmed =
-                                        await showDialog<bool>(
-                                          context: context,
-                                          builder: (ctx) => AlertDialog(
-                                            title: Text(l10n.removeFavorite),
-                                            content: Text(
-                                              l10n.confirmRemoveFavorite(
-                                                food.displayName(context),
-                                              ),
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.pop(ctx, false),
-                                                child: Text(l10n.cancel),
-                                              ),
-                                              FilledButton(
-                                                onPressed: () =>
-                                                    Navigator.pop(ctx, true),
-                                                child: Text(l10n.remove),
-                                              ),
-                                            ],
-                                          ),
-                                        ) ==
-                                        true;
-                                    if (!confirmed) return;
-                                    await ref
-                                        .read(foodRepositoryProvider)
-                                        .toggleFavorite(food.id);
                                   },
                                 ),
                                 _FoodsTab.categories =>
@@ -518,36 +466,66 @@ class _FoodCategoryList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
+    final favoriteCount = ref.watch(favoriteFoodsProvider).value?.length ?? 0;
+    final presetCount = ref.watch(mealPresetsProvider).value?.length ?? 0;
+    final shortcuts = [
+      SportListTile(
+        key: const ValueKey('category-favorites'),
+        contentPadding: EdgeInsets.zero,
+        leading: const FoodCategoryAvatar(category: '收藏'),
+        title: Text(l10n.favorites, style: theme.textTheme.bodyLarge),
+        subtitle: Text(
+          l10n.collectionItems(favoriteCount),
+          style: theme.textTheme.meta,
+        ),
+        trailing: InkIcon(
+          InkGlyph.chevronRight,
+          color: foodUtilityIconColor(context),
+        ),
+        onTap: () => context.push('/foods/favorites'),
+      ),
+      SportListTile(
+        key: const ValueKey('category-presets'),
+        contentPadding: EdgeInsets.zero,
+        leading: const FoodCategoryAvatar(category: '套餐'),
+        title: Text(l10n.presetsTab, style: theme.textTheme.bodyLarge),
+        subtitle: Text(
+          l10n.collectionItems(presetCount),
+          style: theme.textTheme.meta,
+        ),
+        trailing: InkIcon(
+          InkGlyph.chevronRight,
+          color: foodUtilityIconColor(context),
+        ),
+        onTap: () => context.push('/foods/presets'),
+      ),
+    ];
     return ref
         .watch(_categoryCountsProvider)
         .when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(l10n.loadFailed('$e')),
-                const SizedBox(height: 8),
-                FilledButton(
-                  onPressed: () => ref.invalidate(foodsSeedProvider),
-                  child: Text(l10n.retry),
-                ),
-              ],
+          loading: () => ListView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.listPage,
             ),
+            children: [
+              ...shortcuts,
+              const Center(child: CircularProgressIndicator()),
+            ],
+          ),
+          error: (e, _) => ListView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.listPage,
+            ),
+            children: [
+              ...shortcuts,
+              Text(l10n.loadFailed('$e')),
+              FilledButton(
+                onPressed: () => ref.invalidate(foodsSeedProvider),
+                child: Text(l10n.retry),
+              ),
+            ],
           ),
           data: (categories) {
-            if (categories.isEmpty) {
-              return SingleChildScrollView(
-                child: SportEmptyState(
-                  iconWidget: InkIcon(
-                    InkGlyph.food,
-                    size: 48,
-                    color: foodCategoryColor(context, ''),
-                  ),
-                  title: l10n.noCategories,
-                ),
-              );
-            }
             return ListView(
               padding: EdgeInsets.fromLTRB(
                 AppSpacing.listPage,
@@ -579,6 +557,7 @@ class _FoodCategoryList extends ConsumerWidget {
                       ).toString(),
                     ),
                   ),
+                ...shortcuts,
                 SportListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const FoodCategoryAvatar(category: '自定义'),

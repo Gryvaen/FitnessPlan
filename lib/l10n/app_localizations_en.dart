@@ -473,6 +473,60 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealPresets => 'Meal presets';
 
   @override
+  String get presetsTab => 'Presets';
+
+  @override
+  String collectionItems(int count) {
+    return '$count items';
+  }
+
+  @override
+  String get noPresets => 'No meal presets yet';
+
+  @override
+  String get presetAddToday => 'Add to today';
+
+  @override
+  String get presetEdit => 'Edit preset';
+
+  @override
+  String get presetAddFood => 'Add food';
+
+  @override
+  String get presetEmpty => 'This preset has no foods';
+
+  @override
+  String get presetNameRequired => 'Enter a preset name';
+
+  @override
+  String get confirmDeletePresetFood => 'Remove this food from the preset?';
+
+  @override
+  String confirmClearPresetMeal(String meal) {
+    return 'Remove all foods in $meal from the preset?';
+  }
+
+  @override
+  String get presetItemsRequired => 'Add at least one food';
+
+  @override
+  String get presetGramsInvalid => 'Grams must be greater than zero';
+
+  @override
+  String get presetUpdated => 'Preset updated';
+
+  @override
+  String get presetNotFound => 'Preset not found';
+
+  @override
+  String presetAppliedResult(int added, int duplicate, int missing) {
+    return 'Added $added, skipped $duplicate duplicates and $missing missing foods';
+  }
+
+  @override
+  String get presetFoodSearch => 'Search foods to add';
+
+  @override
   String get saveAsPreset => 'Save as preset';
 
   @override
@@ -496,11 +550,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noWorkoutToSave => 'Nothing to save for this day';
 
   @override
-  String get copyYesterday => 'Copy yesterday';
+  String get copyYesterday => 'Append yesterday';
 
   @override
   String copyNamed(String name) {
-    return 'Copy $name';
+    return 'Append $name';
   }
 
   @override
@@ -509,15 +563,29 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get copyYesterdayWorkout => 'Copy yesterday\'s workout';
+  String get copyYesterdayWorkout => 'Append yesterday\'s workout';
 
   @override
   String get copyYesterdayWorkoutConfirm =>
-      'Today already has a workout plan; append yesterday\'s?';
+      'Append yesterday\'s plans whose names are not already in today\'s workout?';
 
   @override
   String copiedWorkoutItems(int n) {
-    return 'Copied $n exercises';
+    return 'Appended $n exercises';
+  }
+
+  @override
+  String skippedDuplicatePlans(int n) {
+    return ', skipped $n plans with the same name';
+  }
+
+  @override
+  String get nothingNewToAppend =>
+      'Nothing new to append; names already exist today';
+
+  @override
+  String skippedDuplicateFoods(int n) {
+    return ', skipped $n foods with the same name';
   }
 
   @override
@@ -1440,7 +1508,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get copyYesterdayConfirm =>
-      'Day already has logs; append yesterday\'s meals?';
+      'Append yesterday\'s foods that are not already in this meal?';
 
   @override
   String get activitySedentary => 'Sedentary';
@@ -1631,7 +1699,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String copiedItems(int n, String skip) {
-    return 'Copied $n$skip';
+    return 'Appended $n$skip';
   }
 
   @override
@@ -2752,6 +2820,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String cultivationCheatPenalty(String kcal) {
+    return 'Cheat day default $kcal kcal';
+  }
+
+  @override
   String cultivationLayerBadge(String realm, String layer) {
     return '$realm · Layer $layer';
   }
@@ -2862,7 +2935,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get realmGuideFootnoteBody =>
-      '① Steps × 0.04 kcal/step; ② diet, counted only when at least 2 distinct meal types are logged that day (breakfast/lunch/dinner/snack) — diet contribution = today\'s TDEE − today\'s intake (eating less yields a larger surplus; exceeding TDEE yields a negative setback).';
+      'On regular days: ① steps × 0.04 kcal/step; ② diet counts after at least 2 distinct meal types are logged, contributing TDEE − intake. A cheat day contributes a fixed −1000 kcal, without steps or diet; a rest day still contributes 0 kcal.';
 
   @override
   String get realmGuideFootnoteNote =>

@@ -25,7 +25,42 @@ class _FoodCategoryPageState extends ConsumerState<FoodCategoryPage> {
   var _loading = true;
   var _loadingMore = false;
   var _hasMore = true;
+  var _loadGeneration = 0;
   Object? _error;
+
+  Future<bool> _confirmDelete(FoodItem food) async {
+    final l10n = context.l10n;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.deleteCustomFood),
+        content: Text(l10n.deleteCustomFoodBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return false;
+    try {
+      await ref.read(foodRepositoryProvider).deleteCustom(food.id);
+      if (mounted) await _load(reset: true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$e')));
+      }
+    }
+    // The refreshed list owns removal, so Dismissible never removes a stale row.
+    return false;
+  }
 
   @override
   void initState() {
@@ -34,6 +69,7 @@ class _FoodCategoryPageState extends ConsumerState<FoodCategoryPage> {
   }
 
   Future<void> _load({required bool reset}) async {
+    final generation = reset ? ++_loadGeneration : _loadGeneration;
     if (reset) {
       setState(() {
         _loading = true;
@@ -55,7 +91,7 @@ class _FoodCategoryPageState extends ConsumerState<FoodCategoryPage> {
             limit: _pageSize,
             offset: reset ? 0 : _items.length,
           );
-      if (!mounted) return;
+      if (!mounted || generation != _loadGeneration) return;
       setState(() {
         _items.addAll(page);
         _hasMore = page.length >= _pageSize;
@@ -63,7 +99,7 @@ class _FoodCategoryPageState extends ConsumerState<FoodCategoryPage> {
         _loadingMore = false;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || generation != _loadGeneration) return;
       setState(() {
         _error = e;
         _loading = false;
@@ -135,7 +171,7 @@ class _FoodCategoryPageState extends ConsumerState<FoodCategoryPage> {
                     );
                   }
                   final f = _items[i];
-                  return ListTile(
+                  final tile = ListTile(
                     key: ValueKey(f.id),
                     title: FoodNameLink(
                       name: f.displayName(context),
@@ -154,6 +190,22 @@ class _FoodCategoryPageState extends ConsumerState<FoodCategoryPage> {
                       color: foodUtilityIconColor(context),
                     ),
                     onTap: () => openFoodDetail(context, f.id),
+                  );
+                  if (!f.isCustom) return tile;
+                  return Dismissible(
+                    key: ValueKey('category-food-${f.id}'),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 16),
+                      color: theme.colorScheme.error,
+                      child: const InkIcon(
+                        InkGlyph.delete,
+                        color: Colors.white,
+                      ),
+                    ),
+                    confirmDismiss: (_) => _confirmDelete(f),
+                    child: tile,
                   );
                 },
               ),

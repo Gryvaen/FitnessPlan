@@ -338,35 +338,6 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     );
   }
 
-  Future<void> _applyPreset(MealPreset preset) async {
-    final day = ref.read(selectedDayProvider);
-    final l10n = context.l10n;
-    if (!AppDates.isLocalToday(day)) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.pastDayReadOnly)));
-      return;
-    }
-    try {
-      final result = await ref
-          .read(mealPresetRepositoryProvider)
-          .applyPreset(presetId: preset.id, date: day);
-      if (!mounted) return;
-      final skip = result.skippedMissingFood > 0
-          ? l10n.skippedMissingFoods(result.skippedMissingFood)
-          : '';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.appliedPresetItems(result.copied, skip))),
-      );
-      _finishAfterAdd();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.applyPresetFailed('$e'))));
-    }
-  }
-
   Future<void> _save() async {
     final l10n = context.l10n;
     final food = _selected;
@@ -490,7 +461,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
             child: ListTile(
               leading: const InkIcon(InkGlyph.restaurant),
               title: Text(p.name),
-              onTap: () => _applyPreset(p),
+              onTap: () => context.push('/meal-preset/${p.id}'),
             ),
           ),
         );

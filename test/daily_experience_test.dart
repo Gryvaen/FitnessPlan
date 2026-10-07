@@ -176,6 +176,85 @@ void main() {
     );
   });
 
+  test(
+    'append yesterday skips duplicate names within each meal type',
+    () async {
+      final riceId = await foods.createCustom(
+        name: '米饭',
+        kcalPer100: 100,
+        proteinPer100: 2,
+        carbPer100: 22,
+        fatPer100: 0,
+      );
+      final eggId = await foods.createCustom(
+        name: '鸡蛋',
+        kcalPer100: 150,
+        proteinPer100: 12,
+        carbPer100: 1,
+        fatPer100: 10,
+      );
+      final rice = (await foods.byId(riceId))!;
+      final egg = (await foods.byId(eggId))!;
+      final today = CalendarDay.todayLocal();
+      final yesterday = today.subtract(const Duration(days: 1));
+      Future<void> seed(MealType type, FoodItem food, double grams) async {
+        await db
+            .into(db.mealEntries)
+            .insert(
+              MealEntriesCompanion.insert(
+                date: yesterday,
+                mealType: type.name,
+                foodId: food.id,
+                foodName: food.name,
+                grams: grams,
+                calories: 0,
+                proteinG: 0,
+                carbG: 0,
+                fatG: 0,
+              ),
+            );
+      }
+
+      await seed(MealType.lunch, rice, 150);
+      await seed(MealType.lunch, egg, 100);
+      await seed(MealType.lunch, egg, 50);
+      await seed(MealType.dinner, rice, 200);
+      await meals.add(
+        date: today,
+        mealType: MealType.lunch,
+        food: rice,
+        grams: 80,
+      );
+      final before = await meals.forDay(today);
+
+      final first = await meals.copyDay(from: yesterday, to: today);
+      expect(first.copied, 2);
+      expect(first.skippedDuplicate, 2);
+      final after = await meals.forDay(today);
+      expect(after, hasLength(3));
+      expect(after.firstWhere((e) => e.id == before.single.id).grams, 80);
+      expect(
+        after
+            .where((e) => e.mealType == MealType.lunch.name)
+            .map((e) => e.foodName)
+            .toSet(),
+        {'米饭', '鸡蛋'},
+      );
+      expect(
+        after
+            .where((e) => e.mealType == MealType.dinner.name)
+            .map((e) => e.foodName)
+            .toSet(),
+        {'米饭'},
+      );
+      expect(await meals.forDay(yesterday), hasLength(4));
+      final again = await meals.copyDay(from: yesterday, to: today);
+      expect(again.copied, 0);
+      expect(again.skippedDuplicate, 4);
+      expect(await meals.forDay(today), hasLength(3));
+    },
+  );
+
   test('meal add rejects past days', () async {
     final id = await foods.createCustom(
       name: '过去日拒写入',
@@ -224,6 +303,156 @@ void main() {
     final result = await presets.applyPreset(presetId: presetId, date: day);
     expect(result.copied, 1);
     expect(await meals.forDay(day), hasLength(1));
+  });
+
+  test('preset edits keep its id and reject another preset name', () async {
+    final firstId = await foods.createCustom(
+      name: '燕麦',
+      kcalPer100: 380,
+      proteinPer100: 12,
+      carbPer100: 65,
+      fatPer100: 7,
+    );
+    final secondId = await foods.createCustom(
+      name: '牛奶',
+      kcalPer100: 60,
+      proteinPer100: 3,
+      carbPer100: 5,
+      fatPer100: 3,
+    );
+    final today = CalendarDay.todayLocal();
+    await meals.add(
+      date: today,
+      mealType: MealType.breakfast,
+      food: (await foods.byId(firstId))!,
+      grams: 100,
+    );
+    final entries = await meals.forDay(today);
+    final id = await presets.createFromEntries(name: '原套餐', entries: entries);
+    await presets.createFromEntries(name: '另一个套餐', entries: entries);
+    await presets.updatePreset(
+      presetId: id,
+      name: '新套餐',
+      items: [
+        MealPresetDraftItem(
+          foodId: secondId,
+          grams: 250,
+          mealType: MealType.dinner,
+        ),
+      ],
+    );
+    expect((await presets.presetById(id))!.name, '新套餐');
+    final changed = (await presets.itemsFor(id)).single;
+    expect(changed.foodName, '牛奶');
+    expect(changed.grams, 250);
+    expect(changed.mealType, MealType.dinner.name);
+    await expectLater(
+      presets.updatePreset(
+        presetId: id,
+        name: '另一个套餐',
+        items: [
+          MealPresetDraftItem(
+            foodId: secondId,
+            grams: 100,
+            mealType: MealType.lunch,
+          ),
+        ],
+      ),
+      throwsA(isA<StateError>()),
+    );
+    expect((await presets.presetById(id))!.name, '新套餐');
+    expect((await presets.itemsFor(id)).single.mealType, MealType.dinner.name);
+    await expectLater(
+      presets.updatePreset(presetId: id, name: '', items: const []),
+      throwsA(isA<ArgumentError>()),
+    );
+    await expectLater(
+      presets.updatePreset(presetId: id, name: '新套餐', items: const []),
+      throwsA(isA<ArgumentError>()),
+    );
+  });
+
+  test(
+    'preset apply skips same names per meal and repeat application',
+    () async {
+      final id = await foods.createCustom(
+        name: '米饭',
+        kcalPer100: 100,
+        proteinPer100: 2,
+        carbPer100: 22,
+        fatPer100: 0,
+      );
+      final food = (await foods.byId(id))!;
+      final today = CalendarDay.todayLocal();
+      await meals.add(
+        date: today,
+        mealType: MealType.lunch,
+        food: food,
+        grams: 80,
+      );
+      final source = await meals.forDay(today);
+      final presetId = await presets.createFromEntries(
+        name: '米饭套餐',
+        entries: source,
+      );
+      await presets.updatePreset(
+        presetId: presetId,
+        name: '米饭套餐',
+        items: [
+          MealPresetDraftItem(foodId: id, grams: 100, mealType: MealType.lunch),
+          MealPresetDraftItem(
+            foodId: id,
+            grams: 120,
+            mealType: MealType.dinner,
+          ),
+          MealPresetDraftItem(
+            foodId: id,
+            grams: 130,
+            mealType: MealType.dinner,
+          ),
+        ],
+      );
+      final first = await presets.applyPreset(presetId: presetId, date: today);
+      expect(first.copied, 1);
+      expect(first.skippedDuplicate, 2);
+      expect((await meals.forDay(today)).length, 2);
+      final second = await presets.applyPreset(presetId: presetId, date: today);
+      expect(second.copied, 0);
+      expect(second.skippedDuplicate, 3);
+      expect(
+        (await meals.forDay(
+          today,
+        )).firstWhere((e) => e.mealType == MealType.lunch.name).grams,
+        80,
+      );
+    },
+  );
+
+  test('preset prunes deleted foods and retains an empty preset', () async {
+    final id = await foods.createCustom(
+      name: '临时食材',
+      kcalPer100: 100,
+      proteinPer100: 1,
+      carbPer100: 1,
+      fatPer100: 1,
+    );
+    final today = CalendarDay.todayLocal();
+    await meals.add(
+      date: today,
+      mealType: MealType.breakfast,
+      food: (await foods.byId(id))!,
+      grams: 50,
+    );
+    final presetId = await presets.createFromEntries(
+      name: '空套餐',
+      entries: await meals.forDay(today),
+    );
+    await foods.deleteCustom(id);
+    expect(await presets.pruneMissingFoods(presetId), 1);
+    expect(await presets.itemsFor(presetId), isEmpty);
+    expect(await presets.presetById(presetId), isNotNull);
+    final result = await presets.applyPreset(presetId: presetId, date: today);
+    expect(result.copied, 0);
   });
 
   test('water logs and goal', () async {

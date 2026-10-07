@@ -7,12 +7,15 @@ import 'domain/diet_strategy.dart';
 import 'l10n/app_localizations_ext.dart';
 import 'providers/app_providers.dart';
 import 'ui/foods/custom_food_edit_page.dart';
+import 'ui/foods/food_collection_page.dart';
 import 'ui/foods/food_category_page.dart';
 import 'ui/foods/food_detail_page.dart';
 import 'ui/foods/foods_page.dart';
 import 'ui/meals/daily_meals_page.dart';
 import 'ui/meals/log_meal_page.dart';
 import 'ui/meals/meal_detail_page.dart';
+import 'ui/meals/meal_preset_detail_page.dart';
+import 'ui/meals/preset_food_add_page.dart';
 import 'ui/onboarding/onboarding_page.dart';
 import 'domain/models.dart';
 import 'ui/profile/cultivation_goal_picker_page.dart';
@@ -92,6 +95,18 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: '/foods',
                 builder: (context, state) => const FoodsPage(),
                 routes: [
+                  GoRoute(
+                    path: 'favorites',
+                    builder: (context, state) => const FoodCollectionPage(
+                      collection: FoodCollection.favorites,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'presets',
+                    builder: (context, state) => const FoodCollectionPage(
+                      collection: FoodCollection.presets,
+                    ),
+                  ),
                   GoRoute(
                     path: 'category',
                     builder: (context, state) {
@@ -307,6 +322,30 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
+      GoRoute(
+        path: '/meal-preset/:id/add',
+        builder: (context, state) {
+          final id = int.tryParse(state.pathParameters['id'] ?? '');
+          if (id == null) {
+            return Scaffold(
+              body: Center(child: Text(context.l10n.presetNotFound)),
+            );
+          }
+          return PresetFoodAddPage(presetId: id);
+        },
+      ),
+      GoRoute(
+        path: '/meal-preset/:id',
+        builder: (context, state) {
+          final id = int.tryParse(state.pathParameters['id'] ?? '');
+          if (id == null) {
+            return Scaffold(
+              body: Center(child: Text(context.l10n.presetNotFound)),
+            );
+          }
+          return MealPresetDetailPage(presetId: id);
+        },
+      ),
       // Root-level twins of /foods/custom and /foods/:id. Pushing a shell
       // route (e.g. from /log-meal) would remount StatefulShellRoute on the
       // root navigator and trip Navigator's duplicate page-key assert.
@@ -318,6 +357,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           final returnId = state.uri.queryParameters['returnId'] == '1';
           return CustomFoodEditPage(
             foodId: id,
+            returnFoodIdOnCreate:
+                state.uri.queryParameters['returnFoodId'] == '1',
             openDetailOnCreate: returnId,
             initialMealType: MealType.tryParse(
               state.uri.queryParameters['mealType'],

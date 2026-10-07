@@ -568,12 +568,19 @@ class _TodayPageState extends ConsumerState<TodayPage> {
       final skip = result.skippedMissingFood > 0
           ? l10n.skippedItems(result.skippedMissingFood)
           : '';
+      final duplicateSkip = result.skippedDuplicate > 0
+          ? l10n.skippedDuplicateFoods(result.skippedDuplicate)
+          : '';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            result.copied == 0 && result.skippedMissingFood == 0
+            result.copied == 0 &&
+                    result.skippedDuplicate > 0 &&
+                    result.skippedMissingFood == 0
+                ? l10n.nothingNewToAppend
+                : result.copied == 0 && result.skippedMissingFood == 0
                 ? l10n.yesterdayNoLogs
-                : l10n.copiedItems(result.copied, skip),
+                : l10n.copiedItems(result.copied, '$skip$duplicateSkip'),
           ),
         ),
       );

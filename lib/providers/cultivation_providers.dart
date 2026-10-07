@@ -76,11 +76,13 @@ final _storedStepsTodayProvider = StreamProvider<int>((ref) {
 });
 
 /// 今日步数（恒为本地今天）。未成功同步（权限/失败/空读）时按 0，避免把
-/// 库里残留的昨日总量当成今日修行贡献。休息日当天步数也归零。
+/// 库里残留的昨日总量当成今日修行贡献。放纵餐和休息日当天步数归零。
 final cultivationStepsTodayProvider = Provider<int>((ref) {
   final today = CalendarDay.todayLocal();
   final marker = ref.watch(dayMarkerProvider(today)).value;
-  if (marker == DayMarkerType.restDay) return 0;
+  if (marker == DayMarkerType.cheatMeal || marker == DayMarkerType.restDay) {
+    return 0;
+  }
   final status = ref.watch(stepsSyncStatusProvider);
   if (status != StepsSyncStatus.connected) return 0;
   return ref.watch(_storedStepsTodayProvider).value ?? 0;
@@ -91,7 +93,8 @@ final cultivationStepsTodayProvider = Provider<int>((ref) {
 final cultivationDietKcalForDayProvider = Provider.autoDispose
     .family<double, DateTime>((ref, day) {
       final marker = ref.watch(dayMarkerProvider(day)).value;
-      if (marker == DayMarkerType.cheatMeal || marker == DayMarkerType.restDay) {
+      if (marker == DayMarkerType.cheatMeal ||
+          marker == DayMarkerType.restDay) {
         return 0;
       }
 
@@ -111,10 +114,19 @@ final cultivationDietKcalTodayProvider = Provider<double>((ref) {
   return ref.watch(cultivationDietKcalForDayProvider(CalendarDay.todayLocal()));
 });
 
+final cultivationCheatPenaltyTodayProvider = Provider<double>((ref) {
+  final marker = ref.watch(dayMarkerProvider(CalendarDay.todayLocal())).value;
+  return marker == DayMarkerType.cheatMeal
+      ? kCheatMealCultivationPenaltyKcal
+      : 0;
+});
+
 final cultivationTodayKcalProvider = Provider<double>((ref) {
   final steps = ref.watch(cultivationStepsTodayProvider);
   final dietKcal = ref.watch(cultivationDietKcalTodayProvider);
-  return stepsToKcal(steps) + dietKcal;
+  return stepsToKcal(steps) +
+      dietKcal +
+      ref.watch(cultivationCheatPenaltyTodayProvider);
 });
 
 class CultivationDayRecord {
@@ -123,22 +135,21 @@ class CultivationDayRecord {
     required this.stepsKcal,
     required this.dietKcal,
     required this.workout,
+    this.cheatPenaltyKcal = 0,
   });
 
   final DateTime date;
   final double stepsKcal;
   final double dietKcal;
+  final double cheatPenaltyKcal;
   final DayWorkoutSnapshot workout;
 
-  double get totalKcal => stepsKcal + dietKcal;
+  double get totalKcal => stepsKcal + dietKcal + cheatPenaltyKcal;
 }
 
 /// One cut stretch's daily rows for the history screen.
 class CultivationHistorySection {
-  const CultivationHistorySection({
-    required this.segment,
-    required this.days,
-  });
+  const CultivationHistorySection({required this.segment, required this.days});
 
   final CutCultivationSegment segment;
   final List<CultivationDayRecord> days;
@@ -198,6 +209,7 @@ Future<List<CultivationDayRecord>> _buildCultivationDays({
       (d) =>
           stepsByDay.containsKey(d) ||
           mealDays.containsKey(d) ||
+          markers[d] == DayMarkerType.cheatMeal ||
           d == today,
     ),
   };
@@ -233,13 +245,19 @@ Future<List<CultivationDayRecord>> _buildCultivationDays({
     final hasWorkout = !workout.isEmpty;
     final hasSteps = steps > 0;
     final hasDietLog = meal != null && meal.mealTypes.length >= 2;
-    // Visibility is decided from raw (pre-zeroing) activity, so a marked day
-    // with real activity still surfaces as a (zeroed) row instead of
-    // vanishing silently.
-    if (!hasSteps && !hasDietLog && !hasWorkout) continue;
-
     final marker = markers[day];
-    final zeroedStepsKcal = marker == DayMarkerType.restDay ? 0.0 : stepsKcal;
+    // A cheat marker alone creates a -1000 kcal row; rest days retain their
+    // existing activity-based visibility.
+    if (!hasSteps &&
+        !hasDietLog &&
+        !hasWorkout &&
+        marker != DayMarkerType.cheatMeal) {
+      continue;
+    }
+    final zeroedStepsKcal =
+        marker == DayMarkerType.cheatMeal || marker == DayMarkerType.restDay
+        ? 0.0
+        : stepsKcal;
     final zeroedDietKcal =
         marker == DayMarkerType.cheatMeal || marker == DayMarkerType.restDay
         ? 0.0
@@ -250,6 +268,9 @@ Future<List<CultivationDayRecord>> _buildCultivationDays({
         date: day,
         stepsKcal: zeroedStepsKcal,
         dietKcal: zeroedDietKcal,
+        cheatPenaltyKcal: marker == DayMarkerType.cheatMeal
+            ? kCheatMealCultivationPenaltyKcal
+            : 0,
         workout: workout,
       ),
     );
@@ -283,9 +304,7 @@ final cultivationHistoryProvider =
       if (profile?.goal == FitnessGoal.cut && ledger.openSegment == null) {
         await ref
             .read(cutCultivationStateProvider.notifier)
-            .ensureOpenForCut(
-              preferredStart: profile?.calorieStandardSince,
-            );
+            .ensureOpenForCut(preferredStart: profile?.calorieStandardSince);
       }
 
       final state = ref.read(cutCultivationStateProvider);
@@ -297,9 +316,7 @@ final cultivationHistoryProvider =
           ref: ref,
           allowedDays: _daysInSegment(segment),
         );
-        sections.add(
-          CultivationHistorySection(segment: segment, days: days),
-        );
+        sections.add(CultivationHistorySection(segment: segment, days: days));
       }
       return sections;
     });

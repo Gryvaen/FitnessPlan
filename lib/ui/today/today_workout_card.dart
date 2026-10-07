@@ -238,9 +238,12 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            result.itemsCopied == 0
+            result.itemsCopied == 0 && result.groupsSkippedDuplicate > 0
+                ? l10n.nothingNewToAppend
+                : result.itemsCopied == 0
                 ? l10n.yesterdayNoWorkout
-                : l10n.copiedWorkoutItems(result.itemsCopied),
+                : '${l10n.copiedWorkoutItems(result.itemsCopied)}'
+                      '${result.groupsSkippedDuplicate > 0 ? l10n.skippedDuplicatePlans(result.groupsSkippedDuplicate) : ''}',
           ),
         ),
       );

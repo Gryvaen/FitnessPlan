@@ -39,6 +39,174 @@ void main() {
   });
 
   test(
+    'applying a plan uses the latest trained exercise, not an idle plan',
+    () async {
+      final trained = await addTestExercise(repo, name: '卧推');
+      final fresh = await addTestExercise(repo, name: '深蹲');
+      final today = CalendarDay.todayLocal();
+      final older = today.subtract(const Duration(days: 3));
+      final newer = today.subtract(const Duration(days: 1));
+      final planId = await repo.createPlan(
+        name: '上肢',
+        items: [
+          PlanDraftItem(
+            exerciseId: trained.id,
+            exerciseName: trained.name,
+            targetSets: 3,
+            targetReps: 12,
+          ),
+          PlanDraftItem(
+            exerciseId: fresh.id,
+            exerciseName: fresh.name,
+            targetSets: 4,
+            targetReps: 8,
+          ),
+        ],
+      );
+      final oldGroup = await db
+          .into(db.dayWorkouts)
+          .insert(
+            DayWorkoutsCompanion.insert(
+              date: older,
+              planName: const Value('别的计划'),
+            ),
+          );
+      final oldItem = await db
+          .into(db.dayWorkoutItems)
+          .insert(
+            DayWorkoutItemsCompanion.insert(
+              dayWorkoutId: oldGroup,
+              exerciseId: trained.id,
+              exerciseName: trained.name,
+              targetSets: 5,
+              targetReps: 6,
+              actualWeightKg: const Value(60),
+              actualWeightUnit: const Value('lbs'),
+              note: const Value('旧心得'),
+            ),
+          );
+      await db
+          .into(db.workoutSetLogs)
+          .insert(
+            WorkoutSetLogsCompanion.insert(
+              date: older,
+              exerciseId: trained.id,
+              exerciseName: trained.name,
+              setIndex: 1,
+              reps: const Value(6),
+              dayWorkoutItemId: Value(oldItem),
+            ),
+          );
+      final idleGroup = await db
+          .into(db.dayWorkouts)
+          .insert(
+            DayWorkoutsCompanion.insert(
+              date: newer,
+              planName: const Value('未练计划'),
+            ),
+          );
+      await db
+          .into(db.dayWorkoutItems)
+          .insert(
+            DayWorkoutItemsCompanion.insert(
+              dayWorkoutId: idleGroup,
+              exerciseId: trained.id,
+              exerciseName: trained.name,
+              targetSets: 2,
+              targetReps: 20,
+              actualWeightKg: const Value(80),
+            ),
+          );
+
+      await repo.applyPlanToDay(planId: planId, day: today);
+      final items = (await repo.daySnapshot(today)).items;
+      final carried = items.firstWhere((e) => e.item.exerciseId == trained.id);
+      expect(carried.item.targetSets, 5);
+      expect(carried.item.targetReps, 6);
+      expect(carried.item.actualWeightKg, 60);
+      expect(carried.item.actualWeightUnit, 'lbs');
+      expect(carried.item.note, isNull);
+      expect(carried.item.done, isFalse);
+      expect(carried.completedSets, 0);
+      final fallback = items.firstWhere((e) => e.item.exerciseId == fresh.id);
+      expect(fallback.item.targetSets, 4);
+      expect(fallback.item.targetReps, 8);
+      expect(fallback.item.actualWeightKg, isNull);
+      expect((await repo.itemsFor(planId)).first.targetSets, 3);
+    },
+  );
+
+  test('appending yesterday skips existing and repeated plan names', () async {
+    final exercise = await addTestExercise(repo, name: '卧推');
+    final today = CalendarDay.todayLocal();
+    final yesterday = today.subtract(const Duration(days: 1));
+    Future<int> seed(DateTime day, String name) async {
+      final group = await db
+          .into(db.dayWorkouts)
+          .insert(
+            DayWorkoutsCompanion.insert(date: day, planName: Value(name)),
+          );
+      await db
+          .into(db.dayWorkoutItems)
+          .insert(
+            DayWorkoutItemsCompanion.insert(
+              dayWorkoutId: group,
+              exerciseId: exercise.id,
+              exerciseName: exercise.name,
+              targetSets: 3,
+              targetReps: 10,
+            ),
+          );
+      return group;
+    }
+
+    await seed(today, '已有');
+    await seed(yesterday, ' 已有 ');
+    await seed(yesterday, '新增');
+    await seed(yesterday, '新增');
+    final before = await repo.daySnapshot(today);
+    final result = await repo.copyDayWorkout(from: yesterday, to: today);
+    expect(result.groupsCopied, 1);
+    expect(result.itemsCopied, 1);
+    expect(result.groupsSkippedDuplicate, 2);
+    final after = await repo.daySnapshot(today);
+    expect(after.groups.map((g) => g.workout.planName), ['已有', '新增']);
+    expect(after.groups.first.workout.id, before.groups.first.workout.id);
+    expect((await repo.daySnapshot(yesterday)).groups, hasLength(3));
+    final again = await repo.copyDayWorkout(from: yesterday, to: today);
+    expect(again.groupsCopied, 0);
+    expect(again.groupsSkippedDuplicate, 3);
+    expect((await repo.daySnapshot(today)).groups, hasLength(2));
+  });
+
+  test('unnamed workout groups share one append name', () async {
+    final exercise = await addTestExercise(repo, name: '平板支撑');
+    final today = CalendarDay.todayLocal();
+    final yesterday = today.subtract(const Duration(days: 1));
+    for (var i = 0; i < 2; i++) {
+      final group = await db.into(db.dayWorkouts).insert(
+        DayWorkoutsCompanion.insert(date: yesterday),
+      );
+      await db.into(db.dayWorkoutItems).insert(
+        DayWorkoutItemsCompanion.insert(
+          dayWorkoutId: group,
+          exerciseId: exercise.id,
+          exerciseName: exercise.name,
+          targetSets: 2,
+          targetReps: 30,
+        ),
+      );
+    }
+    final first = await repo.copyDayWorkout(from: yesterday, to: today);
+    expect(first.groupsCopied, 1);
+    expect(first.groupsSkippedDuplicate, 1);
+    final second = await repo.copyDayWorkout(from: yesterday, to: today);
+    expect(second.groupsCopied, 0);
+    expect(second.groupsSkippedDuplicate, 2);
+    expect((await repo.daySnapshot(today)).groups, hasLength(1));
+  });
+
+  test(
     'recent history updates after adding and removing sets without reopening',
     () async {
       final events = StreamIterator(repo.watchRecentHistory());

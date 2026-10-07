@@ -4,7 +4,7 @@ library;
 import 'calendar_day.dart';
 
 enum DayMarkerType {
-  /// 放纵餐: any date. Zeroes that day's diet kcal in 修行记录; steps unaffected.
+  /// 放纵餐: any date. 修行记录固定计入 -1000 kcal，步数及饮食贡献不叠加。
   cheatMeal,
 
   /// 休息日: any date, including the past. Zeroes that day's diet + steps

@@ -30,10 +30,15 @@ class _MealHistoryAgg {
 }
 
 class CopyDayResult {
-  const CopyDayResult({required this.copied, required this.skippedMissingFood});
+  const CopyDayResult({
+    required this.copied,
+    required this.skippedMissingFood,
+    this.skippedDuplicate = 0,
+  });
 
   final int copied;
   final int skippedMissingFood;
+  final int skippedDuplicate;
 }
 
 class MealRepository {
@@ -181,7 +186,8 @@ class MealRepository {
         .go();
   }
 
-  /// Appends [from] day's meals onto [to]. Recalculates macros from current food rows.
+  /// Appends [from] day's meals not already named in the same meal type on
+  /// [to]. Recalculates macros from current food rows.
   /// [to] must be today; [from] may be any past day.
   Future<CopyDayResult> copyDay({
     required DateTime from,
@@ -206,13 +212,30 @@ class MealRepository {
 
     var copied = 0;
     var skipped = 0;
+    var skippedDuplicate = 0;
     // Transaction (matching applyPreset) so a crash mid-copy can't leave
     // only some of the day's entries copied.
     await _db.transaction(() async {
+      final existing = await forDay(to);
+      String nameKey(String name) => name.trim();
+      final namesByMealType = <String, Set<String>>{};
+      for (final entry in existing) {
+        namesByMealType
+            .putIfAbsent(entry.mealType, () => <String>{})
+            .add(nameKey(entry.foodName));
+      }
       for (final entry in filtered.reversed) {
         final food = foodById[entry.foodId];
         if (food == null) {
           skipped++;
+          continue;
+        }
+        final names = namesByMealType.putIfAbsent(
+          entry.mealType,
+          () => <String>{},
+        );
+        if (!names.add(nameKey(food.name))) {
+          skippedDuplicate++;
           continue;
         }
         await add(
@@ -224,7 +247,11 @@ class MealRepository {
         copied++;
       }
     });
-    return CopyDayResult(copied: copied, skippedMissingFood: skipped);
+    return CopyDayResult(
+      copied: copied,
+      skippedMissingFood: skipped,
+      skippedDuplicate: skippedDuplicate,
+    );
   }
 
   Future<MacroIntake> intakeForDay(DateTime day) async {

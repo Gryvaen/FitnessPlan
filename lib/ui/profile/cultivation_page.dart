@@ -69,6 +69,7 @@ class _CultivationHomeState extends ConsumerState<_CultivationHome> {
     final progress = ref.watch(cultivationProgressProvider);
     final stepsKcal = stepsToKcal(ref.watch(cultivationStepsTodayProvider));
     final dietKcal = ref.watch(cultivationDietKcalTodayProvider);
+    final cheatPenaltyKcal = ref.watch(cultivationCheatPenaltyTodayProvider);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -162,6 +163,7 @@ class _CultivationHomeState extends ConsumerState<_CultivationHome> {
                 progress: progress,
                 stepsKcal: stepsKcal,
                 dietKcal: dietKcal,
+                cheatPenaltyKcal: cheatPenaltyKcal,
               ),
             ),
           ),
@@ -211,12 +213,14 @@ class _RealmPanel extends StatelessWidget {
     required this.progress,
     required this.stepsKcal,
     required this.dietKcal,
+    required this.cheatPenaltyKcal,
   });
 
   final bool collapsed;
   final CultivationProgress progress;
   final double stepsKcal;
   final double dietKcal;
+  final double cheatPenaltyKcal;
 
   @override
   Widget build(BuildContext context) {
@@ -352,38 +356,57 @@ class _RealmPanel extends StatelessWidget {
                   ),
                 ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Column(
                 children: [
-                  InkIcon(
-                    InkGlyph.walk,
-                    size: 14,
-                    color: const Color(0xFF1B2A24).withValues(alpha: 0.65),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      InkIcon(
+                        InkGlyph.walk,
+                        size: 14,
+                        color: const Color(0xFF1B2A24).withValues(alpha: 0.65),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        l10n.cultivationStepsContribution(
+                          formatSignedKcal(stepsKcal),
+                        ),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: const Color(
+                            0xFF1B2A24,
+                          ).withValues(alpha: 0.65),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      InkIcon(
+                        InkGlyph.food,
+                        size: 14,
+                        color: const Color(0xFF1B2A24).withValues(alpha: 0.65),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        l10n.cultivationDietContribution(
+                          formatSignedKcal(dietKcal),
+                        ),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: const Color(
+                            0xFF1B2A24,
+                          ).withValues(alpha: 0.65),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    l10n.cultivationStepsContribution(
-                      formatSignedKcal(stepsKcal),
+                  if (cheatPenaltyKcal != 0) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      l10n.cultivationCheatPenalty(
+                        formatSignedKcal(cheatPenaltyKcal),
+                      ),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                     ),
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: const Color(0xFF1B2A24).withValues(alpha: 0.65),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  InkIcon(
-                    InkGlyph.food,
-                    size: 14,
-                    color: const Color(0xFF1B2A24).withValues(alpha: 0.65),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    l10n.cultivationDietContribution(
-                      formatSignedKcal(dietKcal),
-                    ),
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: const Color(0xFF1B2A24).withValues(alpha: 0.65),
-                    ),
-                  ),
+                  ],
                 ],
               ),
             ),

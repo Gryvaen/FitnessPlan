@@ -471,6 +471,60 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mealPresets => '常用套餐';
 
   @override
+  String get presetsTab => '套餐';
+
+  @override
+  String collectionItems(int count) {
+    return '$count 项';
+  }
+
+  @override
+  String get noPresets => '还没有常用套餐';
+
+  @override
+  String get presetAddToday => '加入今天';
+
+  @override
+  String get presetEdit => '编辑套餐';
+
+  @override
+  String get presetAddFood => '添加食材';
+
+  @override
+  String get presetEmpty => '套餐中没有食材';
+
+  @override
+  String get presetNameRequired => '请输入套餐名称';
+
+  @override
+  String get confirmDeletePresetFood => '从套餐中移除这项食材？';
+
+  @override
+  String confirmClearPresetMeal(String meal) {
+    return '从套餐中移除$meal的全部食材？';
+  }
+
+  @override
+  String get presetItemsRequired => '请至少添加一项食材';
+
+  @override
+  String get presetGramsInvalid => '克数必须大于 0';
+
+  @override
+  String get presetUpdated => '套餐已更新';
+
+  @override
+  String get presetNotFound => '套餐不存在';
+
+  @override
+  String presetAppliedResult(int added, int duplicate, int missing) {
+    return '已加入 $added 项，跳过 $duplicate 项同名食物和 $missing 项缺失食材';
+  }
+
+  @override
+  String get presetFoodSearch => '搜索要添加的食材';
+
+  @override
   String get saveAsPreset => '存为套餐';
 
   @override
@@ -494,11 +548,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noWorkoutToSave => '当日无训练可保存';
 
   @override
-  String get copyYesterday => '复制昨日';
+  String get copyYesterday => '追加昨日';
 
   @override
   String copyNamed(String name) {
-    return '复制$name';
+    return '追加$name';
   }
 
   @override
@@ -507,14 +561,27 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get copyYesterdayWorkout => '复制昨日训练';
+  String get copyYesterdayWorkout => '追加昨日训练';
 
   @override
-  String get copyYesterdayWorkoutConfirm => '今日已有训练计划，将追加昨日训练，确定？';
+  String get copyYesterdayWorkoutConfirm => '今日已有训练计划，将追加昨日未出现的计划，确定？';
 
   @override
   String copiedWorkoutItems(int n) {
-    return '已复制 $n 个动作';
+    return '已追加 $n 个动作';
+  }
+
+  @override
+  String skippedDuplicatePlans(int n) {
+    return '，跳过 $n 个同名计划';
+  }
+
+  @override
+  String get nothingNewToAppend => '今日已有同名记录，没有可追加的内容';
+
+  @override
+  String skippedDuplicateFoods(int n) {
+    return '，跳过 $n 项同名食物';
   }
 
   @override
@@ -1415,7 +1482,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noInstallPackage => '新版本没有可用的安装包';
 
   @override
-  String get copyYesterdayConfirm => '当日已有记录，将追加昨日餐食，确定？';
+  String get copyYesterdayConfirm => '仅追加昨日此餐别中今日尚无的食物，确定？';
 
   @override
   String get activitySedentary => '久坐';
@@ -1605,7 +1672,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String copiedItems(int n, String skip) {
-    return '已复制 $n 项$skip';
+    return '已追加 $n 项$skip';
   }
 
   @override
@@ -2696,6 +2763,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String cultivationCheatPenalty(String kcal) {
+    return '放纵默认 $kcal kcal';
+  }
+
+  @override
   String cultivationLayerBadge(String realm, String layer) {
     return '$realm · $layer层';
   }
@@ -2804,7 +2876,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get realmGuideFootnoteBody =>
-      '① 步数 × 0.04 kcal/步；② 饮食，仅当日记录餐次 ≥ 2 次（早/中/晚/加餐任意两类）时计入——饮食贡献 = 当日 TDEE − 当日摄入（吃得越少结余越多；超过 TDEE 则为负，记为倒退）。';
+      '普通日期：① 步数 × 0.04 kcal/步；② 饮食仅当日记录餐次 ≥ 2 类时计入，贡献 = 当日 TDEE − 当日摄入。放纵日固定计入 −1000 kcal，不叠加步数和饮食贡献；休息日仍计入 0 kcal。';
 
   @override
   String get realmGuideFootnoteNote => '该玩法当前仅对选择「减脂」策略的用户开放。';

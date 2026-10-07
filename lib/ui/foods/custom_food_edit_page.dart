@@ -18,6 +18,7 @@ class CustomFoodEditPage extends ConsumerStatefulWidget {
     super.key,
     this.foodId,
     this.openDetailOnCreate = false,
+    this.returnFoodIdOnCreate = false,
     this.initialMealType,
     this.openDayMealsAfterAdd = true,
   });
@@ -28,6 +29,9 @@ class CustomFoodEditPage extends ConsumerStatefulWidget {
   /// user can log it there; pops `true` if they added a meal, else `false`/
   /// null — never auto-selects the grams sheet on 记一笔.
   final bool openDetailOnCreate;
+
+  /// Returns the newly created food ID to a caller that will use it elsewhere.
+  final bool returnFoodIdOnCreate;
 
   /// Forwarded to food detail so "add to breakfast/…" matches 记一笔.
   final MealType? initialMealType;
@@ -178,7 +182,9 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(l10n.customFoodAdded)));
-          if (widget.openDetailOnCreate) {
+          if (widget.returnFoodIdOnCreate) {
+            context.pop(id);
+          } else if (widget.openDetailOnCreate) {
             // Root twin: /foods/$id would remount the shell from /log-meal.
             final added = await openFoodDetail<bool>(
               context,
