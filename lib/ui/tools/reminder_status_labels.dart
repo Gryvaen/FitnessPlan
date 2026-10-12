@@ -37,10 +37,10 @@ extension ReminderStatusLabels on AppLocalizations {
   String get reminderScheduleFailedTitle =>
       _zh ? '部分提醒安排失败' : 'Some reminders were not scheduled';
   String get reminderBatteryTitle =>
-      _zh ? '后台运行可能受限' : 'Background activity may be limited';
+      _zh ? '系统已限制后台运行' : 'Background activity is restricted';
   String get reminderBatteryDetail => _zh
-      ? '这台手机可能会拦截后台提醒。请检查电池优化与自启动设置。'
-      : 'This phone may block background alerts. Check battery and auto-start settings.';
+      ? '系统报告本应用受到后台限制，提醒可能无法触发。请检查后台使用与电池设置。'
+      : 'Android reports that background activity is restricted for this app. Reminders may not fire. Check background and battery settings.';
   String get reminderAutoStartAppDetailsHint => _zh
       ? '已打开应用信息。可进入「应用的电池使用情况」查看「允许后台使用」；此设备可能没有单独的自启动开关。'
       : 'App info opened. Check Battery usage for background access. This device may not have a separate Auto-start switch.';

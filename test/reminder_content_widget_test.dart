@@ -46,6 +46,8 @@ void main() {
           return {'scheduled': 1, 'failed': 0};
         case 'isAggressiveOem':
           return false;
+        case 'isBackgroundRestricted':
+          return false;
         case 'isIgnoringBatteryOptimizations':
           return true;
         case 'scheduleAll':

@@ -144,6 +144,16 @@ abstract final class ReminderNotifications {
     }
   }
 
+  /// Null when Android cannot report whether the app is background restricted.
+  static Future<bool?> isBackgroundRestricted() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return null;
+    try {
+      return await _nativeChannel.invokeMethod<bool>('isBackgroundRestricted');
+    } catch (_) {
+      return null;
+    }
+  }
+
   static Future<bool> isIgnoringBatteryOptimizations() async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
       return true;

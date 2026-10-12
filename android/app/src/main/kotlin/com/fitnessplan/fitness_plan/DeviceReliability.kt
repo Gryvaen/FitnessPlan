@@ -1,5 +1,6 @@
 package com.fitnessplan.fitness_plan
 
+import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -43,6 +44,18 @@ object DeviceReliability {
     }
 
     fun manufacturer(): String = Build.MANUFACTURER
+
+    /** Null means the platform cannot report this restriction. */
+    fun isBackgroundRestricted(context: Context): Boolean? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return null
+        return try {
+            val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+            activityManager?.isBackgroundRestricted
+        } catch (e: Exception) {
+            Log.w("ReminderSettings", "Cannot read background restriction state", e)
+            null
+        }
+    }
 
     fun isIgnoringBatteryOptimizations(context: Context): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true

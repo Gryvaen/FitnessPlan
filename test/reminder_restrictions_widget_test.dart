@@ -21,6 +21,8 @@ void main() {
   var exactAllowed = true;
   var fullScreenAllowed = true;
   var aggressiveOem = false;
+  bool? backgroundRestricted = false;
+  var ignoringBatteryOpt = false;
   var scheduled = 1;
   var failed = 0;
   var statusUnknown = false;
@@ -34,6 +36,8 @@ void main() {
     exactAllowed = true;
     fullScreenAllowed = true;
     aggressiveOem = false;
+    backgroundRestricted = false;
+    ignoringBatteryOpt = false;
     scheduled = 1;
     failed = 0;
     statusUnknown = false;
@@ -60,8 +64,10 @@ void main() {
               : {'scheduled': scheduled, 'failed': failed};
         case 'isAggressiveOem':
           return aggressiveOem;
+        case 'isBackgroundRestricted':
+          return backgroundRestricted;
         case 'isIgnoringBatteryOptimizations':
-          return false;
+          return ignoringBatteryOpt;
         case 'openAutoStartSettings':
           if (autoStartFails) {
             throw PlatformException(code: 'settings_unavailable');
@@ -130,6 +136,7 @@ void main() {
       fullScreenAllowed = false;
       failed = 1;
       aggressiveOem = true;
+      backgroundRestricted = true;
       tester.view.physicalSize = const Size(360, 640);
       tester.view.devicePixelRatio = 1;
       addTearDown(() {
@@ -144,7 +151,7 @@ void main() {
       expect(find.text('Exact alarms'), findsOneWidget);
       expect(find.text('Lock screen alerts'), findsOneWidget);
       expect(find.text('Some reminders were not scheduled'), findsOneWidget);
-      expect(find.text('Background activity may be limited'), findsOneWidget);
+      expect(find.text('Background activity is restricted'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
     variant: TargetPlatformVariant.only(TargetPlatform.android),
@@ -226,11 +233,75 @@ void main() {
   );
 
   testWidgets(
-    'battery settings fallback shows the real setting',
+    'brand and missing battery exemption alone are not pending issues',
     (tester) async {
       aggressiveOem = true;
       await showPage(tester);
-      await tester.tap(find.text('提醒可能延迟或不在锁屏弹出'));
+      expect(find.textContaining('项待检查'), findsNothing);
+      expect(find.text('已安排 1 个提醒'), findsOneWidget);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+
+  testWidgets(
+    'unknown background state is not a pending issue',
+    (tester) async {
+      aggressiveOem = true;
+      backgroundRestricted = null;
+      await showPage(tester);
+      expect(find.textContaining('项待检查'), findsNothing);
+      expect(find.text('已安排 1 个提醒'), findsOneWidget);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+
+  testWidgets(
+    'confirmed restriction clears after returning from settings',
+    (tester) async {
+      aggressiveOem = true;
+      backgroundRestricted = true;
+      await showPage(tester);
+      expect(find.text('提醒可能收不到'), findsOneWidget);
+      expect(find.text('1 项待检查'), findsOneWidget);
+      await tester.tap(find.text('提醒可能收不到'));
+      await tester.pumpAndSettle();
+      expect(find.text('系统已限制后台运行'), findsOneWidget);
+      expect(find.textContaining('系统报告本应用受到后台限制'), findsOneWidget);
+      await tester.tapAt(const Offset(20, 300));
+      await tester.pumpAndSettle();
+      backgroundRestricted = false;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('项待检查'), findsNothing);
+      expect(find.text('已安排 1 个提醒'), findsOneWidget);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+
+  testWidgets(
+    'confirmed restriction keeps unrelated permission issue visible',
+    (tester) async {
+      aggressiveOem = true;
+      backgroundRestricted = true;
+      notificationAllowed = false;
+      await showPage(tester);
+      expect(find.text('2 项待检查'), findsOneWidget);
+      backgroundRestricted = false;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(find.text('1 项待检查'), findsOneWidget);
+      expect(find.text('提醒可能收不到'), findsOneWidget);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+
+  testWidgets(
+    'battery settings fallback shows the real setting',
+    (tester) async {
+      aggressiveOem = true;
+      backgroundRestricted = true;
+      await showPage(tester);
+      await tester.tap(find.text('提醒可能收不到'));
       await tester.pumpAndSettle();
       final button = find.text('自启动／后台设置');
       await tester.ensureVisible(button);
@@ -240,7 +311,7 @@ void main() {
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pumpAndSettle();
       expect(find.text('请查看「允许后台使用」；如果已经开启，无需更改。'), findsOneWidget);
-      await tester.tap(find.text('提醒可能延迟或不在锁屏弹出'));
+      await tester.tap(find.text('提醒可能收不到'));
       await tester.pumpAndSettle();
       expect(find.text('请查看「允许后台使用」；如果已经开启，无需更改。'), findsWidgets);
     },
@@ -251,9 +322,10 @@ void main() {
     'auto-start failure shows manual settings path',
     (tester) async {
       aggressiveOem = true;
+      backgroundRestricted = true;
       autoStartFails = true;
       await showPage(tester);
-      await tester.tap(find.text('提醒可能延迟或不在锁屏弹出'));
+      await tester.tap(find.text('提醒可能收不到'));
       await tester.pumpAndSettle();
       final button = find.text('自启动／后台设置');
       await tester.ensureVisible(button);

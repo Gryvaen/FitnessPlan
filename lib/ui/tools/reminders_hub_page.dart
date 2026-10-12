@@ -27,7 +27,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
   bool? _granted;
   bool _exact = true;
   bool _fullScreen = true;
-  bool _showOemHint = false;
+  bool? _backgroundRestricted;
   bool _ignoringBatteryOpt = true;
   String? _autoStartGuidance;
   String? _pendingAutoStartFeedback;
@@ -38,7 +38,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _refreshPermission();
-    _refreshOemStatus();
+    _refreshBackgroundStatus();
   }
 
   @override
@@ -53,7 +53,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
     // straight back — re-check so the hint clears itself once granted.
     if (state == AppLifecycleState.resumed) {
       _showPendingAutoStartFeedback();
-      _refreshOemStatus();
+      _refreshBackgroundStatus();
       _refreshPermission();
     }
   }
@@ -91,13 +91,13 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
     }
   }
 
-  Future<void> _refreshOemStatus() async {
-    final aggressive = await ReminderNotifications.isAggressiveOem();
+  Future<void> _refreshBackgroundStatus() async {
+    final restricted = await ReminderNotifications.isBackgroundRestricted();
     final ignoring =
         await ReminderNotifications.isIgnoringBatteryOptimizations();
     if (!mounted) return;
     setState(() {
-      _showOemHint = aggressive;
+      _backgroundRestricted = restricted;
       _ignoringBatteryOpt = ignoring;
     });
   }
@@ -233,12 +233,13 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
         ),
       );
     }
-    if (android && _showOemHint) {
+    if (android && _backgroundRestricted == true) {
       issues.add(
         _RestrictionIssue(
           glyph: InkGlyph.batteryAlert,
           title: l10n.reminderBatteryTitle,
           detail: l10n.reminderBatteryDetail,
+          blocking: true,
           action: _ignoringBatteryOpt
               ? l10n.reminderOemHintAutostartButton
               : l10n.reminderOemHintBatteryButton,
@@ -297,7 +298,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
     } finally {
       if (mounted) {
         await _refreshPermission();
-        await _refreshOemStatus();
+        await _refreshBackgroundStatus();
       }
     }
   }
