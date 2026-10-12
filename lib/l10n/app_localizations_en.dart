@@ -1227,19 +1227,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reminderWaterTitle => 'Drink water';
 
   @override
-  String get reminderWaterBody => 'Time for a glass of water.';
+  String get reminderWaterBody =>
+      'Time to drink water. Drinking more water helps with bowel movements.';
 
   @override
   String get reminderMealTitle => 'Log your meals';
 
   @override
-  String get reminderMealBody => 'Don\'t forget to record what you ate today.';
+  String get reminderMealBody =>
+      'Don\'t forget to record what you ate today. Precise logging helps you know your body precisely.';
 
   @override
   String get reminderWeighInTitle => 'Weigh-in';
 
   @override
-  String get reminderWeighInBody => 'Step on the scale and log your weight.';
+  String get reminderWeighInBody =>
+      'Step on the scale and log today\'s weight. Once a week is enough — don\'t focus on it too much. Body fat is what matters.';
 
   @override
   String get reminderKindWorkout => 'Workout';
@@ -1344,8 +1347,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reminderOemHintBatteryButton => 'Disable battery optimization';
 
   @override
-  String get reminderOemHintAutostartButton =>
-      'Auto-start / background settings';
+  String get reminderOemHintAutostartButton => 'Background settings';
 
   @override
   String get stepsOemHintBody =>

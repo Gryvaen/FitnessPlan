@@ -117,8 +117,12 @@ class RestTimerAlarmService : Service() {
         val openIntent = PendingIntent.getActivity(
             this,
             NOTIFICATION_ID,
-            Intent(this, MainActivity::class.java).apply {
+            Intent(this, ReminderAlarmActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra(ReminderAlarmActivity.EXTRA_REST_TIMER, true)
+                putExtra(RestTimerAlarmScheduler.EXTRA_TITLE, title)
+                putExtra(RestTimerAlarmScheduler.EXTRA_BODY, body)
+                putExtra(RestTimerAlarmScheduler.EXTRA_DISMISS_LABEL, dismissLabel)
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )

@@ -28,7 +28,6 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
   bool _exact = true;
   bool _fullScreen = true;
   bool? _backgroundRestricted;
-  bool _ignoringBatteryOpt = true;
   String? _autoStartGuidance;
   String? _pendingAutoStartFeedback;
   ({int scheduled, int failed})? _scheduleStatus;
@@ -93,12 +92,9 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
 
   Future<void> _refreshBackgroundStatus() async {
     final restricted = await ReminderNotifications.isBackgroundRestricted();
-    final ignoring =
-        await ReminderNotifications.isIgnoringBatteryOptimizations();
     if (!mounted) return;
     setState(() {
       _backgroundRestricted = restricted;
-      _ignoringBatteryOpt = ignoring;
     });
   }
 
@@ -240,18 +236,8 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
           title: l10n.reminderBatteryTitle,
           detail: l10n.reminderBatteryDetail,
           blocking: true,
-          action: _ignoringBatteryOpt
-              ? l10n.reminderOemHintAutostartButton
-              : l10n.reminderOemHintBatteryButton,
-          onAction: _ignoringBatteryOpt
-              ? _openAutoStartSettings
-              : ReminderNotifications.requestIgnoreBatteryOptimizations,
-          secondaryAction: _ignoringBatteryOpt
-              ? null
-              : l10n.reminderOemHintAutostartButton,
-          onSecondaryAction: _ignoringBatteryOpt
-              ? null
-              : _openAutoStartSettings,
+          action: l10n.reminderOemHintAutostartButton,
+          onAction: _openAutoStartSettings,
         ),
       );
     }
@@ -436,12 +422,6 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
                     issue: issue,
                     onAction: () =>
                         _runRestrictionAction(sheetContext, issue.onAction),
-                    onSecondaryAction: issue.onSecondaryAction == null
-                        ? null
-                        : () => _runRestrictionAction(
-                            sheetContext,
-                            issue.onSecondaryAction!,
-                          ),
                   ),
                 const SizedBox(height: AppSpacing.section),
                 Text(
@@ -479,8 +459,6 @@ class _RestrictionIssue {
     required this.action,
     required this.onAction,
     this.blocking = false,
-    this.secondaryAction,
-    this.onSecondaryAction,
   });
 
   final InkGlyph glyph;
@@ -489,8 +467,6 @@ class _RestrictionIssue {
   final String action;
   final Future<void> Function() onAction;
   final bool blocking;
-  final String? secondaryAction;
-  final Future<void> Function()? onSecondaryAction;
 }
 
 class _ReminderStatusRow extends StatelessWidget {
@@ -555,15 +531,10 @@ class _ReminderStatusRow extends StatelessWidget {
 }
 
 class _RestrictionIssueRow extends StatelessWidget {
-  const _RestrictionIssueRow({
-    required this.issue,
-    required this.onAction,
-    this.onSecondaryAction,
-  });
+  const _RestrictionIssueRow({required this.issue, required this.onAction});
 
   final _RestrictionIssue issue;
   final VoidCallback onAction;
-  final VoidCallback? onSecondaryAction;
 
   @override
   Widget build(BuildContext context) {
@@ -597,18 +568,7 @@ class _RestrictionIssueRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: [
-                    TextButton(onPressed: onAction, child: Text(issue.action)),
-                    if (issue.secondaryAction != null)
-                      TextButton(
-                        onPressed: onSecondaryAction,
-                        child: Text(issue.secondaryAction!),
-                      ),
-                  ],
-                ),
+                TextButton(onPressed: onAction, child: Text(issue.action)),
               ],
             ),
           ),

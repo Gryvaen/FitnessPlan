@@ -2388,7 +2388,7 @@ abstract class AppLocalizations {
   /// No description provided for @reminderWaterBody.
   ///
   /// In en, this message translates to:
-  /// **'Time for a glass of water.'**
+  /// **'Time to drink water. Drinking more water helps with bowel movements.'**
   String get reminderWaterBody;
 
   /// No description provided for @reminderMealTitle.
@@ -2400,7 +2400,7 @@ abstract class AppLocalizations {
   /// No description provided for @reminderMealBody.
   ///
   /// In en, this message translates to:
-  /// **'Don\'t forget to record what you ate today.'**
+  /// **'Don\'t forget to record what you ate today. Precise logging helps you know your body precisely.'**
   String get reminderMealBody;
 
   /// No description provided for @reminderWeighInTitle.
@@ -2412,7 +2412,7 @@ abstract class AppLocalizations {
   /// No description provided for @reminderWeighInBody.
   ///
   /// In en, this message translates to:
-  /// **'Step on the scale and log your weight.'**
+  /// **'Step on the scale and log today\'s weight. Once a week is enough — don\'t focus on it too much. Body fat is what matters.'**
   String get reminderWeighInBody;
 
   /// No description provided for @reminderKindWorkout.
@@ -2610,7 +2610,7 @@ abstract class AppLocalizations {
   /// No description provided for @reminderOemHintAutostartButton.
   ///
   /// In en, this message translates to:
-  /// **'Auto-start / background settings'**
+  /// **'Background settings'**
   String get reminderOemHintAutostartButton;
 
   /// No description provided for @stepsOemHintBody.

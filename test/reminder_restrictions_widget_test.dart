@@ -22,13 +22,15 @@ void main() {
   var fullScreenAllowed = true;
   var aggressiveOem = false;
   bool? backgroundRestricted = false;
-  var ignoringBatteryOpt = false;
   var scheduled = 1;
   var failed = 0;
   var statusUnknown = false;
   var notificationRequests = 0;
   var autoStartResult = 'battery';
   var autoStartFails = false;
+  var autoStartCalls = 0;
+  var batteryStatusReads = 0;
+  var batteryOptimizationRequests = 0;
 
   setUp(() {
     SharedPreferences.setMockInitialValues({'reminder_workout_enabled': true});
@@ -37,13 +39,15 @@ void main() {
     fullScreenAllowed = true;
     aggressiveOem = false;
     backgroundRestricted = false;
-    ignoringBatteryOpt = false;
     scheduled = 1;
     failed = 0;
     statusUnknown = false;
     notificationRequests = 0;
     autoStartResult = 'battery';
     autoStartFails = false;
+    autoStartCalls = 0;
+    batteryStatusReads = 0;
+    batteryOptimizationRequests = 0;
     messenger.setMockMethodCallHandler(permissionsChannel, (call) async {
       if (call.method == 'checkPermissionStatus') {
         return notificationAllowed ? 1 : 0;
@@ -67,8 +71,13 @@ void main() {
         case 'isBackgroundRestricted':
           return backgroundRestricted;
         case 'isIgnoringBatteryOptimizations':
-          return ignoringBatteryOpt;
+          batteryStatusReads++;
+          return false;
+        case 'requestIgnoreBatteryOptimizations':
+          batteryOptimizationRequests++;
+          return true;
         case 'openAutoStartSettings':
+          autoStartCalls++;
           if (autoStartFails) {
             throw PlatformException(code: 'settings_unavailable');
           }
@@ -303,10 +312,15 @@ void main() {
       await showPage(tester);
       await tester.tap(find.text('提醒可能收不到'));
       await tester.pumpAndSettle();
-      final button = find.text('自启动／后台设置');
+      final button = find.text('后台运行设置');
+      expect(button, findsOneWidget);
+      expect(find.text('关闭电池优化'), findsNothing);
+      expect(batteryStatusReads, 0);
       await tester.ensureVisible(button);
       await tester.tap(button);
       await tester.pumpAndSettle();
+      expect(autoStartCalls, 1);
+      expect(batteryOptimizationRequests, 0);
       expect(find.text('请查看「允许后台使用」；如果已经开启，无需更改。'), findsNothing);
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pumpAndSettle();
@@ -314,6 +328,43 @@ void main() {
       await tester.tap(find.text('提醒可能收不到'));
       await tester.pumpAndSettle();
       expect(find.text('请查看「允许后台使用」；如果已经开启，无需更改。'), findsWidgets);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+
+  testWidgets(
+    'OEM settings uses the single background settings action',
+    (tester) async {
+      backgroundRestricted = true;
+      autoStartResult = 'oem';
+      await showPage(tester);
+      await tester.tap(find.text('提醒可能收不到'));
+      await tester.pumpAndSettle();
+      expect(find.text('后台运行设置'), findsOneWidget);
+      expect(find.text('关闭电池优化'), findsNothing);
+      await tester.tap(find.text('后台运行设置'));
+      await tester.pumpAndSettle();
+      expect(autoStartCalls, 1);
+      expect(batteryStatusReads, 0);
+      expect(batteryOptimizationRequests, 0);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+
+  testWidgets(
+    'app details fallback explains where to check background usage',
+    (tester) async {
+      backgroundRestricted = true;
+      autoStartResult = 'appDetails';
+      await showPage(tester);
+      await tester.tap(find.text('提醒可能收不到'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('后台运行设置'));
+      await tester.pumpAndSettle();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('已打开应用信息'), findsOneWidget);
+      expect(autoStartCalls, 1);
     },
     variant: TargetPlatformVariant.only(TargetPlatform.android),
   );
@@ -327,7 +378,8 @@ void main() {
       await showPage(tester);
       await tester.tap(find.text('提醒可能收不到'));
       await tester.pumpAndSettle();
-      final button = find.text('自启动／后台设置');
+      final button = find.text('后台运行设置');
+      expect(button, findsOneWidget);
       await tester.ensureVisible(button);
       await tester.tap(button);
       await tester.pumpAndSettle();

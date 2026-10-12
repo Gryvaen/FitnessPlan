@@ -68,8 +68,12 @@ object RestTimerFallbackNotification {
         val open = PendingIntent.getActivity(
             context,
             NOTIFICATION_ID,
-            Intent(context, MainActivity::class.java).apply {
+            Intent(context, ReminderAlarmActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra(ReminderAlarmActivity.EXTRA_REST_TIMER, true)
+                putExtra(RestTimerAlarmScheduler.EXTRA_TITLE, title)
+                putExtra(RestTimerAlarmScheduler.EXTRA_BODY, body)
+                putExtra(RestTimerAlarmScheduler.EXTRA_DISMISS_LABEL, dismissLabel)
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )

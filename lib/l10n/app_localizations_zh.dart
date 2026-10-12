@@ -1206,19 +1206,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reminderWaterTitle => '喝水提醒';
 
   @override
-  String get reminderWaterBody => '该喝一杯水了。';
+  String get reminderWaterBody => '该喝水了,多喝水有助于排便';
 
   @override
   String get reminderMealTitle => '记录饮食';
 
   @override
-  String get reminderMealBody => '别忘了记录今天吃了什么。';
+  String get reminderMealBody => '别忘了记录今天吃了什么,精确记录有助于精确掌握自己的身材';
 
   @override
   String get reminderWeighInTitle => '称体重';
 
   @override
-  String get reminderWeighInBody => '上秤称一下，记录今天的体重。';
+  String get reminderWeighInBody => '上秤称一下，记录今天的体重。一周称一次即可,不必过度关注,重要的是体脂';
 
   @override
   String get reminderKindWorkout => '训练提醒';
@@ -1320,7 +1320,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reminderOemHintBatteryButton => '关闭电池优化';
 
   @override
-  String get reminderOemHintAutostartButton => '自启动／后台设置';
+  String get reminderOemHintAutostartButton => '后台运行设置';
 
   @override
   String get stepsOemHintBody =>
