@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import java.util.Calendar
 import org.json.JSONArray
 import org.json.JSONObject
@@ -23,19 +24,36 @@ object WorkoutReminderScheduler {
     const val EXTRA_CHANNEL_NAME = "channel_name"
     const val EXTRA_SOUND = "sound"
     const val EXTRA_SOUND_URI = "sound_uri"
+    const val EXTRA_TRIGGER_AT = "trigger_at"
 
     // One 100-slot id range per reminder kind (workout / water / meal /
     // weigh-in), matching ReminderKind.idBase on the Dart side.
     private val BASE_REQUEST_CODES = intArrayOf(72001, 72101, 72201, 72301)
     private const val SLOTS_PER_KIND = 32
 
-    fun scheduleAll(context: Context, items: List<ReminderItem>, staleChannelIds: List<String> = emptyList()) {
+    private const val PREFS = "reminder_alarms"
+    private const val MISSED_WINDOW_MILLIS = 60 * 60 * 1000L
+
+    data class ScheduleResult(val scheduled: Int, val failed: Int)
+
+    @Synchronized
+    fun scheduleAll(context: Context, items: List<ReminderItem>, staleChannelIds: List<String> = emptyList()): ScheduleResult {
         cancelAll(context)
         deleteChannels(context, staleChannelIds)
         save(context, items)
+        var scheduled = 0
+        var failed = 0
         for (item in items) {
-            scheduleOne(context, item)
+            try {
+                scheduleOne(context, item)
+                scheduled++
+            } catch (e: RuntimeException) {
+                failed++
+                Log.e("ReminderAlarm", "Cannot schedule reminder ${item.id}", e)
+            }
         }
+        setScheduleStatus(context, scheduled, failed)
+        return ScheduleResult(scheduled, failed)
     }
 
     /**
@@ -49,11 +67,16 @@ object WorkoutReminderScheduler {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         for (id in channelIds) {
             manager.deleteNotificationChannel(id)
+            manager.deleteNotificationChannel("${id}_fallback_v2")
         }
     }
 
+    @Synchronized
     fun cancelAll(context: Context) {
-        context.getSharedPreferences("reminder_alarms", Context.MODE_PRIVATE).edit().clear().apply()
+        check(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .remove("items").remove("scheduled").remove("failed").commit()) {
+            "Cannot clear reminder alarms"
+        }
 
         val alarmManager = context.getSystemService(AlarmManager::class.java) ?: return
         for (base in BASE_REQUEST_CODES) {
@@ -78,12 +101,12 @@ object WorkoutReminderScheduler {
                 put("hour", day.get(Calendar.HOUR_OF_DAY)); put("minute", day.get(Calendar.MINUTE))
             })
         }
-        context.getSharedPreferences("reminder_alarms", Context.MODE_PRIVATE).edit()
-            .putString("items", array.toString()).apply()
+        check(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putString("items", array.toString()).commit()) { "Cannot persist reminder alarms" }
     }
 
     private fun saved(context: Context): JSONArray = JSONArray(
-        context.getSharedPreferences("reminder_alarms", Context.MODE_PRIVATE)
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getString("items", "[]") ?: "[]")
 
     private fun decode(row: JSONObject, trigger: Long = row.getLong("trigger")) = ReminderItem(
@@ -92,16 +115,28 @@ object WorkoutReminderScheduler {
         if (row.has("soundUri") && !row.isNull("soundUri")) row.getString("soundUri") else null)
 
     /** Each weekday slot renews itself, even if Flutter has not opened for a week. */
-    fun scheduleNext(context: Context, intent: Intent) {
+    @Synchronized
+    fun claimAndScheduleNext(context: Context, intent: Intent): Boolean {
         val id = intent.getIntExtra(EXTRA_NOTIFICATION_ID, -1)
+        val trigger = intent.getLongExtra(EXTRA_TRIGGER_AT, -1L)
         val rows = saved(context)
+        val current = (0 until rows.length()).map { rows.getJSONObject(it) }
+            .firstOrNull { it.getInt("id") == id } ?: return false
+        if (trigger != current.getLong("trigger") || alreadyHandled(context, id, trigger)) return false
+        markHandled(context, id, trigger)
         val items = (0 until rows.length()).map { index ->
             val row = rows.getJSONObject(index)
             if (row.getInt("id") != id) decode(row) else decode(row, nextTime(row))
         }
-        val next = items.firstOrNull { it.id == id } ?: return
+        val next = items.first { it.id == id }
         save(context, items)
-        scheduleOne(context, next)
+        try {
+            scheduleOne(context, next)
+        } catch (e: RuntimeException) {
+            markScheduleFailure(context)
+            Log.e("ReminderAlarm", "Cannot renew reminder $id", e)
+        }
+        return true
     }
 
     private fun nextTime(row: JSONObject): Long {
@@ -118,40 +153,83 @@ object WorkoutReminderScheduler {
     }
 
     /** Restore alarms after reboot, update, timezone change or exact-alarm grant. */
-    fun restore(context: Context) {
+    @Synchronized
+    fun restore(context: Context, afterBoot: Boolean = false): List<Intent> {
         val rows = saved(context)
-        val items = (0 until rows.length()).map {
-            val row = rows.getJSONObject(it)
-            decode(row, nextTime(row))
+        val now = System.currentTimeMillis()
+        val catchUps = mutableListOf<Intent>()
+        val items = mutableListOf<ReminderItem>()
+        for (i in 0 until rows.length()) {
+            try {
+                val row = rows.getJSONObject(i)
+                val previous = row.getLong("trigger")
+                val item = decode(row, nextTime(row))
+                items.add(item)
+                if (afterBoot && previous <= now && now - previous <= MISSED_WINDOW_MILLIS &&
+                    !alreadyHandled(context, item.id, previous)) {
+                    markHandled(context, item.id, previous)
+                    catchUps.add(deliveryIntent(context, decode(row), previous))
+                }
+            } catch (e: RuntimeException) {
+                Log.e("ReminderAlarm", "Cannot decode reminder slot $i", e)
+            }
         }
         save(context, items)
-        for (item in items) scheduleOne(context, item)
+        var scheduled = 0
+        var failed = 0
+        for (item in items) {
+            try {
+                scheduleOne(context, item)
+                scheduled++
+            } catch (e: RuntimeException) {
+                failed++
+                Log.e("ReminderAlarm", "Cannot restore reminder ${item.id}", e)
+            }
+        }
+        setScheduleStatus(context, scheduled, failed)
+        return catchUps
+    }
+
+    fun scheduleStatus(context: Context): ScheduleResult {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        return ScheduleResult(prefs.getInt("scheduled", 0), prefs.getInt("failed", 0))
+    }
+
+    private fun setScheduleStatus(context: Context, scheduled: Int, failed: Int) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putInt("scheduled", scheduled).putInt("failed", failed).apply()
+    }
+
+    private fun markScheduleFailure(context: Context) {
+        val status = scheduleStatus(context)
+        setScheduleStatus(context, status.scheduled, status.failed + 1)
+    }
+
+    private fun alreadyHandled(context: Context, id: Int, trigger: Long): Boolean =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getLong("handled_$id", Long.MIN_VALUE) >= trigger
+
+    private fun markHandled(context: Context, id: Int, trigger: Long) {
+        check(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putLong("handled_$id", trigger).commit()) { "Cannot record reminder delivery" }
     }
 
     private fun scheduleOne(context: Context, item: ReminderItem) {
-        val alarmManager = context.getSystemService(AlarmManager::class.java) ?: return
-        val operation = alarmPendingIntent(
-            context,
-            item.id,
-            item.id,
-            item.title,
-            item.body,
-            item.channelId,
-            item.channelName,
-            item.sound,
-            item.soundUri,
-        )
+        val alarmManager = context.getSystemService(AlarmManager::class.java)
+            ?: error("AlarmManager unavailable")
+        val operation = PendingIntent.getBroadcast(context, item.id,
+            deliveryIntent(context, item, item.triggerAtMillis),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val showIntent = PendingIntent.getActivity(
             context,
             item.id,
             Intent(context, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        try {
-            alarmManager.setAlarmClock(
-                AlarmManager.AlarmClockInfo(item.triggerAtMillis, showIntent),
-                operation,
-            )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, item.triggerAtMillis, operation)
+        } else try {
+            alarmManager.setAlarmClock(AlarmManager.AlarmClockInfo(item.triggerAtMillis, showIntent), operation)
         } catch (_: SecurityException) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 alarmManager.setAndAllowWhileIdle(
@@ -165,6 +243,18 @@ object WorkoutReminderScheduler {
             }
         }
     }
+
+    private fun deliveryIntent(context: Context, item: ReminderItem, trigger: Long): Intent =
+        Intent(context, WorkoutReminderReceiver::class.java).apply {
+            putExtra(EXTRA_NOTIFICATION_ID, item.id)
+            putExtra(EXTRA_TRIGGER_AT, trigger)
+            putExtra(EXTRA_TITLE, item.title)
+            putExtra(EXTRA_BODY, item.body)
+            putExtra(EXTRA_CHANNEL_ID, item.channelId)
+            putExtra(EXTRA_CHANNEL_NAME, item.channelName)
+            putExtra(EXTRA_SOUND, item.sound)
+            putExtra(EXTRA_SOUND_URI, item.soundUri)
+        }
 
     private fun alarmPendingIntent(
         context: Context,

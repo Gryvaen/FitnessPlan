@@ -24,6 +24,11 @@ extension ReminderKindMeta on ReminderKind {
 /// null means the system default) or just vibrates.
 enum ReminderAlertMode { ring, vibrate }
 
+String? normalizeReminderContent(String? value) {
+  final trimmed = value?.trim();
+  return trimmed == null || trimmed.isEmpty ? null : trimmed;
+}
+
 /// `weekdays` uses DateTime weekday numbers (Mon = 1 … Sun = 7).
 class ReminderSetting {
   const ReminderSetting({
@@ -34,6 +39,8 @@ class ReminderSetting {
     this.alertMode = ReminderAlertMode.ring,
     this.soundUri,
     this.soundTitle,
+    this.customTitle,
+    this.customBody,
   });
 
   final bool enabled;
@@ -52,6 +59,13 @@ class ReminderSetting {
   /// doesn't have to resolve the URI itself.
   final String? soundTitle;
 
+  /// Null uses the localized default. The workout default body may vary by day.
+  final String? customTitle;
+  final String? customBody;
+
+  String notificationTitle(String defaultTitle) => customTitle ?? defaultTitle;
+  String notificationBody(String defaultBody) => customBody ?? defaultBody;
+
   bool firesOn(int weekday) => weekdays.contains(weekday);
 
   ReminderSetting copyWith({
@@ -62,6 +76,8 @@ class ReminderSetting {
     ReminderAlertMode? alertMode,
     Object? soundUri = _unset,
     Object? soundTitle = _unset,
+    Object? customTitle = _unset,
+    Object? customBody = _unset,
   }) => ReminderSetting(
     enabled: enabled ?? this.enabled,
     hour: hour ?? this.hour,
@@ -72,6 +88,12 @@ class ReminderSetting {
     soundTitle: identical(soundTitle, _unset)
         ? this.soundTitle
         : soundTitle as String?,
+    customTitle: identical(customTitle, _unset)
+        ? this.customTitle
+        : customTitle as String?,
+    customBody: identical(customBody, _unset)
+        ? this.customBody
+        : customBody as String?,
   );
 }
 
@@ -137,6 +159,12 @@ class RemindersRepository {
       alertMode: mode,
       soundUri: _prefs.getString(_key(kind, 'soundUri')),
       soundTitle: _prefs.getString(_key(kind, 'soundTitle')),
+      customTitle: normalizeReminderContent(
+        _prefs.getString(_key(kind, 'customTitle')),
+      ),
+      customBody: normalizeReminderContent(
+        _prefs.getString(_key(kind, 'customBody')),
+      ),
     );
   }
 
@@ -163,6 +191,25 @@ class RemindersRepository {
 
   Future<void> setAlertMode(ReminderKind kind, ReminderAlertMode mode) =>
       _prefs.setString(_key(kind, 'alertMode'), mode.name);
+
+  Future<void> setNotificationContent(
+    ReminderKind kind, {
+    String? title,
+    String? body,
+  }) async {
+    final customTitle = normalizeReminderContent(title);
+    final customBody = normalizeReminderContent(body);
+    if (customTitle == null) {
+      await _prefs.remove(_key(kind, 'customTitle'));
+    } else {
+      await _prefs.setString(_key(kind, 'customTitle'), customTitle);
+    }
+    if (customBody == null) {
+      await _prefs.remove(_key(kind, 'customBody'));
+    } else {
+      await _prefs.setString(_key(kind, 'customBody'), customBody);
+    }
+  }
 
   /// Pass `uri: null` to reset to the system default notification sound.
   Future<void> setSound(ReminderKind kind, {String? uri, String? title}) async {
@@ -200,6 +247,8 @@ class RemindersRepository {
       await _prefs.remove(_key(kind, 'alertMode'));
       await _prefs.remove(_key(kind, 'soundUri'));
       await _prefs.remove(_key(kind, 'soundTitle'));
+      await _prefs.remove(_key(kind, 'customTitle'));
+      await _prefs.remove(_key(kind, 'customBody'));
       await _prefs.remove(_key(kind, 'lastChannelId'));
     }
   }

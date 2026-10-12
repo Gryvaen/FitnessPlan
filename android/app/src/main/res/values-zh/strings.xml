@@ -2,6 +2,9 @@
 <resources>
     <string name="app_name">健身计划</string>
     <string name="rest_timer_alarm_channel">休息计时闹钟</string>
+    <string name="rest_timer_alarm_both_channel">休息计时：响铃并振动</string>
+    <string name="rest_timer_alarm_ring_channel">休息计时：仅响铃</string>
+    <string name="rest_timer_alarm_vibrate_channel">休息计时：仅振动</string>
     <string name="rest_timer_alarm_channel_description">持续提醒组间休息结束</string>
     <string name="rest_timer_alarm_title">休息结束</string>
     <string name="rest_timer_alarm_body">开始下一组</string>

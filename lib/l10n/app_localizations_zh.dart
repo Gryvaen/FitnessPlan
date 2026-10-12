@@ -1143,6 +1143,30 @@ class AppLocalizationsZh extends AppLocalizations {
   String get restNotifyPermissionHint => '未授予通知权限时，锁屏可能不会提醒；前台倒计时仍可用。';
 
   @override
+  String get restTimerNotificationMissing => '请允许通知，以便锁屏时收到休息提醒；当前页面仍可倒计时。';
+
+  @override
+  String get restTimerExactAlarmMissing => '请允许精确闹钟，以提高后台准点提醒的可靠性。';
+
+  @override
+  String get restTimerScheduleFailed => '后台提醒设置失败；当前页面仍可倒计时。';
+
+  @override
+  String get restTimerReviewPermissions => '检查权限';
+
+  @override
+  String get restTimerAlertSettings => '提醒设置';
+
+  @override
+  String get restTimerAlertBoth => '响铃并振动';
+
+  @override
+  String get restTimerAlertRingOnly => '仅响铃';
+
+  @override
+  String get restTimerAlertVibrateOnly => '仅振动';
+
+  @override
   String get restDoneSnack => '休息结束，开始下一组';
 
   @override
@@ -1235,6 +1259,27 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reminderRepeatLabel => '重复日期';
 
   @override
+  String get reminderContentLabel => '通知内容';
+
+  @override
+  String get reminderContentDefault => '默认文案';
+
+  @override
+  String get reminderContentCustom => '已自定义';
+
+  @override
+  String get reminderContentTitleLabel => '标题';
+
+  @override
+  String get reminderContentBodyLabel => '正文';
+
+  @override
+  String get reminderContentEmptyHint => '留空则使用默认文案';
+
+  @override
+  String get reminderContentWorkoutHint => '训练提醒的默认正文会根据前一天的训练情况变化。';
+
+  @override
   String get reminderAlertModeRing => '响铃';
 
   @override
@@ -1275,7 +1320,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reminderOemHintBatteryButton => '关闭电池优化';
 
   @override
-  String get reminderOemHintAutostartButton => '自启动设置';
+  String get reminderOemHintAutostartButton => '自启动／后台设置';
 
   @override
   String get stepsOemHintBody =>

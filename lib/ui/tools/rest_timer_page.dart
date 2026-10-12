@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -23,6 +24,8 @@ class _RestTimerPageState extends State<RestTimerPage>
   static const _selectedKey = 'rest_timer_selected_seconds';
   static const _deadlineKey = 'rest_timer_deadline_ms';
   static const _pausedKey = 'rest_timer_paused_seconds';
+  static const _finishedKey = 'rest_timer_finished';
+  static const _alertModeKey = 'rest_timer_alert_mode';
 
   int _selectedSeconds = 90;
   int _remainingSeconds = 90;
@@ -31,6 +34,12 @@ class _RestTimerPageState extends State<RestTimerPage>
   bool _paused = false;
   bool _finished = false;
   bool _permissionHintShown = false;
+  bool _notificationsAllowed = true;
+  bool _exactAlarmAllowed = true;
+  bool _scheduleFailed = false;
+  bool _restoring = true;
+  bool _modeChanging = false;
+  RestTimerAlertMode _alertMode = RestTimerAlertMode.ringAndVibrate;
 
   /// Guards [_start] itself: `_running` only flips true after the
   /// permission-request await resolves, so without this a rapid double-tap
@@ -46,12 +55,28 @@ class _RestTimerPageState extends State<RestTimerPage>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     unawaited(_restore());
+    unawaited(_refreshAlertStatus());
+  }
+
+  Future<void> _refreshAlertStatus() async {
+    final status = await RestTimerNotifications.alarmStatus();
+    if (!mounted) return;
+    setState(() {
+      _notificationsAllowed = status.notifications;
+      _exactAlarmAllowed = status.exact;
+    });
   }
 
   Future<void> _restore() async {
     final prefs = await SharedPreferences.getInstance();
     final selected = (prefs.getInt(_selectedKey) ?? 90).clamp(30, 600);
     final paused = prefs.getInt(_pausedKey);
+    final wasFinished = prefs.getBool(_finishedKey) ?? false;
+    final savedMode = prefs.getString(_alertModeKey);
+    final alertMode = RestTimerAlertMode.values.firstWhere(
+      (mode) => mode.name == savedMode,
+      orElse: () => RestTimerAlertMode.ringAndVibrate,
+    );
     final deadlineMs = prefs.getInt(_deadlineKey);
     final deadline = deadlineMs == null
         ? null
@@ -66,15 +91,24 @@ class _RestTimerPageState extends State<RestTimerPage>
         _remainingSeconds = left;
         _endsAt = deadline;
         _running = true;
+        _alertMode = alertMode;
+        _restoring = false;
       });
       _startTicker();
     } else {
       if (deadlineMs != null) await prefs.remove(_deadlineKey);
+      if (deadlineMs != null) await prefs.setBool(_finishedKey, true);
+      if (!mounted) return;
       setState(() {
         _selectedSeconds = selected;
-        _remainingSeconds = paused?.clamp(1, 600) ?? selected;
+        _remainingSeconds = deadlineMs != null || wasFinished
+            ? 0
+            : paused?.clamp(1, 600) ?? selected;
         _totalSeconds = math.max(selected, _remainingSeconds);
-        _paused = paused != null;
+        _paused = deadlineMs == null && !wasFinished && paused != null;
+        _finished = deadlineMs != null || wasFinished;
+        _alertMode = alertMode;
+        _restoring = false;
       });
     }
   }
@@ -90,7 +124,10 @@ class _RestTimerPageState extends State<RestTimerPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _syncFromDeadline();
+    if (state == AppLifecycleState.resumed) {
+      _syncFromDeadline();
+      unawaited(_refreshAlertStatus());
+    }
   }
 
   int _secondsUntil(DateTime deadline) {
@@ -117,8 +154,8 @@ class _RestTimerPageState extends State<RestTimerPage>
   }
 
   Future<void> _start({bool resume = false}) async {
-    if (_running || _starting) return;
-    _starting = true;
+    if (_running || _starting || _restoring) return;
+    setState(() => _starting = true);
     try {
       final seconds = (resume ? _remainingSeconds : _selectedSeconds).clamp(
         1,
@@ -126,8 +163,12 @@ class _RestTimerPageState extends State<RestTimerPage>
       );
       final l10n = context.l10n;
 
-      final permissionGranted =
-          await RestTimerNotifications.requestPermissions();
+      bool permissionGranted;
+      try {
+        permissionGranted = await RestTimerNotifications.requestPermissions();
+      } catch (_) {
+        permissionGranted = false;
+      }
       if (!mounted) return;
       if (!permissionGranted && !_permissionHintShown) {
         _permissionHintShown = true;
@@ -144,17 +185,25 @@ class _RestTimerPageState extends State<RestTimerPage>
         _remainingSeconds = seconds;
         _totalSeconds = seconds;
         _endsAt = deadline;
+        _scheduleFailed = false;
       });
-      await _persist();
-      await RestTimerNotifications.scheduleRestEnd(
-        Duration(seconds: seconds),
-        title: l10n.restDoneTitle,
-        body: l10n.restDoneBody,
-        dismissLabel: l10n.restTimerDismiss,
-      );
       _startTicker();
+      await _persist();
+      try {
+        await RestTimerNotifications.scheduleRestEnd(
+          deadline,
+          title: l10n.restDoneTitle,
+          body: l10n.restDoneBody,
+          dismissLabel: l10n.restTimerDismiss,
+          soundEnabled: _alertMode.soundEnabled,
+          vibrationEnabled: _alertMode.vibrationEnabled,
+        );
+      } catch (_) {
+        if (mounted) setState(() => _scheduleFailed = true);
+      }
+      unawaited(_refreshAlertStatus());
     } finally {
-      _starting = false;
+      if (mounted) setState(() => _starting = false);
     }
   }
 
@@ -187,7 +236,91 @@ class _RestTimerPageState extends State<RestTimerPage>
     });
     await _persist();
     if (!mounted) return;
-    HapticFeedback.heavyImpact();
+    if (defaultTargetPlatform != TargetPlatform.android ||
+        _alertMode.vibrationEnabled) {
+      HapticFeedback.heavyImpact();
+    }
+  }
+
+  Future<void> _setAlertMode(RestTimerAlertMode mode) async {
+    if (_modeChanging || _alertMode == mode) return;
+    setState(() {
+      _modeChanging = true;
+      _alertMode = mode;
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_alertModeKey, mode.name);
+      if (!mounted) return;
+      final deadline = _endsAt;
+      if (!_running || deadline == null) return;
+      final l10n = context.l10n;
+      try {
+        await RestTimerNotifications.scheduleRestEnd(
+          deadline,
+          title: l10n.restDoneTitle,
+          body: l10n.restDoneBody,
+          dismissLabel: l10n.restTimerDismiss,
+          soundEnabled: mode.soundEnabled,
+          vibrationEnabled: mode.vibrationEnabled,
+        );
+        if (mounted) setState(() => _scheduleFailed = false);
+      } catch (_) {
+        if (mounted) setState(() => _scheduleFailed = true);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _scheduleFailed = true);
+    } finally {
+      if (mounted) setState(() => _modeChanging = false);
+    }
+  }
+
+  void _showAlertSettings() {
+    final l10n = context.l10n;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                child: Text(
+                  l10n.restTimerAlertSettings,
+                  style: Theme.of(sheetContext).textTheme.titleLarge,
+                ),
+              ),
+              for (final mode in RestTimerAlertMode.values)
+                ListTile(
+                  leading: InkIcon(
+                    mode == RestTimerAlertMode.vibrateOnly
+                        ? InkGlyph.vibration
+                        : InkGlyph.alarm,
+                  ),
+                  title: Text(switch (mode) {
+                    RestTimerAlertMode.ringAndVibrate =>
+                      l10n.restTimerAlertBoth,
+                    RestTimerAlertMode.ringOnly => l10n.restTimerAlertRingOnly,
+                    RestTimerAlertMode.vibrateOnly =>
+                      l10n.restTimerAlertVibrateOnly,
+                  }),
+                  trailing: _alertMode == mode
+                      ? const InkIcon(InkGlyph.check)
+                      : null,
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    unawaited(_setAlertMode(mode));
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _reset() async {
@@ -203,6 +336,7 @@ class _RestTimerPageState extends State<RestTimerPage>
       _remainingSeconds = _selectedSeconds;
       _totalSeconds = _selectedSeconds;
       _endsAt = null;
+      _scheduleFailed = false;
     });
     await _persist();
   }
@@ -210,6 +344,7 @@ class _RestTimerPageState extends State<RestTimerPage>
   Future<void> _persist() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_selectedKey, _selectedSeconds);
+    await prefs.setBool(_finishedKey, _finished);
     if (_running && _endsAt != null) {
       await prefs.setInt(_deadlineKey, _endsAt!.millisecondsSinceEpoch);
     } else {
@@ -259,7 +394,19 @@ class _RestTimerPageState extends State<RestTimerPage>
         : l10n.toolRestTimer;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.toolRestTimer)),
+      appBar: AppBar(
+        title: Text(l10n.toolRestTimer),
+        actions: [
+          if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
+            IconButton(
+              tooltip: l10n.restTimerAlertSettings,
+              onPressed: _restoring || _starting || _modeChanging
+                  ? null
+                  : _showAlertSettings,
+              icon: const InkIcon(InkGlyph.settings),
+            ),
+        ],
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.formPage),
@@ -321,10 +468,46 @@ class _RestTimerPageState extends State<RestTimerPage>
                 ],
               ),
             const SizedBox(height: 32),
+            if (!_notificationsAllowed ||
+                !_exactAlarmAllowed ||
+                _scheduleFailed) ...[
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (!_notificationsAllowed)
+                        Text(l10n.restTimerNotificationMissing),
+                      if (!_exactAlarmAllowed)
+                        Text(l10n.restTimerExactAlarmMissing),
+                      if (_scheduleFailed) Text(l10n.restTimerScheduleFailed),
+                      if (!_notificationsAllowed || !_exactAlarmAllowed)
+                        TextButton(
+                          onPressed: () async {
+                            try {
+                              await RestTimerNotifications.requestPermissions();
+                            } catch (_) {
+                              // Status below still explains the limitation.
+                            }
+                            await _refreshAlertStatus();
+                          },
+                          child: Text(l10n.restTimerReviewPermissions),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: _running ? _pause : () => _start(resume: _paused),
+                onPressed: _restoring || _starting || _modeChanging
+                    ? null
+                    : _running
+                    ? _pause
+                    : () => _start(resume: _paused),
                 icon: InkIcon(_running ? InkGlyph.pause : InkGlyph.play),
                 label: Text(
                   _running
@@ -339,7 +522,9 @@ class _RestTimerPageState extends State<RestTimerPage>
             SizedBox(
               width: double.infinity,
               child: TextButton.icon(
-                onPressed: _reset,
+                onPressed: _restoring || _starting || _modeChanging
+                    ? null
+                    : _reset,
                 icon: const InkIcon(InkGlyph.replay),
                 label: Text(l10n.reset),
               ),

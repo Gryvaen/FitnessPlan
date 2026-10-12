@@ -2265,6 +2265,54 @@ abstract class AppLocalizations {
   /// **'Without notification permission, lock-screen alerts may not fire; foreground timer still works.'**
   String get restNotifyPermissionHint;
 
+  /// No description provided for @restTimerNotificationMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow notifications for lock-screen rest alerts. The countdown still works here.'**
+  String get restTimerNotificationMissing;
+
+  /// No description provided for @restTimerExactAlarmMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow exact alarms for reliable on-time alerts in the background.'**
+  String get restTimerExactAlarmMissing;
+
+  /// No description provided for @restTimerScheduleFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not schedule the background alert. The countdown still works here.'**
+  String get restTimerScheduleFailed;
+
+  /// No description provided for @restTimerReviewPermissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Review permissions'**
+  String get restTimerReviewPermissions;
+
+  /// No description provided for @restTimerAlertSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Alert settings'**
+  String get restTimerAlertSettings;
+
+  /// No description provided for @restTimerAlertBoth.
+  ///
+  /// In en, this message translates to:
+  /// **'Ring and vibrate'**
+  String get restTimerAlertBoth;
+
+  /// No description provided for @restTimerAlertRingOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Ring only'**
+  String get restTimerAlertRingOnly;
+
+  /// No description provided for @restTimerAlertVibrateOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibrate only'**
+  String get restTimerAlertVibrateOnly;
+
   /// No description provided for @restDoneSnack.
   ///
   /// In en, this message translates to:
@@ -2439,6 +2487,48 @@ abstract class AppLocalizations {
   /// **'Repeat'**
   String get reminderRepeatLabel;
 
+  /// No description provided for @reminderContentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification text'**
+  String get reminderContentLabel;
+
+  /// No description provided for @reminderContentDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default text'**
+  String get reminderContentDefault;
+
+  /// No description provided for @reminderContentCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Customized'**
+  String get reminderContentCustom;
+
+  /// No description provided for @reminderContentTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get reminderContentTitleLabel;
+
+  /// No description provided for @reminderContentBodyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get reminderContentBodyLabel;
+
+  /// No description provided for @reminderContentEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave blank to use the default text'**
+  String get reminderContentEmptyHint;
+
+  /// No description provided for @reminderContentWorkoutHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The default workout message varies with the previous day\'s training.'**
+  String get reminderContentWorkoutHint;
+
   /// No description provided for @reminderAlertModeRing.
   ///
   /// In en, this message translates to:
@@ -2520,7 +2610,7 @@ abstract class AppLocalizations {
   /// No description provided for @reminderOemHintAutostartButton.
   ///
   /// In en, this message translates to:
-  /// **'Auto-start settings'**
+  /// **'Auto-start / background settings'**
   String get reminderOemHintAutostartButton;
 
   /// No description provided for @stepsOemHintBody.

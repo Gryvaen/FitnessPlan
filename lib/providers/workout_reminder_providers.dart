@@ -12,6 +12,7 @@ final remindersProvider =
     );
 
 class RemindersNotifier extends Notifier<Map<ReminderKind, ReminderSetting>> {
+  Future<void> _contentWrites = Future<void>.value();
   @override
   Map<ReminderKind, ReminderSetting> build() {
     return ref.read(remindersRepositoryProvider).loadAll();
@@ -82,6 +83,43 @@ class RemindersNotifier extends Notifier<Map<ReminderKind, ReminderSetting>> {
             .read(remindersRepositoryProvider)
             .setSound(kind, uri: uri, title: title),
       );
+
+  Future<void> setNotificationContent(
+    ReminderKind kind, {
+    String? title,
+    String? body,
+  }) {
+    final customTitle = normalizeReminderContent(title);
+    final customBody = normalizeReminderContent(body);
+    final nextWrite = _contentWrites.then((_) async {
+      final current = settingFor(kind);
+      if (current.customTitle == customTitle &&
+          current.customBody == customBody) {
+        return;
+      }
+      await ref
+          .read(remindersRepositoryProvider)
+          .setNotificationContent(kind, title: customTitle, body: customBody);
+      state = {
+        ...state,
+        kind: current.copyWith(
+          customTitle: customTitle,
+          customBody: customBody,
+        ),
+      };
+      if (state.values.any((setting) => setting.enabled)) {
+        try {
+          await syncSchedule();
+        } catch (e) {
+          debugPrint('reminder sync failed: $e');
+        }
+      }
+    });
+    _contentWrites = nextWrite.catchError((Object e) {
+      debugPrint('reminder content save failed: $e');
+    });
+    return nextWrite;
+  }
 
   /// Opens the system ringtone picker for [kind]'s current tone and, if the
   /// user picked one, saves and reschedules. Returns the picked title, or

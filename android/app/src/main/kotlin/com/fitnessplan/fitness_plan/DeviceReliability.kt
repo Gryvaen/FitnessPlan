@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
+import android.util.Log
 
 /**
  * Helpers for the background-restriction workarounds several Android OEM
@@ -22,6 +23,10 @@ import android.provider.Settings
  * and hand the user directly to the right settings screen.
  */
 object DeviceReliability {
+    enum class AutoStartDestination(val wireValue: String) {
+        OEM("oem"), BATTERY("battery"), APP_DETAILS("appDetails"),
+    }
+
     /** Manufacturers known for this kind of background restriction. */
     private val AGGRESSIVE_BRANDS = setOf(
         "oppo", "oneplus", "realme", "xiaomi", "redmi", "poco",
@@ -29,6 +34,9 @@ object DeviceReliability {
     )
 
     fun isAggressiveOem(): Boolean {
+        // A custom ROM does not inherit MIUI/ColorOS background controls just
+        // because the physical handset was made by one of those vendors.
+        if (Build.DISPLAY.lowercase().contains("lineage")) return false
         val brand = Build.BRAND.lowercase()
         val manufacturer = Build.MANUFACTURER.lowercase()
         return AGGRESSIVE_BRANDS.any { brand.contains(it) || manufacturer.contains(it) }
@@ -50,15 +58,8 @@ object DeviceReliability {
         }
     }
 
-    /**
-     * Best-effort deep link into the OEM's own "auto-start" / "allow
-     * background running" management screen — these have no stable public
-     * API and have moved/renamed across OS versions, so every candidate is
-     * tried in order and the first one whose target actually resolves on
-     * this device wins. Falls back to the app's own system details page
-     * (always resolvable) when none of them do.
-     */
-    fun autoStartIntent(context: Context): Intent {
+    /** Tries OEM screens, then per-app battery settings, then app details. */
+    fun openAutoStartSettings(context: Context): AutoStartDestination {
         val candidates = listOf(
             // ColorOS (OPPO / OnePlus / Realme).
             componentIntent("com.coloros.safecenter", "com.coloros.safecenter.permission.startup.StartupAppListActivity"),
@@ -75,13 +76,46 @@ object DeviceReliability {
             // Flyme (Meizu).
             componentIntent("com.meizu.safe", "com.meizu.safe.permission.SmartBGActivity"),
         )
-        for (intent in candidates) {
-            if (intent.resolveActivity(context.packageManager) != null) return intent
+        val packageUri = Uri.parse("package:${context.packageName}")
+        val batterySettings = Intent("android.settings.VIEW_ADVANCED_POWER_USAGE_DETAIL").apply {
+            data = packageUri
         }
-        // Every OEM screen understands its own app's details page; falling
-        // back here still gets the user one tap from "Battery" / "Auto-start".
-        return Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-            data = Uri.parse("package:${context.packageName}")
+        val appDetails = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = packageUri
+        }
+        return launchFirstAvailable(candidates, batterySettings, appDetails, context::startActivity) { intent, error ->
+            Log.w("ReminderSettings", "Cannot open ${intent.component ?: intent.action}", error)
+        }
+    }
+
+    /** The launcher is injected so the candidate/fallback flow can be tested. */
+    internal fun <T> launchFirstAvailable(
+        candidates: List<T>,
+        batterySettings: T,
+        appDetails: T,
+        launch: (T) -> Unit,
+        onFailure: (T, RuntimeException) -> Unit = { _, _ -> },
+    ): AutoStartDestination {
+        for (candidate in candidates) {
+            try {
+                launch(candidate)
+                return AutoStartDestination.OEM
+            } catch (e: RuntimeException) {
+                onFailure(candidate, e)
+            }
+        }
+        try {
+            launch(batterySettings)
+            return AutoStartDestination.BATTERY
+        } catch (e: RuntimeException) {
+            onFailure(batterySettings, e)
+        }
+        try {
+            launch(appDetails)
+            return AutoStartDestination.APP_DETAILS
+        } catch (e: RuntimeException) {
+            onFailure(appDetails, e)
+            throw IllegalStateException("No settings page can be opened", e)
         }
     }
 

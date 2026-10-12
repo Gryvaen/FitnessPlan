@@ -1157,6 +1157,33 @@ class AppLocalizationsEn extends AppLocalizations {
       'Without notification permission, lock-screen alerts may not fire; foreground timer still works.';
 
   @override
+  String get restTimerNotificationMissing =>
+      'Allow notifications for lock-screen rest alerts. The countdown still works here.';
+
+  @override
+  String get restTimerExactAlarmMissing =>
+      'Allow exact alarms for reliable on-time alerts in the background.';
+
+  @override
+  String get restTimerScheduleFailed =>
+      'Could not schedule the background alert. The countdown still works here.';
+
+  @override
+  String get restTimerReviewPermissions => 'Review permissions';
+
+  @override
+  String get restTimerAlertSettings => 'Alert settings';
+
+  @override
+  String get restTimerAlertBoth => 'Ring and vibrate';
+
+  @override
+  String get restTimerAlertRingOnly => 'Ring only';
+
+  @override
+  String get restTimerAlertVibrateOnly => 'Vibrate only';
+
+  @override
   String get restDoneSnack => 'Rest over — next set';
 
   @override
@@ -1253,6 +1280,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reminderRepeatLabel => 'Repeat';
 
   @override
+  String get reminderContentLabel => 'Notification text';
+
+  @override
+  String get reminderContentDefault => 'Default text';
+
+  @override
+  String get reminderContentCustom => 'Customized';
+
+  @override
+  String get reminderContentTitleLabel => 'Title';
+
+  @override
+  String get reminderContentBodyLabel => 'Message';
+
+  @override
+  String get reminderContentEmptyHint => 'Leave blank to use the default text';
+
+  @override
+  String get reminderContentWorkoutHint =>
+      'The default workout message varies with the previous day\'s training.';
+
+  @override
   String get reminderAlertModeRing => 'Ring';
 
   @override
@@ -1295,7 +1344,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reminderOemHintBatteryButton => 'Disable battery optimization';
 
   @override
-  String get reminderOemHintAutostartButton => 'Auto-start settings';
+  String get reminderOemHintAutostartButton =>
+      'Auto-start / background settings';
 
   @override
   String get stepsOemHintBody =>

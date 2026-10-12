@@ -5,6 +5,15 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
+enum RestTimerAlertMode {
+  ringAndVibrate,
+  ringOnly,
+  vibrateOnly;
+
+  bool get soundEnabled => this != RestTimerAlertMode.vibrateOnly;
+  bool get vibrationEnabled => this != RestTimerAlertMode.ringOnly;
+}
+
 /// Thin wrapper around [FlutterLocalNotificationsPlugin] for rest-timer alerts.
 abstract final class RestTimerNotifications {
   // Channel settings are immutable on Android. Keep a versioned id so users
@@ -80,13 +89,21 @@ abstract final class RestTimerNotifications {
 
     if (defaultTargetPlatform == TargetPlatform.android) {
       final notifStatus = await Permission.notification.request();
-      await Permission.scheduleExactAlarm.request();
+      try {
+        await Permission.scheduleExactAlarm.request();
+      } catch (_) {
+        // Permission screens vary by device; the native scheduler still tries.
+      }
       final android = _plugin
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
           >();
-      await android?.requestExactAlarmsPermission();
-      await android?.requestFullScreenIntentPermission();
+      try {
+        await android?.requestExactAlarmsPermission();
+        await android?.requestFullScreenIntentPermission();
+      } catch (_) {
+        // Missing settings activities must not stop the foreground countdown.
+      }
       return notifStatus.isGranted || notifStatus.isLimited;
     }
 
@@ -119,28 +136,59 @@ abstract final class RestTimerNotifications {
     return true;
   }
 
+  static Future<({bool notifications, bool exact})> alarmStatus() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      return (notifications: true, exact: true);
+    }
+    bool notifications;
+    try {
+      final status = await Permission.notification.status;
+      notifications = status.isGranted || status.isLimited;
+    } catch (_) {
+      notifications = false;
+    }
+    bool exact;
+    try {
+      exact =
+          await _nativeAlarmChannel.invokeMethod<bool>(
+            'canScheduleExactAlarms',
+          ) ??
+          false;
+    } catch (_) {
+      exact = false;
+    }
+    return (notifications: notifications, exact: exact);
+  }
+
   /// Schedules a rest-end alert. Pass localized [title]/[body] from the UI.
   static Future<void> scheduleRestEnd(
-    Duration remaining, {
+    DateTime endsAt, {
     required String title,
     required String body,
     required String dismissLabel,
+    required bool soundEnabled,
+    required bool vibrationEnabled,
   }) async {
-    await ensureInitialized();
-    if (remaining.inSeconds < 1) return;
+    final remaining = endsAt.difference(DateTime.now());
+    if (remaining <= Duration.zero) {
+      throw StateError('Rest timer deadline has already passed');
+    }
 
     await cancel();
 
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       await _nativeAlarmChannel.invokeMethod<void>('schedule', {
-        'triggerAtMillis': DateTime.now().add(remaining).millisecondsSinceEpoch,
+        'triggerAtMillis': endsAt.millisecondsSinceEpoch,
         'title': title,
         'body': body,
         'dismissLabel': dismissLabel,
+        'soundEnabled': soundEnabled,
+        'vibrationEnabled': vibrationEnabled,
       });
       return;
     }
 
+    await ensureInitialized();
     final when = tz.TZDateTime.now(tz.UTC).add(remaining);
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
@@ -199,10 +247,15 @@ abstract final class RestTimerNotifications {
   }
 
   static Future<void> cancel() async {
-    await ensureInitialized();
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       await _nativeAlarmChannel.invokeMethod<void>('cancel');
     }
-    await _plugin.cancel(id: notificationId);
+    try {
+      await ensureInitialized();
+      await _plugin.cancel(id: notificationId);
+    } catch (_) {
+      // The old plugin notification is best-effort cleanup on Android.
+      if (defaultTargetPlatform != TargetPlatform.android) rethrow;
+    }
   }
 }

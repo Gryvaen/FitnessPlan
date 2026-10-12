@@ -4,12 +4,18 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.ContextCompat
+import android.util.Log
 
 class RestTimerAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val serviceIntent = Intent(context, RestTimerAlarmService::class.java).apply {
             putExtras(intent)
         }
-        ContextCompat.startForegroundService(context, serviceIntent)
+        try {
+            ContextCompat.startForegroundService(context, serviceIntent)
+        } catch (e: RuntimeException) {
+            Log.e("RestTimerAlarm", "Alarm service blocked; posting fallback", e)
+            RestTimerFallbackNotification.show(context, intent)
+        }
     }
 }

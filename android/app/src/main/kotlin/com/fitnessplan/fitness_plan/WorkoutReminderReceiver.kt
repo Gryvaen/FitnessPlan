@@ -18,22 +18,45 @@ import androidx.core.app.NotificationManagerCompat
 class WorkoutReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         try {
-            WorkoutReminderScheduler.scheduleNext(context, intent)
+            if (!WorkoutReminderScheduler.claimAndScheduleNext(context, intent)) return
         } catch (e: RuntimeException) {
-            Log.w("ReminderAlarm", "Cannot renew next reminder", e)
+            Log.e("ReminderAlarm", "Cannot claim reminder", e)
+            return
         }
+        deliver(context, intent)
+    }
+
+    companion object {
+        private const val FALLBACK_CHANNEL_ID = "workout_reminder_native_fallback_v2"
+        private const val DEFAULT_NOTIFICATION_ID = 72001
+
+        fun deliver(context: Context, intent: Intent) {
         if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
         val alarmChannel = context.getSystemService(NotificationManager::class.java)
-            .getNotificationChannel(ReminderAlarmService.CHANNEL_ID)
-        if (alarmChannel?.importance == NotificationManager.IMPORTANCE_NONE) return
-        try {
-            ContextCompat.startForegroundService(context,
-                Intent(context, ReminderAlarmService::class.java).putExtras(intent))
-            return
-        } catch (e: RuntimeException) {
-            // Restricted background launch: still deliver a visible fallback.
-            Log.w("ReminderAlarm", "Alarm service blocked; posting notification", e)
+            ?.getNotificationChannel(ReminderAlarmService.CHANNEL_ID)
+        if (alarmChannel == null || alarmChannel.importance >= NotificationManager.IMPORTANCE_DEFAULT) {
+            try {
+                ContextCompat.startForegroundService(context,
+                    Intent(context, ReminderAlarmService::class.java).putExtras(intent))
+                return
+            } catch (e: RuntimeException) {
+                Log.w("ReminderAlarm", "Alarm service blocked; posting notification", e)
+            }
         }
+
+        postFallback(context, intent)
+        }
+
+        fun postFallback(context: Context, intent: Intent) {
+        try {
+            postFallbackChecked(context, intent)
+        } catch (e: RuntimeException) {
+            Log.e("ReminderAlarm", "Cannot build fallback notification", e)
+        }
+        }
+
+        private fun postFallbackChecked(context: Context, intent: Intent) {
+        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
 
         val notificationId = intent.getIntExtra(
             WorkoutReminderScheduler.EXTRA_NOTIFICATION_ID,
@@ -43,8 +66,9 @@ class WorkoutReminderReceiver : BroadcastReceiver() {
             ?: context.getString(R.string.workout_reminder_default_title)
         val body = intent.getStringExtra(WorkoutReminderScheduler.EXTRA_BODY)
             ?: context.getString(R.string.workout_reminder_default_body)
-        val channelId = intent.getStringExtra(WorkoutReminderScheduler.EXTRA_CHANNEL_ID)
+        val originalChannelId = intent.getStringExtra(WorkoutReminderScheduler.EXTRA_CHANNEL_ID)
             ?: FALLBACK_CHANNEL_ID
+        val channelId = "${originalChannelId}_fallback_v2"
         val channelName = intent.getStringExtra(WorkoutReminderScheduler.EXTRA_CHANNEL_NAME)
             ?: context.getString(R.string.workout_reminder_channel)
         val sound = intent.getBooleanExtra(WorkoutReminderScheduler.EXTRA_SOUND, true)
@@ -75,10 +99,10 @@ class WorkoutReminderReceiver : BroadcastReceiver() {
 
         try {
             NotificationManagerCompat.from(context).notify(notificationId, notification)
-        } catch (_: SecurityException) {
-            // POST_NOTIFICATIONS denied — nothing else we can do from a receiver.
+        } catch (e: RuntimeException) {
+            Log.e("ReminderAlarm", "Cannot show fallback notification", e)
         }
-    }
+        }
 
     /**
      * Creates [channelId] if it doesn't exist yet. Channels are immutable
@@ -102,7 +126,7 @@ class WorkoutReminderReceiver : BroadcastReceiver() {
             NotificationManager.IMPORTANCE_HIGH,
         ).apply {
             description = context.getString(R.string.workout_reminder_channel_description)
-            enableVibration(true)
+            enableVibration(!sound)
             lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
             if (sound) {
                 val uri = if (soundUri != null) {
@@ -121,9 +145,5 @@ class WorkoutReminderReceiver : BroadcastReceiver() {
         }
         manager.createNotificationChannel(channel)
     }
-
-    companion object {
-        private const val FALLBACK_CHANNEL_ID = "workout_reminder_native_v1"
-        private const val DEFAULT_NOTIFICATION_ID = 72001
     }
 }

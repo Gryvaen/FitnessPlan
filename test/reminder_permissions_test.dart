@@ -49,4 +49,55 @@ void main() {
       ));
     },
   );
+
+  test(
+    'schedule status reports partial failure and unavailable bridge',
+    () async {
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        expect(call.method, 'scheduleStatus');
+        return {'scheduled': 3, 'failed': 1};
+      });
+      expect(await ReminderNotifications.scheduleStatus(), (
+        scheduled: 3,
+        failed: 1,
+      ));
+      messenger.setMockMethodCallHandler(
+        channel,
+        (_) async => throw PlatformException(code: 'unavailable'),
+      );
+      expect(await ReminderNotifications.scheduleStatus(), isNull);
+    },
+  );
+
+  test(
+    'auto-start settings reports the opened page and propagates errors',
+    () async {
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        expect(call.method, 'openAutoStartSettings');
+        return 'oem';
+      });
+      expect(
+        await ReminderNotifications.openAutoStartSettings(),
+        AutoStartSettingsDestination.oem,
+      );
+      messenger.setMockMethodCallHandler(channel, (_) async => 'appDetails');
+      expect(
+        await ReminderNotifications.openAutoStartSettings(),
+        AutoStartSettingsDestination.appDetails,
+      );
+      messenger.setMockMethodCallHandler(channel, (_) async => 'battery');
+      expect(
+        await ReminderNotifications.openAutoStartSettings(),
+        AutoStartSettingsDestination.battery,
+      );
+      messenger.setMockMethodCallHandler(
+        channel,
+        (_) async => throw PlatformException(code: 'settings_unavailable'),
+      );
+      await expectLater(
+        ReminderNotifications.openAutoStartSettings(),
+        throwsA(isA<PlatformException>()),
+      );
+    },
+  );
 }

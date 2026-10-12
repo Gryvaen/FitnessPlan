@@ -426,7 +426,9 @@ class _FitnessAppState extends ConsumerState<FitnessApp> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(remindersProvider.notifier).syncSchedule();
+      ref.read(remindersProvider.notifier).syncSchedule().catchError((Object e) {
+        debugPrint('reminder sync failed: $e');
+      });
       // Reading this forces StepServiceNotifier.build() to run, which
       // auto-enables background step tracking on first run (see
       // StepServiceNotifier._load) instead of waiting for the user to find

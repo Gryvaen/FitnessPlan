@@ -25,6 +25,18 @@ class ReminderAlarmService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
+        return try {
+            startAlarm(intent)
+        } catch (e: RuntimeException) {
+            Log.e("ReminderAlarm", "Alarm service failed; posting fallback", e)
+            stopPlayback()
+            WorkoutReminderReceiver.postFallback(this, intent)
+            stopSelf()
+            START_NOT_STICKY
+        }
+    }
+
+    private fun startAlarm(intent: Intent): Int {
         stopPlayback()
         val title = intent.getStringExtra(WorkoutReminderScheduler.EXTRA_TITLE)
             ?: getString(R.string.workout_reminder_default_title)
@@ -57,17 +69,20 @@ class ReminderAlarmService : Service() {
         startForeground(NOTIFICATION_ID, builder.build())
         val attributes = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM)
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build()
-        vibrator = if (Build.VERSION.SDK_INT >= 31) {
-            getSystemService(VibratorManager::class.java).defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        val sound = intent.getBooleanExtra(WorkoutReminderScheduler.EXTRA_SOUND, true)
+        if (!sound) {
+            vibrator = if (Build.VERSION.SDK_INT >= 31) {
+                getSystemService(VibratorManager::class.java).defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            }
+            vibrator?.let {
+                if (it.hasVibrator()) it.vibrate(
+                    VibrationEffect.createWaveform(longArrayOf(0, 800, 400, 800, 1000), 0), attributes)
+            }
         }
-        vibrator?.let {
-            if (it.hasVibrator()) it.vibrate(
-                VibrationEffect.createWaveform(longArrayOf(0, 800, 400, 800, 1000), 0), attributes)
-        }
-        if (intent.getBooleanExtra(WorkoutReminderScheduler.EXTRA_SOUND, true)) {
+        if (sound) {
             val custom = intent.getStringExtra(WorkoutReminderScheduler.EXTRA_SOUND_URI)?.let(Uri::parse)
             play(custom, attributes)
         }

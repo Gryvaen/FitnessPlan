@@ -12,6 +12,8 @@ import 'rest_timer_notifications.dart';
 ///
 /// Schedules the next [daysAhead] one-shot notifications per enabled kind so
 /// the workout reminder's body can reflect whether the previous day had sets.
+enum AutoStartSettingsDestination { oem, battery, appDetails }
+
 abstract final class ReminderNotifications {
   static const _channelDesc = 'Daily reminders';
   static const daysAhead = 7;
@@ -67,8 +69,54 @@ abstract final class ReminderNotifications {
     }
   }
 
+  static Future<({int scheduled, int failed})?> scheduleStatus() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return null;
+    try {
+      final status = await _nativeChannel.invokeMapMethod<String, Object?>(
+        'scheduleStatus',
+      );
+      if (status == null) return null;
+      return (
+        scheduled: (status['scheduled'] as num?)?.toInt() ?? 0,
+        failed: (status['failed'] as num?)?.toInt() ?? 0,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   static Future<bool> requestPermissions() =>
       RestTimerNotifications.requestPermissions();
+
+  static Future<void> requestNotificationPermission() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    final status = await Permission.notification.status;
+    if (status.isPermanentlyDenied) {
+      await openAppSettings();
+    } else {
+      await Permission.notification.request();
+    }
+  }
+
+  static Future<void> requestExactAlarmPermission() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    await ensureInitialized();
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    await android?.requestExactAlarmsPermission();
+  }
+
+  static Future<void> requestFullScreenPermission() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    await ensureInitialized();
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    await android?.requestFullScreenIntentPermission();
+  }
 
   static Future<bool> permissionGranted() async {
     if (kIsWeb) return false;
@@ -122,26 +170,27 @@ abstract final class ReminderNotifications {
     }
   }
 
-  /// Best-effort deep link into the OEM's own "auto-start" / "allow
-  /// background running" screen; falls back to the app's system details
-  /// page when the manufacturer's own screen can't be resolved.
-  static Future<void> openAutoStartSettings() async {
-    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
-    try {
-      await _nativeChannel.invokeMethod<void>('openAutoStartSettings');
-    } catch (_) {
-      // Nothing to fall back to from here.
+  /// Returns the settings page Android actually opened. Failures propagate so
+  /// the caller can show a manual path instead of silently closing its sheet.
+  static Future<AutoStartSettingsDestination> openAutoStartSettings() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      throw UnsupportedError('Auto-start settings are Android-only');
     }
+    final destination = await _nativeChannel.invokeMethod<String>(
+      'openAutoStartSettings',
+    );
+    return switch (destination) {
+      'oem' => AutoStartSettingsDestination.oem,
+      'battery' => AutoStartSettingsDestination.battery,
+      'appDetails' => AutoStartSettingsDestination.appDetails,
+      _ => throw StateError('Unknown auto-start destination: $destination'),
+    };
   }
 
   static Future<void> cancelAll() async {
     await ensureInitialized();
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      try {
-        await _nativeChannel.invokeMethod<void>('cancelAll');
-      } catch (_) {
-        // Fall through to plugin cancel for older installs.
-      }
+      await _nativeChannel.invokeMethod<void>('cancelAll');
     }
     for (final kind in ReminderKind.values) {
       for (var i = 0; i < daysAhead; i++) {
@@ -221,8 +270,8 @@ abstract final class ReminderNotifications {
           _ScheduledReminder(
             id: kind.idBase + i,
             whenLocal: whenLocal,
-            title: titleFor(kind),
-            body: bodyFor(kind, workedOut: workedOut),
+            title: s.notificationTitle(titleFor(kind)),
+            body: s.notificationBody(bodyFor(kind, workedOut: workedOut)),
             channelId: channelId,
             channelName: channelNameFor(kind),
             sound: s.alertMode == ReminderAlertMode.ring,
@@ -234,9 +283,8 @@ abstract final class ReminderNotifications {
     if (items.isEmpty) return;
 
     if (defaultTargetPlatform == TargetPlatform.android) {
-      final native = await _scheduleAndroidNative(items, staleChannelIds);
-      if (native) return;
-      // Native AlarmManager path unavailable — fall back to the plugin.
+      await _scheduleAndroidNative(items, staleChannelIds);
+      return;
     }
     await _schedulePlugin(items, now);
   }
@@ -261,8 +309,7 @@ abstract final class ReminderNotifications {
     }
   }
 
-  /// Returns true when the native AlarmManager path handled the schedule.
-  static Future<bool> _scheduleAndroidNative(
+  static Future<void> _scheduleAndroidNative(
     List<_ScheduledReminder> items,
     Set<String> staleChannelIds,
   ) async {
@@ -279,14 +326,14 @@ abstract final class ReminderNotifications {
           'soundUri': item.soundUri,
         },
     ];
-    try {
-      await _nativeChannel.invokeMethod<void>('scheduleAll', {
-        'items': payload,
-        'staleChannelIds': staleChannelIds.toList(),
-      });
-      return true;
-    } catch (_) {
-      return false;
+    final status = await _nativeChannel.invokeMapMethod<String, Object?>(
+      'scheduleAll',
+      {'items': payload, 'staleChannelIds': staleChannelIds.toList()},
+    );
+    if (status == null || (status['failed'] as num? ?? items.length) > 0) {
+      throw StateError(
+        'One or more Android reminder alarms were not scheduled',
+      );
     }
   }
 

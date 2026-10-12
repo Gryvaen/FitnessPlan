@@ -11,6 +11,8 @@ object RestTimerAlarmScheduler {
     const val EXTRA_TITLE = "title"
     const val EXTRA_BODY = "body"
     const val EXTRA_DISMISS_LABEL = "dismiss_label"
+    const val EXTRA_SOUND_ENABLED = "sound_enabled"
+    const val EXTRA_VIBRATION_ENABLED = "vibration_enabled"
     private const val REQUEST_CODE = 71001
 
     fun schedule(
@@ -19,10 +21,12 @@ object RestTimerAlarmScheduler {
         title: String,
         body: String,
         dismissLabel: String,
+        soundEnabled: Boolean,
+        vibrationEnabled: Boolean,
     ) {
         cancel(context)
         val alarmManager = context.getSystemService(AlarmManager::class.java)
-        val operation = alarmPendingIntent(context, title, body, dismissLabel)
+        val operation = alarmPendingIntent(context, title, body, dismissLabel, soundEnabled, vibrationEnabled)
         val showIntent = PendingIntent.getActivity(
             context,
             REQUEST_CODE,
@@ -47,8 +51,9 @@ object RestTimerAlarmScheduler {
 
     fun cancel(context: Context) {
         context.getSystemService(AlarmManager::class.java)
-            .cancel(alarmPendingIntent(context, "", "", ""))
+            .cancel(alarmPendingIntent(context, "", "", "", true, true))
         context.stopService(Intent(context, RestTimerAlarmService::class.java))
+        RestTimerFallbackNotification.cancel(context)
     }
 
     private fun alarmPendingIntent(
@@ -56,11 +61,15 @@ object RestTimerAlarmScheduler {
         title: String,
         body: String,
         dismissLabel: String,
+        soundEnabled: Boolean,
+        vibrationEnabled: Boolean,
     ): PendingIntent {
         val intent = Intent(context, RestTimerAlarmReceiver::class.java).apply {
             putExtra(EXTRA_TITLE, title)
             putExtra(EXTRA_BODY, body)
             putExtra(EXTRA_DISMISS_LABEL, dismissLabel)
+            putExtra(EXTRA_SOUND_ENABLED, soundEnabled)
+            putExtra(EXTRA_VIBRATION_ENABLED, vibrationEnabled)
         }
         return PendingIntent.getBroadcast(
             context,

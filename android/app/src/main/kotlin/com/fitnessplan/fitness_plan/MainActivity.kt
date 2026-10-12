@@ -20,18 +20,26 @@ class MainActivity : FlutterFragmentActivity() {
                         val title = call.argument<String>("title")
                         val body = call.argument<String>("body")
                         val dismissLabel = call.argument<String>("dismissLabel")
-                        if (triggerAtMillis == null || title == null || body == null || dismissLabel == null) {
+                        val soundEnabled = call.argument<Boolean>("soundEnabled") ?: true
+                        val vibrationEnabled = call.argument<Boolean>("vibrationEnabled") ?: true
+                        if (triggerAtMillis == null || title == null || body == null || dismissLabel == null ||
+                            (!soundEnabled && !vibrationEnabled)) {
                             result.error("invalid_arguments", "Missing alarm arguments", null)
                             return@setMethodCallHandler
                         }
                         RestTimerAlarmScheduler.schedule(
                             this, triggerAtMillis, title, body, dismissLabel,
+                            soundEnabled, vibrationEnabled,
                         )
                         result.success(null)
                     }
                     "cancel" -> {
                         RestTimerAlarmScheduler.cancel(this)
                         result.success(null)
+                    }
+                    "canScheduleExactAlarms" -> {
+                        val alarms = getSystemService(android.app.AlarmManager::class.java)
+                        result.success(android.os.Build.VERSION.SDK_INT < 31 || alarms.canScheduleExactAlarms())
                     }
                     else -> result.notImplemented()
                 }
@@ -68,8 +76,11 @@ class MainActivity : FlutterFragmentActivity() {
                         val staleChannelIds =
                             (call.argument<List<*>>("staleChannelIds") ?: emptyList<Any?>())
                                 .filterIsInstance<String>()
-                        WorkoutReminderScheduler.scheduleAll(this, items, staleChannelIds)
-                        result.success(null)
+                        val schedule = WorkoutReminderScheduler.scheduleAll(this, items, staleChannelIds)
+                        result.success(mapOf(
+                            "scheduled" to schedule.scheduled,
+                            "failed" to schedule.failed,
+                        ))
                     }
                     "cancelAll" -> {
                         WorkoutReminderScheduler.cancelAll(this)
@@ -81,6 +92,13 @@ class MainActivity : FlutterFragmentActivity() {
                         result.success(mapOf(
                             "exact" to (android.os.Build.VERSION.SDK_INT < 31 || alarms.canScheduleExactAlarms()),
                             "fullScreen" to (android.os.Build.VERSION.SDK_INT < 34 || notifications.canUseFullScreenIntent()),
+                        ))
+                    }
+                    "scheduleStatus" -> {
+                        val schedule = WorkoutReminderScheduler.scheduleStatus(this)
+                        result.success(mapOf(
+                            "scheduled" to schedule.scheduled,
+                            "failed" to schedule.failed,
                         ))
                     }
                     "isAggressiveOem" -> result.success(DeviceReliability.isAggressiveOem())
@@ -97,10 +115,10 @@ class MainActivity : FlutterFragmentActivity() {
                     }
                     "openAutoStartSettings" -> {
                         try {
-                            startActivity(DeviceReliability.autoStartIntent(this))
-                            result.success(true)
+                            val destination = DeviceReliability.openAutoStartSettings(this)
+                            result.success(destination.wireValue)
                         } catch (e: Exception) {
-                            result.error("unavailable", e.message, null)
+                            result.error("settings_unavailable", e.message, null)
                         }
                     }
                     "pickRingtone" -> {
