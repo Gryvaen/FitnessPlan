@@ -1,15 +1,14 @@
-/// Per-day override marker: 放纵餐 (cheatMeal) or 休息日 (restDay).
+/// Per-day override marker: 放纵日 (cheatMeal) or 休息日 (restDay).
 library;
 
 import 'calendar_day.dart';
 
 enum DayMarkerType {
-  /// 放纵餐: any date. 修行记录固定计入 -1000 kcal，步数及饮食贡献不叠加。
+  /// 放纵日: any date.
   cheatMeal,
 
-  /// 休息日: any date, including the past. Zeroes that day's diet + steps
-  /// kcal in 修行记录. Only pauses the carb-cycle day-count for later dates
-  /// when it was marked on/before its own date — see
+  /// 休息日: any date, including the past. May pause the carb-cycle day-count
+  /// for later dates when chosen and marked on/before its own date — see
   /// [restDayCountsTowardProgression]; a rest day backfilled onto an
   /// already-past date is a historical record only and never retroactively
   /// shifts today's/future's targets.
@@ -21,6 +20,29 @@ enum DayMarkerType {
     }
     return null;
   }
+}
+
+/// Persisted choices for one calendar marker. [excludeContributions] is only
+/// true for markers created before the editable marker settings existed.
+class DayMarkerSettings {
+  const DayMarkerSettings({
+    required this.type,
+    this.pauseCarbCycle = false,
+    this.cheatPenaltyEnabled = true,
+    this.cheatPenaltyKcal = 1000,
+    this.excludeContributions = false,
+  });
+
+  final DayMarkerType type;
+  final bool pauseCarbCycle;
+  final bool cheatPenaltyEnabled;
+  final int cheatPenaltyKcal;
+  final bool excludeContributions;
+
+  double get penaltyKcal =>
+      type == DayMarkerType.cheatMeal && cheatPenaltyEnabled
+      ? -cheatPenaltyKcal.toDouble()
+      : 0;
 }
 
 /// Whether a 休息日 marker set on [date] and last touched at [updatedAt]

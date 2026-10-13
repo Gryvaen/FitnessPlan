@@ -88,7 +88,7 @@ Cutting should not feel like a spreadsheet.
   Divine Transformation
 </p>
 
-This path is complete only for the cut goal. Bulk and maintain can open the screen; the content is still a placeholder. A day marked as a cheat meal or a rest day leaves that day's calories out of cultivation.
+This path is complete only for the cut goal. Bulk and maintain can open the screen; the content is still a placeholder. Calendar days can be marked as cheat days or rest days. New markers retain normal step and diet cultivation contributions; cheat-day deductions are optional and editable. Existing markers keep their previous cultivation behavior until edited. Each rest day can optionally delay carb cycling.
 
 Balanced days, carb cycling, and carb tapering each set a target for the day. The numbers are self-service estimates for generally healthy adults, not a clinical prescription.
 

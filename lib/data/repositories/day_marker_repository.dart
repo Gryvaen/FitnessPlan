@@ -4,7 +4,7 @@ import '../../domain/day_marker.dart';
 import '../../domain/diet_strategy.dart';
 import '../db.dart';
 
-/// Per-day 放纵餐/休息日 markers. Both may be set on any date, past included;
+/// Per-day 放纵日/休息日 markers. Both may be set on any date, past included;
 /// see [setRestDay] and [restDayCountsTowardProgression] for how a
 /// backfilled past 休息日 is excluded from the carb-cycle day-count math.
 class DayMarkerRepository {
@@ -15,11 +15,39 @@ class DayMarkerRepository {
   DayMarkerType? _typeOf(DayMarkerRow row) =>
       DayMarkerType.fromStorage(row.type);
 
+  DayMarkerSettings? _settingsOf(DayMarkerRow row) {
+    final type = _typeOf(row);
+    if (type == null) return null;
+    final date = StrategyDates.tryDecode(row.date);
+    return DayMarkerSettings(
+      type: type,
+      pauseCarbCycle:
+          row.pauseCarbCycle &&
+          date != null &&
+          restDayCountsTowardProgression(date, row.updatedAt),
+      cheatPenaltyEnabled: row.cheatPenaltyEnabled,
+      cheatPenaltyKcal: row.cheatPenaltyKcal,
+      excludeContributions: row.excludeContributions,
+    );
+  }
+
+  Future<DayMarkerRow?> _rowForDay(DateTime day) => (_db.select(
+    _db.dayMarkers,
+  )..where((t) => t.date.equals(StrategyDates.encode(day)))).getSingleOrNull();
+
+  Future<DayMarkerSettings?> settingsForDay(DateTime day) async {
+    final row = await _rowForDay(day);
+    return row == null ? null : _settingsOf(row);
+  }
+
+  Stream<DayMarkerSettings?> watchSettingsForDay(DateTime day) =>
+      (_db.select(_db.dayMarkers)
+            ..where((t) => t.date.equals(StrategyDates.encode(day))))
+          .watchSingleOrNull()
+          .map((row) => row == null ? null : _settingsOf(row));
+
   Future<DayMarkerType?> markerForDay(DateTime day) async {
-    final row =
-        await (_db.select(_db.dayMarkers)
-              ..where((t) => t.date.equals(StrategyDates.encode(day))))
-            .getSingleOrNull();
+    final row = await _rowForDay(day);
     return row == null ? null : _typeOf(row);
   }
 
@@ -55,15 +83,48 @@ class DayMarkerRepository {
     return out;
   }
 
+  Future<Map<DateTime, DayMarkerSettings>> settingsBetween(
+    DateTime start,
+    DateTime end,
+  ) async {
+    final s = StrategyDates.dayOnly(start);
+    final e = StrategyDates.dayOnly(end);
+    if (e.isBefore(s)) return const {};
+    final rows =
+        await (_db.select(_db.dayMarkers)..where(
+              (t) => t.date.isBetweenValues(
+                StrategyDates.encode(s),
+                StrategyDates.encode(e),
+              ),
+            ))
+            .get();
+    final out = <DateTime, DayMarkerSettings>{};
+    for (final row in rows) {
+      final date = StrategyDates.tryDecode(row.date);
+      final settings = _settingsOf(row);
+      if (date != null && settings != null) out[date] = settings;
+    }
+    return out;
+  }
+
+  Stream<List<DateTime>> watchAllRestDayDates() =>
+      (_db.select(
+        _db.dayMarkers,
+      )..where((t) => t.type.equals(DayMarkerType.restDay.name))).watch().map(
+        (rows) => rows
+            .map((row) => StrategyDates.tryDecode(row.date))
+            .whereType<DateTime>()
+            .toList(),
+      );
+
   /// Dates whose 休息日 marker counts toward the carb-cycle day-count pause
   /// (unordered, no range filter — used by the diet-strategy day-count math,
   /// which needs the full history). Excludes markers backfilled onto an
   /// already-past date — see [restDayCountsTowardProgression].
   Future<List<DateTime>> restDayDates() async {
-    final rows =
-        await (_db.select(_db.dayMarkers)
-              ..where((t) => t.type.equals(DayMarkerType.restDay.name)))
-            .get();
+    final rows = await (_db.select(
+      _db.dayMarkers,
+    )..where((t) => t.type.equals(DayMarkerType.restDay.name))).get();
     return progressionRestDayDates(rows);
   }
 
@@ -84,30 +145,74 @@ class DayMarkerRepository {
   static List<DateTime> progressionRestDayDates(List<DayMarkerRow> rows) => [
     for (final row in rows)
       if (StrategyDates.tryDecode(row.date) case final date?)
-        if (restDayCountsTowardProgression(date, row.updatedAt)) date,
+        if (row.pauseCarbCycle &&
+            restDayCountsTowardProgression(date, row.updatedAt))
+          date,
   ];
 
-  Future<void> _set(DateTime day, DayMarkerType type, {DateTime? now}) async {
+  Future<void> _set(
+    DateTime day,
+    DayMarkerSettings settings, {
+    DateTime? now,
+  }) async {
+    final previous = await _rowForDay(day);
+    // The original rest-day timestamp determines whether it may move the
+    // cycle. Editing choices must not turn a contemporaneous mark into a
+    // backfilled one (or vice versa).
+    final markedAt =
+        previous?.type == DayMarkerType.restDay.name &&
+            settings.type == DayMarkerType.restDay
+        ? previous!.updatedAt
+        : now ?? DateTime.now();
     await _db
         .into(_db.dayMarkers)
         .insertOnConflictUpdate(
           DayMarkersCompanion.insert(
             date: StrategyDates.encode(day),
-            type: type.name,
-            updatedAt: now ?? DateTime.now(),
+            type: settings.type.name,
+            updatedAt: markedAt,
+            pauseCarbCycle: Value(settings.pauseCarbCycle),
+            cheatPenaltyEnabled: Value(settings.cheatPenaltyEnabled),
+            cheatPenaltyKcal: Value(settings.cheatPenaltyKcal),
+            excludeContributions: const Value(false),
           ),
         );
   }
 
-  /// 放纵餐: any date, past/today/future.
-  Future<void> setCheatMeal(DateTime day, {DateTime? now}) {
-    return _set(day, DayMarkerType.cheatMeal, now: now);
+  /// 放纵日: any date, past/today/future.
+  Future<void> setCheatMeal(
+    DateTime day, {
+    bool deductKcal = true,
+    int penaltyKcal = 1000,
+    DateTime? now,
+  }) {
+    if (penaltyKcal <= 0) throw ArgumentError.value(penaltyKcal, 'penaltyKcal');
+    return _set(
+      day,
+      DayMarkerSettings(
+        type: DayMarkerType.cheatMeal,
+        cheatPenaltyEnabled: deductKcal,
+        cheatPenaltyKcal: penaltyKcal,
+      ),
+      now: now,
+    );
   }
 
   /// 休息日: any date, past included. A past date marked this way is a
   /// historical record only — see [restDayCountsTowardProgression].
-  Future<void> setRestDay(DateTime day, {DateTime? now}) {
-    return _set(day, DayMarkerType.restDay, now: now);
+  Future<void> setRestDay(
+    DateTime day, {
+    bool pauseCarbCycle = false,
+    DateTime? now,
+  }) {
+    return _set(
+      day,
+      DayMarkerSettings(
+        type: DayMarkerType.restDay,
+        pauseCarbCycle: pauseCarbCycle,
+      ),
+      now: now,
+    );
   }
 
   Future<void> clear(DateTime day) async {

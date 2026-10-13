@@ -5,6 +5,8 @@ import 'package:diet/data/repositories/meal_repository.dart';
 import 'package:diet/data/repositories/step_repository.dart';
 import 'package:diet/data/repositories/workout_repository.dart';
 import 'package:diet/domain/calendar_day.dart';
+import 'package:diet/domain/day_marker.dart';
+import 'package:diet/domain/diet_strategy.dart';
 import 'package:diet/domain/cultivation.dart';
 import 'package:diet/domain/cut_cultivation.dart';
 import 'package:diet/domain/models.dart';
@@ -56,7 +58,15 @@ void main() {
     );
     addTearDown(container.dispose);
     final markers = DayMarkerRepository(db);
-    await markers.setCheatMeal(yesterday);
+    await db
+        .into(db.dayMarkers)
+        .insert(
+          DayMarkersCompanion.insert(
+            date: StrategyDates.encode(yesterday),
+            type: DayMarkerType.cheatMeal.name,
+            updatedAt: yesterday,
+          ),
+        );
 
     Future<CultivationDayRecord> yesterdayRecord() async {
       container.invalidate(cultivationHistoryProvider);
@@ -109,6 +119,17 @@ void main() {
     expect(record.totalKcal, -1000);
     expect(record.stepsKcal, 0);
     expect(record.dietKcal, 0);
+
+    await markers.setCheatMeal(yesterday, penaltyKcal: 650);
+    record = await yesterdayRecord();
+    expect(record.stepsKcal, 400);
+    expect(record.cheatPenaltyKcal, -650);
+    expect(record.totalKcal, record.stepsKcal + record.dietKcal - 650);
+
+    await markers.setCheatMeal(yesterday, deductKcal: false, penaltyKcal: 650);
+    record = await yesterdayRecord();
+    expect(record.cheatPenaltyKcal, 0);
+    expect(record.stepsKcal, 400);
     expect(
       (await meals.forDay(yesterday)).fold<double>(0, (s, m) => s + m.calories),
       400,
@@ -126,7 +147,8 @@ void main() {
 
     await markers.setRestDay(yesterday);
     record = await yesterdayRecord();
-    expect(record.totalKcal, 0);
+    expect(record.stepsKcal, 400);
+    expect(record.totalKcal, greaterThanOrEqualTo(400));
     expect(record.cheatPenaltyKcal, 0);
   });
 
@@ -145,9 +167,12 @@ void main() {
     final today = CalendarDay.todayLocal();
     final markers = DayMarkerRepository(db);
     await markers.setCheatMeal(today);
-    final subscription = container.listen(dayMarkerProvider(today), (_, _) {});
+    final subscription = container.listen(
+      dayMarkerSettingsProvider(today),
+      (_, _) {},
+    );
     addTearDown(subscription.close);
-    await container.read(dayMarkerProvider(today).future);
+    await container.read(dayMarkerSettingsProvider(today).future);
     expect(container.read(cultivationStepsTodayProvider), 0);
     expect(container.read(cultivationDietKcalTodayProvider), 0);
     expect(container.read(cultivationCheatPenaltyTodayProvider), -1000);

@@ -9749,8 +9749,71 @@ class $DayMarkersTable extends DayMarkers
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _pauseCarbCycleMeta = const VerificationMeta(
+    'pauseCarbCycle',
+  );
   @override
-  List<GeneratedColumn> get $columns => [date, type, updatedAt];
+  late final GeneratedColumn<bool> pauseCarbCycle = GeneratedColumn<bool>(
+    'pause_carb_cycle',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("pause_carb_cycle" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _cheatPenaltyEnabledMeta =
+      const VerificationMeta('cheatPenaltyEnabled');
+  @override
+  late final GeneratedColumn<bool> cheatPenaltyEnabled = GeneratedColumn<bool>(
+    'cheat_penalty_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("cheat_penalty_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _cheatPenaltyKcalMeta = const VerificationMeta(
+    'cheatPenaltyKcal',
+  );
+  @override
+  late final GeneratedColumn<int> cheatPenaltyKcal = GeneratedColumn<int>(
+    'cheat_penalty_kcal',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1000),
+  );
+  static const VerificationMeta _excludeContributionsMeta =
+      const VerificationMeta('excludeContributions');
+  @override
+  late final GeneratedColumn<bool> excludeContributions = GeneratedColumn<bool>(
+    'exclude_contributions',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("exclude_contributions" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    date,
+    type,
+    updatedAt,
+    pauseCarbCycle,
+    cheatPenaltyEnabled,
+    cheatPenaltyKcal,
+    excludeContributions,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -9787,6 +9850,42 @@ class $DayMarkersTable extends DayMarkers
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
     }
+    if (data.containsKey('pause_carb_cycle')) {
+      context.handle(
+        _pauseCarbCycleMeta,
+        pauseCarbCycle.isAcceptableOrUnknown(
+          data['pause_carb_cycle']!,
+          _pauseCarbCycleMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cheat_penalty_enabled')) {
+      context.handle(
+        _cheatPenaltyEnabledMeta,
+        cheatPenaltyEnabled.isAcceptableOrUnknown(
+          data['cheat_penalty_enabled']!,
+          _cheatPenaltyEnabledMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cheat_penalty_kcal')) {
+      context.handle(
+        _cheatPenaltyKcalMeta,
+        cheatPenaltyKcal.isAcceptableOrUnknown(
+          data['cheat_penalty_kcal']!,
+          _cheatPenaltyKcalMeta,
+        ),
+      );
+    }
+    if (data.containsKey('exclude_contributions')) {
+      context.handle(
+        _excludeContributionsMeta,
+        excludeContributions.isAcceptableOrUnknown(
+          data['exclude_contributions']!,
+          _excludeContributionsMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -9808,6 +9907,22 @@ class $DayMarkersTable extends DayMarkers
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       )!,
+      pauseCarbCycle: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}pause_carb_cycle'],
+      )!,
+      cheatPenaltyEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}cheat_penalty_enabled'],
+      )!,
+      cheatPenaltyKcal: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cheat_penalty_kcal'],
+      )!,
+      excludeContributions: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}exclude_contributions'],
+      )!,
     );
   }
 
@@ -9821,10 +9936,18 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
   final String date;
   final String type;
   final DateTime updatedAt;
+  final bool pauseCarbCycle;
+  final bool cheatPenaltyEnabled;
+  final int cheatPenaltyKcal;
+  final bool excludeContributions;
   const DayMarkerRow({
     required this.date,
     required this.type,
     required this.updatedAt,
+    required this.pauseCarbCycle,
+    required this.cheatPenaltyEnabled,
+    required this.cheatPenaltyKcal,
+    required this.excludeContributions,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -9832,6 +9955,10 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
     map['date'] = Variable<String>(date);
     map['type'] = Variable<String>(type);
     map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['pause_carb_cycle'] = Variable<bool>(pauseCarbCycle);
+    map['cheat_penalty_enabled'] = Variable<bool>(cheatPenaltyEnabled);
+    map['cheat_penalty_kcal'] = Variable<int>(cheatPenaltyKcal);
+    map['exclude_contributions'] = Variable<bool>(excludeContributions);
     return map;
   }
 
@@ -9840,6 +9967,10 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
       date: Value(date),
       type: Value(type),
       updatedAt: Value(updatedAt),
+      pauseCarbCycle: Value(pauseCarbCycle),
+      cheatPenaltyEnabled: Value(cheatPenaltyEnabled),
+      cheatPenaltyKcal: Value(cheatPenaltyKcal),
+      excludeContributions: Value(excludeContributions),
     );
   }
 
@@ -9852,6 +9983,14 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
       date: serializer.fromJson<String>(json['date']),
       type: serializer.fromJson<String>(json['type']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      pauseCarbCycle: serializer.fromJson<bool>(json['pauseCarbCycle']),
+      cheatPenaltyEnabled: serializer.fromJson<bool>(
+        json['cheatPenaltyEnabled'],
+      ),
+      cheatPenaltyKcal: serializer.fromJson<int>(json['cheatPenaltyKcal']),
+      excludeContributions: serializer.fromJson<bool>(
+        json['excludeContributions'],
+      ),
     );
   }
   @override
@@ -9861,20 +10000,47 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
       'date': serializer.toJson<String>(date),
       'type': serializer.toJson<String>(type),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'pauseCarbCycle': serializer.toJson<bool>(pauseCarbCycle),
+      'cheatPenaltyEnabled': serializer.toJson<bool>(cheatPenaltyEnabled),
+      'cheatPenaltyKcal': serializer.toJson<int>(cheatPenaltyKcal),
+      'excludeContributions': serializer.toJson<bool>(excludeContributions),
     };
   }
 
-  DayMarkerRow copyWith({String? date, String? type, DateTime? updatedAt}) =>
-      DayMarkerRow(
-        date: date ?? this.date,
-        type: type ?? this.type,
-        updatedAt: updatedAt ?? this.updatedAt,
-      );
+  DayMarkerRow copyWith({
+    String? date,
+    String? type,
+    DateTime? updatedAt,
+    bool? pauseCarbCycle,
+    bool? cheatPenaltyEnabled,
+    int? cheatPenaltyKcal,
+    bool? excludeContributions,
+  }) => DayMarkerRow(
+    date: date ?? this.date,
+    type: type ?? this.type,
+    updatedAt: updatedAt ?? this.updatedAt,
+    pauseCarbCycle: pauseCarbCycle ?? this.pauseCarbCycle,
+    cheatPenaltyEnabled: cheatPenaltyEnabled ?? this.cheatPenaltyEnabled,
+    cheatPenaltyKcal: cheatPenaltyKcal ?? this.cheatPenaltyKcal,
+    excludeContributions: excludeContributions ?? this.excludeContributions,
+  );
   DayMarkerRow copyWithCompanion(DayMarkersCompanion data) {
     return DayMarkerRow(
       date: data.date.present ? data.date.value : this.date,
       type: data.type.present ? data.type.value : this.type,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      pauseCarbCycle: data.pauseCarbCycle.present
+          ? data.pauseCarbCycle.value
+          : this.pauseCarbCycle,
+      cheatPenaltyEnabled: data.cheatPenaltyEnabled.present
+          ? data.cheatPenaltyEnabled.value
+          : this.cheatPenaltyEnabled,
+      cheatPenaltyKcal: data.cheatPenaltyKcal.present
+          ? data.cheatPenaltyKcal.value
+          : this.cheatPenaltyKcal,
+      excludeContributions: data.excludeContributions.present
+          ? data.excludeContributions.value
+          : this.excludeContributions,
     );
   }
 
@@ -9883,37 +10049,65 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
     return (StringBuffer('DayMarkerRow(')
           ..write('date: $date, ')
           ..write('type: $type, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('pauseCarbCycle: $pauseCarbCycle, ')
+          ..write('cheatPenaltyEnabled: $cheatPenaltyEnabled, ')
+          ..write('cheatPenaltyKcal: $cheatPenaltyKcal, ')
+          ..write('excludeContributions: $excludeContributions')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(date, type, updatedAt);
+  int get hashCode => Object.hash(
+    date,
+    type,
+    updatedAt,
+    pauseCarbCycle,
+    cheatPenaltyEnabled,
+    cheatPenaltyKcal,
+    excludeContributions,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is DayMarkerRow &&
           other.date == this.date &&
           other.type == this.type &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.pauseCarbCycle == this.pauseCarbCycle &&
+          other.cheatPenaltyEnabled == this.cheatPenaltyEnabled &&
+          other.cheatPenaltyKcal == this.cheatPenaltyKcal &&
+          other.excludeContributions == this.excludeContributions);
 }
 
 class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
   final Value<String> date;
   final Value<String> type;
   final Value<DateTime> updatedAt;
+  final Value<bool> pauseCarbCycle;
+  final Value<bool> cheatPenaltyEnabled;
+  final Value<int> cheatPenaltyKcal;
+  final Value<bool> excludeContributions;
   final Value<int> rowid;
   const DayMarkersCompanion({
     this.date = const Value.absent(),
     this.type = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.pauseCarbCycle = const Value.absent(),
+    this.cheatPenaltyEnabled = const Value.absent(),
+    this.cheatPenaltyKcal = const Value.absent(),
+    this.excludeContributions = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   DayMarkersCompanion.insert({
     required String date,
     required String type,
     required DateTime updatedAt,
+    this.pauseCarbCycle = const Value.absent(),
+    this.cheatPenaltyEnabled = const Value.absent(),
+    this.cheatPenaltyKcal = const Value.absent(),
+    this.excludeContributions = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : date = Value(date),
        type = Value(type),
@@ -9922,12 +10116,22 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
     Expression<String>? date,
     Expression<String>? type,
     Expression<DateTime>? updatedAt,
+    Expression<bool>? pauseCarbCycle,
+    Expression<bool>? cheatPenaltyEnabled,
+    Expression<int>? cheatPenaltyKcal,
+    Expression<bool>? excludeContributions,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (date != null) 'date': date,
       if (type != null) 'type': type,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (pauseCarbCycle != null) 'pause_carb_cycle': pauseCarbCycle,
+      if (cheatPenaltyEnabled != null)
+        'cheat_penalty_enabled': cheatPenaltyEnabled,
+      if (cheatPenaltyKcal != null) 'cheat_penalty_kcal': cheatPenaltyKcal,
+      if (excludeContributions != null)
+        'exclude_contributions': excludeContributions,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -9936,12 +10140,20 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
     Value<String>? date,
     Value<String>? type,
     Value<DateTime>? updatedAt,
+    Value<bool>? pauseCarbCycle,
+    Value<bool>? cheatPenaltyEnabled,
+    Value<int>? cheatPenaltyKcal,
+    Value<bool>? excludeContributions,
     Value<int>? rowid,
   }) {
     return DayMarkersCompanion(
       date: date ?? this.date,
       type: type ?? this.type,
       updatedAt: updatedAt ?? this.updatedAt,
+      pauseCarbCycle: pauseCarbCycle ?? this.pauseCarbCycle,
+      cheatPenaltyEnabled: cheatPenaltyEnabled ?? this.cheatPenaltyEnabled,
+      cheatPenaltyKcal: cheatPenaltyKcal ?? this.cheatPenaltyKcal,
+      excludeContributions: excludeContributions ?? this.excludeContributions,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -9958,6 +10170,18 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (pauseCarbCycle.present) {
+      map['pause_carb_cycle'] = Variable<bool>(pauseCarbCycle.value);
+    }
+    if (cheatPenaltyEnabled.present) {
+      map['cheat_penalty_enabled'] = Variable<bool>(cheatPenaltyEnabled.value);
+    }
+    if (cheatPenaltyKcal.present) {
+      map['cheat_penalty_kcal'] = Variable<int>(cheatPenaltyKcal.value);
+    }
+    if (excludeContributions.present) {
+      map['exclude_contributions'] = Variable<bool>(excludeContributions.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -9970,6 +10194,10 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
           ..write('date: $date, ')
           ..write('type: $type, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('pauseCarbCycle: $pauseCarbCycle, ')
+          ..write('cheatPenaltyEnabled: $cheatPenaltyEnabled, ')
+          ..write('cheatPenaltyKcal: $cheatPenaltyKcal, ')
+          ..write('excludeContributions: $excludeContributions, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -15090,6 +15318,10 @@ typedef $$DayMarkersTableCreateCompanionBuilder =
       required String date,
       required String type,
       required DateTime updatedAt,
+      Value<bool> pauseCarbCycle,
+      Value<bool> cheatPenaltyEnabled,
+      Value<int> cheatPenaltyKcal,
+      Value<bool> excludeContributions,
       Value<int> rowid,
     });
 typedef $$DayMarkersTableUpdateCompanionBuilder =
@@ -15097,6 +15329,10 @@ typedef $$DayMarkersTableUpdateCompanionBuilder =
       Value<String> date,
       Value<String> type,
       Value<DateTime> updatedAt,
+      Value<bool> pauseCarbCycle,
+      Value<bool> cheatPenaltyEnabled,
+      Value<int> cheatPenaltyKcal,
+      Value<bool> excludeContributions,
       Value<int> rowid,
     });
 
@@ -15121,6 +15357,26 @@ class $$DayMarkersTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get pauseCarbCycle => $composableBuilder(
+    column: $table.pauseCarbCycle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get cheatPenaltyEnabled => $composableBuilder(
+    column: $table.cheatPenaltyEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cheatPenaltyKcal => $composableBuilder(
+    column: $table.cheatPenaltyKcal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get excludeContributions => $composableBuilder(
+    column: $table.excludeContributions,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -15148,6 +15404,26 @@ class $$DayMarkersTableOrderingComposer
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get pauseCarbCycle => $composableBuilder(
+    column: $table.pauseCarbCycle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get cheatPenaltyEnabled => $composableBuilder(
+    column: $table.cheatPenaltyEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cheatPenaltyKcal => $composableBuilder(
+    column: $table.cheatPenaltyKcal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get excludeContributions => $composableBuilder(
+    column: $table.excludeContributions,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DayMarkersTableAnnotationComposer
@@ -15167,6 +15443,26 @@ class $$DayMarkersTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get pauseCarbCycle => $composableBuilder(
+    column: $table.pauseCarbCycle,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get cheatPenaltyEnabled => $composableBuilder(
+    column: $table.cheatPenaltyEnabled,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cheatPenaltyKcal => $composableBuilder(
+    column: $table.cheatPenaltyKcal,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get excludeContributions => $composableBuilder(
+    column: $table.excludeContributions,
+    builder: (column) => column,
+  );
 }
 
 class $$DayMarkersTableTableManager
@@ -15203,11 +15499,19 @@ class $$DayMarkersTableTableManager
                 Value<String> date = const Value.absent(),
                 Value<String> type = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool> pauseCarbCycle = const Value.absent(),
+                Value<bool> cheatPenaltyEnabled = const Value.absent(),
+                Value<int> cheatPenaltyKcal = const Value.absent(),
+                Value<bool> excludeContributions = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DayMarkersCompanion(
                 date: date,
                 type: type,
                 updatedAt: updatedAt,
+                pauseCarbCycle: pauseCarbCycle,
+                cheatPenaltyEnabled: cheatPenaltyEnabled,
+                cheatPenaltyKcal: cheatPenaltyKcal,
+                excludeContributions: excludeContributions,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -15215,11 +15519,19 @@ class $$DayMarkersTableTableManager
                 required String date,
                 required String type,
                 required DateTime updatedAt,
+                Value<bool> pauseCarbCycle = const Value.absent(),
+                Value<bool> cheatPenaltyEnabled = const Value.absent(),
+                Value<int> cheatPenaltyKcal = const Value.absent(),
+                Value<bool> excludeContributions = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DayMarkersCompanion.insert(
                 date: date,
                 type: type,
                 updatedAt: updatedAt,
+                pauseCarbCycle: pauseCarbCycle,
+                cheatPenaltyEnabled: cheatPenaltyEnabled,
+                cheatPenaltyKcal: cheatPenaltyKcal,
+                excludeContributions: excludeContributions,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

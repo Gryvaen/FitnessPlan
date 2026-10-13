@@ -298,16 +298,24 @@ class DayDietConfirmations extends Table {
   Set<Column> get primaryKey => {date};
 }
 
-/// Per-day 放纵餐/休息日 override marker; see `domain/day_marker.dart`. `type`
-/// stores a [DayMarkerType] name. `updatedAt` doubles as the "was this set
-/// on/before its own date" signal used to decide whether a 休息日 marker
-/// counts toward the carb-cycle day-count progression (see
-/// `restDayCountsTowardProgression`).
+/// Per-day 放纵日/休息日 override marker; see `domain/day_marker.dart`. `type`
+/// stores a [DayMarkerType] name. `updatedAt` retains the original rest-day
+/// mark time, which gates the optional carb-cycle pause. Added setting columns
+/// default to the pre-v30 behavior for migrated rows; new rows set them
+/// explicitly.
 @DataClassName('DayMarkerRow')
 class DayMarkers extends Table {
   TextColumn get date => text()();
   TextColumn get type => text()();
   DateTimeColumn get updatedAt => dateTime()();
+  BoolColumn get pauseCarbCycle =>
+      boolean().withDefault(const Constant(true))();
+  BoolColumn get cheatPenaltyEnabled =>
+      boolean().withDefault(const Constant(true))();
+  IntColumn get cheatPenaltyKcal =>
+      integer().withDefault(const Constant(1000))();
+  BoolColumn get excludeContributions =>
+      boolean().withDefault(const Constant(true))();
 
   @override
   Set<Column> get primaryKey => {date};

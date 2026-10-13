@@ -34,10 +34,7 @@ UserProfile _profile({int calories = 2137, DateTime? since, int adj = 0}) {
 
 final _carbCycleRates = CarbCycleRates.defaults();
 
-DietStrategyPlanDraft _carbCycleDraft(
-  DateTime from, {
-  String code = 'HMLL',
-}) {
+DietStrategyPlanDraft _carbCycleDraft(DateTime from, {String code = 'HMLL'}) {
   final schedule = CarbCycleSchedule.tryParse(code)!;
   final plan = CarbCyclePlanner.compute(
     referenceWeightKg: 75,
@@ -98,28 +95,25 @@ void main() {
       expect((await repo.snapshotFor(today))!.calories, 1900);
     });
 
-    test(
-      'plan starting tomorrow leaves today on the profile target',
-      () async {
-        final from = today.add(const Duration(days: 1));
-        final plan = await repo.createPlan(_carbCycleDraft(from));
-        expect(plan.version, 1);
-        expect(plan.status, DietPlanStatus.active);
-        final t = (await repo.targetForDay(today, _profile()))!;
-        expect(t.source, TargetSource.profile);
-        final future = (await repo.targetForDay(from, _profile()))!;
-        expect(future.source, TargetSource.strategy);
-        // Cycle day 0 (effectiveFrom itself) is always the high day.
-        expect(future.dayType, CarbDayType.high);
-        final expectedHigh = CarbCyclePlanner.compute(
-          referenceWeightKg: 75,
-          rates: _carbCycleRates,
-          schedule: CarbCycleSchedule.tryParse('HMLL')!,
-        ).energyFor(CarbDayType.high)!;
-        expect(future.calories, closeTo(expectedHigh, 1e-6));
-        expect(future.isSnapshot, isFalse); // future never persisted
-      },
-    );
+    test('plan starting tomorrow leaves today on the profile target', () async {
+      final from = today.add(const Duration(days: 1));
+      final plan = await repo.createPlan(_carbCycleDraft(from));
+      expect(plan.version, 1);
+      expect(plan.status, DietPlanStatus.active);
+      final t = (await repo.targetForDay(today, _profile()))!;
+      expect(t.source, TargetSource.profile);
+      final future = (await repo.targetForDay(from, _profile()))!;
+      expect(future.source, TargetSource.strategy);
+      // Cycle day 0 (effectiveFrom itself) is always the high day.
+      expect(future.dayType, CarbDayType.high);
+      final expectedHigh = CarbCyclePlanner.compute(
+        referenceWeightKg: 75,
+        rates: _carbCycleRates,
+        schedule: CarbCycleSchedule.tryParse('HMLL')!,
+      ).energyFor(CarbDayType.high)!;
+      expect(future.calories, closeTo(expectedHigh, 1e-6));
+      expect(future.isSnapshot, isFalse); // future never persisted
+    });
 
     test('plan starting today is used immediately and snapshotted', () async {
       await repo.targetForDay(today, _profile()); // legacy snapshot first
@@ -197,9 +191,7 @@ void main() {
         (await repo.targetForDay(today, _profile()))!.source,
         TargetSource.strategy,
       );
-      final restamp = await repo.stopActivePlan(
-        reason: 'goalChanged:maintain',
-      );
+      final restamp = await repo.stopActivePlan(reason: 'goalChanged:maintain');
       expect(restamp, today);
       final t = (await repo.targetForDay(today, _profile()))!;
       expect(t.source, TargetSource.profile);
@@ -470,6 +462,22 @@ void main() {
   });
 
   group('rest day shifts the carb cycle', () {
+    test('new rest day does not shift by default', () async {
+      await repo.createPlan(_carbCycleDraft(today));
+      final cyclePlan = CarbCyclePlanner.compute(
+        referenceWeightKg: 75,
+        rates: _carbCycleRates,
+        schedule: CarbCycleSchedule.tryParse('HMLL')!,
+      );
+      final tomorrow = today.add(const Duration(days: 1));
+      final dayAfter = today.add(const Duration(days: 2));
+      await DayMarkerRepository(db).setRestDay(tomorrow);
+      expect(
+        (await repo.targetForDay(dayAfter, _profile()))!.calories,
+        closeTo(cyclePlan.dayAt(2).energy, 1e-6),
+      );
+    });
+
     test(
       'a marked rest day pushes the cycle index for later days back by one',
       () async {
@@ -491,7 +499,7 @@ void main() {
         );
 
         final markerRepo = DayMarkerRepository(db);
-        await markerRepo.setRestDay(tomorrow);
+        await markerRepo.setRestDay(tomorrow, pauseCarbCycle: true);
 
         // dayAfter's diff (2) minus the 1 rest day before it (tomorrow) → index 1 (M).
         final afterMark = (await repo.targetForDay(dayAfter, _profile()))!;
@@ -518,7 +526,7 @@ void main() {
       );
       final tomorrow = today.add(const Duration(days: 1));
       final markerRepo = DayMarkerRepository(db);
-      await markerRepo.setRestDay(tomorrow);
+      await markerRepo.setRestDay(tomorrow, pauseCarbCycle: true);
 
       final map = await repo.targetsBetween(
         today,
@@ -529,43 +537,38 @@ void main() {
       final dayAfter = today.add(const Duration(days: 2));
       final day3 = today.add(const Duration(days: 3));
       final day4 = today.add(const Duration(days: 4));
-      expect(
-        map[dayAfter]!.calories,
-        closeTo(cyclePlan.dayAt(1).energy, 1e-6),
-      );
+      expect(map[dayAfter]!.calories, closeTo(cyclePlan.dayAt(1).energy, 1e-6));
       expect(map[day3]!.calories, closeTo(cyclePlan.dayAt(2).energy, 1e-6));
       expect(map[day4]!.calories, closeTo(cyclePlan.dayAt(3).energy, 1e-6));
     });
 
-    test(
-      'a rest day backfilled onto an already-past date does not shift '
-      'the cycle',
-      () async {
-        await repo.createPlan(_carbCycleDraft(today)); // 'HMLL', day0 = today
-        final cyclePlan = CarbCyclePlanner.compute(
-          referenceWeightKg: 75,
-          rates: _carbCycleRates,
-          schedule: CarbCycleSchedule.tryParse('HMLL')!,
-        );
-        final dayAfter = today.add(const Duration(days: 2)); // unshifted: L
-        final day4 = today.add(const Duration(days: 4)); // unshifted: H
+    test('a rest day backfilled onto an already-past date does not shift '
+        'the cycle', () async {
+      await repo.createPlan(_carbCycleDraft(today)); // 'HMLL', day0 = today
+      final cyclePlan = CarbCyclePlanner.compute(
+        referenceWeightKg: 75,
+        rates: _carbCycleRates,
+        schedule: CarbCycleSchedule.tryParse('HMLL')!,
+      );
+      final dayAfter = today.add(const Duration(days: 2)); // unshifted: L
+      final day4 = today.add(const Duration(days: 4)); // unshifted: H
 
-        final markerRepo = DayMarkerRepository(db);
-        // Backfilled well after the fact — updatedAt trails the marked date
-        // by days, unlike a contemporaneous marker — so it must not count
-        // toward the day-count progression.
-        await markerRepo.setRestDay(
-          dayAfter,
-          now: today.add(const Duration(days: 5)),
-        );
+      final markerRepo = DayMarkerRepository(db);
+      // Backfilled well after the fact — updatedAt trails the marked date
+      // by days, unlike a contemporaneous marker — so it must not count
+      // toward the day-count progression.
+      await markerRepo.setRestDay(
+        dayAfter,
+        pauseCarbCycle: true,
+        now: today.add(const Duration(days: 5)),
+      );
 
-        final t = (await repo.targetForDay(day4, _profile()))!;
-        expect(t.calories, closeTo(cyclePlan.dayAt(0).energy, 1e-6));
+      final t = (await repo.targetForDay(day4, _profile()))!;
+      expect(t.calories, closeTo(cyclePlan.dayAt(0).energy, 1e-6));
 
-        final map = await repo.targetsBetween(today, day4, _profile());
-        expect(map[day4]!.calories, closeTo(cyclePlan.dayAt(0).energy, 1e-6));
-      },
-    );
+      final map = await repo.targetsBetween(today, day4, _profile());
+      expect(map[day4]!.calories, closeTo(cyclePlan.dayAt(0).energy, 1e-6));
+    });
 
     test('rest days do not affect non-carb-cycle strategies', () async {
       await repo.createPlan(
@@ -716,14 +719,15 @@ CREATE TABLE workout_set_logs (
       expect(await migrated.select(migrated.workoutPlanItems).get(), isEmpty);
       expect(await migrated.select(migrated.dayWorkoutItems).get(), isEmpty);
       // v24: date indices exist on the tables that previously had none.
-      final indexNames = (await migrated
-              .customSelect(
-                "SELECT name FROM sqlite_master WHERE type = 'index' "
-                "AND name LIKE 'idx_%_date'",
-              )
-              .get())
-          .map((r) => r.read<String>('name'))
-          .toSet();
+      final indexNames =
+          (await migrated
+                  .customSelect(
+                    "SELECT name FROM sqlite_master WHERE type = 'index' "
+                    "AND name LIKE 'idx_%_date'",
+                  )
+                  .get())
+              .map((r) => r.read<String>('name'))
+              .toSet();
       expect(indexNames, {
         'idx_weight_logs_date',
         'idx_meal_entries_date',

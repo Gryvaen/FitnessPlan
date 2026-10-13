@@ -2844,7 +2844,7 @@ abstract class AppLocalizations {
   /// No description provided for @cheatMealLabel.
   ///
   /// In en, this message translates to:
-  /// **'Cheat meal'**
+  /// **'Cheat day'**
   String get cheatMealLabel;
 
   /// No description provided for @restDayLabel.
@@ -2870,6 +2870,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rest'**
   String get restDayShortLabel;
+
+  /// No description provided for @dayMarkerSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set day marker'**
+  String get dayMarkerSettingsTitle;
+
+  /// No description provided for @pauseCarbCycleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Delay carb cycle by one day'**
+  String get pauseCarbCycleLabel;
+
+  /// No description provided for @pauseCarbCycleSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Cycle delayed one day'**
+  String get pauseCarbCycleSummary;
+
+  /// No description provided for @keepCarbCycleSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Cycle unchanged'**
+  String get keepCarbCycleSummary;
+
+  /// No description provided for @pauseCarbCycleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Move later cycle days back one day'**
+  String get pauseCarbCycleHint;
+
+  /// No description provided for @backfilledRestDayHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Marking a past day will not change later carb-cycle days.'**
+  String get backfilledRestDayHint;
+
+  /// No description provided for @deductCultivationKcalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Deduct cultivation'**
+  String get deductCultivationKcalLabel;
+
+  /// No description provided for @deductionSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Deduct {amount} kcal'**
+  String deductionSummary(String amount);
+
+  /// No description provided for @noDeductionSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'No cultivation deduction'**
+  String get noDeductionSummary;
+
+  /// No description provided for @deductionAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Deduction'**
+  String get deductionAmountLabel;
+
+  /// No description provided for @positiveKcalRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a whole number greater than 0'**
+  String get positiveKcalRequired;
 
   /// No description provided for @waterTapHint.
   ///

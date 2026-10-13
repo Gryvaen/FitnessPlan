@@ -19,6 +19,7 @@ class CarbCycleView extends StatelessWidget {
     this.onScheduleChanged,
     this.referenceWeightFromProfile = false,
     this.restDayDates,
+    this.allRestDayDates,
     this.windowStart,
   });
 
@@ -38,6 +39,9 @@ class CarbCycleView extends StatelessWidget {
   /// start date. Leave null for the pre-save configure preview, which has no
   /// committed plan (and therefore no rest days) to shift against yet.
   final List<DateTime>? restDayDates;
+
+  /// All rest markers, including days that do not pause cycle progression.
+  final List<DateTime>? allRestDayDates;
 
   /// First date shown when [restDayDates] is set. Defaults to today.
   final DateTime? windowStart;
@@ -88,7 +92,17 @@ class CarbCycleView extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         for (var i = 0; i < days.length; i++)
-          _dayRow(i, days, start, anchor, restDays, today, locale, editable),
+          _dayRow(
+            i,
+            days,
+            start,
+            anchor,
+            restDays,
+            allRestDayDates,
+            today,
+            locale,
+            editable,
+          ),
         if (editable) ...[
           const SizedBox(height: 6),
           Text(l10n.carbCycleEditHint, style: theme.textTheme.bodySmall),
@@ -142,6 +156,7 @@ class CarbCycleView extends StatelessWidget {
     DateTime start,
     DateTime anchor,
     List<DateTime>? restDays,
+    List<DateTime>? allRestDays,
     DateTime today,
     Locale locale,
     bool editable,
@@ -162,7 +177,8 @@ class CarbCycleView extends StatelessWidget {
     // computed from the shifted cycle slot above (so later rows shift
     // correctly), but this row itself shouldn't claim a H/M/L carb type —
     // the day is a rest day, not a diet day.
-    final isRestDay = restDays?.contains(date) ?? false;
+    final isRestDay =
+        allRestDays?.contains(date) ?? restDays?.contains(date) ?? false;
     return _DayRow(
       key: ValueKey('cycleDay-$i'),
       name: AppDates.md(date, locale),

@@ -1446,7 +1446,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get legendAfterGreenRed => '生效后：过去绿/红';
 
   @override
-  String get cheatMealLabel => '放纵餐';
+  String get cheatMealLabel => '放纵日';
 
   @override
   String get restDayLabel => '休息日';
@@ -1459,6 +1459,41 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get restDayShortLabel => '休息';
+
+  @override
+  String get dayMarkerSettingsTitle => '设置当天标记';
+
+  @override
+  String get pauseCarbCycleLabel => '碳循环顺延一天';
+
+  @override
+  String get pauseCarbCycleSummary => '碳循环顺延一天';
+
+  @override
+  String get keepCarbCycleSummary => '碳循环不顺延';
+
+  @override
+  String get pauseCarbCycleHint => '开启后，后续碳循环顺延一天';
+
+  @override
+  String get backfilledRestDayHint => '过去日期的补标不会更改后续碳循环。';
+
+  @override
+  String get deductCultivationKcalLabel => '扣减修行';
+
+  @override
+  String deductionSummary(String amount) {
+    return '扣减 $amount kcal';
+  }
+
+  @override
+  String get noDeductionSummary => '不扣减修行';
+
+  @override
+  String get deductionAmountLabel => '扣减数值';
+
+  @override
+  String get positiveKcalRequired => '请输入大于 0 的整数';
 
   @override
   String get waterTapHint => '点水杯 +250 · 点杯盖 −250';

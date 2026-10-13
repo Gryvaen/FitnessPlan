@@ -206,6 +206,9 @@ class _CutNutritionTargets extends ConsumerWidget {
     final restDayDates = active?.kind == DietStrategyKind.carbCycle
         ? ref.watch(restDayDatesProvider).value ?? const <DateTime>[]
         : const <DateTime>[];
+    final allRestDayDates = active?.kind == DietStrategyKind.carbCycle
+        ? ref.watch(allRestDayDatesProvider).value ?? const <DateTime>[]
+        : const <DateTime>[];
 
     return ListView(
       padding: EdgeInsets.fromLTRB(
@@ -237,6 +240,7 @@ class _CutNutritionTargets extends ConsumerWidget {
           activeStartsLater: activeStartsLater,
           today: today,
           restDayDates: restDayDates,
+          allRestDayDates: allRestDayDates,
           onAdjustSchedule: () => context.push(
             '/profile/nutrition/strategy/configure?kind=carbCycle',
           ),
@@ -272,6 +276,7 @@ class _StrategyDescription extends StatefulWidget {
     required this.activeStartsLater,
     required this.today,
     required this.restDayDates,
+    required this.allRestDayDates,
     required this.onAdjustSchedule,
     required this.onTaperReview,
     required this.onStop,
@@ -286,6 +291,7 @@ class _StrategyDescription extends StatefulWidget {
   /// in sync with the live (rest-day-shifted) schedule instead of forever
   /// showing the plan's original start-date template.
   final List<DateTime> restDayDates;
+  final List<DateTime> allRestDayDates;
   final VoidCallback onAdjustSchedule;
   final VoidCallback onTaperReview;
   final VoidCallback onStop;
@@ -374,6 +380,7 @@ class _StrategyDescriptionState extends State<_StrategyDescription> {
               plan: active.carbCyclePlan!,
               cycleStart: active.effectiveFrom,
               restDayDates: widget.restDayDates,
+              allRestDayDates: widget.allRestDayDates,
               windowStart: widget.activeStartsLater
                   ? active.effectiveFrom
                   : widget.today,

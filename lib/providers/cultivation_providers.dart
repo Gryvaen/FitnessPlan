@@ -76,11 +76,11 @@ final _storedStepsTodayProvider = StreamProvider<int>((ref) {
 });
 
 /// 今日步数（恒为本地今天）。未成功同步（权限/失败/空读）时按 0，避免把
-/// 库里残留的昨日总量当成今日修行贡献。放纵餐和休息日当天步数归零。
+/// 库里残留的昨日总量当成今日修行贡献。旧版未编辑标记仍按原规则归零。
 final cultivationStepsTodayProvider = Provider<int>((ref) {
   final today = CalendarDay.todayLocal();
-  final marker = ref.watch(dayMarkerProvider(today)).value;
-  if (marker == DayMarkerType.cheatMeal || marker == DayMarkerType.restDay) {
+  final marker = ref.watch(dayMarkerSettingsProvider(today)).value;
+  if (marker?.excludeContributions ?? false) {
     return 0;
   }
   final status = ref.watch(stepsSyncStatusProvider);
@@ -88,13 +88,12 @@ final cultivationStepsTodayProvider = Provider<int>((ref) {
   return ref.watch(_storedStepsTodayProvider).value ?? 0;
 });
 
-/// 指定日期的饮食 kcal 贡献，仅当日记录餐次 ≥ 2 类时计入。放纵餐/休息日
-/// 当天无条件归零。
+/// 指定日期的饮食 kcal 贡献，仅当日记录餐次 ≥ 2 类时计入。旧版未编辑标记
+/// 按原规则归零。
 final cultivationDietKcalForDayProvider = Provider.autoDispose
     .family<double, DateTime>((ref, day) {
-      final marker = ref.watch(dayMarkerProvider(day)).value;
-      if (marker == DayMarkerType.cheatMeal ||
-          marker == DayMarkerType.restDay) {
+      final marker = ref.watch(dayMarkerSettingsProvider(day)).value;
+      if (marker?.excludeContributions ?? false) {
         return 0;
       }
 
@@ -115,10 +114,10 @@ final cultivationDietKcalTodayProvider = Provider<double>((ref) {
 });
 
 final cultivationCheatPenaltyTodayProvider = Provider<double>((ref) {
-  final marker = ref.watch(dayMarkerProvider(CalendarDay.todayLocal())).value;
-  return marker == DayMarkerType.cheatMeal
-      ? kCheatMealCultivationPenaltyKcal
-      : 0;
+  final marker = ref
+      .watch(dayMarkerSettingsProvider(CalendarDay.todayLocal()))
+      .value;
+  return marker?.penaltyKcal ?? 0;
 });
 
 final cultivationTodayKcalProvider = Provider<double>((ref) {
@@ -198,7 +197,7 @@ Future<List<CultivationDayRecord>> _buildCultivationDays({
   final mealDays = await mealRepo.mealDaySummaries(since: oldest);
   final markers = await ref
       .read(dayMarkerRepositoryProvider)
-      .markersBetween(oldest, newest);
+      .settingsBetween(oldest, newest);
   final stepsByDay = <DateTime, int>{
     for (final d in stepDays)
       if (allowedDays.contains(d.date)) d.date: d.steps,
@@ -209,7 +208,7 @@ Future<List<CultivationDayRecord>> _buildCultivationDays({
       (d) =>
           stepsByDay.containsKey(d) ||
           mealDays.containsKey(d) ||
-          markers[d] == DayMarkerType.cheatMeal ||
+          markers[d]?.type == DayMarkerType.cheatMeal ||
           d == today,
     ),
   };
@@ -246,20 +245,18 @@ Future<List<CultivationDayRecord>> _buildCultivationDays({
     final hasSteps = steps > 0;
     final hasDietLog = meal != null && meal.mealTypes.length >= 2;
     final marker = markers[day];
-    // A cheat marker alone creates a -1000 kcal row; rest days retain their
-    // existing activity-based visibility.
+    // A cheat marker alone creates a row, even when its deduction is disabled;
+    // rest days retain their activity-based visibility.
     if (!hasSteps &&
         !hasDietLog &&
         !hasWorkout &&
-        marker != DayMarkerType.cheatMeal) {
+        marker?.type != DayMarkerType.cheatMeal) {
       continue;
     }
-    final zeroedStepsKcal =
-        marker == DayMarkerType.cheatMeal || marker == DayMarkerType.restDay
+    final zeroedStepsKcal = marker?.excludeContributions ?? false
         ? 0.0
         : stepsKcal;
-    final zeroedDietKcal =
-        marker == DayMarkerType.cheatMeal || marker == DayMarkerType.restDay
+    final zeroedDietKcal = marker?.excludeContributions ?? false
         ? 0.0
         : dietKcal;
 
@@ -268,9 +265,7 @@ Future<List<CultivationDayRecord>> _buildCultivationDays({
         date: day,
         stepsKcal: zeroedStepsKcal,
         dietKcal: zeroedDietKcal,
-        cheatPenaltyKcal: marker == DayMarkerType.cheatMeal
-            ? kCheatMealCultivationPenaltyKcal
-            : 0,
+        cheatPenaltyKcal: marker?.penaltyKcal ?? 0,
         workout: workout,
       ),
     );

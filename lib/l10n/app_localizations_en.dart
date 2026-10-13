@@ -1474,7 +1474,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get legendAfterGreenRed => 'After: past green/red';
 
   @override
-  String get cheatMealLabel => 'Cheat meal';
+  String get cheatMealLabel => 'Cheat day';
 
   @override
   String get restDayLabel => 'Rest day';
@@ -1487,6 +1487,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get restDayShortLabel => 'Rest';
+
+  @override
+  String get dayMarkerSettingsTitle => 'Set day marker';
+
+  @override
+  String get pauseCarbCycleLabel => 'Delay carb cycle by one day';
+
+  @override
+  String get pauseCarbCycleSummary => 'Cycle delayed one day';
+
+  @override
+  String get keepCarbCycleSummary => 'Cycle unchanged';
+
+  @override
+  String get pauseCarbCycleHint => 'Move later cycle days back one day';
+
+  @override
+  String get backfilledRestDayHint =>
+      'Marking a past day will not change later carb-cycle days.';
+
+  @override
+  String get deductCultivationKcalLabel => 'Deduct cultivation';
+
+  @override
+  String deductionSummary(String amount) {
+    return 'Deduct $amount kcal';
+  }
+
+  @override
+  String get noDeductionSummary => 'No cultivation deduction';
+
+  @override
+  String get deductionAmountLabel => 'Deduction';
+
+  @override
+  String get positiveKcalRequired => 'Enter a whole number greater than 0';
 
   @override
   String get waterTapHint => 'Tap cup +250 · tap lid −250';

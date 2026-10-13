@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../../data/repositories/day_marker_repository.dart';
@@ -8,6 +9,7 @@ import '../../domain/deficit.dart';
 import '../../domain/diet_plan.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../ink/ink_icon.dart';
+import '../theme/app_theme.dart';
 
 /// Loads the per-day target for every local day in an inclusive range.
 typedef DailyTargetsLoader =
@@ -29,7 +31,7 @@ Future<DateTime?> showDeficitDatePicker({
   required DailyTargetsLoader loadTargets,
   DateTime? calorieStandardSince,
 
-  /// How far into the future the calendar may be paged for 放纵餐/休息日
+  /// How far into the future the calendar may be paged for 放纵日/休息日
   /// marking (long-press). Defaults to [lastDate] — pure date *selection*
   /// (tap + Confirm) always stays bounded by [firstDate]/[lastDate].
   DateTime? markUntil,
@@ -180,46 +182,32 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
   }
 
   Future<void> _showMarkerSheet(DateTime day) async {
-    final l10n = context.l10n;
-    final choice = await showModalBottomSheet<String>(
+    final existing = await widget.markerRepository.settingsForDay(day);
+    if (!mounted) return;
+    final choice = await showModalBottomSheet<_MarkerChoice>(
       context: context,
       useRootNavigator: true,
-      builder: (ctx) => SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const InkIcon(InkGlyph.celebration),
-                title: Text(l10n.cheatMealLabel),
-                onTap: () => Navigator.pop(ctx, 'cheatMeal'),
-              ),
-              ListTile(
-                leading: const InkIcon(InkGlyph.bedtime),
-                title: Text(l10n.restDayLabel),
-                onTap: () => Navigator.pop(ctx, 'restDay'),
-              ),
-              ListTile(
-                leading: const InkIcon(InkGlyph.close),
-                title: Text(l10n.clearMarkerLabel),
-                onTap: () => Navigator.pop(ctx, 'clear'),
-              ),
-            ],
-          ),
-        ),
+      isScrollControlled: true,
+      builder: (ctx) => _MarkerSettingsSheet(
+        existing: existing,
+        canPauseCycle:
+            !day.isBefore(_today) || existing?.pauseCarbCycle == true,
       ),
     );
     if (!mounted || choice == null) return;
-    switch (choice) {
-      case 'cheatMeal':
-        await widget.markerRepository.setCheatMeal(day);
-        break;
-      case 'restDay':
-        await widget.markerRepository.setRestDay(day);
-        break;
-      case 'clear':
-        await widget.markerRepository.clear(day);
-        break;
+    if (choice.clear) {
+      await widget.markerRepository.clear(day);
+    } else if (choice.type == DayMarkerType.cheatMeal) {
+      await widget.markerRepository.setCheatMeal(
+        day,
+        deductKcal: choice.deductKcal,
+        penaltyKcal: choice.penaltyKcal,
+      );
+    } else {
+      await widget.markerRepository.setRestDay(
+        day,
+        pauseCarbCycle: choice.pauseCarbCycle,
+      );
     }
     if (!mounted) return;
     await _loadMonth();
@@ -401,6 +389,9 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
                       dayNum,
                     );
                     return _DayCell(
+                      key: ValueKey(
+                        'deficitDay-${date.year}-${date.month}-${date.day}',
+                      ),
                       date: date,
                       today: today,
                       selected: date == _selected,
@@ -435,6 +426,297 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
           child: Text(l10n.confirm),
         ),
       ],
+    );
+  }
+}
+
+class _MarkerChoice {
+  const _MarkerChoice({
+    required this.type,
+    this.pauseCarbCycle = false,
+    this.deductKcal = true,
+    this.penaltyKcal = 1000,
+    this.clear = false,
+  });
+
+  final DayMarkerType? type;
+  final bool pauseCarbCycle;
+  final bool deductKcal;
+  final int penaltyKcal;
+  final bool clear;
+}
+
+class _MarkerSettingsSheet extends StatefulWidget {
+  const _MarkerSettingsSheet({
+    required this.existing,
+    required this.canPauseCycle,
+  });
+
+  final DayMarkerSettings? existing;
+  final bool canPauseCycle;
+
+  @override
+  State<_MarkerSettingsSheet> createState() => _MarkerSettingsSheetState();
+}
+
+class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
+  DayMarkerType? _type;
+  DayMarkerType? _expandedType;
+  late bool _pauseCycle;
+  late bool _deductKcal;
+  late TextEditingController _amount;
+
+  @override
+  void initState() {
+    super.initState();
+    _type = widget.existing?.type;
+    _pauseCycle = widget.existing?.pauseCarbCycle ?? false;
+    _deductKcal = widget.existing?.cheatPenaltyEnabled ?? true;
+    _amount = TextEditingController(
+      text: '${widget.existing?.cheatPenaltyKcal ?? 1000}',
+    );
+    _amount.addListener(_refresh);
+  }
+
+  void _refresh() => setState(() {});
+
+  void _select(DayMarkerType type) {
+    setState(() {
+      if (_type == type) {
+        _expandedType = _expandedType == type ? null : type;
+      } else {
+        _type = type;
+        _expandedType = type;
+      }
+    });
+  }
+
+  String _summary(BuildContext context, DayMarkerType type) {
+    final l10n = context.l10n;
+    if (type == DayMarkerType.restDay) {
+      return _pauseCycle
+          ? l10n.pauseCarbCycleSummary
+          : l10n.keepCarbCycleSummary;
+    }
+    return _deductKcal
+        ? l10n.deductionSummary(_amount.text)
+        : l10n.noDeductionSummary;
+  }
+
+  Widget _option(BuildContext context, DayMarkerType type) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final accent =
+        theme.extension<AppThemeVisuals>()?.accent ?? theme.colorScheme.primary;
+    final selected = _type == type;
+    final expanded = _expandedType == type;
+    final rest = type == DayMarkerType.restDay;
+    final label = rest ? l10n.restDayLabel : l10n.cheatMealLabel;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        InkWell(
+          key: ValueKey('marker-option-${type.name}'),
+          onTap: () => _select(type),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.compact,
+              vertical: AppSpacing.field,
+            ),
+            child: Row(
+              children: [
+                InkIcon(
+                  rest ? InkGlyph.bedtime : InkGlyph.celebration,
+                  color: selected ? accent : theme.colorScheme.onSurface,
+                ),
+                const SizedBox(width: AppSpacing.field),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: selected ? accent : null,
+                        ),
+                      ),
+                      if (selected && !expanded)
+                        Text(
+                          _summary(context, type),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                InkIcon(
+                  expanded
+                      ? InkGlyph.collapse
+                      : selected
+                      ? InkGlyph.radioChecked
+                      : InkGlyph.radioEmpty,
+                  size: 20,
+                  color: selected ? accent : theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeInOut,
+          child: expanded
+              ? Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    44,
+                    0,
+                    AppSpacing.compact,
+                    AppSpacing.field,
+                  ),
+                  child: Column(
+                    children: [
+                      if (rest) ...[
+                        SwitchListTile.adaptive(
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          title: Text(l10n.pauseCarbCycleLabel),
+                          value: _pauseCycle,
+                          onChanged: widget.canPauseCycle
+                              ? (value) => setState(() => _pauseCycle = value)
+                              : null,
+                        ),
+                        if (!widget.canPauseCycle)
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              l10n.backfilledRestDayHint,
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ),
+                      ] else ...[
+                        SwitchListTile.adaptive(
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          title: Text(l10n.deductCultivationKcalLabel),
+                          value: _deductKcal,
+                          onChanged: (value) =>
+                              setState(() => _deductKcal = value),
+                        ),
+                        if (_deductKcal) ...[
+                          const SizedBox(height: AppSpacing.compact),
+                          TextField(
+                            controller: _amount,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            decoration: InputDecoration(
+                              isDense: true,
+                              labelText: l10n.deductionAmountLabel,
+                              suffixText: 'kcal',
+                              errorText:
+                                  int.tryParse(_amount.text) == null ||
+                                      int.parse(_amount.text) <= 0
+                                  ? l10n.positiveKcalRequired
+                                  : null,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ],
+                  ),
+                )
+              : const SizedBox(width: double.infinity),
+        ),
+      ],
+    );
+  }
+
+  @override
+  void dispose() {
+    _amount.removeListener(_refresh);
+    _amount.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final dividerColor =
+        theme.extension<AppThemeVisuals>()?.divider ??
+        theme.colorScheme.outlineVariant;
+    final amount = int.tryParse(_amount.text);
+    final valid = amount != null && amount > 0;
+    final canSave =
+        _type != null &&
+        (_type != DayMarkerType.cheatMeal || !_deductKcal || valid);
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.formPage,
+          AppSpacing.card,
+          AppSpacing.formPage,
+          MediaQuery.viewInsetsOf(context).bottom + AppSpacing.card,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.dayMarkerSettingsTitle,
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  ),
+                  if (widget.existing != null)
+                    TextButton.icon(
+                      onPressed: () => Navigator.pop(
+                        context,
+                        const _MarkerChoice(type: null, clear: true),
+                      ),
+                      icon: const InkIcon(InkGlyph.delete, size: 18),
+                      label: Text(l10n.clearMarkerLabel),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.field),
+              _option(context, DayMarkerType.restDay),
+              Divider(height: 1, color: dividerColor),
+              _option(context, DayMarkerType.cheatMeal),
+              const SizedBox(height: AppSpacing.card),
+              Row(
+                children: [
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(l10n.cancel),
+                  ),
+                  const SizedBox(width: AppSpacing.compact),
+                  FilledButton(
+                    onPressed: canSave
+                        ? () => Navigator.pop(
+                            context,
+                            _MarkerChoice(
+                              type: _type,
+                              pauseCarbCycle: _pauseCycle,
+                              deductKcal: _deductKcal,
+                              penaltyKcal: valid ? amount : 1000,
+                            ),
+                          )
+                        : null,
+                    child: Text(l10n.confirm),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -512,6 +794,7 @@ class _LegendLine extends StatelessWidget {
 
 class _DayCell extends StatelessWidget {
   const _DayCell({
+    super.key,
     required this.date,
     required this.today,
     required this.selected,
@@ -540,7 +823,7 @@ class _DayCell extends StatelessWidget {
   final Color badColor;
   final VoidCallback onTap;
 
-  /// 放纵餐/休息日 marker for this day, if any.
+  /// 放纵日/休息日 marker for this day, if any.
   final DayMarkerType? marker;
 
   /// Whether long-press marking is allowed for this day.
@@ -564,7 +847,7 @@ class _DayCell extends StatelessWidget {
     // own target (target − intake); the plan-wide actual deficit — which
     // folds in the planned deficit too — is shown up top for the selected
     // day instead (see [_DeficitDatePickerDialogState.build]). Marked days
-    // (放纵餐/休息日) show a short label instead, so verdict/remaining are
+    // (放纵日/休息日) show a short label instead, so verdict/remaining are
     // skipped entirely.
     final showRemaining =
         !marked && selectable && hasLog && t != null && (isPast || isToday);
