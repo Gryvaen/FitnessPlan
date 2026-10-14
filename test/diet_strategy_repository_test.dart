@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
@@ -199,6 +200,30 @@ void main() {
       final plans = await repo.listPlans();
       expect(plans.single.status, DietPlanStatus.stopped);
       expect(plans.single.endedOn, today);
+    });
+
+    test('target stream observes a stopped plan without resubscribing', () async {
+      await repo.createPlan(_carbCycleDraft(today));
+      final targets = StreamIterator(repo.watchTargetForDay(today, _profile()));
+      try {
+        expect(await targets.moveNext(), isTrue);
+        expect(targets.current?.source, TargetSource.strategy);
+
+        await repo.stopActivePlan();
+        DailyNutritionTarget? current;
+        for (var i = 0; i < 3; i++) {
+          expect(
+            await targets.moveNext().timeout(const Duration(seconds: 2)),
+            isTrue,
+          );
+          current = targets.current;
+          if (current?.source == TargetSource.profile) break;
+        }
+        expect(current?.source, TargetSource.profile);
+        expect(current?.dayType, isNull);
+      } finally {
+        await targets.cancel();
+      }
     });
 
     test(

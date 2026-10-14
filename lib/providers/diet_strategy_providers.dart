@@ -41,6 +41,9 @@ class DietStrategyActions {
     if (restamp != null) {
       await _ref.read(profileProvider.notifier).markStandardChanged(restamp);
     }
+    // The selected Today target may still carry the previous strategy while
+    // its database stream is catching up with the committed stop.
+    _ref.invalidate(dailyTargetProvider(CalendarDay.todayLocal()));
   }
 }
 

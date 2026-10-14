@@ -19,7 +19,6 @@ class CarbCycleView extends StatelessWidget {
     this.onScheduleChanged,
     this.referenceWeightFromProfile = false,
     this.restDayDates,
-    this.allRestDayDates,
     this.windowStart,
   });
 
@@ -31,7 +30,7 @@ class CarbCycleView extends StatelessWidget {
   /// (configure flow). Active-plan previews keep the shorter label.
   final bool referenceWeightFromProfile;
 
-  /// Dates marked as 休息日 on/after [cycleStart]. When non-null, the table
+  /// Dates selected and eligible to pause the cycle. When non-null, the table
   /// rolls with [windowStart] (defaults to today) instead of always starting
   /// at [cycleStart], and each row's type/kcal reflect the actual rest-day
   /// shifted cycle position rather than the raw unshifted template — so the
@@ -39,9 +38,6 @@ class CarbCycleView extends StatelessWidget {
   /// start date. Leave null for the pre-save configure preview, which has no
   /// committed plan (and therefore no rest days) to shift against yet.
   final List<DateTime>? restDayDates;
-
-  /// All rest markers, including days that do not pause cycle progression.
-  final List<DateTime>? allRestDayDates;
 
   /// First date shown when [restDayDates] is set. Defaults to today.
   final DateTime? windowStart;
@@ -92,17 +88,7 @@ class CarbCycleView extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         for (var i = 0; i < days.length; i++)
-          _dayRow(
-            i,
-            days,
-            start,
-            anchor,
-            restDays,
-            allRestDayDates,
-            today,
-            locale,
-            editable,
-          ),
+          _dayRow(i, days, start, anchor, restDays, today, locale, editable),
         if (editable) ...[
           const SizedBox(height: 6),
           Text(l10n.carbCycleEditHint, style: theme.textTheme.bodySmall),
@@ -156,7 +142,6 @@ class CarbCycleView extends StatelessWidget {
     DateTime start,
     DateTime anchor,
     List<DateTime>? restDays,
-    List<DateTime>? allRestDays,
     DateTime today,
     Locale locale,
     bool editable,
@@ -173,18 +158,11 @@ class CarbCycleView extends StatelessWidget {
                 .length,
           );
     final row = days[cycleIndex];
-    // The row's own date is a marked 休息日: the underlying target is still
-    // computed from the shifted cycle slot above (so later rows shift
-    // correctly), but this row itself shouldn't claim a H/M/L carb type —
-    // the day is a rest day, not a diet day.
-    final isRestDay =
-        allRestDays?.contains(date) ?? restDays?.contains(date) ?? false;
     return _DayRow(
       key: ValueKey('cycleDay-$i'),
       name: AppDates.md(date, locale),
       isToday: date == today,
       type: row.dayType,
-      isRestDay: isRestDay,
       kcal: row.energy.round(),
       proteinG: row.proteinG.round(),
       carbG: row.carbG.round(),
@@ -202,7 +180,6 @@ class _DayRow extends StatelessWidget {
     required this.name,
     required this.isToday,
     required this.type,
-    required this.isRestDay,
     required this.kcal,
     required this.proteinG,
     required this.carbG,
@@ -213,11 +190,6 @@ class _DayRow extends StatelessWidget {
   final String name;
   final bool isToday;
   final CarbDayType type;
-
-  /// This row's own date is marked as 休息日 — shown in place of the H/M/L
-  /// type below so the table doesn't claim a carb-day type for a day the
-  /// user has explicitly taken off.
-  final bool isRestDay;
   final int kcal;
   final int proteinG;
   final int carbG;
@@ -238,7 +210,7 @@ class _DayRow extends StatelessWidget {
     final scheme = theme.colorScheme;
     final v = AppThemeVisuals.of(context);
     final l10n = context.l10n;
-    final typeColor = isRestDay ? scheme.onSurfaceVariant : _typeColor();
+    final typeColor = _typeColor();
 
     return Material(
       color: Colors.transparent,
@@ -264,7 +236,7 @@ class _DayRow extends StatelessWidget {
                   Expanded(
                     flex: 4,
                     child: Text(
-                      isRestDay ? l10n.restDayLabel : type.label(l10n),
+                      type.label(l10n),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: typeColor,
                         fontWeight: FontWeight.w600,

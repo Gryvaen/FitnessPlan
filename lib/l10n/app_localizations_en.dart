@@ -1508,6 +1508,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Marking a past day will not change later carb-cycle days.';
 
   @override
+  String get noCarbCycleForDayHint => 'No carb cycle applies on this day.';
+
+  @override
   String get deductCultivationKcalLabel => 'Deduct cultivation';
 
   @override
@@ -2204,7 +2207,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get strategyBasisBody =>
-      'TDEE is estimated with Mifflin–St Jeor × activity factor. Protein and fat are fixed per kg of reference weight; carbohydrate takes the remaining energy. Carb cycling redistributes the weekly budget across high / mid / low days with one common shrink factor so every day stays inside bounds and the weekly total is preserved. The taper lowers carbohydrate by 25 g (100 kcal) per stage.';
+      'TDEE is estimated with Mifflin–St Jeor × activity factor. Balanced and taper targets keep protein and fat per kg of reference weight fixed, with carbohydrate taking the remaining energy. Carb-cycle days use the selected per-kg macro rates. The taper reduces carbohydrate by 25 g (100 kcal) per stage, stopping before 130 g carbohydrate.';
 
   @override
   String get strategyDisclaimer =>
@@ -2212,11 +2215,58 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get strategyScopeNote =>
-      'Switching to maintain / bulk stops the strategy automatically. No extreme low-calorie, fasting or ketogenic presets are offered.';
+      'Switching to maintain / bulk stops the strategy automatically. Fasting and ketogenic presets are not offered.';
 
   @override
   String get strategyPickerIntro =>
       'Choose one primary strategy. Protein and fat stay stable in all three; they differ in how carbohydrate and energy are arranged over time.';
+
+  @override
+  String get configureStrategy => 'Configure strategy';
+
+  @override
+  String get strategyGoalRates => 'Targets and macros';
+
+  @override
+  String get strategyPlanDetails => 'Plan details';
+
+  @override
+  String get strategyCurrentProfile => 'Current profile';
+
+  @override
+  String get strategySavedBasis => 'This plan’s baseline';
+
+  @override
+  String get strategyProposedBasis => 'Proposed target';
+
+  @override
+  String get strategyReviewHint =>
+      'Your weight differs from this plan’s reference weight by at least 3%. Review the target.';
+
+  @override
+  String get strategyReviewAction => 'Review strategy';
+
+  @override
+  String get strategyReviewDismiss => 'Later';
+
+  @override
+  String get profileStrategyReviewHint =>
+      'Profile updated. Review this strategy\'s targets; the current plan stays in effect until you apply changes.';
+
+  @override
+  String get profileStrategyReviewAction => 'Compare targets';
+
+  @override
+  String get profileSaveStoppedStrategy =>
+      'Goal changed. The previous fat-loss strategy has stopped.';
+
+  @override
+  String profileTargetUpdated(int oldKcal, int newKcal) {
+    return 'Profile calorie target updated: $oldKcal → $newKcal kcal';
+  }
+
+  @override
+  String get strategyRulesTitle => 'Rules';
 
   @override
   String get defaultWord => 'Recommended';
@@ -2298,15 +2348,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Deficit exceeds the 20% self-service maximum.';
 
   @override
-  String get issueEnergyBelowFloor =>
-      'Energy would fall below the product floor (max(0.75×TDEE, 1201 kcal, P/F + 130 g carb)).';
-
-  @override
-  String get issueEnergyAboveTdee => 'Energy would exceed the estimated TDEE.';
-
-  @override
   String issueCarbBelowMinimum(int g) {
-    return 'Carbohydrate would fall below $g g/day; lower protein/fat per kg or reduce the deficit.';
+    return 'Carbohydrate would fall below $g g/day; adjust parameters or choose an earlier stage.';
   }
 
   @override
@@ -2347,11 +2390,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get averageTargetEnergy => 'Average target energy';
-
-  @override
-  String energyBoundsHint(int min, int max) {
-    return 'Allowed $min–$max kcal';
-  }
 
   @override
   String get proteinPerKgLabel => 'Protein per kg';
@@ -2408,8 +2446,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Each step is −25 g carbohydrate / −100 kcal. Once the strategy is active you can switch stages yourself anytime — no required waiting period.';
 
   @override
-  String taperFloorLine(int kcal, int carb) {
-    return 'Floor: $kcal kcal and $carb g carbohydrate';
+  String taperFloorLine(int carb) {
+    return 'Minimum carbohydrate: $carb g/day';
   }
 
   @override
@@ -2429,6 +2467,17 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String applyStrategyFrom(String date) {
     return 'Apply from $date';
+  }
+
+  @override
+  String get strategyAlreadyApplied => 'Currently applied';
+
+  @override
+  String get strategyAlreadyScheduled => 'Scheduled to apply';
+
+  @override
+  String lowEnergyNotice(String target, int kcal) {
+    return '$target: $kcal kcal is a low daily target. Review whether it suits you; you can still apply this strategy.';
   }
 
   @override
@@ -2458,7 +2507,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taperRulesBody =>
-      'Rules: each step is −25 g carbohydrate / −100 kcal; never below the energy and 130 g carbohydrate floors.';
+      'Each stage reduces carbohydrate by 25 g (100 kcal). Stages stop before carbohydrate falls below 130 g/day.';
 
   @override
   String get cancelScheduledStrategy => 'Cancel scheduled change';

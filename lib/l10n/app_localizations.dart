@@ -2907,6 +2907,12 @@ abstract class AppLocalizations {
   /// **'Marking a past day will not change later carb-cycle days.'**
   String get backfilledRestDayHint;
 
+  /// No description provided for @noCarbCycleForDayHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No carb cycle applies on this day.'**
+  String get noCarbCycleForDayHint;
+
   /// No description provided for @deductCultivationKcalLabel.
   ///
   /// In en, this message translates to:
@@ -3918,7 +3924,7 @@ abstract class AppLocalizations {
   /// No description provided for @strategyBasisBody.
   ///
   /// In en, this message translates to:
-  /// **'TDEE is estimated with Mifflin–St Jeor × activity factor. Protein and fat are fixed per kg of reference weight; carbohydrate takes the remaining energy. Carb cycling redistributes the weekly budget across high / mid / low days with one common shrink factor so every day stays inside bounds and the weekly total is preserved. The taper lowers carbohydrate by 25 g (100 kcal) per stage.'**
+  /// **'TDEE is estimated with Mifflin–St Jeor × activity factor. Balanced and taper targets keep protein and fat per kg of reference weight fixed, with carbohydrate taking the remaining energy. Carb-cycle days use the selected per-kg macro rates. The taper reduces carbohydrate by 25 g (100 kcal) per stage, stopping before 130 g carbohydrate.'**
   String get strategyBasisBody;
 
   /// No description provided for @strategyDisclaimer.
@@ -3930,7 +3936,7 @@ abstract class AppLocalizations {
   /// No description provided for @strategyScopeNote.
   ///
   /// In en, this message translates to:
-  /// **'Switching to maintain / bulk stops the strategy automatically. No extreme low-calorie, fasting or ketogenic presets are offered.'**
+  /// **'Switching to maintain / bulk stops the strategy automatically. Fasting and ketogenic presets are not offered.'**
   String get strategyScopeNote;
 
   /// No description provided for @strategyPickerIntro.
@@ -3938,6 +3944,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose one primary strategy. Protein and fat stay stable in all three; they differ in how carbohydrate and energy are arranged over time.'**
   String get strategyPickerIntro;
+
+  /// No description provided for @configureStrategy.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure strategy'**
+  String get configureStrategy;
+
+  /// No description provided for @strategyGoalRates.
+  ///
+  /// In en, this message translates to:
+  /// **'Targets and macros'**
+  String get strategyGoalRates;
+
+  /// No description provided for @strategyPlanDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan details'**
+  String get strategyPlanDetails;
+
+  /// No description provided for @strategyCurrentProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Current profile'**
+  String get strategyCurrentProfile;
+
+  /// No description provided for @strategySavedBasis.
+  ///
+  /// In en, this message translates to:
+  /// **'This plan’s baseline'**
+  String get strategySavedBasis;
+
+  /// No description provided for @strategyProposedBasis.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposed target'**
+  String get strategyProposedBasis;
+
+  /// No description provided for @strategyReviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your weight differs from this plan’s reference weight by at least 3%. Review the target.'**
+  String get strategyReviewHint;
+
+  /// No description provided for @strategyReviewAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Review strategy'**
+  String get strategyReviewAction;
+
+  /// No description provided for @strategyReviewDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get strategyReviewDismiss;
+
+  /// No description provided for @profileStrategyReviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile updated. Review this strategy\'s targets; the current plan stays in effect until you apply changes.'**
+  String get profileStrategyReviewHint;
+
+  /// No description provided for @profileStrategyReviewAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare targets'**
+  String get profileStrategyReviewAction;
+
+  /// No description provided for @profileSaveStoppedStrategy.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal changed. The previous fat-loss strategy has stopped.'**
+  String get profileSaveStoppedStrategy;
+
+  /// No description provided for @profileTargetUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile calorie target updated: {oldKcal} → {newKcal} kcal'**
+  String profileTargetUpdated(int oldKcal, int newKcal);
+
+  /// No description provided for @strategyRulesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rules'**
+  String get strategyRulesTitle;
 
   /// No description provided for @defaultWord.
   ///
@@ -4077,22 +4167,10 @@ abstract class AppLocalizations {
   /// **'Deficit exceeds the 20% self-service maximum.'**
   String get issueDeficitAboveRange;
 
-  /// No description provided for @issueEnergyBelowFloor.
-  ///
-  /// In en, this message translates to:
-  /// **'Energy would fall below the product floor (max(0.75×TDEE, 1201 kcal, P/F + 130 g carb)).'**
-  String get issueEnergyBelowFloor;
-
-  /// No description provided for @issueEnergyAboveTdee.
-  ///
-  /// In en, this message translates to:
-  /// **'Energy would exceed the estimated TDEE.'**
-  String get issueEnergyAboveTdee;
-
   /// No description provided for @issueCarbBelowMinimum.
   ///
   /// In en, this message translates to:
-  /// **'Carbohydrate would fall below {g} g/day; lower protein/fat per kg or reduce the deficit.'**
+  /// **'Carbohydrate would fall below {g} g/day; adjust parameters or choose an earlier stage.'**
   String issueCarbBelowMinimum(int g);
 
   /// No description provided for @issueInvalidSchedule.
@@ -4160,12 +4238,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Average target energy'**
   String get averageTargetEnergy;
-
-  /// No description provided for @energyBoundsHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Allowed {min}–{max} kcal'**
-  String energyBoundsHint(int min, int max);
 
   /// No description provided for @proteinPerKgLabel.
   ///
@@ -4260,8 +4332,8 @@ abstract class AppLocalizations {
   /// No description provided for @taperFloorLine.
   ///
   /// In en, this message translates to:
-  /// **'Floor: {kcal} kcal and {carb} g carbohydrate'**
-  String taperFloorLine(int kcal, int carb);
+  /// **'Minimum carbohydrate: {carb} g/day'**
+  String taperFloorLine(int carb);
 
   /// No description provided for @currentStage.
   ///
@@ -4292,6 +4364,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Apply from {date}'**
   String applyStrategyFrom(String date);
+
+  /// No description provided for @strategyAlreadyApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Currently applied'**
+  String get strategyAlreadyApplied;
+
+  /// No description provided for @strategyAlreadyScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled to apply'**
+  String get strategyAlreadyScheduled;
+
+  /// No description provided for @lowEnergyNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'{target}: {kcal} kcal is a low daily target. Review whether it suits you; you can still apply this strategy.'**
+  String lowEnergyNotice(String target, int kcal);
 
   /// No description provided for @taperReview.
   ///
@@ -4332,7 +4422,7 @@ abstract class AppLocalizations {
   /// No description provided for @taperRulesBody.
   ///
   /// In en, this message translates to:
-  /// **'Rules: each step is −25 g carbohydrate / −100 kcal; never below the energy and 130 g carbohydrate floors.'**
+  /// **'Each stage reduces carbohydrate by 25 g (100 kcal). Stages stop before carbohydrate falls below 130 g/day.'**
   String get taperRulesBody;
 
   /// No description provided for @cancelScheduledStrategy.

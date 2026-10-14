@@ -16,10 +16,6 @@ final dayMarkerSettingsProvider =
       return ref.watch(dayMarkerRepositoryProvider).watchSettingsForDay(day);
     });
 
-final allRestDayDatesProvider = StreamProvider<List<DateTime>>((ref) {
-  return ref.watch(dayMarkerRepositoryProvider).watchAllRestDayDates();
-});
-
 /// Rest dates eligible and selected to pause the carb cycle. Previews stay
 /// live as markers change.
 final restDayDatesProvider = StreamProvider<List<DateTime>>((ref) {

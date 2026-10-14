@@ -10,6 +10,7 @@ import '../../providers/app_providers.dart';
 import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
+import 'strategy_fold_section.dart';
 import 'strategy_labels.dart';
 
 /// Carb-taper stage control: every reachable stage's kcal/carbs, tap any of
@@ -25,6 +26,11 @@ class TaperReviewPage extends ConsumerStatefulWidget {
 
 class _TaperReviewPageState extends ConsumerState<TaperReviewPage> {
   bool _busy = false;
+  String? _openSection;
+
+  void _toggle(String section) => setState(() {
+    _openSection = _openSection == section ? null : section;
+  });
 
   Future<void> _switchStage(DietStrategyPlan plan, int stage) async {
     final l10n = context.l10n;
@@ -117,76 +123,76 @@ class _TaperReviewPageState extends ConsumerState<TaperReviewPage> {
           listBottomInset(context, hasFab: false),
         ),
         children: [
-          SportHeroCard(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Expanded(
+                child: Text(
+                  '${l10n.currentStage} · ${l10n.taperStageLabel(current.stage)}',
+                  style: theme.textTheme.titleMedium,
+                ),
+              ),
+              Text(
+                '${current.day.energy.round()} kcal',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: visuals.accent,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.compact),
+          Text(
+            'P ${current.day.proteinG.toStringAsFixed(0)} · '
+            'C ${current.day.carbG.toStringAsFixed(0)} · '
+            'F ${current.day.fatG.toStringAsFixed(0)} g',
+            style: theme.textTheme.bodySmall,
+          ),
+          Text(
+            l10n.planActiveSince(
+              AppDates.md(plan.effectiveFrom, locale),
+              plan.version,
+            ),
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: AppSpacing.card),
+          StrategyFoldSection(
+            key: const ValueKey('taperStageSection'),
+            title: l10n.taperLadderTitle,
+            summary: l10n.taperFreeChoiceHint,
+            expanded: _openSection == 'stages',
+            onTap: () => _toggle('stages'),
+            leading: InkGlyph.chart,
+            child: _StageLadder(
+              baseline: baseline,
+              currentStage: plan.taperStage,
+              busy: _busy,
+              onSelect: (stage) => _switchStage(plan, stage),
+            ),
+          ),
+          StrategyFoldSection(
+            key: const ValueKey('taperRulesSection'),
+            title: l10n.strategyRulesTitle,
+            summary: l10n.taperLadderHint,
+            expanded: _openSection == 'rules',
+            onTap: () => _toggle('rules'),
+            leading: InkGlyph.info,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '${l10n.currentStage} · ${l10n.taperStageLabel(current.stage)}',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: visuals.onHero,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      '${current.day.energy.round()}',
-                      style: theme.textTheme.statValue?.copyWith(
-                        color: visuals.onHero,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'kcal',
-                      style: theme.textTheme.statUnit?.copyWith(
-                        color: visuals.onHeroMuted,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'P ${current.day.proteinG.toStringAsFixed(0)} · '
-                  'C ${current.day.carbG.toStringAsFixed(0)} · '
-                  'F ${current.day.fatG.toStringAsFixed(0)} g',
-                  style: theme.textTheme.meta?.copyWith(
-                    color: visuals.onHeroMuted,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.planActiveSince(
-                    AppDates.md(plan.effectiveFrom, locale),
-                    plan.version,
-                  ),
-                  style: theme.textTheme.meta?.copyWith(
-                    color: visuals.onHeroMuted,
-                  ),
-                ),
+                Text(l10n.taperRulesBody, style: theme.textTheme.bodySmall),
+                const SizedBox(height: AppSpacing.compact),
+                Text(l10n.strategyDisclaimer, style: theme.textTheme.bodySmall),
               ],
             ),
           ),
-          const SizedBox(height: AppSpacing.section),
-          _StageLadder(
-            baseline: baseline,
-            currentStage: plan.taperStage,
-            busy: _busy,
-            onSelect: (stage) => _switchStage(plan, stage),
-          ),
-          const SizedBox(height: AppSpacing.section),
-          Text(l10n.taperRulesBody, style: theme.textTheme.bodySmall),
-          const SizedBox(height: 6),
-          Text(l10n.strategyDisclaimer, style: theme.textTheme.bodySmall),
         ],
       ),
     );
   }
 }
 
-/// Every reachable stage down to the floor; tap one (other than the current
+/// Every reachable stage before the carbohydrate minimum; tap one (other than the current
 /// stage) to switch to it.
 class _StageLadder extends StatelessWidget {
   const _StageLadder({
@@ -214,7 +220,7 @@ class _StageLadder extends StatelessWidget {
     }
     if (stages.isEmpty) {
       return Text(
-        StrategyIssue.energyBelowFloor.message(l10n),
+        StrategyIssue.carbBelowMinimum.message(l10n),
         style: theme.textTheme.bodySmall?.copyWith(
           color: theme.colorScheme.error,
         ),
@@ -222,62 +228,48 @@ class _StageLadder extends StatelessWidget {
     }
     return Column(
       children: [
-        for (final s in stages)
-          Container(
-            margin: const EdgeInsets.only(bottom: 6),
-            decoration: BoxDecoration(
-              color: s.stage == currentStage
-                  ? visuals.accentSoft
-                  : visuals.card,
-              borderRadius: BorderRadius.circular(AppRadius.control),
-              border: Border.all(color: visuals.cardBorder),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: busy || s.stage == currentStage
-                    ? null
-                    : () => onSelect(s.stage),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 64,
-                        child: Text(
-                          l10n.taperStageLabel(s.stage),
-                          style: theme.textTheme.labelLarge,
-                        ),
+        for (final s in stages) ...[
+          InkWell(
+            key: ValueKey('taper-stage-${s.stage}'),
+            onTap: busy || s.stage == currentStage
+                ? null
+                : () => onSelect(s.stage),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 64,
+                    child: Text(
+                      l10n.taperStageLabel(s.stage),
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: s.stage == currentStage ? visuals.accent : null,
                       ),
-                      Expanded(
-                        child: Text(
-                          '${s.day.energy.round()} kcal · '
-                          'C ${s.day.carbG.toStringAsFixed(0)} g',
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                      ),
-                      if (s.stage == currentStage)
-                        Text(
-                          l10n.currentStage,
-                          style: theme.textTheme.labelSmall,
-                        )
-                      else
-                        const InkIcon(InkGlyph.chevronRight, size: 18),
-                    ],
+                    ),
                   ),
-                ),
+                  Expanded(
+                    child: Text(
+                      '${s.day.energy.round()} kcal · '
+                      'C ${s.day.carbG.toStringAsFixed(0)} g',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                  if (s.stage == currentStage)
+                    InkIcon(
+                      InkGlyph.radioChecked,
+                      size: 18,
+                      color: visuals.accent,
+                    )
+                  else
+                    const InkIcon(InkGlyph.chevronRight, size: 18),
+                ],
               ),
             ),
           ),
+          Divider(height: 1, color: visuals.divider),
+        ],
         Text(
-          l10n.taperFloorLine(
-            baseline.minEnergy.round(),
-            StrategyRules.minCarbG.round(),
-          ),
+          l10n.taperFloorLine(StrategyRules.minCarbG.round()),
           style: theme.textTheme.bodySmall,
         ),
       ],

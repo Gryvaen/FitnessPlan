@@ -107,16 +107,6 @@ class DayMarkerRepository {
     return out;
   }
 
-  Stream<List<DateTime>> watchAllRestDayDates() =>
-      (_db.select(
-        _db.dayMarkers,
-      )..where((t) => t.type.equals(DayMarkerType.restDay.name))).watch().map(
-        (rows) => rows
-            .map((row) => StrategyDates.tryDecode(row.date))
-            .whereType<DateTime>()
-            .toList(),
-      );
-
   /// Dates whose 休息日 marker counts toward the carb-cycle day-count pause
   /// (unordered, no range filter — used by the diet-strategy day-count math,
   /// which needs the full history). Excludes markers backfilled onto an

@@ -15,14 +15,12 @@ void main() {
   );
 
   group('baseline', () {
-    test('example produces P150 F60 C215 with feasible bounds', () {
+    test('example produces P150 F60 C215', () {
       expect(base.feasible, isTrue);
       expect(base.proteinG, closeTo(150, 1e-9));
       expect(base.fatG, closeTo(60, 1e-9));
       expect(base.carbG, closeTo(215, 1e-9));
       expect(base.deficitFraction, closeTo(400 / 2400, 1e-9));
-      expect(base.minEnergy, closeTo(1800, 1e-9));
-      expect(base.maxEnergy, 2400);
       expect(base.dailyDeficit, closeTo(400, 1e-9));
     });
 
@@ -78,22 +76,42 @@ void main() {
     });
 
     test('heavy user with low TDEE hits carb floor instead of clamping', () {
-      // 120 kg → P240 F96 → fixed 1824 kcal; +520 = 2344 floor.
+      // 120 kg → P240 F96 → fixed 1824 kcal; 130 g carbs need 520 more.
       final b = StrategyBaseline.fromDeficit(
         referenceWeightKg: 120,
         tdee: 2500,
         deficitFraction: 0.15,
       );
       expect(b.feasible, isFalse);
-      expect(b.issues, contains(StrategyIssue.energyBelowFloor));
       expect(b.issues, contains(StrategyIssue.carbBelowMinimum));
       // Carbs are reported as-is (negative or low) rather than silently 0.
       expect(b.carbG, lessThan(StrategyRules.minCarbG));
+    });
+
+    test('target below the former kcal floor remains feasible', () {
+      final b = StrategyBaseline.fromDeficit(
+        referenceWeightKg: 40,
+        tdee: 1350,
+        deficitFraction: 0.15,
+      );
+      expect(b.energy, closeTo(1147.5, 1e-9));
+      expect(b.carbG, greaterThan(StrategyRules.minCarbG));
+      expect(b.issues, isEmpty);
     });
   });
 
   group('carb cycle', () {
     final rates = CarbCycleRates.defaults();
+
+    test('65 kg defaults allow a 1196 kcal low day', () {
+      final plan = CarbCyclePlanner.compute(
+        referenceWeightKg: 65,
+        rates: rates,
+        schedule: CarbCycleSchedule.defaultFor(4),
+      );
+      expect(plan.energyFor(CarbDayType.low), closeTo(1196, 1e-9));
+      expect(plan.usable, isTrue);
+    });
 
     test('defaultFor: one high day on the last position, the rest low', () {
       for (final n in StrategyRules.cycleLengthDaysOptions) {
@@ -106,32 +124,37 @@ void main() {
       }
     });
 
-    test('cycleDayType: non-high days toggle low <-> mid, skipping invalid', () {
-      // 3-day cycle: [low, low, high]. Tapping day 0 (low) goes to mid
-      // (valid: 1 mid ≤ 1 low remaining elsewhere).
-      var s = CarbCycleSchedule.defaultFor(3);
-      s = s.cycleDayType(0); // low -> mid
-      expect(s.days[0], CarbDayType.mid);
-      expect(s.count(CarbDayType.mid), 1);
-      expect(s.count(CarbDayType.low), 1);
+    test(
+      'cycleDayType: non-high days toggle low <-> mid, skipping invalid',
+      () {
+        // 3-day cycle: [low, low, high]. Tapping day 0 (low) goes to mid
+        // (valid: 1 mid ≤ 1 low remaining elsewhere).
+        var s = CarbCycleSchedule.defaultFor(3);
+        s = s.cycleDayType(0); // low -> mid
+        expect(s.days[0], CarbDayType.mid);
+        expect(s.count(CarbDayType.mid), 1);
+        expect(s.count(CarbDayType.low), 1);
 
-      // Tapping day 1 (still low) would need mid=2 > low=0 — invalid, so it
-      // stays low (mid -> low is always the other direction; there's no
-      // "skip to high" anymore, only the high day itself can become high).
-      final before = s.days[1];
-      s = s.cycleDayType(1);
-      expect(s.days[1], before);
+        // Tapping day 1 (still low) would need mid=2 > low=0 — invalid, so it
+        // stays low (mid -> low is always the other direction; there's no
+        // "skip to high" anymore, only the high day itself can become high).
+        final before = s.days[1];
+        s = s.cycleDayType(1);
+        expect(s.days[1], before);
 
-      // A mid day always reverts to low with no validity check needed.
-      s = s.cycleDayType(0); // mid -> low
-      expect(s.days[0], CarbDayType.low);
-      expect(s.count(CarbDayType.mid), 0);
-    });
+        // A mid day always reverts to low with no validity check needed.
+        s = s.cycleDayType(0); // mid -> low
+        expect(s.days[0], CarbDayType.low);
+        expect(s.count(CarbDayType.mid), 0);
+      },
+    );
 
     test('cycleDayType: tapping the high day swaps it to the other end', () {
       // 3-day cycle: [low, low, high] (high on the last position).
       var s = CarbCycleSchedule.defaultFor(3);
-      s = s.cycleDayType(0); // day 0: low -> mid, so target overwrite is visible
+      s = s.cycleDayType(
+        0,
+      ); // day 0: low -> mid, so target overwrite is visible
       expect(s.days, [CarbDayType.mid, CarbDayType.low, CarbDayType.high]);
 
       // Tap the high day (index 2, the last day): moves to index 0
@@ -214,62 +237,56 @@ void main() {
       },
     );
 
-    test(
-      'adding a mid day keeps the cycle average steady by trimming the '
-      'high day\'s carbs only (protein/fat and the low day stay put)',
-      () {
-        final baseline = CarbCyclePlanner.compute(
-          referenceWeightKg: 75,
-          rates: rates,
-          schedule: CarbCycleSchedule.defaultFor(4),
-        );
-        final withMid = CarbCyclePlanner.compute(
-          referenceWeightKg: 75,
-          rates: rates,
-          schedule: CarbCycleSchedule.defaultFor(4).cycleDayType(1),
-        );
-        // The cycle-wide average energy is unchanged by introducing a mid day.
-        expect(
-          withMid.cycleAverageEnergy,
-          closeTo(baseline.cycleAverageEnergy, 1e-6),
-        );
-        final baseHigh = baseline.days.firstWhere(
-          (d) => d.dayType == CarbDayType.high,
-        );
-        final adjustedHigh = withMid.days.firstWhere(
-          (d) => d.dayType == CarbDayType.high,
-        );
-        expect(adjustedHigh.carbG, lessThan(baseHigh.carbG));
-        expect(adjustedHigh.proteinG, closeTo(baseHigh.proteinG, 1e-9));
-        expect(adjustedHigh.fatG, closeTo(baseHigh.fatG, 1e-9));
-        // ΔC = (midDays/N) × (E_high − E_low) / 4, computed independently
-        // of CarbCyclePlanner so this isn't just re-asserting the impl.
-        const w = 75.0, n = 4, m = 1;
-        final elow =
-            w *
-            (4 * rates.lowProteinPerKg +
-                4 * rates.lowCarbPerKg +
-                9 * rates.lowFatPerKg);
-        final ehigh =
-            w *
-            (4 * rates.highProteinPerKg +
-                4 * rates.highCarbPerKg +
-                9 * rates.highFatPerKg);
-        final deltaCarbG = (m / n) * (ehigh - elow) / 4;
-        final expectedHighCarbG = w * rates.highCarbPerKg - deltaCarbG;
-        expect(adjustedHigh.carbG, closeTo(expectedHighCarbG, 1e-6));
-        expect(
-          adjustedHigh.energy,
-          closeTo(adjustedHigh.macroKcal, 1e-6),
-        );
-        final low = withMid.days.firstWhere((d) => d.dayType == CarbDayType.low);
-        final baseLow = baseline.days.firstWhere(
-          (d) => d.dayType == CarbDayType.low,
-        );
-        expect(low.carbG, closeTo(baseLow.carbG, 1e-9));
-        expect(low.energy, closeTo(elow, 1e-6));
-      },
-    );
+    test('adding a mid day keeps the cycle average steady by trimming the '
+        'high day\'s carbs only (protein/fat and the low day stay put)', () {
+      final baseline = CarbCyclePlanner.compute(
+        referenceWeightKg: 75,
+        rates: rates,
+        schedule: CarbCycleSchedule.defaultFor(4),
+      );
+      final withMid = CarbCyclePlanner.compute(
+        referenceWeightKg: 75,
+        rates: rates,
+        schedule: CarbCycleSchedule.defaultFor(4).cycleDayType(1),
+      );
+      // The cycle-wide average energy is unchanged by introducing a mid day.
+      expect(
+        withMid.cycleAverageEnergy,
+        closeTo(baseline.cycleAverageEnergy, 1e-6),
+      );
+      final baseHigh = baseline.days.firstWhere(
+        (d) => d.dayType == CarbDayType.high,
+      );
+      final adjustedHigh = withMid.days.firstWhere(
+        (d) => d.dayType == CarbDayType.high,
+      );
+      expect(adjustedHigh.carbG, lessThan(baseHigh.carbG));
+      expect(adjustedHigh.proteinG, closeTo(baseHigh.proteinG, 1e-9));
+      expect(adjustedHigh.fatG, closeTo(baseHigh.fatG, 1e-9));
+      // ΔC = (midDays/N) × (E_high − E_low) / 4, computed independently
+      // of CarbCyclePlanner so this isn't just re-asserting the impl.
+      const w = 75.0, n = 4, m = 1;
+      final elow =
+          w *
+          (4 * rates.lowProteinPerKg +
+              4 * rates.lowCarbPerKg +
+              9 * rates.lowFatPerKg);
+      final ehigh =
+          w *
+          (4 * rates.highProteinPerKg +
+              4 * rates.highCarbPerKg +
+              9 * rates.highFatPerKg);
+      final deltaCarbG = (m / n) * (ehigh - elow) / 4;
+      final expectedHighCarbG = w * rates.highCarbPerKg - deltaCarbG;
+      expect(adjustedHigh.carbG, closeTo(expectedHighCarbG, 1e-6));
+      expect(adjustedHigh.energy, closeTo(adjustedHigh.macroKcal, 1e-6));
+      final low = withMid.days.firstWhere((d) => d.dayType == CarbDayType.low);
+      final baseLow = baseline.days.firstWhere(
+        (d) => d.dayType == CarbDayType.low,
+      );
+      expect(low.carbG, closeTo(baseLow.carbG, 1e-9));
+      expect(low.energy, closeTo(elow, 1e-6));
+    });
 
     test('day macros scale linearly with reference weight', () {
       final schedule = CarbCycleSchedule.defaultFor(4);
@@ -344,40 +361,58 @@ void main() {
       final anchor = DateTime(2026, 9, 1);
       expect(StrategyDates.cycleIndexOf(anchor, anchor, 4), 0);
       expect(
-        StrategyDates.cycleIndexOf(anchor.add(const Duration(days: 3)), anchor, 4),
+        StrategyDates.cycleIndexOf(
+          anchor.add(const Duration(days: 3)),
+          anchor,
+          4,
+        ),
         3,
       );
       expect(
-        StrategyDates.cycleIndexOf(anchor.add(const Duration(days: 4)), anchor, 4),
+        StrategyDates.cycleIndexOf(
+          anchor.add(const Duration(days: 4)),
+          anchor,
+          4,
+        ),
         0,
       );
       expect(
-        StrategyDates.cycleIndexOf(anchor.add(const Duration(days: 9)), anchor, 4),
+        StrategyDates.cycleIndexOf(
+          anchor.add(const Duration(days: 9)),
+          anchor,
+          4,
+        ),
         1,
       );
       // Before the anchor still resolves to a valid 0-based index.
       expect(
-        StrategyDates.cycleIndexOf(anchor.subtract(const Duration(days: 1)), anchor, 4),
+        StrategyDates.cycleIndexOf(
+          anchor.subtract(const Duration(days: 1)),
+          anchor,
+          4,
+        ),
         3,
       );
     });
   });
 
   group('carb taper', () {
-    test('stages 2000/215 → 1900/190 → 1800/165 then floor', () {
+    test('stages continue to 1700/140 then stop at 130 g carb', () {
       final s0 = CarbTaperStage.of(base, 0);
       final s1 = CarbTaperPlanner.nextStage(base, 0)!;
       final s2 = CarbTaperPlanner.nextStage(base, 1)!;
+      final s3 = CarbTaperPlanner.nextStage(base, 2)!;
       expect(s0.day.energy, 2000);
       expect(s0.day.carbG, closeTo(215, 1e-9));
       expect(s1.day.energy, 1900);
       expect(s1.day.carbG, closeTo(190, 1e-9));
       expect(s2.day.energy, 1800);
       expect(s2.day.carbG, closeTo(165, 1e-9));
-      // 1700 < E_min (1800) → no further step.
-      expect(CarbTaperPlanner.nextStage(base, 2), isNull);
-      expect(CarbTaperStage.of(base, 3).feasible, isFalse);
-      for (final s in [s0, s1, s2]) {
+      expect(s3.day.energy, 1700);
+      expect(s3.day.carbG, closeTo(140, 1e-9));
+      expect(CarbTaperPlanner.nextStage(base, 3), isNull);
+      expect(CarbTaperStage.of(base, 4).feasible, isFalse);
+      for (final s in [s0, s1, s2, s3]) {
         expect(s.day.macroKcal, closeTo(s.day.energy, 1e-9));
         expect(s.day.proteinG, 150);
         expect(s.day.fatG, 60);

@@ -67,11 +67,8 @@ abstract final class StrategyRules {
   /// Fat g/kg baseline.
   static const defaultFatPerKg = 0.8;
 
-  /// Largest daily deficit fraction tolerated by the product (E_min ≥ 0.75T).
-  static const maxDailyDeficitFraction = 0.25;
-
-  /// Absolute energy floor (kcal/day); 800–1200 is a supervised range.
-  static const absoluteEnergyFloorKcal = 1201.0;
+  /// Informational only; never prevents a strategy from being saved.
+  static const lowEnergyNoticeKcal = 1200.0;
 
   /// Minimum daily carbohydrate for the regular template (g).
   static const minCarbG = 130.0;
@@ -129,8 +126,6 @@ enum StrategyIssue {
   invalidTargetEnergy,
   deficitBelowRange,
   deficitAboveRange,
-  energyBelowFloor,
-  energyAboveTdee,
   carbBelowMinimum,
   invalidSchedule,
   invalidCarbCycleRate,
@@ -141,7 +136,7 @@ enum StrategyIssue {
 
 bool _finitePositive(double v) => v.isFinite && v > 0;
 
-/// Common baseline: T, E0, P, F, C0 and feasibility bounds.
+/// Common baseline: T, E0, P, F, C0 and parameter feasibility.
 class StrategyBaseline {
   const StrategyBaseline._({
     required this.referenceWeightKg,
@@ -153,8 +148,6 @@ class StrategyBaseline {
     required this.proteinG,
     required this.fatG,
     required this.carbG,
-    required this.minEnergy,
-    required this.maxEnergy,
     required this.issues,
   });
 
@@ -246,21 +239,7 @@ class StrategyBaseline {
         proteinG * StrategyRules.kcalPerGramProtein +
         fatG * StrategyRules.kcalPerGramFat;
     final carbG = (energy - fixedKcal) / StrategyRules.kcalPerGramCarb;
-    final minEnergy = math.max(
-      math.max(
-        tdee * (1 - StrategyRules.maxDailyDeficitFraction),
-        StrategyRules.absoluteEnergyFloorKcal,
-      ),
-      fixedKcal + StrategyRules.minCarbG * StrategyRules.kcalPerGramCarb,
-    );
-    final maxEnergy = tdee;
     if (issues.isEmpty) {
-      if (energy < minEnergy - 1e-6) {
-        issues.add(StrategyIssue.energyBelowFloor);
-      }
-      if (energy > maxEnergy + 1e-6) {
-        issues.add(StrategyIssue.energyAboveTdee);
-      }
       if (carbG < StrategyRules.minCarbG - 1e-6) {
         issues.add(StrategyIssue.carbBelowMinimum);
       }
@@ -275,8 +254,6 @@ class StrategyBaseline {
       proteinG: proteinG,
       fatG: fatG,
       carbG: carbG,
-      minEnergy: minEnergy,
-      maxEnergy: maxEnergy,
       issues: List.unmodifiable(issues),
     );
   }
@@ -299,12 +276,6 @@ class StrategyBaseline {
   final double proteinG;
   final double fatG;
   final double carbG;
-
-  /// E_min = max(0.75T, 1201, 4P + 9F + 4×130).
-  final double minEnergy;
-
-  /// E_max = T.
-  final double maxEnergy;
 
   final List<StrategyIssue> issues;
 
@@ -710,13 +681,6 @@ abstract final class CarbCyclePlanner {
       CarbDayType.high: high,
     };
     final days = [for (final type in schedule.days) byType[type]!];
-    if (days.isNotEmpty) {
-      final minEnergy = days.map((d) => d.energy).reduce(math.min);
-      if (minEnergy.isFinite &&
-          minEnergy < StrategyRules.absoluteEnergyFloorKcal - 1e-6) {
-        issues.add(StrategyIssue.energyBelowFloor);
-      }
-    }
     return CarbCyclePlan(
       referenceWeightKg: w,
       rates: rates,
@@ -761,10 +725,7 @@ class CarbTaperStage {
     final j = stage < 0 ? 0 : stage;
     final e = b.energy - StrategyRules.taperStepKcal * j;
     final c = b.carbForEnergy(e);
-    final feasible =
-        b.feasible &&
-        e >= b.minEnergy - 1e-6 &&
-        c >= StrategyRules.minCarbG - 1e-6;
+    final feasible = b.feasible && c >= StrategyRules.minCarbG - 1e-6;
     return CarbTaperStage._(
       stage: j,
       day: DayMacroTarget(
@@ -781,7 +742,7 @@ class CarbTaperStage {
   final int stage;
   final DayMacroTarget day;
 
-  /// False once the stage would breach E_min or the 130 g carb floor.
+  /// False once the stage would breach the 130 g carb floor.
   final bool feasible;
 }
 

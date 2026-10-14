@@ -1,7 +1,10 @@
 import 'dart:convert';
 
 import 'package:diet/data/db.dart';
+import 'package:diet/data/repositories/diet_strategy_repository.dart';
 import 'package:diet/domain/calendar_day.dart';
+import 'package:diet/domain/diet_plan.dart';
+import 'package:diet/domain/diet_strategy.dart';
 import 'package:diet/domain/models.dart';
 import 'package:diet/l10n/app_localizations.dart';
 import 'package:diet/providers/app_providers.dart';
@@ -59,7 +62,11 @@ Future<_Harness> _harness({Map<String, Object> extraPrefs = const {}}) async {
   return _Harness(db, prefs, container);
 }
 
-Widget _app(_Harness h, {AppThemeId theme = AppThemeId.fresh}) {
+Widget _app(
+  _Harness h, {
+  AppThemeId theme = AppThemeId.fresh,
+  Locale locale = const Locale('en'),
+}) {
   final router = GoRouter(
     initialLocation: '/today',
     routes: [
@@ -88,7 +95,7 @@ Widget _app(_Harness h, {AppThemeId theme = AppThemeId.fresh}) {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      locale: const Locale('en'),
+      locale: locale,
       routerConfig: router,
     ),
   );
@@ -100,6 +107,7 @@ Future<void> _pump(
   Size size = const Size(360, 800),
   double textScale = 1.0,
   AppThemeId theme = AppThemeId.fresh,
+  Locale locale = const Locale('en'),
 }) async {
   await tester.binding.setSurfaceSize(size);
   tester.platformDispatcher.textScaleFactorTestValue = textScale;
@@ -107,7 +115,7 @@ Future<void> _pump(
     tester.platformDispatcher.clearTextScaleFactorTestValue();
     tester.binding.setSurfaceSize(null);
   });
-  await tester.pumpWidget(_app(h, theme: theme));
+  await tester.pumpWidget(_app(h, theme: theme, locale: locale));
   await tester.pump(const Duration(milliseconds: 300));
   await tester.pump(const Duration(seconds: 1));
 }
@@ -164,11 +172,175 @@ void main() {
   });
 
   group('today hero card layout', () {
+    testWidgets('stopping a carb cycle clears today label and keeps history', (
+      tester,
+    ) async {
+      final today = CalendarDay.todayLocal();
+      final yesterday = DateTime(today.year, today.month, today.day - 1);
+      final schedule = CarbCycleSchedule.defaultFor(4);
+      final rates = CarbCycleRates.defaults();
+      final cycle = CarbCyclePlanner.compute(
+        referenceWeightKg: 75,
+        rates: rates,
+        schedule: schedule,
+      );
+      final repo = h.container.read(dietStrategyRepositoryProvider);
+      await repo.createPlan(
+        DietStrategyPlanDraft(
+          kind: DietStrategyKind.carbCycle,
+          effectiveFrom: yesterday,
+          referenceWeightKg: 75,
+          estimatedTdee: 2400,
+          baseEnergy: cycle.cycleAverageEnergy,
+          schedule: schedule,
+          carbCycleRates: rates,
+        ),
+        now: yesterday,
+      );
+      await _pump(tester, h);
+      expect(find.textContaining('Low-carb day'), findsOneWidget);
+      expect(
+        h.container.read(selectedDayTargetProvider).value?.source,
+        TargetSource.strategy,
+      );
+
+      await h.container.read(dietStrategyActionsProvider).cancelPlan();
+      await tester.pump();
+      expect(find.textContaining('Low-carb day'), findsNothing);
+      await _settle(tester);
+      expect(find.textContaining('Low-carb day'), findsNothing);
+      expect(find.text('Cut'), findsOneWidget);
+      final todayTarget = h.container.read(selectedDayTargetProvider).value;
+      expect(todayTarget?.source, TargetSource.profile);
+      expect(todayTarget?.calories, 2000);
+
+      h.container.read(selectedDayProvider.notifier).setDay(yesterday);
+      await _settle(tester);
+      expect(find.textContaining('Low-carb day'), findsOneWidget);
+      expect(
+        h.container.read(selectedDayTargetProvider).value?.source,
+        TargetSource.strategy,
+      );
+      h.container.read(selectedDayProvider.notifier).goToToday();
+      await _settle(tester);
+      expect(find.textContaining('Low-carb day'), findsNothing);
+      expect(
+        h.container.read(selectedDayTargetProvider).value?.source,
+        TargetSource.profile,
+      );
+    });
+
+    testWidgets('rest marker follows the calorie heading with a separator', (
+      tester,
+    ) async {
+      final today = CalendarDay.todayLocal();
+      final markers = h.container.read(dayMarkerRepositoryProvider);
+      await markers.setRestDay(today);
+      await _pump(tester, h, size: const Size(600, 800));
+
+      expect(find.text('Cut'), findsOneWidget);
+      expect(find.text('Rest day'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('todayDayMarkerStatus')),
+        findsOneWidget,
+      );
+      final heading = find.text('Today calories');
+      final marker = find.byKey(const ValueKey('todayDayMarkerStatus'));
+      expect(
+        find.descendant(of: marker, matching: find.text('|')),
+        findsOneWidget,
+      );
+      expect(
+        tester.getTopLeft(marker).dx,
+        greaterThan(tester.getTopRight(heading).dx),
+      );
+      expect(
+        (tester.getCenter(marker).dy - tester.getCenter(heading).dy).abs(),
+        lessThan(8),
+      );
+      _expectNoOverflow(tester);
+    });
+
+    testWidgets('historical cheat marker follows the selected date', (
+      tester,
+    ) async {
+      final today = CalendarDay.todayLocal();
+      final yesterday = DateTime(today.year, today.month, today.day - 1);
+      await h.container
+          .read(dayMarkerRepositoryProvider)
+          .setCheatMeal(yesterday);
+      h.container.read(selectedDayProvider.notifier).setDay(yesterday);
+      await _pump(tester, h);
+
+      expect(find.text('Cut'), findsOneWidget);
+      expect(find.text('Cheat day'), findsOneWidget);
+      expect(find.text('Rest day'), findsNothing);
+      expect(
+        find.byKey(const ValueKey('todayDayMarkerStatus')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('todayDayMarkerStatus')),
+          matching: find.text('|'),
+        ),
+        findsOneWidget,
+      );
+      _expectNoOverflow(tester);
+    });
+
+    testWidgets('Chinese rest marker stays beside the heading at 360px', (
+      tester,
+    ) async {
+      await h.container
+          .read(dayMarkerRepositoryProvider)
+          .setRestDay(CalendarDay.todayLocal());
+      await _pump(tester, h, locale: const Locale('zh'));
+
+      final heading = find.text('今日热量');
+      final marker = find.byKey(const ValueKey('todayDayMarkerStatus'));
+      expect(find.text('休息日'), findsOneWidget);
+      expect(
+        tester.getTopLeft(marker).dx,
+        greaterThan(tester.getTopRight(heading).dx),
+      );
+      expect(
+        (tester.getCenter(marker).dy - tester.getCenter(heading).dy).abs(),
+        lessThan(8),
+      );
+      _expectNoOverflow(tester);
+    });
+
+    testWidgets('switching dates updates the separate marker status', (
+      tester,
+    ) async {
+      final today = CalendarDay.todayLocal();
+      final yesterday = DateTime(today.year, today.month, today.day - 1);
+      final markers = h.container.read(dayMarkerRepositoryProvider);
+      await markers.setRestDay(today);
+      await markers.setCheatMeal(yesterday);
+      await _pump(tester, h);
+      expect(find.text('Rest day'), findsOneWidget);
+
+      h.container.read(selectedDayProvider.notifier).setDay(yesterday);
+      await _settle(tester);
+      expect(find.text('Cheat day'), findsOneWidget);
+      expect(find.text('Rest day'), findsNothing);
+
+      h.container.read(selectedDayProvider.notifier).goToToday();
+      await _settle(tester);
+      expect(find.text('Rest day'), findsOneWidget);
+      expect(find.text('Cheat day'), findsNothing);
+      _expectNoOverflow(tester);
+    });
+
     testWidgets('four macro columns on a 360px screen without overflow', (
       tester,
     ) async {
       await _pump(tester, h);
       _expectNoOverflow(tester);
+
+      expect(find.byKey(const ValueKey('todayDayMarkerStatus')), findsNothing);
 
       expect(find.text('Protein'), findsOneWidget);
       expect(find.text('Carbs'), findsOneWidget);
@@ -298,6 +470,21 @@ void main() {
   });
 
   group('themes', () {
+    for (final id in [AppThemeId.fresh, AppThemeId.graphite]) {
+      testWidgets('day marker status fits ${id.name} at 360px', (tester) async {
+        await h.container
+            .read(dayMarkerRepositoryProvider)
+            .setRestDay(CalendarDay.todayLocal());
+        await _pump(tester, h, theme: id);
+        expect(
+          find.byKey(const ValueKey('todayDayMarkerStatus')),
+          findsOneWidget,
+        );
+        expect(find.text('Rest day'), findsOneWidget);
+        _expectNoOverflow(tester);
+      });
+    }
+
     for (final id in AppThemeId.presets) {
       testWidgets('renders today page in ${id.name}', (tester) async {
         await _pump(tester, h, theme: id);

@@ -27,6 +27,10 @@ class ProfileNotifier extends Notifier<UserProfile?> {
   }) async {
     final existing = state;
     final oldGoal = existing?.goal;
+    final leavingCut = oldGoal == FitnessGoal.cut && goal != FitnessGoal.cut;
+    final openKcal = leavingCut && existing != null
+        ? await openCultivationKcalBeforeGoalSwitch(ref, existing)
+        : null;
     final profile = await ref
         .read(profileRepositoryProvider)
         .saveFromInputs(
@@ -51,7 +55,11 @@ class ProfileNotifier extends Notifier<UserProfile?> {
           .stopActivePlan(reason: 'goalChanged:${goal.name}');
       if (restamp != null) await markStandardChanged(restamp);
     }
-    await _syncCultivationForGoalSwitch(from: oldGoal, to: goal);
+    await _syncCultivationForGoalSwitch(
+      from: oldGoal,
+      to: goal,
+      openKcal: openKcal,
+    );
     return profile;
   }
 
@@ -60,18 +68,13 @@ class ProfileNotifier extends Notifier<UserProfile?> {
   Future<void> _syncCultivationForGoalSwitch({
     required FitnessGoal? from,
     required FitnessGoal to,
+    double? openKcal,
   }) async {
     if (from == to) return;
     final ledger = ref.read(cutCultivationStateProvider.notifier);
 
     if (from == FitnessGoal.cut && to != FitnessGoal.cut) {
-      // Await a fresh history build while the open segment still exists.
-      ref.invalidate(cultivationHistoryProvider);
-      final sections = await ref.read(cultivationHistoryProvider.future);
-      final openKcal = sections
-          .where((s) => s.isCurrent)
-          .fold<double>(0, (sum, s) => sum + s.totalKcal);
-      await ledger.freezeLeavingCut(openKcal);
+      await ledger.freezeLeavingCut(openKcal ?? 0);
       ref.invalidate(cultivationHistoryProvider);
       return;
     }

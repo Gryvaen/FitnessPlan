@@ -7,6 +7,7 @@ import '../../data/repositories/meal_repository.dart';
 import '../../domain/day_marker.dart';
 import '../../domain/deficit.dart';
 import '../../domain/diet_plan.dart';
+import '../../domain/diet_strategy.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
@@ -17,6 +18,9 @@ typedef DailyTargetsLoader =
       DateTime start,
       DateTime end,
     );
+
+/// Resolves the strategy version governing a calendar day.
+typedef DayStrategyLoader = Future<DietStrategyKind?> Function(DateTime day);
 
 /// Custom month calendar: actual daily deficit only on days with meal logs;
 /// past days green/red verdict, today neutral.
@@ -29,6 +33,7 @@ Future<DateTime?> showDeficitDatePicker({
   required MealRepository mealRepository,
   required DayMarkerRepository markerRepository,
   required DailyTargetsLoader loadTargets,
+  required DayStrategyLoader loadStrategyForDay,
   DateTime? calorieStandardSince,
 
   /// How far into the future the calendar may be paged for 放纵日/休息日
@@ -54,6 +59,7 @@ Future<DateTime?> showDeficitDatePicker({
       mealRepository: mealRepository,
       markerRepository: markerRepository,
       loadTargets: loadTargets,
+      loadStrategyForDay: loadStrategyForDay,
       calorieStandardSince: since,
       markUntil: markUntil == null
           ? null
@@ -71,6 +77,7 @@ class _DeficitDatePickerDialog extends StatefulWidget {
     required this.mealRepository,
     required this.markerRepository,
     required this.loadTargets,
+    required this.loadStrategyForDay,
     this.calorieStandardSince,
     this.markUntil,
   });
@@ -84,6 +91,7 @@ class _DeficitDatePickerDialog extends StatefulWidget {
   final MealRepository mealRepository;
   final DayMarkerRepository markerRepository;
   final DailyTargetsLoader loadTargets;
+  final DayStrategyLoader loadStrategyForDay;
   final DateTime? calorieStandardSince;
   final DateTime? markUntil;
 
@@ -183,6 +191,7 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
 
   Future<void> _showMarkerSheet(DateTime day) async {
     final existing = await widget.markerRepository.settingsForDay(day);
+    final strategy = await widget.loadStrategyForDay(day);
     if (!mounted) return;
     final choice = await showModalBottomSheet<_MarkerChoice>(
       context: context,
@@ -190,8 +199,10 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
       isScrollControlled: true,
       builder: (ctx) => _MarkerSettingsSheet(
         existing: existing,
+        hasCarbCycle: strategy == DietStrategyKind.carbCycle,
         canPauseCycle:
-            !day.isBefore(_today) || existing?.pauseCarbCycle == true,
+            strategy == DietStrategyKind.carbCycle &&
+            (!day.isBefore(_today) || existing?.pauseCarbCycle == true),
       ),
     );
     if (!mounted || choice == null) return;
@@ -449,10 +460,12 @@ class _MarkerChoice {
 class _MarkerSettingsSheet extends StatefulWidget {
   const _MarkerSettingsSheet({
     required this.existing,
+    required this.hasCarbCycle,
     required this.canPauseCycle,
   });
 
   final DayMarkerSettings? existing;
+  final bool hasCarbCycle;
   final bool canPauseCycle;
 
   @override
@@ -540,7 +553,9 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                           color: selected ? accent : null,
                         ),
                       ),
-                      if (selected && !expanded)
+                      if (selected &&
+                          !expanded &&
+                          (!rest || widget.hasCarbCycle))
                         Text(
                           _summary(context, type),
                           style: theme.textTheme.bodySmall?.copyWith(
@@ -586,11 +601,13 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                               ? (value) => setState(() => _pauseCycle = value)
                               : null,
                         ),
-                        if (!widget.canPauseCycle)
+                        if (!widget.hasCarbCycle || !widget.canPauseCycle)
                           Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              l10n.backfilledRestDayHint,
+                              widget.hasCarbCycle
+                                  ? l10n.backfilledRestDayHint
+                                  : l10n.noCarbCycleForDayHint,
                               style: theme.textTheme.bodySmall,
                             ),
                           ),

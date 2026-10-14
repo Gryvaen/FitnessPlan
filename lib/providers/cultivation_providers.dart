@@ -180,6 +180,7 @@ final _cultivationDbTickProvider = StreamProvider.autoDispose<int>((ref) {
 Future<List<CultivationDayRecord>> _buildCultivationDays({
   required Ref ref,
   required Set<DateTime> allowedDays,
+  UserProfile? profileForResolution,
 }) async {
   if (allowedDays.isEmpty) return const [];
 
@@ -188,7 +189,7 @@ Future<List<CultivationDayRecord>> _buildCultivationDays({
   final mealRepo = ref.read(mealRepositoryProvider);
   final strategyRepo = ref.read(dietStrategyRepositoryProvider);
   final workoutRepo = ref.read(workoutRepositoryProvider);
-  final profile = ref.read(profileProvider);
+  final profile = profileForResolution ?? ref.read(profileProvider);
 
   final oldest = allowedDays.reduce((a, b) => a.isBefore(b) ? a : b);
   final newest = allowedDays.reduce((a, b) => a.isAfter(b) ? a : b);
@@ -217,7 +218,10 @@ Future<List<CultivationDayRecord>> _buildCultivationDays({
 
   final ordered = dates.toList()..sort((a, b) => b.compareTo(a));
   final targets = await strategyRepo.targetsBetween(oldest, newest, profile);
-  final workouts = await workoutRepo.watchDayWorkoutsForDays(ordered).first;
+  final workouts = <DateTime, DayWorkoutSnapshot>{};
+  for (final day in ordered) {
+    workouts[day] = await workoutRepo.daySnapshot(day);
+  }
 
   final out = <CultivationDayRecord>[];
   for (final day in ordered) {
@@ -271,6 +275,23 @@ Future<List<CultivationDayRecord>> _buildCultivationDays({
     );
   }
   return out;
+}
+
+/// Computes the open cut segment before a profile goal switch. This path
+/// avoids watching profileProvider from inside ProfileNotifier.save.
+Future<double> openCultivationKcalBeforeGoalSwitch(
+  Ref ref,
+  UserProfile currentProfile,
+) async {
+  final ledger = ref.read(cutCultivationStateProvider);
+  final segment = ledger.openSegment;
+  if (segment == null) return 0;
+  final days = await _buildCultivationDays(
+    ref: ref,
+    allowedDays: _daysInSegment(segment),
+    profileForResolution: currentProfile,
+  );
+  return days.fold<double>(0.0, (sum, day) => sum + day.totalKcal);
 }
 
 Set<DateTime> _daysInSegment(CutCultivationSegment segment) {

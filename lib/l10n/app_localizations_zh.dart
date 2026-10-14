@@ -1479,6 +1479,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get backfilledRestDayHint => '过去日期的补标不会更改后续碳循环。';
 
   @override
+  String get noCarbCycleForDayHint => '该日期未应用碳循环策略。';
+
+  @override
   String get deductCultivationKcalLabel => '扣减修行';
 
   @override
@@ -2163,17 +2166,61 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get strategyBasisBody =>
-      'TDEE 采用 Mifflin–St Jeor × 活动系数估算；蛋白质与脂肪按参考体重固定，碳水承担剩余能量。碳循环用统一缩放因子在高 / 中 / 低碳日间重新分配周预算，保证每日都在上下界内且七日总量不变。渐降每阶段减少 25 g 碳水（100 kcal）。';
+      'TDEE 采用 Mifflin–St Jeor × 活动系数估算。均衡缺口与碳水渐降按参考体重确定蛋白质、脂肪，碳水由剩余能量计算；碳循环按所选的每公斤营养倍数计算每日目标。渐降每阶段减少 25 g 碳水（100 kcal），在碳水低于 130 g 前停止。';
 
   @override
   String get strategyDisclaimer =>
       '以上为面向一般健康成年人的产品默认参数，非临床处方，未经医学认证；有疾病或特殊情况请咨询专业人士。';
 
   @override
-  String get strategyScopeNote => '切换到维持 / 增肌会自动停用策略；不提供极低热量、自动禁食或生酮预设。';
+  String get strategyScopeNote => '切换到维持 / 增肌会自动停用策略；不提供自动禁食或生酮预设。';
 
   @override
   String get strategyPickerIntro => '选择一种主策略。三种策略都保持蛋白质与脂肪稳定，差别在于碳水与能量如何随时间安排。';
+
+  @override
+  String get configureStrategy => '配置策略';
+
+  @override
+  String get strategyGoalRates => '目标与营养';
+
+  @override
+  String get strategyPlanDetails => '计划详情';
+
+  @override
+  String get strategyCurrentProfile => '当前档案';
+
+  @override
+  String get strategySavedBasis => '本版策略基准';
+
+  @override
+  String get strategyProposedBasis => '待应用目标';
+
+  @override
+  String get strategyReviewHint => '当前体重与策略参考体重相差至少 3%，建议复核目标。';
+
+  @override
+  String get strategyReviewAction => '复核策略';
+
+  @override
+  String get strategyReviewDismiss => '稍后';
+
+  @override
+  String get profileStrategyReviewHint => '档案已更新，建议复核策略。当前目标仍按本版策略执行。';
+
+  @override
+  String get profileStrategyReviewAction => '查看新旧目标';
+
+  @override
+  String get profileSaveStoppedStrategy => '减脂目标已切换，原减脂策略已停用。';
+
+  @override
+  String profileTargetUpdated(int oldKcal, int newKcal) {
+    return '档案热量目标已更新：$oldKcal → $newKcal kcal';
+  }
+
+  @override
+  String get strategyRulesTitle => '规则说明';
 
   @override
   String get defaultWord => '推荐';
@@ -2248,15 +2295,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get issueDeficitAboveRange => '缺口超过 20% 自助上限。';
 
   @override
-  String get issueEnergyBelowFloor =>
-      '热量低于产品下限（max(0.75×TDEE, 1201 kcal, 蛋白脂肪 + 130 g 碳水)）。';
-
-  @override
-  String get issueEnergyAboveTdee => '热量超过 TDEE 估算值。';
-
-  @override
   String issueCarbBelowMinimum(int g) {
-    return '碳水低于 $g g/天；请降低每公斤蛋白/脂肪或缩小缺口。';
+    return '碳水低于 $g g/天；请调整参数或选择较早阶段。';
   }
 
   @override
@@ -2296,11 +2336,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get averageTargetEnergy => '平均目标热量';
-
-  @override
-  String energyBoundsHint(int min, int max) {
-    return '允许范围 $min–$max kcal';
-  }
 
   @override
   String get proteinPerKgLabel => '每公斤蛋白质';
@@ -2356,8 +2391,8 @@ class AppLocalizationsZh extends AppLocalizations {
       '每步 −25 g 碳水 / −100 kcal，进入策略后可随时自行切换阶段，不强制等待期。';
 
   @override
-  String taperFloorLine(int kcal, int carb) {
-    return '下限：$kcal kcal 与 $carb g 碳水';
+  String taperFloorLine(int carb) {
+    return '最低碳水：$carb g/天';
   }
 
   @override
@@ -2377,6 +2412,17 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String applyStrategyFrom(String date) {
     return '自 $date 起应用';
+  }
+
+  @override
+  String get strategyAlreadyApplied => '当前已应用';
+
+  @override
+  String get strategyAlreadyScheduled => '已预约应用';
+
+  @override
+  String lowEnergyNotice(String target, int kcal) {
+    return '$target：$kcal kcal 属于较低的每日目标，请确认是否适合自己；仍可应用此策略。';
   }
 
   @override
@@ -2404,7 +2450,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get taperRulesBody => '规则：每步 −25 g 碳水 / −100 kcal；不低于热量与 130 g 碳水下限。';
+  String get taperRulesBody => '每阶段减少 25 g 碳水（100 kcal）；碳水低于 130 g/天前停止。';
 
   @override
   String get cancelScheduledStrategy => '取消预约切换';

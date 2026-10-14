@@ -6,7 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('preview labels every rest day but shifts only selected ones', (
+  testWidgets('preview keeps carb types and shifts only selected rest days', (
     tester,
   ) async {
     final start = DateTime(2026, 10, 13);
@@ -33,7 +33,6 @@ void main() {
             cycleStart: start,
             windowStart: start,
             restDayDates: paused,
-            allRestDayDates: [rest],
           ),
         ),
       ),
@@ -43,14 +42,15 @@ void main() {
     expect(
       find.descendant(
         of: find.byKey(const ValueKey('cycleDay-1')),
-        matching: find.text('Rest day'),
+        matching: find.text('Mid-carb day'),
       ),
       findsOneWidget,
     );
+    expect(find.text('Rest day'), findsNothing);
     expect(
       find.descendant(
         of: find.byKey(const ValueKey('cycleDay-2')),
-        matching: find.text('${plan.integerDays()[2].energy.round()}'),
+        matching: find.text('Low-carb day'),
       ),
       findsOneWidget,
     );
@@ -58,10 +58,18 @@ void main() {
     await show([rest]);
     expect(
       find.descendant(
-        of: find.byKey(const ValueKey('cycleDay-2')),
-        matching: find.text('${plan.integerDays()[1].energy.round()}'),
+        of: find.byKey(const ValueKey('cycleDay-1')),
+        matching: find.text('Mid-carb day'),
       ),
       findsOneWidget,
     );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('cycleDay-2')),
+        matching: find.text('Mid-carb day'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Rest day'), findsNothing);
   });
 }

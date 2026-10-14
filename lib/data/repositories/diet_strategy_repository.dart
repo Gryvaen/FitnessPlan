@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 
 import '../../domain/calendar_day.dart';
@@ -100,7 +102,9 @@ class DietStrategyPlanDraft {
     final issues = <StrategyIssue>[...baseline.issues];
     if (kind == DietStrategyKind.carbTaper) {
       final stage = CarbTaperStage.of(baseline, taperStage);
-      if (!stage.feasible) issues.add(StrategyIssue.energyBelowFloor);
+      if (!stage.feasible && !issues.contains(StrategyIssue.carbBelowMinimum)) {
+        issues.add(StrategyIssue.carbBelowMinimum);
+      }
     }
     return issues;
   }
@@ -130,7 +134,10 @@ class DietStrategyRepository {
     if (old.kind != next.kind) return true;
     switch (next.kind) {
       case DietStrategyKind.balanced:
-        return !_closeEnough(old.deficitFraction, next.baseline.deficitFraction) ||
+        return !_closeEnough(
+              old.deficitFraction,
+              next.baseline.deficitFraction,
+            ) ||
             !_closeEnough(old.proteinPerKg, next.proteinPerKg) ||
             !_closeEnough(old.fatPerKg, next.fatPerKg);
       case DietStrategyKind.carbCycle:
@@ -531,15 +538,14 @@ class DietStrategyRepository {
   Future<int> _restDaysBeforeForDay(DietStrategyPlan plan, DateTime day) async {
     if (plan.kind != DietStrategyKind.carbCycle) return 0;
     final rows =
-        await (_db.select(_db.dayMarkers)
-              ..where(
-                (t) =>
-                    t.type.equals(DayMarkerType.restDay.name) &
-                    t.date.isBiggerOrEqualValue(
-                      StrategyDates.encode(plan.effectiveFrom),
-                    ) &
-                    t.date.isSmallerThanValue(StrategyDates.encode(day)),
-              ))
+        await (_db.select(_db.dayMarkers)..where(
+              (t) =>
+                  t.type.equals(DayMarkerType.restDay.name) &
+                  t.date.isBiggerOrEqualValue(
+                    StrategyDates.encode(plan.effectiveFrom),
+                  ) &
+                  t.date.isSmallerThanValue(StrategyDates.encode(day)),
+            ))
             .get();
     return DayMarkerRepository.progressionRestDayDates(rows).length;
   }
@@ -622,9 +628,8 @@ class DietStrategyRepository {
   Stream<DailyNutritionTarget?> watchTargetForDay(
     DateTime day,
     UserProfile? profile,
-  ) async* {
+  ) {
     final d = StrategyDates.dayOnly(day);
-    yield await targetForDay(d, profile);
     final updates = _db.tableUpdates(
       TableUpdateQuery.onAllTables([
         _db.dietStrategyPlans,
@@ -632,9 +637,48 @@ class DietStrategyRepository {
         _db.dayMarkers,
       ]),
     );
-    await for (final _ in updates) {
-      yield await targetForDay(d, profile);
+    late final StreamController<DailyNutritionTarget?> controller;
+    var resolving = false;
+    var dirty = false;
+    var cancelled = false;
+
+    Future<void> resolve() async {
+      if (cancelled || controller.isClosed) return;
+      if (resolving) {
+        dirty = true;
+        return;
+      }
+      resolving = true;
+      try {
+        do {
+          dirty = false;
+          try {
+            final target = await targetForDay(d, profile);
+            if (!cancelled && !controller.isClosed) controller.add(target);
+          } catch (error, stackTrace) {
+            if (!cancelled && !controller.isClosed) {
+              controller.addError(error, stackTrace);
+            }
+          }
+        } while (dirty && !cancelled && !controller.isClosed);
+      } finally {
+        resolving = false;
+      }
     }
+
+    controller = StreamController<DailyNutritionTarget?>(
+      onListen: () {
+        // Listen before the initial read so a plan stopped during that read
+        // cannot leave the provider showing the old carb-day target.
+        final subscription = updates.listen((_) => resolve());
+        controller.onCancel = () {
+          cancelled = true;
+          return subscription.cancel();
+        };
+        resolve();
+      },
+    );
+    return controller.stream;
   }
 
   /// Targets for every local day in [[start], [end]] (inclusive), without
@@ -650,9 +694,7 @@ class DietStrategyRepository {
     if (e.isBefore(s)) return const {};
     final today = CalendarDay.todayLocal(now);
     final plans = await listPlans();
-    final hasCarbCycle = plans.any(
-      (p) => p.kind == DietStrategyKind.carbCycle,
-    );
+    final hasCarbCycle = plans.any((p) => p.kind == DietStrategyKind.carbCycle);
     final restDayDates = hasCarbCycle
         ? await _allRestDayDates()
         : const <DateTime>[];
@@ -707,10 +749,9 @@ class DietStrategyRepository {
   /// backfilled onto an already-past date, see
   /// [restDayCountsTowardProgression].
   Future<List<DateTime>> _allRestDayDates() async {
-    final rows =
-        await (_db.select(
-          _db.dayMarkers,
-        )..where((t) => t.type.equals(DayMarkerType.restDay.name))).get();
+    final rows = await (_db.select(
+      _db.dayMarkers,
+    )..where((t) => t.type.equals(DayMarkerType.restDay.name))).get();
     return DayMarkerRepository.progressionRestDayDates(rows);
   }
 

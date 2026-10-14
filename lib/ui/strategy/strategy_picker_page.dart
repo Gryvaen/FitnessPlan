@@ -12,11 +12,19 @@ import '../theme/sport_chrome.dart';
 import 'strategy_labels.dart';
 
 /// Profile → Nutrition → Strategy: pick one of the three primary strategies.
-class StrategyPickerPage extends ConsumerWidget {
+class StrategyPickerPage extends ConsumerStatefulWidget {
   const StrategyPickerPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<StrategyPickerPage> createState() => _StrategyPickerPageState();
+}
+
+class _StrategyPickerPageState extends ConsumerState<StrategyPickerPage> {
+  DietStrategyKind? _expanded;
+  bool _rulesExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final visuals = AppThemeVisuals.of(context);
@@ -34,8 +42,6 @@ class StrategyPickerPage extends ConsumerWidget {
           listBottomInset(context, hasFab: false),
         ),
         children: [
-          Text(l10n.strategyPickerIntro, style: theme.textTheme.bodyMedium),
-          const SizedBox(height: AppSpacing.card),
           if (blocking.isNotEmpty) ...[
             for (final i in blocking)
               Padding(
@@ -56,26 +62,112 @@ class StrategyPickerPage extends ConsumerWidget {
               current: active?.kind == kind,
               isDefault: kind == DietStrategyKind.balanced,
               enabled: blocking.isEmpty,
-              onTap: () => context.push(
+              expanded: _expanded == kind,
+              onTap: () =>
+                  setState(() => _expanded = _expanded == kind ? null : kind),
+              onConfigure: () => context.push(
                 '/profile/nutrition/strategy/configure?kind=${kind.name}',
               ),
             ),
-          const SizedBox(height: AppSpacing.compact),
-          Text(
-            l10n.strategyScopeNote,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.compact),
-          Text(
-            l10n.strategyDisclaimer,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: visuals.onHeroMuted,
-            ),
+          const SizedBox(height: AppSpacing.section),
+          _StrategyRulesNote(
+            expanded: _rulesExpanded,
+            onTap: () => setState(() => _rulesExpanded = !_rulesExpanded),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Secondary guidance below the three selectable strategy rows.
+class _StrategyRulesNote extends StatelessWidget {
+  const _StrategyRulesNote({required this.expanded, required this.onTap});
+
+  final bool expanded;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final visuals = AppThemeVisuals.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
+    final noteStyle = theme.textTheme.bodySmall?.copyWith(height: 1.5);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          container: true,
+          button: true,
+          label:
+              '${l10n.strategyRulesTitle}, '
+              '${expanded ? l10n.collapseSection : l10n.expandSection}',
+          child: InkWell(
+            key: const ValueKey('strategyPickerRules'),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.field),
+              child: ExcludeSemantics(
+                child: Row(
+                  children: [
+                    InkIcon(
+                      InkGlyph.info,
+                      size: 18,
+                      color: expanded ? visuals.accent : muted,
+                    ),
+                    const SizedBox(width: AppSpacing.compact),
+                    Expanded(
+                      child: Text(
+                        l10n.strategyRulesTitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: expanded ? visuals.accent : muted,
+                        ),
+                      ),
+                    ),
+                    InkIcon(
+                      expanded ? InkGlyph.collapse : InkGlyph.expand,
+                      size: 18,
+                      color: expanded ? visuals.accent : muted,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeInOut,
+          child: expanded
+              ? Container(
+                  margin: const EdgeInsets.only(
+                    left: AppSpacing.compact,
+                    bottom: AppSpacing.compact,
+                  ),
+                  padding: const EdgeInsets.only(
+                    left: AppSpacing.card,
+                    right: AppSpacing.compact,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border(left: BorderSide(color: visuals.divider)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l10n.strategyPickerIntro, style: noteStyle),
+                      const SizedBox(height: AppSpacing.field),
+                      Text(l10n.strategyScopeNote, style: noteStyle),
+                      const SizedBox(height: AppSpacing.field),
+                      Text(l10n.strategyDisclaimer, style: noteStyle),
+                    ],
+                  ),
+                )
+              : const SizedBox(width: double.infinity),
+        ),
+      ],
     );
   }
 }
@@ -86,14 +178,18 @@ class _StrategyOption extends StatelessWidget {
     required this.current,
     required this.isDefault,
     required this.enabled,
+    required this.expanded,
     required this.onTap,
+    required this.onConfigure,
   });
 
   final DietStrategyKind kind;
   final bool current;
   final bool isDefault;
   final bool enabled;
+  final bool expanded;
   final VoidCallback onTap;
+  final VoidCallback onConfigure;
 
   @override
   Widget build(BuildContext context) {
@@ -101,74 +197,87 @@ class _StrategyOption extends StatelessWidget {
     final theme = Theme.of(context);
     final visuals = AppThemeVisuals.of(context);
     final scheme = theme.colorScheme;
-    return Semantics(
-      button: true,
-      selected: current,
-      child: Material(
-        color: Colors.transparent,
-        shape: Border(bottom: BorderSide(color: visuals.divider)),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: enabled ? onTap : null,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.card),
-            child: Row(
-              children: [
-                InkIcon(
-                  current ? InkGlyph.radioChecked : InkGlyph.radioEmpty,
-                  color: enabled
-                      ? (current ? visuals.accent : scheme.onSurfaceVariant)
-                      : scheme.onSurfaceVariant.withValues(alpha: 0.45),
-                ),
-                const SizedBox(width: AppSpacing.card),
-                Expanded(
+    return Column(
+      children: [
+        Semantics(
+          button: true,
+          selected: current,
+          label:
+              '${kind.label(l10n)}, '
+              '${expanded ? l10n.collapseSection : l10n.expandSection}',
+          child: InkWell(
+            key: ValueKey('strategy-option-${kind.name}'),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.card),
+              child: Row(
+                children: [
+                  InkIcon(
+                    current ? InkGlyph.radioChecked : InkGlyph.radioEmpty,
+                    color: current ? visuals.accent : scheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: AppSpacing.card),
+                  Expanded(
+                    child: Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 6,
+                      children: [
+                        Text(
+                          kind.label(l10n),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: current ? visuals.accent : null,
+                          ),
+                        ),
+                        if (isDefault) SoftChip(label: l10n.defaultWord),
+                        if (current)
+                          SoftChip(
+                            label: l10n.currentWord,
+                            color: visuals.accentSoft,
+                            foreground: visuals.accent,
+                          ),
+                      ],
+                    ),
+                  ),
+                  InkIcon(
+                    expanded ? InkGlyph.collapse : InkGlyph.expand,
+                    size: 20,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 180),
+          child: expanded
+              ? Padding(
+                  padding: const EdgeInsets.only(
+                    left: 40,
+                    bottom: AppSpacing.card,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              kind.label(l10n),
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: current ? visuals.accent : null,
-                              ),
-                            ),
-                          ),
-                          if (isDefault) ...[
-                            const SizedBox(width: 6),
-                            SoftChip(label: l10n.defaultWord),
-                          ],
-                          if (current) ...[
-                            const SizedBox(width: 6),
-                            SoftChip(
-                              label: l10n.currentWord,
-                              color: visuals.accentSoft,
-                              foreground: visuals.accent,
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 4),
                       Text(
                         kind.description(l10n),
                         style: theme.textTheme.bodySmall,
                       ),
+                      const SizedBox(height: AppSpacing.compact),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: FilledButton.tonal(
+                          onPressed: enabled ? onConfigure : null,
+                          child: Text(l10n.configureStrategy),
+                        ),
+                      ),
                     ],
                   ),
-                ),
-                const SizedBox(width: 4),
-                InkIcon(
-                  InkGlyph.chevronRight,
-                  color: enabled
-                      ? scheme.onSurfaceVariant
-                      : theme.disabledColor,
-                ),
-              ],
-            ),
-          ),
+                )
+              : const SizedBox(width: double.infinity),
         ),
-      ),
+        Divider(height: 1, color: visuals.divider),
+      ],
     );
   }
 }

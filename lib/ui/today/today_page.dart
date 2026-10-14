@@ -64,7 +64,9 @@ class _TodayPageState extends ConsumerState<TodayPage> {
 
     // Single per-date target source; fall back to the profile target only
     // while the first resolution is in flight.
-    final dayTarget = targetAsync.value;
+    // A refresh can retain the previous AsyncValue. Do not show its carb-day
+    // label after the strategy has been stopped while the new target loads.
+    final dayTarget = targetAsync.isLoading ? null : targetAsync.value;
     final targets = dayTarget?.toMacroTargets() ?? profile.targets;
     final targetCalories = dayTarget?.calories ?? targets.calories.toDouble();
     final remainCal = targetCalories - intake.calories;
@@ -90,8 +92,6 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     final dayMarker = ref.watch(dayMarkerProvider(day)).value;
     final strategyLabel = dayTarget == null
         ? null
-        : dayMarker == DayMarkerType.restDay
-        ? l10n.restDayLabel
         : targetChipLabel(dayTarget, profile, l10n);
     final canChooseDietStrategy =
         profile.goal == FitnessGoal.cut &&
@@ -109,6 +109,8 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         mealRepository: ref.read(mealRepositoryProvider),
         markerRepository: ref.read(dayMarkerRepositoryProvider),
         loadTargets: (start, end) => repo.targetsBetween(start, end, profile),
+        loadStrategyForDay: (date) async =>
+            (await repo.planCovering(date))?.kind,
         calorieStandardSince: profile.calorieStandardSince,
         markUntil: DateTime(today.year + 1, today.month, today.day),
       );
@@ -170,11 +172,47 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                       Row(
                         children: [
                           Expanded(
-                            child: Text(
-                              l10n.sectionCalories(sectionPrefix),
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: onHero,
-                              ),
+                            child: Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: AppSpacing.compact,
+                              runSpacing: 2,
+                              children: [
+                                IntrinsicWidth(
+                                  child: Text(
+                                    l10n.sectionCalories(sectionPrefix),
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(color: onHero),
+                                  ),
+                                ),
+                                if (dayMarker != null)
+                                  Row(
+                                    key: const ValueKey('todayDayMarkerStatus'),
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        '|',
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(color: onHeroMuted),
+                                      ),
+                                      const SizedBox(width: AppSpacing.compact),
+                                      InkIcon(
+                                        dayMarker == DayMarkerType.restDay
+                                            ? InkGlyph.bedtime
+                                            : InkGlyph.celebration,
+                                        size: 16,
+                                        color: onHeroMuted,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        dayMarker == DayMarkerType.restDay
+                                            ? l10n.restDayLabel
+                                            : l10n.cheatMealLabel,
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(color: onHeroMuted),
+                                      ),
+                                    ],
+                                  ),
+                              ],
                             ),
                           ),
                           _StepsStatusLabel(

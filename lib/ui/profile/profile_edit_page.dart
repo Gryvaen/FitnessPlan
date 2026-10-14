@@ -125,6 +125,10 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   Future<bool> _persist() async {
     setState(() => _saving = true);
     try {
+      final previous = ref.read(profileProvider);
+      final previousPlan = await ref
+          .read(dietStrategyRepositoryProvider)
+          .activePlan();
       // 目标体重 is no longer editable here — carry the existing value
       // through as-is (dropping it if it's stopped making sense against a
       // new current weight), never invent or reset one.
@@ -136,7 +140,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
           ? preservedTarget
           : null;
 
-      await ref
+      final saved = await ref
           .read(profileProvider.notifier)
           .save(
             sex: _sex,
@@ -153,6 +157,36 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         await ref.read(waterGoalProvider.notifier).setGoal(_waterGoalMl!);
       }
       if (!mounted) return false;
+      final nutritionChanged =
+          previous != null && profileAffectsNutrition(previous, saved);
+      if (nutritionChanged &&
+          previousPlan != null &&
+          saved.goal == FitnessGoal.cut &&
+          profileDiffersFromPlan(saved, previousPlan)) {
+        await ref
+            .read(profileStrategyReviewProvider.notifier)
+            .record(previousPlan);
+      }
+      if (!mounted) return false;
+      final l10n = context.l10n;
+      final feedback =
+          previousPlan != null &&
+              previous?.goal == FitnessGoal.cut &&
+              saved.goal != FitnessGoal.cut
+          ? l10n.profileSaveStoppedStrategy
+          : nutritionChanged &&
+                previousPlan == null &&
+                previous.targets.calories != saved.targets.calories
+          ? l10n.profileTargetUpdated(
+              previous.targets.calories,
+              saved.targets.calories,
+            )
+          : null;
+      if (feedback != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(feedback)));
+      }
       setState(() => _dirty = false);
       return true;
     } catch (e) {

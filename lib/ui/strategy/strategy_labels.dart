@@ -38,8 +38,6 @@ extension StrategyIssueL10n on StrategyIssue {
     StrategyIssue.invalidTargetEnergy => l10n.issueInvalidTargetEnergy,
     StrategyIssue.deficitBelowRange => l10n.issueDeficitBelowRange,
     StrategyIssue.deficitAboveRange => l10n.issueDeficitAboveRange,
-    StrategyIssue.energyBelowFloor => l10n.issueEnergyBelowFloor,
-    StrategyIssue.energyAboveTdee => l10n.issueEnergyAboveTdee,
     StrategyIssue.carbBelowMinimum => l10n.issueCarbBelowMinimum(
       StrategyRules.minCarbG.round(),
     ),
