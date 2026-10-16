@@ -1862,6 +1862,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get checkingUpdate => '正在检查更新';
+
+  @override
   String alreadyLatest(String version) {
     return '已是最新版本（$version）';
   }

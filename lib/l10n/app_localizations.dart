@@ -3489,6 +3489,12 @@ abstract class AppLocalizations {
   /// **'{kcal} kcal\nP {p} · C {c} · F {f}\n\nDetails under Me → My profile.'**
   String quotaReadyBody(String kcal, String p, String c, String f);
 
+  /// No description provided for @checkingUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking for updates'**
+  String get checkingUpdate;
+
   /// No description provided for @alreadyLatest.
   ///
   /// In en, this message translates to:

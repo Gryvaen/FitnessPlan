@@ -1897,6 +1897,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get checkingUpdate => 'Checking for updates';
+
+  @override
   String alreadyLatest(String version) {
     return 'Already up to date ($version)';
   }

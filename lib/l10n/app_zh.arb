@@ -992,6 +992,7 @@
       }
     }
   },
+  "checkingUpdate": "正在检查更新",
   "alreadyLatest": "已是最新版本（{version}）",
   "@alreadyLatest": {
     "placeholders": {

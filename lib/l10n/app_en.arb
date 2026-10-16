@@ -1024,6 +1024,7 @@
       }
     }
   },
+  "checkingUpdate": "Checking for updates",
   "alreadyLatest": "Already up to date ({version})",
   "@alreadyLatest": {
     "placeholders": {
