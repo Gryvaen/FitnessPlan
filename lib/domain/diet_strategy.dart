@@ -762,7 +762,7 @@ abstract final class StrategyDates {
   static DateTime dayOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
   /// 0-based position of [date] within a [cycleLengthDays]-day cycle
-  /// anchored at [cycleStart] (cycle day 0 = [cycleStart]).
+  /// anchored at [cycleStart], whose position is [startIndex] (default 0).
   ///
   /// [restDaysBefore] counts 休息日-marked dates in `[cycleStart, date)`;
   /// each one pauses the cycle for a day, so later dates take on the index
@@ -773,9 +773,12 @@ abstract final class StrategyDates {
     DateTime cycleStart,
     int cycleLengthDays, {
     int restDaysBefore = 0,
+    int startIndex = 0,
   }) {
     final diff =
-        dayOnly(date).difference(dayOnly(cycleStart)).inDays - restDaysBefore;
+        dayOnly(date).difference(dayOnly(cycleStart)).inDays -
+        restDaysBefore +
+        startIndex;
     final idx = diff % cycleLengthDays;
     return idx < 0 ? idx + cycleLengthDays : idx;
   }

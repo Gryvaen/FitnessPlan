@@ -201,8 +201,7 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
         existing: existing,
         hasCarbCycle: strategy == DietStrategyKind.carbCycle,
         canPauseCycle:
-            strategy == DietStrategyKind.carbCycle &&
-            (!day.isBefore(_today) || existing?.pauseCarbCycle == true),
+            strategy == DietStrategyKind.carbCycle && !day.isBefore(_today),
       ),
     );
     if (!mounted || choice == null) return;

@@ -481,7 +481,7 @@ void main() {
   });
 
   testWidgets(
-    'stopped cycle keeps a historical saved delay editable and unchanged',
+    'stopped cycle keeps a historical saved delay locked and unchanged',
     (tester) async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(db.close);
@@ -531,7 +531,7 @@ void main() {
               ),
             )
             .onChanged,
-        isNotNull,
+        isNull,
       );
       await tester.tap(find.byType(FilledButton).last);
       await tester.pumpAndSettle();

@@ -2,7 +2,10 @@ package com.fitnessplan.fitness_plan
 
 import android.app.DownloadManager
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
+import java.io.File
 
 /**
  * Downloads an update APK via the system [DownloadManager] instead of a
@@ -15,22 +18,25 @@ import android.net.Uri
 object ApkDownloader {
     const val CHANNEL = "fitness_plan/apk_downloader"
 
-    fun enqueue(context: Context, url: String, fileName: String): Long {
-        // Clear a stale file from a previous attempt so DownloadManager
-        // doesn't append "(1)" to the destination name, which would break
-        // the completion receiver's path check.
-        context.getExternalFilesDir(null)?.resolve(fileName)?.let {
-            if (it.exists()) it.delete()
-        }
+    fun enqueue(context: Context, url: String, fileName: String, size: Long, sha256: String): Long {
+        require(size > 0 && sha256.matches(Regex("[a-fA-F0-9]{64}"))) { "Missing checksum" }
+        require(File(fileName).name == fileName && fileName.endsWith(".apk")) { "Invalid filename" }
+        require(Uri.parse(url).scheme == "https") { "HTTPS required" }
+        // Each attempt gets its own destination. An older install notification
+        // must never point at a new file that is still being downloaded.
+        val destination = "${System.currentTimeMillis()}-$fileName"
         val request = DownloadManager.Request(Uri.parse(url))
-            .setDestinationInExternalFilesDir(context, null, fileName)
+            .setDestinationInExternalFilesDir(context, null, destination)
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
             .setTitle(fileName)
             .setMimeType("application/vnd.android.package-archive")
             .setAllowedOverMetered(true)
             .setAllowedOverRoaming(true)
         val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        return manager.enqueue(request)
+        val id = manager.enqueue(request)
+        context.getSharedPreferences("apk_integrity", Context.MODE_PRIVATE).edit()
+            .putLong("$id.size", size).putString("$id.sha256", sha256.lowercase()).commit()
+        return id
     }
 
     /** Returns `{status, bytesDownloaded, totalBytes, localPath, reason}`. */
@@ -56,13 +62,37 @@ object ApkDownloader {
                 "bytesDownloaded" to (if (bytesCol >= 0) cursor.getLong(bytesCol) else 0L),
                 "totalBytes" to (if (totalCol >= 0) cursor.getLong(totalCol) else 0L),
                 "localPath" to localUri?.let { Uri.parse(it).path },
+                "waitingForNetwork" to (!hasNetwork(context) || cursor.getInt(statusCol) == DownloadManager.STATUS_PAUSED &&
+                    cursor.getInt(reasonCol) in listOf(DownloadManager.PAUSED_WAITING_FOR_NETWORK, DownloadManager.PAUSED_QUEUED_FOR_WIFI)),
                 "reason" to (if (status == "failed" && reasonCol >= 0) cursor.getInt(reasonCol) else null),
             )
         }
     }
 
+    private fun hasNetwork(context: Context): Boolean {
+        val manager = context.getSystemService(ConnectivityManager::class.java)
+        val capabilities = manager.getNetworkCapabilities(manager.activeNetwork) ?: return false
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
+
+    @Synchronized
+    fun verify(context: Context, downloadId: Long): Boolean {
+        val prefs = context.getSharedPreferences("apk_integrity", Context.MODE_PRIVATE)
+        val expected = prefs.getString("$downloadId.sha256", null) ?: return false
+        val info = query(context, downloadId)
+        if (info["status"] != "success") return false
+        val file = File(info["localPath"] as? String ?: return false)
+        val root = context.getExternalFilesDir(null)?.canonicalFile ?: return false
+        if (file.canonicalFile.parentFile != root) return false
+        val valid = ApkIntegrity.matches(file, prefs.getLong("$downloadId.size", -1L), expected)
+        if (!valid) file.delete()
+        return valid
+    }
+
     fun cancel(context: Context, downloadId: Long) {
         val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         manager.remove(downloadId)
+        context.getSharedPreferences("apk_integrity", Context.MODE_PRIVATE).edit()
+            .remove("$downloadId.size").remove("$downloadId.sha256").apply()
     }
 }

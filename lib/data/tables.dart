@@ -248,6 +248,8 @@ class DietStrategyPlans extends Table {
   /// 3-5 letter H/M/L code for carb cycling (day-count cycle, not weekday).
   TextColumn get schedule => text().nullable()();
 
+  IntColumn get cycleStartIndex => integer().withDefault(const Constant(0))();
+
   /// Deprecated (was the deficit-based amplitude); no longer written.
   RealColumn get carbAmplitudeG => real().nullable()();
 
@@ -273,6 +275,8 @@ class DailyNutritionTargets extends Table {
   IntColumn get planVersion => integer().nullable()();
   TextColumn get strategy => text().nullable()();
   TextColumn get dayType => text().nullable()();
+  IntColumn get cycleIndex => integer().nullable()();
+  BoolColumn get cyclePaused => boolean().nullable()();
   RealColumn get calories => real()();
   RealColumn get proteinG => real()();
   RealColumn get carbG => real()();

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../domain/cycle_history.dart';
 import '../../domain/diet_plan.dart';
 import '../../domain/diet_strategy.dart';
 import '../../domain/models.dart';
@@ -219,6 +220,12 @@ class _CutNutritionTargets extends ConsumerWidget {
     final restDayDates = active?.kind == DietStrategyKind.carbCycle
         ? ref.watch(restDayDatesProvider).value ?? const <DateTime>[]
         : const <DateTime>[];
+    final cycleAnchors = active?.kind == DietStrategyKind.carbCycle
+        ? cycleAnchorsOf(
+            ref.watch(cycleSnapshotsProvider).value ?? const [],
+            active!.id,
+          )
+        : const <CycleAnchor>[];
 
     return ListView(
       padding: EdgeInsets.fromLTRB(
@@ -251,6 +258,7 @@ class _CutNutritionTargets extends ConsumerWidget {
           activeStartsLater: activeStartsLater,
           today: today,
           restDayDates: restDayDates,
+          cycleAnchors: cycleAnchors,
           onAdjustSchedule: () => context.push(
             '/profile/nutrition/strategy/configure?kind=carbCycle',
           ),
@@ -346,6 +354,7 @@ class _StrategyDescription extends StatefulWidget {
     required this.activeStartsLater,
     required this.today,
     required this.restDayDates,
+    required this.cycleAnchors,
     required this.onAdjustSchedule,
     required this.onTaperReview,
     required this.onStop,
@@ -360,6 +369,7 @@ class _StrategyDescription extends StatefulWidget {
   /// in sync with the live (rest-day-shifted) schedule instead of forever
   /// showing the plan's original start-date template.
   final List<DateTime> restDayDates;
+  final List<CycleAnchor> cycleAnchors;
   final VoidCallback onAdjustSchedule;
   final VoidCallback onTaperReview;
   final VoidCallback onStop;
@@ -419,7 +429,9 @@ class _StrategyDescriptionState extends State<_StrategyDescription> {
                 key: ValueKey('active-${active.id}'),
                 plan: active.carbCyclePlan!,
                 cycleStart: active.effectiveFrom,
+                cycleStartIndex: active.cycleStartIndex,
                 restDayDates: widget.restDayDates,
+                anchors: widget.cycleAnchors,
                 windowStart: widget.activeStartsLater
                     ? active.effectiveFrom
                     : widget.today,

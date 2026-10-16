@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'tables.dart';
+import 'cycle_alignment_migration.dart';
 
 part 'db.g.dart';
 
@@ -41,7 +42,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 31;
+  int get schemaVersion => 33;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -270,6 +271,27 @@ UPDATE day_markers SET
   include_diet = NOT exclude_contributions AND
     (type != 'cheatMeal' OR NOT cheat_penalty_enabled)
 ''');
+      }
+      if (from < 32) {
+        await _addColumnIfMissing(
+          m,
+          dietStrategyPlans,
+          dietStrategyPlans.cycleStartIndex,
+        );
+        // v33 repairs both legacy resets and the v32 calendar-only repair.
+      }
+      if (from < 33) {
+        await _addColumnIfMissing(
+          m,
+          dailyNutritionTargets,
+          dailyNutritionTargets.cycleIndex,
+        );
+        await _addColumnIfMissing(
+          m,
+          dailyNutritionTargets,
+          dailyNutritionTargets.cyclePaused,
+        );
+        await repairLegacyCycleAlignment(this);
       }
     },
   );

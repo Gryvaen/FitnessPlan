@@ -515,6 +515,18 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
                     ),
                     plan: cyclePlan!,
                     cycleStart: effective,
+                    cycleStartIndex: DietStrategyRepository.continuationIndex(
+                      plans: ref.watch(dietPlansProvider).value ?? const [],
+                      snapshots:
+                          ref.watch(cycleSnapshotsProvider).value ?? const [],
+                      restDays:
+                          ref.watch(restDayDatesProvider).value ?? const [],
+                      effectiveFrom: effective,
+                      schedule: _schedule,
+                    ),
+                    restDayDates:
+                        ref.watch(restDayDatesProvider).value ?? const [],
+                    windowStart: effective,
                     onScheduleChanged: (s) => setState(() => _schedule = s),
                     referenceWeightFromProfile: true,
                   ),

@@ -1320,7 +1320,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reminderOemHintBatteryButton => '关闭电池优化';
 
   @override
-  String get reminderOemHintAutostartButton => '后台运行设置';
+  String get reminderOemHintAutostartButton => '去设置';
 
   @override
   String get stepsOemHintBody =>
@@ -1860,6 +1860,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String quotaReadyBody(String kcal, String p, String c, String f) {
     return '$kcal kcal\nP $p · C $c · F $f\n\n详情可在「我的 → 我的档案」查看。';
   }
+
+  @override
+  String get checkingUpdate => '正在检查更新';
 
   @override
   String alreadyLatest(String version) {

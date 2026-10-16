@@ -26,12 +26,11 @@ extension ReminderStatusLabels on AppLocalizations {
   String get reminderLimitSheetIntro => _zh
       ? '逐项检查下面的设置，处理后状态会自动更新。'
       : 'Check each setting below. Status updates when you return.';
-  String get reminderOpenNotifications =>
-      _zh ? '设置通知权限' : 'Set notification access';
-  String get reminderOpenExact => _zh ? '允许精确闹钟' : 'Allow exact alarms';
-  String get reminderOpenFullScreen =>
-      _zh ? '设置锁屏弹出' : 'Set lock screen alerts';
-  String get reminderRetrySchedule => _zh ? '重新安排提醒' : 'Schedule again';
+  // Short verbs: the issue title already names what each action fixes.
+  String get reminderOpenNotifications => _zh ? '去开启' : 'Turn on';
+  String get reminderOpenExact => _zh ? '去开启' : 'Turn on';
+  String get reminderOpenFullScreen => _zh ? '去开启' : 'Turn on';
+  String get reminderRetrySchedule => _zh ? '重试' : 'Retry';
   String get reminderScheduleUnknownTitle =>
       _zh ? '尚未确认排程结果' : 'Schedule not confirmed';
   String get reminderScheduleFailedTitle =>

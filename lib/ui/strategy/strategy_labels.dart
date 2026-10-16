@@ -65,6 +65,7 @@ String targetChipLabel(
         case DietStrategyKind.balanced:
           return kind.label(l10n);
         case DietStrategyKind.carbCycle:
+          if (target.cyclePaused == true) return l10n.restDayLabel;
           final day = target.dayType;
           return day == null
               ? kind.label(l10n)

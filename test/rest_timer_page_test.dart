@@ -99,6 +99,18 @@ void main() {
     await tester.pump(const Duration(milliseconds: 350));
   }
 
+  Badge settingsBadge(WidgetTester tester) => tester.widget<Badge>(
+    find.descendant(
+      of: find.byKey(const ValueKey('rest-timer-settings')),
+      matching: find.byType(Badge),
+    ),
+  );
+
+  Future<void> expandIssue(WidgetTester tester, String title) async {
+    await tester.tap(find.text(title));
+    await tester.pumpAndSettle();
+  }
+
   Future<void> chooseMode(WidgetTester tester, String label) async {
     await tester.tap(find.text(label));
     await tester.pump();
@@ -210,7 +222,12 @@ void main() {
       await openSettings(tester);
       await chooseMode(tester, 'Vibrate only');
       expect(prefs.getInt('rest_timer_deadline_ms'), deadline);
+      expect(settingsBadge(tester).isLabelVisible, isTrue);
+      await openSettings(tester);
+      await expandIssue(tester, 'Some reminders were not scheduled');
       expect(find.textContaining('Could not schedule'), findsOneWidget);
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
       expect(find.text('Resting'), findsOneWidget);
     },
     variant: TargetPlatformVariant.only(TargetPlatform.android),
@@ -262,20 +279,41 @@ void main() {
   );
 
   testWidgets(
-    'denied permissions and scheduling failure remain visible',
+    'denied permissions and scheduling failure are listed in settings',
     (tester) async {
       notificationGranted = false;
       exactGranted = false;
       scheduleFails = true;
       await showPage(tester);
+      // Nothing crowds the timer itself; the settings icon carries a dot.
+      expect(find.textContaining('Allow notifications'), findsNothing);
+      expect(settingsBadge(tester).isLabelVisible, isTrue);
+      await openSettings(tester);
+      // Rows show title and action only; details unfold on tap.
+      expect(find.textContaining('Allow notifications'), findsNothing);
+      await expandIssue(tester, 'Notification permission');
+      await expandIssue(tester, 'Exact alarms');
       expect(find.textContaining('Allow notifications'), findsOneWidget);
-      expect(find.textContaining('Allow exact alarms'), findsOneWidget);
-      await tester.drag(find.byType(ListView), const Offset(0, -450));
-      await tester.pump();
+      expect(find.textContaining('reliable on-time alerts'), findsOneWidget);
+      await tester.tapAt(const Offset(10, 10)); // Dismiss the sheet.
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Start'));
       await flush(tester);
       expect(find.text('Resting'), findsOneWidget);
+      await openSettings(tester);
+      await expandIssue(tester, 'Some reminders were not scheduled');
       expect(find.textContaining('Could not schedule'), findsOneWidget);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+
+  testWidgets(
+    'no dot or permission rows when alerts are fully allowed',
+    (tester) async {
+      await showPage(tester);
+      expect(settingsBadge(tester).isLabelVisible, isFalse);
+      await openSettings(tester);
+      expect(find.text('Reminder permissions'), findsNothing);
     },
     variant: TargetPlatformVariant.only(TargetPlatform.android),
   );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../ink/ink_icon.dart';
 
 import '../../domain/calendar_day.dart';
+import '../../domain/cycle_history.dart';
 import '../../domain/diet_strategy.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../theme/app_theme.dart';
@@ -20,10 +21,17 @@ class CarbCycleView extends StatelessWidget {
     this.referenceWeightFromProfile = false,
     this.restDayDates,
     this.windowStart,
+    this.cycleStartIndex = 0,
+    this.anchors = const [],
   });
 
   final CarbCyclePlan plan;
   final DateTime cycleStart;
+  final int cycleStartIndex;
+
+  /// Positions frozen by the shown plan's past snapshots (see
+  /// [resolveCycleDay]); empty for a not-yet-saved configuration.
+  final List<CycleAnchor> anchors;
   final ValueChanged<CarbCycleSchedule>? onScheduleChanged;
 
   /// When true, the muted weight caption notes that W is read from the profile
@@ -35,8 +43,8 @@ class CarbCycleView extends StatelessWidget {
   /// at [cycleStart], and each row's type/kcal reflect the actual rest-day
   /// shifted cycle position rather than the raw unshifted template — so the
   /// preview stays in sync instead of staying frozen at the plan's original
-  /// start date. Leave null for the pre-save configure preview, which has no
-  /// committed plan (and therefore no rest days) to shift against yet.
+  /// start date. Configuration previews pass their proposed effective date
+  /// as [windowStart] and the same persisted rest-day choices.
   final List<DateTime>? restDayDates;
 
   /// First date shown when [restDayDates] is set. Defaults to today.
@@ -131,11 +139,8 @@ class CarbCycleView extends StatelessWidget {
     );
   }
 
-  /// Row for schedule slot [i], starting from [anchor]. When [restDays] is
-  /// set, the displayed calendar date is offset from [anchor] but the actual
-  /// macros shown come from the rest-day-shifted cycle slot (not slot [i]
-  /// itself) — the tap target still cycles slot [i]'s raw type, matching the
-  /// edit affordance shown for that row.
+  /// One calendar day. Editing acts on the same rotated/paused schedule
+  /// slot whose macros are displayed, rather than the row's visual index.
   Widget _dayRow(
     int i,
     List<DayMacroTarget> days,
@@ -147,28 +152,28 @@ class CarbCycleView extends StatelessWidget {
     bool editable,
   ) {
     final date = anchor.add(Duration(days: i));
-    final cycleIndex = restDays == null
-        ? i
-        : StrategyDates.cycleIndexOf(
-            date,
-            start,
-            days.length,
-            restDaysBefore: restDays
-                .where((d) => !d.isBefore(start) && d.isBefore(date))
-                .length,
-          );
+    final cycleDay = resolveCycleDay(
+      day: date,
+      start: start,
+      startIndex: cycleStartIndex,
+      length: days.length,
+      pauses: restDays ?? const [],
+      anchors: anchors,
+    );
+    final cycleIndex = cycleDay.index;
     final row = days[cycleIndex];
     return _DayRow(
       key: ValueKey('cycleDay-$i'),
       name: AppDates.md(date, locale),
       isToday: date == today,
       type: row.dayType,
+      paused: cycleDay.paused,
       kcal: row.energy.round(),
       proteinG: row.proteinG.round(),
       carbG: row.carbG.round(),
       fatG: row.fatG.round(),
-      onTap: editable
-          ? () => onScheduleChanged!(plan.schedule.cycleDayType(i))
+      onTap: editable && !cycleDay.paused
+          ? () => onScheduleChanged!(plan.schedule.cycleDayType(cycleIndex))
           : null,
     );
   }
@@ -180,6 +185,7 @@ class _DayRow extends StatelessWidget {
     required this.name,
     required this.isToday,
     required this.type,
+    required this.paused,
     required this.kcal,
     required this.proteinG,
     required this.carbG,
@@ -190,6 +196,10 @@ class _DayRow extends StatelessWidget {
   final String name;
   final bool isToday;
   final CarbDayType type;
+
+  /// A paused 休息日 stands outside the cycle: labelled on its own, its
+  /// macros are those of the slot it holds.
+  final bool paused;
   final int kcal;
   final int proteinG;
   final int carbG;
@@ -210,7 +220,7 @@ class _DayRow extends StatelessWidget {
     final scheme = theme.colorScheme;
     final v = AppThemeVisuals.of(context);
     final l10n = context.l10n;
-    final typeColor = _typeColor();
+    final typeColor = paused ? scheme.onSurfaceVariant : _typeColor();
 
     return Material(
       color: Colors.transparent,
@@ -236,7 +246,7 @@ class _DayRow extends StatelessWidget {
                   Expanded(
                     flex: 4,
                     child: Text(
-                      type.label(l10n),
+                      paused ? l10n.restDayLabel : type.label(l10n),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: typeColor,
                         fontWeight: FontWeight.w600,

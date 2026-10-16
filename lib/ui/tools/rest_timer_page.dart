@@ -9,7 +9,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
+import 'reminder_status_labels.dart';
 import 'rest_timer_notifications.dart';
+import 'restriction_issue_row.dart';
 
 class RestTimerPage extends StatefulWidget {
   const RestTimerPage({super.key});
@@ -190,14 +192,7 @@ class _RestTimerPageState extends State<RestTimerPage>
       _startTicker();
       await _persist();
       try {
-        await RestTimerNotifications.scheduleRestEnd(
-          deadline,
-          title: l10n.restDoneTitle,
-          body: l10n.restDoneBody,
-          dismissLabel: l10n.restTimerDismiss,
-          soundEnabled: _alertMode.soundEnabled,
-          vibrationEnabled: _alertMode.vibrationEnabled,
-        );
+        await _scheduleAlert(deadline, _alertMode, l10n);
       } catch (_) {
         if (mounted) setState(() => _scheduleFailed = true);
       }
@@ -254,16 +249,8 @@ class _RestTimerPageState extends State<RestTimerPage>
       if (!mounted) return;
       final deadline = _endsAt;
       if (!_running || deadline == null) return;
-      final l10n = context.l10n;
       try {
-        await RestTimerNotifications.scheduleRestEnd(
-          deadline,
-          title: l10n.restDoneTitle,
-          body: l10n.restDoneBody,
-          dismissLabel: l10n.restTimerDismiss,
-          soundEnabled: mode.soundEnabled,
-          vibrationEnabled: mode.vibrationEnabled,
-        );
+        await _scheduleAlert(deadline, mode, context.l10n);
         if (mounted) setState(() => _scheduleFailed = false);
       } catch (_) {
         if (mounted) setState(() => _scheduleFailed = true);
@@ -275,51 +262,160 @@ class _RestTimerPageState extends State<RestTimerPage>
     }
   }
 
+  bool get _android =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
+  /// What may keep the lock-screen alert from firing. Shown in the settings
+  /// sheet; the settings icon carries a dot while any remain.
+  List<RestrictionIssue> _issues(AppLocalizations l10n) => [
+    if (!_notificationsAllowed)
+      RestrictionIssue(
+        glyph: InkGlyph.notificationsOff,
+        title: l10n.notificationPermissionRow,
+        detail: l10n.restTimerNotificationMissing,
+        action: l10n.reminderOpenNotifications,
+        blocking: true,
+        onAction: RestTimerNotifications.requestPermissions,
+      ),
+    if (!_exactAlarmAllowed)
+      RestrictionIssue(
+        glyph: InkGlyph.alarm,
+        title: l10n.alarmAccessTitle,
+        detail: l10n.restTimerExactAlarmMissing,
+        action: l10n.reminderOpenExact,
+        onAction: RestTimerNotifications.requestPermissions,
+      ),
+    if (_scheduleFailed)
+      RestrictionIssue(
+        glyph: InkGlyph.info,
+        title: l10n.reminderScheduleFailedTitle,
+        detail: l10n.restTimerScheduleFailed,
+        action: l10n.reminderRetrySchedule,
+        blocking: true,
+        onAction: _retrySchedule,
+      ),
+  ];
+
+  /// [l10n] is read by the caller before any await, so a start begun on
+  /// this page still schedules after the page is left.
+  Future<void> _scheduleAlert(
+    DateTime deadline,
+    RestTimerAlertMode mode,
+    AppLocalizations l10n,
+  ) {
+    return RestTimerNotifications.scheduleRestEnd(
+      deadline,
+      title: l10n.restDoneTitle,
+      body: l10n.restDoneBody,
+      dismissLabel: l10n.restTimerDismiss,
+      soundEnabled: mode.soundEnabled,
+      vibrationEnabled: mode.vibrationEnabled,
+    );
+  }
+
+  Future<void> _retrySchedule() async {
+    final l10n = context.l10n;
+    final deadline = _endsAt;
+    if (!_running || deadline == null) {
+      setState(() => _scheduleFailed = false);
+      return;
+    }
+    try {
+      await _scheduleAlert(deadline, _alertMode, l10n);
+      if (mounted) setState(() => _scheduleFailed = false);
+    } catch (_) {
+      if (mounted) setState(() => _scheduleFailed = true);
+    }
+  }
+
+  Future<void> _runIssueAction(
+    BuildContext sheetContext,
+    Future<void> Function() action,
+  ) async {
+    Navigator.pop(sheetContext);
+    try {
+      await action();
+    } catch (_) {
+      // The issue stays listed when the action could not fix it.
+    } finally {
+      if (mounted) await _refreshAlertStatus();
+    }
+  }
+
   void _showAlertSettings() {
     final l10n = context.l10n;
+    final issues = _issues(l10n);
     showModalBottomSheet<void>(
       context: context,
+      // Above the bottom tab bar, which would otherwise cover the actions.
+      useRootNavigator: true,
+      isScrollControlled: true,
       showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                child: Text(
-                  l10n.restTimerAlertSettings,
-                  style: Theme.of(sheetContext).textTheme.titleLarge,
-                ),
-              ),
-              for (final mode in RestTimerAlertMode.values)
-                ListTile(
-                  leading: InkIcon(
-                    mode == RestTimerAlertMode.vibrateOnly
-                        ? InkGlyph.vibration
-                        : InkGlyph.alarm,
+      builder: (sheetContext) {
+        final theme = Theme.of(sheetContext);
+        return SafeArea(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.82,
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                    child: Text(
+                      l10n.restTimerAlertSettings,
+                      style: theme.textTheme.titleLarge,
+                    ),
                   ),
-                  title: Text(switch (mode) {
-                    RestTimerAlertMode.ringAndVibrate =>
-                      l10n.restTimerAlertBoth,
-                    RestTimerAlertMode.ringOnly => l10n.restTimerAlertRingOnly,
-                    RestTimerAlertMode.vibrateOnly =>
-                      l10n.restTimerAlertVibrateOnly,
-                  }),
-                  trailing: _alertMode == mode
-                      ? const InkIcon(InkGlyph.check)
-                      : null,
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    unawaited(_setAlertMode(mode));
-                  },
-                ),
-            ],
+                  if (_android)
+                    for (final mode in RestTimerAlertMode.values)
+                      ListTile(
+                        leading: InkIcon(
+                          mode == RestTimerAlertMode.vibrateOnly
+                              ? InkGlyph.vibration
+                              : InkGlyph.alarm,
+                        ),
+                        title: Text(switch (mode) {
+                          RestTimerAlertMode.ringAndVibrate =>
+                            l10n.restTimerAlertBoth,
+                          RestTimerAlertMode.ringOnly =>
+                            l10n.restTimerAlertRingOnly,
+                          RestTimerAlertMode.vibrateOnly =>
+                            l10n.restTimerAlertVibrateOnly,
+                        }),
+                        trailing: _alertMode == mode
+                            ? const InkIcon(InkGlyph.check)
+                            : null,
+                        onTap: () {
+                          Navigator.pop(sheetContext);
+                          unawaited(_setAlertMode(mode));
+                        },
+                      ),
+                  if (issues.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                      child: Text(
+                        l10n.reminderRestrictionsSheetTitle,
+                        style: theme.textTheme.titleSmall,
+                      ),
+                    ),
+                    for (final issue in issues)
+                      RestrictionIssueRow(
+                        issue: issue,
+                        onAction: () =>
+                            _runIssueAction(sheetContext, issue.onAction),
+                      ),
+                  ],
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -385,6 +481,7 @@ class _RestTimerPageState extends State<RestTimerPage>
         : (display / _totalSeconds).clamp(0.0, 1.0);
 
     final scheme = theme.colorScheme;
+    final hasIssue = _issues(l10n).isNotEmpty;
     final statusLabel = _running
         ? l10n.restTimerRunning
         : _paused
@@ -397,13 +494,19 @@ class _RestTimerPageState extends State<RestTimerPage>
       appBar: AppBar(
         title: Text(l10n.toolRestTimer),
         actions: [
-          if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
+          if (_android || hasIssue)
             IconButton(
+              key: const ValueKey('rest-timer-settings'),
               tooltip: l10n.restTimerAlertSettings,
               onPressed: _restoring || _starting || _modeChanging
                   ? null
                   : _showAlertSettings,
-              icon: const InkIcon(InkGlyph.settings),
+              icon: Badge(
+                isLabelVisible: hasIssue,
+                smallSize: 8,
+                backgroundColor: AppColors.warning,
+                child: const InkIcon(InkGlyph.settings),
+              ),
             ),
         ],
       ),
@@ -468,38 +571,6 @@ class _RestTimerPageState extends State<RestTimerPage>
                 ],
               ),
             const SizedBox(height: 32),
-            if (!_notificationsAllowed ||
-                !_exactAlarmAllowed ||
-                _scheduleFailed) ...[
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (!_notificationsAllowed)
-                        Text(l10n.restTimerNotificationMissing),
-                      if (!_exactAlarmAllowed)
-                        Text(l10n.restTimerExactAlarmMissing),
-                      if (_scheduleFailed) Text(l10n.restTimerScheduleFailed),
-                      if (!_notificationsAllowed || !_exactAlarmAllowed)
-                        TextButton(
-                          onPressed: () async {
-                            try {
-                              await RestTimerNotifications.requestPermissions();
-                            } catch (_) {
-                              // Status below still explains the limitation.
-                            }
-                            await _refreshAlertStatus();
-                          },
-                          child: Text(l10n.restTimerReviewPermissions),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(

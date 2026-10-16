@@ -176,7 +176,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           fileName: payload.fileName,
           bytes: payload.bytes,
           type: FileType.custom,
-          allowedExtensions: const ['json'],
+          allowedExtensions: const ['gz'],
         );
         if (savedPath == null || !mounted) return;
         messenger.showSnackBar(
@@ -186,7 +186,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         final file = await repo.writeBackupToTemp();
         await SharePlus.instance.share(
           ShareParams(
-            files: [XFile(file.path, mimeType: 'application/json')],
+            files: [XFile(file.path, mimeType: 'application/gzip')],
             subject: l10n.exportData,
           ),
         );
@@ -234,10 +234,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     final messenger = ScaffoldMessenger.of(context);
     try {
+      // No extension filter: Android maps it to a MIME type, which greys
+      // out `.json.gz` backups. The decoder validates the content instead.
       final result = await FilePicker.platform.pickFiles(
         dialogTitle: l10n.importData,
-        type: FileType.custom,
-        allowedExtensions: const ['json'],
+        type: FileType.any,
         withData: true,
       );
       if (result == null || result.files.isEmpty || !mounted) return;
@@ -254,6 +255,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       ref.invalidate(localeProvider);
       ref.invalidate(remindersProvider);
       ref.read(profileProvider.notifier).reload();
+      // The 境界 ledger lives in prefs too; drop the pre-import copy.
+      ref.read(cutCultivationStateProvider.notifier).reload();
+      ref.invalidate(cultivationHistoryProvider);
       await ref.read(remindersProvider.notifier).syncSchedule();
 
       if (!mounted) return;
@@ -295,8 +299,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final localBuildNumber = info.buildNumber;
     final notifier = ref.read(appUpdateProvider.notifier);
 
+    // Hidden as soon as the check settles, before any follow-up UI.
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(l10n.checkingUpdate),
+        duration: const Duration(minutes: 1),
+      ),
+    );
+
     try {
-      final latest = await notifier.checkForUpdate(local, localBuildNumber);
+      final latest = await notifier
+          .checkForUpdate(local, localBuildNumber)
+          .whenComplete(messenger.hideCurrentSnackBar);
       if (!mounted) return;
 
       if (latest == null) {
@@ -322,24 +336,57 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ? '${latest.body.substring(0, 400)}…'
           : latest.body;
 
+      var source = notifier.sourcePreference;
+      final zh = Localizations.localeOf(context).languageCode == 'zh';
       final go = await showDialog<bool>(
         context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(l10n.newVersionTitle(latest.version)),
-          content: SingleChildScrollView(child: Text(notes)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l10n.later),
+        builder: (ctx) => StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            title: Text(l10n.newVersionTitle(latest.version)),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(notes),
+                  DropdownButton<UpdateSource>(
+                    value: source,
+                    isExpanded: true,
+                    items: UpdateSource.values
+                        .map(
+                          (s) => DropdownMenuItem(
+                            value: s,
+                            child: Text(
+                              s == UpdateSource.auto
+                                  ? (zh ? '自动选择下载源' : 'Automatic source')
+                                  : s == UpdateSource.gitee
+                                  ? 'Gitee'
+                                  : 'GitHub',
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) setDialogState(() => source = value);
+                    },
+                  ),
+                ],
+              ),
             ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l10n.downloadInstall),
-            ),
-          ],
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(l10n.later),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(l10n.downloadInstall),
+              ),
+            ],
+          ),
         ),
       );
       if (go != true || !mounted) return;
+      await notifier.setSourcePreference(source);
 
       messenger.showSnackBar(SnackBar(content: Text(l10n.downloading)));
       // Fire-and-forget: progress lives on [appUpdateProvider] / AppBar icon.
@@ -546,6 +593,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   trailing: const InkIcon(InkGlyph.chevronRight),
                   onTap: () => _showAbout(context, plan, versionLabel),
                 ),
+                if (update.phase == AppUpdatePhase.downloading &&
+                    update.downloadMessage != null)
+                  _UpdateProgressRow(status: update),
               ],
             ),
           ),
@@ -1119,6 +1169,44 @@ class _MenuRow extends StatelessWidget {
         color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
       onTap: onTap,
+    );
+  }
+}
+
+/// Bottom-of-list status row shown while an update download runs,
+/// styled like the menu rows above it.
+class _UpdateProgressRow extends StatelessWidget {
+  const _UpdateProgressRow({required this.status});
+
+  final AppUpdateStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final determinate =
+        status.phase == AppUpdatePhase.downloading && status.progress > 0;
+    return SportListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: const InkIcon(InkGlyph.download, color: _updateColor),
+      title: Text(status.downloadMessage!),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(2),
+          child: LinearProgressIndicator(
+            minHeight: 3,
+            value: determinate ? status.progress.clamp(0.0, 1.0) : null,
+            color: _updateColor,
+            backgroundColor: _updateColor.withValues(alpha: 0.18),
+          ),
+        ),
+      ),
+      trailing: determinate
+          ? Text(
+              '${(status.progress * 100).toStringAsFixed(0)}%',
+              style: theme.textTheme.meta,
+            )
+          : null,
     );
   }
 }

@@ -1347,7 +1347,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reminderOemHintBatteryButton => 'Disable battery optimization';
 
   @override
-  String get reminderOemHintAutostartButton => 'Background settings';
+  String get reminderOemHintAutostartButton => 'Settings';
 
   @override
   String get stepsOemHintBody =>
@@ -1895,6 +1895,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String quotaReadyBody(String kcal, String p, String c, String f) {
     return '$kcal kcal\nP $p · C $c · F $f\n\nDetails under Me → My profile.';
   }
+
+  @override
+  String get checkingUpdate => 'Checking for updates';
 
   @override
   String alreadyLatest(String version) {

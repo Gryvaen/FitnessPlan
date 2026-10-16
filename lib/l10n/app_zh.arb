@@ -501,7 +501,7 @@
   "reminderOemHintTitle": "你的手机可能会限制提醒",
   "reminderOemHintBody": "部分手机品牌会限制后台运行，导致提醒无法响铃、振动，甚至完全不触发。建议关闭本应用的电池优化，并在系统设置中允许「自启动」/后台运行。",
   "reminderOemHintBatteryButton": "关闭电池优化",
-  "reminderOemHintAutostartButton": "后台运行设置",
+  "reminderOemHintAutostartButton": "去设置",
   "stepsOemHintBody": "部分手机品牌会限制后台运行，导致应用退出后步数停止统计。建议关闭本应用的电池优化，以保持后台记录。",
   "customDuration": "自定义（0:30–10:00）",
   "notifChannelName": "休息计时器",
@@ -992,6 +992,7 @@
       }
     }
   },
+  "checkingUpdate": "正在检查更新",
   "alreadyLatest": "已是最新版本（{version}）",
   "@alreadyLatest": {
     "placeholders": {

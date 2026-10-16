@@ -91,3 +91,10 @@ final dayDietCompleteProvider = StreamProvider.family<bool?, DateTime>((
       .watch(dietStrategyRepositoryProvider)
       .watchDayComplete(CalendarDay.dayOnly(day));
 });
+
+/// Persisted phase evidence used by the same continuation resolver as saving.
+final cycleSnapshotsProvider = StreamProvider<List<DailyNutritionTarget>>((
+  ref,
+) {
+  return ref.watch(dietStrategyRepositoryProvider).watchCycleSnapshots();
+});

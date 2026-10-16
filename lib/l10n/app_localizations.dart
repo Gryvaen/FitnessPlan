@@ -2610,7 +2610,7 @@ abstract class AppLocalizations {
   /// No description provided for @reminderOemHintAutostartButton.
   ///
   /// In en, this message translates to:
-  /// **'Background settings'**
+  /// **'Settings'**
   String get reminderOemHintAutostartButton;
 
   /// No description provided for @stepsOemHintBody.
@@ -3488,6 +3488,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{kcal} kcal\nP {p} · C {c} · F {f}\n\nDetails under Me → My profile.'**
   String quotaReadyBody(String kcal, String p, String c, String f);
+
+  /// No description provided for @checkingUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking for updates'**
+  String get checkingUpdate;
 
   /// No description provided for @alreadyLatest.
   ///
