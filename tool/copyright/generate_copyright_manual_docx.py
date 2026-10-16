@@ -12,7 +12,7 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = ROOT / "docs" / "copyright"
 DISPLAY_DIR = ROOT / "docs" / "display"
 OUTPUT = OUT_DIR / "健身饮食管理助手软件V1.0-说明书.docx"

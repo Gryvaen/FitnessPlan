@@ -2,7 +2,7 @@
 # Create an Android upload keystore and key.properties for release builds.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 ANDROID_DIR="$ROOT/android"
 KEYSTORE="$ANDROID_DIR/upload-keystore.jks"
 PROPS="$ANDROID_DIR/key.properties"

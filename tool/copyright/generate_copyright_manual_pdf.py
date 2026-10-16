@@ -20,7 +20,7 @@ from reportlab.platypus import (
     Spacer,
 )
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = ROOT / "docs" / "copyright"
 SCREEN_DIR = OUT_DIR / "screenshots"
 OUTPUT = OUT_DIR / "健身饮食管理助手软件V1.0-说明书.pdf"

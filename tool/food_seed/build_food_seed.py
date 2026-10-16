@@ -4,14 +4,14 @@
 Final seed contains only entries whose display name includes Chinese (Han) characters.
 
 Sources:
-  - tool/data2026.csv (cn-food-mcp / China food composition style, MIT)
-  - tool/sanotsu_json/*.json (Sanotsu OCR of 中国食物成分表第6版; optional enricher)
+  - tool/food_seed/data2026.csv (cn-food-mcp / China food composition style, MIT)
+  - tool/food_seed/sanotsu_json/*.json (Sanotsu OCR of 中国食物成分表第6版; optional enricher)
   - Open Food Facts (ODbL) — Chinese-named China/HK/TW products with per-100g macros
 
 Usage:
-  python3 tool/build_food_seed.py                 # download OFF dump, filter, merge
-  python3 tool/build_food_seed.py --offline       # CSV + sanotsu + existing OFF cache
-  python3 tool/build_food_seed.py --source api    # paginate OFF search API instead
+  python3 tool/food_seed/build_food_seed.py                 # download OFF dump, filter, merge
+  python3 tool/food_seed/build_food_seed.py --offline       # CSV + sanotsu + existing OFF cache
+  python3 tool/food_seed/build_food_seed.py --source api    # paginate OFF search API instead
 """
 
 from __future__ import annotations
@@ -26,7 +26,8 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
+HERE = Path(__file__).resolve().parent
 
 # Category rules — first match wins.
 CATEGORY_RULES: list[tuple[str, list[str]]] = [
@@ -229,7 +230,7 @@ def load_cfct(csv_path: Path) -> dict[str, dict]:
 OFF_DUMP_URL = (
     "https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz"
 )
-OFF_DUMP_PATH = ROOT / "tool" / "off_products.csv.gz"
+OFF_DUMP_PATH = HERE / "off_products.csv.gz"
 
 
 def _dump_ok(dump_path: Path) -> bool:
@@ -746,8 +747,8 @@ def merge(cfct: dict[str, dict], off: dict[str, dict]) -> list[dict]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--csv", type=Path, default=ROOT / "tool" / "data2026.csv")
-    parser.add_argument("--cache", type=Path, default=ROOT / "tool" / "off_zh_cache.jsonl")
+    parser.add_argument("--csv", type=Path, default=HERE / "data2026.csv")
+    parser.add_argument("--cache", type=Path, default=HERE / "off_zh_cache.jsonl")
     parser.add_argument("--dump", type=Path, default=OFF_DUMP_PATH)
     parser.add_argument("--output", type=Path, default=ROOT / "assets" / "food_seed.json")
     parser.add_argument(
@@ -764,7 +765,7 @@ def main() -> None:
     parser.add_argument(
         "--sanotsu",
         type=Path,
-        default=ROOT / "tool" / "sanotsu_json",
+        default=HERE / "sanotsu_json",
         help="Optional Sanotsu CFCT OCR JSON directory",
     )
     parser.add_argument(
@@ -793,7 +794,7 @@ def main() -> None:
             if args.force_download or not _dump_ok(args.dump):
                 import sys
 
-                sys.path.insert(0, str(Path(__file__).resolve().parent))
+                sys.path.insert(0, str(HERE))
                 from download_resumable import download as multi_download
 
                 print("OFF dump missing/incomplete — multipath download …")

@@ -2,7 +2,7 @@
 # key.properties and *.jks / *.keystore must NOT be committed.
 #
 # Generate a keystore (from repo root):
-#   ./tool/create_release_keystore.sh
+#   ./tool/release/create_release_keystore.sh
 
 storePassword=YOUR_STORE_PASSWORD
 keyPassword=YOUR_KEY_PASSWORD

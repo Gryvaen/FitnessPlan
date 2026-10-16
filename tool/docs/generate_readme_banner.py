@@ -6,7 +6,7 @@ GitHub strips colors from Markdown, so the lettering is drawn as SVG shapes
 
 Usage:
     pip install art
-    python tool/generate_readme_banner.py
+    python tool/docs/generate_readme_banner.py
 """
 
 from pathlib import Path
@@ -15,7 +15,7 @@ from art import text2art
 
 TEXT = "Fitness Plan"
 FONT = "tarty1"  # ANSI-shadow style: █ blocks plus ╔═╗ shadow lines
-OUTPUT = Path(__file__).resolve().parent.parent / "assets/branding/readme-banner.svg"
+OUTPUT = Path(__file__).resolve().parents[2] / "assets/branding/readme-banner.svg"
 
 CELL_W = 10
 CELL_H = 20

@@ -4,11 +4,11 @@
 # present, otherwise falls back to the debug key.
 #
 # Usage:
-#   ./tool/build_test_apk.sh              # arm64-v8a only (most phones, smaller)
-#   ./tool/build_test_apk.sh --universal  # all ABIs in one APK
+#   ./tool/release/build_test_apk.sh              # arm64-v8a only (most phones, smaller)
+#   ./tool/release/build_test_apk.sh --universal  # all ABIs in one APK
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 
 UNIVERSAL=false
@@ -36,8 +36,8 @@ fi
 
 flutter pub get
 
-# shellcheck source=tool/prefetch_sqlite3_android_libs.sh
-source "$ROOT/tool/prefetch_sqlite3_android_libs.sh"
+# shellcheck source=tool/release/prefetch_sqlite3_android_libs.sh
+source "$ROOT/tool/release/prefetch_sqlite3_android_libs.sh"
 prefetch_sqlite3_android_libs
 
 VERSION="$(grep -E '^version:' pubspec.yaml | head -1 | sed -E 's/version:[[:space:]]*([^+]+).*/\1/')"

@@ -210,7 +210,7 @@ flutter test
 正式 Android 包（需签名，不要提交 `key.properties` 或 `*.jks`）：
 
 ```bash
-./tool/build_release_apk.sh
+./tool/release/build_release_apk.sh
 ```
 
 示例见 [android/key.properties.example](android/key.properties.example)。iOS 需要 macOS 与 Xcode：
@@ -231,9 +231,9 @@ flutter build ipa --release
 本地发布（Python 3，无额外依赖）：
 
 ```bash
-./tool/build_release_apk.sh
+./tool/release/build_release_apk.sh
 # 在本地环境中配置 GITHUB_TOKEN、GITEE_TOKEN，勿写入仓库或命令历史。
-python3 tool/publish_release.py --tag vX.Y.Z --notes-file /path/to/release-notes.md
+python3 tool/release/publish_release.py --tag vX.Y.Z --notes-file /path/to/release-notes.md
 ```
 
 构建脚本生成四种 APK、`SHA256SUMS` 和 `update-manifest.json`。发布脚本上传同一批文件到两边，最后上传清单；验证公开下载内容后报告结果。部分失败可用原命令重试，一致附件跳过，同名不同内容停止，禁止自动覆盖。从 2.6.1 起每个版本都必须带清单；2.6.0 及更早的版本没有清单，仅从 GitHub 获取，并用 GitHub 提供的附件大小与 SHA-256 校验。

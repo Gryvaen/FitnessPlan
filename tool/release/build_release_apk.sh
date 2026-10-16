@@ -2,17 +2,17 @@
 # Build Android release APKs into dist/ for GitHub Releases.
 # iOS IPA cannot be built on Linux — use macOS + Xcode (see README).
 #
-# Requires android/key.properties + keystore (see tool/create_release_keystore.sh).
+# Requires android/key.properties + keystore (see tool/release/create_release_keystore.sh).
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 
 PROPS="$ROOT/android/key.properties"
 if [[ ! -f "$PROPS" ]]; then
   echo "Missing $PROPS"
   echo "Create a release keystore first:"
-  echo "  ./tool/create_release_keystore.sh"
+  echo "  ./tool/release/create_release_keystore.sh"
   echo "Or copy android/key.properties.example → android/key.properties"
   exit 1
 fi
@@ -38,8 +38,8 @@ echo "==> flutter test"
 # Soft著截图 golden 依赖本地 docs/copyright（已 gitignore），默认排除。
 flutter test --exclude-tags=copyright
 
-# shellcheck source=tool/prefetch_sqlite3_android_libs.sh
-source "$ROOT/tool/prefetch_sqlite3_android_libs.sh"
+# shellcheck source=tool/release/prefetch_sqlite3_android_libs.sh
+source "$ROOT/tool/release/prefetch_sqlite3_android_libs.sh"
 prefetch_sqlite3_android_libs
 
 VERSION="$(grep -E '^version:' pubspec.yaml | head -1 | sed -E 's/version:[[:space:]]*([^+]+).*/\1/')"
@@ -64,7 +64,7 @@ cp -f build/app/outputs/flutter-apk/app-x86_64-release.apk \
   "$OUT/FitnessPlan-${VERSION}-android-x86_64.apk"
 
 echo
-python3 tool/release_manifest.py --dist "$OUT" --version "$VERSION"
+python3 tool/release/release_manifest.py --dist "$OUT" --version "$VERSION"
 
 echo "Done. Publish the same artifacts to GitHub and Gitee:"
 ls -lh "$OUT"/FitnessPlan-"${VERSION}"-android*.apk

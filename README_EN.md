@@ -210,7 +210,7 @@ flutter test
 A signed Android release (do not commit `key.properties` or `*.jks`):
 
 ```bash
-./tool/build_release_apk.sh
+./tool/release/build_release_apk.sh
 ```
 
 See [android/key.properties.example](android/key.properties.example). iOS needs macOS and Xcode:
@@ -228,10 +228,10 @@ Releases here are Android APKs only. Linux emulator notes are in [docs/android-e
 
 <br>
 
-Build once with `./tool/build_release_apk.sh`. Configure `GITHUB_TOKEN` and `GITEE_TOKEN` in your local environment (never commit them), then run:
+Build once with `./tool/release/build_release_apk.sh`. Configure `GITHUB_TOKEN` and `GITEE_TOKEN` in your local environment (never commit them), then run:
 
 ```bash
-python3 tool/publish_release.py --tag vX.Y.Z --notes-file /path/to/release-notes.md
+python3 tool/release/publish_release.py --tag vX.Y.Z --notes-file /path/to/release-notes.md
 ```
 
 The build generates four APKs, `SHA256SUMS`, and `update-manifest.json`. The publisher uploads identical files to both platforms, manifest last, and verifies public downloads. Retry the same command after partial failure: identical files are skipped; conflicting files are never overwritten. Every release from 2.6.1 on must carry the manifest; releases up to 2.6.0 have none and are taken from GitHub only, verified against the asset size and SHA-256 that GitHub reports.

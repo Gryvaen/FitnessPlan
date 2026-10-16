@@ -23,7 +23,7 @@ prefetch_sqlite3_android_libs() {
     exit 1
   fi
 
-  mirror="$ROOT/tool/sqlite3_mirror/sqlite3-${ver}"
+  mirror="$ROOT/tool/release/sqlite3_mirror/sqlite3-${ver}"
   shared="$ROOT/.dart_tool/hooks_runner/shared/sqlite3/build"
   base="https://github.com/simolus3/sqlite3.dart/releases/download/sqlite3-${ver}"
   mkdir -p "$mirror" "$shared"
