@@ -3119,4 +3119,24 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get cheatActualDietHint =>
       '按 TDEE − 摄入计算，不叠加固定扣减。需记录至少两类餐次且有当日 TDEE，否则计入 0 kcal。';
+
+  @override
+  String get updateSourceLabel => '下载源';
+
+  @override
+  String get updateSourceAuto => '自动选择';
+
+  @override
+  String get updateSourceAutoHint => '测速后选最快的源';
+
+  @override
+  String get updateSourceGiteeHint => '国内网络通常更快';
+
+  @override
+  String get updateSourceGithubHint => '海外网络通常更快';
+
+  @override
+  String updateVersionMeta(String current, String size) {
+    return '当前 $current · 安装包 $size';
+  }
 }

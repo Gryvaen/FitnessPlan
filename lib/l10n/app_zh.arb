@@ -2293,5 +2293,11 @@
   "dietExcludedSummary": "不计饮食",
   "actualDietContributionHint": "TDEE − 摄入",
   "dietContributionRequirementsHint": "饮食贡献 = TDEE − 摄入；需记录至少两类餐次且有当日 TDEE，否则计入 0 kcal。",
-  "cheatActualDietHint": "按 TDEE − 摄入计算，不叠加固定扣减。需记录至少两类餐次且有当日 TDEE，否则计入 0 kcal。"
+  "cheatActualDietHint": "按 TDEE − 摄入计算，不叠加固定扣减。需记录至少两类餐次且有当日 TDEE，否则计入 0 kcal。",
+  "updateSourceLabel": "下载源",
+  "updateSourceAuto": "自动选择",
+  "updateSourceAutoHint": "测速后选最快的源",
+  "updateSourceGiteeHint": "国内网络通常更快",
+  "updateSourceGithubHint": "海外网络通常更快",
+  "updateVersionMeta": "当前 {current} · 安装包 {size}"
 }

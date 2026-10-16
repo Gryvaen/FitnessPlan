@@ -3195,4 +3195,24 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get cheatActualDietHint =>
       'Uses TDEE − intake instead of the fixed deduction. At least two meal types and a daily TDEE are required; otherwise it contributes 0 kcal.';
+
+  @override
+  String get updateSourceLabel => 'Download source';
+
+  @override
+  String get updateSourceAuto => 'Automatic';
+
+  @override
+  String get updateSourceAutoHint => 'Picks the fastest after a speed test';
+
+  @override
+  String get updateSourceGiteeHint => 'Usually faster in mainland China';
+
+  @override
+  String get updateSourceGithubHint => 'Usually faster outside China';
+
+  @override
+  String updateVersionMeta(String current, String size) {
+    return 'Current $current · $size download';
+  }
 }

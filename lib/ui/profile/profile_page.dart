@@ -17,6 +17,7 @@ import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/calorie_breakdown.dart';
 import 'cultivation_labels.dart';
+import 'update_available_dialog.dart';
 
 /// Me header action tints — distinct from menu-row macro colors.
 const _languageColor = Color(0xFF5B6CDB); // indigo
@@ -330,62 +331,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         return;
       }
 
-      final notes = latest.body.isEmpty
-          ? l10n.newVersionAsk(latest.version)
-          : latest.body.length > 400
-          ? '${latest.body.substring(0, 400)}…'
-          : latest.body;
-
-      var source = notifier.sourcePreference;
-      final zh = Localizations.localeOf(context).languageCode == 'zh';
-      final go = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => StatefulBuilder(
-          builder: (ctx, setDialogState) => AlertDialog(
-            title: Text(l10n.newVersionTitle(latest.version)),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(notes),
-                  DropdownButton<UpdateSource>(
-                    value: source,
-                    isExpanded: true,
-                    items: UpdateSource.values
-                        .map(
-                          (s) => DropdownMenuItem(
-                            value: s,
-                            child: Text(
-                              s == UpdateSource.auto
-                                  ? (zh ? '自动选择下载源' : 'Automatic source')
-                                  : s == UpdateSource.gitee
-                                  ? 'Gitee'
-                                  : 'GitHub',
-                            ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value != null) setDialogState(() => source = value);
-                    },
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: Text(l10n.later),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: Text(l10n.downloadInstall),
-              ),
-            ],
-          ),
-        ),
+      final source = await showUpdateAvailableDialog(
+        context,
+        release: latest,
+        asset: asset,
+        localVersion: local,
+        initialSource: notifier.sourcePreference,
       );
-      if (go != true || !mounted) return;
+      if (source == null || !mounted) return;
       await notifier.setSourcePreference(source);
 
       messenger.showSnackBar(SnackBar(content: Text(l10n.downloading)));

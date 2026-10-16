@@ -5594,6 +5594,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Uses TDEE − intake instead of the fixed deduction. At least two meal types and a daily TDEE are required; otherwise it contributes 0 kcal.'**
   String get cheatActualDietHint;
+
+  /// No description provided for @updateSourceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Download source'**
+  String get updateSourceLabel;
+
+  /// No description provided for @updateSourceAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get updateSourceAuto;
+
+  /// No description provided for @updateSourceAutoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Picks the fastest after a speed test'**
+  String get updateSourceAutoHint;
+
+  /// No description provided for @updateSourceGiteeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Usually faster in mainland China'**
+  String get updateSourceGiteeHint;
+
+  /// No description provided for @updateSourceGithubHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Usually faster outside China'**
+  String get updateSourceGithubHint;
+
+  /// No description provided for @updateVersionMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'Current {current} · {size} download'**
+  String updateVersionMeta(String current, String size);
 }
 
 class _AppLocalizationsDelegate

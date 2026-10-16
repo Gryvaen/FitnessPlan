@@ -2372,5 +2372,21 @@
   "dietExcludedSummary": "Diet excluded",
   "actualDietContributionHint": "TDEE − intake",
   "dietContributionRequirementsHint": "Diet contributes TDEE − intake. At least two meal types and a daily TDEE are required; otherwise it contributes 0 kcal.",
-  "cheatActualDietHint": "Uses TDEE − intake instead of the fixed deduction. At least two meal types and a daily TDEE are required; otherwise it contributes 0 kcal."
+  "cheatActualDietHint": "Uses TDEE − intake instead of the fixed deduction. At least two meal types and a daily TDEE are required; otherwise it contributes 0 kcal.",
+  "updateSourceLabel": "Download source",
+  "updateSourceAuto": "Automatic",
+  "updateSourceAutoHint": "Picks the fastest after a speed test",
+  "updateSourceGiteeHint": "Usually faster in mainland China",
+  "updateSourceGithubHint": "Usually faster outside China",
+  "updateVersionMeta": "Current {current} · {size} download",
+  "@updateVersionMeta": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  }
 }
