@@ -45,3 +45,51 @@ void suppressInitialSearchFocus(FocusNode focus) =>
 void unfocusForNavigation() {
   FocusManager.instance.primaryFocus?.unfocus();
 }
+
+/// Drops [focusNode] when the soft keyboard is dismissed (back key / IME
+/// hide button) so the field doesn't keep a blinking caret and re-raise the
+/// IME on the next focus restore.
+class UnfocusOnKeyboardHide extends StatefulWidget {
+  const UnfocusOnKeyboardHide({
+    super.key,
+    required this.focusNode,
+    required this.child,
+  });
+
+  final FocusNode focusNode;
+  final Widget child;
+
+  @override
+  State<UnfocusOnKeyboardHide> createState() => _UnfocusOnKeyboardHideState();
+}
+
+class _UnfocusOnKeyboardHideState extends State<UnfocusOnKeyboardHide>
+    with WidgetsBindingObserver {
+  double _lastInset = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    // Read the raw view: Scaffold strips the bottom inset from its body's
+    // MediaQuery when it resizes for the keyboard.
+    final inset = View.of(context).viewInsets.bottom;
+    if (_lastInset > 0 && inset == 0 && widget.focusNode.hasFocus) {
+      widget.focusNode.unfocus();
+    }
+    _lastInset = inset;
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}

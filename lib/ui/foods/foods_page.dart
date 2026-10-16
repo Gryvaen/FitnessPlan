@@ -199,30 +199,33 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.listPage,
               ),
-              child: TextField(
-                controller: _searchController,
+              child: UnfocusOnKeyboardHide(
                 focusNode: _searchFocus,
-                decoration: InputDecoration(
-                  hintText: l10n.searchFood,
-                  prefixIcon: InkIcon(
-                    InkGlyph.search,
-                    color: foodUtilityIconColor(context),
+                child: TextField(
+                  controller: _searchController,
+                  focusNode: _searchFocus,
+                  decoration: InputDecoration(
+                    hintText: l10n.searchFood,
+                    prefixIcon: InkIcon(
+                      InkGlyph.search,
+                      color: foodUtilityIconColor(context),
+                    ),
+                    suffixIcon: searching
+                        ? IconButton(
+                            icon: InkIcon(
+                              InkGlyph.close,
+                              color: foodUtilityIconColor(context),
+                            ),
+                            onPressed: () {
+                              _searchFocus.unfocus();
+                              _searchController.clear();
+                              _setQuery('');
+                            },
+                          )
+                        : null,
                   ),
-                  suffixIcon: searching
-                      ? IconButton(
-                          icon: InkIcon(
-                            InkGlyph.close,
-                            color: foodUtilityIconColor(context),
-                          ),
-                          onPressed: () {
-                            _searchFocus.unfocus();
-                            _searchController.clear();
-                            _setQuery('');
-                          },
-                        )
-                      : null,
+                  onChanged: _setQuery,
                 ),
-                onChanged: _setQuery,
               ),
             ),
             if (!searching && visible.length > 1) ...[
