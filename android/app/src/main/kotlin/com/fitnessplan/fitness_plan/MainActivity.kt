@@ -173,9 +173,18 @@ class MainActivity : FlutterFragmentActivity() {
                             return@setMethodCallHandler
                         }
                         try {
-                            result.success(ApkDownloader.enqueue(applicationContext, url, fileName))
+                            result.success(ApkDownloader.enqueue(applicationContext, url, fileName, call.argument<Number>("size")?.toLong() ?: 0L, call.argument<String>("sha256") ?: ""))
                         } catch (e: Exception) {
                             result.error("enqueue_failed", e.message, null)
+                        }
+                    }
+                    "verify" -> {
+                        val id = call.argument<Number>("downloadId")?.toLong()
+                        if (id == null) { result.success(false) } else {
+                            Thread {
+                                val valid = try { ApkDownloader.verify(applicationContext, id) } catch (_: Exception) { false }
+                                runOnUiThread { result.success(valid) }
+                            }.start()
                         }
                     }
                     "query" -> {

@@ -27,6 +27,20 @@ class ApkDownloadCompleteReceiver : BroadcastReceiver() {
         val downloadId = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L)
         if (downloadId < 0) return
 
+        val pending = goAsync()
+        Thread {
+            try {
+                if (!ApkDownloader.verify(context, downloadId)) return@Thread
+                handleVerifiedDownload(context, downloadId)
+            } catch (_: Exception) {
+                // Foreground recovery will query and validate again.
+            } finally {
+                pending.finish()
+            }
+        }.start()
+    }
+
+    private fun handleVerifiedDownload(context: Context, downloadId: Long) {
         val info = ApkDownloader.query(context, downloadId)
         if (info["status"] != "success") return
         val localPath = info["localPath"] as? String ?: return

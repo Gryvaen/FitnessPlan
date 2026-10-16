@@ -13,9 +13,9 @@ void main() {
     void mockHandler(Object? Function(MethodCall) handler) {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (call) async {
-        calls.add(call);
-        return handler(call);
-      });
+            calls.add(call);
+            return handler(call);
+          });
     }
 
     setUp(() => calls = []);
@@ -24,20 +24,25 @@ void main() {
           .setMockMethodCallHandler(channel, null);
     });
 
-    test('enqueueDownload passes url/fileName and returns the download id', () async {
-      mockHandler((call) => 42);
-      final repo = AppUpdateRepository();
-      final id = await repo.enqueueDownload(
-        url: 'https://example.com/a.apk',
-        fileName: 'update.apk',
-      );
-      expect(id, 42);
-      expect(calls.single.method, 'enqueue');
-      expect(calls.single.arguments, {
-        'url': 'https://example.com/a.apk',
-        'fileName': 'update.apk',
-      });
-    });
+    test(
+      'enqueueDownload passes url/fileName and returns the download id',
+      () async {
+        mockHandler((call) => 42);
+        final repo = AppUpdateRepository();
+        final id = await repo.enqueueDownload(
+          url: 'https://example.com/a.apk',
+          fileName: 'update.apk',
+        );
+        expect(id, 42);
+        expect(calls.single.method, 'enqueue');
+        expect(calls.single.arguments, {
+          'url': 'https://example.com/a.apk',
+          'fileName': 'update.apk',
+          'size': 0,
+          'sha256': '',
+        });
+      },
+    );
 
     test('queryDownload maps the native status payload', () async {
       mockHandler(

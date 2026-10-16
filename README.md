@@ -108,7 +108,7 @@ Drift → SQLite
 
 ### Android
 
-从 [Releases](https://github.com/Gryvaen/FitnessPlan/releases) 下载 APK。大多数真机用 `FitnessPlan-*-android-arm64-v8a.apk`。
+从 [GitHub Releases](https://github.com/Gryvaen/FitnessPlan/releases) 或 [Gitee Releases](https://gitee.com/Gryvaen/FitnessPlan/releases) 下载 APK。大多数真机用 `FitnessPlan-*-android-arm64-v8a.apk`。
 
 ### 源码
 
@@ -227,3 +227,21 @@ flutter build ipa --release
 Made with Flutter
 
 </div>
+
+### 双源发布与更新
+
+APK 下载：[GitHub Releases](https://github.com/Gryvaen/FitnessPlan/releases) / [Gitee Releases](https://gitee.com/Gryvaen/FitnessPlan/releases)。大陆网络可优先尝试 Gitee。
+旧版若无法访问 GitHub，请手动下载安装支持双源更新的版本；以后可在更新弹窗选择自动、Gitee 或 GitHub。
+
+本地发布（Python 3，无额外依赖）：
+
+```bash
+./tool/build_release_apk.sh
+# 在本地环境中配置 GITHUB_TOKEN、GITEE_TOKEN，勿写入仓库或命令历史。
+python3 tool/publish_release.py --tag vX.Y.Z --notes-file /path/to/release-notes.md
+```
+
+构建脚本生成四种 APK、`SHA256SUMS` 和 `update-manifest.json`。发布脚本上传同一批文件到两边，最后上传清单；验证公开下载内容后报告结果。部分失败可用原命令重试，一致附件跳过，同名不同内容停止，禁止自动覆盖。从 2.6.1 起每个版本都必须带清单；2.6.0 及更早的版本没有清单，仅从 GitHub 获取，并用 GitHub 提供的附件大小与 SHA-256 校验。
+默认目标为 GitHub `Gryvaen/FitnessPlan`（main）和 Gitee `Gryvaen/FitnessPlan`（master）；可用 `--github-repo`、`--gitee-repo`、`--github-target`、`--gitee-target` 显式覆盖。发布前核对目标仓库和分支；脚本不负责同步源代码，目标提交须已存在。
+
+下载沿用 Android 系统服务，退出 App 后继续；自动换源在 App 运行或恢复后执行。前台安装与后台安装通知均须通过大小和 SHA-256 校验。摘要用于检查文件一致性，不代替 Android 的 APK 签名验证。

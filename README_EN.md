@@ -108,7 +108,7 @@ Meals, weight, workouts, and preferences stay on the device. You can export a ba
 
 ### Android
 
-Download an APK from [Releases](https://github.com/Gryvaen/FitnessPlan/releases). Most phones want `FitnessPlan-*-android-arm64-v8a.apk`.
+Download an APK from [GitHub Releases](https://github.com/Gryvaen/FitnessPlan/releases) or [Gitee Releases](https://gitee.com/Gryvaen/FitnessPlan/releases). Most phones want `FitnessPlan-*-android-arm64-v8a.apk`.
 
 ### Source
 
@@ -227,3 +227,18 @@ Free for personal, educational, and other non-commercial use. Commercial use nee
 Made with Flutter
 
 </div>
+
+### Dual-source releases and updates
+
+Download APKs from [GitHub Releases](https://github.com/Gryvaen/FitnessPlan/releases) or [Gitee Releases](https://gitee.com/Gryvaen/FitnessPlan/releases). Try Gitee when GitHub is unreachable. Users on older versions may need to install the first dual-source version manually.
+
+Build once with `./tool/build_release_apk.sh`. Configure `GITHUB_TOKEN` and `GITEE_TOKEN` in your local environment (never commit them), then run:
+
+```bash
+python3 tool/publish_release.py --tag vX.Y.Z --notes-file /path/to/release-notes.md
+```
+
+The build generates four APKs, `SHA256SUMS`, and `update-manifest.json`. The publisher uploads identical files to both platforms, manifest last, and verifies public downloads. Retry the same command after partial failure: identical files are skipped; conflicting files are never overwritten. Every release from 2.6.1 on must carry the manifest; releases up to 2.6.0 have none and are taken from GitHub only, verified against the asset size and SHA-256 that GitHub reports.
+Defaults: GitHub `Gryvaen/FitnessPlan` (main), Gitee `Gryvaen/FitnessPlan` (master). Override with `--github-repo`, `--gitee-repo`, `--github-target`, `--gitee-target`. Verify destinations before publishing; source synchronization is not performed and target commits must already exist.
+
+The update dialog remembers Automatic / Gitee / GitHub preference. Manual choices remain eligible for fallback. Android DownloadManager continues downloads while the app is closed; fallback runs when the app is active again. Both foreground installation and background install notifications require matching file size and SHA-256. Checksums establish file consistency; Android still verifies APK signatures.

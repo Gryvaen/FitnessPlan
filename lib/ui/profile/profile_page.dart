@@ -322,24 +322,57 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ? '${latest.body.substring(0, 400)}…'
           : latest.body;
 
+      var source = notifier.sourcePreference;
+      final zh = Localizations.localeOf(context).languageCode == 'zh';
       final go = await showDialog<bool>(
         context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(l10n.newVersionTitle(latest.version)),
-          content: SingleChildScrollView(child: Text(notes)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l10n.later),
+        builder: (ctx) => StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            title: Text(l10n.newVersionTitle(latest.version)),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(notes),
+                  DropdownButton<UpdateSource>(
+                    value: source,
+                    isExpanded: true,
+                    items: UpdateSource.values
+                        .map(
+                          (s) => DropdownMenuItem(
+                            value: s,
+                            child: Text(
+                              s == UpdateSource.auto
+                                  ? (zh ? '自动选择下载源' : 'Automatic source')
+                                  : s == UpdateSource.gitee
+                                  ? 'Gitee'
+                                  : 'GitHub',
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) setDialogState(() => source = value);
+                    },
+                  ),
+                ],
+              ),
             ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l10n.downloadInstall),
-            ),
-          ],
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(l10n.later),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(l10n.downloadInstall),
+              ),
+            ],
+          ),
         ),
       );
       if (go != true || !mounted) return;
+      await notifier.setSourcePreference(source);
 
       messenger.showSnackBar(SnackBar(content: Text(l10n.downloading)));
       // Fire-and-forget: progress lives on [appUpdateProvider] / AppBar icon.
@@ -484,6 +517,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ],
                   ),
                 ),
+                if (update.isBusy && update.downloadMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      '${update.downloadMessage}${update.progress > 0 ? ' · ${(update.progress * 100).toStringAsFixed(0)}%' : ''}',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ),
                 const CultivationHeroCard(),
                 const SizedBox(height: AppSpacing.section),
                 SportListTile(
