@@ -325,6 +325,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         latest.assets,
         version: latest.version,
         localBuildNumber: localBuildNumber,
+        deviceAbi: ref.read(appUpdateDeviceAbiProvider),
       );
       if (asset == null) {
         messenger.showSnackBar(SnackBar(content: Text(l10n.noInstallPackage)));
@@ -546,9 +547,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   trailing: const InkIcon(InkGlyph.chevronRight),
                   onTap: () => _showAbout(context, plan, versionLabel),
                 ),
-                if (update.phase == AppUpdatePhase.downloading &&
-                    update.downloadMessage != null)
-                  _UpdateProgressRow(status: update),
               ],
             ),
           ),
@@ -1122,44 +1120,6 @@ class _MenuRow extends StatelessWidget {
         color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
       onTap: onTap,
-    );
-  }
-}
-
-/// Bottom-of-list status row shown while an update download runs,
-/// styled like the menu rows above it.
-class _UpdateProgressRow extends StatelessWidget {
-  const _UpdateProgressRow({required this.status});
-
-  final AppUpdateStatus status;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final determinate =
-        status.phase == AppUpdatePhase.downloading && status.progress > 0;
-    return SportListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: const InkIcon(InkGlyph.download, color: _updateColor),
-      title: Text(status.downloadMessage!),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 6),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(2),
-          child: LinearProgressIndicator(
-            minHeight: 3,
-            value: determinate ? status.progress.clamp(0.0, 1.0) : null,
-            color: _updateColor,
-            backgroundColor: _updateColor.withValues(alpha: 0.18),
-          ),
-        ),
-      ),
-      trailing: determinate
-          ? Text(
-              '${(status.progress * 100).toStringAsFixed(0)}%',
-              style: theme.textTheme.meta,
-            )
-          : null,
     );
   }
 }

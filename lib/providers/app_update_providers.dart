@@ -70,6 +70,14 @@ final appUpdateClockProvider = Provider<DateTime Function()>(
   (ref) => DateTime.now,
 );
 
+/// A GitHub download averaging less than [kSlowDownloadBytesPerSecond] over
+/// its first [kSlowDownloadWindow] switches to Gitee.
+const kSlowDownloadWindow = Duration(seconds: 15);
+const kSlowDownloadBytesPerSecond = 150 * 1024;
+
+/// Split-APK ABI of this device; overridden in tests.
+final appUpdateDeviceAbiProvider = Provider<String?>((ref) => currentApkAbi());
+
 final appUpdateProvider = NotifierProvider<AppUpdateNotifier, AppUpdateStatus>(
   AppUpdateNotifier.new,
 );
@@ -85,6 +93,12 @@ class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
   DownloadCandidate? _current;
   int _lastBytes = 0;
   DateTime _lastProgress = DateTime.now();
+
+  /// Start of the current speed window and the bytes downloaded at that
+  /// moment; see [_isTooSlowOnGithub].
+  DateTime? _attemptStart;
+  int _attemptStartBytes = 0;
+  bool _slowSwitched = false;
   static const _sessionKey = 'app_update_download_session';
   UpdateSource get sourcePreference {
     final name = ref
@@ -137,6 +151,8 @@ class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
         await prefs.setInt(_kPendingDownloadId, id);
         _lastBytes = 0;
         _lastProgress = ref.read(appUpdateClockProvider)();
+        _attemptStart = _lastProgress;
+        _attemptStartBytes = 0;
         _startPolling(id);
         return;
       } catch (_) {
@@ -149,6 +165,22 @@ class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
       phase: AppUpdatePhase.idle,
       lastError: '所有下载源均失败，请稍后重试',
     );
+  }
+
+  /// GitHub is often an order of magnitude slower than Gitee from mainland
+  /// networks; switch once per session when a Gitee mirror is left to try.
+  bool _isTooSlowOnGithub(ApkDownloadInfo info, DateTime now) {
+    final start = _attemptStart;
+    if (_slowSwitched ||
+        start == null ||
+        _current?.source != UpdateSource.github ||
+        !_remaining.any((c) => c.source == UpdateSource.gitee)) {
+      return false;
+    }
+    final elapsed = now.difference(start);
+    if (elapsed < kSlowDownloadWindow) return false;
+    final bytes = info.bytesDownloaded - _attemptStartBytes;
+    return bytes * 1000 / elapsed.inMilliseconds < kSlowDownloadBytesPerSecond;
   }
 
   Future<void> _switchSource(int id) async {
@@ -235,6 +267,8 @@ class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
     if (!ref.mounted) return;
     _lastProgress = ref.read(appUpdateClockProvider)();
     _lastBytes = info.bytesDownloaded;
+    _attemptStart = _lastProgress;
+    _attemptStartBytes = info.bytesDownloaded;
     switch (info.state) {
       case ApkDownloadState.running:
         state = state.copyWith(
@@ -258,11 +292,22 @@ class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
     String localBuildNumber,
   ) async {
     if (!_isAndroid || state.isBusy) return;
+    await _dropStaleAvailableVersion(localVersion);
     try {
       await _fetchAndRecord(localVersion, localBuildNumber);
     } catch (_) {
       // Silent — a manual tap will surface the real error if it recurs.
     }
+  }
+
+  /// Clears the cached red-dot version once it is no longer newer than the
+  /// installed build (e.g. right after installing it), without waiting for a
+  /// network check that may fail.
+  Future<void> _dropStaleAvailableVersion(String localVersion) async {
+    final cached = state.availableVersion;
+    if (cached == null || AppUpdateLogic.isNewer(localVersion, cached)) return;
+    await ref.read(sharedPreferencesProvider).remove(_kAvailableVersion);
+    state = state.copyWith(clearAvailableVersion: true);
   }
 
   /// Check both sources for a newer release. Returns the release when an update is
@@ -272,6 +317,7 @@ class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
     String localBuildNumber,
   ) async {
     if (state.isBusy) return null;
+    await _dropStaleAvailableVersion(localVersion);
     state = state.copyWith(
       phase: AppUpdatePhase.checking,
       downloadMessage: '正在检查更新',
@@ -284,6 +330,7 @@ class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
         latest.assets,
         version: latest.version,
         localBuildNumber: localBuildNumber,
+        deviceAbi: ref.read(appUpdateDeviceAbiProvider),
       );
       if (asset == null) throw StateError('no_apk');
       return latest;
@@ -303,9 +350,11 @@ class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
   ) async {
     final repo = ref.read(appUpdateRepositoryProvider);
     final prefs = ref.read(sharedPreferencesProvider);
+    final deviceAbi = ref.read(appUpdateDeviceAbiProvider);
     final latest = AppUpdateLogic.selectRelease(
       await repo.fetchReleases(localVersion: localVersion),
       localBuildNumber,
+      deviceAbi: deviceAbi,
     );
     final isNewer = AppUpdateLogic.isNewer(localVersion, latest.version);
     final asset = isNewer
@@ -313,6 +362,7 @@ class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
             latest.assets,
             version: latest.version,
             localBuildNumber: localBuildNumber,
+            deviceAbi: deviceAbi,
           )
         : null;
     if (asset == null) {
@@ -351,6 +401,7 @@ class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
         throw StateError('安装包缺少有效校验信息，请重新检查更新');
       }
       _asset = asset;
+      _slowSwitched = false;
       state = state.copyWith(downloadMessage: '正在探测下载源');
       _remaining = List.of(await repo.rankCandidates(asset, sourcePreference));
       await _enqueueNext();
@@ -389,6 +440,17 @@ class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
           if (!info.waitingForNetwork &&
               now.difference(_lastProgress).inSeconds >=
                   (_lastBytes == 0 ? 30 : 60)) {
+            await _switchSource(downloadId);
+            return;
+          }
+          if (info.waitingForNetwork) {
+            // Time spent offline says nothing about the source's speed.
+            _attemptStart = now;
+            _attemptStartBytes = info.bytesDownloaded;
+          } else if (_isTooSlowOnGithub(info, now)) {
+            // Keep GitHub as the fallback in case Gitee fails.
+            _slowSwitched = true;
+            _remaining.add(_current!);
             await _switchSource(downloadId);
             return;
           }

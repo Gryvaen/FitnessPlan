@@ -55,6 +55,7 @@ class _FakeAppUpdateRepository extends AppUpdateRepository {
     UpdateSource preference,
   ) async => asset.candidates;
   int enqueueCalls = 0;
+  final List<String> enqueuedUrls = [];
   int _nextId = 1;
   final Map<int, ApkDownloadInfo> downloadInfos = {};
   final List<int> cancelled = [];
@@ -75,6 +76,7 @@ class _FakeAppUpdateRepository extends AppUpdateRepository {
     String sha256 = '',
   }) async {
     enqueueCalls++;
+    enqueuedUrls.add(url);
     final id = _nextId++;
     downloadInfos[id] = const ApkDownloadInfo(
       state: ApkDownloadState.running,
@@ -203,6 +205,30 @@ void main() {
           .silentCheckForUpdate('1.0.0', '2008');
       expect(container.read(appUpdateProvider).hasUpdateAvailable, isFalse);
       expect(container.read(appUpdateProvider).lastError, isNull);
+    });
+
+    test(
+      'clears a cached version once it is installed, even offline',
+      () async {
+        await prefs.setString('app_update_available_version', '2.6.1');
+        repo.fetchLatestError = Exception('offline');
+        final notifier = container.read(appUpdateProvider.notifier);
+        expect(container.read(appUpdateProvider).availableVersion, '2.6.1');
+
+        await notifier.silentCheckForUpdate('2.6.1', '79');
+
+        expect(container.read(appUpdateProvider).hasUpdateAvailable, isFalse);
+        expect(prefs.getString('app_update_available_version'), isNull);
+      },
+    );
+
+    test('keeps a cached version that is still newer when offline', () async {
+      await prefs.setString('app_update_available_version', '2.7.0');
+      repo.fetchLatestError = Exception('offline');
+      await container
+          .read(appUpdateProvider.notifier)
+          .silentCheckForUpdate('2.6.1', '79');
+      expect(container.read(appUpdateProvider).availableVersion, '2.7.0');
     });
   });
 
@@ -383,6 +409,61 @@ void main() {
     now = now.add(const Duration(seconds: 21));
     await tester.pump(const Duration(seconds: 1));
     expect(repo.enqueueCalls, 2);
+  });
+
+  Future<void> beginOnGithub() => container
+      .read(appUpdateProvider.notifier)
+      .downloadAndInstall(
+        asset: ReleaseAsset(
+          name: 'update.apk',
+          downloadUrl: 'https://github.com/a.apk',
+          size: 100 << 20,
+          sha256: 'a' * 64,
+          candidates: const [
+            DownloadCandidate(UpdateSource.github, 'https://github.com/a.apk'),
+            DownloadCandidate(UpdateSource.gitee, 'https://gitee.com/a.apk'),
+          ],
+        ),
+        localVersion: '1.0.0',
+      );
+
+  ApkDownloadInfo running(int bytes) => ApkDownloadInfo(
+    state: ApkDownloadState.running,
+    bytesDownloaded: bytes,
+    totalBytes: 100 << 20,
+  );
+
+  updateTest(
+    'slow GitHub switches to Gitee once and keeps GitHub as fallback',
+    (tester) async {
+      await beginOnGithub();
+      // 40 KB/s over the first 16 s — what GitHub manages from mainland links.
+      now = now.add(const Duration(seconds: 16));
+      repo.downloadInfos[1] = running(16 * 40 * 1024);
+      await tester.pump(const Duration(seconds: 1));
+      expect(repo.enqueuedUrls, [
+        'https://github.com/a.apk',
+        'https://gitee.com/a.apk',
+      ]);
+      expect(repo.cancelled, [1]);
+      final session =
+          jsonDecode(prefs.getString('app_update_download_session')!) as Map;
+      expect((session['remaining'] as List).single['source'], 'github');
+
+      // Gitee being slow too must not bounce back to GitHub.
+      now = now.add(const Duration(seconds: 16));
+      repo.downloadInfos[2] = running(1024);
+      await tester.pump(const Duration(seconds: 1));
+      expect(repo.enqueueCalls, 2);
+    },
+  );
+
+  updateTest('a fast GitHub download is left alone', (tester) async {
+    await beginOnGithub();
+    now = now.add(const Duration(seconds: 16));
+    repo.downloadInfos[1] = running(16 * 400 * 1024);
+    await tester.pump(const Duration(seconds: 1));
+    expect(repo.enqueueCalls, 1);
   });
 
   updateTest('offline waiting resets stall timer without switching', (

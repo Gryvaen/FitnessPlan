@@ -34,6 +34,105 @@ String manifest({String? sha, String version = '3.0.0'}) => jsonEncode({
 });
 
 void main() {
+  test('falls back to Gitee download links when its API is blocked', () async {
+    const universal = 'FitnessPlan-3.0.0-android.apk';
+    const giteeBase = 'https://gitee.com/$kGiteeRepo/releases/download/v3.0.0';
+    final bigManifest = jsonEncode({
+      'schemaVersion': 1,
+      'version': '3.0.0',
+      'assets': [
+        {'name': apk, 'size': 100, 'sha256': hash},
+        {'name': universal, 'size': kGiteeMaxAssetBytes + 1, 'sha256': hash},
+      ],
+    });
+    final repo = AppUpdateRepository(
+      client: MockClient((req) async {
+        final url = req.url.toString();
+        if (url == '$giteeBase/update-manifest.json' ||
+            req.url.path == '/manifest') {
+          return http.Response(bigManifest, 200);
+        }
+        if (req.url.host == 'gitee.com') {
+          return http.Response('403 Forbidden (Rate Limit Exceeded)', 403);
+        }
+        final j = release('github.com');
+        (j['assets'] as List).add({
+          'name': universal,
+          'browser_download_url': 'https://github.com/universal.apk',
+        });
+        return http.Response(jsonEncode([j]), 200);
+      }),
+    );
+    final releases = await repo.fetchReleases();
+    final gitee = releases.where(
+      (r) => r.assets.any(
+        (a) => a.candidates.any((c) => c.source == UpdateSource.gitee),
+      ),
+    );
+    // The universal APK is over Gitee's limit, so it gets no Gitee link.
+    expect(gitee.single.assets.map((a) => a.name), [apk]);
+
+    final result = AppUpdateLogic.selectRelease(
+      releases,
+      '79',
+      deviceAbi: 'arm64-v8a',
+    );
+    expect(result.assets.single.name, apk);
+    expect(result.assets.single.candidates.map((c) => c.url), [
+      '$giteeBase/$apk',
+      'https://github.com/app.apk',
+    ]);
+  });
+
+  test('asks each source once for only the newest releases', () async {
+    final listRequests = <Uri>[];
+    final repo = AppUpdateRepository(
+      client: MockClient((req) async {
+        if (req.url.path == '/manifest') return http.Response(manifest(), 200);
+        listRequests.add(req.url);
+        final host = req.url.host == 'api.github.com'
+            ? 'github.com'
+            : 'gitee.com';
+        // A full page must not trigger a request for page 2.
+        return http.Response(
+          jsonEncode(List.filled(kReleasePageSize, release(host))),
+          200,
+        );
+      }),
+    );
+    await repo.fetchReleases();
+    expect(listRequests, hasLength(2));
+    for (final uri in listRequests) {
+      expect(uri.queryParameters['per_page'], '$kReleasePageSize');
+      expect(uri.queryParameters['page'], '1');
+    }
+  });
+
+  test('GitHub assets go through the API asset endpoint', () async {
+    const apiBase = 'https://api.github.com/repos/o/r/releases/assets';
+    String? manifestAccept;
+    final repo = AppUpdateRepository(
+      client: MockClient((req) async {
+        if (req.url.toString() == '$apiBase/2') {
+          manifestAccept = req.headers['Accept'];
+          return http.Response(manifest(), 200);
+        }
+        if (req.url.host != 'api.github.com') throw Exception('offline');
+        final j = release('github.com');
+        final assets = j['assets'] as List;
+        (assets[0] as Map)['url'] = '$apiBase/1';
+        (assets[1] as Map)['url'] = '$apiBase/2';
+        return http.Response(jsonEncode([j]), 200);
+      }),
+    );
+    final result = AppUpdateLogic.selectRelease(
+      await repo.fetchReleases(),
+      '2077',
+    );
+    expect(manifestAccept, kOctetStream);
+    expect(result.assets.single.candidates.single.url, '$apiBase/1');
+  });
+
   test('one unavailable source does not block the other', () async {
     final repo = AppUpdateRepository(
       client: MockClient((req) async {

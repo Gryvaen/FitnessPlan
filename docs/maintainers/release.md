@@ -88,7 +88,7 @@ GITHUB_TOKEN="$(gh auth token)" GITEE_TOKEN="$(<~/.config/fitnessplan/gitee_toke
 | 附件大小上限 | 2 GB | **100 MB**：通用包（约 116 MB）传不上去 |
 | 认证 | `Authorization: Bearer` 请求头 | `access_token` 参数（GET 时放在 URL 里） |
 
-Gitee 上缺少通用包没有关系：清单里仍然列着它，应用发现 Gitee 上没有这个文件，就会改从 GitHub 下载。只有安装通用包的用户（构建号小于 1000，例如通过 adb 直接安装的）会受影响。
+Gitee 上缺少通用包没有关系：清单里仍然列着它，应用不会给它生成 Gitee 下载地址。安装了通用包的用户（构建号小于 1000，例如通过 adb 直接安装的）更新时会改下本机 ABI 的分包，分包两个源都有。详见 [features.md](features.md) 的「应用内更新」。
 
 ## 签名
 

@@ -123,12 +123,15 @@
 
 代码：`lib/data/repositories/app_update_repository.dart`、`lib/providers/app_update_providers.dart`、`lib/ui/profile/update_available_dialog.dart`。发布这一侧的流程见 [release.md](release.md)。
 
-1. **拉取**：同时请求 Gitee（`Gryvaen/FitnessPlan`）和 GitHub（`Gryvaen/FitnessPlan`）的发布列表，每边超时 10 秒。一边失败不影响另一边，两边都失败才报错。
+1. **拉取**：同时请求 Gitee（`Gryvaen/FitnessPlan`）和 GitHub（`Gryvaen/FitnessPlan`）的发布列表，**每边只要最新 `kReleasePageSize`（5）个、不翻页**，每边超时 15 秒。每个 GitHub 发布的 JSON 约 15 KB，大陆网络下拉全部历史会超时。一边失败不影响另一边，两边都失败才报错。
+   - **GitHub 的文件一律走 REST 资源接口**（`api.github.com/repos/…/releases/assets/<id>`，请求头 `Accept: application/octet-stream`），不用 `github.com` 的下载链接：大陆网络下 `github.com` 时常连不上，`api.github.com` 稳定。清单、测速和 DownloadManager（`ApkDownloader.kt` 加同样的请求头）都这样做。
+   - **Gitee 的发布 API 常被它的防火墙按 IP 限流（403）**，但直接下载链接不受影响。Gitee 一边拿不到结果、GitHub 有结果时，就从 `gitee.com/<仓库>/releases/download/<tag>/update-manifest.json` 直接读清单，按 `…/download/<tag>/<文件名>` 拼出 Gitee 下载地址；超过 `kGiteeMaxAssetBytes`（100 MB）的文件不拼（Gitee 上没有）。
 2. **校验**：
    - 跳过草稿和预发布版本；tag 必须是 `vX.Y.Z`，下载地址必须是 https。
    - 发布里有 `update-manifest.json` 时，读取清单，逐个核对其中文件的名称、大小和 SHA-256。清单里列了、但这个下载源上没有的文件，直接跳过（Gitee 因此可以不放超过 100 MB 的通用包）。
    - 没有清单的发布，只接受 GitHub 上版本低于 `kFirstManifestVersion`（2.6.1）的，用 GitHub 自带的 digest 校验；Gitee 上没有清单的发布一律丢弃。
-3. **选择安装包**：按已安装版本的构建号判断 ABI 通道：1xxx → `armeabi-v7a`，2xxx → `arm64-v8a`，4xxx → `x86_64`，其他（小于 1000）→ 通用包。必须保持在同一通道，否则 Android 会把新版本当成降级，拒绝安装。同一版本在两个源上的文件合并为多个候选下载地址；两边的大小或哈希不一致时直接报错。
-4. **检查时机**：启动和回到前台时静默检查（只更新「我的」上的红点）；用户也可以在「我的」里手动检查。
-5. **下载**：按用户选择的下载源（自动 / Gitee / GitHub），或者给每个源测速（请求 256 KiB）后排序，速度相同时优先 Gitee。通过原生 DownloadManager 下载，下载会话存在 prefs 里，进程被杀后可以续上。30 秒没有任何进度（或 60 秒卡住）就切换到下一个源。
+3. **选择安装包**：按已安装版本的构建号判断 ABI 通道：1xxx → `armeabi-v7a`，2xxx → `arm64-v8a`，4xxx → `x86_64`。分包用户必须留在同一通道，否则 Android 会把新版本当成降级，拒绝安装。**通用包用户（构建号小于 1000）改下本机 ABI 的分包**（`currentApkAbi()`，来自 `dart:ffi` 的 `Abi.current()`）：分包的 versionCode 更大，属于正常升级，体积更小，而且 Gitee 上只有分包。没有对应分包时才退回通用包。同一版本在两个源上的文件合并为多个候选下载地址；两边的大小或哈希不一致时直接报错。
+4. **检查时机**：启动和回到前台时静默检查（只更新「我的」上的红点）；用户也可以在「我的」里手动检查。缓存的红点版本一旦不比已安装版本新，就在检查前直接清掉，不等网络。
+5. **下载**：按用户选择的下载源（自动 / Gitee / GitHub），或者给每个源测速（请求 256 KiB）后排序，速度相同时优先 Gitee。通过原生 DownloadManager 下载，下载会话存在 prefs 里，进程被杀后可以续上。30 秒没有任何进度（或 60 秒卡住）就切换到下一个源。**GitHub 下载开始 15 秒（`kSlowDownloadWindow`）后平均速度低于 150 KiB/s，且还有 Gitee 可用时，切到 Gitee**，GitHub 放回队尾作为后备；每次下载最多这样切一次。256 KiB 的测速样本太小，经常判断不准，主要靠这条兜底。下载进度只显示在「我的」右上角下载图标的圆圈上。
+   - Gitee 下载按 IP 做令牌桶限速：开头约 1.3 MB 很快，短时间内下多了会掉到几十 KB/s。真机反复测试时会遇到，不是代码问题。
 6. **安装**：原生层校验文件大小和 SHA-256，不通过就换源重下，**绝不安装未经校验的文件**；通过后调用系统安装器。这里的哈希只校验文件完整性，不能代替 Android 的 APK 签名校验。

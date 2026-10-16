@@ -184,6 +184,47 @@ void main() {
       expect(picked?.downloadUrl, 'https://example.com/universal.apk');
     });
 
+    const universalAndArm64 = [
+      ReleaseAsset(
+        name: 'FitnessPlan-1.1.0-android.apk',
+        downloadUrl: 'https://example.com/universal.apk',
+      ),
+      ReleaseAsset(
+        name: 'FitnessPlan-1.1.0-android-arm64-v8a.apk',
+        downloadUrl: 'https://example.com/arm64.apk',
+      ),
+    ];
+
+    test('moves a universal installation to the device ABI split', () {
+      final picked = AppUpdateLogic.pickApkAsset(
+        universalAndArm64,
+        version: '1.1.0',
+        localBuildNumber: '79',
+        deviceAbi: 'arm64-v8a',
+      );
+      expect(picked?.downloadUrl, 'https://example.com/arm64.apk');
+    });
+
+    test('falls back to universal without a split for the device ABI', () {
+      final picked = AppUpdateLogic.pickApkAsset(
+        universalAndArm64,
+        version: '1.1.0',
+        localBuildNumber: '79',
+        deviceAbi: 'x86_64',
+      );
+      expect(picked?.downloadUrl, 'https://example.com/universal.apk');
+    });
+
+    test('never moves a split installation to another ABI', () {
+      final picked = AppUpdateLogic.pickApkAsset(
+        universalAndArm64,
+        version: '1.1.0',
+        localBuildNumber: '1079',
+        deviceAbi: 'arm64-v8a',
+      );
+      expect(picked, isNull);
+    });
+
     test('returns null when no suitable apk', () {
       expect(
         AppUpdateLogic.pickApkAsset(

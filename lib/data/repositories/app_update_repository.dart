@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:ffi' show Abi;
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -21,6 +22,34 @@ enum UpdateSource { auto, gitee, github }
 /// releases are verified with the size/sha256 digest GitHub reports per
 /// asset instead; older Gitee releases carry no digest and are skipped.
 const kFirstManifestVersion = '2.6.1';
+
+/// How many of the newest releases each source is asked for.
+const kReleasePageSize = 5;
+
+const kOctetStream = 'application/octet-stream';
+
+const kGiteeRepo = 'Gryvaen/FitnessPlan';
+
+/// Gitee rejects release attachments over this size, so the publish script
+/// skips them there (tool/release/publish_release.py GITEE_MAX_ASSET_BYTES).
+const kGiteeMaxAssetBytes = 100000000;
+
+/// The split-APK ABI matching this process, used to move universal installs
+/// onto a split APK (see [AppUpdateLogic.pickApkAsset]).
+String? currentApkAbi() => switch (Abi.current()) {
+  Abi.androidArm64 => 'arm64-v8a',
+  Abi.androidArm => 'armeabi-v7a',
+  Abi.androidX64 => 'x86_64',
+  _ => null,
+};
+
+/// GitHub assets are fetched through the REST asset endpoint
+/// (`api.github.com/repos/…/releases/assets/<id>` with [kOctetStream]), which
+/// redirects straight to the file. From mainland networks github.com download
+/// links often fail to connect while api.github.com stays reachable.
+/// `ApkDownloader.kt` adds the same Accept header for these URLs.
+bool isGithubApiAssetUrl(String url) =>
+    url.startsWith('https://api.github.com/');
 
 class DownloadCandidate {
   const DownloadCandidate(this.source, this.url);
@@ -160,8 +189,9 @@ abstract final class AppUpdateLogic {
 
   static LatestRelease selectRelease(
     List<LatestRelease> releases,
-    String buildNumber,
-  ) {
+    String buildNumber, {
+    String? deviceAbi,
+  }) {
     final usable = releases
         .where(
           (r) =>
@@ -169,6 +199,7 @@ abstract final class AppUpdateLogic {
                 r.assets,
                 version: r.version,
                 localBuildNumber: buildNumber,
+                deviceAbi: deviceAbi,
               ) !=
               null,
         )
@@ -186,6 +217,7 @@ abstract final class AppUpdateLogic {
       latest.assets,
       version: latest.version,
       localBuildNumber: buildNumber,
+      deviceAbi: deviceAbi,
     )!;
     final mirrors = <DownloadCandidate>[];
     for (final release in usable.where((r) => r.version == latest.version)) {
@@ -193,6 +225,7 @@ abstract final class AppUpdateLogic {
         release.assets,
         version: release.version,
         localBuildNumber: buildNumber,
+        deviceAbi: deviceAbi,
       )!;
       if (asset.name != selected.name ||
           asset.size != selected.size ||
@@ -230,10 +263,16 @@ abstract final class AppUpdateLogic {
   /// a split APK to a universal APK would therefore look like a downgrade to
   /// Android even when its version name is newer, and Android's installer
   /// then refuses it as "already installed".
+  ///
+  /// The other direction is an upgrade: a universal install (no prefix) moves
+  /// to the split APK for [deviceAbi] when one is published. It is smaller,
+  /// and Gitee only carries split APKs (the universal one exceeds its 100 MB
+  /// attachment limit).
   static ReleaseAsset? pickApkAsset(
     List<ReleaseAsset> assets, {
     required String version,
     required String localBuildNumber,
+    String? deviceAbi,
   }) {
     final buildNumber = int.tryParse(localBuildNumber) ?? 0;
     final channel = switch (buildNumber ~/ 1000) {
@@ -243,13 +282,20 @@ abstract final class AppUpdateLogic {
       _ => null,
     };
     final normalized = normalizeVersion(version);
-    final expectedName = channel == null
-        ? 'FitnessPlan-$normalized-android.apk'
-        : 'FitnessPlan-$normalized-android-$channel.apk';
-    for (final a in assets) {
-      if (a.name == expectedName) return a;
+    ReleaseAsset? named(String name) {
+      for (final a in assets) {
+        if (a.name == name) return a;
+      }
+      return null;
     }
-    return null;
+
+    if (channel != null) {
+      return named('FitnessPlan-$normalized-android-$channel.apk');
+    }
+    return (deviceAbi == null
+            ? null
+            : named('FitnessPlan-$normalized-android-$deviceAbi.apk')) ??
+        named('FitnessPlan-$normalized-android.apk');
   }
 }
 
@@ -258,7 +304,7 @@ class AppUpdateRepository {
     this._client,
     this.userAgentVersion = '0.0.0',
     this.downloadProbe,
-    this.sourceTimeout = const Duration(seconds: 10),
+    this.sourceTimeout = const Duration(seconds: 15),
     this.probeTimeout = const Duration(seconds: 5),
   });
 
@@ -279,7 +325,15 @@ class AppUpdateRepository {
       _fetchSource(UpdateSource.gitee),
       _fetchSource(UpdateSource.github),
     ]);
-    final releases = results.expand((r) => r).toList();
+    final [gitee, github] = results;
+    if (gitee.isEmpty && github.isNotEmpty) {
+      final newest = github.reduce(
+        (a, b) => AppUpdateLogic.isNewer(a.version, b.version) ? b : a,
+      );
+      final mirror = await _giteeMirrorOf(newest);
+      if (mirror != null) gitee.add(mirror);
+    }
+    final releases = [...gitee, ...github];
     if (releases.isEmpty) throw Exception('所有更新源均不可用或没有有效的更新清单');
     // ABI selection happens after both sources have been collected.
     return releases;
@@ -301,31 +355,29 @@ class AppUpdateRepository {
     http.Client client,
   ) async {
     final github = source == UpdateSource.github;
-    final releases = <Map<String, dynamic>>[];
-    var page = 1;
-    while (true) {
-      final uri = Uri.https(
-        github ? 'api.github.com' : 'gitee.com',
-        github
-            ? '/repos/$kGithubOwner/$kGithubRepo/releases'
-            : '/api/v5/repos/Gryvaen/FitnessPlan/releases',
-        {'per_page': '100', 'page': '$page'},
-      );
-      final response = await client.get(
-        uri,
-        headers: github ? _headers() : {'Accept': 'application/json'},
-      );
-      if (response.statusCode != 200) {
-        throw Exception('HTTP ${response.statusCode}');
-      }
-      final decoded = jsonDecode(response.body);
-      final items = decoded is List ? decoded : [decoded];
-      releases.addAll(
-        items.whereType<Map>().map((j) => Map<String, dynamic>.from(j)),
-      );
-      if (items.length < 100) break;
-      page++;
+    // Only the newest few releases matter. Each GitHub release is ~15 KB of
+    // JSON, so the full history (~800 KB) could not finish within
+    // [sourceTimeout] on slow mainland links to api.github.com.
+    final uri = Uri.https(
+      github ? 'api.github.com' : 'gitee.com',
+      github
+          ? '/repos/$kGithubOwner/$kGithubRepo/releases'
+          : '/api/v5/repos/$kGiteeRepo/releases',
+      {'per_page': '$kReleasePageSize', 'page': '1'},
+    );
+    final response = await client.get(
+      uri,
+      headers: github ? _headers() : {'Accept': 'application/json'},
+    );
+    if (response.statusCode != 200) {
+      throw Exception('HTTP ${response.statusCode}');
     }
+    final decoded = jsonDecode(response.body);
+    final items = decoded is List ? decoded : [decoded];
+    final releases = items
+        .whereType<Map>()
+        .map((j) => Map<String, dynamic>.from(j))
+        .toList();
     final parsed = await Future.wait(
       releases.map((j) async {
         try {
@@ -355,10 +407,15 @@ class AppUpdateRepository {
     for (final item in items) {
       if (item is! Map) continue;
       final name = item['name'];
+      final apiUrl = item['url'];
       final url =
-          item['browser_download_url'] ??
-          item['direct_asset_url'] ??
-          item['url'];
+          source == UpdateSource.github &&
+              apiUrl is String &&
+              isGithubApiAssetUrl(apiUrl)
+          ? apiUrl
+          : item['browser_download_url'] ??
+                item['direct_asset_url'] ??
+                item['url'];
       if (name is String &&
           url is String &&
           Uri.tryParse(url)?.scheme == 'https') {
@@ -394,21 +451,47 @@ class AppUpdateRepository {
         assets: verified,
       );
     }
-    final manifestResponse = await client.get(Uri.parse(manifestUrl));
+    final manifestResponse = await client.get(
+      Uri.parse(manifestUrl),
+      headers: isGithubApiAssetUrl(manifestUrl)
+          ? {..._headers(), 'Accept': kOctetStream}
+          : null,
+    );
     if (manifestResponse.statusCode != 200) return null;
-    final manifest = jsonDecode(manifestResponse.body) as Map<String, dynamic>;
+    return _releaseFromManifest(
+      manifestResponse.body,
+      tag: tag,
+      version: version,
+      body: (j['body'] as String? ?? '').trim(),
+      source: source,
+      urlFor: (name, _) => links[name],
+    );
+  }
+
+  /// Builds a verified release from `update-manifest.json`, keeping only the
+  /// assets [urlFor] can link to.
+  static LatestRelease? _releaseFromManifest(
+    String manifestBody, {
+    required String tag,
+    required String version,
+    required String body,
+    required UpdateSource source,
+    required String? Function(String name, int size) urlFor,
+  }) {
+    final manifest = jsonDecode(manifestBody) as Map<String, dynamic>;
     if (manifest['version'] != version || manifest['schemaVersion'] != 1) {
       return null;
     }
     final assets = <ReleaseAsset>[];
     for (final entry in manifest['assets'] as List) {
       final name = entry['name'] as String;
-      final url = links[name];
+      final size = entry['size'] as int;
+      final url = urlFor(name, size);
       if (url == null) continue;
       final asset = ReleaseAsset(
         name: name,
         downloadUrl: url,
-        size: entry['size'] as int,
+        size: size,
         sha256: (entry['sha256'] as String).toLowerCase(),
         candidates: [DownloadCandidate(source, url)],
       );
@@ -418,9 +501,38 @@ class AppUpdateRepository {
     return LatestRelease(
       tagName: tag,
       version: version,
-      body: (j['body'] as String? ?? '').trim(),
+      body: body,
       assets: assets,
     );
+  }
+
+  /// Gitee mirror of [release] built from Gitee's direct download links,
+  /// for when Gitee's release API is unavailable (its WAF rate-limits the
+  /// API per IP while plain downloads keep working). Assets over
+  /// [kGiteeMaxAssetBytes] are never uploaded to Gitee, so they get no link.
+  Future<LatestRelease?> _giteeMirrorOf(LatestRelease release) async {
+    final client = _client ?? http.Client();
+    final base =
+        'https://gitee.com/$kGiteeRepo/releases/download/${release.tagName}';
+    try {
+      final response = await client
+          .get(Uri.parse('$base/update-manifest.json'))
+          .timeout(sourceTimeout);
+      if (response.statusCode != 200) return null;
+      return _releaseFromManifest(
+        response.body,
+        tag: release.tagName,
+        version: release.version,
+        body: release.body,
+        source: UpdateSource.gitee,
+        urlFor: (name, size) =>
+            size > kGiteeMaxAssetBytes ? null : '$base/$name',
+      );
+    } catch (_) {
+      return null;
+    } finally {
+      if (_client == null) client.close();
+    }
   }
 
   Future<List<DownloadCandidate>> rankCandidates(
@@ -455,6 +567,9 @@ class AppUpdateRepository {
         final watch = Stopwatch()..start();
         final request = await client.getUrl(Uri.parse(url));
         request.headers.set('Range', 'bytes=0-262143');
+        if (isGithubApiAssetUrl(url)) {
+          request.headers.set('Accept', kOctetStream);
+        }
         final response = await request.close();
         if (response.statusCode != 200 && response.statusCode != 206) {
           return -1.0;

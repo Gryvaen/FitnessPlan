@@ -32,6 +32,11 @@ object ApkDownloader {
             .setMimeType("application/vnd.android.package-archive")
             .setAllowedOverMetered(true)
             .setAllowedOverRoaming(true)
+        // GitHub's REST asset endpoint serves the file itself only when asked
+        // for octet-stream (see isGithubApiAssetUrl in app_update_repository.dart).
+        if (Uri.parse(url).host == "api.github.com") {
+            request.addRequestHeader("Accept", "application/octet-stream")
+        }
         val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         val id = manager.enqueue(request)
         context.getSharedPreferences("apk_integrity", Context.MODE_PRIVATE).edit()
