@@ -228,7 +228,16 @@ flutter build ipa --release
 
 <br>
 
-本地发布（Python 3，无额外依赖）：
+一键发布（需已登录 `gh`，工作区干净且在 `main` 上）：
+
+```bash
+./tool/release/release.sh --setup                                  # 只需一次：保存 Gitee 令牌
+./tool/release/release.sh X.Y.Z --notes-file /path/to/release-notes.md
+```
+
+依次完成：版本号与构建号加一并提交、打附注 tag、分析与测试并构建、推送 `main` 和 tag 到 GitHub 与 Gitee、双源发布并校验。构建和测试通过前不推送任何内容；中途失败用原命令重跑即可续上（已完成的提交、tag 和同一提交的构建产物会复用，`--rebuild` 强制重建）。Gitee 令牌存于 `~/.config/fitnessplan/gitee_token`（权限 600），也可用 `GITEE_TOKEN` 环境变量；令牌不会打印、出现在命令行或写入 git 配置。
+
+也可分步执行：
 
 ```bash
 ./tool/release/build_release_apk.sh
@@ -236,9 +245,9 @@ flutter build ipa --release
 python3 tool/release/publish_release.py --tag vX.Y.Z --notes-file /path/to/release-notes.md
 ```
 
-构建脚本生成四种 APK、`SHA256SUMS` 和 `update-manifest.json`。发布脚本上传同一批文件到两边，最后上传清单；验证公开下载内容后报告结果。部分失败可用原命令重试，一致附件跳过，同名不同内容停止，禁止自动覆盖。从 2.6.1 起每个版本都必须带清单；2.6.0 及更早的版本没有清单，仅从 GitHub 获取，并用 GitHub 提供的附件大小与 SHA-256 校验。
+构建脚本生成四种 APK、`SHA256SUMS` 和 `update-manifest.json`。发布脚本上传同一批文件到两边，最后上传清单；验证公开下载内容后报告结果。部分失败可用原命令重试，一致附件跳过，同名不同内容停止，禁止自动覆盖。Gitee 单个附件上限 100 MB，超限的文件（通用 APK）只发 GitHub，应用会自动从 GitHub 下载它。从 2.6.1 起每个版本都必须带清单；2.6.0 及更早的版本没有清单，仅从 GitHub 获取，并用 GitHub 提供的附件大小与 SHA-256 校验。
 
-默认目标为 GitHub `Gryvaen/FitnessPlan`（main）和 Gitee `Gryvaen/FitnessPlan`（master）；可用 `--github-repo`、`--gitee-repo`、`--github-target`、`--gitee-target` 显式覆盖。发布前核对目标仓库和分支；脚本不负责同步源代码，目标提交须已存在。
+默认目标为 GitHub `Gryvaen/FitnessPlan`（main）和 Gitee `Gryvaen/FitnessPlan`（main）；可用 `--github-repo`、`--gitee-repo`、`--github-target`、`--gitee-target` 显式覆盖。脚本不负责同步源代码：创建发布前会用 `git ls-remote` 核对远端 tag（或目标分支头）是否就是本地 tag 指向的提交，不一致就停止，先推送或同步目标分支再重试。
 
 </details>
 

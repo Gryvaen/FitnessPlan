@@ -228,15 +228,24 @@ Releases here are Android APKs only. Linux emulator notes are in [docs/android-e
 
 <br>
 
-Build once with `./tool/release/build_release_apk.sh`. Configure `GITHUB_TOKEN` and `GITEE_TOKEN` in your local environment (never commit them), then run:
+One command (needs a logged-in `gh`, a clean tree and `main` checked out):
+
+```bash
+./tool/release/release.sh --setup                                  # once: store the Gitee token
+./tool/release/release.sh X.Y.Z --notes-file /path/to/release-notes.md
+```
+
+It bumps the version and build number and commits, creates an annotated tag, analyzes, tests and builds, pushes `main` and the tag to GitHub and Gitee, then publishes to both and verifies. Nothing is pushed until the build and tests pass; after a failure, re-run the same command to resume (the release commit, tag and artifacts built from the same commit are reused; `--rebuild` forces a rebuild). The Gitee token lives in `~/.config/fitnessplan/gitee_token` (mode 600) or `GITEE_TOKEN`; it is never printed, put on a command line or saved in git config.
+
+Step by step instead: build once with `./tool/release/build_release_apk.sh`. Configure `GITHUB_TOKEN` and `GITEE_TOKEN` in your local environment (never commit them), then run:
 
 ```bash
 python3 tool/release/publish_release.py --tag vX.Y.Z --notes-file /path/to/release-notes.md
 ```
 
-The build generates four APKs, `SHA256SUMS`, and `update-manifest.json`. The publisher uploads identical files to both platforms, manifest last, and verifies public downloads. Retry the same command after partial failure: identical files are skipped; conflicting files are never overwritten. Every release from 2.6.1 on must carry the manifest; releases up to 2.6.0 have none and are taken from GitHub only, verified against the asset size and SHA-256 that GitHub reports.
+The build generates four APKs, `SHA256SUMS`, and `update-manifest.json`. The publisher uploads identical files to both platforms, manifest last, and verifies public downloads. Retry the same command after partial failure: identical files are skipped; conflicting files are never overwritten. Gitee caps attachments at 100 MB, so larger files (the universal APK) go to GitHub only; the app downloads those from GitHub. Every release from 2.6.1 on must carry the manifest; releases up to 2.6.0 have none and are taken from GitHub only, verified against the asset size and SHA-256 that GitHub reports.
 
-Defaults: GitHub `Gryvaen/FitnessPlan` (main), Gitee `Gryvaen/FitnessPlan` (master). Override with `--github-repo`, `--gitee-repo`, `--github-target`, `--gitee-target`. Verify destinations before publishing; source synchronization is not performed and target commits must already exist.
+Defaults: GitHub `Gryvaen/FitnessPlan` (main), Gitee `Gryvaen/FitnessPlan` (main). Override with `--github-repo`, `--gitee-repo`, `--github-target`, `--gitee-target`. Source is not synchronized: before creating a release the script checks with `git ls-remote` that the remote tag (or the target branch head) is the commit the local tag points to, and stops otherwise; push or sync the target branch first, then retry.
 
 </details>
 

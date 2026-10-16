@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 import sys
 import urllib.error
 import urllib.parse
@@ -32,12 +33,18 @@ class PublicRedirect(urllib.request.HTTPRedirectHandler):
         return redirected
 
 
+# Gitee rejects release attachments over 100 MB ("文件大小已超出限制：100 MB").
+GITEE_MAX_ASSET_BYTES = 100_000_000
+
+
 class Platform:
     def __init__(self, name, repo, token, target):
         if not re.fullmatch(r'[\w.-]+/[\w.-]+', repo):
             raise ValueError('Invalid repository')
         self.name, self.token, self.target = name, token, target
         self.base = f'https://{"api.github.com" if name == "github" else "gitee.com/api/v5"}/repos/{repo}'
+        self.git_url = f'https://{"github.com" if name == "github" else "gitee.com"}/{repo}.git'
+        self.max_asset_size = GITEE_MAX_ASSET_BYTES if name == 'gitee' else None
         self.opener = urllib.request.build_opener(PublicRedirect())
 
     def request(self, method, url, payload=None, content_type='application/json'):
@@ -58,7 +65,49 @@ class Platform:
             raise ApiError(error.code) from None
 
     def get_release(self, tag):
-        return self.request('GET', self.base + '/releases/tags/' + urllib.parse.quote(tag, safe=''))
+        release = self.request('GET', self.base + '/releases/tags/' + urllib.parse.quote(tag, safe=''))
+        # Gitee answers a missing release with HTTP 200 and a JSON null.
+        if not isinstance(release, dict):
+            raise ApiError(404)
+        return release
+
+    def find_release(self, tag):
+        """Like get_release, but also finds a GitHub draft left by an earlier run."""
+        try:
+            return self.get_release(tag)
+        except ApiError as error:
+            # GitHub's /releases/tags/{tag} never returns drafts.
+            if error.status != 404 or self.name != 'github':
+                raise
+        page = 1
+        while True:
+            batch = self.request('GET', f'{self.base}/releases?per_page=100&page={page}')
+            for release in batch:
+                if release.get('tag_name') == tag:
+                    return release
+            if len(batch) < 100:
+                raise ApiError(404)
+            page += 1
+
+    def refresh(self, release, tag):
+        if self.name == 'github':
+            # By id: drafts are invisible to the by-tag endpoint.
+            return self.request('GET', f"{self.base}/releases/{release['id']}")
+        return self.get_release(tag)
+
+    def remote_commit(self, tag):
+        """Commit the new release's tag would point at: the existing remote tag,
+        else the head of the target branch (where the platform creates it)."""
+        refs = {}
+        output = subprocess.run(
+            ['git', 'ls-remote', self.git_url, f'refs/tags/{tag}', f'refs/tags/{tag}^{{}}', f'refs/heads/{self.target}'],
+            check=True, capture_output=True, text=True, timeout=120,
+        ).stdout
+        for line in output.splitlines():
+            sha, ref = line.split('\t', 1)
+            refs[ref] = sha
+        return (refs.get(f'refs/tags/{tag}^{{}}') or refs.get(f'refs/tags/{tag}')
+                or refs.get(f'refs/heads/{self.target}'))
 
     def attachments(self, release):
         if self.name == 'github':
@@ -88,6 +137,13 @@ class Platform:
             self.request('POST', f"{self.base}/releases/{release['id']}/attach_files", data,
                          f'multipart/form-data; boundary={boundary}')
 
+    def asset_digest(self, asset):
+        # GitHub reports a SHA-256 per asset; draft assets have no public URL yet.
+        reported = asset.get('digest') if self.name == 'github' else None
+        if reported and reported.startswith('sha256:'):
+            return asset['size'], reported[len('sha256:'):]
+        return self.remote_digest(asset)
+
     def remote_digest(self, asset):
         # Always verify anonymously using the same public URL clients consume.
         url = asset.get('browser_download_url') or asset.get('direct_asset_url') or asset.get('url')
@@ -101,12 +157,24 @@ class Platform:
         return size, h.hexdigest()
 
 
-def publish(platform, tag, notes, paths):
+def publish(platform, tag, notes, paths, commit=None):
+    """Returns the names skipped for exceeding the platform's size limit.
+
+    The manifest still lists them: the app ignores manifest entries a source
+    lacks and downloads those from the other source."""
+    limit = getattr(platform, 'max_asset_size', None)
+    skipped = [p.name for p in paths if limit and p.stat().st_size > limit]
+    paths = [p for p in paths if p.name not in skipped]
     try:
-        release = platform.get_release(tag)
+        release = platform.find_release(tag)
     except ApiError as error:
         if error.status != 404:
             raise
+        if commit:
+            remote = platform.remote_commit(tag)
+            if remote != commit:
+                raise ValueError(f'{platform.target} on {platform.name} is not at the release commit; '
+                                 'push or sync it first')
         release = platform.request('POST', platform.base + '/releases', {
             'tag_name': tag, 'name': tag, 'body': notes,
             'target_commitish': platform.target, 'prerelease': False,
@@ -123,18 +191,34 @@ def publish(platform, tag, notes, paths):
     expected = {p.name: (p.stat().st_size, digest(p)) for p in paths}
     # Validate all existing files before uploading anything to this release.
     for path in paths:
-        if path.name in existing and platform.remote_digest(existing[path.name]) != expected[path.name]:
+        if path.name in existing and platform.asset_digest(existing[path.name]) != expected[path.name]:
             raise ValueError(f'Conflicting existing attachment: {path.name}')
     for path in paths:
         if path.name not in existing:
             platform.upload(release, path)
-    release = platform.get_release(tag)
-    final = {a['name']: a for a in platform.attachments(release)}
-    for path in paths:
-        if path.name not in final or platform.remote_digest(final[path.name]) != expected[path.name]:
-            raise ValueError(f'Attachment verification failed: {path.name}')
+    release = platform.refresh(release, tag)
+    verify(platform, release, expected, platform.asset_digest)
     if platform.name == 'github' and release.get('draft'):
         platform.request('PATCH', f"{platform.base}/releases/{release['id']}", {'draft': False})
+        release = platform.refresh(release, tag)
+    # Finally check the public URLs clients actually download from.
+    verify(platform, release, expected, platform.remote_digest)
+    return skipped
+
+
+def verify(platform, release, expected, digest_of):
+    final = {a['name']: a for a in platform.attachments(release)}
+    for name, wanted in expected.items():
+        if name not in final or digest_of(final[name]) != wanted:
+            raise ValueError(f'Attachment verification failed: {name}')
+
+
+def local_commit(tag):
+    try:
+        return subprocess.run(['git', 'rev-parse', '--verify', '--quiet', f'{tag}^{{commit}}'],
+                              check=True, capture_output=True, text=True).stdout.strip()
+    except subprocess.CalledProcessError:
+        raise ValueError(f'Tag {tag} does not exist locally; create it on the release commit first') from None
 
 
 def validate_bundle(directory, tag):
@@ -164,10 +248,14 @@ def main():
     parser.add_argument('--github-repo', default='Gryvaen/FitnessPlan')
     parser.add_argument('--gitee-repo', default='Gryvaen/FitnessPlan')
     parser.add_argument('--github-target', default='main')
-    parser.add_argument('--gitee-target', default='master')
+    parser.add_argument('--gitee-target', default='main')
     args = parser.parse_args()
     paths = validate_bundle(args.dist, args.tag)
     notes = args.notes_file.read_text(encoding='utf-8')
+    try:
+        commit = local_commit(args.tag)
+    except ValueError as error:
+        parser.error(str(error))
     failed = False
     for name in ('github', 'gitee'):
         token = os.environ.get(name.upper() + '_TOKEN')
@@ -175,8 +263,10 @@ def main():
             if not token:
                 raise ValueError('Missing ' + name.upper() + '_TOKEN')
             platform = Platform(name, getattr(args, name + '_repo'), token, getattr(args, name + '_target'))
-            publish(platform, args.tag, notes, paths)
+            skipped = publish(platform, args.tag, notes, paths, commit)
             print(f'{name}: published and verified {args.tag}')
+            for skipped_name in skipped:
+                print(f'{name}: skipped {skipped_name} (over the size limit; clients fall back to the other source)')
         except Exception as error:
             # Do not print transport errors: URLs may contain access tokens.
             detail = str(error) if isinstance(error, (ValueError, ApiError)) else type(error).__name__
