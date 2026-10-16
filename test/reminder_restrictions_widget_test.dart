@@ -132,8 +132,12 @@ void main() {
       expect(find.text('1 项待检查'), findsOneWidget);
       await tester.tap(find.text('提醒可能收不到'));
       await tester.pumpAndSettle();
+      // The detail is folded until the row is tapped.
+      expect(find.text('通知已关闭，到点时可能无法显示提醒。'), findsNothing);
+      await tester.tap(find.text('通知权限'));
+      await tester.pumpAndSettle();
       expect(find.text('通知已关闭，到点时可能无法显示提醒。'), findsOneWidget);
-      expect(find.text('设置通知权限'), findsOneWidget);
+      expect(find.text('去开启'), findsOneWidget);
     },
     variant: TargetPlatformVariant.only(TargetPlatform.android),
   );
@@ -234,7 +238,7 @@ void main() {
       await showPage(tester);
       await tester.tap(find.text('提醒可能收不到'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('设置通知权限'));
+      await tester.tap(find.text('去开启'));
       await tester.pumpAndSettle();
       expect(notificationRequests, 1);
     },
@@ -275,6 +279,8 @@ void main() {
       await tester.tap(find.text('提醒可能收不到'));
       await tester.pumpAndSettle();
       expect(find.text('系统已限制后台运行'), findsOneWidget);
+      await tester.tap(find.text('系统已限制后台运行'));
+      await tester.pumpAndSettle();
       expect(find.textContaining('系统报告本应用受到后台限制'), findsOneWidget);
       await tester.tapAt(const Offset(20, 300));
       await tester.pumpAndSettle();
@@ -312,7 +318,7 @@ void main() {
       await showPage(tester);
       await tester.tap(find.text('提醒可能收不到'));
       await tester.pumpAndSettle();
-      final button = find.text('后台运行设置');
+      final button = find.text('去设置');
       expect(button, findsOneWidget);
       expect(find.text('关闭电池优化'), findsNothing);
       expect(batteryStatusReads, 0);
@@ -340,9 +346,9 @@ void main() {
       await showPage(tester);
       await tester.tap(find.text('提醒可能收不到'));
       await tester.pumpAndSettle();
-      expect(find.text('后台运行设置'), findsOneWidget);
+      expect(find.text('去设置'), findsOneWidget);
       expect(find.text('关闭电池优化'), findsNothing);
-      await tester.tap(find.text('后台运行设置'));
+      await tester.tap(find.text('去设置'));
       await tester.pumpAndSettle();
       expect(autoStartCalls, 1);
       expect(batteryStatusReads, 0);
@@ -359,7 +365,7 @@ void main() {
       await showPage(tester);
       await tester.tap(find.text('提醒可能收不到'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('后台运行设置'));
+      await tester.tap(find.text('去设置'));
       await tester.pumpAndSettle();
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pumpAndSettle();
@@ -378,7 +384,7 @@ void main() {
       await showPage(tester);
       await tester.tap(find.text('提醒可能收不到'));
       await tester.pumpAndSettle();
-      final button = find.text('后台运行设置');
+      final button = find.text('去设置');
       expect(button, findsOneWidget);
       await tester.ensureVisible(button);
       await tester.tap(button);

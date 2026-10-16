@@ -1347,7 +1347,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reminderOemHintBatteryButton => 'Disable battery optimization';
 
   @override
-  String get reminderOemHintAutostartButton => 'Background settings';
+  String get reminderOemHintAutostartButton => 'Settings';
 
   @override
   String get stepsOemHintBody =>

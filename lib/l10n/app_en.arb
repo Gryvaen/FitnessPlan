@@ -509,7 +509,7 @@
   "reminderOemHintTitle": "Your phone may restrict reminders",
   "reminderOemHintBody": "Some phone brands restrict background apps, which can silence or block reminders from ringing, vibrating, or firing at all. It helps to disable battery optimization for this app and allow \"auto-start\" / background running in system settings.",
   "reminderOemHintBatteryButton": "Disable battery optimization",
-  "reminderOemHintAutostartButton": "Background settings",
+  "reminderOemHintAutostartButton": "Settings",
   "stepsOemHintBody": "Some phone brands restrict background apps, which can stop step counting once the app is closed. Disabling battery optimization for this app helps it keep counting.",
   "customDuration": "Custom (0:30–10:00)",
   "notifChannelName": "Rest timer",

@@ -12,6 +12,7 @@ import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import 'workout_reminder_notifications.dart';
 import 'reminder_status_labels.dart';
+import 'restriction_issue_row.dart';
 
 /// Reminder settings: an independent on/off + time + repeat-days for each
 /// reminder kind, plus the notification-permission status (board 06.03).
@@ -169,15 +170,15 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
     ReminderKind.weighIn => AppColors.fat,
   };
 
-  List<_RestrictionIssue> _restrictionIssues(
+  List<RestrictionIssue> _restrictionIssues(
     AppLocalizations l10n, {
     required bool enabled,
     required bool android,
   }) {
-    final issues = <_RestrictionIssue>[];
+    final issues = <RestrictionIssue>[];
     if (_granted == false) {
       issues.add(
-        _RestrictionIssue(
+        RestrictionIssue(
           glyph: InkGlyph.notificationsOff,
           title: l10n.notificationPermissionRow,
           detail: l10n.notificationPermissionMissing,
@@ -189,7 +190,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
     }
     if (android && !_exact) {
       issues.add(
-        _RestrictionIssue(
+        RestrictionIssue(
           glyph: InkGlyph.alarm,
           title: l10n.alarmAccessTitle,
           detail: l10n.exactAlarmMissing,
@@ -200,7 +201,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
     }
     if (android && !_fullScreen) {
       issues.add(
-        _RestrictionIssue(
+        RestrictionIssue(
           glyph: InkGlyph.alarm,
           title: l10n.fullScreenAlarmTitle,
           detail: l10n.fullScreenAlarmMissing,
@@ -215,7 +216,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
             _scheduleStatus!.failed > 0 ||
             _scheduleStatus!.scheduled == 0)) {
       issues.add(
-        _RestrictionIssue(
+        RestrictionIssue(
           glyph: InkGlyph.info,
           title: _scheduleStatus == null
               ? l10n.reminderScheduleUnknownTitle
@@ -231,7 +232,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
     }
     if (android && _backgroundRestricted == true) {
       issues.add(
-        _RestrictionIssue(
+        RestrictionIssue(
           glyph: InkGlyph.batteryAlert,
           title: l10n.reminderBatteryTitle,
           detail: l10n.reminderBatteryDetail,
@@ -364,7 +365,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
   );
 
   void _showStatusDetails(
-    List<_RestrictionIssue> issues, {
+    List<RestrictionIssue> issues, {
     required bool android,
     required int scheduled,
   }) {
@@ -418,8 +419,9 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
                 ],
                 const SizedBox(height: AppSpacing.card),
                 for (final issue in issues)
-                  _RestrictionIssueRow(
+                  RestrictionIssueRow(
                     issue: issue,
+                    contentPadding: EdgeInsets.zero,
                     onAction: () =>
                         _runRestrictionAction(sheetContext, issue.onAction),
                   ),
@@ -449,24 +451,6 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
       ),
     );
   }
-}
-
-class _RestrictionIssue {
-  const _RestrictionIssue({
-    required this.glyph,
-    required this.title,
-    required this.detail,
-    required this.action,
-    required this.onAction,
-    this.blocking = false,
-  });
-
-  final InkGlyph glyph;
-  final String title;
-  final String detail;
-  final String action;
-  final Future<void> Function() onAction;
-  final bool blocking;
 }
 
 class _ReminderStatusRow extends StatelessWidget {
@@ -525,54 +509,6 @@ class _ReminderStatusRow extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _RestrictionIssueRow extends StatelessWidget {
-  const _RestrictionIssueRow({required this.issue, required this.onAction});
-
-  final _RestrictionIssue issue;
-  final VoidCallback onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.card),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: theme.colorScheme.outlineVariant),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: InkIcon(issue.glyph, size: 20, color: AppColors.warning),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(issue.title, style: theme.textTheme.titleSmall),
-                const SizedBox(height: 5),
-                Text(
-                  issue.detail,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                TextButton(onPressed: onAction, child: Text(issue.action)),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

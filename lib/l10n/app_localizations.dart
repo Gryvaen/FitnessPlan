@@ -2610,7 +2610,7 @@ abstract class AppLocalizations {
   /// No description provided for @reminderOemHintAutostartButton.
   ///
   /// In en, this message translates to:
-  /// **'Background settings'**
+  /// **'Settings'**
   String get reminderOemHintAutostartButton;
 
   /// No description provided for @stepsOemHintBody.

@@ -1320,7 +1320,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reminderOemHintBatteryButton => '关闭电池优化';
 
   @override
-  String get reminderOemHintAutostartButton => '后台运行设置';
+  String get reminderOemHintAutostartButton => '去设置';
 
   @override
   String get stepsOemHintBody =>
