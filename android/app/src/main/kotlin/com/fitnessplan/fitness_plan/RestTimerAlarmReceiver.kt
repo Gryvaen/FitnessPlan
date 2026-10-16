@@ -8,6 +8,8 @@ import android.util.Log
 
 class RestTimerAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        RestTimerAlarmScheduler.recordDelay(context, intent)
+        RestTimerAlarmScheduler.cancelCountdown(context)
         val serviceIntent = Intent(context, RestTimerAlarmService::class.java).apply {
             putExtras(intent)
         }

@@ -14,6 +14,7 @@ void main() {
   final messenger =
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   const alarm = MethodChannel('fitness_plan/rest_timer_alarm');
+  const reminder = MethodChannel('fitness_plan/workout_reminder');
   const permissions = MethodChannel('flutter.baseflow.com/permissions/methods');
   const notifications = MethodChannel(
     'dexterous.com/flutter/local_notifications',
@@ -23,6 +24,9 @@ void main() {
   var notificationGranted = true;
   var exactGranted = true;
   var scheduleFails = false;
+  var aggressiveOem = false;
+  int? lastDelayMs;
+  final reminderCalls = <String>[];
 
   setUp(() {
     FlutterLocalNotificationsPlatform.instance =
@@ -33,9 +37,23 @@ void main() {
     notificationGranted = true;
     exactGranted = true;
     scheduleFails = false;
+    aggressiveOem = false;
+    lastDelayMs = null;
+    reminderCalls.clear();
+    messenger.setMockMethodCallHandler(reminder, (call) async {
+      reminderCalls.add(call.method);
+      if (call.method == 'isAggressiveOem') return aggressiveOem;
+      if (call.method == 'openAutoStartSettings') return 'battery';
+      return null;
+    });
     messenger.setMockMethodCallHandler(alarm, (call) async {
       alarmCalls.add(call);
       if (call.method == 'canScheduleExactAlarms') return exactGranted;
+      if (call.method == 'takeLastDelayMs') {
+        final delay = lastDelayMs;
+        lastDelayMs = null;
+        return delay;
+      }
       if (call.method == 'schedule' && scheduleFails) {
         throw PlatformException(code: 'schedule_failed');
       }
@@ -66,6 +84,7 @@ void main() {
 
   tearDown(() {
     messenger.setMockMethodCallHandler(alarm, null);
+    messenger.setMockMethodCallHandler(reminder, null);
     messenger.setMockMethodCallHandler(permissions, null);
     messenger.setMockMethodCallHandler(notifications, null);
   });
@@ -314,6 +333,54 @@ void main() {
       expect(settingsBadge(tester).isLabelVisible, isFalse);
       await openSettings(tester);
       expect(find.text('Reminder permissions'), findsNothing);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+
+  testWidgets(
+    'aggressive OEM lists the background issue until settings are opened',
+    (tester) async {
+      aggressiveOem = true;
+      await showPage(tester);
+      expect(settingsBadge(tester).isLabelVisible, isTrue);
+
+      await tester.tap(find.text('Start'));
+      await flush(tester);
+      expect(
+        find.text('Alerts may be delayed while you use other apps'),
+        findsOneWidget,
+      );
+      final scheduled = alarmCalls.where((c) => c.method == 'schedule').last;
+      expect((scheduled.arguments as Map)['countdownTitle'], 'Resting');
+
+      await openSettings(tester);
+      expect(find.text('May be late in background'), findsOneWidget);
+      await tester.tap(find.text('Settings').last);
+      await flush(tester);
+      expect(reminderCalls, contains('openAutoStartSettings'));
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool('rest_timer_background_ack'), isTrue);
+      expect(settingsBadge(tester).isLabelVisible, isFalse);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+
+  testWidgets(
+    'a delayed alarm is reported and re-arms the background issue',
+    (tester) async {
+      aggressiveOem = true;
+      SharedPreferences.setMockInitialValues({
+        'rest_timer_background_ack': true,
+      });
+      lastDelayMs = 90000;
+      await showPage(tester);
+      expect(
+        find.text('Your last rest alert was delayed 90s by the system'),
+        findsOneWidget,
+      );
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool('rest_timer_background_ack'), isFalse);
+      expect(settingsBadge(tester).isLabelVisible, isTrue);
     },
     variant: TargetPlatformVariant.only(TargetPlatform.android),
   );

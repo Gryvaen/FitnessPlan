@@ -257,6 +257,8 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
             context.l10n.reminderAutoStartBatteryHint,
           AutoStartSettingsDestination.appDetails =>
             context.l10n.reminderAutoStartAppDetailsHint,
+          AutoStartSettingsDestination.colorOsAppDetails =>
+            context.l10n.reminderAutoStartColorOsHint,
         };
       });
       _pendingAutoStartFeedback = null;

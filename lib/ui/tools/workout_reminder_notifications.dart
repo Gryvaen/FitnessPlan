@@ -12,7 +12,7 @@ import 'rest_timer_notifications.dart';
 ///
 /// Schedules the next [daysAhead] one-shot notifications per enabled kind so
 /// the workout reminder's body can reflect whether the previous day had sets.
-enum AutoStartSettingsDestination { oem, battery, appDetails }
+enum AutoStartSettingsDestination { oem, battery, appDetails, colorOsAppDetails }
 
 abstract final class ReminderNotifications {
   static const _channelDesc = 'Daily reminders';
@@ -193,6 +193,7 @@ abstract final class ReminderNotifications {
       'oem' => AutoStartSettingsDestination.oem,
       'battery' => AutoStartSettingsDestination.battery,
       'appDetails' => AutoStartSettingsDestination.appDetails,
+      'colorOsAppDetails' => AutoStartSettingsDestination.colorOsAppDetails,
       _ => throw StateError('Unknown auto-start destination: $destination'),
     };
   }

@@ -168,6 +168,7 @@ abstract final class RestTimerNotifications {
     required String dismissLabel,
     required bool soundEnabled,
     required bool vibrationEnabled,
+    required String countdownTitle,
   }) async {
     final remaining = endsAt.difference(DateTime.now());
     if (remaining <= Duration.zero) {
@@ -184,6 +185,7 @@ abstract final class RestTimerNotifications {
         'dismissLabel': dismissLabel,
         'soundEnabled': soundEnabled,
         'vibrationEnabled': vibrationEnabled,
+        'countdownTitle': countdownTitle,
       });
       return;
     }
@@ -243,6 +245,19 @@ abstract final class RestTimerNotifications {
         notificationDetails: details,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       );
+    }
+  }
+
+  /// How late the last Android alert arrived when the system held it back
+  /// (e.g. ColorOS freezing the app in the background). Read once: the
+  /// native side clears it. Null when nothing was delayed.
+  static Future<Duration?> takeLastAlarmDelay() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return null;
+    try {
+      final ms = await _nativeAlarmChannel.invokeMethod<int>('takeLastDelayMs');
+      return ms == null ? null : Duration(milliseconds: ms);
+    } catch (_) {
+      return null;
     }
   }
 

@@ -54,4 +54,14 @@ class DeviceReliabilityTest {
         }
         assertEquals(listOf("oppo", "oneplus", "battery", "details"), attempted)
     }
+
+    @Test fun skipsBatterySettingsWhenAbsent() {
+        val attempted = mutableListOf<String>()
+        val destination = DeviceReliability.launchFirstAvailable(listOf("oppo"), null, "details", {
+            attempted += it
+            if (it != "details") throw SecurityException("unavailable")
+        })
+        assertEquals(DeviceReliability.AutoStartDestination.APP_DETAILS, destination)
+        assertEquals(listOf("oppo", "details"), attempted)
+    }
 }

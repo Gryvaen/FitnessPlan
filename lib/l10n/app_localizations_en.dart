@@ -1163,6 +1163,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not schedule the background alert. The countdown still works here.';
 
   @override
+  String get restTimerBackgroundTitle => 'May be late in background';
+
+  @override
+  String get restTimerBackgroundDetail =>
+      'The system freezes background apps, so the alert may wait until you return. Allow background activity for this app in its battery settings.';
+
+  @override
+  String get restTimerBackgroundSnack =>
+      'Alerts may be delayed while you use other apps';
+
+  @override
+  String restTimerAlarmDelayed(int seconds) {
+    return 'Your last rest alert was delayed ${seconds}s by the system';
+  }
+
+  @override
   String get restTimerReviewPermissions => 'Review permissions';
 
   @override

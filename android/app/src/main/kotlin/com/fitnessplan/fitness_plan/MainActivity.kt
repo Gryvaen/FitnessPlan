@@ -22,6 +22,8 @@ class MainActivity : FlutterFragmentActivity() {
                         val dismissLabel = call.argument<String>("dismissLabel")
                         val soundEnabled = call.argument<Boolean>("soundEnabled") ?: true
                         val vibrationEnabled = call.argument<Boolean>("vibrationEnabled") ?: true
+                        val countdownTitle = call.argument<String>("countdownTitle")
+                            ?: getString(R.string.reminder_alarm_rest)
                         if (triggerAtMillis == null || title == null || body == null || dismissLabel == null ||
                             (!soundEnabled && !vibrationEnabled)) {
                             result.error("invalid_arguments", "Missing alarm arguments", null)
@@ -29,7 +31,7 @@ class MainActivity : FlutterFragmentActivity() {
                         }
                         RestTimerAlarmScheduler.schedule(
                             this, triggerAtMillis, title, body, dismissLabel,
-                            soundEnabled, vibrationEnabled,
+                            soundEnabled, vibrationEnabled, countdownTitle,
                         )
                         result.success(null)
                     }
@@ -37,6 +39,7 @@ class MainActivity : FlutterFragmentActivity() {
                         RestTimerAlarmScheduler.cancel(this)
                         result.success(null)
                     }
+                    "takeLastDelayMs" -> result.success(RestTimerAlarmScheduler.takeLastDelayMs(this))
                     "canScheduleExactAlarms" -> {
                         val alarms = getSystemService(android.app.AlarmManager::class.java)
                         result.success(android.os.Build.VERSION.SDK_INT < 31 || alarms.canScheduleExactAlarms())

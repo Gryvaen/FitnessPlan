@@ -1145,6 +1145,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get restTimerScheduleFailed => '后台提醒设置失败；当前页面仍可倒计时。';
 
   @override
+  String get restTimerBackgroundTitle => '后台可能不准时';
+
+  @override
+  String get restTimerBackgroundDetail =>
+      '系统会冻结后台应用，计时结束可能要等回到应用才提醒。请在应用详情的「耗电管理」中允许应用后台行为。';
+
+  @override
+  String get restTimerBackgroundSnack => '切到其他应用时提醒可能被系统延迟';
+
+  @override
+  String restTimerAlarmDelayed(int seconds) {
+    return '上次休息提醒被系统延迟了 $seconds 秒';
+  }
+
+  @override
   String get restTimerReviewPermissions => '检查权限';
 
   @override

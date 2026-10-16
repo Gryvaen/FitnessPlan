@@ -2271,6 +2271,30 @@ abstract class AppLocalizations {
   /// **'Could not schedule the background alert. The countdown still works here.'**
   String get restTimerScheduleFailed;
 
+  /// No description provided for @restTimerBackgroundTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'May be late in background'**
+  String get restTimerBackgroundTitle;
+
+  /// No description provided for @restTimerBackgroundDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'The system freezes background apps, so the alert may wait until you return. Allow background activity for this app in its battery settings.'**
+  String get restTimerBackgroundDetail;
+
+  /// No description provided for @restTimerBackgroundSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Alerts may be delayed while you use other apps'**
+  String get restTimerBackgroundSnack;
+
+  /// No description provided for @restTimerAlarmDelayed.
+  ///
+  /// In en, this message translates to:
+  /// **'Your last rest alert was delayed {seconds}s by the system'**
+  String restTimerAlarmDelayed(int seconds);
+
   /// No description provided for @restTimerReviewPermissions.
   ///
   /// In en, this message translates to:

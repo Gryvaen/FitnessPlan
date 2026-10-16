@@ -12,6 +12,7 @@ import '../theme/app_theme.dart';
 import 'reminder_status_labels.dart';
 import 'rest_timer_notifications.dart';
 import 'restriction_issue_row.dart';
+import 'workout_reminder_notifications.dart';
 
 class RestTimerPage extends StatefulWidget {
   const RestTimerPage({super.key});
@@ -28,6 +29,7 @@ class _RestTimerPageState extends State<RestTimerPage>
   static const _pausedKey = 'rest_timer_paused_seconds';
   static const _finishedKey = 'rest_timer_finished';
   static const _alertModeKey = 'rest_timer_alert_mode';
+  static const _backgroundAckKey = 'rest_timer_background_ack';
 
   int _selectedSeconds = 90;
   int _remainingSeconds = 90;
@@ -39,6 +41,15 @@ class _RestTimerPageState extends State<RestTimerPage>
   bool _notificationsAllowed = true;
   bool _exactAlarmAllowed = true;
   bool _scheduleFailed = false;
+
+  /// On ColorOS/MIUI-style skins the system freezes the app in the
+  /// background and holds its alarms until it is reopened. True until the
+  /// user has visited the battery settings (no API reports the toggle).
+  bool _backgroundRisk = false;
+  bool _backgroundHintShown = false;
+
+  /// Which switch to look for, shown once the user is back from settings.
+  String? _pendingSettingsHint;
   bool _restoring = true;
   bool _modeChanging = false;
   RestTimerAlertMode _alertMode = RestTimerAlertMode.ringAndVibrate;
@@ -58,15 +69,81 @@ class _RestTimerPageState extends State<RestTimerPage>
     WidgetsBinding.instance.addObserver(this);
     unawaited(_restore());
     unawaited(_refreshAlertStatus());
+    unawaited(_checkAlarmDelay());
   }
 
   Future<void> _refreshAlertStatus() async {
     final status = await RestTimerNotifications.alarmStatus();
+    final aggressive = await ReminderNotifications.isAggressiveOem();
+    final prefs = await SharedPreferences.getInstance();
+    final acknowledged = prefs.getBool(_backgroundAckKey) ?? false;
     if (!mounted) return;
     setState(() {
       _notificationsAllowed = status.notifications;
       _exactAlarmAllowed = status.exact;
+      _backgroundRisk = aggressive && !acknowledged;
     });
+  }
+
+  /// Surfaces an alert the system held back while the app was frozen, and
+  /// brings the background-settings issue back since the fix did not stick.
+  Future<void> _checkAlarmDelay() async {
+    final delay = await RestTimerNotifications.takeLastAlarmDelay();
+    if (delay == null || !mounted) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_backgroundAckKey, false);
+    if (!mounted) return;
+    setState(() => _backgroundRisk = true);
+    _backgroundHintShown = true;
+    final l10n = context.l10n;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.restTimerAlarmDelayed(delay.inSeconds)),
+        action: SnackBarAction(
+          label: l10n.reminderOemHintAutostartButton,
+          onPressed: _openBackgroundSettings,
+        ),
+      ),
+    );
+  }
+
+  void _showPendingSettingsHint() {
+    final hint = _pendingSettingsHint;
+    if (!mounted || hint == null) return;
+    _pendingSettingsHint = null;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(hint), duration: const Duration(seconds: 8)),
+      );
+  }
+
+  Future<void> _openBackgroundSettings() async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    AutoStartSettingsDestination destination;
+    try {
+      destination = await ReminderNotifications.openAutoStartSettings();
+    } catch (_) {
+      // No settings page could be opened; the issue stays listed.
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.reminderAutoStartManualHint)),
+      );
+      return;
+    }
+    // Generic pages need one more step; say which switch to look for when
+    // the user comes back (a SnackBar shown now would expire unseen).
+    _pendingSettingsHint = switch (destination) {
+      AutoStartSettingsDestination.oem => null,
+      AutoStartSettingsDestination.battery => l10n.reminderAutoStartBatteryHint,
+      AutoStartSettingsDestination.appDetails =>
+        l10n.reminderAutoStartAppDetailsHint,
+      AutoStartSettingsDestination.colorOsAppDetails =>
+        l10n.reminderAutoStartColorOsHint,
+    };
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_backgroundAckKey, true);
+    if (mounted) setState(() => _backgroundRisk = false);
   }
 
   Future<void> _restore() async {
@@ -129,6 +206,8 @@ class _RestTimerPageState extends State<RestTimerPage>
     if (state == AppLifecycleState.resumed) {
       _syncFromDeadline();
       unawaited(_refreshAlertStatus());
+      unawaited(_checkAlarmDelay());
+      _showPendingSettingsHint();
     }
   }
 
@@ -177,6 +256,17 @@ class _RestTimerPageState extends State<RestTimerPage>
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(l10n.restNotifyPermissionHint)));
+      } else if (_backgroundRisk && !_backgroundHintShown) {
+        _backgroundHintShown = true;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.restTimerBackgroundSnack),
+            action: SnackBarAction(
+              label: l10n.reminderOemHintAutostartButton,
+              onPressed: _openBackgroundSettings,
+            ),
+          ),
+        );
       }
 
       final deadline = DateTime.now().add(Duration(seconds: seconds));
@@ -285,6 +375,15 @@ class _RestTimerPageState extends State<RestTimerPage>
         action: l10n.reminderOpenExact,
         onAction: RestTimerNotifications.requestPermissions,
       ),
+    if (_android && _backgroundRisk)
+      RestrictionIssue(
+        glyph: InkGlyph.battery,
+        title: l10n.restTimerBackgroundTitle,
+        detail: l10n.restTimerBackgroundDetail,
+        action: l10n.reminderOemHintAutostartButton,
+        blocking: true,
+        onAction: _openBackgroundSettings,
+      ),
     if (_scheduleFailed)
       RestrictionIssue(
         glyph: InkGlyph.info,
@@ -310,6 +409,7 @@ class _RestTimerPageState extends State<RestTimerPage>
       dismissLabel: l10n.restTimerDismiss,
       soundEnabled: mode.soundEnabled,
       vibrationEnabled: mode.vibrationEnabled,
+      countdownTitle: l10n.restTimerRunning,
     );
   }
 

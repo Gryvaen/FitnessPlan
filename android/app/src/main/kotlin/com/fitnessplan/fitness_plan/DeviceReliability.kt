@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
+import android.widget.Toast
 
 /**
  * Helpers for the background-restriction workarounds several Android OEM
@@ -26,7 +27,12 @@ import android.util.Log
 object DeviceReliability {
     enum class AutoStartDestination(val wireValue: String) {
         OEM("oem"), BATTERY("battery"), APP_DETAILS("appDetails"),
+
+        /** ColorOS app info, one tap away from its "耗电管理" background switch. */
+        COLOROS_APP_DETAILS("colorOsAppDetails"),
     }
+
+    private val COLOROS_BRANDS = setOf("oppo", "oneplus", "realme")
 
     /** Manufacturers known for this kind of background restriction. */
     private val AGGRESSIVE_BRANDS = setOf(
@@ -44,6 +50,13 @@ object DeviceReliability {
     }
 
     fun manufacturer(): String = Build.MANUFACTURER
+
+    private fun isColorOs(): Boolean {
+        if (Build.DISPLAY.lowercase().contains("lineage")) return false
+        val brand = Build.BRAND.lowercase()
+        val manufacturer = Build.MANUFACTURER.lowercase()
+        return COLOROS_BRANDS.any { brand.contains(it) || manufacturer.contains(it) }
+    }
 
     /** Null means the platform cannot report this restriction. */
     fun isBackgroundRestricted(context: Context): Boolean? {
@@ -96,15 +109,31 @@ object DeviceReliability {
         val appDetails = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
             data = packageUri
         }
-        return launchFirstAvailable(candidates, batterySettings, appDetails, context::startActivity) { intent, error ->
+        // ColorOS 13+ keeps its per-app "allow background activity" switch in
+        // an unexported page reached from app info → 耗电管理. The AOSP battery
+        // page it would otherwise land on lacks that switch, so skip it.
+        val colorOs = isColorOs()
+        val destination = launchFirstAvailable(
+            candidates,
+            if (colorOs) null else batterySettings,
+            appDetails,
+            context::startActivity,
+        ) { intent, error ->
             Log.w("ReminderSettings", "Cannot open ${intent.component ?: intent.action}", error)
+        }
+        return if (colorOs && destination == AutoStartDestination.APP_DETAILS) {
+            // Shown over the settings page, where the user needs the next step.
+            Toast.makeText(context, R.string.coloros_background_toast, Toast.LENGTH_LONG).show()
+            AutoStartDestination.COLOROS_APP_DETAILS
+        } else {
+            destination
         }
     }
 
     /** The launcher is injected so the candidate/fallback flow can be tested. */
     internal fun <T> launchFirstAvailable(
         candidates: List<T>,
-        batterySettings: T,
+        batterySettings: T?,
         appDetails: T,
         launch: (T) -> Unit,
         onFailure: (T, RuntimeException) -> Unit = { _, _ -> },
@@ -117,11 +146,13 @@ object DeviceReliability {
                 onFailure(candidate, e)
             }
         }
-        try {
-            launch(batterySettings)
-            return AutoStartDestination.BATTERY
-        } catch (e: RuntimeException) {
-            onFailure(batterySettings, e)
+        if (batterySettings != null) {
+            try {
+                launch(batterySettings)
+                return AutoStartDestination.BATTERY
+            } catch (e: RuntimeException) {
+                onFailure(batterySettings, e)
+            }
         }
         try {
             launch(appDetails)
