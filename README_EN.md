@@ -2,7 +2,7 @@
 
 <img src="./assets/branding/fitness-plan-logo.png" width="110" alt="Fitness Plan">
 
-<h1>Fitness Plan</h1>
+<img src="./assets/branding/readme-banner.svg" width="560" alt="Fitness Plan">
 
 <p>
   <strong>Your offline fitness & nutrition companion.</strong>
