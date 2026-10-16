@@ -10,6 +10,7 @@ import '../../providers/app_providers.dart';
 import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
+import '../widgets/folded_notes.dart';
 import 'workout_reminder_notifications.dart';
 import 'reminder_status_labels.dart';
 import 'restriction_issue_row.dart';
@@ -425,24 +426,13 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
                     onAction: () =>
                         _runRestrictionAction(sheetContext, issue.onAction),
                   ),
-                const SizedBox(height: AppSpacing.section),
-                Text(
-                  l10n.reminderBehaviorTitle,
-                  style: theme.textTheme.titleSmall,
-                ),
-                const SizedBox(height: AppSpacing.compact),
-                Text(
-                  l10n.reminderPowerOffNote,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.compact),
-                Text(
-                  l10n.reminderBackgroundNote,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                const SizedBox(height: AppSpacing.card),
+                FoldedNotes(
+                  title: l10n.reminderBehaviorTitle,
+                  notes: [
+                    l10n.reminderPowerOffNote,
+                    l10n.reminderBackgroundNote,
+                  ],
                 ),
               ],
             ),

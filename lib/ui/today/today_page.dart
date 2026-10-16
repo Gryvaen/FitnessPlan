@@ -20,7 +20,9 @@ import '../strategy/strategy_labels.dart';
 import '../theme/app_theme.dart';
 import '../theme/macro_color.dart';
 import '../theme/sport_chrome.dart';
+import '../tools/restriction_issue_row.dart';
 import '../tools/workout_reminder_notifications.dart';
+import '../widgets/folded_notes.dart';
 import '../widgets/food_name_link.dart';
 import '../widgets/search_field_focus.dart';
 import 'deficit_date_picker.dart';
@@ -895,7 +897,9 @@ class _StepsStatusLabel extends ConsumerWidget {
 
     final label = switch (status) {
       StepsSyncStatus.denied => l10n.stepsPermissionNeeded,
-      StepsSyncStatus.failed || StepsSyncStatus.empty => l10n.stepsNotSynced,
+      // `empty` is a successful read of 0 steps — show "0 steps", not
+      // "not synced", or an early-morning 0 looks like a broken sync.
+      StepsSyncStatus.failed => l10n.stepsNotSynced,
       _ => l10n.nSteps(steps),
     };
     final iconColor = status == StepsSyncStatus.connected
@@ -1027,7 +1031,6 @@ class _StepsDetailSheet extends ConsumerStatefulWidget {
 
 class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
   bool _syncing = false;
-  Future<Map<String, Object?>>? _diagnostics;
   bool _showBatteryHint = false;
 
   @override
@@ -1051,12 +1054,7 @@ class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
     try {
       await ref.read(stepsSyncStatusProvider.notifier).resync();
     } finally {
-      if (mounted) {
-        setState(() {
-          _syncing = false;
-          _diagnostics = null;
-        });
-      }
+      if (mounted) setState(() => _syncing = false);
     }
   }
 
@@ -1064,37 +1062,36 @@ class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
     await ref.read(stepsSyncServiceProvider).openHealthConnectSettings();
   }
 
-  void _copyDiagnostics(Map<String, Object?> data) {
-    final text = data.entries.map((e) => '${e.key}: ${e.value}').join('\n');
-    Clipboard.setData(ClipboardData(text: text));
-    if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(context.l10n.copiedClipboard)));
+  Future<void> _disableBatteryOptimization() async {
+    await ReminderNotifications.requestIgnoreBatteryOptimizations();
+    await _refreshBatteryStatus();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
     final status = ref.watch(stepsSyncStatusProvider);
     final steps = ref.watch(stepsForSelectedDayProvider).value ?? 0;
+    final serviceOn =
+        StepServiceNotifier.isAvailable && ref.watch(stepServiceProvider);
 
     final (statusText, statusIcon, statusColor) = switch (status) {
       StepsSyncStatus.connected => (
         l10n.stepsStatusConnected,
         InkGlyph.check,
-        Colors.green,
+        AppColors.success,
       ),
       StepsSyncStatus.empty => (
         l10n.stepsStatusEmpty,
         InkGlyph.info,
-        Colors.orange,
+        AppColors.warning,
       ),
       StepsSyncStatus.denied => (
         l10n.stepsStatusDenied,
         InkGlyph.disconnect,
-        Colors.orange,
+        AppColors.warning,
       ),
       StepsSyncStatus.failed => (
         l10n.stepsStatusFailed,
@@ -1104,16 +1101,12 @@ class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
       StepsSyncStatus.unsupported => (
         l10n.stepsStatusUnsupported,
         InkGlyph.disconnect,
-        theme.colorScheme.onSurfaceVariant,
+        muted,
       ),
-      null => (
-        l10n.stepsStatusSyncing,
-        InkGlyph.sync,
-        theme.colorScheme.onSurfaceVariant,
-      ),
+      null => (l10n.stepsStatusSyncing, InkGlyph.sync, muted),
     };
 
-    final hint = switch (status) {
+    final statusHint = switch (status) {
       StepsSyncStatus.empty => l10n.stepsSheetEmptyHint,
       StepsSyncStatus.denied => l10n.stepsSheetDeniedHint,
       _ => null,
@@ -1121,189 +1114,79 @@ class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
 
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(20, 4, 20, 16 + bottomInset),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      l10n.stepsSheetTitle,
-                      style: theme.textTheme.titleLarge,
-                    ),
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.formPage,
+          0,
+          AppSpacing.formPage,
+          AppSpacing.section + bottomInset,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.stepsSheetTitle,
+                    style: theme.textTheme.titleLarge,
                   ),
-                  Text(l10n.nSteps(steps), style: theme.textTheme.titleMedium),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  InkIcon(statusIcon, size: 20, color: statusColor),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(statusText, style: theme.textTheme.bodyLarge),
-                  ),
-                ],
-              ),
-              if (hint != null) ...[
-                const SizedBox(height: 8),
-                Text(hint, style: theme.textTheme.bodyMedium),
+                ),
+                Text(l10n.nSteps(steps), style: theme.textTheme.titleMedium),
               ],
-              const SizedBox(height: 12),
-              Text(
-                l10n.stepsSheetSourceHint,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+            ),
+            const SizedBox(height: AppSpacing.compact),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: InkIcon(statusIcon, color: statusColor),
+              title: Text(statusText),
+              trailing: TextButton(
+                onPressed: _syncing ? null : _resync,
+                child: _syncing
+                    ? const InkIcon(InkGlyph.loading, size: 16)
+                    : Text(l10n.stepsSheetResync),
               ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: _syncing ? null : _resync,
-                      icon: _syncing
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: InkIcon(InkGlyph.loading, size: 16),
-                            )
-                          : const InkIcon(InkGlyph.sync),
-                      label: Text(l10n.stepsSheetResync),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _openSettings,
-                      icon: const InkIcon(InkGlyph.settings),
-                      label: Text(
-                        l10n.stepsSheetOpenSettings,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              if (StepServiceNotifier.isAvailable) ...[
-                const SizedBox(height: 4),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(l10n.stepsServiceTitle),
-                  subtitle: Text(
-                    l10n.stepsServiceHint,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  isThreeLine: true,
-                  value: ref.watch(stepServiceProvider),
-                  onChanged: (v) async {
-                    await ref.read(stepServiceProvider.notifier).setEnabled(v);
-                    if (v) await _refreshBatteryStatus();
-                  },
-                ),
-                if (ref.watch(stepServiceProvider) && _showBatteryHint)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4, bottom: 8),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        InkIcon(
-                          InkGlyph.battery,
-                          size: 16,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                l10n.stepsOemHintBody,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                              TextButton(
-                                style: TextButton.styleFrom(
-                                  padding: EdgeInsets.zero,
-                                  minimumSize: Size.zero,
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
-                                onPressed: () async {
-                                  await ReminderNotifications.requestIgnoreBatteryOptimizations();
-                                  await _refreshBatteryStatus();
-                                },
-                                child: Text(l10n.reminderOemHintBatteryButton),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-              const SizedBox(height: 8),
-              ExpansionTile(
-                tilePadding: EdgeInsets.zero,
-                title: Text(
-                  l10n.stepsSheetDiagnostics,
-                  style: theme.textTheme.titleSmall,
-                ),
-                onExpansionChanged: (open) {
-                  if (open && _diagnostics == null) {
-                    setState(() {
-                      _diagnostics = ref
-                          .read(stepsSyncServiceProvider)
-                          .diagnostics();
-                    });
-                  }
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: InkIcon(InkGlyph.settings, color: muted),
+              title: Text(l10n.stepsSheetOpenSettings),
+              trailing: InkIcon(InkGlyph.chevronRight, size: 18, color: muted),
+              onTap: _openSettings,
+            ),
+            if (StepServiceNotifier.isAvailable)
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.stepsServiceTitle),
+                value: serviceOn,
+                onChanged: (v) async {
+                  await ref.read(stepServiceProvider.notifier).setEnabled(v);
+                  if (v) await _refreshBatteryStatus();
                 },
-                children: [
-                  FutureBuilder<Map<String, Object?>>(
-                    future: _diagnostics,
-                    builder: (context, snap) {
-                      final data = snap.data;
-                      if (data == null) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Text(l10n.stepsSheetDiagnosticsLoading),
-                        );
-                      }
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SelectableText(
-                            data.entries
-                                .map((e) => '${e.key}: ${e.value}')
-                                .join('\n'),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontFamily: 'monospace',
-                            ),
-                          ),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton.icon(
-                              onPressed: () => _copyDiagnostics(data),
-                              icon: const InkIcon(InkGlyph.copy, size: 16),
-                              label: Text(l10n.copy),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ],
               ),
-            ],
-          ),
+            if (serviceOn && _showBatteryHint)
+              RestrictionIssueRow(
+                contentPadding: EdgeInsets.zero,
+                issue: RestrictionIssue(
+                  glyph: InkGlyph.battery,
+                  title: l10n.stepsBatteryTitle,
+                  detail: l10n.stepsOemHintBody,
+                  action: l10n.reminderOemHintBatteryButton,
+                  onAction: _disableBatteryOptimization,
+                ),
+                onAction: _disableBatteryOptimization,
+              ),
+            const SizedBox(height: AppSpacing.compact),
+            FoldedNotes(
+              title: l10n.stepsSheetHowItWorks,
+              notes: [
+                ?statusHint,
+                l10n.stepsSheetSourceHint,
+                if (StepServiceNotifier.isAvailable) l10n.stepsServiceHint,
+              ],
+            ),
+          ],
         ),
       ),
     );

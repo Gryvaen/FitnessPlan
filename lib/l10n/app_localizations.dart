@@ -1667,19 +1667,19 @@ abstract class AppLocalizations {
   /// No description provided for @stepsSheetSourceHint.
   ///
   /// In en, this message translates to:
-  /// **'Today\'s steps are the larger of Health Connect and the phone\'s step sensor. On OPPO, Xiaomi and similar phones the system health app does not share steps with third parties; without Health Connect data, the sensor counts from first authorization, earlier steps that day cannot be recovered, and days align automatically from the next day.'**
+  /// **'Steps are the larger of Health Connect and the phone\'s step sensor. Without Health Connect data, the sensor counts from first authorization; earlier steps that day can\'t be recovered.'**
   String get stepsSheetSourceHint;
 
   /// No description provided for @stepsSheetEmptyHint.
   ///
   /// In en, this message translates to:
-  /// **'If your system health app shows steps but this is 0: allow this app to read steps in Health Connect and enable data sharing in the health app; otherwise walk a bit and come back to this page.'**
+  /// **'Health app shows steps but this is 0? Allow this app to read steps in Health Connect.'**
   String get stepsSheetEmptyHint;
 
   /// No description provided for @stepsSheetDeniedHint.
   ///
   /// In en, this message translates to:
-  /// **'Grant the Physical activity permission to this app in system settings, then resync.'**
+  /// **'Allow Physical activity in system settings, then resync.'**
   String get stepsSheetDeniedHint;
 
   /// No description provided for @stepsSheetResync.
@@ -1688,34 +1688,34 @@ abstract class AppLocalizations {
   /// **'Resync'**
   String get stepsSheetResync;
 
+  /// No description provided for @stepsSheetHowItWorks.
+  ///
+  /// In en, this message translates to:
+  /// **'How steps are counted'**
+  String get stepsSheetHowItWorks;
+
+  /// No description provided for @stepsBatteryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery optimization may stop counting'**
+  String get stepsBatteryTitle;
+
   /// No description provided for @stepsSheetOpenSettings.
   ///
   /// In en, this message translates to:
-  /// **'Open health / permission settings'**
+  /// **'Health & permission settings'**
   String get stepsSheetOpenSettings;
-
-  /// No description provided for @stepsSheetDiagnostics.
-  ///
-  /// In en, this message translates to:
-  /// **'Diagnostics'**
-  String get stepsSheetDiagnostics;
-
-  /// No description provided for @stepsSheetDiagnosticsLoading.
-  ///
-  /// In en, this message translates to:
-  /// **'Loading…'**
-  String get stepsSheetDiagnosticsLoading;
 
   /// No description provided for @stepsServiceTitle.
   ///
   /// In en, this message translates to:
-  /// **'Count steps in the background'**
+  /// **'Background step counting'**
   String get stepsServiceTitle;
 
   /// No description provided for @stepsServiceHint.
   ///
   /// In en, this message translates to:
-  /// **'Shows an ongoing notification and keeps counting even when the system limits background apps — the reliable option on OPPO, Xiaomi and similar phones.'**
+  /// **'Keeps an ongoing notification so counting continues when the system limits background apps.'**
   String get stepsServiceHint;
 
   /// No description provided for @noSetLogs.
@@ -2616,7 +2616,7 @@ abstract class AppLocalizations {
   /// No description provided for @stepsOemHintBody.
   ///
   /// In en, this message translates to:
-  /// **'Some phone brands restrict background apps, which can stop step counting once the app is closed. Disabling battery optimization for this app helps it keep counting.'**
+  /// **'Some phones stop counting after the app closes; disabling battery optimization keeps it going.'**
   String get stepsOemHintBody;
 
   /// No description provided for @customDuration.

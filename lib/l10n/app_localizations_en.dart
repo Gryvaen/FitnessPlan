@@ -824,34 +824,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stepsSheetSourceHint =>
-      'Today\'s steps are the larger of Health Connect and the phone\'s step sensor. On OPPO, Xiaomi and similar phones the system health app does not share steps with third parties; without Health Connect data, the sensor counts from first authorization, earlier steps that day cannot be recovered, and days align automatically from the next day.';
+      'Steps are the larger of Health Connect and the phone\'s step sensor. Without Health Connect data, the sensor counts from first authorization; earlier steps that day can\'t be recovered.';
 
   @override
   String get stepsSheetEmptyHint =>
-      'If your system health app shows steps but this is 0: allow this app to read steps in Health Connect and enable data sharing in the health app; otherwise walk a bit and come back to this page.';
+      'Health app shows steps but this is 0? Allow this app to read steps in Health Connect.';
 
   @override
   String get stepsSheetDeniedHint =>
-      'Grant the Physical activity permission to this app in system settings, then resync.';
+      'Allow Physical activity in system settings, then resync.';
 
   @override
   String get stepsSheetResync => 'Resync';
 
   @override
-  String get stepsSheetOpenSettings => 'Open health / permission settings';
+  String get stepsSheetHowItWorks => 'How steps are counted';
 
   @override
-  String get stepsSheetDiagnostics => 'Diagnostics';
+  String get stepsBatteryTitle => 'Battery optimization may stop counting';
 
   @override
-  String get stepsSheetDiagnosticsLoading => 'Loading…';
+  String get stepsSheetOpenSettings => 'Health & permission settings';
 
   @override
-  String get stepsServiceTitle => 'Count steps in the background';
+  String get stepsServiceTitle => 'Background step counting';
 
   @override
   String get stepsServiceHint =>
-      'Shows an ongoing notification and keeps counting even when the system limits background apps — the reliable option on OPPO, Xiaomi and similar phones.';
+      'Keeps an ongoing notification so counting continues when the system limits background apps.';
 
   @override
   String get noSetLogs => 'No set logs';
@@ -1351,7 +1351,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stepsOemHintBody =>
-      'Some phone brands restrict background apps, which can stop step counting once the app is closed. Disabling battery optimization for this app helps it keep counting.';
+      'Some phones stop counting after the app closes; disabling battery optimization keeps it going.';
 
   @override
   String get customDuration => 'Custom (0:30–10:00)';

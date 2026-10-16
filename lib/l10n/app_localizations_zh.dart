@@ -819,33 +819,32 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get stepsSheetSourceHint =>
-      '今日步数取 Health Connect 与手机计步传感器中的较大值。OPPO、小米等国产手机的系统「健康」步数通常不对第三方开放；若 Health Connect 没有数据，将从首次授权起用传感器累计，当天此前的步数无法补回，次日起会自动对齐。';
+      '今日步数取 Health Connect 与手机计步传感器的较大值。没有 Health Connect 数据时，从首次授权起用传感器累计，当天之前的步数无法补回。';
 
   @override
   String get stepsSheetEmptyHint =>
-      '若系统健康里有步数而这里为 0：请在「Health Connect / 健康数据共享」中允许本应用读取步数，并在系统健康 App 中开启数据共享；否则请稍后再走几步后回到本页查看。';
+      '系统健康里有步数但这里为 0？请在 Health Connect 中允许本应用读取步数。';
 
   @override
-  String get stepsSheetDeniedHint => '请在系统设置中为本应用开启「身体活动 / 健身运动」权限，然后重新同步。';
+  String get stepsSheetDeniedHint => '请在系统设置中开启「身体活动」权限后重新同步。';
 
   @override
   String get stepsSheetResync => '重新同步';
 
   @override
-  String get stepsSheetOpenSettings => '打开健康 / 权限设置';
+  String get stepsSheetHowItWorks => '步数如何统计';
 
   @override
-  String get stepsSheetDiagnostics => '诊断信息';
+  String get stepsBatteryTitle => '电池优化可能中断计步';
 
   @override
-  String get stepsSheetDiagnosticsLoading => '正在读取…';
+  String get stepsSheetOpenSettings => '健康与权限设置';
 
   @override
-  String get stepsServiceTitle => '后台持续统计步数';
+  String get stepsServiceTitle => '后台计步';
 
   @override
-  String get stepsServiceHint =>
-      '会在通知栏显示一个常驻通知，即使系统限制后台也能继续计步 —— OPPO、小米等机型上更可靠。';
+  String get stepsServiceHint => '开启后通知栏会常驻一条通知，系统限制后台时也能继续计步。';
 
   @override
   String get noSetLogs => '暂无组次记录';
@@ -1323,8 +1322,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reminderOemHintAutostartButton => '去设置';
 
   @override
-  String get stepsOemHintBody =>
-      '部分手机品牌会限制后台运行，导致应用退出后步数停止统计。建议关闭本应用的电池优化，以保持后台记录。';
+  String get stepsOemHintBody => '部分机型会在应用退出后停止计步，关闭电池优化可保持统计。';
 
   @override
   String get customDuration => '自定义（0:30–10:00）';
