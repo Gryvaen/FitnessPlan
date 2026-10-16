@@ -17,6 +17,9 @@ void main() {
     testWidgets('marker options stay flat in ${themeId.name} theme', (
       tester,
     ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(360, 800);
+      addTearDown(tester.view.reset);
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(db.close);
       final today = CalendarDay.todayLocal();
@@ -83,6 +86,71 @@ void main() {
         AppTheme.visualsFor(themeId).accent,
       );
       expect(find.text('1000'), findsOneWidget);
+      expect(find.text('Deduction amount'), findsNothing);
+      final amount = find.byType(TextField);
+      final amountToggle = find.byKey(const ValueKey('marker-penalty-toggle'));
+      expect(amount, findsNothing);
+      final deductionRow = find.byKey(const ValueKey('marker-deduction-row'));
+      final rowSize = tester.getSize(deductionRow);
+      final unitRect = tester.getRect(find.text('kcal'));
+      await tester.tap(amountToggle);
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(amount).focusNode!.hasFocus, isTrue);
+      expect(
+        tester.widget<TextField>(amount).controller!.selection,
+        const TextSelection(baseOffset: 0, extentOffset: 4),
+      );
+      expect(tester.getSize(deductionRow), rowSize);
+      expect(tester.getRect(find.text('kcal')), unitRect);
+      await tester.showKeyboard(amount);
+      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(amount);
+      await tester.enterText(amount, '');
+      await tester.pumpAndSettle();
+      expect(find.text('−'), findsOneWidget);
+      expect(find.text('kcal'), findsOneWidget);
+      expect(
+        tester.widget<FilledButton>(find.byType(FilledButton).last).onPressed,
+        isNull,
+      );
+      expect(tester.takeException(), isNull);
+      expect(tester.getSize(deductionRow), rowSize);
+      expect(
+        find.text('Enter a whole number greater than 0', findRichText: true),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Set day marker'));
+      await tester.pumpAndSettle();
+      expect(amount, findsOneWidget);
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(amount, findsOneWidget);
+      expect(tester.widget<TextField>(amount).focusNode!.hasFocus, isTrue);
+      await tester.enterText(amount, '650');
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<FilledButton>(find.byType(FilledButton).last).onPressed,
+        isNotNull,
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.text('650'), findsOneWidget);
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(amount, findsNothing);
+      await tester.tap(amountToggle);
+      await tester.pumpAndSettle();
+      expect(find.text('650'), findsOneWidget);
+      await tester.tap(find.text('Set day marker'));
+      await tester.pumpAndSettle();
+      expect(amount, findsNothing);
+      expect(tester.getSize(deductionRow), rowSize);
+      await tester.tap(rest);
+      await tester.pumpAndSettle();
+      await tester.tap(cheat);
+      await tester.pumpAndSettle();
+      expect(amount, findsNothing);
+      expect(find.text('650'), findsOneWidget);
     });
   }
 
@@ -146,6 +214,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('marker-option-restDay')));
     await tester.pumpAndSettle();
     expect(find.text('Delay carb cycle by one day'), findsOneWidget);
+    expect(find.textContaining('Diet contributes TDEE'), findsNothing);
     expect(find.text('Deduct cultivation'), findsNothing);
     await tester.tap(find.byType(FilledButton).last);
     await tester.pumpAndSettle();
@@ -153,7 +222,7 @@ void main() {
 
     await tester.longPress(find.byKey(dayKey));
     await tester.pumpAndSettle();
-    expect(find.text('Cycle unchanged'), findsOneWidget);
+    expect(find.textContaining('Cycle unchanged'), findsOneWidget);
     expect(find.text('Delay carb cycle by one day'), findsNothing);
     await tester.tap(find.byKey(const ValueKey('marker-option-restDay')));
     await tester.pumpAndSettle();
@@ -165,22 +234,43 @@ void main() {
 
     await tester.longPress(find.byKey(dayKey));
     await tester.pumpAndSettle();
-    expect(find.text('Cycle delayed one day'), findsOneWidget);
+    expect(find.textContaining('Cycle delayed one day'), findsOneWidget);
     expect(find.text('Delay carb cycle by one day'), findsNothing);
     await tester.tap(find.byKey(const ValueKey('marker-option-cheatMeal')));
     await tester.pumpAndSettle();
     expect(find.text('1000'), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('marker-penalty-toggle')));
+    await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '650');
     await tester.pump();
+    final dietToggle = find.byKey(const ValueKey('marker-diet-cheatMeal'));
+    final stepsToggle = find.byKey(const ValueKey('marker-steps-cheatMeal'));
+    await tester.tap(dietToggle);
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsNothing);
+    expect(find.textContaining('instead of the fixed deduction'), findsNothing);
+    await tester.tap(dietToggle);
+    await tester.pumpAndSettle();
+    expect(find.text('650'), findsOneWidget);
+    await tester.tap(stepsToggle);
+    await tester.pumpAndSettle();
     await tester.tap(find.byType(FilledButton).last);
     await tester.pumpAndSettle();
     expect((await repo.settingsForDay(today))!.penaltyKcal, -650);
+    expect((await repo.settingsForDay(today))!.includeSteps, isFalse);
+    expect((await repo.settingsForDay(today))!.includeDiet, isFalse);
 
     await tester.longPress(find.byKey(dayKey));
     await tester.pumpAndSettle();
-    expect(find.text('Deduct 650 kcal'), findsOneWidget);
+    expect(find.textContaining('Deduct 650 kcal'), findsOneWidget);
     expect(find.byType(TextField), findsNothing);
     await tester.tap(find.byKey(const ValueKey('marker-option-cheatMeal')));
+    await tester.pumpAndSettle();
+    expect(find.text('650'), findsOneWidget);
+    expect(tester.widget<SwitchListTile>(stepsToggle).value, isFalse);
+    expect(find.byType(TextField), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('marker-penalty-toggle')));
     await tester.pumpAndSettle();
     expect(find.text('650'), findsOneWidget);
     await tester.enterText(find.byType(TextField), '0');
@@ -202,16 +292,21 @@ void main() {
 
     await tester.longPress(find.byKey(dayKey));
     await tester.pumpAndSettle();
-    expect(find.text('No cultivation deduction'), findsOneWidget);
+    expect(find.textContaining('No cultivation deduction'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('marker-option-cheatMeal')));
     await tester.pumpAndSettle();
     expect(find.byType(TextField), findsNothing);
     await tester.tap(find.text('Deduct cultivation'));
     await tester.pumpAndSettle();
     expect(find.text('650'), findsOneWidget);
+    await tester.tap(dietToggle);
+    await tester.tap(stepsToggle);
+    await tester.pumpAndSettle();
     await tester.tap(find.byType(TextButton).last);
     await tester.pumpAndSettle();
     expect((await repo.settingsForDay(today))!.penaltyKcal, 0);
+    expect((await repo.settingsForDay(today))!.includeSteps, isFalse);
+    expect((await repo.settingsForDay(today))!.includeDiet, isFalse);
 
     await tester.longPress(find.byKey(dayKey));
     await tester.pumpAndSettle();
@@ -276,10 +371,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       find.text('Marking a past day will not change later carb-cycle days.'),
-      findsOneWidget,
+      findsNothing,
     );
     expect(
-      tester.widget<SwitchListTile>(find.byType(SwitchListTile)).onChanged,
+      tester
+          .widget<SwitchListTile>(
+            find.widgetWithText(SwitchListTile, 'Delay carb cycle by one day'),
+          )
+          .onChanged,
       isNull,
     );
     await tester.tap(find.byType(FilledButton).last);
@@ -315,10 +414,17 @@ void main() {
         await tester.tap(find.byKey(const ValueKey('marker-option-restDay')));
         await tester.pumpAndSettle();
         expect(
-          tester.widget<SwitchListTile>(find.byType(SwitchListTile)).onChanged,
+          tester
+              .widget<SwitchListTile>(
+                find.widgetWithText(
+                  SwitchListTile,
+                  'Delay carb cycle by one day',
+                ),
+              )
+              .onChanged,
           isNull,
         );
-        expect(find.text('No carb cycle applies on this day.'), findsOneWidget);
+        expect(find.text('No carb cycle applies on this day.'), findsNothing);
         await tester.tap(find.byType(FilledButton).last);
         await tester.pumpAndSettle();
         expect(
@@ -327,7 +433,7 @@ void main() {
         );
         await tester.longPress(_dayFinder(today));
         await tester.pumpAndSettle();
-        expect(find.text('Cycle unchanged'), findsNothing);
+        expect(find.textContaining('Cycle unchanged'), findsNothing);
       },
     );
   }
@@ -347,7 +453,11 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('marker-option-restDay')));
     await tester.pumpAndSettle();
     expect(
-      tester.widget<SwitchListTile>(find.byType(SwitchListTile)).onChanged,
+      tester
+          .widget<SwitchListTile>(
+            find.widgetWithText(SwitchListTile, 'Delay carb cycle by one day'),
+          )
+          .onChanged,
       isNull,
     );
 
@@ -356,7 +466,11 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('marker-option-restDay')));
     await tester.pumpAndSettle();
     expect(
-      tester.widget<SwitchListTile>(find.byType(SwitchListTile)).onChanged,
+      tester
+          .widget<SwitchListTile>(
+            find.widgetWithText(SwitchListTile, 'Delay carb cycle by one day'),
+          )
+          .onChanged,
       isNotNull,
     );
     await tester.tap(find.text('Delay carb cycle by one day'));
@@ -392,17 +506,31 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('marker-option-restDay')));
       await tester.pumpAndSettle();
       expect(
-        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).onChanged,
+        tester
+            .widget<SwitchListTile>(
+              find.widgetWithText(
+                SwitchListTile,
+                'Delay carb cycle by one day',
+              ),
+            )
+            .onChanged,
         isNull,
       );
 
       await tester.pumpWidget(const SizedBox.shrink());
       await _openMarkerSheet(tester, db, markerRepo, strategyRepo, yesterday);
-      expect(find.text('Cycle delayed one day'), findsOneWidget);
+      expect(find.textContaining('Cycle delayed one day'), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey('marker-option-restDay')));
       await tester.pumpAndSettle();
       expect(
-        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).onChanged,
+        tester
+            .widget<SwitchListTile>(
+              find.widgetWithText(
+                SwitchListTile,
+                'Delay carb cycle by one day',
+              ),
+            )
+            .onChanged,
         isNotNull,
       );
       await tester.tap(find.byType(FilledButton).last);
@@ -424,10 +552,12 @@ void main() {
     final today = CalendarDay.todayLocal();
     await markerRepo.setRestDay(today, pauseCarbCycle: true);
     await _openMarkerSheet(tester, db, markerRepo, strategyRepo, today);
-    expect(find.text('Cycle delayed one day'), findsNothing);
+    expect(find.textContaining('Cycle delayed one day'), findsNothing);
     await tester.tap(find.byKey(const ValueKey('marker-option-restDay')));
     await tester.pumpAndSettle();
-    final toggle = tester.widget<SwitchListTile>(find.byType(SwitchListTile));
+    final toggle = tester.widget<SwitchListTile>(
+      find.widgetWithText(SwitchListTile, 'Delay carb cycle by one day'),
+    );
     expect(toggle.value, isTrue);
     expect(toggle.onChanged, isNull);
     await tester.tap(find.byType(FilledButton).last);

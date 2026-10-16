@@ -211,6 +211,8 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
     } else if (choice.type == DayMarkerType.cheatMeal) {
       await widget.markerRepository.setCheatMeal(
         day,
+        includeSteps: choice.includeSteps,
+        includeDiet: choice.includeDiet,
         deductKcal: choice.deductKcal,
         penaltyKcal: choice.penaltyKcal,
       );
@@ -218,6 +220,8 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
       await widget.markerRepository.setRestDay(
         day,
         pauseCarbCycle: choice.pauseCarbCycle,
+        includeSteps: choice.includeSteps,
+        includeDiet: choice.includeDiet,
       );
     }
     if (!mounted) return;
@@ -448,6 +452,8 @@ class _MarkerChoice {
     this.deductKcal = true,
     this.penaltyKcal = 1000,
     this.clear = false,
+    this.includeSteps = true,
+    this.includeDiet = false,
   });
 
   final DayMarkerType? type;
@@ -455,6 +461,8 @@ class _MarkerChoice {
   final bool deductKcal;
   final int penaltyKcal;
   final bool clear;
+  final bool includeSteps;
+  final bool includeDiet;
 }
 
 class _MarkerSettingsSheet extends StatefulWidget {
@@ -478,11 +486,25 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
   late bool _pauseCycle;
   late bool _deductKcal;
   late TextEditingController _amount;
+  final _amountFocus = FocusNode();
+  bool _editingAmount = false;
+  final _amountErrorTooltip = GlobalKey<TooltipState>();
+
+  bool get _validAmount => (int.tryParse(_amount.text) ?? 0) > 0;
+  final _stepsByType = {for (final type in DayMarkerType.values) type: true};
+  final _dietByType = {
+    DayMarkerType.cheatMeal: false,
+    DayMarkerType.restDay: true,
+  };
 
   @override
   void initState() {
     super.initState();
     _type = widget.existing?.type;
+    if (widget.existing case final settings?) {
+      _stepsByType[settings.type] = settings.includeSteps;
+      _dietByType[settings.type] = settings.includeDiet;
+    }
     _pauseCycle = widget.existing?.pauseCarbCycle ?? false;
     _deductKcal = widget.existing?.cheatPenaltyEnabled ?? true;
     _amount = TextEditingController(
@@ -491,10 +513,27 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
     _amount.addListener(_refresh);
   }
 
-  void _refresh() => setState(() {});
+  void _refresh() {
+    setState(() {});
+    if (_editingAmount && !_validAmount) {
+      _showAmountError();
+    } else {
+      Tooltip.dismissAllToolTips();
+    }
+  }
+
+  void _showAmountError() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _editingAmount && !_validAmount) {
+        _amountErrorTooltip.currentState?.ensureTooltipVisible();
+      }
+    });
+  }
 
   void _select(DayMarkerType type) {
+    _amountFocus.unfocus();
     setState(() {
+      _editingAmount = false;
       if (_type == type) {
         _expandedType = _expandedType == type ? null : type;
       } else {
@@ -504,16 +543,131 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
     });
   }
 
+  void _setDeduction(bool value) {
+    _amountFocus.unfocus();
+    setState(() {
+      _deductKcal = value;
+      _editingAmount = false;
+    });
+  }
+
+  void _startAmountEditing() {
+    _amount.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: _amount.text.length,
+    );
+    setState(() => _editingAmount = true);
+  }
+
+  void _finishAmountEditing() {
+    if (!_validAmount) {
+      _amountFocus.requestFocus();
+      _showAmountError();
+      return;
+    }
+    _amountFocus.unfocus();
+    Tooltip.dismissAllToolTips();
+    setState(() => _editingAmount = false);
+  }
+
+  Widget _amountEditor(BuildContext context, Color accent) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final invalid = _editingAmount && !_validAmount;
+    final color = invalid ? theme.colorScheme.error : accent;
+    return SizedBox(
+      key: const ValueKey('marker-penalty-toggle'),
+      width: 112,
+      height: 40,
+      child: Tooltip(
+        key: _amountErrorTooltip,
+        message: l10n.positiveKcalRequired,
+        excludeFromSemantics: true,
+        triggerMode: TooltipTriggerMode.manual,
+        preferBelow: false,
+        child: Semantics(
+          label: invalid
+              ? l10n.positiveKcalRequired
+              : l10n.deductionAmountLabel,
+          liveRegion: invalid,
+          button: !_editingAmount,
+          child: InkWell(
+            onTap: _editingAmount ? null : _startAmountEditing,
+            child: Row(
+              children: [
+                Text('−', style: theme.textTheme.bodySmall),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: _editingAmount
+                      ? TextField(
+                          key: const ValueKey('marker-penalty-amount'),
+                          controller: _amount,
+                          focusNode: _amountFocus,
+                          autofocus: true,
+                          keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.done,
+                          onEditingComplete: () {},
+                          onSubmitted: (_) => _finishAmountEditing(),
+                          onTapOutside: (_) => _finishAmountEditing(),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          style: theme.textTheme.bodySmall,
+                          textAlign: TextAlign.right,
+                          decoration: InputDecoration(
+                            isDense: true,
+                            filled: false,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 8,
+                            ),
+                            border: const UnderlineInputBorder(),
+                            enabledBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: color),
+                            ),
+                            focusedBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: color),
+                            ),
+                          ),
+                        )
+                      : Text(
+                          _amount.text,
+                          textAlign: TextAlign.right,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall,
+                        ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'kcal',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   String _summary(BuildContext context, DayMarkerType type) {
     final l10n = context.l10n;
-    if (type == DayMarkerType.restDay) {
-      return _pauseCycle
-          ? l10n.pauseCarbCycleSummary
-          : l10n.keepCarbCycleSummary;
-    }
-    return _deductKcal
-        ? l10n.deductionSummary(_amount.text)
-        : l10n.noDeductionSummary;
+    final rule = type == DayMarkerType.restDay
+        ? (_pauseCycle ? l10n.pauseCarbCycleSummary : l10n.keepCarbCycleSummary)
+        : (_dietByType[type]!
+              ? l10n.actualDietContributionHint
+              : _deductKcal
+              ? l10n.deductionSummary(_amount.text)
+              : l10n.noDeductionSummary);
+    return [
+      _stepsByType[type]!
+          ? l10n.stepsCountedSummary
+          : l10n.stepsExcludedSummary,
+      _dietByType[type]! ? l10n.dietCountedSummary : l10n.dietExcludedSummary,
+      if (type == DayMarkerType.cheatMeal || widget.hasCarbCycle) rule,
+    ].join(' · ');
   }
 
   Widget _option(BuildContext context, DayMarkerType type) {
@@ -553,9 +707,7 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                           color: selected ? accent : null,
                         ),
                       ),
-                      if (selected &&
-                          !expanded &&
-                          (!rest || widget.hasCarbCycle))
+                      if (selected && !expanded)
                         Text(
                           _summary(context, type),
                           style: theme.textTheme.bodySmall?.copyWith(
@@ -591,6 +743,29 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                   ),
                   child: Column(
                     children: [
+                      SwitchListTile.adaptive(
+                        key: ValueKey('marker-steps-${type.name}'),
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                        title: Text(l10n.stepsCountTowardCultivationLabel),
+                        value: _stepsByType[type]!,
+                        onChanged: (value) =>
+                            setState(() => _stepsByType[type] = value),
+                      ),
+                      SwitchListTile.adaptive(
+                        key: ValueKey('marker-diet-${type.name}'),
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                        title: Text(l10n.dietCountTowardCultivationLabel),
+                        value: _dietByType[type]!,
+                        onChanged: (value) {
+                          _amountFocus.unfocus();
+                          setState(() {
+                            _dietByType[type] = value;
+                            _editingAmount = false;
+                          });
+                        },
+                      ),
                       if (rest) ...[
                         SwitchListTile.adaptive(
                           contentPadding: EdgeInsets.zero,
@@ -601,45 +776,36 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                               ? (value) => setState(() => _pauseCycle = value)
                               : null,
                         ),
-                        if (!widget.hasCarbCycle || !widget.canPauseCycle)
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              widget.hasCarbCycle
-                                  ? l10n.backfilledRestDayHint
-                                  : l10n.noCarbCycleForDayHint,
-                              style: theme.textTheme.bodySmall,
+                      ] else if (!_dietByType[type]!) ...[
+                        Row(
+                          key: const ValueKey('marker-deduction-row'),
+                          children: [
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => _setDeduction(!_deductKcal),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  child: Text(
+                                    l10n.deductCultivationKcalLabel,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.bodyMedium,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                      ] else ...[
-                        SwitchListTile.adaptive(
-                          contentPadding: EdgeInsets.zero,
-                          dense: true,
-                          title: Text(l10n.deductCultivationKcalLabel),
-                          value: _deductKcal,
-                          onChanged: (value) =>
-                              setState(() => _deductKcal = value),
+                            if (_deductKcal) _amountEditor(context, accent),
+                            Semantics(
+                              label: l10n.deductCultivationKcalLabel,
+                              child: Switch.adaptive(
+                                value: _deductKcal,
+                                onChanged: _setDeduction,
+                              ),
+                            ),
+                          ],
                         ),
-                        if (_deductKcal) ...[
-                          const SizedBox(height: AppSpacing.compact),
-                          TextField(
-                            controller: _amount,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
-                            decoration: InputDecoration(
-                              isDense: true,
-                              labelText: l10n.deductionAmountLabel,
-                              suffixText: 'kcal',
-                              errorText:
-                                  int.tryParse(_amount.text) == null ||
-                                      int.parse(_amount.text) <= 0
-                                  ? l10n.positiveKcalRequired
-                                  : null,
-                            ),
-                          ),
-                        ],
                       ],
                     ],
                   ),
@@ -654,6 +820,7 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
   void dispose() {
     _amount.removeListener(_refresh);
     _amount.dispose();
+    _amountFocus.dispose();
     super.dispose();
   }
 
@@ -668,7 +835,10 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
     final valid = amount != null && amount > 0;
     final canSave =
         _type != null &&
-        (_type != DayMarkerType.cheatMeal || !_deductKcal || valid);
+        (_type != DayMarkerType.cheatMeal ||
+            _dietByType[_type]! ||
+            !_deductKcal ||
+            valid);
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.fromLTRB(
@@ -720,6 +890,8 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                             context,
                             _MarkerChoice(
                               type: _type,
+                              includeSteps: _stepsByType[_type]!,
+                              includeDiet: _dietByType[_type]!,
                               pauseCarbCycle: _pauseCycle,
                               deductKcal: _deductKcal,
                               penaltyKcal: valid ? amount : 1000,

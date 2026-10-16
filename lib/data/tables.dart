@@ -314,6 +314,8 @@ class DayMarkers extends Table {
       boolean().withDefault(const Constant(true))();
   IntColumn get cheatPenaltyKcal =>
       integer().withDefault(const Constant(1000))();
+  BoolColumn get includeSteps => boolean().withDefault(const Constant(false))();
+  BoolColumn get includeDiet => boolean().withDefault(const Constant(false))();
   BoolColumn get excludeContributions =>
       boolean().withDefault(const Constant(true))();
 

@@ -26,6 +26,40 @@ void main() {
 
   tearDown(() => db.close());
 
+  test(
+    'contribution choices persist independently for every type and date',
+    () async {
+      for (final type in DayMarkerType.values) {
+        for (final steps in [false, true]) {
+          for (final diet in [false, true]) {
+            if (type == DayMarkerType.cheatMeal) {
+              await repo.setCheatMeal(
+                today,
+                includeSteps: steps,
+                includeDiet: diet,
+                penaltyKcal: 650,
+              );
+            } else {
+              await repo.setRestDay(
+                today,
+                includeSteps: steps,
+                includeDiet: diet,
+              );
+            }
+            final settings = (await repo.settingsForDay(today))!;
+            expect(settings.includeSteps, steps);
+            expect(settings.includeDiet, diet);
+            expect(
+              settings.penaltyKcal,
+              type == DayMarkerType.cheatMeal && !diet ? -650 : 0,
+            );
+            expect(await repo.settingsForDay(tomorrow), isNull);
+          }
+        }
+      }
+    },
+  );
+
   test('unset day has no marker', () async {
     expect(await repo.markerForDay(today), isNull);
   });
@@ -162,6 +196,8 @@ void main() {
     final old = (await repo.settingsForDay(today))!;
     expect(old.pauseCarbCycle, isTrue);
     expect(old.excludeContributions, isTrue);
+    expect(old.includeSteps, isFalse);
+    expect(old.includeDiet, isFalse);
     await repo.setRestDay(today, pauseCarbCycle: false);
     final edited = (await repo.settingsForDay(today))!;
     expect(edited.pauseCarbCycle, isFalse);
@@ -197,8 +233,65 @@ CREATE TABLE day_markers (
     final old = (await DayMarkerRepository(migrated).settingsForDay(today))!;
     expect(old.pauseCarbCycle, isTrue);
     expect(old.excludeContributions, isTrue);
+    expect(old.includeSteps, isFalse);
+    expect(old.includeDiet, isFalse);
     expect(old.penaltyKcal, 0);
   });
+
+  test(
+    'v30 settings migrate to independent switches without losing metadata',
+    () async {
+      final dir = await Directory.systemTemp.createTemp('marker-v30-');
+      final file = File('${dir.path}/markers.sqlite');
+      final seed = AppDatabase.forTesting(NativeDatabase(file));
+      await seed.select(seed.dayMarkers).get();
+      await seed.close();
+      final oldDb = NativeDatabase(file);
+      await oldDb.ensureOpen(_V29User());
+      await oldDb.runCustom(
+        'ALTER TABLE day_markers DROP COLUMN include_steps',
+      );
+      await oldDb.runCustom('ALTER TABLE day_markers DROP COLUMN include_diet');
+      for (var i = 0; i < 6; i++) {
+        final date = DateTime(2026, 1, i + 1);
+        await oldDb.runInsert(
+          'INSERT INTO day_markers (date, type, updated_at, pause_carb_cycle, '
+          'cheat_penalty_enabled, cheat_penalty_kcal, exclude_contributions) '
+          'VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [
+            '2026-01-0${i + 1}',
+            i.isEven ? 'cheatMeal' : 'restDay',
+            date.millisecondsSinceEpoch ~/ 1000,
+            1,
+            i < 4 ? 1 : 0,
+            650,
+            i < 2 ? 1 : 0,
+          ],
+        );
+      }
+      await oldDb.runCustom('PRAGMA user_version = 30');
+      await oldDb.close();
+      final migrated = AppDatabase.forTesting(NativeDatabase(file));
+      addTearDown(() async {
+        await migrated.close();
+        await dir.delete(recursive: true);
+      });
+      final migratedRepo = DayMarkerRepository(migrated);
+      for (var i = 0; i < 6; i++) {
+        final date = DateTime(2026, 1, i + 1);
+        final settings = (await migratedRepo.settingsForDay(date))!;
+        expect(settings.includeSteps, i >= 2);
+        expect(settings.includeDiet, i >= 2 && (i.isOdd || i >= 4));
+        expect(settings.cheatPenaltyKcal, 650);
+        expect(settings.cheatPenaltyEnabled, i < 4);
+        final row = await (migrated.select(
+          migrated.dayMarkers,
+        )..where((t) => t.date.equals('2026-01-0${i + 1}'))).getSingle();
+        expect(row.updatedAt, date);
+        if (i.isOdd) expect(settings.pauseCarbCycle, isTrue);
+      }
+    },
+  );
 
   test('watchMarkerForDay emits updates', () async {
     final stream = repo.watchMarkerForDay(today);

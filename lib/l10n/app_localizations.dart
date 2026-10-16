@@ -5382,7 +5382,7 @@ abstract class AppLocalizations {
   /// No description provided for @realmGuideFootnoteBody.
   ///
   /// In en, this message translates to:
-  /// **'On regular days: ① steps × 0.04 kcal/step; ② diet counts after at least 2 distinct meal types are logged, contributing TDEE − intake. A cheat day contributes a fixed −1000 kcal, without steps or diet; a rest day still contributes 0 kcal.'**
+  /// **'Regular days: steps × 0.04 kcal/step. Diet contributes TDEE − intake when at least two meal types and a daily TDEE are available; otherwise it contributes 0. Cheat and rest days have independent daily switches for steps and diet. On cheat days, diet replaces the fixed deduction; with diet off, a custom fixed deduction or no deduction can be chosen.'**
   String get realmGuideFootnoteBody;
 
   /// No description provided for @realmGuideFootnoteNote.
@@ -5528,6 +5528,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'/ {sets} sets'**
   String trainingSetDenominator(int sets);
+
+  /// No description provided for @stepsCountTowardCultivationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Count steps toward cultivation'**
+  String get stepsCountTowardCultivationLabel;
+
+  /// No description provided for @dietCountTowardCultivationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Count diet calories toward cultivation'**
+  String get dietCountTowardCultivationLabel;
+
+  /// No description provided for @stepsCountedSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps counted'**
+  String get stepsCountedSummary;
+
+  /// No description provided for @stepsExcludedSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps excluded'**
+  String get stepsExcludedSummary;
+
+  /// No description provided for @dietCountedSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Diet counted'**
+  String get dietCountedSummary;
+
+  /// No description provided for @dietExcludedSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Diet excluded'**
+  String get dietExcludedSummary;
+
+  /// No description provided for @actualDietContributionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'TDEE − intake'**
+  String get actualDietContributionHint;
+
+  /// No description provided for @dietContributionRequirementsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Diet contributes TDEE − intake. At least two meal types and a daily TDEE are required; otherwise it contributes 0 kcal.'**
+  String get dietContributionRequirementsHint;
+
+  /// No description provided for @cheatActualDietHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses TDEE − intake instead of the fixed deduction. At least two meal types and a daily TDEE are required; otherwise it contributes 0 kcal.'**
+  String get cheatActualDietHint;
 }
 
 class _AppLocalizationsDelegate

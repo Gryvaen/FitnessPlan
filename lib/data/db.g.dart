@@ -9790,6 +9790,36 @@ class $DayMarkersTable extends DayMarkers
     requiredDuringInsert: false,
     defaultValue: const Constant(1000),
   );
+  static const VerificationMeta _includeStepsMeta = const VerificationMeta(
+    'includeSteps',
+  );
+  @override
+  late final GeneratedColumn<bool> includeSteps = GeneratedColumn<bool>(
+    'include_steps',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("include_steps" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _includeDietMeta = const VerificationMeta(
+    'includeDiet',
+  );
+  @override
+  late final GeneratedColumn<bool> includeDiet = GeneratedColumn<bool>(
+    'include_diet',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("include_diet" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _excludeContributionsMeta =
       const VerificationMeta('excludeContributions');
   @override
@@ -9812,6 +9842,8 @@ class $DayMarkersTable extends DayMarkers
     pauseCarbCycle,
     cheatPenaltyEnabled,
     cheatPenaltyKcal,
+    includeSteps,
+    includeDiet,
     excludeContributions,
   ];
   @override
@@ -9877,6 +9909,24 @@ class $DayMarkersTable extends DayMarkers
         ),
       );
     }
+    if (data.containsKey('include_steps')) {
+      context.handle(
+        _includeStepsMeta,
+        includeSteps.isAcceptableOrUnknown(
+          data['include_steps']!,
+          _includeStepsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('include_diet')) {
+      context.handle(
+        _includeDietMeta,
+        includeDiet.isAcceptableOrUnknown(
+          data['include_diet']!,
+          _includeDietMeta,
+        ),
+      );
+    }
     if (data.containsKey('exclude_contributions')) {
       context.handle(
         _excludeContributionsMeta,
@@ -9919,6 +9969,14 @@ class $DayMarkersTable extends DayMarkers
         DriftSqlType.int,
         data['${effectivePrefix}cheat_penalty_kcal'],
       )!,
+      includeSteps: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}include_steps'],
+      )!,
+      includeDiet: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}include_diet'],
+      )!,
       excludeContributions: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}exclude_contributions'],
@@ -9939,6 +9997,8 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
   final bool pauseCarbCycle;
   final bool cheatPenaltyEnabled;
   final int cheatPenaltyKcal;
+  final bool includeSteps;
+  final bool includeDiet;
   final bool excludeContributions;
   const DayMarkerRow({
     required this.date,
@@ -9947,6 +10007,8 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
     required this.pauseCarbCycle,
     required this.cheatPenaltyEnabled,
     required this.cheatPenaltyKcal,
+    required this.includeSteps,
+    required this.includeDiet,
     required this.excludeContributions,
   });
   @override
@@ -9958,6 +10020,8 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
     map['pause_carb_cycle'] = Variable<bool>(pauseCarbCycle);
     map['cheat_penalty_enabled'] = Variable<bool>(cheatPenaltyEnabled);
     map['cheat_penalty_kcal'] = Variable<int>(cheatPenaltyKcal);
+    map['include_steps'] = Variable<bool>(includeSteps);
+    map['include_diet'] = Variable<bool>(includeDiet);
     map['exclude_contributions'] = Variable<bool>(excludeContributions);
     return map;
   }
@@ -9970,6 +10034,8 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
       pauseCarbCycle: Value(pauseCarbCycle),
       cheatPenaltyEnabled: Value(cheatPenaltyEnabled),
       cheatPenaltyKcal: Value(cheatPenaltyKcal),
+      includeSteps: Value(includeSteps),
+      includeDiet: Value(includeDiet),
       excludeContributions: Value(excludeContributions),
     );
   }
@@ -9988,6 +10054,8 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
         json['cheatPenaltyEnabled'],
       ),
       cheatPenaltyKcal: serializer.fromJson<int>(json['cheatPenaltyKcal']),
+      includeSteps: serializer.fromJson<bool>(json['includeSteps']),
+      includeDiet: serializer.fromJson<bool>(json['includeDiet']),
       excludeContributions: serializer.fromJson<bool>(
         json['excludeContributions'],
       ),
@@ -10003,6 +10071,8 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
       'pauseCarbCycle': serializer.toJson<bool>(pauseCarbCycle),
       'cheatPenaltyEnabled': serializer.toJson<bool>(cheatPenaltyEnabled),
       'cheatPenaltyKcal': serializer.toJson<int>(cheatPenaltyKcal),
+      'includeSteps': serializer.toJson<bool>(includeSteps),
+      'includeDiet': serializer.toJson<bool>(includeDiet),
       'excludeContributions': serializer.toJson<bool>(excludeContributions),
     };
   }
@@ -10014,6 +10084,8 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
     bool? pauseCarbCycle,
     bool? cheatPenaltyEnabled,
     int? cheatPenaltyKcal,
+    bool? includeSteps,
+    bool? includeDiet,
     bool? excludeContributions,
   }) => DayMarkerRow(
     date: date ?? this.date,
@@ -10022,6 +10094,8 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
     pauseCarbCycle: pauseCarbCycle ?? this.pauseCarbCycle,
     cheatPenaltyEnabled: cheatPenaltyEnabled ?? this.cheatPenaltyEnabled,
     cheatPenaltyKcal: cheatPenaltyKcal ?? this.cheatPenaltyKcal,
+    includeSteps: includeSteps ?? this.includeSteps,
+    includeDiet: includeDiet ?? this.includeDiet,
     excludeContributions: excludeContributions ?? this.excludeContributions,
   );
   DayMarkerRow copyWithCompanion(DayMarkersCompanion data) {
@@ -10038,6 +10112,12 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
       cheatPenaltyKcal: data.cheatPenaltyKcal.present
           ? data.cheatPenaltyKcal.value
           : this.cheatPenaltyKcal,
+      includeSteps: data.includeSteps.present
+          ? data.includeSteps.value
+          : this.includeSteps,
+      includeDiet: data.includeDiet.present
+          ? data.includeDiet.value
+          : this.includeDiet,
       excludeContributions: data.excludeContributions.present
           ? data.excludeContributions.value
           : this.excludeContributions,
@@ -10053,6 +10133,8 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
           ..write('pauseCarbCycle: $pauseCarbCycle, ')
           ..write('cheatPenaltyEnabled: $cheatPenaltyEnabled, ')
           ..write('cheatPenaltyKcal: $cheatPenaltyKcal, ')
+          ..write('includeSteps: $includeSteps, ')
+          ..write('includeDiet: $includeDiet, ')
           ..write('excludeContributions: $excludeContributions')
           ..write(')'))
         .toString();
@@ -10066,6 +10148,8 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
     pauseCarbCycle,
     cheatPenaltyEnabled,
     cheatPenaltyKcal,
+    includeSteps,
+    includeDiet,
     excludeContributions,
   );
   @override
@@ -10078,6 +10162,8 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
           other.pauseCarbCycle == this.pauseCarbCycle &&
           other.cheatPenaltyEnabled == this.cheatPenaltyEnabled &&
           other.cheatPenaltyKcal == this.cheatPenaltyKcal &&
+          other.includeSteps == this.includeSteps &&
+          other.includeDiet == this.includeDiet &&
           other.excludeContributions == this.excludeContributions);
 }
 
@@ -10088,6 +10174,8 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
   final Value<bool> pauseCarbCycle;
   final Value<bool> cheatPenaltyEnabled;
   final Value<int> cheatPenaltyKcal;
+  final Value<bool> includeSteps;
+  final Value<bool> includeDiet;
   final Value<bool> excludeContributions;
   final Value<int> rowid;
   const DayMarkersCompanion({
@@ -10097,6 +10185,8 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
     this.pauseCarbCycle = const Value.absent(),
     this.cheatPenaltyEnabled = const Value.absent(),
     this.cheatPenaltyKcal = const Value.absent(),
+    this.includeSteps = const Value.absent(),
+    this.includeDiet = const Value.absent(),
     this.excludeContributions = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -10107,6 +10197,8 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
     this.pauseCarbCycle = const Value.absent(),
     this.cheatPenaltyEnabled = const Value.absent(),
     this.cheatPenaltyKcal = const Value.absent(),
+    this.includeSteps = const Value.absent(),
+    this.includeDiet = const Value.absent(),
     this.excludeContributions = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : date = Value(date),
@@ -10119,6 +10211,8 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
     Expression<bool>? pauseCarbCycle,
     Expression<bool>? cheatPenaltyEnabled,
     Expression<int>? cheatPenaltyKcal,
+    Expression<bool>? includeSteps,
+    Expression<bool>? includeDiet,
     Expression<bool>? excludeContributions,
     Expression<int>? rowid,
   }) {
@@ -10130,6 +10224,8 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
       if (cheatPenaltyEnabled != null)
         'cheat_penalty_enabled': cheatPenaltyEnabled,
       if (cheatPenaltyKcal != null) 'cheat_penalty_kcal': cheatPenaltyKcal,
+      if (includeSteps != null) 'include_steps': includeSteps,
+      if (includeDiet != null) 'include_diet': includeDiet,
       if (excludeContributions != null)
         'exclude_contributions': excludeContributions,
       if (rowid != null) 'rowid': rowid,
@@ -10143,6 +10239,8 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
     Value<bool>? pauseCarbCycle,
     Value<bool>? cheatPenaltyEnabled,
     Value<int>? cheatPenaltyKcal,
+    Value<bool>? includeSteps,
+    Value<bool>? includeDiet,
     Value<bool>? excludeContributions,
     Value<int>? rowid,
   }) {
@@ -10153,6 +10251,8 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
       pauseCarbCycle: pauseCarbCycle ?? this.pauseCarbCycle,
       cheatPenaltyEnabled: cheatPenaltyEnabled ?? this.cheatPenaltyEnabled,
       cheatPenaltyKcal: cheatPenaltyKcal ?? this.cheatPenaltyKcal,
+      includeSteps: includeSteps ?? this.includeSteps,
+      includeDiet: includeDiet ?? this.includeDiet,
       excludeContributions: excludeContributions ?? this.excludeContributions,
       rowid: rowid ?? this.rowid,
     );
@@ -10179,6 +10279,12 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
     if (cheatPenaltyKcal.present) {
       map['cheat_penalty_kcal'] = Variable<int>(cheatPenaltyKcal.value);
     }
+    if (includeSteps.present) {
+      map['include_steps'] = Variable<bool>(includeSteps.value);
+    }
+    if (includeDiet.present) {
+      map['include_diet'] = Variable<bool>(includeDiet.value);
+    }
     if (excludeContributions.present) {
       map['exclude_contributions'] = Variable<bool>(excludeContributions.value);
     }
@@ -10197,6 +10303,8 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
           ..write('pauseCarbCycle: $pauseCarbCycle, ')
           ..write('cheatPenaltyEnabled: $cheatPenaltyEnabled, ')
           ..write('cheatPenaltyKcal: $cheatPenaltyKcal, ')
+          ..write('includeSteps: $includeSteps, ')
+          ..write('includeDiet: $includeDiet, ')
           ..write('excludeContributions: $excludeContributions, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -15321,6 +15429,8 @@ typedef $$DayMarkersTableCreateCompanionBuilder =
       Value<bool> pauseCarbCycle,
       Value<bool> cheatPenaltyEnabled,
       Value<int> cheatPenaltyKcal,
+      Value<bool> includeSteps,
+      Value<bool> includeDiet,
       Value<bool> excludeContributions,
       Value<int> rowid,
     });
@@ -15332,6 +15442,8 @@ typedef $$DayMarkersTableUpdateCompanionBuilder =
       Value<bool> pauseCarbCycle,
       Value<bool> cheatPenaltyEnabled,
       Value<int> cheatPenaltyKcal,
+      Value<bool> includeSteps,
+      Value<bool> includeDiet,
       Value<bool> excludeContributions,
       Value<int> rowid,
     });
@@ -15372,6 +15484,16 @@ class $$DayMarkersTableFilterComposer
 
   ColumnFilters<int> get cheatPenaltyKcal => $composableBuilder(
     column: $table.cheatPenaltyKcal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get includeSteps => $composableBuilder(
+    column: $table.includeSteps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get includeDiet => $composableBuilder(
+    column: $table.includeDiet,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -15420,6 +15542,16 @@ class $$DayMarkersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get includeSteps => $composableBuilder(
+    column: $table.includeSteps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get includeDiet => $composableBuilder(
+    column: $table.includeDiet,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get excludeContributions => $composableBuilder(
     column: $table.excludeContributions,
     builder: (column) => ColumnOrderings(column),
@@ -15456,6 +15588,16 @@ class $$DayMarkersTableAnnotationComposer
 
   GeneratedColumn<int> get cheatPenaltyKcal => $composableBuilder(
     column: $table.cheatPenaltyKcal,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get includeSteps => $composableBuilder(
+    column: $table.includeSteps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get includeDiet => $composableBuilder(
+    column: $table.includeDiet,
     builder: (column) => column,
   );
 
@@ -15502,6 +15644,8 @@ class $$DayMarkersTableTableManager
                 Value<bool> pauseCarbCycle = const Value.absent(),
                 Value<bool> cheatPenaltyEnabled = const Value.absent(),
                 Value<int> cheatPenaltyKcal = const Value.absent(),
+                Value<bool> includeSteps = const Value.absent(),
+                Value<bool> includeDiet = const Value.absent(),
                 Value<bool> excludeContributions = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DayMarkersCompanion(
@@ -15511,6 +15655,8 @@ class $$DayMarkersTableTableManager
                 pauseCarbCycle: pauseCarbCycle,
                 cheatPenaltyEnabled: cheatPenaltyEnabled,
                 cheatPenaltyKcal: cheatPenaltyKcal,
+                includeSteps: includeSteps,
+                includeDiet: includeDiet,
                 excludeContributions: excludeContributions,
                 rowid: rowid,
               ),
@@ -15522,6 +15668,8 @@ class $$DayMarkersTableTableManager
                 Value<bool> pauseCarbCycle = const Value.absent(),
                 Value<bool> cheatPenaltyEnabled = const Value.absent(),
                 Value<int> cheatPenaltyKcal = const Value.absent(),
+                Value<bool> includeSteps = const Value.absent(),
+                Value<bool> includeDiet = const Value.absent(),
                 Value<bool> excludeContributions = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DayMarkersCompanion.insert(
@@ -15531,6 +15679,8 @@ class $$DayMarkersTableTableManager
                 pauseCarbCycle: pauseCarbCycle,
                 cheatPenaltyEnabled: cheatPenaltyEnabled,
                 cheatPenaltyKcal: cheatPenaltyKcal,
+                includeSteps: includeSteps,
+                includeDiet: includeDiet,
                 excludeContributions: excludeContributions,
                 rowid: rowid,
               ),

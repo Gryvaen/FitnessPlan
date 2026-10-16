@@ -22,8 +22,7 @@ enum DayMarkerType {
   }
 }
 
-/// Persisted choices for one calendar marker. [excludeContributions] is only
-/// true for markers created before the editable marker settings existed.
+/// Persisted cultivation and carb-cycle choices for one calendar day.
 class DayMarkerSettings {
   const DayMarkerSettings({
     required this.type,
@@ -31,16 +30,20 @@ class DayMarkerSettings {
     this.cheatPenaltyEnabled = true,
     this.cheatPenaltyKcal = 1000,
     this.excludeContributions = false,
-  });
+    this.includeSteps = true,
+    bool? includeDiet,
+  }) : includeDiet = includeDiet ?? (type == DayMarkerType.restDay);
 
   final DayMarkerType type;
   final bool pauseCarbCycle;
   final bool cheatPenaltyEnabled;
   final int cheatPenaltyKcal;
   final bool excludeContributions;
+  final bool includeSteps;
+  final bool includeDiet;
 
   double get penaltyKcal =>
-      type == DayMarkerType.cheatMeal && cheatPenaltyEnabled
+      type == DayMarkerType.cheatMeal && !includeDiet && cheatPenaltyEnabled
       ? -cheatPenaltyKcal.toDouble()
       : 0;
 }

@@ -15,6 +15,8 @@ import 'package:diet/l10n/app_localizations.dart';
 import 'package:diet/ui/profile/cultivation_history_page.dart';
 import 'package:diet/ui/profile/cultivation_page.dart';
 import 'package:drift/native.dart';
+import 'package:drift/drift.dart' show Value;
+import 'package:diet/data/services/steps_sync_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -124,7 +126,7 @@ void main() {
     record = await yesterdayRecord();
     expect(record.stepsKcal, 400);
     expect(record.cheatPenaltyKcal, -650);
-    expect(record.totalKcal, record.stepsKcal + record.dietKcal - 650);
+    expect(record.totalKcal, record.stepsKcal - 650);
 
     await markers.setCheatMeal(yesterday, deductKcal: false, penaltyKcal: 650);
     record = await yesterdayRecord();
@@ -151,6 +153,206 @@ void main() {
     expect(record.totalKcal, greaterThanOrEqualTo(400));
     expect(record.cheatPenaltyKcal, 0);
   });
+
+  test(
+    'history switches gate contributions and actual diet replaces deduction',
+    () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final day = CalendarDay.todayLocal().subtract(const Duration(days: 1));
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      await CultivationRepository(prefs).save(
+        CutCultivationState(
+          frozenKcal: 2000,
+          segments: [CutCultivationSegment(start: day)],
+        ),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          sharedPreferencesProvider.overrideWithValue(prefs),
+        ],
+      );
+      addTearDown(container.dispose);
+      await StepRepository(db).setStepsForDay(day, 10000);
+      await db
+          .into(db.dailyNutritionTargets)
+          .insert(
+            DailyNutritionTargetsCompanion.insert(
+              date: StrategyDates.encode(day),
+              calories: 2000,
+              proteinG: 100,
+              carbG: 200,
+              fatG: 70,
+              estimatedTdee: const Value(2400),
+              source: 'strategy',
+              updatedAt: day,
+            ),
+          );
+      final foodId = await db
+          .into(db.foodItems)
+          .insert(
+            FoodItemsCompanion.insert(
+              name: 'Switch test',
+              category: 'Custom',
+              kcalPer100: 100,
+              proteinPer100: 1,
+              carbPer100: 1,
+              fatPer100: 1,
+            ),
+          );
+      for (final type in [MealType.breakfast, MealType.dinner]) {
+        await db
+            .into(db.mealEntries)
+            .insert(
+              MealEntriesCompanion.insert(
+                date: day,
+                mealType: type.name,
+                foodId: foodId,
+                foodName: 'Switch test',
+                grams: 100,
+                calories: 900,
+                proteinG: 1,
+                carbG: 1,
+                fatG: 1,
+              ),
+            );
+      }
+      Future<CultivationDayRecord> record() async {
+        container.invalidate(cultivationHistoryProvider);
+        return (await container.read(
+          cultivationHistoryProvider.future,
+        )).single.days.singleWhere((r) => r.date == day);
+      }
+
+      final repo = DayMarkerRepository(db);
+      for (final type in DayMarkerType.values) {
+        for (final steps in [false, true]) {
+          for (final diet in [false, true]) {
+            if (type == DayMarkerType.cheatMeal) {
+              await repo.setCheatMeal(
+                day,
+                includeSteps: steps,
+                includeDiet: diet,
+                penaltyKcal: 650,
+              );
+            } else {
+              await repo.setRestDay(
+                day,
+                includeSteps: steps,
+                includeDiet: diet,
+              );
+            }
+            final r = await record();
+            expect(r.stepsKcal, steps ? 400 : 0);
+            expect(r.dietKcal, diet ? 600 : 0);
+            expect(
+              r.cheatPenaltyKcal,
+              type == DayMarkerType.cheatMeal && !diet ? -650 : 0,
+            );
+            expect(
+              container.read(cultivationProgressProvider).kgLost,
+              closeTo((2000 + r.totalKcal) / kKcalPerKg, 0.000001),
+            );
+          }
+        }
+      }
+      await repo.setCheatMeal(day, includeDiet: true);
+      await (db.update(
+        db.mealEntries,
+      )).write(const MealEntriesCompanion(calories: Value(1500)));
+      expect((await record()).dietKcal, -600);
+      await (db.delete(
+        db.mealEntries,
+      )..where((t) => t.mealType.equals(MealType.dinner.name))).go();
+      var r = await record();
+      expect(r.dietKcal, 0);
+      expect(
+        r.cheatPenaltyKcal,
+        0,
+      ); // No fallback deduction for incomplete logs.
+      await (db.update(db.dailyNutritionTargets)).write(
+        const DailyNutritionTargetsCompanion(estimatedTdee: Value(null)),
+      );
+      // Restore a second meal type to isolate the missing-TDEE case.
+      await db
+          .into(db.mealEntries)
+          .insert(
+            MealEntriesCompanion.insert(
+              date: day,
+              mealType: MealType.dinner.name,
+              foodId: foodId,
+              foodName: 'Switch test',
+              grams: 100,
+              calories: 900,
+              proteinG: 1,
+              carbG: 1,
+              fatG: 1,
+            ),
+          );
+      r = await record();
+      expect(r.dietKcal, 0);
+      expect(r.cheatPenaltyKcal, 0);
+      await repo.setCheatMeal(day, deductKcal: false);
+      expect((await record()).cheatPenaltyKcal, 0);
+      expect(await StepRepository(db).stepsForDay(day), 10000);
+      expect((await MealRepository(db).forDay(day)).length, 2);
+    },
+  );
+
+  test(
+    'today reflects switch changes and does not count disconnected steps',
+    () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final day = CalendarDay.todayLocal();
+      final repo = DayMarkerRepository(db);
+      await StepRepository(db).setStepsForDay(day, 10000);
+      await repo.setCheatMeal(day, includeSteps: true, includeDiet: true);
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          stepsSyncProvider.overrideWith(
+            (ref) async => StepsSyncStatus.connected,
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final sub = container.listen(cultivationTodayKcalProvider, (_, _) {});
+      addTearDown(sub.close);
+      await container.read(dayMarkerSettingsProvider(day).future);
+      container
+          .read(stepsSyncStatusProvider.notifier)
+          .setStatus(StepsSyncStatus.connected);
+      await pumpEventQueue();
+      expect(container.read(cultivationStepsTodayProvider), 10000);
+      expect(container.read(cultivationDietKcalTodayProvider), 0);
+      expect(container.read(cultivationCheatPenaltyTodayProvider), 0);
+      expect(container.read(cultivationTodayKcalProvider), 400);
+      container
+          .read(stepsSyncStatusProvider.notifier)
+          .setStatus(StepsSyncStatus.denied);
+      expect(container.read(cultivationStepsTodayProvider), 0);
+      container
+          .read(stepsSyncStatusProvider.notifier)
+          .setStatus(StepsSyncStatus.connected);
+      await repo.setCheatMeal(
+        day,
+        includeSteps: false,
+        includeDiet: false,
+        penaltyKcal: 650,
+      );
+      await pumpEventQueue();
+      expect(container.read(cultivationTodayKcalProvider), -650);
+      await repo.setRestDay(day, includeSteps: true, includeDiet: true);
+      await pumpEventQueue();
+      expect(container.read(cultivationTodayKcalProvider), 400);
+    },
+  );
 
   test('today cheat marker contributes -1000 without meal logs', () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());

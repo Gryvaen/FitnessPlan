@@ -3002,7 +3002,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get realmGuideFootnoteBody =>
-      '普通日期：① 步数 × 0.04 kcal/步；② 饮食仅当日记录餐次 ≥ 2 类时计入，贡献 = 当日 TDEE − 当日摄入。放纵日固定计入 −1000 kcal，不叠加步数和饮食贡献；休息日仍计入 0 kcal。';
+      '普通日期：步数 × 0.04 kcal/步；饮食需记录至少两类餐次且有当日 TDEE，贡献 = TDEE − 摄入，否则为 0。放纵日和休息日可按日期独立选择是否计入步数和饮食。放纵日计入饮食时替代固定扣减；不计饮食时可自定义固定扣减或不扣减。';
 
   @override
   String get realmGuideFootnoteNote => '该玩法当前仅对选择「减脂」策略的用户开放。';
@@ -3085,4 +3085,33 @@ class AppLocalizationsZh extends AppLocalizations {
   String trainingSetDenominator(int sets) {
     return '/ $sets 组';
   }
+
+  @override
+  String get stepsCountTowardCultivationLabel => '步数计入修行';
+
+  @override
+  String get dietCountTowardCultivationLabel => '饮食热量计入修行';
+
+  @override
+  String get stepsCountedSummary => '计入步数';
+
+  @override
+  String get stepsExcludedSummary => '不计步数';
+
+  @override
+  String get dietCountedSummary => '计入饮食';
+
+  @override
+  String get dietExcludedSummary => '不计饮食';
+
+  @override
+  String get actualDietContributionHint => 'TDEE − 摄入';
+
+  @override
+  String get dietContributionRequirementsHint =>
+      '饮食贡献 = TDEE − 摄入；需记录至少两类餐次且有当日 TDEE，否则计入 0 kcal。';
+
+  @override
+  String get cheatActualDietHint =>
+      '按 TDEE − 摄入计算，不叠加固定扣减。需记录至少两类餐次且有当日 TDEE，否则计入 0 kcal。';
 }

@@ -3072,7 +3072,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get realmGuideFootnoteBody =>
-      'On regular days: ① steps × 0.04 kcal/step; ② diet counts after at least 2 distinct meal types are logged, contributing TDEE − intake. A cheat day contributes a fixed −1000 kcal, without steps or diet; a rest day still contributes 0 kcal.';
+      'Regular days: steps × 0.04 kcal/step. Diet contributes TDEE − intake when at least two meal types and a daily TDEE are available; otherwise it contributes 0. Cheat and rest days have independent daily switches for steps and diet. On cheat days, diet replaces the fixed deduction; with diet off, a custom fixed deduction or no deduction can be chosen.';
 
   @override
   String get realmGuideFootnoteNote =>
@@ -3156,4 +3156,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String trainingSetDenominator(int sets) {
     return '/ $sets sets';
   }
+
+  @override
+  String get stepsCountTowardCultivationLabel =>
+      'Count steps toward cultivation';
+
+  @override
+  String get dietCountTowardCultivationLabel =>
+      'Count diet calories toward cultivation';
+
+  @override
+  String get stepsCountedSummary => 'Steps counted';
+
+  @override
+  String get stepsExcludedSummary => 'Steps excluded';
+
+  @override
+  String get dietCountedSummary => 'Diet counted';
+
+  @override
+  String get dietExcludedSummary => 'Diet excluded';
+
+  @override
+  String get actualDietContributionHint => 'TDEE − intake';
+
+  @override
+  String get dietContributionRequirementsHint =>
+      'Diet contributes TDEE − intake. At least two meal types and a daily TDEE are required; otherwise it contributes 0 kcal.';
+
+  @override
+  String get cheatActualDietHint =>
+      'Uses TDEE − intake instead of the fixed deduction. At least two meal types and a daily TDEE are required; otherwise it contributes 0 kcal.';
 }
