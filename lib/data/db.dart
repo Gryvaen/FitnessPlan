@@ -41,7 +41,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 30;
+  int get schemaVersion => 31;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -260,6 +260,16 @@ CREATE TABLE day_workouts_new (
           dayMarkers,
           dayMarkers.excludeContributions,
         );
+      }
+      if (from < 31) {
+        await _addColumnIfMissing(m, dayMarkers, dayMarkers.includeSteps);
+        await _addColumnIfMissing(m, dayMarkers, dayMarkers.includeDiet);
+        await customStatement('''
+UPDATE day_markers SET
+  include_steps = NOT exclude_contributions,
+  include_diet = NOT exclude_contributions AND
+    (type != 'cheatMeal' OR NOT cheat_penalty_enabled)
+''');
       }
     },
   );

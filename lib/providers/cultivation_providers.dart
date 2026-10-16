@@ -76,11 +76,11 @@ final _storedStepsTodayProvider = StreamProvider<int>((ref) {
 });
 
 /// 今日步数（恒为本地今天）。未成功同步（权限/失败/空读）时按 0，避免把
-/// 库里残留的昨日总量当成今日修行贡献。旧版未编辑标记仍按原规则归零。
+/// 库里残留的昨日总量当成今日修行贡献。按当日标记的步数开关决定是否计入。
 final cultivationStepsTodayProvider = Provider<int>((ref) {
   final today = CalendarDay.todayLocal();
   final marker = ref.watch(dayMarkerSettingsProvider(today)).value;
-  if (marker?.excludeContributions ?? false) {
+  if (!(marker?.includeSteps ?? true)) {
     return 0;
   }
   final status = ref.watch(stepsSyncStatusProvider);
@@ -88,12 +88,11 @@ final cultivationStepsTodayProvider = Provider<int>((ref) {
   return ref.watch(_storedStepsTodayProvider).value ?? 0;
 });
 
-/// 指定日期的饮食 kcal 贡献，仅当日记录餐次 ≥ 2 类时计入。旧版未编辑标记
-/// 按原规则归零。
+/// 指定日期的饮食 kcal 贡献，仅当日记录餐次 ≥ 2 类时计入。由当日标记的饮食开关控制。
 final cultivationDietKcalForDayProvider = Provider.autoDispose
     .family<double, DateTime>((ref, day) {
       final marker = ref.watch(dayMarkerSettingsProvider(day)).value;
-      if (marker?.excludeContributions ?? false) {
+      if (!(marker?.includeDiet ?? true)) {
         return 0;
       }
 
@@ -257,12 +256,8 @@ Future<List<CultivationDayRecord>> _buildCultivationDays({
         marker?.type != DayMarkerType.cheatMeal) {
       continue;
     }
-    final zeroedStepsKcal = marker?.excludeContributions ?? false
-        ? 0.0
-        : stepsKcal;
-    final zeroedDietKcal = marker?.excludeContributions ?? false
-        ? 0.0
-        : dietKcal;
+    final zeroedStepsKcal = (marker?.includeSteps ?? true) ? stepsKcal : 0.0;
+    final zeroedDietKcal = (marker?.includeDiet ?? true) ? dietKcal : 0.0;
 
     out.add(
       CultivationDayRecord(

@@ -28,6 +28,8 @@ class DayMarkerRepository {
       cheatPenaltyEnabled: row.cheatPenaltyEnabled,
       cheatPenaltyKcal: row.cheatPenaltyKcal,
       excludeContributions: row.excludeContributions,
+      includeSteps: row.includeSteps,
+      includeDiet: row.includeDiet,
     );
   }
 
@@ -165,6 +167,8 @@ class DayMarkerRepository {
             cheatPenaltyEnabled: Value(settings.cheatPenaltyEnabled),
             cheatPenaltyKcal: Value(settings.cheatPenaltyKcal),
             excludeContributions: const Value(false),
+            includeSteps: Value(settings.includeSteps),
+            includeDiet: Value(settings.includeDiet),
           ),
         );
   }
@@ -172,6 +176,8 @@ class DayMarkerRepository {
   /// 放纵日: any date, past/today/future.
   Future<void> setCheatMeal(
     DateTime day, {
+    bool includeSteps = true,
+    bool includeDiet = false,
     bool deductKcal = true,
     int penaltyKcal = 1000,
     DateTime? now,
@@ -181,6 +187,8 @@ class DayMarkerRepository {
       day,
       DayMarkerSettings(
         type: DayMarkerType.cheatMeal,
+        includeSteps: includeSteps,
+        includeDiet: includeDiet,
         cheatPenaltyEnabled: deductKcal,
         cheatPenaltyKcal: penaltyKcal,
       ),
@@ -193,6 +201,8 @@ class DayMarkerRepository {
   Future<void> setRestDay(
     DateTime day, {
     bool pauseCarbCycle = false,
+    bool includeSteps = true,
+    bool includeDiet = true,
     DateTime? now,
   }) {
     return _set(
@@ -200,6 +210,8 @@ class DayMarkerRepository {
       DayMarkerSettings(
         type: DayMarkerType.restDay,
         pauseCarbCycle: pauseCarbCycle,
+        includeSteps: includeSteps,
+        includeDiet: includeDiet,
       ),
       now: now,
     );

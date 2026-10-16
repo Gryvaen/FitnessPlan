@@ -2345,7 +2345,7 @@
   "realmGuideTagLocked": "Locked",
   "realmGuideTagLockedMax": "Locked · Highest realm",
   "realmGuideFootnoteTitle": "kcal sources:",
-  "realmGuideFootnoteBody": "On regular days: ① steps × 0.04 kcal/step; ② diet counts after at least 2 distinct meal types are logged, contributing TDEE − intake. A cheat day contributes a fixed −1000 kcal, without steps or diet; a rest day still contributes 0 kcal.",
+  "realmGuideFootnoteBody": "Regular days: steps × 0.04 kcal/step. Diet contributes TDEE − intake when at least two meal types and a daily TDEE are available; otherwise it contributes 0. Cheat and rest days have independent daily switches for steps and diet. On cheat days, diet replaces the fixed deduction; with diet off, a custom fixed deduction or no deduction can be chosen.",
   "realmGuideFootnoteNote": "This feature is currently only available to users on the \"Cut\" goal.",
   "cultivationHistoryTitle": "Cultivation log",
   "cultivationHistoryEmpty": "No records yet",
@@ -2393,5 +2393,14 @@
         "type": "int"
       }
     }
-  }
+  },
+  "stepsCountTowardCultivationLabel": "Count steps toward cultivation",
+  "dietCountTowardCultivationLabel": "Count diet calories toward cultivation",
+  "stepsCountedSummary": "Steps counted",
+  "stepsExcludedSummary": "Steps excluded",
+  "dietCountedSummary": "Diet counted",
+  "dietExcludedSummary": "Diet excluded",
+  "actualDietContributionHint": "TDEE − intake",
+  "dietContributionRequirementsHint": "Diet contributes TDEE − intake. At least two meal types and a daily TDEE are required; otherwise it contributes 0 kcal.",
+  "cheatActualDietHint": "Uses TDEE − intake instead of the fixed deduction. At least two meal types and a daily TDEE are required; otherwise it contributes 0 kcal."
 }
