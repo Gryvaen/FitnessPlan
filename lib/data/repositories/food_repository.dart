@@ -8,7 +8,7 @@ import '../db.dart';
 
 /// Bump when [assets/food_seed.json] content changes meaningfully,
 /// or when sync policy changes (e.g. obsolete-row deletion).
-const kFoodSeedVersion = 13;
+const kFoodSeedVersion = 14;
 
 const kFoodSearchLimit = 80;
 
@@ -27,6 +27,56 @@ String escapeLikePattern(String input) {
       .replaceAll(r'\', r'\\')
       .replaceAll('%', r'\%')
       .replaceAll('_', r'\_');
+}
+
+/// Cooking-method words that users type before/after a dish ("清炒花菜",
+/// "鸡胸肉烟熏") while seed rows spell them as a suffix (`菜花(清炒)`).
+/// Longest first so "清炒" wins over "炒".
+const _searchMethodWords = [
+  '清炒', '白灼', '烟熏', '水煮', '清蒸', '凉拌', //
+  '炒', '熏', '煎', '烤', '蒸', '炖', '卤',
+];
+
+/// Colloquial name → seed name, applied as substring replacement.
+const _searchSynonyms = {'花椰菜': '菜花', '花菜': '菜花', '番茄': '西红柿', '包菜': '圆白菜'};
+
+/// Splits a search query into AND-ed term groups, each an OR-list of
+/// alternatives: whitespace separates terms, a leading/trailing cooking-method
+/// word is split off, and colloquial names gain their seed spelling.
+/// e.g. `清炒花菜` → `[[清炒], [花菜, 菜花]]`.
+List<List<String>> foodSearchTermGroups(String query) {
+  final terms = <String>[];
+  for (final token in query.trim().split(RegExp(r'\s+'))) {
+    if (token.isEmpty) continue;
+    String? method;
+    for (final m in _searchMethodWords) {
+      if (token == m) break;
+      if (token.length > m.length &&
+          (token.startsWith(m) || token.endsWith(m))) {
+        method = m;
+        break;
+      }
+    }
+    if (method == null) {
+      terms.add(token);
+    } else if (token.startsWith(method)) {
+      terms
+        ..add(method)
+        ..add(token.substring(method.length));
+    } else {
+      terms
+        ..add(token.substring(0, token.length - method.length))
+        ..add(method);
+    }
+  }
+  return [
+    for (final term in terms)
+      {
+        term,
+        for (final e in _searchSynonyms.entries)
+          if (term.contains(e.key)) term.replaceAll(e.key, e.value),
+      }.toList(),
+  ];
 }
 
 class FoodRepository {
@@ -171,13 +221,26 @@ class FoodRepository {
   Future<List<FoodItem>> search(String query, {int limit = kFoodSearchLimit}) {
     final q = query.trim();
     if (q.isEmpty) return Future.value(const []);
-    final pattern = '%${escapeLikePattern(q)}%';
+    Expression<bool> matches($FoodItemsTable t, String term) {
+      final pattern = '%${escapeLikePattern(term)}%';
+      return t.name.like(pattern, escapeChar: r'\') |
+          t.nameEn.like(pattern, escapeChar: r'\');
+    }
+
+    final groups = foodSearchTermGroups(q);
+    final expanded = groups.length > 1 || groups.any((g) => g.length > 1);
     final select = _db.select(_db.foodItems)
-      ..where(
-        (t) =>
-            t.name.like(pattern, escapeChar: r'\') |
-            t.nameEn.like(pattern, escapeChar: r'\'),
-      )
+      ..where((t) {
+        final whole = matches(t, q);
+        if (!expanded) return whole;
+        return whole |
+            groups
+                .map(
+                  (g) =>
+                      g.map((term) => matches(t, term)).reduce((a, b) => a | b),
+                )
+                .reduce((a, b) => a & b);
+      })
       ..orderBy([(t) => OrderingTerm.asc(t.name)])
       ..limit(limit);
     return select.get();
