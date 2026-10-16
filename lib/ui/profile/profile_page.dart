@@ -176,7 +176,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           fileName: payload.fileName,
           bytes: payload.bytes,
           type: FileType.custom,
-          allowedExtensions: const ['json'],
+          allowedExtensions: const ['gz'],
         );
         if (savedPath == null || !mounted) return;
         messenger.showSnackBar(
@@ -186,7 +186,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         final file = await repo.writeBackupToTemp();
         await SharePlus.instance.share(
           ShareParams(
-            files: [XFile(file.path, mimeType: 'application/json')],
+            files: [XFile(file.path, mimeType: 'application/gzip')],
             subject: l10n.exportData,
           ),
         );
@@ -234,10 +234,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     final messenger = ScaffoldMessenger.of(context);
     try {
+      // No extension filter: Android maps it to a MIME type, which greys
+      // out `.json.gz` backups. The decoder validates the content instead.
       final result = await FilePicker.platform.pickFiles(
         dialogTitle: l10n.importData,
-        type: FileType.custom,
-        allowedExtensions: const ['json'],
+        type: FileType.any,
         withData: true,
       );
       if (result == null || result.files.isEmpty || !mounted) return;
@@ -254,6 +255,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       ref.invalidate(localeProvider);
       ref.invalidate(remindersProvider);
       ref.read(profileProvider.notifier).reload();
+      // The 境界 ledger lives in prefs too; drop the pre-import copy.
+      ref.read(cutCultivationStateProvider.notifier).reload();
+      ref.invalidate(cultivationHistoryProvider);
       await ref.read(remindersProvider.notifier).syncSchedule();
 
       if (!mounted) return;
