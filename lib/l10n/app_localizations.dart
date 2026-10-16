@@ -776,12 +776,6 @@ abstract class AppLocalizations {
   /// **'Go to Records'**
   String get goRecords;
 
-  /// No description provided for @startUsing.
-  ///
-  /// In en, this message translates to:
-  /// **'Get started'**
-  String get startUsing;
-
   /// No description provided for @startWriting.
   ///
   /// In en, this message translates to:
@@ -1837,12 +1831,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Daily water goal'**
   String get dailyWaterGoal;
-
-  /// No description provided for @quotaReadyTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Daily targets ready'**
-  String get quotaReadyTitle;
 
   /// No description provided for @createProfileTitle.
   ///
@@ -3482,12 +3470,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Leave blank for default {ml} ml'**
   String waterDefaultHint(int ml);
-
-  /// No description provided for @quotaReadyBody.
-  ///
-  /// In en, this message translates to:
-  /// **'{kcal} kcal\nP {p} · C {c} · F {f}\n\nDetails under Me → My profile.'**
-  String quotaReadyBody(String kcal, String p, String c, String f);
 
   /// No description provided for @checkingUpdate.
   ///

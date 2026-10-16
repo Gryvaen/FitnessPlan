@@ -113,7 +113,6 @@
   "clearSelection": "清除",
   "completed": "已完成",
   "goRecords": "去记录",
-  "startUsing": "开始使用",
   "startWriting": "开始书写",
   "checkUpdate": "检查更新",
   "downloadInstall": "下载并安装",
@@ -323,7 +322,6 @@
   "unsavedChanges": "未保存的更改",
   "unsavedChangesBody": "身体档案有未保存的修改，要如何处理？",
   "dailyWaterGoal": "每日饮水目标",
-  "quotaReadyTitle": "每日配额已算出",
   "createProfileTitle": "建立身体档案",
   "createProfileHint": "填写身体数据，生成每日热量与营养配额。",
   "calculateAndStart": "计算并开始",
@@ -972,23 +970,6 @@
     "placeholders": {
       "ml": {
         "type": "int"
-      }
-    }
-  },
-  "quotaReadyBody": "{kcal} kcal\nP {p} · C {c} · F {f}\n\n详情可在「我的 → 我的档案」查看。",
-  "@quotaReadyBody": {
-    "placeholders": {
-      "kcal": {
-        "type": "String"
-      },
-      "p": {
-        "type": "String"
-      },
-      "c": {
-        "type": "String"
-      },
-      "f": {
-        "type": "String"
       }
     }
   },
@@ -1692,23 +1673,6 @@
     "placeholders": {
       "ml": {
         "type": "int"
-      }
-    }
-  },
-  "quotaReadyBody": "{kcal} kcal\nP {p} · C {c} · F {f}\n\n详情可在「我的 → 我的档案」查看。",
-  "@quotaReadyBody": {
-    "placeholders": {
-      "kcal": {
-        "type": "String"
-      },
-      "p": {
-        "type": "String"
-      },
-      "c": {
-        "type": "String"
-      },
-      "f": {
-        "type": "String"
       }
     }
   },

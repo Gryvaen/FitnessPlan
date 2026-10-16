@@ -348,9 +348,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get goRecords => '去记录';
 
   @override
-  String get startUsing => '开始使用';
-
-  @override
   String get startWriting => '开始书写';
 
   @override
@@ -905,9 +902,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dailyWaterGoal => '每日饮水目标';
-
-  @override
-  String get quotaReadyTitle => '每日配额已算出';
 
   @override
   String get createProfileTitle => '建立身体档案';
@@ -1852,11 +1846,6 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String waterDefaultHint(int ml) {
     return '不填写则使用默认 $ml ml';
-  }
-
-  @override
-  String quotaReadyBody(String kcal, String p, String c, String f) {
-    return '$kcal kcal\nP $p · C $c · F $f\n\n详情可在「我的 → 我的档案」查看。';
   }
 
   @override

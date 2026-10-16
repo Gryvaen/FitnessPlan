@@ -49,10 +49,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     FitnessGoal.bulk => l10n.goalBulkDesc,
   };
 
-  Future<void> _showResultAndSave() async {
+  Future<void> _save() async {
     setState(() => _saving = true);
     try {
-      final profile = await ref
+      await ref
           .read(profileProvider.notifier)
           .save(
             sex: _sex,
@@ -63,29 +63,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             goal: _goal,
             targetWeightKg: null,
           );
-      if (!mounted) return;
-
-      final l10n = context.l10n;
-      await showDialog<void>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(l10n.quotaReadyTitle),
-          content: Text(
-            l10n.quotaReadyBody(
-              '${profile.targets.calories}',
-              profile.targets.proteinG.toStringAsFixed(0),
-              profile.targets.carbG.toStringAsFixed(0),
-              profile.targets.fatG.toStringAsFixed(0),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(l10n.startUsing),
-            ),
-          ],
-        ),
-      );
       if (mounted) context.go('/today');
     } catch (e) {
       if (mounted) {
@@ -284,7 +261,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     ),
                   const SizedBox(height: 32),
                   FilledButton(
-                    onPressed: _saving ? null : _showResultAndSave,
+                    onPressed: _saving ? null : _save,
                     child: Text(
                       _saving ? l10n.calculating : l10n.onboardingFinish,
                     ),
@@ -403,4 +380,3 @@ class _Feature extends StatelessWidget {
     );
   }
 }
-

@@ -348,9 +348,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goRecords => 'Go to Records';
 
   @override
-  String get startUsing => 'Get started';
-
-  @override
   String get startWriting => 'Start writing';
 
   @override
@@ -913,9 +910,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dailyWaterGoal => 'Daily water goal';
-
-  @override
-  String get quotaReadyTitle => 'Daily targets ready';
 
   @override
   String get createProfileTitle => 'Create your profile';
@@ -1889,11 +1883,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String waterDefaultHint(int ml) {
     return 'Leave blank for default $ml ml';
-  }
-
-  @override
-  String quotaReadyBody(String kcal, String p, String c, String f) {
-    return '$kcal kcal\nP $p · C $c · F $f\n\nDetails under Me → My profile.';
   }
 
   @override

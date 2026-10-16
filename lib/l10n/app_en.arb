@@ -113,7 +113,6 @@
   "clearSelection": "Clear",
   "completed": "Done",
   "goRecords": "Go to Records",
-  "startUsing": "Get started",
   "startWriting": "Start writing",
   "checkUpdate": "Check for updates",
   "downloadInstall": "Download & install",
@@ -327,7 +326,6 @@
   "unsavedChanges": "Unsaved changes",
   "unsavedChangesBody": "Profile has unsaved edits. What next?",
   "dailyWaterGoal": "Daily water goal",
-  "quotaReadyTitle": "Daily targets ready",
   "createProfileTitle": "Create your profile",
   "createProfileHint": "Enter your stats to generate daily calorie and macro targets.",
   "calculateAndStart": "Calculate & start",
@@ -1004,23 +1002,6 @@
     "placeholders": {
       "ml": {
         "type": "int"
-      }
-    }
-  },
-  "quotaReadyBody": "{kcal} kcal\nP {p} · C {c} · F {f}\n\nDetails under Me → My profile.",
-  "@quotaReadyBody": {
-    "placeholders": {
-      "kcal": {
-        "type": "String"
-      },
-      "p": {
-        "type": "String"
-      },
-      "c": {
-        "type": "String"
-      },
-      "f": {
-        "type": "String"
       }
     }
   },
@@ -1721,23 +1702,6 @@
     "placeholders": {
       "ml": {
         "type": "int"
-      }
-    }
-  },
-  "quotaReadyBody": "{kcal} kcal\nP {p} · C {c} · F {f}\n\nDetails under Me → My profile.",
-  "@quotaReadyBody": {
-    "placeholders": {
-      "kcal": {
-        "type": "String"
-      },
-      "p": {
-        "type": "String"
-      },
-      "c": {
-        "type": "String"
-      },
-      "f": {
-        "type": "String"
       }
     }
   },
