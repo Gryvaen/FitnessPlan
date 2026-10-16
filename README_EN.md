@@ -11,19 +11,15 @@
 </p>
 
 <p>
-  <a href="https://github.com/Gryvaen/FitnessPlan/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Gryvaen/FitnessPlan/ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
   <a href="https://github.com/Gryvaen/FitnessPlan/releases"><img src="https://img.shields.io/github/v/release/Gryvaen/FitnessPlan?include_prereleases&style=flat-square&color=0F6E6B" alt="Release"></a>
   <img src="https://img.shields.io/badge/platform-Android-0F6E6B?style=flat-square&logo=android&logoColor=white" alt="Platform: Android">
-  <img src="https://img.shields.io/badge/Flutter-Dart%20%5E3.12.2-0F6E6B?style=flat-square&logo=flutter&logoColor=white" alt="Flutter">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Personal%20Free%20%2F%20Commercial%20Paid-0F6E6B?style=flat-square" alt="License"></a>
 </p>
 
 <p>
   <a href="#features">Features</a> ·
   <a href="#cultivation">Cultivation</a> ·
-  <a href="#download">Download</a> ·
-  <a href="#build-from-source">Build from source</a> ·
-  <a href="#development">Development</a>
+  <a href="#download">Download</a>
   &nbsp;|&nbsp;
   <a href="./README.md">中文</a> · <b>English</b>
 </p>
@@ -108,7 +104,7 @@ Calendar days can be marked as cheat days or rest days. New markers retain norma
     <td align="center">🔐<br><b>No account</b></td>
     <td align="center">📴<br><b>No cloud</b></td>
     <td align="center">🚫<br><b>No tracking</b></td>
-    <td align="center">💾<br><b>Drift → SQLite</b></td>
+    <td align="center">💾<br><b>Export & import</b></td>
   </tr>
 </table>
 </div>
@@ -119,148 +115,13 @@ Meals, weight, workouts, and preferences stay on the device. You can export a ba
 
 Download an APK from [GitHub Releases](https://github.com/Gryvaen/FitnessPlan/releases) or [Gitee Releases](https://gitee.com/Gryvaen/FitnessPlan/releases). Try Gitee when GitHub is unreachable. Most phones want `FitnessPlan-*-android-arm64-v8a.apk`.
 
-Users on older versions may need to install the first dual-source version manually. The update dialog remembers Automatic / Gitee / GitHub preference. Manual choices remain eligible for fallback.
-
-Android DownloadManager continues downloads while the app is closed; fallback runs when the app is active again. Both foreground installation and background install notifications require matching file size and SHA-256. Checksums establish file consistency; Android still verifies APK signatures.
-
-## Build from source
-
-You need [Flutter](https://docs.flutter.dev/get-started/install) matching the Dart SDK constraint `^3.12.2` in `pubspec.yaml`.
-
-```bash
-git clone https://github.com/Gryvaen/FitnessPlan.git
-cd FitnessPlan
-flutter pub get
-flutter run
-```
-
-On first launch, enter sex, age, height, weight, activity, and a goal: cut, maintain, or bulk.
-
-## Architecture
-
-Calorie math, fat-loss strategies, plateau detection, and cultivation progress live in `lib/domain/`, with no Flutter imports. Screens talk to repositories through Riverpod. Repositories write to the database or to system services.
-
-```mermaid
-flowchart LR
-  UI["lib/ui<br/>Today · Foods · Records · Profile"] --> P["lib/providers"]
-  UI --> D["lib/domain<br/>Calories · Strategy · Realm"]
-  P --> D
-  P --> R["lib/data<br/>repositories"]
-  R --> DB[("Drift / SQLite")]
-  R --> N["Steps · Notifications · App update"]
-```
-
-Android silently checks GitHub Releases on launch and when the app returns to the foreground. Desktop and web have no health store, so step sync is marked unsupported.
-
-## Tech stack
-
-| Component | Version | Purpose |
-| --- | --- | --- |
-| Flutter / Dart | `^3.12.2` | Cross-platform UI; body text uses LXGW WenKai and Noto Sans SC |
-| flutter_riverpod | `^3.3.2` | State management |
-| go_router | `^17.3.0` | Routing |
-| drift | `^2.34.2` | On-device SQLite |
-| health | `^13.3.1` | Steps |
-| flutter_local_notifications | `^22.0.1` | Local reminders |
-| fl_chart | `^1.2.0` | Weight charts |
-
-The bottom navigation and most screens use the ink icons in `assets/ink/`.
-
-## Project structure
-
-```text
-FitnessPlan/
-├── lib/
-│   ├── domain/          # calories, strategy, cultivation
-│   ├── data/            # Drift, repositories, steps, reminders
-│   ├── providers/
-│   ├── ui/              # today, foods, records, profile
-│   └── l10n/
-├── assets/
-│   ├── food_seed.json   # 668 foods
-│   ├── branding/
-│   ├── cultivation/     # realm art
-│   └── ink/
-├── test/
-├── docs/maintainers/   # maintainer guides (Chinese)
-├── tool/                # release, copyright, docs and food-seed scripts
-└── android/ ios/ linux/ macos/ windows/ web/
-```
-
-## Development
-
-Before taking over maintenance, read the [maintainer guides](docs/maintainers/README.md) (in Chinese): setup, architecture, a file-by-file map, business rules, testing, scripts and the release process.
-
-After changing a table:
-
-```bash
-dart run build_runner build
-```
-
-After editing [lib/l10n/app_zh.arb](lib/l10n/app_zh.arb) or the template [lib/l10n/app_en.arb](lib/l10n/app_en.arb), run `flutter gen-l10n`. `flutter pub get` generates as well.
-
-After editing [assets/food_seed.json](assets/food_seed.json), bump `kFoodSeedVersion` (currently `14`) in [lib/data/repositories/food_repository.dart](lib/data/repositories/food_repository.dart) so existing installs re-sync.
-
-Before a pull request:
-
-```bash
-flutter analyze --no-fatal-infos
-flutter test
-```
-
-### Build
-
-A signed Android release (do not commit `key.properties` or `*.jks`):
-
-```bash
-./tool/release/build_release_apk.sh
-```
-
-See [android/key.properties.example](android/key.properties.example). iOS needs macOS and Xcode:
-
-```bash
-flutter build ipa --release
-```
-
-Releases here are Android APKs only. Linux emulator notes are in [docs/android-emulator.md](docs/android-emulator.md) (Chinese).
-
-### Release (maintainers)
-
-<details>
-<summary>Dual-source publishing to GitHub and Gitee</summary>
-
-<br>
-
-One command (needs a logged-in `gh`, a clean tree and `main` checked out):
-
-```bash
-./tool/release/release.sh --setup                                  # once: store the Gitee token
-./tool/release/release.sh X.Y.Z --notes-file /path/to/release-notes.md
-```
-
-It bumps the version and build number and commits, creates an annotated tag, analyzes, tests and builds, pushes `main` and the tag to GitHub and Gitee, then publishes to both and verifies. Nothing is pushed until the build and tests pass; after a failure, re-run the same command to resume (the release commit, tag and artifacts built from the same commit are reused; `--rebuild` forces a rebuild). The Gitee token lives in `~/.config/fitnessplan/gitee_token` (mode 600) or `GITEE_TOKEN`; it is never printed, put on a command line or saved in git config.
-
-Step by step instead: build once with `./tool/release/build_release_apk.sh`. Configure `GITHUB_TOKEN` and `GITEE_TOKEN` in your local environment (never commit them), then run:
-
-```bash
-python3 tool/release/publish_release.py --tag vX.Y.Z --notes-file /path/to/release-notes.md
-```
-
-The build generates four APKs, `SHA256SUMS`, and `update-manifest.json`. The publisher uploads identical files to both platforms, manifest last, and verifies public downloads. Retry the same command after partial failure: identical files are skipped; conflicting files are never overwritten. Gitee caps attachments at 100 MB, so larger files (the universal APK) go to GitHub only; the app downloads those from GitHub. Every release from 2.6.1 on must carry the manifest; releases up to 2.6.0 have none and are taken from GitHub only, verified against the asset size and SHA-256 that GitHub reports.
-
-Defaults: GitHub `Gryvaen/FitnessPlan` (main), Gitee `Gryvaen/FitnessPlan` (main). Override with `--github-repo`, `--gitee-repo`, `--github-target`, `--gitee-target`. Source is not synchronized: before creating a release the script checks with `git ls-remote` that the remote tag (or the target branch head) is the commit the local tag points to, and stops otherwise; push or sync the target branch first, then retry.
-
-</details>
+If an older version cannot reach GitHub, install a version with dual-source updates manually. After that, the update dialog lets you choose Automatic, Gitee, or GitHub.
 
 ## Roadmap
 
 - [x] Cut cultivation: Qi Refining → Foundation → Core Formation → Nascent Soul → Divine Transformation
 - [x] Local meals, training, body logs, and Android releases
 - [ ] Bulk and maintain cultivation (the entrance exists; the page is still a placeholder)
-
-## Contributing
-
-Match CI: `flutter analyze --no-fatal-infos` and `flutter test`. The workflow is [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Style is in [analysis_options.yaml](analysis_options.yaml).
 
 ## Donate
 

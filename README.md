@@ -11,19 +11,15 @@
 </p>
 
 <p>
-  <a href="https://github.com/Gryvaen/FitnessPlan/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Gryvaen/FitnessPlan/ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
   <a href="https://github.com/Gryvaen/FitnessPlan/releases"><img src="https://img.shields.io/github/v/release/Gryvaen/FitnessPlan?include_prereleases&style=flat-square&color=0F6E6B" alt="Release"></a>
   <img src="https://img.shields.io/badge/platform-Android-0F6E6B?style=flat-square&logo=android&logoColor=white" alt="Platform: Android">
-  <img src="https://img.shields.io/badge/Flutter-Dart%20%5E3.12.2-0F6E6B?style=flat-square&logo=flutter&logoColor=white" alt="Flutter">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Personal%20Free%20%2F%20Commercial%20Paid-0F6E6B?style=flat-square" alt="License"></a>
 </p>
 
 <p>
   <a href="#功能">功能</a> ·
   <a href="#修仙境界">修仙境界</a> ·
-  <a href="#下载安装">下载</a> ·
-  <a href="#从源码运行">从源码运行</a> ·
-  <a href="#开发">开发</a>
+  <a href="#下载安装">下载</a>
   &nbsp;|&nbsp;
   <b>中文</b> · <a href="./README_EN.md">English</a>
 </p>
@@ -100,7 +96,7 @@
 > [!NOTE]
 > 均衡、碳水循环和碳水递减会按日给出目标。这些数字是给一般健康成年人的自助估算，不是临床处方。
 
-## 数据留在本地
+## 本地数据
 
 <div align="center">
 <table>
@@ -108,7 +104,7 @@
     <td align="center">🔐<br><b>不登录</b></td>
     <td align="center">📴<br><b>不上云</b></td>
     <td align="center">🚫<br><b>不追踪</b></td>
-    <td align="center">💾<br><b>Drift → SQLite</b></td>
+    <td align="center">💾<br><b>可导出备份</b></td>
   </tr>
 </table>
 </div>
@@ -121,148 +117,11 @@
 
 旧版若无法访问 GitHub，请手动下载安装支持双源更新的版本；以后可在更新弹窗选择自动、Gitee 或 GitHub。
 
-下载沿用 Android 系统服务，退出 App 后继续；自动换源在 App 运行或恢复后执行。前台安装与后台安装通知均须通过大小和 SHA-256 校验。摘要用于检查文件一致性，不代替 Android 的 APK 签名验证。
-
-## 从源码运行
-
-需要与 `pubspec.yaml` 里 Dart SDK `^3.12.2` 匹配的 [Flutter](https://docs.flutter.dev/get-started/install)。
-
-```bash
-git clone https://github.com/Gryvaen/FitnessPlan.git
-cd FitnessPlan
-flutter pub get
-flutter run
-```
-
-第一次打开，填写性别、年龄、身高、体重、活动量，以及目标：减脂、维持或增肌。
-
-## 架构
-
-热量、减脂策略、平台期和修仙进度在 `lib/domain/`，不依赖 Flutter。页面经 Riverpod 读写仓库，仓库再落到数据库或系统能力。
-
-```mermaid
-flowchart LR
-  UI["lib/ui<br/>今日 · 食材 · 记录 · 我的"] --> P["lib/providers"]
-  UI --> D["lib/domain<br/>热量 · 策略 · 境界"]
-  P --> D
-  P --> R["lib/data<br/>repositories"]
-  R --> DB[("Drift / SQLite")]
-  R --> N["步数 · 本地通知 · 应用更新"]
-```
-
-安卓会在启动和回到前台时静默查看 GitHub Release。桌面和 Web 没有健康存储，步数会标成不支持。
-
-## 技术栈
-
-| 组件 | 版本 | 用途 |
-| --- | --- | --- |
-| Flutter / Dart | `^3.12.2` | 跨平台 UI；正文字体是霞鹜文楷与思源黑体 |
-| flutter_riverpod | `^3.3.2` | 状态管理 |
-| go_router | `^17.3.0` | 路由 |
-| drift | `^2.34.2` | 本地 SQLite |
-| health | `^13.3.1` | 步数 |
-| flutter_local_notifications | `^22.0.1` | 本地提醒 |
-| fl_chart | `^1.2.0` | 体重图表 |
-
-底部导航和大部分页面使用 `assets/ink/` 里的水墨图标。
-
-## 项目结构
-
-```text
-FitnessPlan/
-├── lib/
-│   ├── domain/          # 热量、策略、境界
-│   ├── data/            # Drift、仓库、步数与提醒
-│   ├── providers/
-│   ├── ui/              # 今日、食材、记录、我的
-│   └── l10n/
-├── assets/
-│   ├── food_seed.json   # 668 条食材
-│   ├── branding/
-│   ├── cultivation/     # 境界原画
-│   └── ink/
-├── test/
-├── docs/maintainers/   # 维护者文档
-├── tool/                # 发版、软著、文档与食材种子脚本
-└── android/ ios/ linux/ macos/ windows/ web/
-```
-
-## 开发
-
-接手维护前，先读 [维护者文档](docs/maintainers/README.md)：环境搭建、架构、逐文件说明、业务规则、测试、脚本和发版流程都在里面。
-
-改表结构之后：
-
-```bash
-dart run build_runner build
-```
-
-改 [lib/l10n/app_zh.arb](lib/l10n/app_zh.arb) 或模板 [lib/l10n/app_en.arb](lib/l10n/app_en.arb) 之后执行 `flutter gen-l10n`。`flutter pub get` 也会生成。
-
-改 [assets/food_seed.json](assets/food_seed.json) 后，把 [lib/data/repositories/food_repository.dart](lib/data/repositories/food_repository.dart) 里的 `kFoodSeedVersion` 加一（当前 `14`），已安装的设备才会重新同步。
-
-提交前：
-
-```bash
-flutter analyze --no-fatal-infos
-flutter test
-```
-
-### 构建
-
-正式 Android 包（需签名，不要提交 `key.properties` 或 `*.jks`）：
-
-```bash
-./tool/release/build_release_apk.sh
-```
-
-示例见 [android/key.properties.example](android/key.properties.example)。iOS 需要 macOS 与 Xcode：
-
-```bash
-flutter build ipa --release
-```
-
-当前 Release 只有 Android APK。Linux 模拟器见 [docs/android-emulator.md](docs/android-emulator.md)。
-
-### 发布（维护者）
-
-<details>
-<summary>双源发布到 GitHub 与 Gitee</summary>
-
-<br>
-
-一键发布（需已登录 `gh`，工作区干净且在 `main` 上）：
-
-```bash
-./tool/release/release.sh --setup                                  # 只需一次：保存 Gitee 令牌
-./tool/release/release.sh X.Y.Z --notes-file /path/to/release-notes.md
-```
-
-依次完成：版本号与构建号加一并提交、打附注 tag、分析与测试并构建、推送 `main` 和 tag 到 GitHub 与 Gitee、双源发布并校验。构建和测试通过前不推送任何内容；中途失败用原命令重跑即可续上（已完成的提交、tag 和同一提交的构建产物会复用，`--rebuild` 强制重建）。Gitee 令牌存于 `~/.config/fitnessplan/gitee_token`（权限 600），也可用 `GITEE_TOKEN` 环境变量；令牌不会打印、出现在命令行或写入 git 配置。
-
-也可分步执行：
-
-```bash
-./tool/release/build_release_apk.sh
-# 在本地环境中配置 GITHUB_TOKEN、GITEE_TOKEN，勿写入仓库或命令历史。
-python3 tool/release/publish_release.py --tag vX.Y.Z --notes-file /path/to/release-notes.md
-```
-
-构建脚本生成四种 APK、`SHA256SUMS` 和 `update-manifest.json`。发布脚本上传同一批文件到两边，最后上传清单；验证公开下载内容后报告结果。部分失败可用原命令重试，一致附件跳过，同名不同内容停止，禁止自动覆盖。Gitee 单个附件上限 100 MB，超限的文件（通用 APK）只发 GitHub，应用会自动从 GitHub 下载它。从 2.6.1 起每个版本都必须带清单；2.6.0 及更早的版本没有清单，仅从 GitHub 获取，并用 GitHub 提供的附件大小与 SHA-256 校验。
-
-默认目标为 GitHub `Gryvaen/FitnessPlan`（main）和 Gitee `Gryvaen/FitnessPlan`（main）；可用 `--github-repo`、`--gitee-repo`、`--github-target`、`--gitee-target` 显式覆盖。脚本不负责同步源代码：创建发布前会用 `git ls-remote` 核对远端 tag（或目标分支头）是否就是本地 tag 指向的提交，不一致就停止，先推送或同步目标分支再重试。
-
-</details>
-
 ## 路线图
 
 - [x] 减脂修仙：练气 → 筑基 → 结丹 → 元婴 → 化神
 - [x] 本地饮食、训练、身体记录，以及 Android Release
 - [ ] 增肌、维持的境界玩法（入口在，内容仍是占位）
-
-## 贡献
-
-与 CI 相同：`flutter analyze --no-fatal-infos` 和 `flutter test`。CI 配置在 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)，风格见 [analysis_options.yaml](analysis_options.yaml)。
 
 ## 赞助
 

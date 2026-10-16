@@ -30,13 +30,15 @@ cd android && JAVA_HOME=~/development/jdk-21 ./gradlew :app:testDebugUnitTest
 ## 第一次运行
 
 ```bash
+git clone https://github.com/Gryvaen/FitnessPlan.git
+cd FitnessPlan
 flutter pub get        # 同时会按 l10n.yaml 生成多语言代码
 flutter analyze
 flutter test
 flutter run            # 默认连到第一台设备；用 flutter devices 查看设备列表
 ```
 
-第一次启动会把 `assets/food_seed.json` 同步进数据库（约 670 种食材），所以首屏的加载动画会稍长一些。
+第一次启动会把 `assets/food_seed.json` 同步进数据库（约 670 种食材），所以首屏的加载动画会稍长一些。随后进入建档：填写性别、年龄、身高、体重、活动量，以及目标（减脂、维持或增肌）。
 
 ## 日常命令
 
