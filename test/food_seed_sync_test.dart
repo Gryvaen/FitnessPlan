@@ -106,6 +106,65 @@ void main() {
     expect(await repo.search('tofu'), isEmpty);
   });
 
+  test('foodSearchTermGroups splits cooking methods and adds synonyms', () {
+    expect(foodSearchTermGroups('清炒花菜'), [
+      ['清炒'],
+      ['花菜', '菜花'],
+    ]);
+    expect(foodSearchTermGroups('烟熏鸡胸'), [
+      ['烟熏'],
+      ['鸡胸'],
+    ]);
+    expect(foodSearchTermGroups('鸡胸肉烟熏'), [
+      ['鸡胸肉'],
+      ['烟熏'],
+    ]);
+    expect(foodSearchTermGroups('smoked  chicken'), [
+      ['smoked'],
+      ['chicken'],
+    ]);
+    expect(foodSearchTermGroups('鸡胸肉'), [
+      ['鸡胸肉'],
+    ]);
+    expect(foodSearchTermGroups('清炒'), [
+      ['清炒'],
+    ]);
+  });
+
+  test('search finds method-suffixed rows from natural dish names', () async {
+    for (final (name, nameEn) in [
+      ('菜花', 'Cauliflower'),
+      ('菜花(清炒)', 'Cauliflower (Stir-Fried)'),
+      ('鸡胸肉(烟熏)', 'Chicken Breast (Smoked)'),
+      ('鸡胸肉(水煮)', 'Chicken Breast (Boiled)'),
+    ]) {
+      await db
+          .into(db.foodItems)
+          .insert(
+            FoodItemsCompanion.insert(
+              name: name,
+              category: '测试',
+              kcalPer100: 100,
+              proteinPer100: 10,
+              carbPer100: 5,
+              fatPer100: 4,
+              nameEn: Value(nameEn),
+            ),
+          );
+    }
+    Future<List<String>> names(String q) async => [
+      for (final f in await repo.search(q)) f.name,
+    ];
+
+    expect(await names('清炒花菜'), ['菜花(清炒)']);
+    expect(await names('炒菜花'), ['菜花(清炒)']);
+    expect(await names('花菜'), ['菜花', '菜花(清炒)']);
+    expect(await names('烟熏鸡胸肉'), ['鸡胸肉(烟熏)']);
+    expect(await names('熏鸡胸'), ['鸡胸肉(烟熏)']);
+    expect(await names('smoked chicken'), ['鸡胸肉(烟熏)']);
+    expect(await names('鸡胸肉'), ['鸡胸肉(水煮)', '鸡胸肉(烟熏)']);
+  });
+
   test('cooking-method variants sort contiguously with their base ingredient', () async {
     // Insert in a deliberately non-adjacent order.
     for (final name in ['鸡胸肉(烤)', '苹果', '鸡胸肉', '鸡胸肉(水煮)', '鸡胸肉(煎)']) {
