@@ -20,6 +20,7 @@ final stepsSyncServiceProvider = Provider<StepsSyncService>((ref) {
   return StepsSyncService(
     ref.watch(stepRepositoryProvider),
     stepSensor: ref.watch(androidStepSensorProvider),
+    prefs: ref.watch(sharedPreferencesProvider),
   );
 });
 

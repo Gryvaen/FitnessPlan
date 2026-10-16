@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:health/health.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/calendar_day.dart';
+import '../repositories/data_backup_repository.dart';
 import '../repositories/step_repository.dart';
 import 'android_step_sensor.dart';
 
@@ -32,12 +34,17 @@ enum StepsSyncStatus {
 /// OPPO / ColorOS), also reads the OEM / hardware step counter and keeps the
 /// larger of the two values for today.
 class StepsSyncService {
-  StepsSyncService(this._repo, {Health? health, this._stepSensor})
-    : _health = health ?? Health();
+  StepsSyncService(
+    this._repo, {
+    Health? health,
+    this._stepSensor,
+    this._prefs,
+  }) : _health = health ?? Health();
 
   final StepRepository _repo;
   final Health _health;
   final AndroidStepSensor? _stepSensor;
+  final SharedPreferences? _prefs;
 
   bool _configured = false;
   bool _promptedThisSession = false;
@@ -198,6 +205,12 @@ class StepsSyncService {
       // Trust live readings including 0. Keeping a previous DB total when
       // Health/sensor report 0 made "today" look like yesterday after a
       // midnight reset or a failed sync, while the phone already showed 0.
+      // Exception: on the day a backup was imported, the restored total was
+      // counted on another device, so it is a floor rather than stale data.
+      if (_importedToday(today)) {
+        final stored = await _repo.stepsForDay(today);
+        if (stored > todayFinal) todayFinal = stored;
+      }
       await _repo.setStepsForDay(today, todayFinal);
 
       if (authorized &&
@@ -210,6 +223,12 @@ class StepsSyncService {
     } catch (_) {
       return StepsSyncStatus.failed;
     }
+  }
+
+  bool _importedToday(DateTime today) {
+    final raw = _prefs?.getString(DataBackupRepository.importedOnDayKey);
+    final day = raw == null ? null : DateTime.tryParse(raw);
+    return day != null && CalendarDay.dayOnly(day) == today;
   }
 
   Future<int?> _readSensorToday() async {

@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../domain/calendar_day.dart';
 import '../db.dart';
 
 /// A single-file local backup ready to save or share.
@@ -83,6 +84,10 @@ class DataBackupRepository {
 
   static const formatVersion = 1;
   static const dbFileName = 'fitness_plan.sqlite';
+
+  /// Local day (ISO date) of the last import. Step sync must not lower that
+  /// day's restored total, since this device's sensor never counted it.
+  static const importedOnDayKey = 'steps_imported_on_day';
 
   String _stamp() {
     final n = DateTime.now();
@@ -169,5 +174,9 @@ class DataBackupRepository {
         );
       }
     }
+    await _prefs.setString(
+      importedOnDayKey,
+      CalendarDay.todayLocal().toIso8601String(),
+    );
   }
 }
