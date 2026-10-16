@@ -52,7 +52,7 @@
   <tr>
     <td width="50%" valign="top">
       <h3>🍚 饮食</h3>
-      Mifflin–St Jeor 算出基础代谢、每日消耗，以及蛋白质、碳水和脂肪。内置 637 条中国大陆常见食材，18 个分类，每 100 克 10 项营养素。记一笔，当天剩余配额就减下去，饮水也记在同一天。
+      Mifflin–St Jeor 算出基础代谢、每日消耗，以及蛋白质、碳水和脂肪。内置 668 条中国大陆常见食材，18 个分类，每 100 克 10 项营养素。记一笔，当天剩余配额就减下去，饮水也记在同一天。
     </td>
     <td width="50%" valign="top">
       <h3>🏋️ 训练</h3>
@@ -177,16 +177,19 @@ FitnessPlan/
 │   ├── ui/              # 今日、食材、记录、我的
 │   └── l10n/
 ├── assets/
-│   ├── food_seed.json   # 637 条食材
+│   ├── food_seed.json   # 668 条食材
 │   ├── branding/
 │   ├── cultivation/     # 境界原画
 │   └── ink/
 ├── test/
-├── tool/                # 发布脚本
+├── docs/maintainers/   # 维护者文档
+├── tool/                # 发版、软著、文档与食材种子脚本
 └── android/ ios/ linux/ macos/ windows/ web/
 ```
 
 ## 开发
+
+接手维护前，先读 [维护者文档](docs/maintainers/README.md)：环境搭建、架构、逐文件说明、业务规则、测试、脚本和发版流程都在里面。
 
 改表结构之后：
 
@@ -196,7 +199,7 @@ dart run build_runner build
 
 改 [lib/l10n/app_zh.arb](lib/l10n/app_zh.arb) 或模板 [lib/l10n/app_en.arb](lib/l10n/app_en.arb) 之后执行 `flutter gen-l10n`。`flutter pub get` 也会生成。
 
-改 [assets/food_seed.json](assets/food_seed.json) 后，把 [lib/data/repositories/food_repository.dart](lib/data/repositories/food_repository.dart) 里的 `kFoodSeedVersion` 加一（当前 `13`），已安装的设备才会重新同步。
+改 [assets/food_seed.json](assets/food_seed.json) 后，把 [lib/data/repositories/food_repository.dart](lib/data/repositories/food_repository.dart) 里的 `kFoodSeedVersion` 加一（当前 `14`），已安装的设备才会重新同步。
 
 提交前：
 

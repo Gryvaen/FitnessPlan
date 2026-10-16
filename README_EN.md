@@ -52,7 +52,7 @@ It turns body stats into a daily calorie and macro budget, logs meals from a loc
   <tr>
     <td width="50%" valign="top">
       <h3>🍚 Eat</h3>
-      Mifflin–St Jeor produces BMR, TDEE, and protein, carbs, and fat. The built-in library has 637 common Mainland China foods in 18 categories, with 10 nutrients per 100 g. Logging a meal spends today's budget. Water is recorded on the same day.
+      Mifflin–St Jeor produces BMR, TDEE, and protein, carbs, and fat. The built-in library has 668 common Mainland China foods in 18 categories, with 10 nutrients per 100 g. Logging a meal spends today's budget. Water is recorded on the same day.
     </td>
     <td width="50%" valign="top">
       <h3>🏋️ Train</h3>
@@ -177,16 +177,19 @@ FitnessPlan/
 │   ├── ui/              # today, foods, records, profile
 │   └── l10n/
 ├── assets/
-│   ├── food_seed.json   # 637 foods
+│   ├── food_seed.json   # 668 foods
 │   ├── branding/
 │   ├── cultivation/     # realm art
 │   └── ink/
 ├── test/
-├── tool/                # release scripts
+├── docs/maintainers/   # maintainer guides (Chinese)
+├── tool/                # release, copyright, docs and food-seed scripts
 └── android/ ios/ linux/ macos/ windows/ web/
 ```
 
 ## Development
+
+Before taking over maintenance, read the [maintainer guides](docs/maintainers/README.md) (in Chinese): setup, architecture, a file-by-file map, business rules, testing, scripts and the release process.
 
 After changing a table:
 
@@ -196,7 +199,7 @@ dart run build_runner build
 
 After editing [lib/l10n/app_zh.arb](lib/l10n/app_zh.arb) or the template [lib/l10n/app_en.arb](lib/l10n/app_en.arb), run `flutter gen-l10n`. `flutter pub get` generates as well.
 
-After editing [assets/food_seed.json](assets/food_seed.json), bump `kFoodSeedVersion` (currently `13`) in [lib/data/repositories/food_repository.dart](lib/data/repositories/food_repository.dart) so existing installs re-sync.
+After editing [assets/food_seed.json](assets/food_seed.json), bump `kFoodSeedVersion` (currently `14`) in [lib/data/repositories/food_repository.dart](lib/data/repositories/food_repository.dart) so existing installs re-sync.
 
 Before a pull request:
 
