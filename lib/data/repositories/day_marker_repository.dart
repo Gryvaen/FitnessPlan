@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../domain/day_marker.dart';
+import '../../domain/calendar_day.dart';
 import '../../domain/diet_strategy.dart';
 import '../db.dart';
 
@@ -15,16 +16,17 @@ class DayMarkerRepository {
   DayMarkerType? _typeOf(DayMarkerRow row) =>
       DayMarkerType.fromStorage(row.type);
 
-  DayMarkerSettings? _settingsOf(DayMarkerRow row) {
+  DayMarkerSettings? _settingsOf(DayMarkerRow row, {bool? frozenPause}) {
     final type = _typeOf(row);
     if (type == null) return null;
     final date = StrategyDates.tryDecode(row.date);
     return DayMarkerSettings(
       type: type,
       pauseCarbCycle:
-          row.pauseCarbCycle &&
-          date != null &&
-          restDayCountsTowardProgression(date, row.updatedAt),
+          frozenPause ??
+          (row.pauseCarbCycle &&
+              date != null &&
+              restDayCountsTowardProgression(date, row.updatedAt)),
       cheatPenaltyEnabled: row.cheatPenaltyEnabled,
       cheatPenaltyKcal: row.cheatPenaltyKcal,
       excludeContributions: row.excludeContributions,
@@ -39,14 +41,20 @@ class DayMarkerRepository {
 
   Future<DayMarkerSettings?> settingsForDay(DateTime day) async {
     final row = await _rowForDay(day);
-    return row == null ? null : _settingsOf(row);
+    if (row == null) return null;
+    final snap = StrategyDates.dayOnly(day).isBefore(CalendarDay.todayLocal())
+        ? await (_db.select(_db.dailyNutritionTargets)
+                ..where((t) => t.date.equals(StrategyDates.encode(day))))
+              .getSingleOrNull()
+        : null;
+    return _settingsOf(row, frozenPause: snap?.cyclePaused);
   }
 
   Stream<DayMarkerSettings?> watchSettingsForDay(DateTime day) =>
       (_db.select(_db.dayMarkers)
             ..where((t) => t.date.equals(StrategyDates.encode(day))))
           .watchSingleOrNull()
-          .map((row) => row == null ? null : _settingsOf(row));
+          .asyncMap((_) => settingsForDay(day));
 
   Future<DayMarkerType?> markerForDay(DateTime day) async {
     final row = await _rowForDay(day);
@@ -109,25 +117,47 @@ class DayMarkerRepository {
     return out;
   }
 
-  /// Dates whose 休息日 marker counts toward the carb-cycle day-count pause
-  /// (unordered, no range filter — used by the diet-strategy day-count math,
-  /// which needs the full history). Excludes markers backfilled onto an
-  /// already-past date — see [restDayCountsTowardProgression].
-  Future<List<DateTime>> restDayDates() async {
+  /// The effective carb-cycle pause set, sorted (no range filter — the
+  /// diet-strategy day-count math needs the full history).
+  ///
+  /// Past days use the pause frozen on their snapshot, so later toggle edits
+  /// never rewrite an executed day sequence; today and the future follow the
+  /// 休息日 markers. Markers backfilled onto an already-past date never count
+  /// — see [restDayCountsTowardProgression].
+  Future<List<DateTime>> restDayDates({DateTime? now}) async {
     final rows = await (_db.select(
       _db.dayMarkers,
     )..where((t) => t.type.equals(DayMarkerType.restDay.name))).get();
-    return progressionRestDayDates(rows);
+    final dates = progressionRestDayDates(rows).toSet();
+    final today = StrategyDates.encode(CalendarDay.todayLocal(now));
+    final snapshots =
+        await (_db.select(_db.dailyNutritionTargets)..where(
+              (t) =>
+                  t.date.isSmallerThanValue(today) &
+                  t.cyclePaused.isNotNull() &
+                  t.strategy.equals('carbCycle'),
+            ))
+            .get();
+    for (final row in snapshots) {
+      final day = StrategyDates.tryDecode(row.date);
+      if (day == null) continue;
+      if (row.cyclePaused!) {
+        dates.add(day);
+      } else {
+        dates.remove(day);
+      }
+    }
+    return dates.toList()..sort();
   }
 
-  /// Live version of [restDayDates] — re-emits whenever any marker changes,
-  /// so carb-cycle previews stay in sync as 休息日 gets marked/cleared.
-  Stream<List<DateTime>> watchRestDayDates() {
-    return (_db.select(_db.dayMarkers)
-          ..where((t) => t.type.equals(DayMarkerType.restDay.name)))
-        .watch()
-        .map(progressionRestDayDates);
-  }
+  Stream<List<DateTime>> watchRestDayDates() => _db
+      .customSelect(
+        'SELECT date FROM day_markers UNION '
+        'SELECT date FROM daily_nutrition_targets WHERE cycle_paused IS NOT NULL',
+        readsFrom: {_db.dayMarkers, _db.dailyNutritionTargets},
+      )
+      .watch()
+      .asyncMap((_) => restDayDates());
 
   /// Filters raw 休息日 marker rows down to the ones that count toward the
   /// carb-cycle day-count progression (see [restDayCountsTowardProgression]).

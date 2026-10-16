@@ -1,6 +1,7 @@
 /// Versioned strategy plans and per-date nutrition targets.
 library;
 
+import 'cycle_history.dart';
 import 'diet_strategy.dart';
 import 'models.dart';
 
@@ -46,6 +47,7 @@ class DietStrategyPlan {
     required this.observationDays,
     required this.reason,
     required this.legacyCalories,
+    this.cycleStartIndex = 0,
   });
 
   final int id;
@@ -55,6 +57,9 @@ class DietStrategyPlan {
 
   /// First local day governed by this version.
   final DateTime effectiveFrom;
+
+  /// Cycle position at this version's effective date, independent of its age.
+  final int cycleStartIndex;
 
   /// First local day *not* governed (exclusive); null = open-ended.
   final DateTime? endedOn;
@@ -117,26 +122,40 @@ class DietStrategyPlan {
     return true;
   }
 
+  /// Cycle position of [day] for a `carbCycle` version (null otherwise).
+  ///
+  /// [pauses] is the effective pause set and [anchors] the positions frozen
+  /// by this version's past snapshots, see [resolveCycleDay].
+  CycleDay? cycleDayOn(
+    DateTime day, {
+    Iterable<DateTime> pauses = const [],
+    Iterable<CycleAnchor> anchors = const [],
+  }) {
+    final plan = kind == DietStrategyKind.carbCycle ? carbCyclePlan : null;
+    if (plan == null) return null;
+    return resolveCycleDay(
+      day: day,
+      start: effectiveFrom,
+      startIndex: cycleStartIndex,
+      length: plan.schedule.cycleLengthDays,
+      pauses: pauses,
+      anchors: anchors,
+    );
+  }
+
   /// Full-precision target for a date governed by this version.
   ///
-  /// [restDaysBeforeDay] counts 休息日-marked dates strictly before [day]
-  /// (within this plan's range); only the `carbCycle` branch uses it to
-  /// shift the day-count. `balanced`/`carbTaper` targets are date-independent
+  /// Only the `carbCycle` branch depends on [cycleDay] (defaults to the
+  /// unpaused position); `balanced`/`carbTaper` targets are date-independent
   /// day-to-day, so rest days are structurally a no-op for them.
-  DayMacroTarget targetFor(DateTime day, {int restDaysBeforeDay = 0}) {
+  DayMacroTarget targetFor(DateTime day, {CycleDay? cycleDay}) {
     switch (kind) {
       case DietStrategyKind.balanced:
         return baseline.balancedDay;
       case DietStrategyKind.carbCycle:
         final plan = carbCyclePlan;
         if (plan == null) return baseline.balancedDay;
-        final index = StrategyDates.cycleIndexOf(
-          day,
-          effectiveFrom,
-          plan.schedule.cycleLengthDays,
-          restDaysBefore: restDaysBeforeDay,
-        );
-        return plan.dayAt(index);
+        return plan.dayAt((cycleDay ?? cycleDayOn(day)!).index);
       case DietStrategyKind.carbTaper:
         return CarbTaperStage.of(baseline, taperStage).day;
     }
@@ -172,6 +191,8 @@ class DailyNutritionTarget {
     this.planVersion,
     this.strategy,
     this.dayType,
+    this.cycleIndex,
+    this.cyclePaused,
     this.isSnapshot = false,
     this.isLegacyEstimate = false,
     this.reason,
@@ -188,6 +209,8 @@ class DailyNutritionTarget {
   final int? planVersion;
   final DietStrategyKind? strategy;
   final CarbDayType? dayType;
+  final int? cycleIndex;
+  final bool? cyclePaused;
 
   /// True when read from the per-day snapshot table.
   final bool isSnapshot;
@@ -228,3 +251,16 @@ class DailyNutritionTarget {
     fatG: fatG,
   );
 }
+
+/// Positions frozen by [planId]'s past strategy snapshots. Manual overrides
+/// are never cycle evidence.
+List<CycleAnchor> cycleAnchorsOf(
+  Iterable<DailyNutritionTarget> snapshots,
+  int planId,
+) => [
+  for (final s in snapshots)
+    if (s.source == TargetSource.strategy &&
+        s.planId == planId &&
+        s.cycleIndex != null)
+      CycleAnchor(s.date, s.cycleIndex!),
+]..sort((a, b) => a.date.compareTo(b.date));

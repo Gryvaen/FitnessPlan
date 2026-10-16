@@ -7323,6 +7323,18 @@ class $DietStrategyPlansTable extends DietStrategyPlans
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _cycleStartIndexMeta = const VerificationMeta(
+    'cycleStartIndex',
+  );
+  @override
+  late final GeneratedColumn<int> cycleStartIndex = GeneratedColumn<int>(
+    'cycle_start_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _carbAmplitudeGMeta = const VerificationMeta(
     'carbAmplitudeG',
   );
@@ -7472,6 +7484,7 @@ class $DietStrategyPlansTable extends DietStrategyPlans
     fatPerKg,
     baseEnergy,
     schedule,
+    cycleStartIndex,
     carbAmplitudeG,
     lowProteinPerKg,
     lowCarbPerKg,
@@ -7613,6 +7626,15 @@ class $DietStrategyPlansTable extends DietStrategyPlans
       context.handle(
         _scheduleMeta,
         schedule.isAcceptableOrUnknown(data['schedule']!, _scheduleMeta),
+      );
+    }
+    if (data.containsKey('cycle_start_index')) {
+      context.handle(
+        _cycleStartIndexMeta,
+        cycleStartIndex.isAcceptableOrUnknown(
+          data['cycle_start_index']!,
+          _cycleStartIndexMeta,
+        ),
       );
     }
     if (data.containsKey('carb_amplitude_g')) {
@@ -7782,6 +7804,10 @@ class $DietStrategyPlansTable extends DietStrategyPlans
         DriftSqlType.string,
         data['${effectivePrefix}schedule'],
       ),
+      cycleStartIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cycle_start_index'],
+      )!,
       carbAmplitudeG: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}carb_amplitude_g'],
@@ -7857,6 +7883,7 @@ class DietStrategyPlanRow extends DataClass
 
   /// 3-5 letter H/M/L code for carb cycling (day-count cycle, not weekday).
   final String? schedule;
+  final int cycleStartIndex;
 
   /// Deprecated (was the deficit-based amplitude); no longer written.
   final double? carbAmplitudeG;
@@ -7888,6 +7915,7 @@ class DietStrategyPlanRow extends DataClass
     required this.fatPerKg,
     required this.baseEnergy,
     this.schedule,
+    required this.cycleStartIndex,
     this.carbAmplitudeG,
     this.lowProteinPerKg,
     this.lowCarbPerKg,
@@ -7922,6 +7950,7 @@ class DietStrategyPlanRow extends DataClass
     if (!nullToAbsent || schedule != null) {
       map['schedule'] = Variable<String>(schedule);
     }
+    map['cycle_start_index'] = Variable<int>(cycleStartIndex);
     if (!nullToAbsent || carbAmplitudeG != null) {
       map['carb_amplitude_g'] = Variable<double>(carbAmplitudeG);
     }
@@ -7975,6 +8004,7 @@ class DietStrategyPlanRow extends DataClass
       schedule: schedule == null && nullToAbsent
           ? const Value.absent()
           : Value(schedule),
+      cycleStartIndex: Value(cycleStartIndex),
       carbAmplitudeG: carbAmplitudeG == null && nullToAbsent
           ? const Value.absent()
           : Value(carbAmplitudeG),
@@ -8028,6 +8058,7 @@ class DietStrategyPlanRow extends DataClass
       fatPerKg: serializer.fromJson<double>(json['fatPerKg']),
       baseEnergy: serializer.fromJson<double>(json['baseEnergy']),
       schedule: serializer.fromJson<String?>(json['schedule']),
+      cycleStartIndex: serializer.fromJson<int>(json['cycleStartIndex']),
       carbAmplitudeG: serializer.fromJson<double?>(json['carbAmplitudeG']),
       lowProteinPerKg: serializer.fromJson<double?>(json['lowProteinPerKg']),
       lowCarbPerKg: serializer.fromJson<double?>(json['lowCarbPerKg']),
@@ -8060,6 +8091,7 @@ class DietStrategyPlanRow extends DataClass
       'fatPerKg': serializer.toJson<double>(fatPerKg),
       'baseEnergy': serializer.toJson<double>(baseEnergy),
       'schedule': serializer.toJson<String?>(schedule),
+      'cycleStartIndex': serializer.toJson<int>(cycleStartIndex),
       'carbAmplitudeG': serializer.toJson<double?>(carbAmplitudeG),
       'lowProteinPerKg': serializer.toJson<double?>(lowProteinPerKg),
       'lowCarbPerKg': serializer.toJson<double?>(lowCarbPerKg),
@@ -8090,6 +8122,7 @@ class DietStrategyPlanRow extends DataClass
     double? fatPerKg,
     double? baseEnergy,
     Value<String?> schedule = const Value.absent(),
+    int? cycleStartIndex,
     Value<double?> carbAmplitudeG = const Value.absent(),
     Value<double?> lowProteinPerKg = const Value.absent(),
     Value<double?> lowCarbPerKg = const Value.absent(),
@@ -8117,6 +8150,7 @@ class DietStrategyPlanRow extends DataClass
     fatPerKg: fatPerKg ?? this.fatPerKg,
     baseEnergy: baseEnergy ?? this.baseEnergy,
     schedule: schedule.present ? schedule.value : this.schedule,
+    cycleStartIndex: cycleStartIndex ?? this.cycleStartIndex,
     carbAmplitudeG: carbAmplitudeG.present
         ? carbAmplitudeG.value
         : this.carbAmplitudeG,
@@ -8170,6 +8204,9 @@ class DietStrategyPlanRow extends DataClass
           ? data.baseEnergy.value
           : this.baseEnergy,
       schedule: data.schedule.present ? data.schedule.value : this.schedule,
+      cycleStartIndex: data.cycleStartIndex.present
+          ? data.cycleStartIndex.value
+          : this.cycleStartIndex,
       carbAmplitudeG: data.carbAmplitudeG.present
           ? data.carbAmplitudeG.value
           : this.carbAmplitudeG,
@@ -8224,6 +8261,7 @@ class DietStrategyPlanRow extends DataClass
           ..write('fatPerKg: $fatPerKg, ')
           ..write('baseEnergy: $baseEnergy, ')
           ..write('schedule: $schedule, ')
+          ..write('cycleStartIndex: $cycleStartIndex, ')
           ..write('carbAmplitudeG: $carbAmplitudeG, ')
           ..write('lowProteinPerKg: $lowProteinPerKg, ')
           ..write('lowCarbPerKg: $lowCarbPerKg, ')
@@ -8256,6 +8294,7 @@ class DietStrategyPlanRow extends DataClass
     fatPerKg,
     baseEnergy,
     schedule,
+    cycleStartIndex,
     carbAmplitudeG,
     lowProteinPerKg,
     lowCarbPerKg,
@@ -8287,6 +8326,7 @@ class DietStrategyPlanRow extends DataClass
           other.fatPerKg == this.fatPerKg &&
           other.baseEnergy == this.baseEnergy &&
           other.schedule == this.schedule &&
+          other.cycleStartIndex == this.cycleStartIndex &&
           other.carbAmplitudeG == this.carbAmplitudeG &&
           other.lowProteinPerKg == this.lowProteinPerKg &&
           other.lowCarbPerKg == this.lowCarbPerKg &&
@@ -8316,6 +8356,7 @@ class DietStrategyPlansCompanion extends UpdateCompanion<DietStrategyPlanRow> {
   final Value<double> fatPerKg;
   final Value<double> baseEnergy;
   final Value<String?> schedule;
+  final Value<int> cycleStartIndex;
   final Value<double?> carbAmplitudeG;
   final Value<double?> lowProteinPerKg;
   final Value<double?> lowCarbPerKg;
@@ -8343,6 +8384,7 @@ class DietStrategyPlansCompanion extends UpdateCompanion<DietStrategyPlanRow> {
     this.fatPerKg = const Value.absent(),
     this.baseEnergy = const Value.absent(),
     this.schedule = const Value.absent(),
+    this.cycleStartIndex = const Value.absent(),
     this.carbAmplitudeG = const Value.absent(),
     this.lowProteinPerKg = const Value.absent(),
     this.lowCarbPerKg = const Value.absent(),
@@ -8371,6 +8413,7 @@ class DietStrategyPlansCompanion extends UpdateCompanion<DietStrategyPlanRow> {
     required double fatPerKg,
     required double baseEnergy,
     this.schedule = const Value.absent(),
+    this.cycleStartIndex = const Value.absent(),
     this.carbAmplitudeG = const Value.absent(),
     this.lowProteinPerKg = const Value.absent(),
     this.lowCarbPerKg = const Value.absent(),
@@ -8409,6 +8452,7 @@ class DietStrategyPlansCompanion extends UpdateCompanion<DietStrategyPlanRow> {
     Expression<double>? fatPerKg,
     Expression<double>? baseEnergy,
     Expression<String>? schedule,
+    Expression<int>? cycleStartIndex,
     Expression<double>? carbAmplitudeG,
     Expression<double>? lowProteinPerKg,
     Expression<double>? lowCarbPerKg,
@@ -8437,6 +8481,7 @@ class DietStrategyPlansCompanion extends UpdateCompanion<DietStrategyPlanRow> {
       if (fatPerKg != null) 'fat_per_kg': fatPerKg,
       if (baseEnergy != null) 'base_energy': baseEnergy,
       if (schedule != null) 'schedule': schedule,
+      if (cycleStartIndex != null) 'cycle_start_index': cycleStartIndex,
       if (carbAmplitudeG != null) 'carb_amplitude_g': carbAmplitudeG,
       if (lowProteinPerKg != null) 'low_protein_per_kg': lowProteinPerKg,
       if (lowCarbPerKg != null) 'low_carb_per_kg': lowCarbPerKg,
@@ -8467,6 +8512,7 @@ class DietStrategyPlansCompanion extends UpdateCompanion<DietStrategyPlanRow> {
     Value<double>? fatPerKg,
     Value<double>? baseEnergy,
     Value<String?>? schedule,
+    Value<int>? cycleStartIndex,
     Value<double?>? carbAmplitudeG,
     Value<double?>? lowProteinPerKg,
     Value<double?>? lowCarbPerKg,
@@ -8495,6 +8541,7 @@ class DietStrategyPlansCompanion extends UpdateCompanion<DietStrategyPlanRow> {
       fatPerKg: fatPerKg ?? this.fatPerKg,
       baseEnergy: baseEnergy ?? this.baseEnergy,
       schedule: schedule ?? this.schedule,
+      cycleStartIndex: cycleStartIndex ?? this.cycleStartIndex,
       carbAmplitudeG: carbAmplitudeG ?? this.carbAmplitudeG,
       lowProteinPerKg: lowProteinPerKg ?? this.lowProteinPerKg,
       lowCarbPerKg: lowCarbPerKg ?? this.lowCarbPerKg,
@@ -8555,6 +8602,9 @@ class DietStrategyPlansCompanion extends UpdateCompanion<DietStrategyPlanRow> {
     if (schedule.present) {
       map['schedule'] = Variable<String>(schedule.value);
     }
+    if (cycleStartIndex.present) {
+      map['cycle_start_index'] = Variable<int>(cycleStartIndex.value);
+    }
     if (carbAmplitudeG.present) {
       map['carb_amplitude_g'] = Variable<double>(carbAmplitudeG.value);
     }
@@ -8611,6 +8661,7 @@ class DietStrategyPlansCompanion extends UpdateCompanion<DietStrategyPlanRow> {
           ..write('fatPerKg: $fatPerKg, ')
           ..write('baseEnergy: $baseEnergy, ')
           ..write('schedule: $schedule, ')
+          ..write('cycleStartIndex: $cycleStartIndex, ')
           ..write('carbAmplitudeG: $carbAmplitudeG, ')
           ..write('lowProteinPerKg: $lowProteinPerKg, ')
           ..write('lowCarbPerKg: $lowCarbPerKg, ')
@@ -8684,6 +8735,31 @@ class $DailyNutritionTargetsTable extends DailyNutritionTargets
     true,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cycleIndexMeta = const VerificationMeta(
+    'cycleIndex',
+  );
+  @override
+  late final GeneratedColumn<int> cycleIndex = GeneratedColumn<int>(
+    'cycle_index',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cyclePausedMeta = const VerificationMeta(
+    'cyclePaused',
+  );
+  @override
+  late final GeneratedColumn<bool> cyclePaused = GeneratedColumn<bool>(
+    'cycle_paused',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("cycle_paused" IN (0, 1))',
+    ),
   );
   static const VerificationMeta _caloriesMeta = const VerificationMeta(
     'calories',
@@ -8782,6 +8858,8 @@ class $DailyNutritionTargetsTable extends DailyNutritionTargets
     planVersion,
     strategy,
     dayType,
+    cycleIndex,
+    cyclePaused,
     calories,
     proteinG,
     carbG,
@@ -8837,6 +8915,21 @@ class $DailyNutritionTargetsTable extends DailyNutritionTargets
       context.handle(
         _dayTypeMeta,
         dayType.isAcceptableOrUnknown(data['day_type']!, _dayTypeMeta),
+      );
+    }
+    if (data.containsKey('cycle_index')) {
+      context.handle(
+        _cycleIndexMeta,
+        cycleIndex.isAcceptableOrUnknown(data['cycle_index']!, _cycleIndexMeta),
+      );
+    }
+    if (data.containsKey('cycle_paused')) {
+      context.handle(
+        _cyclePausedMeta,
+        cyclePaused.isAcceptableOrUnknown(
+          data['cycle_paused']!,
+          _cyclePausedMeta,
+        ),
       );
     }
     if (data.containsKey('calories')) {
@@ -8940,6 +9033,14 @@ class $DailyNutritionTargetsTable extends DailyNutritionTargets
         DriftSqlType.string,
         data['${effectivePrefix}day_type'],
       ),
+      cycleIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cycle_index'],
+      ),
+      cyclePaused: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}cycle_paused'],
+      ),
       calories: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}calories'],
@@ -8992,6 +9093,8 @@ class DailyNutritionTargetRow extends DataClass
   final int? planVersion;
   final String? strategy;
   final String? dayType;
+  final int? cycleIndex;
+  final bool? cyclePaused;
   final double calories;
   final double proteinG;
   final double carbG;
@@ -9007,6 +9110,8 @@ class DailyNutritionTargetRow extends DataClass
     this.planVersion,
     this.strategy,
     this.dayType,
+    this.cycleIndex,
+    this.cyclePaused,
     required this.calories,
     required this.proteinG,
     required this.carbG,
@@ -9032,6 +9137,12 @@ class DailyNutritionTargetRow extends DataClass
     }
     if (!nullToAbsent || dayType != null) {
       map['day_type'] = Variable<String>(dayType);
+    }
+    if (!nullToAbsent || cycleIndex != null) {
+      map['cycle_index'] = Variable<int>(cycleIndex);
+    }
+    if (!nullToAbsent || cyclePaused != null) {
+      map['cycle_paused'] = Variable<bool>(cyclePaused);
     }
     map['calories'] = Variable<double>(calories);
     map['protein_g'] = Variable<double>(proteinG);
@@ -9064,6 +9175,12 @@ class DailyNutritionTargetRow extends DataClass
       dayType: dayType == null && nullToAbsent
           ? const Value.absent()
           : Value(dayType),
+      cycleIndex: cycleIndex == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cycleIndex),
+      cyclePaused: cyclePaused == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cyclePaused),
       calories: Value(calories),
       proteinG: Value(proteinG),
       carbG: Value(carbG),
@@ -9091,6 +9208,8 @@ class DailyNutritionTargetRow extends DataClass
       planVersion: serializer.fromJson<int?>(json['planVersion']),
       strategy: serializer.fromJson<String?>(json['strategy']),
       dayType: serializer.fromJson<String?>(json['dayType']),
+      cycleIndex: serializer.fromJson<int?>(json['cycleIndex']),
+      cyclePaused: serializer.fromJson<bool?>(json['cyclePaused']),
       calories: serializer.fromJson<double>(json['calories']),
       proteinG: serializer.fromJson<double>(json['proteinG']),
       carbG: serializer.fromJson<double>(json['carbG']),
@@ -9111,6 +9230,8 @@ class DailyNutritionTargetRow extends DataClass
       'planVersion': serializer.toJson<int?>(planVersion),
       'strategy': serializer.toJson<String?>(strategy),
       'dayType': serializer.toJson<String?>(dayType),
+      'cycleIndex': serializer.toJson<int?>(cycleIndex),
+      'cyclePaused': serializer.toJson<bool?>(cyclePaused),
       'calories': serializer.toJson<double>(calories),
       'proteinG': serializer.toJson<double>(proteinG),
       'carbG': serializer.toJson<double>(carbG),
@@ -9129,6 +9250,8 @@ class DailyNutritionTargetRow extends DataClass
     Value<int?> planVersion = const Value.absent(),
     Value<String?> strategy = const Value.absent(),
     Value<String?> dayType = const Value.absent(),
+    Value<int?> cycleIndex = const Value.absent(),
+    Value<bool?> cyclePaused = const Value.absent(),
     double? calories,
     double? proteinG,
     double? carbG,
@@ -9144,6 +9267,8 @@ class DailyNutritionTargetRow extends DataClass
     planVersion: planVersion.present ? planVersion.value : this.planVersion,
     strategy: strategy.present ? strategy.value : this.strategy,
     dayType: dayType.present ? dayType.value : this.dayType,
+    cycleIndex: cycleIndex.present ? cycleIndex.value : this.cycleIndex,
+    cyclePaused: cyclePaused.present ? cyclePaused.value : this.cyclePaused,
     calories: calories ?? this.calories,
     proteinG: proteinG ?? this.proteinG,
     carbG: carbG ?? this.carbG,
@@ -9167,6 +9292,12 @@ class DailyNutritionTargetRow extends DataClass
           : this.planVersion,
       strategy: data.strategy.present ? data.strategy.value : this.strategy,
       dayType: data.dayType.present ? data.dayType.value : this.dayType,
+      cycleIndex: data.cycleIndex.present
+          ? data.cycleIndex.value
+          : this.cycleIndex,
+      cyclePaused: data.cyclePaused.present
+          ? data.cyclePaused.value
+          : this.cyclePaused,
       calories: data.calories.present ? data.calories.value : this.calories,
       proteinG: data.proteinG.present ? data.proteinG.value : this.proteinG,
       carbG: data.carbG.present ? data.carbG.value : this.carbG,
@@ -9189,6 +9320,8 @@ class DailyNutritionTargetRow extends DataClass
           ..write('planVersion: $planVersion, ')
           ..write('strategy: $strategy, ')
           ..write('dayType: $dayType, ')
+          ..write('cycleIndex: $cycleIndex, ')
+          ..write('cyclePaused: $cyclePaused, ')
           ..write('calories: $calories, ')
           ..write('proteinG: $proteinG, ')
           ..write('carbG: $carbG, ')
@@ -9209,6 +9342,8 @@ class DailyNutritionTargetRow extends DataClass
     planVersion,
     strategy,
     dayType,
+    cycleIndex,
+    cyclePaused,
     calories,
     proteinG,
     carbG,
@@ -9228,6 +9363,8 @@ class DailyNutritionTargetRow extends DataClass
           other.planVersion == this.planVersion &&
           other.strategy == this.strategy &&
           other.dayType == this.dayType &&
+          other.cycleIndex == this.cycleIndex &&
+          other.cyclePaused == this.cyclePaused &&
           other.calories == this.calories &&
           other.proteinG == this.proteinG &&
           other.carbG == this.carbG &&
@@ -9246,6 +9383,8 @@ class DailyNutritionTargetsCompanion
   final Value<int?> planVersion;
   final Value<String?> strategy;
   final Value<String?> dayType;
+  final Value<int?> cycleIndex;
+  final Value<bool?> cyclePaused;
   final Value<double> calories;
   final Value<double> proteinG;
   final Value<double> carbG;
@@ -9262,6 +9401,8 @@ class DailyNutritionTargetsCompanion
     this.planVersion = const Value.absent(),
     this.strategy = const Value.absent(),
     this.dayType = const Value.absent(),
+    this.cycleIndex = const Value.absent(),
+    this.cyclePaused = const Value.absent(),
     this.calories = const Value.absent(),
     this.proteinG = const Value.absent(),
     this.carbG = const Value.absent(),
@@ -9279,6 +9420,8 @@ class DailyNutritionTargetsCompanion
     this.planVersion = const Value.absent(),
     this.strategy = const Value.absent(),
     this.dayType = const Value.absent(),
+    this.cycleIndex = const Value.absent(),
+    this.cyclePaused = const Value.absent(),
     required double calories,
     required double proteinG,
     required double carbG,
@@ -9302,6 +9445,8 @@ class DailyNutritionTargetsCompanion
     Expression<int>? planVersion,
     Expression<String>? strategy,
     Expression<String>? dayType,
+    Expression<int>? cycleIndex,
+    Expression<bool>? cyclePaused,
     Expression<double>? calories,
     Expression<double>? proteinG,
     Expression<double>? carbG,
@@ -9319,6 +9464,8 @@ class DailyNutritionTargetsCompanion
       if (planVersion != null) 'plan_version': planVersion,
       if (strategy != null) 'strategy': strategy,
       if (dayType != null) 'day_type': dayType,
+      if (cycleIndex != null) 'cycle_index': cycleIndex,
+      if (cyclePaused != null) 'cycle_paused': cyclePaused,
       if (calories != null) 'calories': calories,
       if (proteinG != null) 'protein_g': proteinG,
       if (carbG != null) 'carb_g': carbG,
@@ -9338,6 +9485,8 @@ class DailyNutritionTargetsCompanion
     Value<int?>? planVersion,
     Value<String?>? strategy,
     Value<String?>? dayType,
+    Value<int?>? cycleIndex,
+    Value<bool?>? cyclePaused,
     Value<double>? calories,
     Value<double>? proteinG,
     Value<double>? carbG,
@@ -9355,6 +9504,8 @@ class DailyNutritionTargetsCompanion
       planVersion: planVersion ?? this.planVersion,
       strategy: strategy ?? this.strategy,
       dayType: dayType ?? this.dayType,
+      cycleIndex: cycleIndex ?? this.cycleIndex,
+      cyclePaused: cyclePaused ?? this.cyclePaused,
       calories: calories ?? this.calories,
       proteinG: proteinG ?? this.proteinG,
       carbG: carbG ?? this.carbG,
@@ -9385,6 +9536,12 @@ class DailyNutritionTargetsCompanion
     }
     if (dayType.present) {
       map['day_type'] = Variable<String>(dayType.value);
+    }
+    if (cycleIndex.present) {
+      map['cycle_index'] = Variable<int>(cycleIndex.value);
+    }
+    if (cyclePaused.present) {
+      map['cycle_paused'] = Variable<bool>(cyclePaused.value);
     }
     if (calories.present) {
       map['calories'] = Variable<double>(calories.value);
@@ -9427,6 +9584,8 @@ class DailyNutritionTargetsCompanion
           ..write('planVersion: $planVersion, ')
           ..write('strategy: $strategy, ')
           ..write('dayType: $dayType, ')
+          ..write('cycleIndex: $cycleIndex, ')
+          ..write('cyclePaused: $cyclePaused, ')
           ..write('calories: $calories, ')
           ..write('proteinG: $proteinG, ')
           ..write('carbG: $carbG, ')
@@ -14225,6 +14384,7 @@ typedef $$DietStrategyPlansTableCreateCompanionBuilder =
       required double fatPerKg,
       required double baseEnergy,
       Value<String?> schedule,
+      Value<int> cycleStartIndex,
       Value<double?> carbAmplitudeG,
       Value<double?> lowProteinPerKg,
       Value<double?> lowCarbPerKg,
@@ -14254,6 +14414,7 @@ typedef $$DietStrategyPlansTableUpdateCompanionBuilder =
       Value<double> fatPerKg,
       Value<double> baseEnergy,
       Value<String?> schedule,
+      Value<int> cycleStartIndex,
       Value<double?> carbAmplitudeG,
       Value<double?> lowProteinPerKg,
       Value<double?> lowCarbPerKg,
@@ -14344,6 +14505,11 @@ class $$DietStrategyPlansTableFilterComposer
 
   ColumnFilters<String> get schedule => $composableBuilder(
     column: $table.schedule,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cycleStartIndex => $composableBuilder(
+    column: $table.cycleStartIndex,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -14487,6 +14653,11 @@ class $$DietStrategyPlansTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get cycleStartIndex => $composableBuilder(
+    column: $table.cycleStartIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get carbAmplitudeG => $composableBuilder(
     column: $table.carbAmplitudeG,
     builder: (column) => ColumnOrderings(column),
@@ -14611,6 +14782,11 @@ class $$DietStrategyPlansTableAnnotationComposer
   GeneratedColumn<String> get schedule =>
       $composableBuilder(column: $table.schedule, builder: (column) => column);
 
+  GeneratedColumn<int> get cycleStartIndex => $composableBuilder(
+    column: $table.cycleStartIndex,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<double> get carbAmplitudeG => $composableBuilder(
     column: $table.carbAmplitudeG,
     builder: (column) => column,
@@ -14724,6 +14900,7 @@ class $$DietStrategyPlansTableTableManager
                 Value<double> fatPerKg = const Value.absent(),
                 Value<double> baseEnergy = const Value.absent(),
                 Value<String?> schedule = const Value.absent(),
+                Value<int> cycleStartIndex = const Value.absent(),
                 Value<double?> carbAmplitudeG = const Value.absent(),
                 Value<double?> lowProteinPerKg = const Value.absent(),
                 Value<double?> lowCarbPerKg = const Value.absent(),
@@ -14751,6 +14928,7 @@ class $$DietStrategyPlansTableTableManager
                 fatPerKg: fatPerKg,
                 baseEnergy: baseEnergy,
                 schedule: schedule,
+                cycleStartIndex: cycleStartIndex,
                 carbAmplitudeG: carbAmplitudeG,
                 lowProteinPerKg: lowProteinPerKg,
                 lowCarbPerKg: lowCarbPerKg,
@@ -14780,6 +14958,7 @@ class $$DietStrategyPlansTableTableManager
                 required double fatPerKg,
                 required double baseEnergy,
                 Value<String?> schedule = const Value.absent(),
+                Value<int> cycleStartIndex = const Value.absent(),
                 Value<double?> carbAmplitudeG = const Value.absent(),
                 Value<double?> lowProteinPerKg = const Value.absent(),
                 Value<double?> lowCarbPerKg = const Value.absent(),
@@ -14807,6 +14986,7 @@ class $$DietStrategyPlansTableTableManager
                 fatPerKg: fatPerKg,
                 baseEnergy: baseEnergy,
                 schedule: schedule,
+                cycleStartIndex: cycleStartIndex,
                 carbAmplitudeG: carbAmplitudeG,
                 lowProteinPerKg: lowProteinPerKg,
                 lowCarbPerKg: lowCarbPerKg,
@@ -14856,6 +15036,8 @@ typedef $$DailyNutritionTargetsTableCreateCompanionBuilder =
       Value<int?> planVersion,
       Value<String?> strategy,
       Value<String?> dayType,
+      Value<int?> cycleIndex,
+      Value<bool?> cyclePaused,
       required double calories,
       required double proteinG,
       required double carbG,
@@ -14874,6 +15056,8 @@ typedef $$DailyNutritionTargetsTableUpdateCompanionBuilder =
       Value<int?> planVersion,
       Value<String?> strategy,
       Value<String?> dayType,
+      Value<int?> cycleIndex,
+      Value<bool?> cyclePaused,
       Value<double> calories,
       Value<double> proteinG,
       Value<double> carbG,
@@ -14917,6 +15101,16 @@ class $$DailyNutritionTargetsTableFilterComposer
 
   ColumnFilters<String> get dayType => $composableBuilder(
     column: $table.dayType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cycleIndex => $composableBuilder(
+    column: $table.cycleIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get cyclePaused => $composableBuilder(
+    column: $table.cyclePaused,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -15000,6 +15194,16 @@ class $$DailyNutritionTargetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get cycleIndex => $composableBuilder(
+    column: $table.cycleIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get cyclePaused => $composableBuilder(
+    column: $table.cyclePaused,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get calories => $composableBuilder(
     column: $table.calories,
     builder: (column) => ColumnOrderings(column),
@@ -15071,6 +15275,16 @@ class $$DailyNutritionTargetsTableAnnotationComposer
 
   GeneratedColumn<String> get dayType =>
       $composableBuilder(column: $table.dayType, builder: (column) => column);
+
+  GeneratedColumn<int> get cycleIndex => $composableBuilder(
+    column: $table.cycleIndex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get cyclePaused => $composableBuilder(
+    column: $table.cyclePaused,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<double> get calories =>
       $composableBuilder(column: $table.calories, builder: (column) => column);
@@ -15153,6 +15367,8 @@ class $$DailyNutritionTargetsTableTableManager
                 Value<int?> planVersion = const Value.absent(),
                 Value<String?> strategy = const Value.absent(),
                 Value<String?> dayType = const Value.absent(),
+                Value<int?> cycleIndex = const Value.absent(),
+                Value<bool?> cyclePaused = const Value.absent(),
                 Value<double> calories = const Value.absent(),
                 Value<double> proteinG = const Value.absent(),
                 Value<double> carbG = const Value.absent(),
@@ -15169,6 +15385,8 @@ class $$DailyNutritionTargetsTableTableManager
                 planVersion: planVersion,
                 strategy: strategy,
                 dayType: dayType,
+                cycleIndex: cycleIndex,
+                cyclePaused: cyclePaused,
                 calories: calories,
                 proteinG: proteinG,
                 carbG: carbG,
@@ -15187,6 +15405,8 @@ class $$DailyNutritionTargetsTableTableManager
                 Value<int?> planVersion = const Value.absent(),
                 Value<String?> strategy = const Value.absent(),
                 Value<String?> dayType = const Value.absent(),
+                Value<int?> cycleIndex = const Value.absent(),
+                Value<bool?> cyclePaused = const Value.absent(),
                 required double calories,
                 required double proteinG,
                 required double carbG,
@@ -15203,6 +15423,8 @@ class $$DailyNutritionTargetsTableTableManager
                 planVersion: planVersion,
                 strategy: strategy,
                 dayType: dayType,
+                cycleIndex: cycleIndex,
+                cyclePaused: cyclePaused,
                 calories: calories,
                 proteinG: proteinG,
                 carbG: carbG,

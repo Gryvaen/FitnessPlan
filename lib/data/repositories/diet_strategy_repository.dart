@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:drift/drift.dart';
 
 import '../../domain/calendar_day.dart';
-import '../../domain/day_marker.dart';
+import '../../domain/cycle_history.dart';
 import '../../domain/diet_plan.dart';
 import '../../domain/diet_strategy.dart';
 import '../../domain/models.dart';
@@ -165,6 +165,7 @@ class DietStrategyRepository {
   DietStrategyPlan _fromRow(DietStrategyPlanRow r) => DietStrategyPlan(
     id: r.id,
     version: r.version,
+    cycleStartIndex: r.cycleStartIndex,
     kind: DietStrategyKind.fromStorage(r.strategy),
     status: DietPlanStatus.fromStorage(r.status),
     effectiveFrom:
@@ -248,6 +249,36 @@ class DietStrategyRepository {
     return found;
   }
 
+  /// Resolves the old position at the effective date before changing versions.
+  /// Shared by configuration previews and transactional persistence.
+  static int continuationIndex({
+    required List<DietStrategyPlan> plans,
+    required List<DateTime> restDays,
+    required DateTime effectiveFrom,
+    required CarbCycleSchedule schedule,
+    List<DailyNutritionTarget> snapshots = const [],
+  }) {
+    final day = StrategyDates.dayOnly(effectiveFrom);
+    DietStrategyPlan? previous;
+    for (final plan in plans) {
+      if (plan.covers(day)) previous = plan;
+    }
+    if (previous == null ||
+        previous.kind != DietStrategyKind.carbCycle ||
+        previous.status == DietPlanStatus.stopped ||
+        previous.schedule == null) {
+      return 0;
+    }
+    return previous
+            .cycleDayOn(
+              day,
+              pauses: restDays,
+              anchors: cycleAnchorsOf(snapshots, previous.id),
+            )!
+            .index %
+        schedule.cycleLengthDays;
+  }
+
   /// Inserts a new version and supersedes the currently active one.
   ///
   /// Throws [ArgumentError] when the draft is infeasible.
@@ -270,6 +301,18 @@ class DietStrategyRepository {
     }
     return _db.transaction(() async {
       final existing = await listPlans();
+      final cycleStartIndex =
+          draft.kind == DietStrategyKind.carbCycle && draft.schedule != null
+          ? continuationIndex(
+              plans: existing,
+              snapshots: (await _db.select(_db.dailyNutritionTargets).get())
+                  .map(_fromSnapshot)
+                  .toList(),
+              restDays: await DayMarkerRepository(_db).restDayDates(now: now),
+              effectiveFrom: from,
+              schedule: draft.schedule!,
+            )
+          : 0;
       var nextVersion = 1;
       for (final p in existing) {
         if (p.version >= nextVersion) nextVersion = p.version + 1;
@@ -291,6 +334,7 @@ class DietStrategyRepository {
           .insert(
             DietStrategyPlansCompanion.insert(
               version: nextVersion,
+              cycleStartIndex: Value(cycleStartIndex),
               strategy: draft.kind.name,
               status: DietPlanStatus.active.name,
               effectiveFrom: StrategyDates.encode(from),
@@ -321,7 +365,12 @@ class DietStrategyRepository {
           );
       // Only today's snapshot may be affected (future days are never stored).
       if (!from.isAfter(today)) {
-        await _deleteSnapshot(today);
+        await (_db.delete(_db.dailyNutritionTargets)..where(
+              (t) =>
+                  t.date.equals(StrategyDates.encode(today)) &
+                  t.source.isNotValue(TargetSource.override.name),
+            ))
+            .go();
       }
       final row = await (_db.select(
         _db.dietStrategyPlans,
@@ -419,6 +468,8 @@ class DietStrategyRepository {
           ? null
           : DietStrategyKind.fromStorage(r.strategy),
       dayType: r.dayType == null ? null : CarbDayType.fromCode(r.dayType!),
+      cycleIndex: r.cycleIndex,
+      cyclePaused: r.cyclePaused,
       isSnapshot: true,
       reason: r.reason,
     );
@@ -433,6 +484,8 @@ class DietStrategyRepository {
       a.planId == b.planId &&
       a.planVersion == b.planVersion &&
       a.dayType == b.dayType &&
+      a.cycleIndex == b.cycleIndex &&
+      a.cyclePaused == b.cyclePaused &&
       a.reason == b.reason &&
       ((a.estimatedTdee ?? -1) - (b.estimatedTdee ?? -1)).abs() < 1e-6;
 
@@ -450,6 +503,8 @@ class DietStrategyRepository {
             planVersion: Value(t.planVersion),
             strategy: Value(t.strategy?.name),
             dayType: Value(t.dayType?.code),
+            cycleIndex: Value(t.cycleIndex),
+            cyclePaused: Value(t.cyclePaused),
             calories: t.calories,
             proteinG: t.proteinG,
             carbG: t.carbG,
@@ -484,6 +539,13 @@ class DietStrategyRepository {
       throw StateError('只能覆盖今天的目标');
     }
     final plan = await planCovering(d);
+    // The day's cycle position is recorded so its pause stays frozen once
+    // past; anchors never use override rows as position evidence.
+    final cycleDay = plan?.cycleDayOn(
+      d,
+      pauses: await DayMarkerRepository(_db).restDayDates(now: now),
+      anchors: await _anchorsBefore(plan, d),
+    );
     await _upsertSnapshot(
       DailyNutritionTarget(
         date: d,
@@ -497,6 +559,8 @@ class DietStrategyRepository {
         planVersion: plan?.version,
         strategy: plan?.kind,
         dayType: target.dayType,
+        cycleIndex: cycleDay?.index,
+        cyclePaused: cycleDay?.paused,
         isSnapshot: true,
         reason: reason,
       ),
@@ -506,12 +570,16 @@ class DietStrategyRepository {
 
   // ----------------------------------------------------------- resolution
 
+  /// [pauses]/[anchors] feed the shared cycle resolver; ignored for
+  /// non-`carbCycle` plans.
   DailyNutritionTarget _fromPlan(
     DietStrategyPlan plan,
     DateTime day, {
-    int restDaysBefore = 0,
+    Iterable<DateTime> pauses = const [],
+    Iterable<CycleAnchor> anchors = const [],
   }) {
-    final t = plan.targetFor(day, restDaysBeforeDay: restDaysBefore);
+    final cycleDay = plan.cycleDayOn(day, pauses: pauses, anchors: anchors);
+    final t = plan.targetFor(day, cycleDay: cycleDay);
     return DailyNutritionTarget(
       date: day,
       calories: t.energy,
@@ -523,31 +591,30 @@ class DietStrategyRepository {
       planId: plan.id,
       planVersion: plan.version,
       strategy: plan.kind,
-      dayType: plan.kind == DietStrategyKind.carbCycle ? t.dayType : null,
+      dayType: cycleDay == null ? null : t.dayType,
+      cycleIndex: cycleDay?.index,
+      cyclePaused: cycleDay?.paused,
       reason: plan.kind == DietStrategyKind.carbTaper
           ? 'taperStage:${plan.taperStage}'
           : null,
     );
   }
 
-  /// Count of 休息日-marked dates in `[plan.effectiveFrom, day)` that count
-  /// toward the carb-cycle day-count pause (excludes rest days backfilled
-  /// onto an already-past date, see [restDayCountsTowardProgression]). Only
-  /// meaningful for `carbCycle` plans; `0` (no query) otherwise, and `0`
-  /// for everyone until any rest day is ever marked.
-  Future<int> _restDaysBeforeForDay(DietStrategyPlan plan, DateTime day) async {
-    if (plan.kind != DietStrategyKind.carbCycle) return 0;
+  /// Positions frozen by [plan]'s snapshots strictly before [day].
+  Future<List<CycleAnchor>> _anchorsBefore(
+    DietStrategyPlan plan,
+    DateTime day,
+  ) async {
+    if (plan.kind != DietStrategyKind.carbCycle) return const [];
     final rows =
-        await (_db.select(_db.dayMarkers)..where(
+        await (_db.select(_db.dailyNutritionTargets)..where(
               (t) =>
-                  t.type.equals(DayMarkerType.restDay.name) &
-                  t.date.isBiggerOrEqualValue(
-                    StrategyDates.encode(plan.effectiveFrom),
-                  ) &
+                  t.planId.equals(plan.id) &
+                  t.cycleIndex.isNotNull() &
                   t.date.isSmallerThanValue(StrategyDates.encode(day)),
             ))
             .get();
-    return DayMarkerRepository.progressionRestDayDates(rows).length;
+    return cycleAnchorsOf(rows.map(_fromSnapshot), plan.id);
   }
 
   DailyNutritionTarget? _fromProfile(
@@ -599,7 +666,10 @@ class DietStrategyRepository {
         ? _fromPlan(
             plan,
             d,
-            restDaysBefore: await _restDaysBeforeForDay(plan, d),
+            pauses: plan.kind == DietStrategyKind.carbCycle
+                ? await DayMarkerRepository(_db).restDayDates(now: now)
+                : const [],
+            anchors: await _anchorsBefore(plan, d),
           )
         : _fromProfile(profile, d, isPast: isPast);
     if (resolved == null) return null;
@@ -617,6 +687,8 @@ class DietStrategyRepository {
         planVersion: resolved.planVersion,
         strategy: resolved.strategy,
         dayType: resolved.dayType,
+        cycleIndex: resolved.cycleIndex,
+        cyclePaused: resolved.cyclePaused,
         isSnapshot: true,
         reason: resolved.reason,
       );
@@ -696,7 +768,7 @@ class DietStrategyRepository {
     final plans = await listPlans();
     final hasCarbCycle = plans.any((p) => p.kind == DietStrategyKind.carbCycle);
     final restDayDates = hasCarbCycle
-        ? await _allRestDayDates()
+        ? await DayMarkerRepository(_db).restDayDates(now: now)
         : const <DateTime>[];
     final snapRows =
         await (_db.select(_db.dailyNutritionTargets)..where(
@@ -710,6 +782,12 @@ class DietStrategyRepository {
       for (final r in snapRows)
         StrategyDates.dayOnly(_fromSnapshot(r).date): _fromSnapshot(r),
     };
+    final anchorRows = hasCarbCycle
+        ? await (_db.select(
+            _db.dailyNutritionTargets,
+          )..where((t) => t.cycleIndex.isNotNull())).get()
+        : const <DailyNutritionTargetRow>[];
+    final anchorSnaps = anchorRows.map(_fromSnapshot).toList();
     final out = <DateTime, DailyNutritionTarget>{};
     for (var d = s; !d.isAfter(e); d = DateTime(d.year, d.month, d.day + 1)) {
       if (d == today) {
@@ -727,15 +805,11 @@ class DietStrategyRepository {
           ? _fromPlan(
               plan,
               d,
-              restDaysBefore: plan.kind == DietStrategyKind.carbCycle
-                  ? restDayDates
-                        .where(
-                          (rd) =>
-                              !rd.isBefore(plan.effectiveFrom) &&
-                              rd.isBefore(d),
-                        )
-                        .length
-                  : 0,
+              pauses: restDayDates,
+              anchors: cycleAnchorsOf(
+                anchorSnaps.where((a) => a.date.isBefore(d)),
+                plan.id,
+              ),
             )
           : _fromProfile(profile, d, isPast: d.isBefore(today));
       if (t != null) out[d] = t;
@@ -743,17 +817,15 @@ class DietStrategyRepository {
     return out;
   }
 
-  /// All dates currently marked as 休息日 that count toward the carb-cycle
-  /// day-count progression (unordered — used to compute per-day
-  /// rest-day-before counts for carb-cycle plans). Excludes markers
-  /// backfilled onto an already-past date, see
-  /// [restDayCountsTowardProgression].
-  Future<List<DateTime>> _allRestDayDates() async {
-    final rows = await (_db.select(
-      _db.dayMarkers,
-    )..where((t) => t.type.equals(DayMarkerType.restDay.name))).get();
-    return DayMarkerRepository.progressionRestDayDates(rows);
-  }
+  /// Persisted carb-cycle snapshots: the anchors shared by previews.
+  Stream<List<DailyNutritionTarget>> watchCycleSnapshots() =>
+      (_db.select(_db.dailyNutritionTargets)..where(
+            (t) =>
+                t.source.equals(TargetSource.strategy.name) &
+                t.strategy.equals(DietStrategyKind.carbCycle.name),
+          ))
+          .watch()
+          .map((rows) => rows.map(_fromSnapshot).toList());
 
   // -------------------------------------------------------- confirmations
 
