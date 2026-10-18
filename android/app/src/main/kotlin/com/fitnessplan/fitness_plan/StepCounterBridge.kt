@@ -18,38 +18,44 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.util.Calendar
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.math.max
 
 /**
  * Reads [Sensor.TYPE_STEP_COUNTER] and converts the reboot-cumulative value into
- * local-calendar-day totals.
+ * local-calendar-day totals via [StepCounterState].
  *
- * Day boundary strategy (best → worst):
- * 1. Midnight alarm snapshot of the cumulative counter (exact baseline).
- * 2. Device booted today → cumulative == steps since boot ≈ today.
- * 3. Last sample was late yesterday (≤ 6 h before midnight) → treat all steps
- *    since that sample as today's (people rarely walk much before midnight).
- * 4. Last sample was earlier yesterday → time-weighted interpolation.
- * 5. Nothing usable → anchor at current value (morning steps are lost).
+ * Only increases within one boot are counted; stale / out-of-order events are
+ * dropped by their sensor timestamp, and a reboot is recognized only by the
+ * boot id changing — never by the counter going down. Any jump faster than a
+ * human can walk only moves the baseline (see [StepCounterState.maxPlausibleSteps]).
+ *
+ * Day boundary: the midnight alarm (or the foreground service) anchors the new
+ * day at 0. If the device booted today, steps since boot seed the day.
+ * Otherwise steps walked before the first post-midnight sample are lost.
  */
 object StepCounterBridge {
     const val CHANNEL = "fitness_plan/step_counter"
     const val ACTION_MIDNIGHT_SNAPSHOT = "com.fitnessplan.fitness_plan.STEP_COUNTER_MIDNIGHT"
     private const val TAG = "StepCounterBridge"
     private const val PREFS = "fitness_plan_step_counter"
-    private const val KEY_DATE = "date"
-    private const val KEY_BASELINE = "baseline"
-    private const val KEY_LAST = "last"
-    private const val KEY_LAST_TIME = "last_time"
-    private const val KEY_TODAY = "today"
-    private const val KEY_BASELINE_SOURCE = "baseline_source"
+    private val LEGACY_KEYS = listOf("date", "baseline", "last", "last_time", "today", "baseline_source")
+    private const val KEY_V2_DATE = "v2_date"
+    private const val KEY_V2_BOOT = "v2_boot"
+    private const val KEY_V2_BOOT_AT = "v2_boot_at"
+    private const val KEY_V2_EVENT_NANOS = "v2_event_nanos"
+    private const val KEY_V2_ELAPSED_NANOS = "v2_elapsed_nanos"
+    private const val KEY_V2_LOW_STREAK = "v2_low_streak"
+    private const val KEY_V2_LOW_SINCE = "v2_low_since"
+    private const val KEY_V2_CUMULATIVE = "v2_cumulative"
+    private const val KEY_V2_STEPS = "v2_steps"
+    private const val KEY_V2_SOURCE = "v2_source"
     private const val HISTORY_PREFIX = "history_"
     private const val MIDNIGHT_REQUEST = 71011
     private const val SENSOR_TIMEOUT_MS = 6000L
-    private const val LATE_EVENING_MS = 6 * 60 * 60 * 1000L
+    private const val BOOT_TIME_TOLERANCE_MS = 10 * 60 * 1000L
+    private const val HISTORY_KEEP_DAYS = 90
 
-    /** How stale a prior sample may be and still seed today's reconstruction. */
-    private const val RECONSTRUCT_WINDOW_MS = 3L * 24 * 60 * 60 * 1000
+    /** No human walks this much in a day; only the legacy reboot bug did. */
+    private const val MAX_PLAUSIBLE_DAILY_STEPS = 100_000
 
     fun handle(context: Context, call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
@@ -67,14 +73,21 @@ object StepCounterBridge {
 
     /** Archived per-day totals the day boundary has already closed out, keyed
      *  by local date ("yyyy-MM-dd"). This is the only place history survives
-     *  once [KEY_TODAY] resets for a new day. */
+     *  once the live counter anchors a new day. */
     private fun archiveCompletedDay(
         prefs: android.content.SharedPreferences,
         date: String?,
         steps: Int,
     ) {
         if (date == null) return
-        prefs.edit().putInt(HISTORY_PREFIX + date, steps.coerceAtLeast(0)).apply()
+        val oldest = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -HISTORY_KEEP_DAYS) }
+        val cutoff = HISTORY_PREFIX + localDateKey(oldest.timeInMillis)
+        val edit = prefs.edit().putInt(HISTORY_PREFIX + date, steps.coerceAtLeast(0))
+        // yyyy-MM-dd keys sort chronologically, so a string compare is a date compare.
+        for (key in prefs.all.keys) {
+            if (key.startsWith(HISTORY_PREFIX) && key < cutoff) edit.remove(key)
+        }
+        edit.apply()
     }
 
     private fun readRecentStepsMap(context: Context, days: Int): Map<String, Int> {
@@ -92,24 +105,16 @@ object StepCounterBridge {
     }
 
     fun snapshotMidnightBaseline(context: Context) {
-        readCumulative(context) { cumulative ->
-            if (cumulative == null) return@readCumulative
-            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            val today = localDateKey()
-            val outgoingDate = prefs.getString(KEY_DATE, null)
-            if (outgoingDate != null && outgoingDate != today) {
-                archiveCompletedDay(prefs, outgoingDate, prefs.getInt(KEY_TODAY, 0))
+        readCumulative(context) { sample ->
+            if (sample != null) {
+                try {
+                    applyCumulative(context, sample.value, sample.eventNanos)
+                } catch (e: Exception) {
+                    Log.e(TAG, "midnight applyCumulative failed", e)
+                }
+                Log.i(TAG, "midnight sample=${sample.value} date=${localDateKey()}")
             }
-            prefs.edit()
-                .putString(KEY_DATE, today)
-                .putLong(KEY_BASELINE, cumulative)
-                .putLong(KEY_LAST, cumulative)
-                .putLong(KEY_LAST_TIME, System.currentTimeMillis())
-                .putInt(KEY_TODAY, 0)
-                .putString(KEY_BASELINE_SOURCE, "midnight_alarm")
-                .apply()
             scheduleNextMidnight(context)
-            Log.i(TAG, "midnight baseline=$cumulative date=$today")
         }
     }
 
@@ -146,13 +151,13 @@ object StepCounterBridge {
             return
         }
 
-        readCumulative(context) { cumulative ->
-            if (cumulative == null) {
+        readCumulative(context) { sample ->
+            if (sample == null) {
                 result.success(null)
                 return@readCumulative
             }
             try {
-                val today = applyCumulative(context, cumulative)
+                val today = applyCumulative(context, sample.value, sample.eventNanos)
                 scheduleNextMidnight(context)
                 result.success(today)
             } catch (e: Exception) {
@@ -174,12 +179,14 @@ object StepCounterBridge {
             "sensorName" to sensor?.name,
             "bootTimeMillis" to bootAt,
             "bootToday" to isBootToday(),
-            "storedDate" to prefs.getString(KEY_DATE, null),
-            "baseline" to prefs.getLong(KEY_BASELINE, -1L),
-            "baselineSource" to prefs.getString(KEY_BASELINE_SOURCE, null),
-            "last" to prefs.getLong(KEY_LAST, -1L),
-            "lastTimeMillis" to prefs.getLong(KEY_LAST_TIME, -1L),
-            "today" to prefs.getInt(KEY_TODAY, -1),
+            "bootId" to currentBootId(context, prefs, persist = false),
+            "storedDate" to prefs.getString(KEY_V2_DATE, null),
+            "storedBootId" to prefs.getString(KEY_V2_BOOT, null),
+            "eventNanos" to prefs.getLong(KEY_V2_EVENT_NANOS, -1L),
+            "last" to prefs.getLong(KEY_V2_CUMULATIVE, -1L),
+            "today" to prefs.getInt(KEY_V2_STEPS, -1),
+            "source" to prefs.getString(KEY_V2_SOURCE, null),
+            "lowStreak" to prefs.getInt(KEY_V2_LOW_STREAK, 0),
             "oemToday" to readOemTodaySteps(context),
         )
         if (sensor == null) {
@@ -187,8 +194,8 @@ object StepCounterBridge {
             result.success(base)
             return
         }
-        readCumulative(context) { cumulative ->
-            base["cumulative"] = cumulative
+        readCumulative(context) { sample ->
+            base["cumulative"] = sample?.value
             result.success(base)
         }
     }
@@ -221,103 +228,105 @@ object StepCounterBridge {
         return null
     }
 
-    /** Guards the prefs read-modify-write against the sensor service and the
-     *  MethodChannel touching the day counter at the same time. */
-    private val counterLock = Any()
-
-    internal fun applyCumulative(context: Context, cumulativeRaw: Long): Int =
-        synchronized(counterLock) { applyCumulativeLocked(context, cumulativeRaw) }
-
-    private fun applyCumulativeLocked(context: Context, cumulativeRaw: Long): Int {
-        val cumulative = max(0L, cumulativeRaw)
-        val now = System.currentTimeMillis()
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val todayKey = localDateKey()
-        val storedDate = prefs.getString(KEY_DATE, null)
-        var baseline = prefs.getLong(KEY_BASELINE, -1L)
-        var last = prefs.getLong(KEY_LAST, -1L)
-        val lastTime = prefs.getLong(KEY_LAST_TIME, -1L)
-        var todaySteps = prefs.getInt(KEY_TODAY, 0).coerceAtLeast(0)
-        var source = prefs.getString(KEY_BASELINE_SOURCE, null)
-        val bootToday = isBootToday()
-
-        if (storedDate != todayKey) {
-            if (storedDate != null) {
-                archiveCompletedDay(prefs, storedDate, todaySteps)
+    /** Feeds one sensor sample through [StepCounterState]. Every caller — the
+     *  foreground service, the MethodChannel one-shot read and the midnight
+     *  alarm — goes through here so they share one serialized transition. */
+    internal fun applyCumulative(context: Context, value: Long, eventNanos: Long): Int =
+        StepCounterTransaction.run {
+            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val previous = loadState(prefs)
+            if (previous == null) {
+                Log.w(TAG, "no step state; re-anchoring (keys=${prefs.all.keys.filterNot { it.startsWith(HISTORY_PREFIX) }})")
+                migrateLegacy(prefs)
             }
-            val midnight = todayStartMillis()
-            val haveSample = last in 0L..cumulative && lastTime in 1 until now
-            val sampleAgeMs = if (haveSample) now - lastTime else Long.MAX_VALUE
-            if (bootToday) {
-                todaySteps = cumulative.toInt().coerceAtLeast(0)
-                baseline = 0L
-                source = "boot_today"
-            } else if (haveSample && sampleAgeMs <= RECONSTRUCT_WINDOW_MS) {
-                val sinceSample = (cumulative - last).toInt().coerceAtLeast(0)
-                val gapBeforeMidnight = midnight - lastTime
-                if (lastTime < midnight && gapBeforeMidnight in 0..LATE_EVENING_MS) {
-                    // Last sample was late yesterday evening — few people walk
-                    // much before midnight, so count it all as today.
-                    todaySteps = sinceSample
-                    source = "late_evening_sample"
-                } else {
-                    // Apportion the steps since the last sample to the slice
-                    // that falls after today's midnight.
-                    val windowMs = (now - lastTime).coerceAtLeast(1L)
-                    val afterMidnightMs = (now - midnight).coerceAtLeast(0L)
-                    val fraction = (afterMidnightMs.toDouble() / windowMs).coerceIn(0.0, 1.0)
-                    todaySteps = (sinceSample * fraction).toInt().coerceAtLeast(0)
-                    source = "reconstructed"
-                }
-                baseline = cumulative - todaySteps
-            } else {
-                todaySteps = 0
-                baseline = cumulative
-                source = "anchored"
-            }
-            last = cumulative
-            persist(prefs, todayKey, baseline, last, now, todaySteps, source)
-            return todaySteps
+            val (next, archived) = StepCounterState.advance(
+                previous,
+                day = localDateKey(),
+                boot = currentBootId(context, prefs),
+                timestamp = eventNanos,
+                elapsed = SystemClock.elapsedRealtimeNanos(),
+                value = value,
+                bootToday = isBootToday(),
+            )
+            if (archived != null) archiveCompletedDay(prefs, archived.first, archived.second)
+            if (next != previous) saveState(prefs, next)
+            if (next.source != previous?.source) Log.i(TAG, "step source=${next.source} value=$value steps=${next.steps}")
+            next.steps
         }
 
-        if (last < 0L) {
-            if (bootToday && todaySteps == 0 && baseline <= 0L) {
-                todaySteps = cumulative.toInt().coerceAtLeast(0)
-                baseline = 0L
-                source = "boot_today"
-            } else if (baseline >= 0L && cumulative >= baseline) {
-                todaySteps = (cumulative - baseline).toInt().coerceAtLeast(0)
-            }
-        } else if (cumulative >= last) {
-            todaySteps += (cumulative - last).toInt()
-        } else {
-            // Counter reset (reboot) — keep what we had, add steps since boot.
-            todaySteps += cumulative.toInt().coerceAtLeast(0)
-            baseline = 0L
-            source = "reboot_midday"
-        }
-        last = cumulative
-        persist(prefs, todayKey, baseline, last, now, todaySteps.coerceAtLeast(0), source)
-        return todaySteps.coerceAtLeast(0)
+    private fun loadState(prefs: android.content.SharedPreferences): StepCounterState? {
+        val date = prefs.getString(KEY_V2_DATE, null) ?: return null
+        val boot = prefs.getString(KEY_V2_BOOT, null) ?: return null
+        return StepCounterState(
+            date,
+            boot,
+            prefs.getLong(KEY_V2_EVENT_NANOS, 0L),
+            prefs.getLong(KEY_V2_ELAPSED_NANOS, 0L),
+            prefs.getLong(KEY_V2_CUMULATIVE, 0L),
+            prefs.getInt(KEY_V2_STEPS, 0).coerceAtLeast(0),
+            prefs.getString(KEY_V2_SOURCE, null) ?: "unknown",
+            prefs.getInt(KEY_V2_LOW_STREAK, 0),
+            prefs.getLong(KEY_V2_LOW_SINCE, 0L),
+        )
     }
 
-    private fun persist(
-        prefs: android.content.SharedPreferences,
-        date: String,
-        baseline: Long,
-        last: Long,
-        lastTime: Long,
-        today: Int,
-        source: String?,
-    ) {
+    private fun saveState(prefs: android.content.SharedPreferences, state: StepCounterState) {
         prefs.edit()
-            .putString(KEY_DATE, date)
-            .putLong(KEY_BASELINE, baseline)
-            .putLong(KEY_LAST, last)
-            .putLong(KEY_LAST_TIME, lastTime)
-            .putInt(KEY_TODAY, today)
-            .putString(KEY_BASELINE_SOURCE, source)
-            .apply()
+            .putString(KEY_V2_DATE, state.date)
+            .putString(KEY_V2_BOOT, state.bootId)
+            .putLong(KEY_V2_EVENT_NANOS, state.eventNanos)
+            .putLong(KEY_V2_ELAPSED_NANOS, state.elapsedNanos)
+            .putInt(KEY_V2_LOW_STREAK, state.lowStreak)
+            .putLong(KEY_V2_LOW_SINCE, state.lowSinceNanos)
+            .putLong(KEY_V2_CUMULATIVE, state.cumulative)
+            .putInt(KEY_V2_STEPS, state.steps)
+            .putString(KEY_V2_SOURCE, state.source)
+            .commit()
+    }
+
+    /** Drops the v1 day counter and any archived day that could only have come
+     *  from the old "decrease == reboot" bug. */
+    private fun migrateLegacy(prefs: android.content.SharedPreferences) {
+        val edit = prefs.edit()
+        for (key in LEGACY_KEYS) edit.remove(key)
+        for ((key, v) in prefs.all) {
+            if (key.startsWith(HISTORY_PREFIX) && v is Int && v >= MAX_PLAUSIBLE_DAILY_STEPS) {
+                edit.remove(key)
+            }
+        }
+        edit.apply()
+    }
+
+    /**
+     * Identifies the current boot. A counter decrease alone must never be read
+     * as a reboot (ColorOS replays stale cached events), so reboots are only
+     * recognized by this id changing.
+     */
+    private fun currentBootId(
+        context: Context,
+        prefs: android.content.SharedPreferences,
+        persist: Boolean = true,
+    ): String {
+        try {
+            val count = android.provider.Settings.Global.getInt(
+                context.contentResolver,
+                android.provider.Settings.Global.BOOT_COUNT,
+            )
+            return "c$count"
+        } catch (_: Exception) {
+        }
+        // Wall-clock derived boot time drifts with NTP / manual clock changes,
+        // so reuse the stored id while it stays within tolerance.
+        val bootAt = System.currentTimeMillis() - SystemClock.elapsedRealtime()
+        val storedAt = prefs.getLong(KEY_V2_BOOT_AT, Long.MIN_VALUE)
+        val stored = prefs.getString(KEY_V2_BOOT, null)
+        if (stored != null && storedAt != Long.MIN_VALUE &&
+            kotlin.math.abs(bootAt - storedAt) <= BOOT_TIME_TOLERANCE_MS
+        ) {
+            return stored
+        }
+        if (persist) prefs.edit().putLong(KEY_V2_BOOT_AT, bootAt).apply()
+        return "t$bootAt"
     }
 
     private fun stepSensor(context: Context): Sensor? {
@@ -326,7 +335,9 @@ object StepCounterBridge {
             ?: sm.getDefaultSensor(Sensor.TYPE_STEP_COUNTER, true)
     }
 
-    private fun readCumulative(context: Context, callback: (Long?) -> Unit) {
+    class Sample(val value: Long, val eventNanos: Long)
+
+    private fun readCumulative(context: Context, callback: (Sample?) -> Unit) {
         val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val sensor = stepSensor(context)
         if (sensor == null) {
@@ -340,7 +351,7 @@ object StepCounterBridge {
             override fun onSensorChanged(event: SensorEvent) {
                 if (!done.compareAndSet(false, true)) return
                 sensorManager.unregisterListener(this)
-                callback(event.values[0].toLong())
+                callback(Sample(event.values[0].toLong(), event.timestamp))
             }
 
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}

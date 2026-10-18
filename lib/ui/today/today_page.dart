@@ -1029,14 +1029,29 @@ class _StepsDetailSheet extends ConsumerStatefulWidget {
   ConsumerState<_StepsDetailSheet> createState() => _StepsDetailSheetState();
 }
 
-class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
+class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet>
+    with WidgetsBindingObserver {
   bool _syncing = false;
   bool _showBatteryHint = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _refreshBatteryStatus();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Back from battery / Health Connect settings: clear stale hints. The
+    // shell already re-syncs steps on resume.
+    if (state == AppLifecycleState.resumed) _refreshBatteryStatus();
   }
 
   Future<void> _refreshBatteryStatus() async {

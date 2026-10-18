@@ -2625,6 +2625,24 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get reminderOemHintAutostartButton;
 
+  /// No description provided for @reminderMissedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders were blocked'**
+  String get reminderMissedTitle;
+
+  /// No description provided for @reminderMissedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'The reminder at {times} did not go off on time: the system stopped the app from starting while it was not running. In app details → battery usage, allow auto-start and background activity.'**
+  String reminderMissedDetail(String times);
+
+  /// No description provided for @reminderMissedSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Some reminders were blocked by the system and did not go off on time'**
+  String get reminderMissedSnack;
+
   /// No description provided for @stepsOemHintBody.
   ///
   /// In en, this message translates to:

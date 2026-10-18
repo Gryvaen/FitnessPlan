@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../data/repositories/reminders_repository.dart';
+import '../../data/services/permission_gate.dart';
 import 'rest_timer_notifications.dart';
 
 /// Daily reminders (workout / water / meal-log / weigh-in) via native
@@ -69,6 +70,31 @@ abstract final class ReminderNotifications {
     }
   }
 
+  /// Reminders that fired late or never fired because the system refused to
+  /// start the app for them (ColorOS auto-start blocking), oldest first.
+  static Future<List<DateTime>> missedReminders() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      return const [];
+    }
+    try {
+      final raw = await _nativeChannel.invokeListMethod<num>('missedReminders');
+      return [
+        for (final ms in raw ?? const <num>[])
+          DateTime.fromMillisecondsSinceEpoch(ms.toInt()),
+      ];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// Clears [missedReminders] and re-arms any slot that never fired.
+  static Future<void> acknowledgeMissedReminders() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    try {
+      await _nativeChannel.invokeMethod<void>('acknowledgeMissedReminders');
+    } catch (_) {}
+  }
+
   static Future<({int scheduled, int failed})?> scheduleStatus() async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return null;
     try {
@@ -94,7 +120,7 @@ abstract final class ReminderNotifications {
     if (status.isPermanentlyDenied) {
       await openAppSettings();
     } else {
-      await Permission.notification.request();
+      await PermissionGate.request(Permission.notification);
     }
   }
 

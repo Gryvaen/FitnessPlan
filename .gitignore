@@ -64,3 +64,5 @@ app.*.map.json
 /tool/food_seed/off_products.csv.gz.part
 /tool/food_seed/off_products.csv.gz.parts/
 /tool/food_seed/off_products.csv.gz.assembling
+/.vscode/
+/tool/sqlite3_mirror/

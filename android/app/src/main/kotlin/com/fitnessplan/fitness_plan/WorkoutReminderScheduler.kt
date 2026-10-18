@@ -34,10 +34,18 @@ object WorkoutReminderScheduler {
     private const val PREFS = "reminder_alarms"
     private const val MISSED_WINDOW_MILLIS = 60 * 60 * 1000L
 
+    /** A reminder later than this was held back by the system (e.g. ColorOS
+     *  refusing to start the app for the alarm broadcast). */
+    internal const val LATE_GRACE_MILLIS = 2 * 60 * 1000L
+    private const val KEY_MISSED = "missed_triggers"
+    private const val MAX_MISSED = 20
+
     data class ScheduleResult(val scheduled: Int, val failed: Int)
 
     @Synchronized
     fun scheduleAll(context: Context, items: List<ReminderItem>, staleChannelIds: List<String> = emptyList()): ScheduleResult {
+        // Replacing the saved slots erases the evidence of any that never fired.
+        recordOverdue(context)
         cancelAll(context)
         deleteChannels(context, staleChannelIds)
         save(context, items)
@@ -124,6 +132,9 @@ object WorkoutReminderScheduler {
             .firstOrNull { it.getInt("id") == id } ?: return false
         if (trigger != current.getLong("trigger") || alreadyHandled(context, id, trigger)) return false
         markHandled(context, id, trigger)
+        val lateMs = System.currentTimeMillis() - trigger
+        Log.i("ReminderAlarm", "claimed reminder $id ${lateMs}ms after trigger")
+        if (isLate(trigger, trigger + lateMs)) recordMissed(context, listOf(trigger))
         val items = (0 until rows.length()).map { index ->
             val row = rows.getJSONObject(index)
             if (row.getInt("id") != id) decode(row) else decode(row, nextTime(row))
@@ -155,6 +166,9 @@ object WorkoutReminderScheduler {
     /** Restore alarms after reboot, update, timezone change or exact-alarm grant. */
     @Synchronized
     fun restore(context: Context, afterBoot: Boolean = false): List<Intent> {
+        // After a reboot the gap is the phone being off, not the system
+        // blocking us — that case is caught up below instead.
+        if (!afterBoot) recordOverdue(context)
         val rows = saved(context)
         val now = System.currentTimeMillis()
         val catchUps = mutableListOf<Intent>()
@@ -189,6 +203,53 @@ object WorkoutReminderScheduler {
         setScheduleStatus(context, scheduled, failed)
         return catchUps
     }
+
+    /** Trigger times of reminders that fired late or never fired, oldest first. */
+    @Synchronized
+    fun missedReminders(context: Context): List<Long> {
+        recordOverdue(context)
+        val array = JSONArray(prefs(context).getString(KEY_MISSED, "[]") ?: "[]")
+        return (0 until array.length()).map { array.getLong(it) }
+    }
+
+    /** The user has seen the warning: forget it and re-arm slots that never fired. */
+    @Synchronized
+    fun acknowledgeMissed(context: Context) {
+        restore(context)
+        prefs(context).edit().remove(KEY_MISSED).apply()
+    }
+
+    internal fun isLate(trigger: Long, now: Long) = now - trigger > LATE_GRACE_MILLIS
+
+    /** Slots whose trigger passed more than [LATE_GRACE_MILLIS] ago without delivery. */
+    internal fun overdue(slots: List<Pair<Long, Long>>, now: Long): List<Long> =
+        slots.filter { (trigger, handled) -> isLate(trigger, now) && handled < trigger }.map { it.first }
+
+    internal fun mergeMissed(existing: List<Long>, added: List<Long>): List<Long> =
+        (existing + added).distinct().sorted().takeLast(MAX_MISSED)
+
+    private fun recordOverdue(context: Context) {
+        val rows = saved(context)
+        val slots = (0 until rows.length()).mapNotNull { i ->
+            try {
+                val row = rows.getJSONObject(i)
+                row.getLong("trigger") to prefs(context).getLong("handled_${row.getInt("id")}", Long.MIN_VALUE)
+            } catch (_: RuntimeException) {
+                null
+            }
+        }
+        recordMissed(context, overdue(slots, System.currentTimeMillis()))
+    }
+
+    private fun recordMissed(context: Context, triggers: List<Long>) {
+        if (triggers.isEmpty()) return
+        val current = JSONArray(prefs(context).getString(KEY_MISSED, "[]") ?: "[]")
+        val merged = mergeMissed((0 until current.length()).map { current.getLong(it) }, triggers)
+        prefs(context).edit().putString(KEY_MISSED, JSONArray(merged).toString()).apply()
+        Log.w("ReminderAlarm", "reminders missed or late: $triggers")
+    }
+
+    private fun prefs(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     fun scheduleStatus(context: Context): ScheduleResult {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

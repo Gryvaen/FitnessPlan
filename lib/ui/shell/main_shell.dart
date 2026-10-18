@@ -8,6 +8,7 @@ import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
+import '../tools/workout_reminder_notifications.dart';
 import 'swipe_tab_view.dart';
 
 class MainShell extends ConsumerStatefulWidget {
@@ -26,6 +27,7 @@ class _MainShellState extends ConsumerState<MainShell>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _checkForUpdateSilently();
+    _warnMissedReminders();
   }
 
   @override
@@ -39,6 +41,7 @@ class _MainShellState extends ConsumerState<MainShell>
     if (state == AppLifecycleState.resumed) {
       ref.invalidate(stepsSyncProvider);
       _checkForUpdateSilently();
+      _warnMissedReminders();
     }
   }
 
@@ -51,6 +54,33 @@ class _MainShellState extends ConsumerState<MainShell>
     ref
         .read(appUpdateProvider.notifier)
         .silentCheckForUpdate(info.version, info.buildNumber);
+  }
+
+  static const _missedWarnedKey = 'reminder_missed_warned_until';
+
+  /// ColorOS can block a reminder outright when the app is not running; the
+  /// user would otherwise never learn why it stayed silent. Warn once per
+  /// newly missed batch and point at the reminders page's fix.
+  Future<void> _warnMissedReminders() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return;
+    final missed = await ReminderNotifications.missedReminders();
+    if (!mounted || missed.isEmpty) return;
+    final prefs = ref.read(sharedPreferencesProvider);
+    final newest = missed.last.millisecondsSinceEpoch;
+    if (newest <= (prefs.getInt(_missedWarnedKey) ?? 0)) return;
+    await prefs.setInt(_missedWarnedKey, newest);
+    if (!mounted) return;
+    final l10n = context.l10n;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.reminderMissedSnack),
+        duration: const Duration(seconds: 8),
+        action: SnackBarAction(
+          label: l10n.reminderOemHintAutostartButton,
+          onPressed: () => context.push('/profile/reminders'),
+        ),
+      ),
+    );
   }
 
   void _onTap(int index) {

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 
 import '../../domain/calendar_day.dart';
@@ -112,6 +114,43 @@ class StepRepository {
         .select(_db.stepLogs)
         .watch()
         .asyncMap((_) => historyDays(limitDays: limitDays));
+  }
+
+  /// One-time repair of totals inflated by the legacy native counter bug
+  /// (a stale sensor event was taken as a reboot and the whole since-boot
+  /// counter got added). Backs up [today] and every day at or above
+  /// [ceiling] under [backupKey], then zeroes them. The backup row doubles
+  /// as the "already repaired" marker, so this never runs twice.
+  Future<void> repairInflatedOnce({
+    required String backupKey,
+    required DateTime today,
+    required int ceiling,
+  }) async {
+    final done = await (_db.select(
+      _db.appMeta,
+    )..where((t) => t.key.equals(backupKey))).getSingleOrNull();
+    if (done != null) return;
+    final todayKey = _dayStart(today);
+    await _db.transaction(() async {
+      final suspects = [
+        for (final day in await allLoggedDays())
+          if (day.date == todayKey || day.steps >= ceiling) day,
+      ];
+      final backup = jsonEncode({
+        'days': [
+          for (final day in suspects)
+            {'date': day.date.toIso8601String(), 'steps': day.steps},
+        ],
+      });
+      await _db
+          .into(_db.appMeta)
+          .insertOnConflictUpdate(
+            AppMetaCompanion.insert(key: backupKey, value: backup),
+          );
+      for (final day in suspects) {
+        await setStepsForDay(day.date, 0);
+      }
+    });
   }
 
   Future<void> clearAll() => _db.delete(_db.stepLogs).go();

@@ -5,6 +5,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../data/services/permission_gate.dart';
+
 enum RestTimerAlertMode {
   ringAndVibrate,
   ringOnly,
@@ -88,7 +90,7 @@ abstract final class RestTimerNotifications {
     if (kIsWeb) return false;
 
     if (defaultTargetPlatform == TargetPlatform.android) {
-      final notifStatus = await Permission.notification.request();
+      final notifStatus = await PermissionGate.request(Permission.notification);
       try {
         await Permission.scheduleExactAlarm.request();
       } catch (_) {

@@ -97,6 +97,17 @@ Dart 侧在调用前都会先判断平台；非 Android 平台不会调用这些
 - ColorOS 15 的包名已经改成 `com.oplus.*`，旧的 `com.coloros.safecenter` 页面不存在了；「耗电管理」页（`com.oplus.battery/...PowerControlActivity`）没有对第三方应用导出，无法直接打开。所以应用详情页是能跳到的最近位置。
 - 应用这边的应对：计时器的通知栏倒计时由 SystemUI 绘制，应用被冻结时也能显示剩余时间；闹钟晚到超过 5 秒会被记录下来（`RestTimerAlarmReceiver` → prefs `rest_timer_alarm` / `last_delay_ms`），回到应用时提示用户去设置。
 
+2026-10-18 在同一台手机上补充实测（未开「允许自启动」）：
+
+- App 进程不在时，闹钟到点会被 `OplusAppStartupManager` 拦下。**三种唤醒方式都不行**：
+  - 广播（现行做法）：`prevent start ... by broadcast`；
+  - `PendingIntent.getForegroundService`：`isAllowStartFromStartService: prevent start`；
+  - `PendingIntent.getActivity`：`Background activity launch blocked`。即使加上 Android 14 的 `setPendingIntentCreatorBackgroundActivityStartMode` 也一样。
+- 被拦的广播有时会在用户下次打开 App 时补送（提醒晚响），有时直接丢失。
+- 后台计步服务（前台服务）在运行时，进程在最近任务里被划掉也活着，提醒能准时响。不过同一天里也观察到过划掉后进程被杀的情况，不能依赖。
+- 应用的应对：`WorkoutReminderScheduler` 记录漏发和晚发（`missed_triggers`），打开 App 时弹 SnackBar，提醒设置页显示「提醒被系统拦截」，引导用户打开自启动。
+- **测试时不要用 `am force-stop`**：它会清掉应用的全部闹钟。要模拟进程被杀，用 `adb shell run-as com.fitnessplan.fitness_plan kill -9 <pid>`。
+
 **排查「提醒或计时器不准时」的方法**：
 
 ```bash

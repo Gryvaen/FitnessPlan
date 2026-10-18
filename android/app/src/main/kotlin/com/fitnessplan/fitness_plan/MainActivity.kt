@@ -97,6 +97,12 @@ class MainActivity : FlutterFragmentActivity() {
                             "fullScreen" to (android.os.Build.VERSION.SDK_INT < 34 || notifications.canUseFullScreenIntent()),
                         ))
                     }
+                    "missedReminders" ->
+                        result.success(WorkoutReminderScheduler.missedReminders(this))
+                    "acknowledgeMissedReminders" -> {
+                        WorkoutReminderScheduler.acknowledgeMissed(this)
+                        result.success(null)
+                    }
                     "scheduleStatus" -> {
                         val schedule = WorkoutReminderScheduler.scheduleStatus(this)
                         result.success(mapOf(

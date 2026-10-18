@@ -78,7 +78,7 @@ class StepCounterService : Service(), SensorEventListener {
     override fun onSensorChanged(event: SensorEvent) {
         val value = event.values.firstOrNull()?.toLong() ?: return
         try {
-            StepCounterBridge.applyCumulative(applicationContext, value)
+            StepCounterBridge.applyCumulative(applicationContext, value, event.timestamp)
         } catch (e: Exception) {
             Log.w(TAG, "applyCumulative from service failed", e)
         }

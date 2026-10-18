@@ -4,6 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../data/repositories/step_repository.dart';
 import '../data/services/android_step_sensor.dart';
+import '../data/services/permission_gate.dart';
 import '../data/services/steps_sync_service.dart';
 import 'core_providers.dart';
 import 'meal_providers.dart';
@@ -100,12 +101,16 @@ class StepServiceNotifier extends Notifier<bool> {
   }
 
   Future<void> setEnabled(bool enabled) async {
-    await ref.read(sharedPreferencesProvider).setBool(_choiceSetKey, true);
     if (enabled) {
-      final activity = await Permission.activityRecognition.request();
+      final activity = await PermissionGate.request(
+        Permission.activityRecognition,
+      );
       if (!activity.isGranted) return;
-      await Permission.notification.request();
+      await PermissionGate.request(Permission.notification);
     }
+    // Only after permissions settled: a failed request must not count as the
+    // user's choice, or auto-enable would never be retried.
+    await ref.read(sharedPreferencesProvider).setBool(_choiceSetKey, true);
     if (ref.mounted) state = enabled;
     await ref.read(androidStepSensorProvider).setServiceEnabled(enabled);
     if (enabled) {
@@ -115,9 +120,14 @@ class StepServiceNotifier extends Notifier<bool> {
 }
 
 /// Kick off a background sync; concurrent calls share one in-flight run.
+/// Re-runs on its own as soon as any permission gets granted, so the UI
+/// updates without the user restarting the app.
 final stepsSyncProvider = FutureProvider.autoDispose<StepsSyncStatus>((
   ref,
 ) async {
+  void onGranted() => ref.invalidateSelf();
+  PermissionGate.grantedTick.addListener(onGranted);
+  ref.onDispose(() => PermissionGate.grantedTick.removeListener(onGranted));
   final status = await ref
       .read(stepsSyncServiceProvider)
       .syncRecent(limitDays: 14);

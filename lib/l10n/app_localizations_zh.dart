@@ -1331,6 +1331,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reminderOemHintAutostartButton => '去设置';
 
   @override
+  String get reminderMissedTitle => '提醒被系统拦截';
+
+  @override
+  String reminderMissedDetail(String times) {
+    return '$times 的提醒没有按时响起：App 不在后台时，系统阻止了它启动。请在应用详情 → 耗电管理中打开「允许自启动」和「允许应用后台行为」。';
+  }
+
+  @override
+  String get reminderMissedSnack => '有提醒被系统拦截，没有按时响起';
+
+  @override
   String get stepsOemHintBody => '部分机型会在应用退出后停止计步，关闭电池优化可保持统计。';
 
   @override
