@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../../data/services/oem_background_guide.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../ink/ink_icon.dart';
@@ -66,6 +67,8 @@ class _MainShellState extends ConsumerState<MainShell>
     final missed = await ReminderNotifications.missedReminders();
     if (!mounted || missed.isEmpty) return;
     final prefs = ref.read(sharedPreferencesProvider);
+    // The settings visit did not stick: bring the background nudges back.
+    await OemBackgroundGuide.reset(prefs);
     final newest = missed.last.millisecondsSinceEpoch;
     if (newest <= (prefs.getInt(_missedWarnedKey) ?? 0)) return;
     await prefs.setInt(_missedWarnedKey, newest);

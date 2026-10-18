@@ -2643,6 +2643,24 @@ abstract class AppLocalizations {
   /// **'Some reminders were blocked by the system and did not go off on time'**
   String get reminderMissedSnack;
 
+  /// No description provided for @reminderBackgroundGuideSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder on. Also allow auto-start and background activity so it goes off on time'**
+  String get reminderBackgroundGuideSnack;
+
+  /// No description provided for @stepsBackgroundHintTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The system may stop background step counting'**
+  String get stepsBackgroundHintTitle;
+
+  /// No description provided for @stepsBackgroundHintBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Some phones stop counting steps once the app is closed. In app details → battery usage, allow background activity.'**
+  String get stepsBackgroundHintBody;
+
   /// No description provided for @stepsOemHintBody.
   ///
   /// In en, this message translates to:

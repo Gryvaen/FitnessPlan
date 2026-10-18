@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../data/repositories/reminders_repository.dart';
+import '../../data/services/oem_background_guide.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../ink/ink_icon.dart';
@@ -32,6 +33,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
   bool _fullScreen = true;
   bool? _backgroundRestricted;
   List<DateTime> _missed = const [];
+  bool _backgroundGuide = false;
   String? _autoStartGuidance;
   String? _pendingAutoStartFeedback;
   ({int scheduled, int failed})? _scheduleStatus;
@@ -97,10 +99,15 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
   Future<void> _refreshBackgroundStatus() async {
     final restricted = await ReminderNotifications.isBackgroundRestricted();
     final missed = await ReminderNotifications.missedReminders();
+    final aggressive = await ReminderNotifications.isAggressiveOem();
+    final prefs = ref.read(sharedPreferencesProvider);
+    // A missed reminder proves the earlier settings visit did not stick.
+    if (missed.isNotEmpty) await OemBackgroundGuide.reset(prefs);
     if (!mounted) return;
     setState(() {
       _backgroundRestricted = restricted;
       _missed = missed;
+      _backgroundGuide = aggressive && !OemBackgroundGuide.acknowledged(prefs);
     });
   }
 
@@ -113,6 +120,29 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
     // below tells the user if notifications still need allowing.
     await ref.read(remindersProvider.notifier).setEnabled(kind, wantOn);
     await _refreshPermission();
+    // The brand alone is not listed as a pending issue (no API can confirm
+    // the restriction), so nudge once at the moment it matters instead.
+    if (wantOn && _backgroundGuide && mounted) {
+      final l10n = context.l10n;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(l10n.reminderBackgroundGuideSnack),
+            duration: const Duration(seconds: 8),
+            action: SnackBarAction(
+              label: l10n.reminderOemHintAutostartButton,
+              onPressed: _thenRefresh(_openBackgroundSettings),
+            ),
+          ),
+        );
+    }
+  }
+
+  /// Opens auto-start / app details and counts the visit as done.
+  Future<void> _openBackgroundSettings() async {
+    await _openAutoStartSettings();
+    await OemBackgroundGuide.acknowledge(ref.read(sharedPreferencesProvider));
   }
 
   Future<void> _pickTime(ReminderKind kind) async {
@@ -211,12 +241,13 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
           action: l10n.reminderOemHintAutostartButton,
           blocking: true,
           onAction: _thenRefresh(() async {
-            await _openAutoStartSettings();
+            await _openBackgroundSettings();
             await ReminderNotifications.acknowledgeMissedReminders();
           }),
         ),
       );
     }
+
     if (_granted == false) {
       issues.add(
         RestrictionIssue(

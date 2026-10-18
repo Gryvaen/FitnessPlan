@@ -133,4 +133,26 @@ void main() {
     await service.syncRecent(limitDays: 1);
     expect(await repo.stepsForDay(today), 4321);
   });
+
+  test('permanently denied activity permission opens app settings', () async {
+    final calls = <String>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(permission, (call) async {
+          calls.add(call.method);
+          if (call.method == 'checkPermissionStatus') return 4;
+          if (call.method == 'openAppSettings') return true;
+          return null;
+        });
+    final service = StepsSyncService(
+      repo,
+      health: _Health(0, available: false),
+      stepSensor: _Sensor(),
+    );
+    expect(
+      await service.syncRecent(limitDays: 1, forcePrompt: true),
+      StepsSyncStatus.denied,
+    );
+    expect(calls, contains('openAppSettings'));
+    expect(calls, isNot(contains('requestPermissions')));
+  });
 }

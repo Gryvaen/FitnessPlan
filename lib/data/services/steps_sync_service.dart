@@ -74,6 +74,13 @@ class StepsSyncService {
     final status = await Permission.activityRecognition.status;
     if (status.isGranted) return true;
     if (!prompt) return false;
+    // Android shows no dialog once the user picked "don't allow" twice; send
+    // them to app settings instead of a retry that silently does nothing.
+    // The shell re-syncs on resume when they come back.
+    if (status.isPermanentlyDenied) {
+      await openAppSettings();
+      return false;
+    }
     return (await PermissionGate.request(
       Permission.activityRecognition,
     )).isGranted;

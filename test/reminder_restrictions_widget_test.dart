@@ -202,6 +202,51 @@ void main() {
   );
 
   testWidgets(
+    'turning a reminder on nudges once toward auto-start settings',
+    (tester) async {
+      const nudge = '提醒已开启。还需要允许自启动和后台行为，提醒才能准时响';
+      aggressiveOem = true;
+      await showPage(tester);
+      // The brand alone is still not a pending issue.
+      expect(find.textContaining('项待检查'), findsNothing);
+      await tester.tap(find.text('训练提醒').first); // off
+      await tester.pumpAndSettle();
+      expect(find.text(nudge), findsNothing);
+      await tester.tap(find.text('训练提醒').first); // on
+      await tester.pumpAndSettle();
+      expect(find.text(nudge), findsOneWidget);
+      await tester.tap(find.widgetWithText(SnackBarAction, '去设置'));
+      await tester.pumpAndSettle();
+      expect(autoStartCalls, 1);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool('oem_background_ack'), isTrue);
+      // Acknowledged: turning it on again does not nag.
+      await tester.tap(find.text('训练提醒').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('训练提醒').first);
+      await tester.pumpAndSettle();
+      expect(find.text(nudge), findsNothing);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+
+  testWidgets(
+    'a missed reminder brings the auto-start nudge back',
+    (tester) async {
+      aggressiveOem = true;
+      SharedPreferences.setMockInitialValues({
+        'reminder_workout_enabled': true,
+        'oem_background_ack': true,
+      });
+      missed = [DateTime(2026, 10, 18, 19, 28).millisecondsSinceEpoch];
+      await showPage(tester);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool('oem_background_ack'), isNull);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+
+  testWidgets(
     'unknown scheduling is distinct from failed scheduling',
     (tester) async {
       statusUnknown = true;

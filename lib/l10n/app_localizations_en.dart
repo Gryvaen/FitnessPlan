@@ -1372,6 +1372,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Some reminders were blocked by the system and did not go off on time';
 
   @override
+  String get reminderBackgroundGuideSnack =>
+      'Reminder on. Also allow auto-start and background activity so it goes off on time';
+
+  @override
+  String get stepsBackgroundHintTitle =>
+      'The system may stop background step counting';
+
+  @override
+  String get stepsBackgroundHintBody =>
+      'Some phones stop counting steps once the app is closed. In app details → battery usage, allow background activity.';
+
+  @override
   String get stepsOemHintBody =>
       'Some phones stop counting after the app closes; disabling battery optimization keeps it going.';
 

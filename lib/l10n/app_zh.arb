@@ -513,6 +513,9 @@
     }
   },
   "reminderMissedSnack": "有提醒被系统拦截，没有按时响起",
+  "reminderBackgroundGuideSnack": "提醒已开启。还需要允许自启动和后台行为，提醒才能准时响",
+  "stepsBackgroundHintTitle": "系统可能会中断后台计步",
+  "stepsBackgroundHintBody": "部分手机会在 App 退出后停止计步。请在应用详情 → 耗电管理中打开「允许应用后台行为」。",
   "stepsOemHintBody": "部分机型会在应用退出后停止计步，关闭电池优化可保持统计。",
   "customDuration": "自定义（0:30–10:00）",
   "notifChannelName": "休息计时器",
