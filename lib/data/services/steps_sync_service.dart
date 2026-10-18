@@ -7,6 +7,7 @@ import '../../domain/calendar_day.dart';
 import '../repositories/data_backup_repository.dart';
 import '../repositories/step_repository.dart';
 import 'android_step_sensor.dart';
+import 'permission_gate.dart';
 
 /// Result of syncing steps from HealthKit / Health Connect / device sensor.
 enum StepsSyncStatus {
@@ -28,6 +29,9 @@ enum StepsSyncStatus {
   failed,
 }
 
+/// No human walks this much in a day; only the legacy reboot bug produced it.
+const kMaxPlausibleDailySteps = 100000;
+
 /// Syncs daily step totals from HealthKit / Health Connect into [StepRepository].
 ///
 /// On Android, when Health Connect is missing or returns 0 for today (common on
@@ -45,6 +49,8 @@ class StepsSyncService {
   final Health _health;
   final AndroidStepSensor? _stepSensor;
   final SharedPreferences? _prefs;
+
+  static const _repairBackupKey = 'step_counter_backup_v2';
 
   bool _configured = false;
   bool _promptedThisSession = false;
@@ -65,11 +71,19 @@ class StepsSyncService {
 
   Future<bool> _ensureActivityRecognition({required bool prompt}) async {
     if (!_isAndroid) return true;
-    var status = await Permission.activityRecognition.status;
+    final status = await Permission.activityRecognition.status;
     if (status.isGranted) return true;
     if (!prompt) return false;
-    status = await Permission.activityRecognition.request();
-    return status.isGranted;
+    // Android shows no dialog once the user picked "don't allow" twice; send
+    // them to app settings instead of a retry that silently does nothing.
+    // The shell re-syncs on resume when they come back.
+    if (status.isPermanentlyDenied) {
+      await openAppSettings();
+      return false;
+    }
+    return (await PermissionGate.request(
+      Permission.activityRecognition,
+    )).isGranted;
   }
 
   /// Returns whether Health Connect / HealthKit read access is granted.
@@ -149,6 +163,14 @@ class StepsSyncService {
         return StepsSyncStatus.denied;
       }
 
+      if (_isAndroid) {
+        await _repo.repairInflatedOnce(
+          backupKey: _repairBackupKey,
+          today: CalendarDay.todayLocal(),
+          ceiling: kMaxPlausibleDailySteps,
+        );
+      }
+
       final authorized = await ensureAuthorized(prompt: prompt);
       var readsOk = 0;
       var readsFailed = 0;
@@ -181,7 +203,8 @@ class StepsSyncService {
           todayFromHealth = healthValue;
           continue;
         }
-        final fromSensor = sensorHistory[day] ?? 0;
+        var fromSensor = sensorHistory[day] ?? 0;
+        if (fromSensor >= kMaxPlausibleDailySteps) fromSensor = 0;
         final existing = await _repo.stepsForDay(day);
         final merged = [
           healthValue,
@@ -201,6 +224,12 @@ class StepsSyncService {
       var todayFinal = todayFromHealth;
       if (sensorToday != null && sensorToday > todayFinal) {
         todayFinal = sensorToday;
+      }
+      // No sensor answer (6 s timeout) is not a reading of 0: keep today's
+      // stored total instead of letting a Health Connect 0 wipe it.
+      if (sensorToday == null) {
+        final stored = await _repo.stepsForDay(today);
+        if (stored > todayFinal) todayFinal = stored;
       }
       // Trust live readings including 0. Keeping a previous DB total when
       // Health/sensor report 0 made "today" look like yesterday after a

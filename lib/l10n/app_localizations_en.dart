@@ -1360,6 +1360,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reminderOemHintAutostartButton => 'Settings';
 
   @override
+  String get reminderMissedTitle => 'Reminders were blocked';
+
+  @override
+  String reminderMissedDetail(String times) {
+    return 'The reminder at $times did not go off on time: the system stopped the app from starting while it was not running. Turn this app on in Settings → Apps → Auto-start, and allow background activity in app details → battery usage.';
+  }
+
+  @override
+  String get reminderMissedSnack =>
+      'Some reminders were blocked by the system and did not go off on time';
+
+  @override
+  String get reminderBackgroundGuideSnack =>
+      'Reminder on. Also turn this app on in Settings → Apps → Auto-start so it goes off on time';
+
+  @override
+  String get stepsBackgroundHintTitle =>
+      'The system may stop background step counting';
+
+  @override
+  String get stepsBackgroundHintBody =>
+      'Some phones stop counting steps once the app is closed. Turn this app on in Settings → Apps → Auto-start, and allow background activity in app details → battery usage.';
+
+  @override
   String get stepsOemHintBody =>
       'Some phones stop counting after the app closes; disabling battery optimization keeps it going.';
 

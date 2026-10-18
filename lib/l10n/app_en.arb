@@ -513,6 +513,17 @@
   "reminderOemHintBody": "Some phone brands restrict background apps, which can silence or block reminders from ringing, vibrating, or firing at all. It helps to disable battery optimization for this app and allow \"auto-start\" / background running in system settings.",
   "reminderOemHintBatteryButton": "Disable battery optimization",
   "reminderOemHintAutostartButton": "Settings",
+  "reminderMissedTitle": "Reminders were blocked",
+  "reminderMissedDetail": "The reminder at {times} did not go off on time: the system stopped the app from starting while it was not running. Turn this app on in Settings → Apps → Auto-start, and allow background activity in app details → battery usage.",
+  "@reminderMissedDetail": {
+    "placeholders": {
+      "times": {"type": "String"}
+    }
+  },
+  "reminderMissedSnack": "Some reminders were blocked by the system and did not go off on time",
+  "reminderBackgroundGuideSnack": "Reminder on. Also turn this app on in Settings → Apps → Auto-start so it goes off on time",
+  "stepsBackgroundHintTitle": "The system may stop background step counting",
+  "stepsBackgroundHintBody": "Some phones stop counting steps once the app is closed. Turn this app on in Settings → Apps → Auto-start, and allow background activity in app details → battery usage.",
   "stepsOemHintBody": "Some phones stop counting after the app closes; disabling battery optimization keeps it going.",
   "customDuration": "Custom (0:30–10:00)",
   "notifChannelName": "Rest timer",

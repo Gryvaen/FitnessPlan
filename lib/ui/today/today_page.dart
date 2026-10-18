@@ -10,6 +10,7 @@ import '../../domain/diet_strategy.dart';
 import '../../domain/goal_quotes.dart';
 import '../../domain/models.dart';
 import '../../domain/plateau.dart';
+import '../../data/services/oem_background_guide.dart';
 import '../../data/services/steps_sync_service.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
@@ -1029,14 +1030,30 @@ class _StepsDetailSheet extends ConsumerStatefulWidget {
   ConsumerState<_StepsDetailSheet> createState() => _StepsDetailSheetState();
 }
 
-class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
+class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet>
+    with WidgetsBindingObserver {
   bool _syncing = false;
   bool _showBatteryHint = false;
+  bool _batteryOptimized = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _refreshBatteryStatus();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Back from battery / Health Connect settings: clear stale hints. The
+    // shell already re-syncs steps on resume.
+    if (state == AppLifecycleState.resumed) _refreshBatteryStatus();
   }
 
   Future<void> _refreshBatteryStatus() async {
@@ -1045,7 +1062,15 @@ class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
     final ignoring =
         await ReminderNotifications.isIgnoringBatteryOptimizations();
     if (!mounted) return;
-    setState(() => _showBatteryHint = aggressive && !ignoring);
+    final acknowledged = OemBackgroundGuide.acknowledged(
+      ref.read(sharedPreferencesProvider),
+    );
+    // On ColorOS exempting battery optimization is not enough; background
+    // activity must be allowed too, which no API can report.
+    setState(() {
+      _batteryOptimized = !ignoring;
+      _showBatteryHint = aggressive && (!ignoring || !acknowledged);
+    });
   }
 
   Future<void> _resync() async {
@@ -1060,6 +1085,16 @@ class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
 
   Future<void> _openSettings() async {
     await ref.read(stepsSyncServiceProvider).openHealthConnectSettings();
+  }
+
+  Future<void> _openBackgroundSettings() async {
+    try {
+      await ReminderNotifications.openAutoStartSettings();
+    } catch (_) {
+      return;
+    }
+    await OemBackgroundGuide.acknowledge(ref.read(sharedPreferencesProvider));
+    await _refreshBatteryStatus();
   }
 
   Future<void> _disableBatteryOptimization() async {
@@ -1170,12 +1205,22 @@ class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet> {
                 contentPadding: EdgeInsets.zero,
                 issue: RestrictionIssue(
                   glyph: InkGlyph.battery,
-                  title: l10n.stepsBatteryTitle,
-                  detail: l10n.stepsOemHintBody,
-                  action: l10n.reminderOemHintBatteryButton,
-                  onAction: _disableBatteryOptimization,
+                  title: _batteryOptimized
+                      ? l10n.stepsBatteryTitle
+                      : l10n.stepsBackgroundHintTitle,
+                  detail: _batteryOptimized
+                      ? l10n.stepsOemHintBody
+                      : l10n.stepsBackgroundHintBody,
+                  action: _batteryOptimized
+                      ? l10n.reminderOemHintBatteryButton
+                      : l10n.reminderOemHintAutostartButton,
+                  onAction: _batteryOptimized
+                      ? _disableBatteryOptimization
+                      : _openBackgroundSettings,
                 ),
-                onAction: _disableBatteryOptimization,
+                onAction: _batteryOptimized
+                    ? _disableBatteryOptimization
+                    : _openBackgroundSettings,
               ),
             const SizedBox(height: AppSpacing.compact),
             FoldedNotes(

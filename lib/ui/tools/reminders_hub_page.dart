@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../data/repositories/reminders_repository.dart';
+import '../../data/services/oem_background_guide.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../ink/ink_icon.dart';
@@ -30,6 +32,8 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
   bool _exact = true;
   bool _fullScreen = true;
   bool? _backgroundRestricted;
+  List<DateTime> _missed = const [];
+  bool _backgroundGuide = false;
   String? _autoStartGuidance;
   String? _pendingAutoStartFeedback;
   ({int scheduled, int failed})? _scheduleStatus;
@@ -94,9 +98,16 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
 
   Future<void> _refreshBackgroundStatus() async {
     final restricted = await ReminderNotifications.isBackgroundRestricted();
+    final missed = await ReminderNotifications.missedReminders();
+    final aggressive = await ReminderNotifications.isAggressiveOem();
+    final prefs = ref.read(sharedPreferencesProvider);
+    // A missed reminder proves the earlier settings visit did not stick.
+    if (missed.isNotEmpty) await OemBackgroundGuide.reset(prefs);
     if (!mounted) return;
     setState(() {
       _backgroundRestricted = restricted;
+      _missed = missed;
+      _backgroundGuide = aggressive && !OemBackgroundGuide.acknowledged(prefs);
     });
   }
 
@@ -109,6 +120,29 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
     // below tells the user if notifications still need allowing.
     await ref.read(remindersProvider.notifier).setEnabled(kind, wantOn);
     await _refreshPermission();
+    // The brand alone is not listed as a pending issue (no API can confirm
+    // the restriction), so nudge once at the moment it matters instead.
+    if (wantOn && _backgroundGuide && mounted) {
+      final l10n = context.l10n;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(l10n.reminderBackgroundGuideSnack),
+            duration: const Duration(seconds: 8),
+            action: SnackBarAction(
+              label: l10n.reminderOemHintAutostartButton,
+              onPressed: _thenRefresh(_openBackgroundSettings),
+            ),
+          ),
+        );
+    }
+  }
+
+  /// Opens auto-start / app details and counts the visit as done.
+  Future<void> _openBackgroundSettings() async {
+    await _openAutoStartSettings();
+    await OemBackgroundGuide.acknowledge(ref.read(sharedPreferencesProvider));
   }
 
   Future<void> _pickTime(ReminderKind kind) async {
@@ -171,12 +205,49 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
     ReminderKind.weighIn => AppColors.fat,
   };
 
+  /// Re-checks every status once [action] finishes, so a permission granted
+  /// from an in-app dialog shows up even when no resume event follows.
+  Future<void> Function() _thenRefresh(FutureOr<void> Function() action) {
+    return () async {
+      try {
+        await action();
+      } finally {
+        if (mounted) {
+          await _refreshPermission();
+          await _refreshBackgroundStatus();
+        }
+      }
+    };
+  }
+
   List<RestrictionIssue> _restrictionIssues(
     AppLocalizations l10n, {
     required bool enabled,
     required bool android,
   }) {
     final issues = <RestrictionIssue>[];
+    if (android && _missed.isNotEmpty) {
+      // `isBackgroundRestricted` cannot see ColorOS auto-start blocking; a
+      // reminder that never fired (or fired late) is the only reliable sign.
+      final format = DateFormat.Md(l10n.localeName).add_Hm();
+      final times = [
+        for (final t in _missed.reversed.take(3)) format.format(t),
+      ].join(l10n.localeName.startsWith('zh') ? '、' : ', ');
+      issues.add(
+        RestrictionIssue(
+          glyph: InkGlyph.batteryAlert,
+          title: l10n.reminderMissedTitle,
+          detail: l10n.reminderMissedDetail(times),
+          action: l10n.reminderOemHintAutostartButton,
+          blocking: true,
+          onAction: _thenRefresh(() async {
+            await _openBackgroundSettings();
+            await ReminderNotifications.acknowledgeMissedReminders();
+          }),
+        ),
+      );
+    }
+
     if (_granted == false) {
       issues.add(
         RestrictionIssue(
@@ -185,7 +256,9 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
           detail: l10n.notificationPermissionMissing,
           action: l10n.reminderOpenNotifications,
           blocking: true,
-          onAction: ReminderNotifications.requestNotificationPermission,
+          onAction: _thenRefresh(
+            ReminderNotifications.requestNotificationPermission,
+          ),
         ),
       );
     }
@@ -196,7 +269,9 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
           title: l10n.alarmAccessTitle,
           detail: l10n.exactAlarmMissing,
           action: l10n.reminderOpenExact,
-          onAction: ReminderNotifications.requestExactAlarmPermission,
+          onAction: _thenRefresh(
+            ReminderNotifications.requestExactAlarmPermission,
+          ),
         ),
       );
     }
@@ -207,7 +282,9 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
           title: l10n.fullScreenAlarmTitle,
           detail: l10n.fullScreenAlarmMissing,
           action: l10n.reminderOpenFullScreen,
-          onAction: ReminderNotifications.requestFullScreenPermission,
+          onAction: _thenRefresh(
+            ReminderNotifications.requestFullScreenPermission,
+          ),
         ),
       );
     }
@@ -227,7 +304,9 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
               : l10n.reminderScheduleFailed,
           action: l10n.reminderRetrySchedule,
           blocking: true,
-          onAction: () => ref.read(remindersProvider.notifier).syncSchedule(),
+          onAction: _thenRefresh(
+            () => ref.read(remindersProvider.notifier).syncSchedule(),
+          ),
         ),
       );
     }

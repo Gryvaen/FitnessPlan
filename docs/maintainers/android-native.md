@@ -93,9 +93,23 @@ Dart 侧在调用前都会先判断平台；非 Android 平台不会调用这些
 2026-10-16 在一加 PHM110（ColorOS 15 / Android 15）上用 adb 实测确认：
 
 - 应用离开前台约 5 秒后，ColorOS 的 Hans 会冻结进程，并通过 `OplusAlarmAdjustment proxyAlarmsByUid` 扣住它的闹钟，**包括 `setAlarmClock`**。闹钟要等应用回到前台才会放行（偶尔也会因为蓝牙扫描之类的事件被提前放行）。
-- 前台服务在运行、应用在电池优化白名单里，都**挡不住**这种冻结。唯一有效的是用户手动打开：应用详情 → 耗电管理 → 「允许应用后台行为」。
+- 前台服务在运行、应用在电池优化白名单里，都**挡不住**这种冻结。需要用户手动打开**两个**开关（2026-10-18 实测）：
+  - 应用详情 → 耗电管理 → 「允许应用后台行为」；
+  - 设置 → 应用 → 自启动 → 打开本应用（`com.oplus.battery/com.oplus.startupapp.view.StartupAppListActivity`）。这个页面需要 `oplus.permission.OPLUS_COMPONENT_SAFE` 权限，第三方应用跳不过去，只能在文案里写清路径。
+  只开「允许应用后台行为」时，进程被杀后闹钟照样被拦。两个都开了，进程被杀后系统会立刻重新拉起后台计步服务，提醒能准时响（实测延迟不到 0.1 秒，划掉后台也一样）。
 - ColorOS 15 的包名已经改成 `com.oplus.*`，旧的 `com.coloros.safecenter` 页面不存在了；「耗电管理」页（`com.oplus.battery/...PowerControlActivity`）没有对第三方应用导出，无法直接打开。所以应用详情页是能跳到的最近位置。
 - 应用这边的应对：计时器的通知栏倒计时由 SystemUI 绘制，应用被冻结时也能显示剩余时间；闹钟晚到超过 5 秒会被记录下来（`RestTimerAlarmReceiver` → prefs `rest_timer_alarm` / `last_delay_ms`），回到应用时提示用户去设置。
+
+2026-10-18 在同一台手机上补充实测（未开「允许自启动」）：
+
+- App 进程不在时，闹钟到点会被 `OplusAppStartupManager` 拦下。**三种唤醒方式都不行**：
+  - 广播（现行做法）：`prevent start ... by broadcast`；
+  - `PendingIntent.getForegroundService`：`isAllowStartFromStartService: prevent start`；
+  - `PendingIntent.getActivity`：`Background activity launch blocked`。即使加上 Android 14 的 `setPendingIntentCreatorBackgroundActivityStartMode` 也一样。
+- 被拦的广播有时会在用户下次打开 App 时补送（提醒晚响），有时直接丢失。
+- 后台计步服务（前台服务）在运行时，进程在最近任务里被划掉也活着，提醒能准时响。不过同一天里也观察到过划掉后进程被杀的情况，不能依赖。
+- 应用的应对：`WorkoutReminderScheduler` 记录漏发和晚发（`missed_triggers`），打开 App 时弹 SnackBar，提醒设置页显示「提醒被系统拦截」，引导用户打开自启动。
+- **测试时不要用 `am force-stop`**：它会清掉应用的全部闹钟。要模拟进程被杀，用 `adb shell run-as com.fitnessplan.fitness_plan kill -9 <pid>`。
 
 **排查「提醒或计时器不准时」的方法**：
 

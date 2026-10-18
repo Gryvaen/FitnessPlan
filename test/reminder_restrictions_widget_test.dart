@@ -31,6 +31,8 @@ void main() {
   var autoStartCalls = 0;
   var batteryStatusReads = 0;
   var batteryOptimizationRequests = 0;
+  var missed = <int>[];
+  var missedAcks = 0;
 
   setUp(() {
     SharedPreferences.setMockInitialValues({'reminder_workout_enabled': true});
@@ -48,6 +50,8 @@ void main() {
     autoStartCalls = 0;
     batteryStatusReads = 0;
     batteryOptimizationRequests = 0;
+    missed = [];
+    missedAcks = 0;
     messenger.setMockMethodCallHandler(permissionsChannel, (call) async {
       if (call.method == 'checkPermissionStatus') {
         return notificationAllowed ? 1 : 0;
@@ -68,6 +72,12 @@ void main() {
               : {'scheduled': scheduled, 'failed': failed};
         case 'isAggressiveOem':
           return aggressiveOem;
+        case 'missedReminders':
+          return missed;
+        case 'acknowledgeMissedReminders':
+          missedAcks++;
+          missed = [];
+          return null;
         case 'isBackgroundRestricted':
           return backgroundRestricted;
         case 'isIgnoringBatteryOptimizations':
@@ -166,6 +176,72 @@ void main() {
       expect(find.text('Some reminders were not scheduled'), findsOneWidget);
       expect(find.text('Background activity is restricted'), findsOneWidget);
       expect(tester.takeException(), isNull);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+
+  testWidgets(
+    'a reminder blocked by the system is reported and leads to settings',
+    (tester) async {
+      missed = [DateTime(2026, 10, 18, 19, 28).millisecondsSinceEpoch];
+      await showPage(tester);
+      expect(find.text('提醒可能收不到'), findsOneWidget);
+      await tester.tap(find.text('提醒可能收不到'));
+      await tester.pumpAndSettle();
+      expect(find.text('提醒被系统拦截'), findsOneWidget);
+      await tester.tap(find.text('提醒被系统拦截'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('19:28 的提醒没有按时响起'), findsOneWidget);
+      await tester.tap(find.text('去设置').first);
+      await tester.pumpAndSettle();
+      expect(autoStartCalls, 1);
+      expect(missedAcks, 1);
+      expect(find.text('提醒被系统拦截'), findsNothing);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+
+  testWidgets(
+    'turning a reminder on nudges once toward auto-start settings',
+    (tester) async {
+      const nudge = '提醒已开启。还需在 设置 → 应用 → 自启动 中打开本应用，提醒才能准时响';
+      aggressiveOem = true;
+      await showPage(tester);
+      // The brand alone is still not a pending issue.
+      expect(find.textContaining('项待检查'), findsNothing);
+      await tester.tap(find.text('训练提醒').first); // off
+      await tester.pumpAndSettle();
+      expect(find.text(nudge), findsNothing);
+      await tester.tap(find.text('训练提醒').first); // on
+      await tester.pumpAndSettle();
+      expect(find.text(nudge), findsOneWidget);
+      await tester.tap(find.widgetWithText(SnackBarAction, '去设置'));
+      await tester.pumpAndSettle();
+      expect(autoStartCalls, 1);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool('oem_background_ack'), isTrue);
+      // Acknowledged: turning it on again does not nag.
+      await tester.tap(find.text('训练提醒').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('训练提醒').first);
+      await tester.pumpAndSettle();
+      expect(find.text(nudge), findsNothing);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+
+  testWidgets(
+    'a missed reminder brings the auto-start nudge back',
+    (tester) async {
+      aggressiveOem = true;
+      SharedPreferences.setMockInitialValues({
+        'reminder_workout_enabled': true,
+        'oem_background_ack': true,
+      });
+      missed = [DateTime(2026, 10, 18, 19, 28).millisecondsSinceEpoch];
+      await showPage(tester);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool('oem_background_ack'), isNull);
     },
     variant: TargetPlatformVariant.only(TargetPlatform.android),
   );
