@@ -44,8 +44,8 @@ extension ReminderStatusLabels on AppLocalizations {
       ? '已打开应用信息。可进入「应用的电池使用情况」查看「允许后台使用」；此设备可能没有单独的自启动开关。'
       : 'App info opened. Check Battery usage for background access. This device may not have a separate Auto-start switch.';
   String get reminderAutoStartColorOsHint => _zh
-      ? '已打开应用详情。请点「耗电管理」，打开「允许应用后台行为」。'
-      : 'App info opened. Tap Power consumption management and turn on Allow background activity.';
+      ? '已打开应用详情。请点「耗电管理」，打开「允许应用后台行为」；再到 设置 → 应用 → 自启动，打开本应用。'
+      : 'App info opened. Tap Power consumption management and turn on Allow background activity, then turn this app on in Settings → Apps → Auto-start.';
   String get reminderAutoStartBatteryHint => _zh
       ? '请查看「允许后台使用」；如果已经开启，无需更改。'
       : 'Check Allow background usage. If it is already on, no change is needed.';

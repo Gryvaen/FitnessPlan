@@ -2634,7 +2634,7 @@ abstract class AppLocalizations {
   /// No description provided for @reminderMissedDetail.
   ///
   /// In en, this message translates to:
-  /// **'The reminder at {times} did not go off on time: the system stopped the app from starting while it was not running. In app details → battery usage, allow auto-start and background activity.'**
+  /// **'The reminder at {times} did not go off on time: the system stopped the app from starting while it was not running. Turn this app on in Settings → Apps → Auto-start, and allow background activity in app details → battery usage.'**
   String reminderMissedDetail(String times);
 
   /// No description provided for @reminderMissedSnack.
@@ -2646,7 +2646,7 @@ abstract class AppLocalizations {
   /// No description provided for @reminderBackgroundGuideSnack.
   ///
   /// In en, this message translates to:
-  /// **'Reminder on. Also allow auto-start and background activity so it goes off on time'**
+  /// **'Reminder on. Also turn this app on in Settings → Apps → Auto-start so it goes off on time'**
   String get reminderBackgroundGuideSnack;
 
   /// No description provided for @stepsBackgroundHintTitle.
@@ -2658,7 +2658,7 @@ abstract class AppLocalizations {
   /// No description provided for @stepsBackgroundHintBody.
   ///
   /// In en, this message translates to:
-  /// **'Some phones stop counting steps once the app is closed. In app details → battery usage, allow background activity.'**
+  /// **'Some phones stop counting steps once the app is closed. Turn this app on in Settings → Apps → Auto-start, and allow background activity in app details → battery usage.'**
   String get stepsBackgroundHintBody;
 
   /// No description provided for @stepsOemHintBody.

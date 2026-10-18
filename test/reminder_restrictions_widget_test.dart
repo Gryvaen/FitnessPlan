@@ -204,7 +204,7 @@ void main() {
   testWidgets(
     'turning a reminder on nudges once toward auto-start settings',
     (tester) async {
-      const nudge = '提醒已开启。还需要允许自启动和后台行为，提醒才能准时响';
+      const nudge = '提醒已开启。还需在 设置 → 应用 → 自启动 中打开本应用，提醒才能准时响';
       aggressiveOem = true;
       await showPage(tester);
       // The brand alone is still not a pending issue.

@@ -1364,7 +1364,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String reminderMissedDetail(String times) {
-    return 'The reminder at $times did not go off on time: the system stopped the app from starting while it was not running. In app details → battery usage, allow auto-start and background activity.';
+    return 'The reminder at $times did not go off on time: the system stopped the app from starting while it was not running. Turn this app on in Settings → Apps → Auto-start, and allow background activity in app details → battery usage.';
   }
 
   @override
@@ -1373,7 +1373,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reminderBackgroundGuideSnack =>
-      'Reminder on. Also allow auto-start and background activity so it goes off on time';
+      'Reminder on. Also turn this app on in Settings → Apps → Auto-start so it goes off on time';
 
   @override
   String get stepsBackgroundHintTitle =>
@@ -1381,7 +1381,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stepsBackgroundHintBody =>
-      'Some phones stop counting steps once the app is closed. In app details → battery usage, allow background activity.';
+      'Some phones stop counting steps once the app is closed. Turn this app on in Settings → Apps → Auto-start, and allow background activity in app details → battery usage.';
 
   @override
   String get stepsOemHintBody =>
