@@ -411,15 +411,40 @@ void main() {
       },
     );
 
-    test('carb cycle: a different schedule is a structural change', () async {
+    test(
+      'carb cycle: a different schedule is not a structural change',
+      () async {
+        final old = await repo.createPlan(_carbCycleDraft(today));
+        expect(
+          DietStrategyRepository.isStructuralChange(
+            old,
+            _carbCycleDraft(today, code: 'HMLLL'),
+          ),
+          isFalse,
+        );
+      },
+    );
+
+    test('carb cycle: different rates are a structural change', () async {
       final old = await repo.createPlan(_carbCycleDraft(today));
-      expect(
-        DietStrategyRepository.isStructuralChange(
-          old,
-          _carbCycleDraft(today, code: 'HMLLL'),
+      final base = _carbCycleDraft(today);
+      final draft = DietStrategyPlanDraft(
+        kind: base.kind,
+        effectiveFrom: base.effectiveFrom,
+        referenceWeightKg: base.referenceWeightKg,
+        estimatedTdee: base.estimatedTdee,
+        baseEnergy: base.baseEnergy,
+        schedule: base.schedule,
+        carbCycleRates: CarbCycleRates(
+          lowProteinPerKg: _carbCycleRates.lowProteinPerKg,
+          lowCarbPerKg: _carbCycleRates.lowCarbPerKg,
+          lowFatPerKg: _carbCycleRates.lowFatPerKg,
+          highProteinPerKg: _carbCycleRates.highProteinPerKg,
+          highCarbPerKg: _carbCycleRates.highCarbPerKg + 0.5,
+          highFatPerKg: _carbCycleRates.highFatPerKg,
         ),
-        isTrue,
       );
+      expect(DietStrategyRepository.isStructuralChange(old, draft), isTrue);
     });
 
     test(
@@ -462,6 +487,91 @@ void main() {
         taperStage: 1,
       );
       expect(DietStrategyRepository.isStructuralChange(old, draft), isTrue);
+    });
+  });
+
+  group('carb-load day', () {
+    final cyclePlan = CarbCyclePlanner.compute(
+      referenceWeightKg: 75,
+      rates: _carbCycleRates,
+      schedule: CarbCycleSchedule.tryParse('HMLL')!,
+    );
+    final tomorrow = today.add(const Duration(days: 1));
+    final dayAfter = today.add(const Duration(days: 2));
+
+    test('raises carbs on the high day and keeps the cycle going', () async {
+      await repo.createPlan(_carbCycleDraft(today));
+      await DayMarkerRepository(db).setCarbLoad(tomorrow, carbPerKg: 6);
+      final high = cyclePlan.dayFor(CarbDayType.high)!;
+      final t = (await repo.targetForDay(tomorrow, _profile()))!;
+      expect(t.isCarbLoad, isTrue);
+      expect(t.reason, 'carbLoad:6.0');
+      expect(t.dayType, CarbDayType.high);
+      expect(t.proteinG, closeTo(high.proteinG, 1e-6));
+      expect(t.fatG, closeTo(high.fatG, 1e-6));
+      expect(t.carbG, closeTo(75 * 6, 1e-6));
+      expect(
+        t.calories,
+        closeTo(high.proteinG * 4 + 75 * 6 * 4 + high.fatG * 9, 1e-6),
+      );
+      expect(t.cyclePaused, isFalse);
+      expect(
+        (await repo.targetForDay(dayAfter, _profile()))!.calories,
+        closeTo(cyclePlan.dayAt(2).energy, 1e-6),
+      );
+      final range = await repo.targetsBetween(tomorrow, dayAfter, _profile());
+      expect(range[tomorrow]!.isCarbLoad, isTrue);
+      expect(range[dayAfter]!.isCarbLoad, isFalse);
+    });
+
+    test('a paused carb-load day shifts later days back by one', () async {
+      await repo.createPlan(_carbCycleDraft(today));
+      await DayMarkerRepository(
+        db,
+      ).setCarbLoad(tomorrow, carbPerKg: 6, pauseCarbCycle: true);
+      final t = (await repo.targetForDay(tomorrow, _profile()))!;
+      expect(t.isCarbLoad, isTrue);
+      expect(t.cyclePaused, isTrue);
+      expect(
+        (await repo.targetForDay(dayAfter, _profile()))!.calories,
+        closeTo(cyclePlan.dayAt(1).energy, 1e-6),
+      );
+    });
+
+    test('carbs never drop below the plan\'s high day', () async {
+      await repo.createPlan(_carbCycleDraft(today));
+      await DayMarkerRepository(db).setCarbLoad(tomorrow, carbPerKg: 1);
+      final t = (await repo.targetForDay(tomorrow, _profile()))!;
+      expect(t.carbG, closeTo(cyclePlan.dayFor(CarbDayType.high)!.carbG, 1e-6));
+    });
+
+    test('marking today rewrites today\'s snapshot', () async {
+      await repo.createPlan(_carbCycleDraft(today));
+      final markers = DayMarkerRepository(db);
+      await markers.setCarbLoad(today, carbPerKg: 7);
+      expect((await repo.targetForDay(today, _profile()))!.carbG, 75 * 7);
+      expect((await repo.snapshotFor(today))!.isCarbLoad, isTrue);
+      await markers.clear(today);
+      final cleared = (await repo.targetForDay(today, _profile()))!;
+      expect(cleared.isCarbLoad, isFalse);
+      expect(cleared.calories, closeTo(cyclePlan.dayAt(0).energy, 1e-6));
+    });
+
+    test('is ignored outside a carb cycle', () async {
+      await repo.createPlan(
+        DietStrategyPlanDraft(
+          kind: DietStrategyKind.carbTaper,
+          effectiveFrom: today,
+          referenceWeightKg: 75,
+          estimatedTdee: 2400,
+          baseEnergy: 2000,
+        ),
+      );
+      await DayMarkerRepository(db).setCarbLoad(tomorrow, carbPerKg: 6);
+      expect(
+        (await repo.targetForDay(tomorrow, _profile()))!.isCarbLoad,
+        isFalse,
+      );
     });
   });
 

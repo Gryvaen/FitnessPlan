@@ -354,6 +354,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get checkUpdate => 'Check for updates';
 
   @override
+  String installDownloadedUpdate(String version) {
+    return 'Install v$version';
+  }
+
+  @override
   String get downloadInstall => 'Download & install';
 
   @override
@@ -1308,13 +1313,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reminderContentBodyLabel => 'Message';
 
   @override
-  String get reminderContentEmptyHint => 'Leave blank to use the default text';
-
-  @override
-  String get reminderContentWorkoutHint =>
-      'The default workout message varies with the previous day\'s training.';
-
-  @override
   String get reminderAlertModeRing => 'Ring';
 
   @override
@@ -1521,6 +1519,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get restDayShortLabel => 'Rest';
+
+  @override
+  String get carbLoadLabel => 'Carb-load day';
+
+  @override
+  String get carbLoadShortLabel => 'Load';
+
+  @override
+  String get carbLoadCarbPerKgLabel => 'Carbs';
+
+  @override
+  String carbLoadSummary(String perKg) {
+    return 'Carbs $perKg g/kg';
+  }
+
+  @override
+  String get carbLoadHint =>
+      'High-day protein and fat, carbs raised up to 7 g/kg';
 
   @override
   String get dayMarkerSettingsTitle => 'Set day marker';

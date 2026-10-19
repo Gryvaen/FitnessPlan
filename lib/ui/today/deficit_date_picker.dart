@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -10,6 +12,8 @@ import '../../domain/diet_plan.dart';
 import '../../domain/diet_strategy.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../ink/ink_icon.dart';
+import '../strategy/stepper_row.dart';
+import '../strategy/strategy_labels.dart';
 import '../theme/app_theme.dart';
 
 /// Loads the per-day target for every local day in an inclusive range.
@@ -21,6 +25,10 @@ typedef DailyTargetsLoader =
 
 /// Resolves the strategy version governing a calendar day.
 typedef DayStrategyLoader = Future<DietStrategyKind?> Function(DateTime day);
+
+/// The lowest 冲碳日 carbs (g/kg) for a calendar day — its carb-cycle plan's
+/// high day — or null when unknown.
+typedef CarbLoadFloorLoader = Future<double?> Function(DateTime day);
 
 /// Custom month calendar: actual daily deficit only on days with meal logs;
 /// past days green/red verdict, today neutral.
@@ -34,6 +42,7 @@ Future<DateTime?> showDeficitDatePicker({
   required DayMarkerRepository markerRepository,
   required DailyTargetsLoader loadTargets,
   required DayStrategyLoader loadStrategyForDay,
+  CarbLoadFloorLoader? loadCarbLoadFloor,
   DateTime? calorieStandardSince,
 
   /// How far into the future the calendar may be paged for 放纵日/休息日
@@ -60,6 +69,7 @@ Future<DateTime?> showDeficitDatePicker({
       markerRepository: markerRepository,
       loadTargets: loadTargets,
       loadStrategyForDay: loadStrategyForDay,
+      loadCarbLoadFloor: loadCarbLoadFloor,
       calorieStandardSince: since,
       markUntil: markUntil == null
           ? null
@@ -78,6 +88,7 @@ class _DeficitDatePickerDialog extends StatefulWidget {
     required this.markerRepository,
     required this.loadTargets,
     required this.loadStrategyForDay,
+    this.loadCarbLoadFloor,
     this.calorieStandardSince,
     this.markUntil,
   });
@@ -92,6 +103,7 @@ class _DeficitDatePickerDialog extends StatefulWidget {
   final DayMarkerRepository markerRepository;
   final DailyTargetsLoader loadTargets;
   final DayStrategyLoader loadStrategyForDay;
+  final CarbLoadFloorLoader? loadCarbLoadFloor;
   final DateTime? calorieStandardSince;
   final DateTime? markUntil;
 
@@ -192,6 +204,13 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
   Future<void> _showMarkerSheet(DateTime day) async {
     final existing = await widget.markerRepository.settingsForDay(day);
     final strategy = await widget.loadStrategyForDay(day);
+    final canPauseCycle =
+        strategy == DietStrategyKind.carbCycle && !day.isBefore(_today);
+    // 冲碳日 shares the pause gate: only a carb-cycle day from today on can
+    // still have its target changed.
+    final carbLoadFloor = canPauseCycle
+        ? await widget.loadCarbLoadFloor?.call(day)
+        : null;
     if (!mounted) return;
     final choice = await showModalBottomSheet<_MarkerChoice>(
       context: context,
@@ -200,28 +219,45 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
       builder: (ctx) => _MarkerSettingsSheet(
         existing: existing,
         hasCarbCycle: strategy == DietStrategyKind.carbCycle,
-        canPauseCycle:
-            strategy == DietStrategyKind.carbCycle && !day.isBefore(_today),
+        canPauseCycle: canPauseCycle,
+        canCarbLoad: canPauseCycle,
+        carbLoadFloor: math.min(
+          carbLoadFloor ?? StrategyRules.highCarbPerKgMin,
+          StrategyRules.carbLoadCarbPerKgMax,
+        ),
       ),
     );
     if (!mounted || choice == null) return;
-    if (choice.clear) {
+    final type = choice.type;
+    if (choice.clear || type == null) {
       await widget.markerRepository.clear(day);
-    } else if (choice.type == DayMarkerType.cheatMeal) {
-      await widget.markerRepository.setCheatMeal(
-        day,
-        includeSteps: choice.includeSteps,
-        includeDiet: choice.includeDiet,
-        deductKcal: choice.deductKcal,
-        penaltyKcal: choice.penaltyKcal,
-      );
     } else {
-      await widget.markerRepository.setRestDay(
-        day,
-        pauseCarbCycle: choice.pauseCarbCycle,
-        includeSteps: choice.includeSteps,
-        includeDiet: choice.includeDiet,
-      );
+      switch (type) {
+        case DayMarkerType.cheatMeal:
+          await widget.markerRepository.setCheatMeal(
+            day,
+            pauseCarbCycle: choice.pauseCarbCycle,
+            includeSteps: choice.includeSteps,
+            includeDiet: choice.includeDiet,
+            deductKcal: choice.deductKcal,
+            penaltyKcal: choice.penaltyKcal,
+          );
+        case DayMarkerType.restDay:
+          await widget.markerRepository.setRestDay(
+            day,
+            pauseCarbCycle: choice.pauseCarbCycle,
+            includeSteps: choice.includeSteps,
+            includeDiet: choice.includeDiet,
+          );
+        case DayMarkerType.carbLoad:
+          await widget.markerRepository.setCarbLoad(
+            day,
+            carbPerKg: choice.carbPerKg,
+            pauseCarbCycle: choice.pauseCarbCycle,
+            includeSteps: choice.includeSteps,
+            includeDiet: choice.includeDiet,
+          );
+      }
     }
     if (!mounted) return;
     await _loadMonth();
@@ -286,7 +322,8 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
     final headerText = switch (selectedMarker) {
       DayMarkerType.cheatMeal => l10n.cheatMealShortLabel,
       DayMarkerType.restDay => l10n.restDayShortLabel,
-      null =>
+      // 冲碳日 has a real target, so it reads like an unmarked day.
+      DayMarkerType.carbLoad || null =>
         selectedActual == null
             ? (dayPlanned != null
                   ? l10n.actualDeficitFormula('${dayPlanned.round()}')
@@ -453,6 +490,7 @@ class _MarkerChoice {
     this.clear = false,
     this.includeSteps = true,
     this.includeDiet = false,
+    this.carbPerKg = StrategyRules.defaultCarbLoadCarbPerKg,
   });
 
   final DayMarkerType? type;
@@ -462,6 +500,9 @@ class _MarkerChoice {
   final bool clear;
   final bool includeSteps;
   final bool includeDiet;
+
+  /// 冲碳日 carbs (g/kg); ignored for other types.
+  final double carbPerKg;
 }
 
 class _MarkerSettingsSheet extends StatefulWidget {
@@ -469,11 +510,20 @@ class _MarkerSettingsSheet extends StatefulWidget {
     required this.existing,
     required this.hasCarbCycle,
     required this.canPauseCycle,
+    required this.canCarbLoad,
+    required this.carbLoadFloor,
   });
 
   final DayMarkerSettings? existing;
   final bool hasCarbCycle;
   final bool canPauseCycle;
+
+  /// Whether 冲碳日 is offered (carb-cycle day, today or later). An existing
+  /// 冲碳日 marker stays listed either way so it can still be edited.
+  final bool canCarbLoad;
+
+  /// Lowest 冲碳日 carbs (g/kg): the day's high-day carbs.
+  final double carbLoadFloor;
 
   @override
   State<_MarkerSettingsSheet> createState() => _MarkerSettingsSheetState();
@@ -482,7 +532,7 @@ class _MarkerSettingsSheet extends StatefulWidget {
 class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
   DayMarkerType? _type;
   DayMarkerType? _expandedType;
-  late bool _pauseCycle;
+  late double _carbPerKg;
   late bool _deductKcal;
   late TextEditingController _amount;
   final _amountFocus = FocusNode();
@@ -492,9 +542,10 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
   bool get _validAmount => (int.tryParse(_amount.text) ?? 0) > 0;
   final _stepsByType = {for (final type in DayMarkerType.values) type: true};
   final _dietByType = {
-    DayMarkerType.cheatMeal: false,
-    DayMarkerType.restDay: true,
+    for (final type in DayMarkerType.values)
+      type: DayMarkerSettings(type: type).includeDiet,
   };
+  final _pauseByType = {for (final type in DayMarkerType.values) type: false};
 
   @override
   void initState() {
@@ -503,8 +554,13 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
     if (widget.existing case final settings?) {
       _stepsByType[settings.type] = settings.includeSteps;
       _dietByType[settings.type] = settings.includeDiet;
+      _pauseByType[settings.type] = settings.pauseCarbCycle;
     }
-    _pauseCycle = widget.existing?.pauseCarbCycle ?? false;
+    _carbPerKg = math.max(
+      widget.existing?.carbLoadCarbPerKg ??
+          StrategyRules.defaultCarbLoadCarbPerKg,
+      widget.carbLoadFloor,
+    );
     _deductKcal = widget.existing?.cheatPenaltyEnabled ?? true;
     _amount = TextEditingController(
       text: '${widget.existing?.cheatPenaltyKcal ?? 1000}',
@@ -653,19 +709,23 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
 
   String _summary(BuildContext context, DayMarkerType type) {
     final l10n = context.l10n;
-    final rule = type == DayMarkerType.restDay
-        ? (_pauseCycle ? l10n.pauseCarbCycleSummary : l10n.keepCarbCycleSummary)
-        : (_dietByType[type]!
-              ? l10n.actualDietContributionHint
-              : _deductKcal
-              ? l10n.deductionSummary(_amount.text)
-              : l10n.noDeductionSummary);
     return [
+      if (type == DayMarkerType.carbLoad)
+        l10n.carbLoadSummary(_carbPerKg.toStringAsFixed(1)),
       _stepsByType[type]!
           ? l10n.stepsCountedSummary
           : l10n.stepsExcludedSummary,
       _dietByType[type]! ? l10n.dietCountedSummary : l10n.dietExcludedSummary,
-      if (type == DayMarkerType.cheatMeal || widget.hasCarbCycle) rule,
+      if (type == DayMarkerType.cheatMeal)
+        _dietByType[type]!
+            ? l10n.actualDietContributionHint
+            : _deductKcal
+            ? l10n.deductionSummary(_amount.text)
+            : l10n.noDeductionSummary,
+      if (widget.hasCarbCycle)
+        _pauseByType[type]!
+            ? l10n.pauseCarbCycleSummary
+            : l10n.keepCarbCycleSummary,
     ].join(' · ');
   }
 
@@ -676,8 +736,9 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
         theme.extension<AppThemeVisuals>()?.accent ?? theme.colorScheme.primary;
     final selected = _type == type;
     final expanded = _expandedType == type;
-    final rest = type == DayMarkerType.restDay;
-    final label = rest ? l10n.restDayLabel : l10n.cheatMealLabel;
+    // Rest days always list the switch (disabled off-cycle, as before); the
+    // others only once a carb cycle applies.
+    final showPause = type == DayMarkerType.restDay || widget.hasCarbCycle;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -692,7 +753,7 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
             child: Row(
               children: [
                 InkIcon(
-                  rest ? InkGlyph.bedtime : InkGlyph.celebration,
+                  type.glyph,
                   color: selected ? accent : theme.colorScheme.onSurface,
                 ),
                 const SizedBox(width: AppSpacing.field),
@@ -701,7 +762,7 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        label,
+                        type.label(l10n),
                         style: theme.textTheme.titleSmall?.copyWith(
                           color: selected ? accent : null,
                         ),
@@ -742,6 +803,27 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                   ),
                   child: Column(
                     children: [
+                      if (type == DayMarkerType.carbLoad) ...[
+                        StepperRow(
+                          key: const ValueKey('marker-carb-load-stepper'),
+                          label: l10n.carbLoadCarbPerKgLabel,
+                          value: _carbPerKg,
+                          min: widget.carbLoadFloor,
+                          max: StrategyRules.carbLoadCarbPerKgMax,
+                          step: 0.1,
+                          unit: 'g/kg',
+                          onChanged: (v) => setState(() => _carbPerKg = v),
+                        ),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            l10n.carbLoadHint,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
                       SwitchListTile.adaptive(
                         key: ValueKey('marker-steps-${type.name}'),
                         contentPadding: EdgeInsets.zero,
@@ -765,17 +847,20 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                           });
                         },
                       ),
-                      if (rest) ...[
+                      if (showPause)
                         SwitchListTile.adaptive(
+                          key: ValueKey('marker-pause-${type.name}'),
                           contentPadding: EdgeInsets.zero,
                           dense: true,
                           title: Text(l10n.pauseCarbCycleLabel),
-                          value: _pauseCycle,
+                          value: _pauseByType[type]!,
                           onChanged: widget.canPauseCycle
-                              ? (value) => setState(() => _pauseCycle = value)
+                              ? (value) =>
+                                    setState(() => _pauseByType[type] = value)
                               : null,
                         ),
-                      ] else if (!_dietByType[type]!) ...[
+                      if (type == DayMarkerType.cheatMeal &&
+                          !_dietByType[type]!) ...[
                         Row(
                           key: const ValueKey('marker-deduction-row'),
                           children: [
@@ -874,6 +959,11 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
               _option(context, DayMarkerType.restDay),
               Divider(height: 1, color: dividerColor),
               _option(context, DayMarkerType.cheatMeal),
+              if (widget.canCarbLoad ||
+                  widget.existing?.type == DayMarkerType.carbLoad) ...[
+                Divider(height: 1, color: dividerColor),
+                _option(context, DayMarkerType.carbLoad),
+              ],
               const SizedBox(height: AppSpacing.card),
               Row(
                 children: [
@@ -891,9 +981,10 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                               type: _type,
                               includeSteps: _stepsByType[_type]!,
                               includeDiet: _dietByType[_type]!,
-                              pauseCarbCycle: _pauseCycle,
+                              pauseCarbCycle: _pauseByType[_type]!,
                               deductKcal: _deductKcal,
                               penaltyKcal: valid ? amount : 1000,
+                              carbPerKg: _carbPerKg,
                             ),
                           )
                         : null,
@@ -1025,6 +1116,9 @@ class _DayCell extends StatelessWidget {
     final isPast = date.isBefore(today);
     final isToday = date == today;
     final marked = marker != null;
+    // 冲碳日 keeps a real target, so it still gets remaining/verdict; the
+    // other markers show only their label.
+    final verdictMarker = marker == null || marker == DayMarkerType.carbLoad;
     final hasLog = intake != null;
     final since = calorieStandardSince;
     final t = target;
@@ -1035,10 +1129,14 @@ class _DayCell extends StatelessWidget {
     // own target (target − intake); the plan-wide actual deficit — which
     // folds in the planned deficit too — is shown up top for the selected
     // day instead (see [_DeficitDatePickerDialogState.build]). Marked days
-    // (放纵日/休息日) show a short label instead, so verdict/remaining are
-    // skipped entirely.
+    // show a short label instead of the number; 放纵日/休息日 skip the
+    // verdict entirely, while 冲碳日 keeps its green/red tint.
     final showRemaining =
-        !marked && selectable && hasLog && t != null && (isPast || isToday);
+        verdictMarker &&
+        selectable &&
+        hasLog &&
+        t != null &&
+        (isPast || isToday);
     final remaining = showRemaining ? (t.calories - (intake ?? 0)) : null;
     // Finalize green/red only for days whose target is a real record (not a
     // legacy estimate) and on/after the latest calorie standard. Meeting the
@@ -1047,7 +1145,11 @@ class _DayCell extends StatelessWidget {
     // figure here.
     final legacy = t?.isLegacyEstimate ?? false;
     final useVerdict =
-        !marked && remaining != null && isPast && !beforeStandard && !legacy;
+        verdictMarker &&
+        remaining != null &&
+        isPast &&
+        !beforeStandard &&
+        !legacy;
     final met = remaining != null && remaining >= 0;
 
     Color? bg;
@@ -1106,9 +1208,7 @@ class _DayCell extends StatelessWidget {
                 if (marked) ...[
                   const SizedBox(height: 1),
                   Text(
-                    marker == DayMarkerType.cheatMeal
-                        ? l10n.cheatMealShortLabel
-                        : l10n.restDayShortLabel,
+                    marker!.shortLabel(l10n),
                     style: theme.textTheme.labelSmall?.copyWith(
                       height: 1.1,
                       fontWeight: FontWeight.w600,

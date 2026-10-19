@@ -17,7 +17,7 @@ Flutter 的通知插件只能「到点发一条通知」，做不到持续响铃
 | `fitness_plan/rest_timer_alarm` | `schedule`（截止时间、标题、正文、关闭按钮文字、是否响铃、是否振动、倒计时标题；响铃和振动都关时报错）、`cancel`、`takeLastDelayMs`、`canScheduleExactAlarms` | `lib/ui/tools/rest_timer_notifications.dart` |
 | `fitness_plan/workout_reminder` | `scheduleAll`（返回成功和失败的数量）、`cancelAll`、`alarmStatus`、`scheduleStatus`、`isAggressiveOem`、`isBackgroundRestricted`、`manufacturer`、`isIgnoringBatteryOptimizations`、`requestIgnoreBatteryOptimizations`、`openAutoStartSettings`（返回 `oem`/`battery`/`appDetails`/`colorOsAppDetails`）、`pickRingtone` | `lib/ui/tools/workout_reminder_notifications.dart` |
 | `fitness_plan/step_counter` | `setStepService`、`isStepServiceEnabled`（由 MainActivity 处理）；`readTodaySteps`、`readRecentSteps`、`isAvailable`、`openHealthConnectSettings`、`diagnostics`（交给 `StepCounterBridge.handle`） | `lib/data/services/android_step_sensor.dart` |
-| `fitness_plan/apk_downloader` | `enqueue`（地址、文件名、大小、sha256）、`verify`、`query`、`cancel` | `lib/data/repositories/app_update_repository.dart` |
+| `fitness_plan/apk_downloader` | `enqueue`（地址、文件名、大小、sha256）、`verify`、`query`、`cancel`、`dismissInstallNotification`（Dart 已打开安装器时收掉 73001 通知） | `lib/data/repositories/app_update_repository.dart` |
 
 Dart 侧在调用前都会先判断平台；非 Android 平台不会调用这些通道。测试里用 `setMockMethodCallHandler` 模拟它们，见 [testing.md](testing.md)。
 
@@ -62,7 +62,7 @@ Dart 侧在调用前都会先判断平台；非 Android 平台不会调用这些
 | 71021 | 后台计步服务的通知 | `StepCounterService` |
 | 72001 / 72101 / 72201 / 72301 + 序号 | 训练 / 喝水 / 饮食 / 称重提醒；Dart 用 `idBase + 0..6` | `reminders_repository.dart` 的 `ReminderKind.idBase`、`WorkoutReminderScheduler` |
 | 72401 | 提醒响铃服务的通知 | `ReminderAlarmService` |
-| 73001 | 「更新已下载」通知 | `ApkDownloadCompleteReceiver` |
+| 73001 | 「更新已下载」通知；`MainActivity` 处于 resumed 时（`ApkDownloadCompleteReceiver.appVisible`）不发，由 Dart 直接打开安装器 | `ApkDownloadCompleteReceiver` |
 | 4271 | 铃声选择器的 Activity 请求码 | `MainActivity` |
 
 主要的通知渠道：`rest_timer_countdown_v1`（低重要性、静音）、`rest_timer_native_alarm_v1`、`rest_timer_fallback_alarm_v2_{both,ring,vibrate}`、`daily_reminder_alarm_service_v1`、`step_counter_service_v1`、`app_update_v1`。

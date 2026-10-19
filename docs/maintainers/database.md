@@ -6,7 +6,7 @@
 
 - 文件：应用文档目录下的 `fitness_plan.sqlite`，用 `NativeDatabase.createInBackground` 在后台 isolate 打开。
 - 代码：`lib/data/tables.dart`（表定义）、`lib/data/db.dart`（`AppDatabase`、迁移）、`lib/data/db.g.dart`（生成的代码，已提交）。
-- **当前 `schemaVersion` = 33**（`lib/data/db.dart`）。
+- **当前 `schemaVersion` = 34**（`lib/data/db.dart`）。
 - 不是所有数据都在 SQLite 里：用户档案、修仙账本、提醒、主题等存在 SharedPreferences，见 [architecture.md](architecture.md#数据放在哪里)。
 
 ## 表
@@ -33,7 +33,7 @@
 
 ## 迁移
 
-全部写在 `db.dart` 的 `onUpgrade` 里，形式是一串 `if (from < N) { ... }`，从 v2 一直到 v33。
+全部写在 `db.dart` 的 `onUpgrade` 里，形式是一串 `if (from < N) { ... }`，从 v2 一直到 v34。
 
 几条约定：
 - **加列用 `_addColumnIfMissing`**。它先用 `PRAGMA table_info` 检查列是否已经存在，这样中途中断的升级可以安全地重跑，同一次升级里前面刚建好的表也不会因为重复加列而出错。
@@ -50,6 +50,7 @@
 | v23 | 碳循环改为「每公斤体重的倍数」模型；旧的碳循环计划不迁移 |
 | v31 | 由旧的 `exclude_contributions` 推导出 `include_steps` 和 `include_diet` |
 | v33 | 执行 `repairLegacyCycleAlignment()`（`lib/data/cycle_alignment_migration.dart`）：根据历史快照推断碳循环的位置；必要时以一个新的策略版本取代今天的计划 |
+| v34 | `day_markers` 加 `carb_load_carb_per_kg`（冲碳日碳水 g/kg）；三种标记都开始读 `pause_carb_cycle`，所以把旧放纵日的这一列清零（v30 迁移时它们取了默认值 true） |
 
 ### 改表的完整步骤
 

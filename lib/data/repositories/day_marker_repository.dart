@@ -5,9 +5,10 @@ import '../../domain/calendar_day.dart';
 import '../../domain/diet_strategy.dart';
 import '../db.dart';
 
-/// Per-day 放纵日/休息日 markers. Both may be set on any date, past included;
-/// see [setRestDay] and [restDayCountsTowardProgression] for how a
-/// backfilled past 休息日 is excluded from the carb-cycle day-count math.
+/// Per-day 放纵日/休息日/冲碳日 markers. 放纵日/休息日 may be set on any date,
+/// past included; 冲碳日 is set from today on. Any of them may pause the
+/// carb-cycle day-count — see [restDayCountsTowardProgression] for how a
+/// backfilled past marker is excluded from that math.
 class DayMarkerRepository {
   DayMarkerRepository(this._db);
 
@@ -32,6 +33,7 @@ class DayMarkerRepository {
       excludeContributions: row.excludeContributions,
       includeSteps: row.includeSteps,
       includeDiet: row.includeDiet,
+      carbLoadCarbPerKg: row.carbLoadCarbPerKg,
     );
   }
 
@@ -117,17 +119,36 @@ class DayMarkerRepository {
     return out;
   }
 
+  /// Settings of every marker from today on, keyed by day — what carb-cycle
+  /// previews need to label paused rows and show 冲碳日 macros.
+  Stream<Map<DateTime, DayMarkerSettings>> watchUpcomingSettings() {
+    final today = StrategyDates.encode(CalendarDay.todayLocal());
+    return (_db.select(
+      _db.dayMarkers,
+    )..where((t) => t.date.isBiggerOrEqualValue(today))).watch().map(
+      (rows) => {
+        for (final row in rows)
+          if ((StrategyDates.tryDecode(row.date), _settingsOf(row)) case (
+            final date?,
+            final settings?,
+          ))
+            date: settings,
+      },
+    );
+  }
+
   /// The effective carb-cycle pause set, sorted (no range filter — the
   /// diet-strategy day-count math needs the full history).
   ///
   /// Past days use the pause frozen on their snapshot, so later toggle edits
   /// never rewrite an executed day sequence; today and the future follow the
-  /// 休息日 markers. Markers backfilled onto an already-past date never count
-  /// — see [restDayCountsTowardProgression].
+  /// markers of every type whose pause switch is on. Markers backfilled onto
+  /// an already-past date never count — see
+  /// [restDayCountsTowardProgression].
   Future<List<DateTime>> restDayDates({DateTime? now}) async {
     final rows = await (_db.select(
       _db.dayMarkers,
-    )..where((t) => t.type.equals(DayMarkerType.restDay.name))).get();
+    )..where((t) => t.pauseCarbCycle.equals(true))).get();
     final dates = progressionRestDayDates(rows).toSet();
     final today = StrategyDates.encode(CalendarDay.todayLocal(now));
     final snapshots =
@@ -159,7 +180,7 @@ class DayMarkerRepository {
       .watch()
       .asyncMap((_) => restDayDates());
 
-  /// Filters raw 休息日 marker rows down to the ones that count toward the
+  /// Filters raw marker rows down to the ones that count toward the
   /// carb-cycle day-count progression (see [restDayCountsTowardProgression]).
   /// Shared with [DietStrategyRepository], which queries `day_markers`
   /// directly (bounded by plan range) rather than going through this
@@ -178,14 +199,10 @@ class DayMarkerRepository {
     DateTime? now,
   }) async {
     final previous = await _rowForDay(day);
-    // The original rest-day timestamp determines whether it may move the
-    // cycle. Editing choices must not turn a contemporaneous mark into a
-    // backfilled one (or vice versa).
-    final markedAt =
-        previous?.type == DayMarkerType.restDay.name &&
-            settings.type == DayMarkerType.restDay
-        ? previous!.updatedAt
-        : now ?? DateTime.now();
+    // The original mark timestamp determines whether it may move the cycle.
+    // Editing choices — or switching type — must not turn a contemporaneous
+    // mark into a backfilled one (or vice versa).
+    final markedAt = previous?.updatedAt ?? now ?? DateTime.now();
     await _db
         .into(_db.dayMarkers)
         .insertOnConflictUpdate(
@@ -199,6 +216,7 @@ class DayMarkerRepository {
             excludeContributions: const Value(false),
             includeSteps: Value(settings.includeSteps),
             includeDiet: Value(settings.includeDiet),
+            carbLoadCarbPerKg: Value(settings.carbLoadCarbPerKg),
           ),
         );
   }
@@ -206,6 +224,7 @@ class DayMarkerRepository {
   /// 放纵日: any date, past/today/future.
   Future<void> setCheatMeal(
     DateTime day, {
+    bool pauseCarbCycle = false,
     bool includeSteps = true,
     bool includeDiet = false,
     bool deductKcal = true,
@@ -217,6 +236,7 @@ class DayMarkerRepository {
       day,
       DayMarkerSettings(
         type: DayMarkerType.cheatMeal,
+        pauseCarbCycle: pauseCarbCycle,
         includeSteps: includeSteps,
         includeDiet: includeDiet,
         cheatPenaltyEnabled: deductKcal,
@@ -242,6 +262,35 @@ class DayMarkerRepository {
         pauseCarbCycle: pauseCarbCycle,
         includeSteps: includeSteps,
         includeDiet: includeDiet,
+      ),
+      now: now,
+    );
+  }
+
+  /// 冲碳日: today or later, carb-cycle plans only (enforced by the UI).
+  /// [carbPerKg] is clamped to the plan's high day when the target is
+  /// resolved, so only the absolute ceiling is checked here.
+  Future<void> setCarbLoad(
+    DateTime day, {
+    required double carbPerKg,
+    bool pauseCarbCycle = false,
+    bool includeSteps = true,
+    bool includeDiet = true,
+    DateTime? now,
+  }) {
+    if (!carbPerKg.isFinite ||
+        carbPerKg <= 0 ||
+        carbPerKg > StrategyRules.carbLoadCarbPerKgMax + 1e-9) {
+      throw ArgumentError.value(carbPerKg, 'carbPerKg');
+    }
+    return _set(
+      day,
+      DayMarkerSettings(
+        type: DayMarkerType.carbLoad,
+        pauseCarbCycle: pauseCarbCycle,
+        includeSteps: includeSteps,
+        includeDiet: includeDiet,
+        carbLoadCarbPerKg: carbPerKg,
       ),
       now: now,
     );

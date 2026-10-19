@@ -13,16 +13,9 @@ extension ReminderStatusLabels on AppLocalizations {
   String get notificationPermissionMissing => _zh
       ? '通知已关闭，到点时可能无法显示提醒。'
       : 'Notifications are off, so scheduled alerts may not appear.';
-  String get reminderLimitBlocking =>
-      _zh ? '提醒可能收不到' : 'Reminders may not arrive';
-  String get reminderLimitDelayed => _zh
-      ? '提醒可能延迟或不在锁屏弹出'
-      : 'Reminders may be late or hidden on the lock screen';
-  String reminderLimitCount(int count) =>
-      _zh ? '$count 项待检查' : '$count to check';
-  String get reminderStatusTitle => _zh ? '提醒状态' : 'Reminder status';
-  String reminderStatusReady(int count) =>
-      _zh ? '已安排 $count 个提醒' : '$count reminders scheduled';
+  String get reminderSettingsTitle => _zh ? '提醒设置' : 'Reminder settings';
+  String get reminderPermissionsOk =>
+      _zh ? '提醒所需权限均已开启' : 'All reminder permissions are on';
   String get reminderLimitSheetIntro => _zh
       ? '逐项检查下面的设置，处理后状态会自动更新。'
       : 'Check each setting below. Status updates when you return.';
@@ -66,7 +59,4 @@ extension ReminderStatusLabels on AppLocalizations {
   String get reminderScheduleUnknown => _zh
       ? '无法确认系统闹钟是否已安排，请重新安排。'
       : 'Could not confirm whether Android scheduled the reminders. Schedule again.';
-  String reminderScheduleReady(int count) => _zh
-      ? '已向系统安排 $count 个提醒；实际送达仍受设备设置影响。'
-      : '$count reminders scheduled with Android; delivery still depends on device settings.';
 }

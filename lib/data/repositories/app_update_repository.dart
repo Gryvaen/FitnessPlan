@@ -268,6 +268,12 @@ abstract final class AppUpdateLogic {
   /// to the split APK for [deviceAbi] when one is published. It is smaller,
   /// and Gitee only carries split APKs (the universal one exceeds its 100 MB
   /// attachment limit).
+  /// Version embedded in an APK asset name picked by [pickApkAsset]
+  /// (`FitnessPlan-<version>-android[-<abi>].apk`), or null.
+  static String? versionOfApkName(String name) => RegExp(
+    r'^FitnessPlan-(.+?)-android(?:-[^.]+)?\.apk$',
+  ).firstMatch(name)?.group(1);
+
   static ReleaseAsset? pickApkAsset(
     List<ReleaseAsset> assets, {
     required String version,
@@ -646,5 +652,15 @@ class AppUpdateRepository {
     return _apkDownloaderChannel.invokeMethod('cancel', {
       'downloadId': downloadId,
     });
+  }
+
+  /// Removes the native "download finished — tap to install" notification
+  /// once the installer has been opened another way. Best effort.
+  Future<void> dismissInstallNotification() async {
+    try {
+      await _apkDownloaderChannel.invokeMethod('dismissInstallNotification');
+    } catch (_) {
+      /* Older native side or no notification — nothing to do. */
+    }
   }
 }

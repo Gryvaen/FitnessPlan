@@ -47,14 +47,16 @@ class _MainShellState extends ConsumerState<MainShell>
   }
 
   /// Checks for a newer release on every launch and resume so the update
-  /// icon's red dot can show up without a manual tap.
+  /// icon's red dot can show up without a manual tap, and opens the
+  /// installer for an update that finished downloading in the background.
   Future<void> _checkForUpdateSilently() async {
     if (defaultTargetPlatform != TargetPlatform.android) return;
     final info = await PackageInfo.fromPlatform();
     if (!mounted) return;
-    ref
-        .read(appUpdateProvider.notifier)
-        .silentCheckForUpdate(info.version, info.buildNumber);
+    final notifier = ref.read(appUpdateProvider.notifier);
+    await notifier.onAppResumed(info.version);
+    if (!mounted) return;
+    notifier.silentCheckForUpdate(info.version, info.buildNumber);
   }
 
   static const _missedWarnedKey = 'reminder_missed_warned_until';

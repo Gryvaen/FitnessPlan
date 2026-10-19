@@ -220,6 +220,12 @@ class DailyNutritionTarget {
   final bool isLegacyEstimate;
   final String? reason;
 
+  /// `reason` prefix of a 冲碳日 target, followed by its carbs in g/kg.
+  static const carbLoadReasonPrefix = 'carbLoad:';
+
+  /// True when a 冲碳日 marker replaced this day's carb-cycle macros.
+  bool get isCarbLoad => reason?.startsWith(carbLoadReasonPrefix) ?? false;
+
   int get caloriesRounded => calories.round();
 
   /// Planned deficit = estimated TDEE − target (null if TDEE unknown).

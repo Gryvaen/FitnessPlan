@@ -1,6 +1,7 @@
 import 'package:diet/l10n/app_localizations.dart';
 import 'package:diet/providers/core_providers.dart';
 import 'package:diet/ui/tools/reminders_hub_page.dart';
+import 'package:diet/ui/tools/restriction_issue_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -133,14 +134,28 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  final gear = find.byKey(const ValueKey('reminders-settings'));
+  bool warningDot(WidgetTester tester) => tester
+      .widget<Badge>(find.descendant(of: gear, matching: find.byType(Badge)))
+      .isLabelVisible;
+
+  /// Opens the settings sheet, checks its issue count, and closes it again.
+  Future<void> expectIssues(WidgetTester tester, int count) async {
+    expect(warningDot(tester), count > 0);
+    await tester.tap(gear);
+    await tester.pumpAndSettle();
+    expect(find.byType(RestrictionIssueRow), findsNWidgets(count));
+    tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+    await tester.pumpAndSettle();
+  }
+
   testWidgets(
     'notification denied is a single actionable issue',
     (tester) async {
       notificationAllowed = false;
       await showPage(tester);
-      expect(find.text('提醒可能收不到'), findsOneWidget);
-      expect(find.text('1 项待检查'), findsOneWidget);
-      await tester.tap(find.text('提醒可能收不到'));
+      await expectIssues(tester, 1);
+      await tester.tap(gear);
       await tester.pumpAndSettle();
       // The detail is folded until the row is tapped.
       expect(find.text('通知已关闭，到点时可能无法显示提醒。'), findsNothing);
@@ -167,9 +182,8 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
       await showPage(tester, locale: const Locale('en'), textScale: 1.5);
-      expect(find.text('Reminders may not arrive'), findsOneWidget);
-      expect(find.text('4 to check'), findsOneWidget);
-      await tester.tap(find.text('Reminders may not arrive'));
+      await expectIssues(tester, 4);
+      await tester.tap(gear);
       await tester.pumpAndSettle();
       expect(find.text('Exact alarms'), findsOneWidget);
       expect(find.text('Lock screen alerts'), findsOneWidget);
@@ -185,8 +199,8 @@ void main() {
     (tester) async {
       missed = [DateTime(2026, 10, 18, 19, 28).millisecondsSinceEpoch];
       await showPage(tester);
-      expect(find.text('提醒可能收不到'), findsOneWidget);
-      await tester.tap(find.text('提醒可能收不到'));
+      expect(warningDot(tester), isTrue);
+      await tester.tap(gear);
       await tester.pumpAndSettle();
       expect(find.text('提醒被系统拦截'), findsOneWidget);
       await tester.tap(find.text('提醒被系统拦截'));
@@ -208,7 +222,7 @@ void main() {
       aggressiveOem = true;
       await showPage(tester);
       // The brand alone is still not a pending issue.
-      expect(find.textContaining('项待检查'), findsNothing);
+      expect(warningDot(tester), isFalse);
       await tester.tap(find.text('训练提醒').first); // off
       await tester.pumpAndSettle();
       expect(find.text(nudge), findsNothing);
@@ -251,9 +265,8 @@ void main() {
     (tester) async {
       statusUnknown = true;
       await showPage(tester);
-      expect(find.text('提醒可能收不到'), findsOneWidget);
-      expect(find.text('1 项待检查'), findsOneWidget);
-      await tester.tap(find.text('提醒可能收不到'));
+      await expectIssues(tester, 1);
+      await tester.tap(gear);
       await tester.pumpAndSettle();
       expect(find.text('尚未确认排程结果'), findsOneWidget);
       expect(find.text('部分提醒安排失败'), findsNothing);
@@ -262,21 +275,25 @@ void main() {
   );
 
   testWidgets(
-    'normal scheduling shows no restriction summary',
+    'normal scheduling shows no restriction summary or reminder count',
     (tester) async {
       await showPage(tester);
-      expect(find.text('已安排 1 个提醒'), findsOneWidget);
-      expect(find.textContaining('项待检查'), findsNothing);
+      expect(warningDot(tester), isFalse);
+      expect(find.textContaining('已安排'), findsNothing);
       expect(find.text('训练提醒'), findsWidgets);
       expect(find.text('喝水提醒'), findsWidgets);
       expect(find.text('饮食记录'), findsWidgets);
       expect(find.text('体重提醒'), findsWidgets);
-      await tester.tap(find.text('已安排 1 个提醒'));
+      await tester.tap(gear);
       await tester.pumpAndSettle();
-      expect(find.text('已向系统安排 1 个提醒；实际送达仍受设备设置影响。'), findsOneWidget);
-      await tester.tapAt(const Offset(20, 300));
+      expect(find.text('提醒设置'), findsOneWidget);
+      expect(find.text('提醒所需权限均已开启'), findsOneWidget);
+      expect(find.byType(RestrictionIssueRow), findsNothing);
+      expect(find.textContaining('已安排'), findsNothing);
+      expect(find.text('提醒如何工作'), findsOneWidget);
+      await tester.tapAt(const Offset(20, 100));
       await tester.pumpAndSettle();
-      expect(find.text('已向系统安排 1 个提醒；实际送达仍受设备设置影响。'), findsNothing);
+      expect(find.text('提醒所需权限均已开启'), findsNothing);
     },
     variant: TargetPlatformVariant.only(TargetPlatform.android),
   );
@@ -286,8 +303,8 @@ void main() {
     (tester) async {
       SharedPreferences.setMockInitialValues({});
       await showPage(tester);
-      expect(find.text('已安排 1 个提醒'), findsNothing);
-      expect(find.textContaining('项待检查'), findsNothing);
+      expect(warningDot(tester), isFalse);
+      expect(find.textContaining('已安排'), findsNothing);
       expect(find.text('训练提醒'), findsWidgets);
       expect(find.text('喝水提醒'), findsWidgets);
       expect(find.text('饮食记录'), findsWidgets);
@@ -297,12 +314,14 @@ void main() {
   );
 
   testWidgets(
-    'exact alarm alone has the softer summary',
+    'exact alarm alone is listed as one issue',
     (tester) async {
       exactAllowed = false;
       await showPage(tester);
-      expect(find.text('提醒可能延迟或不在锁屏弹出'), findsOneWidget);
-      expect(find.text('1 项待检查'), findsOneWidget);
+      await expectIssues(tester, 1);
+      await tester.tap(gear);
+      await tester.pumpAndSettle();
+      expect(find.text('精确闹钟'), findsOneWidget);
     },
     variant: TargetPlatformVariant.only(TargetPlatform.android),
   );
@@ -312,7 +331,7 @@ void main() {
     (tester) async {
       notificationAllowed = false;
       await showPage(tester);
-      await tester.tap(find.text('提醒可能收不到'));
+      await tester.tap(gear);
       await tester.pumpAndSettle();
       await tester.tap(find.text('去开启'));
       await tester.pumpAndSettle();
@@ -326,8 +345,8 @@ void main() {
     (tester) async {
       aggressiveOem = true;
       await showPage(tester);
-      expect(find.textContaining('项待检查'), findsNothing);
-      expect(find.text('已安排 1 个提醒'), findsOneWidget);
+      expect(warningDot(tester), isFalse);
+      expect(find.textContaining('已安排'), findsNothing);
     },
     variant: TargetPlatformVariant.only(TargetPlatform.android),
   );
@@ -338,8 +357,8 @@ void main() {
       aggressiveOem = true;
       backgroundRestricted = null;
       await showPage(tester);
-      expect(find.textContaining('项待检查'), findsNothing);
-      expect(find.text('已安排 1 个提醒'), findsOneWidget);
+      expect(warningDot(tester), isFalse);
+      expect(find.textContaining('已安排'), findsNothing);
     },
     variant: TargetPlatformVariant.only(TargetPlatform.android),
   );
@@ -350,9 +369,8 @@ void main() {
       aggressiveOem = true;
       backgroundRestricted = true;
       await showPage(tester);
-      expect(find.text('提醒可能收不到'), findsOneWidget);
-      expect(find.text('1 项待检查'), findsOneWidget);
-      await tester.tap(find.text('提醒可能收不到'));
+      await expectIssues(tester, 1);
+      await tester.tap(gear);
       await tester.pumpAndSettle();
       expect(find.text('系统已限制后台运行'), findsOneWidget);
       await tester.tap(find.text('系统已限制后台运行'));
@@ -363,8 +381,8 @@ void main() {
       backgroundRestricted = false;
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pumpAndSettle();
-      expect(find.textContaining('项待检查'), findsNothing);
-      expect(find.text('已安排 1 个提醒'), findsOneWidget);
+      expect(warningDot(tester), isFalse);
+      expect(find.textContaining('已安排'), findsNothing);
     },
     variant: TargetPlatformVariant.only(TargetPlatform.android),
   );
@@ -376,12 +394,11 @@ void main() {
       backgroundRestricted = true;
       notificationAllowed = false;
       await showPage(tester);
-      expect(find.text('2 项待检查'), findsOneWidget);
+      await expectIssues(tester, 2);
       backgroundRestricted = false;
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pumpAndSettle();
-      expect(find.text('1 项待检查'), findsOneWidget);
-      expect(find.text('提醒可能收不到'), findsOneWidget);
+      await expectIssues(tester, 1);
     },
     variant: TargetPlatformVariant.only(TargetPlatform.android),
   );
@@ -392,7 +409,7 @@ void main() {
       aggressiveOem = true;
       backgroundRestricted = true;
       await showPage(tester);
-      await tester.tap(find.text('提醒可能收不到'));
+      await tester.tap(gear);
       await tester.pumpAndSettle();
       final button = find.text('去设置');
       expect(button, findsOneWidget);
@@ -407,7 +424,7 @@ void main() {
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pumpAndSettle();
       expect(find.text('请查看「允许后台使用」；如果已经开启，无需更改。'), findsOneWidget);
-      await tester.tap(find.text('提醒可能收不到'));
+      await tester.tap(gear);
       await tester.pumpAndSettle();
       expect(find.text('请查看「允许后台使用」；如果已经开启，无需更改。'), findsWidgets);
     },
@@ -420,7 +437,7 @@ void main() {
       backgroundRestricted = true;
       autoStartResult = 'oem';
       await showPage(tester);
-      await tester.tap(find.text('提醒可能收不到'));
+      await tester.tap(gear);
       await tester.pumpAndSettle();
       expect(find.text('去设置'), findsOneWidget);
       expect(find.text('关闭电池优化'), findsNothing);
@@ -439,7 +456,7 @@ void main() {
       backgroundRestricted = true;
       autoStartResult = 'appDetails';
       await showPage(tester);
-      await tester.tap(find.text('提醒可能收不到'));
+      await tester.tap(gear);
       await tester.pumpAndSettle();
       await tester.tap(find.text('去设置'));
       await tester.pumpAndSettle();
@@ -458,7 +475,7 @@ void main() {
       backgroundRestricted = true;
       autoStartFails = true;
       await showPage(tester);
-      await tester.tap(find.text('提醒可能收不到'));
+      await tester.tap(gear);
       await tester.pumpAndSettle();
       final button = find.text('去设置');
       expect(button, findsOneWidget);

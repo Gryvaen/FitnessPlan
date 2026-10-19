@@ -302,8 +302,8 @@ class DayDietConfirmations extends Table {
   Set<Column> get primaryKey => {date};
 }
 
-/// Per-day 放纵日/休息日 override marker; see `domain/day_marker.dart`. `type`
-/// stores a [DayMarkerType] name. `updatedAt` retains the original rest-day
+/// Per-day 放纵日/休息日/冲碳日 override marker; see `domain/day_marker.dart`.
+/// `type` stores a [DayMarkerType] name. `updatedAt` retains the original
 /// mark time, which gates the optional carb-cycle pause. Added setting columns
 /// default to the pre-v30 behavior for migrated rows; new rows set them
 /// explicitly.
@@ -322,6 +322,9 @@ class DayMarkers extends Table {
   BoolColumn get includeDiet => boolean().withDefault(const Constant(false))();
   BoolColumn get excludeContributions =>
       boolean().withDefault(const Constant(true))();
+
+  /// 冲碳日 carbs, g per kg reference weight (v34); null for other types.
+  RealColumn get carbLoadCarbPerKg => real().nullable()();
 
   @override
   Set<Column> get primaryKey => {date};

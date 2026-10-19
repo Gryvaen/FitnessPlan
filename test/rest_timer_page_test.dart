@@ -158,7 +158,8 @@ void main() {
       );
       final trigger =
           (scheduled.single.arguments as Map)['triggerAtMillis'] as int;
-      expect((scheduled.single.arguments as Map)['soundEnabled'], isTrue);
+      // Vibrate-only is the default for a fresh install.
+      expect((scheduled.single.arguments as Map)['soundEnabled'], isFalse);
       expect((scheduled.single.arguments as Map)['vibrationEnabled'], isTrue);
       expect(prefs.getInt('rest_timer_deadline_ms'), trigger);
 
@@ -191,36 +192,36 @@ void main() {
       final deadline = (initial.arguments as Map)['triggerAtMillis'];
 
       await openSettings(tester);
-      await chooseMode(tester, 'Vibrate only');
-      final afterVibrate = alarmCalls.where((c) => c.method == 'schedule').last;
-      expect((afterVibrate.arguments as Map)['triggerAtMillis'], deadline);
-      expect((afterVibrate.arguments as Map)['soundEnabled'], isFalse);
-      expect((afterVibrate.arguments as Map)['vibrationEnabled'], isTrue);
-      expect(alarmCalls.where((c) => c.method == 'schedule'), hasLength(2));
-
-      await openSettings(tester);
-      final selected = tester.widget<ListTile>(
-        find.ancestor(
-          of: find.text('Vibrate only'),
-          matching: find.byType(ListTile),
-        ),
-      );
-      expect(selected.trailing, isNotNull);
       await chooseMode(tester, 'Ring only');
       final afterRing = alarmCalls.where((c) => c.method == 'schedule').last;
       expect((afterRing.arguments as Map)['triggerAtMillis'], deadline);
       expect((afterRing.arguments as Map)['soundEnabled'], isTrue);
       expect((afterRing.arguments as Map)['vibrationEnabled'], isFalse);
+      expect(alarmCalls.where((c) => c.method == 'schedule'), hasLength(2));
+
+      await openSettings(tester);
+      final selected = tester.widget<ListTile>(
+        find.ancestor(
+          of: find.text('Ring only'),
+          matching: find.byType(ListTile),
+        ),
+      );
+      expect(selected.trailing, isNotNull);
+      await chooseMode(tester, 'Vibrate only');
+      final afterVibrate = alarmCalls.where((c) => c.method == 'schedule').last;
+      expect((afterVibrate.arguments as Map)['triggerAtMillis'], deadline);
+      expect((afterVibrate.arguments as Map)['soundEnabled'], isFalse);
+      expect((afterVibrate.arguments as Map)['vibrationEnabled'], isTrue);
       expect(alarmCalls.where((c) => c.method == 'schedule'), hasLength(3));
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getString('rest_timer_alert_mode'), 'ringOnly');
+      expect(prefs.getString('rest_timer_alert_mode'), 'vibrateOnly');
 
       await tester.pumpWidget(const SizedBox.shrink());
       await showPage(tester);
       await openSettings(tester);
       final restored = tester.widget<ListTile>(
         find.ancestor(
-          of: find.text('Ring only'),
+          of: find.text('Vibrate only'),
           matching: find.byType(ListTile),
         ),
       );
@@ -239,7 +240,7 @@ void main() {
       final deadline = prefs.getInt('rest_timer_deadline_ms');
       scheduleFails = true;
       await openSettings(tester);
-      await chooseMode(tester, 'Vibrate only');
+      await chooseMode(tester, 'Ring only');
       expect(prefs.getInt('rest_timer_deadline_ms'), deadline);
       expect(settingsBadge(tester).isLabelVisible, isTrue);
       await openSettings(tester);

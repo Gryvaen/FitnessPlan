@@ -3,6 +3,7 @@ import '../ink/ink_icon.dart';
 
 import '../../domain/calendar_day.dart';
 import '../../domain/cycle_history.dart';
+import '../../domain/day_marker.dart';
 import '../../domain/diet_strategy.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../theme/app_theme.dart';
@@ -23,6 +24,7 @@ class CarbCycleView extends StatelessWidget {
     this.windowStart,
     this.cycleStartIndex = 0,
     this.anchors = const [],
+    this.markers = const {},
   });
 
   final CarbCyclePlan plan;
@@ -49,6 +51,10 @@ class CarbCycleView extends StatelessWidget {
 
   /// First date shown when [restDayDates] is set. Defaults to today.
   final DateTime? windowStart;
+
+  /// Day markers by date: a paused row is labelled by its marker, and a
+  /// 冲碳日 row shows its raised macros (see [CarbCyclePlan.carbLoadDay]).
+  final Map<DateTime, DayMarkerSettings> markers;
 
   @override
   Widget build(BuildContext context) {
@@ -161,18 +167,27 @@ class CarbCycleView extends StatelessWidget {
       anchors: anchors,
     );
     final cycleIndex = cycleDay.index;
-    final row = days[cycleIndex];
+    final marker = markers[date];
+    final carbLoadPerKg = marker?.type == DayMarkerType.carbLoad
+        ? marker?.carbLoadCarbPerKg ?? StrategyRules.defaultCarbLoadCarbPerKg
+        : null;
+    final row = carbLoadPerKg != null
+        ? plan.carbLoadDay(carbLoadPerKg)
+        : days[cycleIndex];
     return _DayRow(
       key: ValueKey('cycleDay-$i'),
       name: AppDates.md(date, locale),
       isToday: date == today,
       type: row.dayType,
       paused: cycleDay.paused,
+      marker: carbLoadPerKg != null || cycleDay.paused
+          ? marker?.type ?? DayMarkerType.restDay
+          : null,
       kcal: row.energy.round(),
       proteinG: row.proteinG.round(),
       carbG: row.carbG.round(),
       fatG: row.fatG.round(),
-      onTap: editable && !cycleDay.paused
+      onTap: editable && !cycleDay.paused && carbLoadPerKg == null
           ? () => onScheduleChanged!(plan.schedule.cycleDayType(cycleIndex))
           : null,
     );
@@ -186,6 +201,7 @@ class _DayRow extends StatelessWidget {
     required this.isToday,
     required this.type,
     required this.paused,
+    required this.marker,
     required this.kcal,
     required this.proteinG,
     required this.carbG,
@@ -197,9 +213,13 @@ class _DayRow extends StatelessWidget {
   final bool isToday;
   final CarbDayType type;
 
-  /// A paused 休息日 stands outside the cycle: labelled on its own, its
-  /// macros are those of the slot it holds.
+  /// A paused day stands outside the cycle: labelled by its [marker], its
+  /// macros are those of the slot it holds (or the 冲碳日's own).
   final bool paused;
+
+  /// Marker naming this row instead of its carb-day type: set for a paused
+  /// day or a 冲碳日.
+  final DayMarkerType? marker;
   final int kcal;
   final int proteinG;
   final int carbG;
@@ -246,7 +266,7 @@ class _DayRow extends StatelessWidget {
                   Expanded(
                     flex: 4,
                     child: Text(
-                      paused ? l10n.restDayLabel : type.label(l10n),
+                      marker?.label(l10n) ?? type.label(l10n),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: typeColor,
                         fontWeight: FontWeight.w600,

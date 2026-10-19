@@ -19,7 +19,9 @@ import java.io.File
  * `<receiver>` registration still gets it. Posts a notification to install
  * the update: tapping a notification counts as direct user interaction, so
  * it can launch the installer even from the background, unlike starting it
- * straight from this receiver (which Android 10+ would block).
+ * straight from this receiver (which Android 10+ would block). While the
+ * app is on screen the Dart side opens the installer itself, so no
+ * notification is posted then.
  */
 class ApkDownloadCompleteReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -50,6 +52,7 @@ class ApkDownloadCompleteReceiver : BroadcastReceiver() {
         // handle downloads that actually landed in our own app-private
         // directory (nothing else could write there).
         if (!localPath.startsWith(ownDir)) return
+        if (appVisible) return
 
         showInstallNotification(context, localPath)
     }
@@ -99,5 +102,14 @@ class ApkDownloadCompleteReceiver : BroadcastReceiver() {
     companion object {
         private const val CHANNEL_ID = "app_update_v1"
         private const val NOTIFICATION_ID = 73001
+
+        /** Set by [MainActivity] while it is resumed. */
+        @Volatile
+        var appVisible = false
+
+        /** Called once the installer was opened some other way. */
+        fun dismissNotification(context: Context) {
+            context.getSystemService(NotificationManager::class.java)?.cancel(NOTIFICATION_ID)
+        }
     }
 }

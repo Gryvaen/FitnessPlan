@@ -44,6 +44,29 @@ void main() {
       },
     );
 
+    test('dismissInstallNotification calls native and never throws', () async {
+      mockHandler((call) => null);
+      final repo = AppUpdateRepository();
+      await repo.dismissInstallNotification();
+      expect(calls.single.method, 'dismissInstallNotification');
+      mockHandler((call) => throw PlatformException(code: 'x'));
+      await repo.dismissInstallNotification();
+    });
+
+    test('versionOfApkName reads split and universal names', () {
+      expect(
+        AppUpdateLogic.versionOfApkName(
+          'FitnessPlan-2.6.4-android-arm64-v8a.apk',
+        ),
+        '2.6.4',
+      );
+      expect(
+        AppUpdateLogic.versionOfApkName('FitnessPlan-2.6.4-android.apk'),
+        '2.6.4',
+      );
+      expect(AppUpdateLogic.versionOfApkName('update.apk'), isNull);
+    });
+
     test('queryDownload maps the native status payload', () async {
       mockHandler(
         (call) => {

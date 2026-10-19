@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../data/repositories/app_update_repository.dart';
+import '../../data/services/permission_gate.dart';
 import '../../domain/calorie_calculator.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
@@ -300,6 +302,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final localBuildNumber = info.buildNumber;
     final notifier = ref.read(appUpdateProvider.notifier);
 
+    // Already downloaded but not installed (e.g. the installer was backed
+    // out of): install that file instead of checking and downloading again,
+    // unless a newer release has turned up since.
+    final ready = update.readyVersion;
+    if (ready != null &&
+        AppUpdateLogic.isNewer(local, ready) &&
+        (update.availableVersion == null || update.availableVersion == ready)) {
+      if (await notifier.installReady()) return;
+      if (!mounted) return;
+    }
+
     // Hidden as soon as the check settles, before any follow-up UI.
     messenger.showSnackBar(
       SnackBar(
@@ -341,6 +354,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       );
       if (source == null || !mounted) return;
       await notifier.setSourcePreference(source);
+      // Lets a download that finishes in the background announce itself;
+      // declining only loses that notification.
+      await PermissionGate.request(Permission.notification);
+      if (!mounted) return;
 
       messenger.showSnackBar(SnackBar(content: Text(l10n.downloading)));
       // Fire-and-forget: progress lives on [appUpdateProvider] / AppBar icon.
@@ -478,6 +495,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               ? (update.progress > 0
                                     ? '${(update.progress * 100).toStringAsFixed(0)}%'
                                     : l10n.connecting)
+                              : update.readyVersion != null
+                              ? l10n.installDownloadedUpdate(
+                                  update.readyVersion!,
+                                )
                               : l10n.checkUpdate,
                           onPressed: update.isBusy ? null : _checkForUpdate,
                           icon: _UpdateDownloadIcon(status: update),

@@ -788,6 +788,12 @@ abstract class AppLocalizations {
   /// **'Check for updates'**
   String get checkUpdate;
 
+  /// No description provided for @installDownloadedUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Install v{version}'**
+  String installDownloadedUpdate(String version);
+
   /// No description provided for @downloadInstall.
   ///
   /// In en, this message translates to:
@@ -2529,18 +2535,6 @@ abstract class AppLocalizations {
   /// **'Message'**
   String get reminderContentBodyLabel;
 
-  /// No description provided for @reminderContentEmptyHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Leave blank to use the default text'**
-  String get reminderContentEmptyHint;
-
-  /// No description provided for @reminderContentWorkoutHint.
-  ///
-  /// In en, this message translates to:
-  /// **'The default workout message varies with the previous day\'s training.'**
-  String get reminderContentWorkoutHint;
-
   /// No description provided for @reminderAlertModeRing.
   ///
   /// In en, this message translates to:
@@ -2918,6 +2912,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rest'**
   String get restDayShortLabel;
+
+  /// No description provided for @carbLoadLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Carb-load day'**
+  String get carbLoadLabel;
+
+  /// No description provided for @carbLoadShortLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Load'**
+  String get carbLoadShortLabel;
+
+  /// No description provided for @carbLoadCarbPerKgLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Carbs'**
+  String get carbLoadCarbPerKgLabel;
+
+  /// No description provided for @carbLoadSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Carbs {perKg} g/kg'**
+  String carbLoadSummary(String perKg);
+
+  /// No description provided for @carbLoadHint.
+  ///
+  /// In en, this message translates to:
+  /// **'High-day protein and fat, carbs raised up to 7 g/kg'**
+  String get carbLoadHint;
 
   /// No description provided for @dayMarkerSettingsTitle.
   ///

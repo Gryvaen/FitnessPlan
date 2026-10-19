@@ -102,6 +102,10 @@ class _FakeAppUpdateRepository extends AppUpdateRepository {
   Future<void> cancelDownload(int downloadId) async {
     cancelled.add(downloadId);
   }
+
+  int dismissCalls = 0;
+  @override
+  Future<void> dismissInstallNotification() async => dismissCalls++;
 }
 
 Future<void> _storeSession(SharedPreferences prefs) async {
@@ -120,6 +124,8 @@ void main() {
   late ProviderContainer container;
   late DateTime now;
   var disposed = false;
+  late List<String> installs;
+  var foreground = true;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -127,11 +133,18 @@ void main() {
     repo = _FakeAppUpdateRepository();
     now = DateTime(2026, 10, 16);
     disposed = false;
+    installs = [];
+    foreground = true;
     container = ProviderContainer(
       overrides: [
         appUpdateClockProvider.overrideWithValue(() => now),
         sharedPreferencesProvider.overrideWithValue(prefs),
         appUpdateRepositoryProvider.overrideWithValue(repo),
+        appUpdateIsForegroundProvider.overrideWithValue(() => foreground),
+        appUpdateInstallerProvider.overrideWithValue((path) async {
+          installs.add(path);
+          return null;
+        }),
       ],
     );
   });
@@ -307,6 +320,102 @@ void main() {
         expect(repo.cancelled, [999]);
       },
     );
+  });
+
+  group('downloaded but not installed', () {
+    /// Lets a download that finished while the app was closed land on a
+    /// fresh container, as the resume path does at launch.
+    Future<void> finishDownload() async {
+      await _storeSession(prefs);
+      await prefs.setInt('app_update_pending_download_id', 7);
+      repo.downloadInfos[7] = const ApkDownloadInfo(
+        state: ApkDownloadState.success,
+        bytesDownloaded: 100,
+        totalBytes: 100,
+        localPath: '/files/update.apk',
+      );
+      container.read(appUpdateProvider);
+      for (var i = 0; i < 5; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
+
+    AppUpdateNotifier notifier() => container.read(appUpdateProvider.notifier);
+
+    test('in the foreground it installs and remembers the APK', () async {
+      await finishDownload();
+      expect(installs, ['/files/update.apk']);
+      expect(repo.dismissCalls, 1);
+      expect(repo.cancelled, isEmpty);
+      expect(container.read(appUpdateProvider).readyVersion, '2.0.0');
+      expect(prefs.getString('app_update_ready_apk'), isNotNull);
+    });
+
+    test('in the background it waits for the next resume', () async {
+      foreground = false;
+      await finishDownload();
+      expect(installs, isEmpty);
+      await notifier().onAppResumed('1.0.0');
+      expect(installs, ['/files/update.apk']);
+      await notifier().onAppResumed('1.0.0');
+      expect(installs, hasLength(1));
+    });
+
+    test('tapping again installs the same file without downloading', () async {
+      await finishDownload();
+      installs.clear();
+      await notifier().downloadAndInstall(
+        asset: _release('2.0.0').assets.first,
+        localVersion: '1.0.0',
+      );
+      expect(installs, ['/files/update.apk']);
+      expect(repo.enqueueCalls, 0);
+      expect(container.read(appUpdateProvider).isBusy, isFalse);
+    });
+
+    test('a broken file is forgotten and downloaded again', () async {
+      await finishDownload();
+      installs.clear();
+      repo.valid = false;
+      expect(await notifier().installReady(), isFalse);
+      expect(repo.cancelled, [7]);
+      expect(container.read(appUpdateProvider).readyVersion, isNull);
+      await notifier().downloadAndInstall(
+        asset: _release('2.0.0').assets.first,
+        localVersion: '1.0.0',
+      );
+      expect(installs, isEmpty);
+      expect(repo.enqueueCalls, 1);
+    });
+
+    test('a different package replaces the downloaded one', () async {
+      await finishDownload();
+      installs.clear();
+      final newer = _release('2.1.0').assets.first;
+      await notifier().downloadAndInstall(
+        asset: ReleaseAsset(
+          name: newer.name,
+          downloadUrl: newer.downloadUrl,
+          size: newer.size,
+          sha256: 'b' * 64,
+          candidates: newer.candidates,
+        ),
+        localVersion: '1.0.0',
+      );
+      expect(installs, isEmpty);
+      expect(repo.cancelled, [7]);
+      expect(repo.enqueueCalls, 1);
+    });
+
+    test('once installed the APK is cleaned up, not reopened', () async {
+      foreground = false;
+      await finishDownload();
+      await notifier().onAppResumed('2.0.0');
+      expect(installs, isEmpty);
+      expect(repo.cancelled, [7]);
+      expect(prefs.getString('app_update_ready_apk'), isNull);
+      expect(prefs.getBool('app_update_install_on_resume'), isNull);
+    });
   });
 
   group('resuming a pending download on a fresh container', () {

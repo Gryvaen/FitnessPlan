@@ -356,6 +356,38 @@ void main() {
     });
   });
 
+  group('carb-load day', () {
+    CarbCyclePlan planFor(String code) => CarbCyclePlanner.compute(
+      referenceWeightKg: 75,
+      rates: CarbCycleRates.defaults(),
+      schedule: CarbCycleSchedule.tryParse(code)!,
+    );
+
+    test('floor is the compensated high day; ceiling is 7 g/kg', () {
+      final plain = planFor('LLLH');
+      expect(plain.highDayCarbPerKg, closeTo(3.5, 1e-9));
+      final withMid = planFor('HMLL');
+      expect(withMid.highDayCarbPerKg, lessThan(3.5));
+      expect(withMid.clampCarbLoadPerKg(1), withMid.highDayCarbPerKg);
+      expect(withMid.clampCarbLoadPerKg(9), 7.0);
+      expect(withMid.clampCarbLoadPerKg(double.nan), withMid.highDayCarbPerKg);
+    });
+
+    test('keeps high-day protein and fat and recomputes energy', () {
+      final plan = planFor('HMLL');
+      final high = plan.dayFor(CarbDayType.high)!;
+      final load = plan.carbLoadDay(6.5);
+      expect(load.dayType, CarbDayType.high);
+      expect(load.proteinG, high.proteinG);
+      expect(load.fatG, high.fatG);
+      expect(load.carbG, closeTo(75 * 6.5, 1e-9));
+      expect(
+        load.energy,
+        closeTo(load.proteinG * 4 + load.carbG * 4 + load.fatG * 9, 1e-9),
+      );
+    });
+  });
+
   group('cycle date indexing', () {
     test('cycleIndexOf wraps around the anchor date', () {
       final anchor = DateTime(2026, 9, 1);

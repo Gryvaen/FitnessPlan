@@ -11,7 +11,7 @@
 3. **每日目标快照只写今天。** `targetForDay` 会把今天的目标存成 `DailyNutritionTarget` 快照；过去的快照永远不改，未来的日期永远不存。过去某天如果没有快照，就按当时生效的计划或档案实时算出来。手动覆盖的目标在重新计算时会保留。
 4. **快照判等要完整。** `_upsertSnapshot` 在值没变时跳过写入，这样 `watchTargetForDay` 才不会因为自己写表而被反复触发、陷入循环。给快照新增字段时，**一定要同时更新 `_sameTarget` 的比较**。
 5. **碳循环按天数计算，不按星期几。** 「今天是循环的第几天」只能通过 `resolveCycleDay`（`lib/domain/cycle_history.dart`）计算，依据是历史快照里的锚点和暂停日。不要另写一套推算。
-6. **休息日标记的 `updatedAt` 不能在编辑时更新。** 休息日只有在当天或之前标记，才会暂停循环（`restDayCountsTowardProgression`），判断依据就是这个时间戳。`DayMarkerRepository` 编辑标记时刻意保留原来的 `updatedAt`。
+6. **日期标记的 `updatedAt` 不能在编辑时更新。** 标记只有在当天或之前做出，才会暂停循环（`restDayCountsTowardProgression`），判断依据就是这个时间戳。`DayMarkerRepository` 编辑标记或切换类型时都保留原来的 `updatedAt`。
 7. **减脂目标本身没有热量缺口。** `CalorieCalculator` 对减脂目标给出的就是 TDEE（和维持一样），缺口只来自生效中的饮食策略。离开减脂目标时会自动停止策略，并冻结修仙进度。
 8. **修仙进度按热量计算，不按体重。** 见下文「修仙境界」。
 9. **路由刷新只看档案从无到有、从有到无。** 见 [architecture.md](architecture.md#路由)。
@@ -23,7 +23,7 @@
 - `CalorieCalculator`（`lib/domain/calorie_calculator.dart`）：先用 Mifflin-St Jeor 公式算 BMR，乘以活动系数得到 TDEE，再按目标给出摄入：维持 = TDEE，减脂 = TDEE（缺口由策略提供），增肌 = TDEE × 1.1；最后分配三大营养素。
 - 平台期修正：`calorieAdjustment` 最多 300 kcal。
 - 平台期检测（`lib/domain/plateau.dart`）：最近 7 次体重记录的变化不超过 0.3 kg，就判定为平台期，在今日页给出提示。
-- **「新标准」标记**：`UserProfile.calorieStandardSince`。只有策略发生结构性变化（`isStructuralChange`）或切换目标时才会重新打这个标记；在此之前的日期显示为「旧标准估算」。
+- **「新标准」标记**：`UserProfile.calorieStandardSince`。只有策略发生结构性变化（`isStructuralChange`）或切换目标时才会重新打这个标记；碳循环只调整排期（周期长度、高/中/低顺序）不算结构性变化。在此之前的日期显示为「旧标准估算」。
 
 ## 饮食策略
 
@@ -46,21 +46,23 @@
 | 碳水递减 | 每档 25 g 碳水（100 kcal），观察期 14 天 |
 
 - **每日目标的唯一出口**是 `dailyTargetProvider`（按天的 family），背后是 `DietStrategyRepository.targetForDay`，来源（`TargetSource`）可能是策略、档案或手动覆盖。
-- 策略配置页每次保存都会生成一个新版本，同时重新打「新标准」标记。
+- 策略配置页每次保存都会生成一个新版本；只有结构性变化才会重新打「新标准」标记（见上文）。
 - 体重变化达到 3%，或档案和计划不一致时，会提示重新评估策略（`strategy_review_providers.dart`）。
 
 ### 碳循环
 
 - 循环是一个由 H/M/L 组成、长度 3–5 天的序列（`CarbCycleSchedule`），**按天数推进，和星期几无关**。
 - 修改计划后，循环会**接着已执行的天数继续**，不会回到第一天：新版本记录 `cycle_start_index`，每天的快照记录当天的 `cycle_index` 和是否暂停（`cycle_paused`）。
-- 休息日暂停：被标记为休息日、并且标记在当天或之前做出的日子，循环暂停一天，界面上单独显示为「休息日」。暂停开关只影响今天及以后，过去的日期已锁定。
+- 标记暂停：放纵日、休息日、冲碳日都可以打开「碳循环顺延一天」。打开后，只要标记在当天或之前做出，循环就暂停一天，预览里该行按标记类型显示。暂停开关只影响今天及以后，过去的日期已锁定。
+- 冲碳日：当天目标用高碳日的蛋白和脂肪，碳水按标记里设定的 g/kg 计算，范围从计划的高碳日实际值（扣除中碳日补偿后）到 7.0（`CarbCyclePlan.carbLoadDay`）。目标的 `reason` 写成 `carbLoad:<g/kg>`，`dayType` 记为高碳日。多出的热量不在其他日子补回。
 - v33 迁移会为老用户推断历史的循环位置，见 [database.md](database.md#迁移)。
 
-## 日期标记（放纵日 / 休息日）
+## 日期标记（放纵日 / 休息日 / 冲碳日）
 
 - `lib/domain/day_marker.dart`、`lib/data/repositories/day_marker_repository.dart`。在今日页的月历上长按日期即可标记。
 - 每个标记日可以分别设置：步数是否计入修行、饮食热量是否计入修行。放纵日计入饮食时，按 TDEE − 摄入计算；不计入时，可以设置一个固定扣减值（也可以不扣）。
-- 休息日可以暂停碳循环，规则见上文。
+- 三种标记都可以暂停碳循环，规则见上文。冲碳日只能在碳循环计划下、给今天及以后的日期标记；它有真实目标，所以月历上照常判绿/红，放纵日和休息日则不判定。
+- 一天只能有一个标记（`day_markers` 以 `date` 为主键），三种类型互斥。
 
 ## 修仙境界
 
@@ -89,16 +91,19 @@
 
 代码：`lib/data/repositories/reminders_repository.dart`、`lib/providers/workout_reminder_providers.dart`、`lib/ui/tools/workout_reminder_notifications.dart`、`lib/ui/tools/reminders_hub_page.dart`，原生部分见 [android-native.md](android-native.md)。
 
-- 四类提醒：训练、喝水、饮食、称重。每类可以设置时间、星期几、响铃或振动、铃声、自定义标题和正文。
+- 四类提醒：训练、喝水、饮食、称重。每类在列表里单独设置时间和星期几；响铃或振动、铃声四类共用，自定义标题和正文按类型分开，这些都在右上角齿轮的「提醒设置」弹窗里设置。默认振动；通知内容点某一类后在底部弹窗里编辑。
+  - 响铃和铃声在存储上仍然是每类各存一份（`reminder_<kind>_alertMode` / `soundUri` / `soundTitle`），保存时 `setAlertModeAll` / `setSoundAll` 会同时写四份，所以原生排期和通知渠道 id 都没有变。老用户各类的设置可能不一样，由 `RemindersRepository._unifyAlertSettings` 统一一次（标记 `reminder_alert_unified_v1`）：取第一个已开启的提醒，都没开时取训练提醒。
 - 保存设置后，`syncSchedule()` 会重新排期（尽力而为）；应用每次启动后也会同步一次。
 - Android 上提醒由原生代码排期：每个提醒触发后自己排下一周，所以即使用户很久不打开应用，提醒也会继续；开机后会自动恢复。
-- 提醒中心顶部的状态行会汇总权限问题（通知、精确闹钟、锁屏全屏、后台限制），点开可以逐项处理。
+- 提醒中心右上角的齿轮（`reminders-settings`）打开「提醒设置」弹窗，版式和休息计时器的提醒设置一致：列出权限问题（通知、精确闹钟、锁屏全屏、后台限制、排程失败），可以逐项处理；没有问题时显示「提醒所需权限均已开启」。有问题时齿轮上显示警告色小点。页面上不显示状态行，也不显示已安排的提醒数量。
 
 ## 休息计时器
 
 代码：`lib/ui/tools/rest_timer_page.dart`、`lib/ui/tools/rest_timer_notifications.dart`，原生部分见 [android-native.md](android-native.md)。
 
 - 计时的截止时间保存在 prefs（`rest_timer_deadline_ms`），离开页面或杀掉应用后再回来，仍能恢复。
+- 提醒方式（右上角齿轮）默认「仅振动」。
+- **默认振动只对新安装生效**：`lib/data/services/alert_defaults.dart` 的 `pinLegacyAlertDefaults` 在 `main()` 里执行一次（标记 `alert_default_vibrate_v1`）。已有 `user_profile` 的老安装，如果没手动选过，会被写回原来的默认值（提醒 `ring`、计时器 `ringAndVibrate`），所以升级后听到的方式不变。
 - 开始计时时，Android 用 `setAlarmClock` 排一个闹钟，并在通知栏显示系统绘制的倒计时。
 - **ColorOS 等系统会冻结后台应用、扣住它的闹钟**，导致计时结束后要等切回应用才响。应用的应对办法：
   - 在这类机型上，提醒设置里会显示「后台可能不准时」，引导用户打开「允许应用后台行为」；
@@ -135,3 +140,6 @@
 5. **下载**：按用户选择的下载源（自动 / Gitee / GitHub），或者给每个源测速（请求 256 KiB）后排序，速度相同时优先 Gitee。通过原生 DownloadManager 下载，下载会话存在 prefs 里，进程被杀后可以续上。30 秒没有任何进度（或 60 秒卡住）就切换到下一个源。**GitHub 下载开始 15 秒（`kSlowDownloadWindow`）后平均速度低于 150 KiB/s，且还有 Gitee 可用时，切到 Gitee**，GitHub 放回队尾作为后备；每次下载最多这样切一次。256 KiB 的测速样本太小，经常判断不准，主要靠这条兜底。下载进度只显示在「我的」右上角下载图标的圆圈上。
    - Gitee 下载按 IP 做令牌桶限速：开头约 1.3 MB 很快，短时间内下多了会掉到几十 KB/s。真机反复测试时会遇到，不是代码问题。
 6. **安装**：原生层校验文件大小和 SHA-256，不通过就换源重下，**绝不安装未经校验的文件**；通过后调用系统安装器。这里的哈希只校验文件完整性，不能代替 Android 的 APK 签名校验。
+   - **后台完成**：Android 10 起，后台应用调起安装器会被系统静默拦截（`startActivity` 不报错）。因此 `_finishDownload` 判断不在前台（`appUpdateIsForegroundProvider`）时不调安装器，只写 `app_update_install_on_resume`。用户可以点原生广播发的「点击安装」通知（App 在前台时广播不发这条通知）；也可以直接回到 App，由 `MainShell` 在启动和每次回前台时调用 `onAppResumed(本机版本)` 打开安装器。用户点「下载安装」时会申请通知权限；拒绝也不影响回前台自动弹出。
+   - **已下载未安装**：校验通过的包记在 `app_update_ready_apk`（版本、downloadId、asset），DownloadManager 的记录和文件都保留。用户在安装界面取消后，再点右上角按钮（tooltip 显示「安装 vX」），会跳过联网检查，`installReady()` 重新校验后直接安装；`downloadAndInstall` 遇到 sha256 相同的包也直接安装。文件丢失或校验不过时，就丢弃这条记录，回到正常的下载流程。
+   - **清理**：本机版本已不低于已下载的版本（说明装上了），或者要下载另一个包时，`cancelDownload` 会删掉旧包和它的记录。

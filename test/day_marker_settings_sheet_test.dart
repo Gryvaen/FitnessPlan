@@ -3,6 +3,7 @@ import 'package:diet/data/repositories/day_marker_repository.dart';
 import 'package:diet/data/repositories/diet_strategy_repository.dart';
 import 'package:diet/data/repositories/meal_repository.dart';
 import 'package:diet/domain/calendar_day.dart';
+import 'package:diet/domain/day_marker.dart';
 import 'package:diet/domain/diet_strategy.dart';
 import 'package:diet/l10n/app_localizations.dart';
 import 'package:diet/ui/theme/app_theme.dart';
@@ -120,6 +121,7 @@ void main() {
         find.text('Enter a whole number greater than 0', findRichText: true),
         findsOneWidget,
       );
+      await tester.ensureVisible(find.text('Set day marker'));
       await tester.tap(find.text('Set day marker'));
       await tester.pumpAndSettle();
       expect(amount, findsOneWidget);
@@ -141,6 +143,7 @@ void main() {
       await tester.tap(amountToggle);
       await tester.pumpAndSettle();
       expect(find.text('650'), findsOneWidget);
+      await tester.ensureVisible(find.text('Set day marker'));
       await tester.tap(find.text('Set day marker'));
       await tester.pumpAndSettle();
       expect(amount, findsNothing);
@@ -313,6 +316,154 @@ void main() {
     await tester.tap(find.text('Clear marker'));
     await tester.pumpAndSettle();
     expect(await repo.settingsForDay(today), isNull);
+  });
+
+  Future<void> openPicker(
+    WidgetTester tester,
+    AppDatabase db, {
+    required DateTime firstDate,
+    required DietStrategyKind? strategy,
+  }) async {
+    final today = CalendarDay.todayLocal();
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showDeficitDatePicker(
+                context: context,
+                initialDate: today,
+                firstDate: firstDate,
+                lastDate: today,
+                plannedDeficit: 0,
+                mealRepository: MealRepository(db),
+                markerRepository: DayMarkerRepository(db),
+                loadTargets: (_, _) async => {},
+                loadStrategyForDay: (_) async => strategy,
+                loadCarbLoadFloor: (_) async => 3.2,
+              ),
+              child: const Text('Open calendar'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open calendar'));
+    await tester.pumpAndSettle();
+  }
+
+  ValueKey<String> dayKey(DateTime d) =>
+      ValueKey('deficitDay-${d.year}-${d.month}-${d.day}');
+
+  testWidgets('carb-load day saves its carbs and an optional delay', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final repo = DayMarkerRepository(db);
+    final today = CalendarDay.todayLocal();
+    await openPicker(
+      tester,
+      db,
+      firstDate: today,
+      strategy: DietStrategyKind.carbCycle,
+    );
+    await tester.longPress(find.byKey(dayKey(today)));
+    await tester.pumpAndSettle();
+    final option = find.byKey(const ValueKey('marker-option-carbLoad'));
+    await tester.ensureVisible(option);
+    await tester.tap(option);
+    await tester.pumpAndSettle();
+    final stepper = find.byKey(const ValueKey('marker-carb-load-stepper'));
+    expect(
+      find.descendant(of: stepper, matching: find.text('7.0 g/kg')),
+      findsOneWidget,
+    );
+    final buttons = find.descendant(
+      of: stepper,
+      matching: find.byType(IconButton),
+    );
+    expect(tester.widget<IconButton>(buttons.last).onPressed, isNull);
+    await tester.tap(buttons.first);
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(of: stepper, matching: find.text('6.9 g/kg')),
+      findsOneWidget,
+    );
+    final pause = find.byKey(const ValueKey('marker-pause-carbLoad'));
+    await tester.ensureVisible(pause);
+    await tester.tap(pause);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(FilledButton).last);
+    await tester.pumpAndSettle();
+    final saved = (await repo.settingsForDay(today))!;
+    expect(saved.type, DayMarkerType.carbLoad);
+    expect(saved.carbLoadCarbPerKg, closeTo(6.9, 1e-9));
+    expect(saved.pauseCarbCycle, isTrue);
+    expect(saved.includeDiet, isTrue);
+
+    await tester.longPress(find.byKey(dayKey(today)));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Carbs 6.9 g/kg'), findsOneWidget);
+    expect(find.textContaining('Cycle delayed one day'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('marker-option-cheatMeal')));
+    await tester.pumpAndSettle();
+    final cheatPause = find.byKey(const ValueKey('marker-pause-cheatMeal'));
+    await tester.ensureVisible(cheatPause);
+    await tester.tap(cheatPause);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(FilledButton).last);
+    await tester.pumpAndSettle();
+    final cheat = (await repo.settingsForDay(today))!;
+    expect(cheat.type, DayMarkerType.cheatMeal);
+    expect(cheat.pauseCarbCycle, isTrue);
+    expect(cheat.carbLoadCarbPerKg, isNull);
+  });
+
+  testWidgets('carb-load day is not offered on a past day', (tester) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final today = CalendarDay.todayLocal();
+    final yesterday = today.subtract(const Duration(days: 1));
+    await openPicker(
+      tester,
+      db,
+      firstDate: yesterday,
+      strategy: DietStrategyKind.carbCycle,
+    );
+    final option = find.byKey(const ValueKey('marker-option-carbLoad'));
+    await tester.longPress(find.byKey(dayKey(yesterday)));
+    await tester.pumpAndSettle();
+    expect(option, findsNothing);
+  });
+
+  testWidgets('no carb-load day or cheat-day delay without a carb cycle', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final today = CalendarDay.todayLocal();
+    final option = find.byKey(const ValueKey('marker-option-carbLoad'));
+    await openPicker(
+      tester,
+      db,
+      firstDate: today,
+      strategy: DietStrategyKind.balanced,
+    );
+    await tester.longPress(find.byKey(dayKey(today)));
+    await tester.pumpAndSettle();
+    expect(option, findsNothing);
+    await tester.tap(find.byKey(const ValueKey('marker-option-cheatMeal')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('marker-pause-cheatMeal')), findsNothing);
   });
 
   testWidgets('backfilled rest day cannot delay the carb cycle', (

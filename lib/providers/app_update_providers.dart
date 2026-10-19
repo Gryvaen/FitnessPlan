@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_filex/open_filex.dart';
 
@@ -18,6 +19,7 @@ class AppUpdateStatus {
     this.lastOpenMessage,
     this.availableVersion,
     this.downloadMessage,
+    this.readyVersion,
   });
 
   final AppUpdatePhase phase;
@@ -37,6 +39,11 @@ class AppUpdateStatus {
   final String? availableVersion;
   final String? downloadMessage;
 
+  /// Version of a verified APK already downloaded but not yet installed —
+  /// tapping the update button installs it straight away instead of
+  /// downloading again. Cleared once that version is installed or replaced.
+  final String? readyVersion;
+
   bool get isBusy => phase != AppUpdatePhase.idle;
   bool get hasUpdateAvailable => availableVersion != null;
 
@@ -47,9 +54,11 @@ class AppUpdateStatus {
     String? lastOpenMessage,
     String? availableVersion,
     String? downloadMessage,
+    String? readyVersion,
     bool clearError = false,
     bool clearOpenMessage = false,
     bool clearAvailableVersion = false,
+    bool clearReadyVersion = false,
   }) {
     return AppUpdateStatus(
       phase: phase ?? this.phase,
@@ -62,6 +71,9 @@ class AppUpdateStatus {
       availableVersion: clearAvailableVersion
           ? null
           : (availableVersion ?? this.availableVersion),
+      readyVersion: clearReadyVersion
+          ? null
+          : (readyVersion ?? this.readyVersion),
     );
   }
 }
@@ -78,6 +90,29 @@ const kSlowDownloadBytesPerSecond = 150 * 1024;
 /// Split-APK ABI of this device; overridden in tests.
 final appUpdateDeviceAbiProvider = Provider<String?>((ref) => currentApkAbi());
 
+/// Whether the app is in the foreground. Android 10+ silently blocks a
+/// background app from starting the installer, so a download finishing in
+/// the background waits for [AppUpdateNotifier.onAppResumed] instead.
+/// Overridden in tests.
+final appUpdateIsForegroundProvider = Provider<bool Function()>((ref) {
+  return () {
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    return lifecycle == null || lifecycle == AppLifecycleState.resumed;
+  };
+});
+
+/// Opens the system installer for the APK at a path; returns an error
+/// message when it could not be opened, null otherwise. Overridden in tests.
+final appUpdateInstallerProvider = Provider<Future<String?> Function(String)>(
+  (ref) => (path) async {
+    final result = await OpenFilex.open(
+      path,
+      type: 'application/vnd.android.package-archive',
+    );
+    return result.type == ResultType.done ? null : result.message;
+  },
+);
+
 final appUpdateProvider = NotifierProvider<AppUpdateNotifier, AppUpdateStatus>(
   AppUpdateNotifier.new,
 );
@@ -85,6 +120,14 @@ final appUpdateProvider = NotifierProvider<AppUpdateNotifier, AppUpdateStatus>(
 class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
   static const _kAvailableVersion = 'app_update_available_version';
   static const _kPendingDownloadId = 'app_update_pending_download_id';
+
+  /// `{version, downloadId, asset}` of the verified, not-yet-installed APK.
+  static const _kReadyApk = 'app_update_ready_apk';
+
+  /// Set when a download finished in the background: the installer opens on
+  /// the next resume (or launch) instead.
+  static const _kInstallOnResume = 'app_update_install_on_resume';
+  bool _installingReady = false;
 
   Timer? _pollTimer;
   bool _polling = false;
@@ -211,9 +254,131 @@ class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
     final cached = prefs.getString(_kAvailableVersion);
     // Resuming a download already in flight (or one that finished while the
     // app was closed) needs a real platform-channel round trip, so it can't
-    // happen synchronously here — kicked off after build() returns.
+    // happen synchronously here — kicked off after build() returns. A
+    // download that finished in the background before the process died is
+    // handled by [onAppResumed], which `MainShell` also calls at launch.
     _resumePendingDownloadIfAny();
-    return AppUpdateStatus(availableVersion: cached);
+    return AppUpdateStatus(
+      availableVersion: cached,
+      readyVersion: _readReady()?.version,
+    );
+  }
+
+  ({String version, int downloadId, ReleaseAsset asset})? _readReady() {
+    final raw = ref.read(sharedPreferencesProvider).getString(_kReadyApk);
+    if (raw == null) return null;
+    try {
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      return (
+        version: json['version'] as String,
+        downloadId: json['downloadId'] as int,
+        asset: ReleaseAsset.fromJson(
+          Map<String, dynamic>.from(json['asset'] as Map),
+        ),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _saveReady(int downloadId, ReleaseAsset asset) async {
+    final previous = _readReady();
+    if (previous != null && previous.downloadId != downloadId) {
+      await _discardReady();
+    }
+    final version =
+        AppUpdateLogic.versionOfApkName(asset.name) ?? state.availableVersion;
+    if (version == null) return;
+    await ref
+        .read(sharedPreferencesProvider)
+        .setString(
+          _kReadyApk,
+          jsonEncode({
+            'version': version,
+            'downloadId': downloadId,
+            'asset': asset.toJson(),
+          }),
+        );
+    if (ref.mounted) state = state.copyWith(readyVersion: version);
+  }
+
+  /// Drops the ready APK: its DownloadManager record and file go too.
+  Future<void> _discardReady() async {
+    final ready = _readReady();
+    final prefs = ref.read(sharedPreferencesProvider);
+    await prefs.remove(_kReadyApk);
+    await prefs.remove(_kInstallOnResume);
+    if (ready != null) {
+      try {
+        await ref
+            .read(appUpdateRepositoryProvider)
+            .cancelDownload(ready.downloadId);
+      } catch (_) {
+        /* The file is app-private; a stray one is harmless. */
+      }
+    }
+    if (ref.mounted) state = state.copyWith(clearReadyVersion: true);
+  }
+
+  /// Opens the installer for the already-downloaded APK after re-verifying
+  /// it. Returns false — and forgets the APK — when it is gone or no longer
+  /// matches its checksum, so the caller can fall back to downloading.
+  Future<bool> installReady() async {
+    final ready = _readReady();
+    if (ready == null || _installingReady) return false;
+    _installingReady = true;
+    try {
+      final repo = ref.read(appUpdateRepositoryProvider);
+      var valid = false;
+      String? path;
+      try {
+        valid = await repo.verifyDownload(ready.downloadId);
+        if (valid) {
+          path = (await repo.queryDownload(ready.downloadId)).localPath;
+        }
+      } catch (_) {
+        valid = false;
+      }
+      if (!ref.mounted) return false;
+      if (!valid || path == null) {
+        await _discardReady();
+        return false;
+      }
+      await _openInstaller(path);
+      return true;
+    } finally {
+      _installingReady = false;
+    }
+  }
+
+  /// Opens the installer a background-finished download deferred; `MainShell`
+  /// calls this at launch and on every resume. An APK no newer than
+  /// [localVersion] was installed meanwhile (e.g. from the notification) and
+  /// is dropped instead.
+  Future<void> onAppResumed(String localVersion) async {
+    final ready = state.readyVersion;
+    if (ready != null && !AppUpdateLogic.isNewer(localVersion, ready)) {
+      await _discardReady();
+      return;
+    }
+    final prefs = ref.read(sharedPreferencesProvider);
+    if (!(prefs.getBool(_kInstallOnResume) ?? false) || state.isBusy) return;
+    await prefs.remove(_kInstallOnResume);
+    if (!ref.mounted) return;
+    await installReady();
+  }
+
+  Future<void> _openInstaller(String path) async {
+    try {
+      final message = await ref.read(appUpdateInstallerProvider)(path);
+      if (!ref.mounted) return;
+      if (message != null) state = state.copyWith(lastOpenMessage: message);
+    } catch (e) {
+      if (!ref.mounted) return;
+      state = state.copyWith(lastError: '$e');
+    }
+    // The installer is up, so the "tap to install" notification is moot.
+    await ref.read(appUpdateRepositoryProvider).dismissInstallNotification();
   }
 
   Future<void> _resumePendingDownloadIfAny() async {
@@ -304,6 +469,11 @@ class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
   /// installed build (e.g. right after installing it), without waiting for a
   /// network check that may fail.
   Future<void> _dropStaleAvailableVersion(String localVersion) async {
+    final ready = state.readyVersion;
+    if (ready != null && !AppUpdateLogic.isNewer(localVersion, ready)) {
+      // Installed (or superseded locally) — the APK is no longer needed.
+      await _discardReady();
+    }
     final cached = state.availableVersion;
     if (cached == null || AppUpdateLogic.isNewer(localVersion, cached)) return;
     await ref.read(sharedPreferencesProvider).remove(_kAvailableVersion);
@@ -382,6 +552,16 @@ class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
     required String localVersion,
   }) async {
     if (state.isBusy) return;
+    final ready = _readReady();
+    if (ready != null) {
+      final same =
+          ready.asset.sha256.toLowerCase() == asset.sha256.toLowerCase();
+      // Already downloaded and still intact: install, don't fetch it again.
+      if (same && await installReady()) return;
+      // A different (newer) package replaces it.
+      if (!same) await _discardReady();
+      if (!ref.mounted) return;
+    }
     final repo = ref.read(appUpdateRepositoryProvider);
     final prefs = ref.read(sharedPreferencesProvider);
 
@@ -489,24 +669,25 @@ class AppUpdateNotifier extends Notifier<AppUpdateStatus> {
     final prefs = ref.read(sharedPreferencesProvider);
     await prefs.remove(_sessionKey);
     await prefs.remove(_kPendingDownloadId);
+    // Keep the DownloadManager record: if the user backs out of the
+    // installer, the next tap re-verifies and installs this same file.
+    final asset = _asset;
+    if (asset != null) await _saveReady(downloadId, asset);
+    if (!ref.mounted) return;
     state = state.copyWith(phase: AppUpdatePhase.idle);
     final path = info.localPath;
     if (path == null) {
       state = state.copyWith(lastError: '无法打开下载文件，请重新检查更新');
       return;
     }
-    try {
-      final result = await OpenFilex.open(
-        path,
-        type: 'application/vnd.android.package-archive',
-      );
-      if (!ref.mounted) return;
-      if (result.type != ResultType.done) {
-        state = state.copyWith(lastOpenMessage: result.message);
-      }
-    } catch (e) {
-      if (!ref.mounted) return;
-      state = state.copyWith(lastError: '$e');
+    if (ref.read(appUpdateIsForegroundProvider)()) {
+      await prefs.remove(_kInstallOnResume);
+      await _openInstaller(path);
+    } else {
+      // Android 10+ would silently drop the installer launch; the native
+      // receiver's notification covers the background, and returning to
+      // the app opens it.
+      await prefs.setBool(_kInstallOnResume, true);
     }
   }
 

@@ -32,19 +32,27 @@ void main() {
       for (final type in DayMarkerType.values) {
         for (final steps in [false, true]) {
           for (final diet in [false, true]) {
-            if (type == DayMarkerType.cheatMeal) {
-              await repo.setCheatMeal(
-                today,
-                includeSteps: steps,
-                includeDiet: diet,
-                penaltyKcal: 650,
-              );
-            } else {
-              await repo.setRestDay(
-                today,
-                includeSteps: steps,
-                includeDiet: diet,
-              );
+            switch (type) {
+              case DayMarkerType.cheatMeal:
+                await repo.setCheatMeal(
+                  today,
+                  includeSteps: steps,
+                  includeDiet: diet,
+                  penaltyKcal: 650,
+                );
+              case DayMarkerType.restDay:
+                await repo.setRestDay(
+                  today,
+                  includeSteps: steps,
+                  includeDiet: diet,
+                );
+              case DayMarkerType.carbLoad:
+                await repo.setCarbLoad(
+                  today,
+                  carbPerKg: 6,
+                  includeSteps: steps,
+                  includeDiet: diet,
+                );
             }
             final settings = (await repo.settingsForDay(today))!;
             expect(settings.includeSteps, steps);
@@ -292,6 +300,79 @@ CREATE TABLE day_markers (
       }
     },
   );
+
+  test('setCarbLoad persists its carbs and counts diet by default', () async {
+    await repo.setCarbLoad(tomorrow, carbPerKg: 6.5);
+    final settings = (await repo.settingsForDay(tomorrow))!;
+    expect(settings.type, DayMarkerType.carbLoad);
+    expect(settings.carbLoadCarbPerKg, 6.5);
+    expect(settings.includeSteps, isTrue);
+    expect(settings.includeDiet, isTrue);
+    expect(settings.pauseCarbCycle, isFalse);
+    expect(settings.penaltyKcal, 0);
+    expect(await repo.restDayDates(), isEmpty);
+    await repo.setRestDay(tomorrow);
+    expect((await repo.settingsForDay(tomorrow))!.carbLoadCarbPerKg, isNull);
+  });
+
+  test('setCarbLoad rejects carbs outside (0, 7] g/kg', () async {
+    expect(() => repo.setCarbLoad(today, carbPerKg: 7.1), throwsArgumentError);
+    expect(() => repo.setCarbLoad(today, carbPerKg: 0), throwsArgumentError);
+    await repo.setCarbLoad(today, carbPerKg: 7);
+    expect(await repo.markerForDay(today), DayMarkerType.carbLoad);
+  });
+
+  test('every marker type can pause the carb cycle', () async {
+    await repo.setCheatMeal(today, pauseCarbCycle: true);
+    await repo.setCarbLoad(tomorrow, carbPerKg: 6, pauseCarbCycle: true);
+    final later = tomorrow.add(const Duration(days: 1));
+    await repo.setRestDay(later, pauseCarbCycle: true);
+    expect(await repo.restDayDates(), [today, tomorrow, later]);
+    await repo.setCheatMeal(today);
+    expect(await repo.restDayDates(), [tomorrow, later]);
+  });
+
+  test('switching type keeps the original mark time', () async {
+    await repo.setCheatMeal(yesterday, now: yesterday);
+    await repo.setRestDay(yesterday, pauseCarbCycle: true, now: today);
+    expect(await repo.restDayDates(), [yesterday]);
+  });
+
+  test('v33 cheat days stop pausing the cycle after migrating', () async {
+    final dir = await Directory.systemTemp.createTemp('marker-v33-');
+    final file = File('${dir.path}/markers.sqlite');
+    final seed = AppDatabase.forTesting(NativeDatabase(file));
+    await seed.select(seed.dayMarkers).get();
+    await seed.close();
+    final oldDb = NativeDatabase(file);
+    await oldDb.ensureOpen(_V29User());
+    await oldDb.runCustom(
+      'ALTER TABLE day_markers DROP COLUMN carb_load_carb_per_kg',
+    );
+    for (final (i, type) in ['cheatMeal', 'restDay'].indexed) {
+      final date = DateTime(2026, 1, i + 1);
+      await oldDb.runInsert(
+        'INSERT INTO day_markers (date, type, updated_at, pause_carb_cycle) '
+        'VALUES (?, ?, ?, 1)',
+        ['2026-01-0${i + 1}', type, date.millisecondsSinceEpoch ~/ 1000],
+      );
+    }
+    await oldDb.runCustom('PRAGMA user_version = 33');
+    await oldDb.close();
+    final migrated = AppDatabase.forTesting(NativeDatabase(file));
+    addTearDown(() async {
+      await migrated.close();
+      await dir.delete(recursive: true);
+    });
+    final migratedRepo = DayMarkerRepository(migrated);
+    final cheat = (await migratedRepo.settingsForDay(DateTime(2026, 1, 1)))!;
+    final rest = (await migratedRepo.settingsForDay(DateTime(2026, 1, 2)))!;
+    expect(cheat.pauseCarbCycle, isFalse);
+    expect(rest.pauseCarbCycle, isTrue);
+    expect(cheat.carbLoadCarbPerKg, isNull);
+    await migratedRepo.setCarbLoad(tomorrow, carbPerKg: 6);
+    expect((await migratedRepo.settingsForDay(tomorrow))!.carbLoadCarbPerKg, 6);
+  });
 
   test('watchMarkerForDay emits updates', () async {
     final stream = repo.watchMarkerForDay(today);

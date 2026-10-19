@@ -93,6 +93,12 @@ abstract final class StrategyRules {
   static const highFatPerKgMin = 0.3;
   static const highFatPerKgMax = 0.8;
 
+  /// 冲碳日 carb ceiling and default (g per kg reference weight). The floor
+  /// is the plan's own (compensated) high-day carb — see
+  /// [CarbCyclePlan.highDayCarbPerKg].
+  static const carbLoadCarbPerKgMax = 7.0;
+  static const defaultCarbLoadCarbPerKg = carbLoadCarbPerKgMax;
+
   /// Default multipliers: floor of each range above.
   static const defaultLowProteinPerKg = lowProteinPerKgMin;
   static const defaultLowCarbPerKg = lowCarbPerKgMin;
@@ -581,6 +587,47 @@ class CarbCyclePlan {
 
   /// Energy of the (first) day with [type], or null if absent.
   double? energyFor(CarbDayType type) => dayFor(type)?.energy;
+
+  /// Carb g/kg of the high day actually used (after mid-day compensation);
+  /// the floor of a 冲碳日. Falls back to the user-set high rate when the
+  /// schedule has no high day or the weight is unusable.
+  double get highDayCarbPerKg {
+    final high = dayFor(CarbDayType.high);
+    if (high == null || referenceWeightKg <= 0) return rates.highCarbPerKg;
+    return high.carbG / referenceWeightKg;
+  }
+
+  /// [carbPerKg] clamped to the 冲碳日 range: [[highDayCarbPerKg],
+  /// [StrategyRules.carbLoadCarbPerKgMax]].
+  double clampCarbLoadPerKg(double carbPerKg) {
+    final floor = math.min(
+      highDayCarbPerKg,
+      StrategyRules.carbLoadCarbPerKgMax,
+    );
+    if (!carbPerKg.isFinite) return floor;
+    return carbPerKg.clamp(floor, StrategyRules.carbLoadCarbPerKgMax);
+  }
+
+  /// 冲碳日: the high day's protein and fat with carbs raised to
+  /// [carbPerKg] (see [clampCarbLoadPerKg]).
+  DayMacroTarget carbLoadDay(double carbPerKg) {
+    final perKg = clampCarbLoadPerKg(carbPerKg);
+    final high = dayFor(CarbDayType.high);
+    final proteinG =
+        high?.proteinG ?? referenceWeightKg * rates.highProteinPerKg;
+    final fatG = high?.fatG ?? referenceWeightKg * rates.highFatPerKg;
+    final carbG = referenceWeightKg * perKg;
+    return DayMacroTarget(
+      energy:
+          proteinG * StrategyRules.kcalPerGramProtein +
+          carbG * StrategyRules.kcalPerGramCarb +
+          fatG * StrategyRules.kcalPerGramFat,
+      proteinG: proteinG,
+      carbG: carbG,
+      fatG: fatG,
+      dayType: CarbDayType.high,
+    );
+  }
 
   /// Integer-gram macros per day; energy is recomputed from the rounded
   /// grams so 4P + 4C + 9F still matches exactly.

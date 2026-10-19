@@ -36,7 +36,7 @@ class ReminderSetting {
     required this.hour,
     required this.minute,
     required this.weekdays,
-    this.alertMode = ReminderAlertMode.ring,
+    this.alertMode = ReminderAlertMode.vibrate,
     this.soundUri,
     this.soundTitle,
     this.customTitle,
@@ -114,12 +114,19 @@ extension ReminderChannelId on ReminderSetting {
 class RemindersRepository {
   RemindersRepository(this._prefs) {
     _migrateLegacyWorkoutKeys();
+    _unifyAlertSettings();
   }
+
+  static const _kAlertUnified = 'reminder_alert_unified_v1';
 
   final SharedPreferences _prefs;
 
   String _key(ReminderKind kind, String field) =>
       'reminder_${kind.name}_$field';
+
+  /// Where [kind]'s [ReminderAlertMode] name is stored.
+  static String alertModeKey(ReminderKind kind) =>
+      'reminder_${kind.name}_alertMode';
 
   /// v2.0.x stored the single workout reminder under `workout_reminder_*`.
   void _migrateLegacyWorkoutKeys() {
@@ -132,6 +139,30 @@ class RemindersRepository {
     final m = _prefs.getInt('workout_reminder_minute');
     if (h != null) _prefs.setInt(_key(ReminderKind.workout, 'hour'), h);
     if (m != null) _prefs.setInt(_key(ReminderKind.workout, 'minute'), m);
+  }
+
+  /// The ring/vibrate choice and tone used to be per kind; they are now one
+  /// setting shared by every kind (still stored per kind, so scheduling and
+  /// channel ids are unchanged). Once, copy the first enabled kind's choice
+  /// — or the workout reminder's — onto the others.
+  void _unifyAlertSettings() {
+    if (_prefs.getBool(_kAlertUnified) ?? false) return;
+    final source = ReminderKind.values.firstWhere(
+      (kind) => _prefs.getBool(_key(kind, 'enabled')) ?? false,
+      orElse: () => ReminderKind.workout,
+    );
+    for (final field in const ['alertMode', 'soundUri', 'soundTitle']) {
+      final value = _prefs.getString(_key(source, field));
+      for (final kind in ReminderKind.values) {
+        if (kind == source) continue;
+        if (value == null) {
+          _prefs.remove(_key(kind, field));
+        } else {
+          _prefs.setString(_key(kind, field), value);
+        }
+      }
+    }
+    _prefs.setBool(_kAlertUnified, true);
   }
 
   Set<int> _parseWeekdays(String? raw) {
@@ -149,7 +180,7 @@ class RemindersRepository {
     final modeRaw = _prefs.getString(_key(kind, 'alertMode'));
     final mode = ReminderAlertMode.values.firstWhere(
       (m) => m.name == modeRaw,
-      orElse: () => ReminderAlertMode.ring,
+      orElse: () => ReminderAlertMode.vibrate,
     );
     return ReminderSetting(
       enabled: _prefs.getBool(_key(kind, 'enabled')) ?? false,
@@ -192,6 +223,13 @@ class RemindersRepository {
   Future<void> setAlertMode(ReminderKind kind, ReminderAlertMode mode) =>
       _prefs.setString(_key(kind, 'alertMode'), mode.name);
 
+  /// Ring/vibrate is shared by every kind — see [_unifyAlertSettings].
+  Future<void> setAlertModeAll(ReminderAlertMode mode) async {
+    for (final kind in ReminderKind.values) {
+      await setAlertMode(kind, mode);
+    }
+  }
+
   Future<void> setNotificationContent(
     ReminderKind kind, {
     String? title,
@@ -226,6 +264,13 @@ class RemindersRepository {
     }
   }
 
+  /// The tone is shared by every kind — see [_unifyAlertSettings].
+  Future<void> setSoundAll({String? uri, String? title}) async {
+    for (final kind in ReminderKind.values) {
+      await setSound(kind, uri: uri, title: title);
+    }
+  }
+
   /// The Android notification channel id last used to schedule [kind]'s
   /// alarms. Android channels are immutable once created (sound/vibration
   /// can't be changed in place), so a changed [ReminderSetting] gets a fresh
@@ -251,5 +296,6 @@ class RemindersRepository {
       await _prefs.remove(_key(kind, 'customBody'));
       await _prefs.remove(_key(kind, 'lastChannelId'));
     }
+    await _prefs.remove(_kAlertUnified);
   }
 }

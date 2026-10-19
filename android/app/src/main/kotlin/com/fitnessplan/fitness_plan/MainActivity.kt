@@ -210,12 +210,26 @@ class MainActivity : FlutterFragmentActivity() {
                         }
                         result.success(null)
                     }
+                    "dismissInstallNotification" -> {
+                        ApkDownloadCompleteReceiver.dismissNotification(applicationContext)
+                        result.success(null)
+                    }
                     else -> result.notImplemented()
                 }
             }
 
         // Re-arm the background counter after a cold start / app update.
         StepCounterService.startIfEnabled(applicationContext)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        ApkDownloadCompleteReceiver.appVisible = true
+    }
+
+    override fun onPause() {
+        ApkDownloadCompleteReceiver.appVisible = false
+        super.onPause()
     }
 
     @Suppress("DEPRECATION")

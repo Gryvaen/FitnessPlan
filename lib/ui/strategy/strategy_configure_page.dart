@@ -13,6 +13,7 @@ import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import 'carb_cycle_view.dart';
+import 'stepper_row.dart';
 import 'strategy_fold_section.dart';
 import 'strategy_labels.dart';
 
@@ -526,6 +527,8 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
                     ),
                     restDayDates:
                         ref.watch(restDayDatesProvider).value ?? const [],
+                    markers:
+                        ref.watch(upcomingDayMarkersProvider).value ?? const {},
                     windowStart: effective,
                     onScheduleChanged: (s) => setState(() => _schedule = s),
                     referenceWeightFromProfile: true,
@@ -543,7 +546,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
               icon: InkGlyph.carbs,
               child: Column(
                 children: [
-                  _StepperRow(
+                  StepperRow(
                     label: l10n.proteinPerKgLabel,
                     value: _lowProteinPerKg,
                     min: StrategyRules.lowProteinPerKgMin,
@@ -552,7 +555,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
                     unit: 'g/kg',
                     onChanged: (v) => setState(() => _lowProteinPerKg = v),
                   ),
-                  _StepperRow(
+                  StepperRow(
                     label: l10n.carbPerKgLabel,
                     value: _lowCarbPerKg,
                     min: StrategyRules.lowCarbPerKgMin,
@@ -561,7 +564,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
                     unit: 'g/kg',
                     onChanged: (v) => setState(() => _lowCarbPerKg = v),
                   ),
-                  _StepperRow(
+                  StepperRow(
                     label: l10n.fatPerKgLabel,
                     value: _lowFatPerKg,
                     min: StrategyRules.lowFatPerKgMin,
@@ -583,7 +586,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
               icon: InkGlyph.carbs,
               child: Column(
                 children: [
-                  _StepperRow(
+                  StepperRow(
                     label: l10n.proteinPerKgLabel,
                     value: _highProteinPerKg,
                     min: StrategyRules.highProteinPerKgMin,
@@ -596,7 +599,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
                     builder: (context) {
                       final adjusted = _effectiveHighCarbPerKg(cyclePlan);
                       final shown = adjusted ?? _highCarbPerKg;
-                      return _StepperRow(
+                      return StepperRow(
                         label: l10n.carbPerKgLabel,
                         modifiedTooltip: adjusted != null
                             ? l10n.carbCycleAdjustedTooltip
@@ -615,7 +618,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
                       );
                     },
                   ),
-                  _StepperRow(
+                  StepperRow(
                     label: l10n.fatPerKgLabel,
                     value: _highFatPerKg,
                     min: StrategyRules.highFatPerKgMin,
@@ -650,7 +653,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
                     value: _energy > 0 ? _energy.round().toString() : '–',
                     unit: 'kcal',
                   ),
-                  _StepperRow(
+                  StepperRow(
                     label: l10n.proteinPerKgLabel,
                     value: _proteinPerKg,
                     min: 1.4,
@@ -659,7 +662,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
                     unit: 'g/kg',
                     onChanged: (v) => setState(() => _proteinPerKg = v),
                   ),
-                  _StepperRow(
+                  StepperRow(
                     label: l10n.fatPerKgLabel,
                     value: _fatPerKg,
                     min: 0.6,
@@ -804,89 +807,6 @@ class _EffectiveDateOption extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _StepperRow extends StatelessWidget {
-  const _StepperRow({
-    required this.label,
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.step,
-    required this.unit,
-    required this.onChanged,
-    this.modifiedTooltip,
-  });
-
-  final String label;
-  final double value;
-  final double min;
-  final double max;
-  final double step;
-  final String unit;
-  final ValueChanged<double> onChanged;
-
-  /// When set, shows a small "auto-adjusted" badge after the label instead
-  /// of a text marker; the string is the badge's tooltip.
-  final String? modifiedTooltip;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    double snap(double v) => (v * 10).round() / 10;
-    return Row(
-      children: [
-        Expanded(
-          child: Row(
-            children: [
-              Flexible(
-                child: Text(
-                  label,
-                  style: theme.textTheme.bodyMedium,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (modifiedTooltip case final tooltip?)
-                Padding(
-                  padding: const EdgeInsets.only(left: 6),
-                  child: Tooltip(
-                    message: tooltip,
-                    triggerMode: TooltipTriggerMode.tap,
-                    child: InkIcon(
-                      InkGlyph.autoFix,
-                      size: 15,
-                      color: theme.colorScheme.tertiary,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        IconButton(
-          tooltip: '−$step',
-          onPressed: value - step >= min - 1e-9
-              ? () => onChanged(snap(value - step))
-              : null,
-          icon: const InkIcon(InkGlyph.close),
-        ),
-        SizedBox(
-          width: 72,
-          child: Text(
-            '${value.toStringAsFixed(1)} $unit',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.titleSmall,
-          ),
-        ),
-        IconButton(
-          tooltip: '+$step',
-          onPressed: value + step <= max + 1e-9
-              ? () => onChanged(snap(value + step))
-              : null,
-          icon: const InkIcon(InkGlyph.add),
-        ),
-      ],
     );
   }
 }

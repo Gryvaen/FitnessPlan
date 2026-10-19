@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
+import 'data/services/alert_defaults.dart';
 import 'l10n/app_localizations.dart';
 import 'providers/app_providers.dart';
 import 'ui/loading/discipline_freedom_loading_page.dart';
@@ -25,6 +26,7 @@ Future<void> main() async {
   // blank window or a frame that already moved.
   binding.deferFirstFrame();
   final prefs = await SharedPreferences.getInstance();
+  await pinLegacyAlertDefaults(prefs);
   // ReminderNotifications.ensureInitialized() already awaits
   // RestTimerNotifications.ensureInitialized() itself.
   await ReminderNotifications.ensureInitialized();

@@ -42,7 +42,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 33;
+  int get schemaVersion => 34;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -292,6 +292,15 @@ UPDATE day_markers SET
           dailyNutritionTargets.cyclePaused,
         );
         await repairLegacyCycleAlignment(this);
+      }
+      if (from < 34) {
+        await _addColumnIfMissing(m, dayMarkers, dayMarkers.carbLoadCarbPerKg);
+        // Cheat days never paused the cycle before v34, but rows migrated in
+        // at v30 picked up the column default (true). Every marker type now
+        // honors the flag, so clear it to keep those days' history as-is.
+        await customStatement(
+          "UPDATE day_markers SET pause_carb_cycle = 0 WHERE type = 'cheatMeal'",
+        );
       }
     },
   );

@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 
 import '../../domain/calendar_day.dart';
 import '../../domain/cycle_history.dart';
+import '../../domain/day_marker.dart';
 import '../../domain/diet_plan.dart';
 import '../../domain/diet_strategy.dart';
 import '../../domain/models.dart';
@@ -125,7 +126,9 @@ class DietStrategyRepository {
   /// their own with body weight (reference weight, estimated TDEE, base
   /// energy) are deliberately excluded so re-opening and re-saving the same
   /// strategy after a routine weigh-in doesn't move the calendar's "new
-  /// standard" marker.
+  /// standard" marker. A carb-cycle schedule edit (cycle length or the
+  /// high/medium/low order) is excluded too: it only rearranges days within
+  /// the same strategy, it doesn't change what a day is judged against.
   static bool isStructuralChange(
     DietStrategyPlan? old,
     DietStrategyPlanDraft next,
@@ -141,8 +144,7 @@ class DietStrategyRepository {
             !_closeEnough(old.proteinPerKg, next.proteinPerKg) ||
             !_closeEnough(old.fatPerKg, next.fatPerKg);
       case DietStrategyKind.carbCycle:
-        return old.schedule?.code != next.schedule?.code ||
-            !_sameRates(old.carbCycleRates, next.carbCycleRates);
+        return !_sameRates(old.carbCycleRates, next.carbCycleRates);
       case DietStrategyKind.carbTaper:
         return old.taperStage != next.taperStage;
     }
@@ -570,16 +572,26 @@ class DietStrategyRepository {
 
   // ----------------------------------------------------------- resolution
 
-  /// [pauses]/[anchors] feed the shared cycle resolver; ignored for
+  /// [pauses]/[anchors] feed the shared cycle resolver and [carbLoadPerKg]
+  /// (a 冲碳日 marker's carbs) replaces the day's macros; all are ignored for
   /// non-`carbCycle` plans.
   DailyNutritionTarget _fromPlan(
     DietStrategyPlan plan,
     DateTime day, {
     Iterable<DateTime> pauses = const [],
     Iterable<CycleAnchor> anchors = const [],
+    double? carbLoadPerKg,
   }) {
     final cycleDay = plan.cycleDayOn(day, pauses: pauses, anchors: anchors);
-    final t = plan.targetFor(day, cycleDay: cycleDay);
+    final cyclePlan = plan.kind == DietStrategyKind.carbCycle
+        ? plan.carbCyclePlan
+        : null;
+    final loadPerKg = carbLoadPerKg != null && cyclePlan != null
+        ? cyclePlan.clampCarbLoadPerKg(carbLoadPerKg)
+        : null;
+    final t = loadPerKg != null
+        ? cyclePlan!.carbLoadDay(loadPerKg)
+        : plan.targetFor(day, cycleDay: cycleDay);
     return DailyNutritionTarget(
       date: day,
       calories: t.energy,
@@ -596,9 +608,26 @@ class DietStrategyRepository {
       cyclePaused: cycleDay?.paused,
       reason: plan.kind == DietStrategyKind.carbTaper
           ? 'taperStage:${plan.taperStage}'
+          : loadPerKg != null
+          ? '${DailyNutritionTarget.carbLoadReasonPrefix}'
+                '${loadPerKg.toStringAsFixed(1)}'
           : null,
     );
   }
+
+  /// 冲碳日 carbs (g/kg) of [day]'s marker, or null when it isn't one.
+  Future<double?> _carbLoadPerKgOn(DateTime day) async {
+    final row =
+        await (_db.select(_db.dayMarkers)
+              ..where((t) => t.date.equals(StrategyDates.encode(day))))
+            .getSingleOrNull();
+    return _carbLoadPerKgOf(row);
+  }
+
+  static double? _carbLoadPerKgOf(DayMarkerRow? row) =>
+      row != null && row.type == DayMarkerType.carbLoad.name
+      ? row.carbLoadCarbPerKg ?? StrategyRules.defaultCarbLoadCarbPerKg
+      : null;
 
   /// Positions frozen by [plan]'s snapshots strictly before [day].
   Future<List<CycleAnchor>> _anchorsBefore(
@@ -670,6 +699,9 @@ class DietStrategyRepository {
                 ? await DayMarkerRepository(_db).restDayDates(now: now)
                 : const [],
             anchors: await _anchorsBefore(plan, d),
+            carbLoadPerKg: plan.kind == DietStrategyKind.carbCycle
+                ? await _carbLoadPerKgOn(d)
+                : null,
           )
         : _fromProfile(profile, d, isPast: isPast);
     if (resolved == null) return null;
@@ -770,6 +802,24 @@ class DietStrategyRepository {
     final restDayDates = hasCarbCycle
         ? await DayMarkerRepository(_db).restDayDates(now: now)
         : const <DateTime>[];
+    final carbLoads = <DateTime, double>{};
+    if (hasCarbCycle) {
+      final markerRows =
+          await (_db.select(_db.dayMarkers)..where(
+                (t) =>
+                    t.type.equals(DayMarkerType.carbLoad.name) &
+                    t.date.isBetweenValues(
+                      StrategyDates.encode(s),
+                      StrategyDates.encode(e),
+                    ),
+              ))
+              .get();
+      for (final row in markerRows) {
+        final date = StrategyDates.tryDecode(row.date);
+        final perKg = _carbLoadPerKgOf(row);
+        if (date != null && perKg != null) carbLoads[date] = perKg;
+      }
+    }
     final snapRows =
         await (_db.select(_db.dailyNutritionTargets)..where(
               (t) => t.date.isBetweenValues(
@@ -810,6 +860,7 @@ class DietStrategyRepository {
                 anchorSnaps.where((a) => a.date.isBefore(d)),
                 plan.id,
               ),
+              carbLoadPerKg: carbLoads[d],
             )
           : _fromProfile(profile, d, isPast: d.isBefore(today));
       if (t != null) out[d] = t;

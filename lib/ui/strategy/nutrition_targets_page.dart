@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../domain/cycle_history.dart';
+import '../../domain/day_marker.dart';
 import '../../domain/diet_plan.dart';
 import '../../domain/diet_strategy.dart';
 import '../../domain/models.dart';
@@ -259,6 +260,9 @@ class _CutNutritionTargets extends ConsumerWidget {
           today: today,
           restDayDates: restDayDates,
           cycleAnchors: cycleAnchors,
+          dayMarkers: active?.kind == DietStrategyKind.carbCycle
+              ? ref.watch(upcomingDayMarkersProvider).value ?? const {}
+              : const {},
           onAdjustSchedule: () => context.push(
             '/profile/nutrition/strategy/configure?kind=carbCycle',
           ),
@@ -355,6 +359,7 @@ class _StrategyDescription extends StatefulWidget {
     required this.today,
     required this.restDayDates,
     required this.cycleAnchors,
+    required this.dayMarkers,
     required this.onAdjustSchedule,
     required this.onTaperReview,
     required this.onStop,
@@ -370,6 +375,7 @@ class _StrategyDescription extends StatefulWidget {
   /// showing the plan's original start-date template.
   final List<DateTime> restDayDates;
   final List<CycleAnchor> cycleAnchors;
+  final Map<DateTime, DayMarkerSettings> dayMarkers;
   final VoidCallback onAdjustSchedule;
   final VoidCallback onTaperReview;
   final VoidCallback onStop;
@@ -432,6 +438,7 @@ class _StrategyDescriptionState extends State<_StrategyDescription> {
                 cycleStartIndex: active.cycleStartIndex,
                 restDayDates: widget.restDayDates,
                 anchors: widget.cycleAnchors,
+                markers: widget.dayMarkers,
                 windowStart: widget.activeStartsLater
                     ? active.effectiveFrom
                     : widget.today,

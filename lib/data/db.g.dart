@@ -9993,6 +9993,18 @@ class $DayMarkersTable extends DayMarkers
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _carbLoadCarbPerKgMeta = const VerificationMeta(
+    'carbLoadCarbPerKg',
+  );
+  @override
+  late final GeneratedColumn<double> carbLoadCarbPerKg =
+      GeneratedColumn<double>(
+        'carb_load_carb_per_kg',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     date,
@@ -10004,6 +10016,7 @@ class $DayMarkersTable extends DayMarkers
     includeSteps,
     includeDiet,
     excludeContributions,
+    carbLoadCarbPerKg,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -10095,6 +10108,15 @@ class $DayMarkersTable extends DayMarkers
         ),
       );
     }
+    if (data.containsKey('carb_load_carb_per_kg')) {
+      context.handle(
+        _carbLoadCarbPerKgMeta,
+        carbLoadCarbPerKg.isAcceptableOrUnknown(
+          data['carb_load_carb_per_kg']!,
+          _carbLoadCarbPerKgMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -10140,6 +10162,10 @@ class $DayMarkersTable extends DayMarkers
         DriftSqlType.bool,
         data['${effectivePrefix}exclude_contributions'],
       )!,
+      carbLoadCarbPerKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}carb_load_carb_per_kg'],
+      ),
     );
   }
 
@@ -10159,6 +10185,9 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
   final bool includeSteps;
   final bool includeDiet;
   final bool excludeContributions;
+
+  /// 冲碳日 carbs, g per kg reference weight (v34); null for other types.
+  final double? carbLoadCarbPerKg;
   const DayMarkerRow({
     required this.date,
     required this.type,
@@ -10169,6 +10198,7 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
     required this.includeSteps,
     required this.includeDiet,
     required this.excludeContributions,
+    this.carbLoadCarbPerKg,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -10182,6 +10212,9 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
     map['include_steps'] = Variable<bool>(includeSteps);
     map['include_diet'] = Variable<bool>(includeDiet);
     map['exclude_contributions'] = Variable<bool>(excludeContributions);
+    if (!nullToAbsent || carbLoadCarbPerKg != null) {
+      map['carb_load_carb_per_kg'] = Variable<double>(carbLoadCarbPerKg);
+    }
     return map;
   }
 
@@ -10196,6 +10229,9 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
       includeSteps: Value(includeSteps),
       includeDiet: Value(includeDiet),
       excludeContributions: Value(excludeContributions),
+      carbLoadCarbPerKg: carbLoadCarbPerKg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(carbLoadCarbPerKg),
     );
   }
 
@@ -10218,6 +10254,9 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
       excludeContributions: serializer.fromJson<bool>(
         json['excludeContributions'],
       ),
+      carbLoadCarbPerKg: serializer.fromJson<double?>(
+        json['carbLoadCarbPerKg'],
+      ),
     );
   }
   @override
@@ -10233,6 +10272,7 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
       'includeSteps': serializer.toJson<bool>(includeSteps),
       'includeDiet': serializer.toJson<bool>(includeDiet),
       'excludeContributions': serializer.toJson<bool>(excludeContributions),
+      'carbLoadCarbPerKg': serializer.toJson<double?>(carbLoadCarbPerKg),
     };
   }
 
@@ -10246,6 +10286,7 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
     bool? includeSteps,
     bool? includeDiet,
     bool? excludeContributions,
+    Value<double?> carbLoadCarbPerKg = const Value.absent(),
   }) => DayMarkerRow(
     date: date ?? this.date,
     type: type ?? this.type,
@@ -10256,6 +10297,9 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
     includeSteps: includeSteps ?? this.includeSteps,
     includeDiet: includeDiet ?? this.includeDiet,
     excludeContributions: excludeContributions ?? this.excludeContributions,
+    carbLoadCarbPerKg: carbLoadCarbPerKg.present
+        ? carbLoadCarbPerKg.value
+        : this.carbLoadCarbPerKg,
   );
   DayMarkerRow copyWithCompanion(DayMarkersCompanion data) {
     return DayMarkerRow(
@@ -10280,6 +10324,9 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
       excludeContributions: data.excludeContributions.present
           ? data.excludeContributions.value
           : this.excludeContributions,
+      carbLoadCarbPerKg: data.carbLoadCarbPerKg.present
+          ? data.carbLoadCarbPerKg.value
+          : this.carbLoadCarbPerKg,
     );
   }
 
@@ -10294,7 +10341,8 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
           ..write('cheatPenaltyKcal: $cheatPenaltyKcal, ')
           ..write('includeSteps: $includeSteps, ')
           ..write('includeDiet: $includeDiet, ')
-          ..write('excludeContributions: $excludeContributions')
+          ..write('excludeContributions: $excludeContributions, ')
+          ..write('carbLoadCarbPerKg: $carbLoadCarbPerKg')
           ..write(')'))
         .toString();
   }
@@ -10310,6 +10358,7 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
     includeSteps,
     includeDiet,
     excludeContributions,
+    carbLoadCarbPerKg,
   );
   @override
   bool operator ==(Object other) =>
@@ -10323,7 +10372,8 @@ class DayMarkerRow extends DataClass implements Insertable<DayMarkerRow> {
           other.cheatPenaltyKcal == this.cheatPenaltyKcal &&
           other.includeSteps == this.includeSteps &&
           other.includeDiet == this.includeDiet &&
-          other.excludeContributions == this.excludeContributions);
+          other.excludeContributions == this.excludeContributions &&
+          other.carbLoadCarbPerKg == this.carbLoadCarbPerKg);
 }
 
 class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
@@ -10336,6 +10386,7 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
   final Value<bool> includeSteps;
   final Value<bool> includeDiet;
   final Value<bool> excludeContributions;
+  final Value<double?> carbLoadCarbPerKg;
   final Value<int> rowid;
   const DayMarkersCompanion({
     this.date = const Value.absent(),
@@ -10347,6 +10398,7 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
     this.includeSteps = const Value.absent(),
     this.includeDiet = const Value.absent(),
     this.excludeContributions = const Value.absent(),
+    this.carbLoadCarbPerKg = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   DayMarkersCompanion.insert({
@@ -10359,6 +10411,7 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
     this.includeSteps = const Value.absent(),
     this.includeDiet = const Value.absent(),
     this.excludeContributions = const Value.absent(),
+    this.carbLoadCarbPerKg = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : date = Value(date),
        type = Value(type),
@@ -10373,6 +10426,7 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
     Expression<bool>? includeSteps,
     Expression<bool>? includeDiet,
     Expression<bool>? excludeContributions,
+    Expression<double>? carbLoadCarbPerKg,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -10387,6 +10441,7 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
       if (includeDiet != null) 'include_diet': includeDiet,
       if (excludeContributions != null)
         'exclude_contributions': excludeContributions,
+      if (carbLoadCarbPerKg != null) 'carb_load_carb_per_kg': carbLoadCarbPerKg,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -10401,6 +10456,7 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
     Value<bool>? includeSteps,
     Value<bool>? includeDiet,
     Value<bool>? excludeContributions,
+    Value<double?>? carbLoadCarbPerKg,
     Value<int>? rowid,
   }) {
     return DayMarkersCompanion(
@@ -10413,6 +10469,7 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
       includeSteps: includeSteps ?? this.includeSteps,
       includeDiet: includeDiet ?? this.includeDiet,
       excludeContributions: excludeContributions ?? this.excludeContributions,
+      carbLoadCarbPerKg: carbLoadCarbPerKg ?? this.carbLoadCarbPerKg,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -10447,6 +10504,9 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
     if (excludeContributions.present) {
       map['exclude_contributions'] = Variable<bool>(excludeContributions.value);
     }
+    if (carbLoadCarbPerKg.present) {
+      map['carb_load_carb_per_kg'] = Variable<double>(carbLoadCarbPerKg.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -10465,6 +10525,7 @@ class DayMarkersCompanion extends UpdateCompanion<DayMarkerRow> {
           ..write('includeSteps: $includeSteps, ')
           ..write('includeDiet: $includeDiet, ')
           ..write('excludeContributions: $excludeContributions, ')
+          ..write('carbLoadCarbPerKg: $carbLoadCarbPerKg, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -15654,6 +15715,7 @@ typedef $$DayMarkersTableCreateCompanionBuilder =
       Value<bool> includeSteps,
       Value<bool> includeDiet,
       Value<bool> excludeContributions,
+      Value<double?> carbLoadCarbPerKg,
       Value<int> rowid,
     });
 typedef $$DayMarkersTableUpdateCompanionBuilder =
@@ -15667,6 +15729,7 @@ typedef $$DayMarkersTableUpdateCompanionBuilder =
       Value<bool> includeSteps,
       Value<bool> includeDiet,
       Value<bool> excludeContributions,
+      Value<double?> carbLoadCarbPerKg,
       Value<int> rowid,
     });
 
@@ -15721,6 +15784,11 @@ class $$DayMarkersTableFilterComposer
 
   ColumnFilters<bool> get excludeContributions => $composableBuilder(
     column: $table.excludeContributions,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get carbLoadCarbPerKg => $composableBuilder(
+    column: $table.carbLoadCarbPerKg,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -15778,6 +15846,11 @@ class $$DayMarkersTableOrderingComposer
     column: $table.excludeContributions,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get carbLoadCarbPerKg => $composableBuilder(
+    column: $table.carbLoadCarbPerKg,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DayMarkersTableAnnotationComposer
@@ -15827,6 +15900,11 @@ class $$DayMarkersTableAnnotationComposer
     column: $table.excludeContributions,
     builder: (column) => column,
   );
+
+  GeneratedColumn<double> get carbLoadCarbPerKg => $composableBuilder(
+    column: $table.carbLoadCarbPerKg,
+    builder: (column) => column,
+  );
 }
 
 class $$DayMarkersTableTableManager
@@ -15869,6 +15947,7 @@ class $$DayMarkersTableTableManager
                 Value<bool> includeSteps = const Value.absent(),
                 Value<bool> includeDiet = const Value.absent(),
                 Value<bool> excludeContributions = const Value.absent(),
+                Value<double?> carbLoadCarbPerKg = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DayMarkersCompanion(
                 date: date,
@@ -15880,6 +15959,7 @@ class $$DayMarkersTableTableManager
                 includeSteps: includeSteps,
                 includeDiet: includeDiet,
                 excludeContributions: excludeContributions,
+                carbLoadCarbPerKg: carbLoadCarbPerKg,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -15893,6 +15973,7 @@ class $$DayMarkersTableTableManager
                 Value<bool> includeSteps = const Value.absent(),
                 Value<bool> includeDiet = const Value.absent(),
                 Value<bool> excludeContributions = const Value.absent(),
+                Value<double?> carbLoadCarbPerKg = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DayMarkersCompanion.insert(
                 date: date,
@@ -15904,6 +15985,7 @@ class $$DayMarkersTableTableManager
                 includeSteps: includeSteps,
                 includeDiet: includeDiet,
                 excludeContributions: excludeContributions,
+                carbLoadCarbPerKg: carbLoadCarbPerKg,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

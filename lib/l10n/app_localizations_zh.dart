@@ -354,6 +354,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get checkUpdate => '检查更新';
 
   @override
+  String installDownloadedUpdate(String version) {
+    return '安装 v$version';
+  }
+
+  @override
   String get downloadInstall => '下载并安装';
 
   @override
@@ -1282,12 +1287,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reminderContentBodyLabel => '正文';
 
   @override
-  String get reminderContentEmptyHint => '留空则使用默认文案';
-
-  @override
-  String get reminderContentWorkoutHint => '训练提醒的默认正文会根据前一天的训练情况变化。';
-
-  @override
   String get reminderAlertModeRing => '响铃';
 
   @override
@@ -1488,6 +1487,23 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get restDayShortLabel => '休息';
+
+  @override
+  String get carbLoadLabel => '冲碳日';
+
+  @override
+  String get carbLoadShortLabel => '冲碳';
+
+  @override
+  String get carbLoadCarbPerKgLabel => '当天碳水';
+
+  @override
+  String carbLoadSummary(String perKg) {
+    return '碳水 $perKg g/kg';
+  }
+
+  @override
+  String get carbLoadHint => '蛋白、脂肪同高碳日，碳水最高可到 7 g/kg';
 
   @override
   String get dayMarkerSettingsTitle => '设置当天标记';

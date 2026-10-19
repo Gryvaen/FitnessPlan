@@ -167,14 +167,31 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
     await _refreshPermission();
   }
 
-  Future<void> _setAlertMode(ReminderKind kind, ReminderAlertMode mode) async {
-    await ref.read(remindersProvider.notifier).setAlertMode(kind, mode);
+  Future<void> _setAlertMode(ReminderAlertMode mode) async {
+    await ref.read(remindersProvider.notifier).setAlertModeAll(mode);
     await _refreshPermission();
   }
 
-  Future<void> _pickSound(ReminderKind kind) async {
-    await ref.read(remindersProvider.notifier).pickAndSetSound(kind);
+  Future<void> _pickSound() async {
+    await ref.read(remindersProvider.notifier).pickAndSetSharedSound();
     await _refreshPermission();
+  }
+
+  Future<void> _editContent(ReminderKind kind) async {
+    final setting = ref.read(remindersProvider.notifier).settingFor(kind);
+    final result = await showModalBottomSheet<({String title, String body})>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) =>
+          _ContentSheet(title: _label(kind, context.l10n), setting: setting),
+    );
+    if (result == null || !mounted) return;
+    await ref
+        .read(remindersProvider.notifier)
+        .setNotificationContent(kind, title: result.title, body: result.body);
+    if (mounted) await _refreshPermission();
   }
 
   String _label(ReminderKind kind, AppLocalizations l10n) => switch (kind) {
@@ -376,15 +393,28 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final settings = ref.watch(remindersProvider);
-    final remindersNotifier = ref.read(remindersProvider.notifier);
     final enabled = settings.values.any((s) => s.enabled);
     final android = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
     final issues = _restrictionIssues(l10n, enabled: enabled, android: android);
     final hasIssue = issues.isNotEmpty;
-    final showStatus = hasIssue || enabled;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.reminders)),
+      appBar: AppBar(
+        title: Text(l10n.reminders),
+        actions: [
+          IconButton(
+            key: const ValueKey('reminders-settings'),
+            tooltip: l10n.reminderSettingsTitle,
+            onPressed: () => _showSettings(issues),
+            icon: Badge(
+              isLabelVisible: hasIssue,
+              smallSize: 8,
+              backgroundColor: AppColors.warning,
+              child: const InkIcon(InkGlyph.settings),
+            ),
+          ),
+        ],
+      ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           AppSpacing.formPage,
@@ -393,25 +423,6 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
           listBottomInset(context, hasFab: false),
         ),
         children: [
-          if (showStatus)
-            _ReminderStatusRow(
-              title: hasIssue
-                  ? (issues.any((issue) => issue.blocking)
-                        ? l10n.reminderLimitBlocking
-                        : l10n.reminderLimitDelayed)
-                  : (android
-                        ? l10n.reminderStatusReady(_scheduleStatus!.scheduled)
-                        : l10n.notificationPermissionOn),
-              subtitle: hasIssue
-                  ? l10n.reminderLimitCount(issues.length)
-                  : null,
-              restricted: hasIssue,
-              onTap: () => _showStatusDetails(
-                issues,
-                android: android,
-                scheduled: _scheduleStatus?.scheduled ?? 0,
-              ),
-            ),
           for (final kind in ReminderKind.values)
             _ReminderTile(
               kind: kind,
@@ -423,16 +434,6 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
               onToggle: (v) => _toggle(kind, v),
               onPickTime: () => _pickTime(kind),
               onToggleWeekday: (d) => _toggleWeekday(kind, d),
-              onSetAlertMode: (m) => _setAlertMode(kind, m),
-              onPickSound: () => _pickSound(kind),
-              onSetContent: (title, body) async {
-                await remindersNotifier.setNotificationContent(
-                  kind,
-                  title: title,
-                  body: body,
-                );
-                if (mounted) await _refreshPermission();
-              },
             ),
         ],
       ),
@@ -446,137 +447,265 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
     weekdays: const {1, 2, 3, 4, 5, 6, 7},
   );
 
-  void _showStatusDetails(
-    List<RestrictionIssue> issues, {
-    required bool android,
-    required int scheduled,
-  }) {
+  /// Same layout as the rest timer's alert settings: a warning dot on the
+  /// gear flags issues, and the sheet lists them with their fixes.
+  void _showSettings(List<RestrictionIssue> issues) {
     final l10n = context.l10n;
-    final theme = Theme.of(context);
-    final hasIssue = issues.isNotEmpty;
     showModalBottomSheet<void>(
       context: context,
+      // Above the bottom tab bar, which would otherwise cover the actions.
+      useRootNavigator: true,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.82,
-          ),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.formPage,
-              0,
-              AppSpacing.formPage,
-              AppSpacing.section,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  hasIssue
-                      ? l10n.reminderRestrictionsSheetTitle
-                      : l10n.reminderStatusTitle,
-                  style: theme.textTheme.titleLarge,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  hasIssue
-                      ? l10n.reminderLimitSheetIntro
-                      : (android
-                            ? l10n.reminderScheduleReady(scheduled)
-                            : l10n.notificationPermissionOn),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                if (_autoStartGuidance != null) ...[
-                  const SizedBox(height: AppSpacing.compact),
-                  Text(
-                    _autoStartGuidance!,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+      builder: (sheetContext) => Consumer(
+        builder: (sheetContext, ref, _) {
+          final theme = Theme.of(sheetContext);
+          final muted = theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          );
+          final settings = ref.watch(remindersProvider);
+          final shared = ref.read(remindersProvider.notifier).sharedAlert;
+          return SafeArea(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.82,
+              ),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                      child: Text(
+                        l10n.reminderSettingsTitle,
+                        style: theme.textTheme.titleLarge,
+                      ),
                     ),
-                  ),
-                ],
-                const SizedBox(height: AppSpacing.card),
-                for (final issue in issues)
-                  RestrictionIssueRow(
-                    issue: issue,
-                    contentPadding: EdgeInsets.zero,
-                    onAction: () =>
-                        _runRestrictionAction(sheetContext, issue.onAction),
-                  ),
-                const SizedBox(height: AppSpacing.card),
-                FoldedNotes(
-                  title: l10n.reminderBehaviorTitle,
-                  notes: [
-                    l10n.reminderPowerOffNote,
-                    l10n.reminderBackgroundNote,
+                    // Problems first: they are why the dot is on the gear.
+                    if (issues.isEmpty)
+                      ListTile(
+                        leading: const InkIcon(
+                          InkGlyph.check,
+                          color: AppColors.success,
+                        ),
+                        title: Text(l10n.reminderPermissionsOk),
+                      )
+                    else ...[
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.reminderRestrictionsSheetTitle,
+                              style: theme.textTheme.titleSmall,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(l10n.reminderLimitSheetIntro, style: muted),
+                            if (_autoStartGuidance != null) ...[
+                              const SizedBox(height: AppSpacing.compact),
+                              Text(_autoStartGuidance!, style: muted),
+                            ],
+                          ],
+                        ),
+                      ),
+                      for (final issue in issues)
+                        RestrictionIssueRow(
+                          issue: issue,
+                          onAction: () => _runRestrictionAction(
+                            sheetContext,
+                            issue.onAction,
+                          ),
+                        ),
+                    ],
+                    const SizedBox(height: 8),
+                    for (final mode in ReminderAlertMode.values)
+                      ListTile(
+                        key: ValueKey('reminder-alert-${mode.name}'),
+                        leading: InkIcon(
+                          mode == ReminderAlertMode.vibrate
+                              ? InkGlyph.vibration
+                              : InkGlyph.alarm,
+                        ),
+                        title: Text(switch (mode) {
+                          ReminderAlertMode.ring => l10n.reminderAlertModeRing,
+                          ReminderAlertMode.vibrate =>
+                            l10n.reminderAlertModeVibrate,
+                        }),
+                        trailing: shared.alertMode == mode
+                            ? const InkIcon(InkGlyph.check)
+                            : null,
+                        onTap: () => unawaited(_setAlertMode(mode)),
+                      ),
+                    if (shared.alertMode == ReminderAlertMode.ring)
+                      ListTile(
+                        key: const ValueKey('reminder-sound'),
+                        leading: const InkIcon(InkGlyph.music),
+                        title: Text(l10n.reminderSoundLabel),
+                        trailing: _TrailingValue(
+                          shared.soundTitle ?? l10n.reminderSoundDefault,
+                        ),
+                        onTap: () => unawaited(_pickSound()),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                      child: Text(
+                        l10n.reminderContentLabel,
+                        style: theme.textTheme.titleSmall,
+                      ),
+                    ),
+                    for (final kind in ReminderKind.values)
+                      ListTile(
+                        key: ValueKey('reminder-content-${kind.name}'),
+                        leading: InkIcon(_icon(kind), color: _iconColor(kind)),
+                        title: Text(_label(kind, l10n)),
+                        trailing: _TrailingValue(
+                          settings[kind]?.customTitle != null ||
+                                  settings[kind]?.customBody != null
+                              ? l10n.reminderContentCustom
+                              : l10n.reminderContentDefault,
+                        ),
+                        onTap: () => unawaited(_editContent(kind)),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: FoldedNotes(
+                        title: l10n.reminderBehaviorTitle,
+                        notes: [
+                          l10n.reminderPowerOffNote,
+                          l10n.reminderBackgroundNote,
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 }
 
-class _ReminderStatusRow extends StatelessWidget {
-  const _ReminderStatusRow({
-    required this.title,
-    required this.subtitle,
-    required this.restricted,
-    required this.onTap,
-  });
+/// Muted value + chevron, the trailing of a settings row that opens a picker.
+class _TrailingValue extends StatelessWidget {
+  const _TrailingValue(this.value);
 
-  final String title;
-  final String? subtitle;
-  final bool restricted;
-  final VoidCallback onTap;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppRadius.card),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Row(
+    final muted = theme.colorScheme.onSurfaceVariant;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 160),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(color: muted),
+            ),
+          ),
+          InkIcon(InkGlyph.chevronRight, size: 18, color: muted),
+        ],
+      ),
+    );
+  }
+}
+
+/// Bottom sheet editing one kind's custom notification title/body; empty
+/// fields fall back to the default copy. Pops `(title, body)` on save, null
+/// on cancel.
+class _ContentSheet extends StatefulWidget {
+  const _ContentSheet({required this.title, required this.setting});
+
+  final String title;
+  final ReminderSetting setting;
+
+  @override
+  State<_ContentSheet> createState() => _ContentSheetState();
+}
+
+class _ContentSheetState extends State<_ContentSheet> {
+  late final _title = TextEditingController(text: widget.setting.customTitle);
+  late final _body = TextEditingController(text: widget.setting.customBody);
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _body.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          32,
+          0,
+          32,
+          24 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            InkIcon(
-              restricted ? InkGlyph.info : InkGlyph.check,
-              size: 16,
-              color: restricted ? AppColors.warning : AppColors.success,
+            Padding(
+              padding: const EdgeInsets.only(top: 4, bottom: 12),
+              child: Text(widget.title, style: theme.textTheme.titleLarge),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+            TextField(
+              key: const ValueKey('reminder-content-title'),
+              controller: _title,
+              maxLength: 60,
+              maxLines: 1,
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText: l10n.reminderContentTitleLabel,
+                counterText: '',
               ),
             ),
-            if (subtitle != null) ...[
-              const SizedBox(width: 6),
-              Text(
-                subtitle!,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+            const SizedBox(height: 8),
+            TextField(
+              key: const ValueKey('reminder-content-body'),
+              controller: _body,
+              maxLength: 240,
+              minLines: 2,
+              maxLines: 3,
+              textInputAction: TextInputAction.newline,
+              decoration: InputDecoration(
+                labelText: l10n.reminderContentBodyLabel,
+                counterText: '',
               ),
-            ],
-            const SizedBox(width: 4),
-            InkIcon(
-              InkGlyph.chevronRight,
-              size: 16,
-              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: AppSpacing.card),
+            Row(
+              children: [
+                const Spacer(),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(l10n.cancel),
+                ),
+                const SizedBox(width: AppSpacing.compact),
+                FilledButton(
+                  key: const ValueKey('reminder-content-save'),
+                  onPressed: () => Navigator.pop(context, (
+                    title: _title.text,
+                    body: _body.text,
+                  )),
+                  child: Text(l10n.save),
+                ),
+              ],
             ),
           ],
         ),
@@ -596,9 +725,6 @@ class _ReminderTile extends StatelessWidget {
     required this.onToggle,
     required this.onPickTime,
     required this.onToggleWeekday,
-    required this.onSetAlertMode,
-    required this.onPickSound,
-    required this.onSetContent,
   });
 
   final ReminderKind kind;
@@ -610,9 +736,6 @@ class _ReminderTile extends StatelessWidget {
   final ValueChanged<bool> onToggle;
   final VoidCallback onPickTime;
   final ValueChanged<int> onToggleWeekday;
-  final ValueChanged<ReminderAlertMode> onSetAlertMode;
-  final VoidCallback onPickSound;
-  final Future<void> Function(String? title, String? body) onSetContent;
 
   String get _timeText =>
       '${setting.hour.toString().padLeft(2, '0')}:'
@@ -689,336 +812,12 @@ class _ReminderTile extends StatelessWidget {
                       ),
                   ],
                 ),
-                const SizedBox(height: 14),
-                _AlertModeToggle(
-                  mode: setting.alertMode,
-                  onChanged: onSetAlertMode,
-                ),
-                if (setting.alertMode == ReminderAlertMode.ring)
-                  InkWell(
-                    onTap: onPickSound,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Row(
-                        children: [
-                          InkIcon(InkGlyph.music, size: 18, color: muted),
-                          const SizedBox(width: 8),
-                          Text(
-                            l10n.reminderSoundLabel,
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                          const Spacer(),
-                          Flexible(
-                            child: Text(
-                              setting.soundTitle ?? l10n.reminderSoundDefault,
-                              style: theme.textTheme.bodyMedium,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.end,
-                            ),
-                          ),
-                          InkIcon(
-                            InkGlyph.chevronRight,
-                            size: 18,
-                            color: muted,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                _NotificationContentEditor(
-                  key: ValueKey('reminder-content-${kind.name}'),
-                  kind: kind,
-                  setting: setting,
-                  onSave: onSetContent,
-                ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 8),
               ],
             ),
           ),
         ],
       ],
-    );
-  }
-}
-
-class _NotificationContentEditor extends StatefulWidget {
-  const _NotificationContentEditor({
-    super.key,
-    required this.kind,
-    required this.setting,
-    required this.onSave,
-  });
-
-  final ReminderKind kind;
-  final ReminderSetting setting;
-  final Future<void> Function(String? title, String? body) onSave;
-
-  @override
-  State<_NotificationContentEditor> createState() =>
-      _NotificationContentEditorState();
-}
-
-class _NotificationContentEditorState
-    extends State<_NotificationContentEditor> {
-  late final TextEditingController _titleController;
-  late final TextEditingController _bodyController;
-  late final FocusNode _titleFocus;
-  late final FocusNode _bodyFocus;
-  Timer? _saveTimer;
-  Future<void> _saveQueue = Future<void>.value();
-  String? _lastSubmittedTitle;
-  String? _lastSubmittedBody;
-  bool _expanded = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _titleController = TextEditingController(text: widget.setting.customTitle);
-    _bodyController = TextEditingController(text: widget.setting.customBody);
-    _titleFocus = FocusNode()..addListener(_onTitleFocusChanged);
-    _bodyFocus = FocusNode()..addListener(_onBodyFocusChanged);
-    _lastSubmittedTitle = widget.setting.customTitle;
-    _lastSubmittedBody = widget.setting.customBody;
-  }
-
-  void _onTitleFocusChanged() {
-    if (!_titleFocus.hasFocus) _queueSave();
-  }
-
-  void _onBodyFocusChanged() {
-    if (!_bodyFocus.hasFocus) _queueSave();
-  }
-
-  void _onChanged(String _) {
-    _saveTimer?.cancel();
-    _saveTimer = Timer(const Duration(milliseconds: 500), _queueSave);
-  }
-
-  void _queueSave() {
-    _saveTimer?.cancel();
-    _saveTimer = null;
-    final title = normalizeReminderContent(_titleController.text);
-    final body = normalizeReminderContent(_bodyController.text);
-    if (title == _lastSubmittedTitle && body == _lastSubmittedBody) return;
-    _lastSubmittedTitle = title;
-    _lastSubmittedBody = body;
-    final save = widget.onSave;
-    _saveQueue = _saveQueue
-        .catchError((Object error) {
-          debugPrint('reminder content save failed: $error');
-        })
-        .then((_) => save(title, body));
-    unawaited(
-      _saveQueue.catchError((Object error) {
-        debugPrint('reminder content save failed: $error');
-      }),
-    );
-  }
-
-  void _toggleExpanded() {
-    if (_expanded) {
-      _queueSave();
-      FocusScope.of(context).unfocus();
-    }
-    setState(() => _expanded = !_expanded);
-  }
-
-  @override
-  void dispose() {
-    _queueSave();
-    _saveTimer?.cancel();
-    _titleFocus
-      ..removeListener(_onTitleFocusChanged)
-      ..dispose();
-    _bodyFocus
-      ..removeListener(_onBodyFocusChanged)
-      ..dispose();
-    _titleController.dispose();
-    _bodyController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final l10n = context.l10n;
-    final muted = theme.colorScheme.onSurfaceVariant;
-    final custom =
-        widget.setting.customTitle != null ||
-        widget.setting.customBody != null ||
-        normalizeReminderContent(_titleController.text) != null ||
-        normalizeReminderContent(_bodyController.text) != null;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        InkWell(
-          onTap: _toggleExpanded,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Row(
-              children: [
-                InkIcon(InkGlyph.notification, size: 18, color: muted),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    l10n.reminderContentLabel,
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ),
-                Text(
-                  custom
-                      ? l10n.reminderContentCustom
-                      : l10n.reminderContentDefault,
-                  style: theme.textTheme.bodySmall?.copyWith(color: muted),
-                ),
-                const SizedBox(width: 6),
-                InkIcon(
-                  _expanded ? InkGlyph.collapse : InkGlyph.expand,
-                  size: 18,
-                  color: muted,
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (_expanded) ...[
-          const SizedBox(height: 4),
-          TextField(
-            controller: _titleController,
-            focusNode: _titleFocus,
-            maxLength: 60,
-            maxLines: 1,
-            textInputAction: TextInputAction.next,
-            decoration: InputDecoration(
-              labelText: l10n.reminderContentTitleLabel,
-              counterText: '',
-            ),
-            onChanged: _onChanged,
-            onTapOutside: (_) => FocusScope.of(context).unfocus(),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _bodyController,
-            focusNode: _bodyFocus,
-            maxLength: 240,
-            minLines: 2,
-            maxLines: 3,
-            textInputAction: TextInputAction.newline,
-            decoration: InputDecoration(
-              labelText: l10n.reminderContentBodyLabel,
-              counterText: '',
-            ),
-            onChanged: _onChanged,
-            onTapOutside: (_) => FocusScope.of(context).unfocus(),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            l10n.reminderContentEmptyHint,
-            style: theme.textTheme.bodySmall?.copyWith(color: muted),
-          ),
-          if (widget.kind == ReminderKind.workout)
-            Text(
-              l10n.reminderContentWorkoutHint,
-              style: theme.textTheme.bodySmall?.copyWith(color: muted),
-            ),
-          const SizedBox(height: 8),
-        ],
-      ],
-    );
-  }
-}
-
-class _AlertModeToggle extends StatelessWidget {
-  const _AlertModeToggle({required this.mode, required this.onChanged});
-
-  final ReminderAlertMode mode;
-  final ValueChanged<ReminderAlertMode> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: _AlertModeButton(
-              glyph: InkGlyph.notification,
-              label: l10n.reminderAlertModeRing,
-              selected: mode == ReminderAlertMode.ring,
-              onTap: () => onChanged(ReminderAlertMode.ring),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _AlertModeButton(
-              glyph: InkGlyph.vibration,
-              label: l10n.reminderAlertModeVibrate,
-              selected: mode == ReminderAlertMode.vibrate,
-              onTap: () => onChanged(ReminderAlertMode.vibrate),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AlertModeButton extends StatelessWidget {
-  const _AlertModeButton({
-    required this.glyph,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final InkGlyph glyph;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: selected
-          ? scheme.primaryContainer
-          : scheme.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(AppRadius.control),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.control),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              InkIcon(
-                glyph,
-                size: 16,
-                color: selected
-                    ? scheme.onPrimaryContainer
-                    : scheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: selected
-                        ? scheme.onPrimaryContainer
-                        : scheme.onSurfaceVariant,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

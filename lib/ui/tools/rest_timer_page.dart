@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../data/services/alert_defaults.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
@@ -28,7 +29,7 @@ class _RestTimerPageState extends State<RestTimerPage>
   static const _deadlineKey = 'rest_timer_deadline_ms';
   static const _pausedKey = 'rest_timer_paused_seconds';
   static const _finishedKey = 'rest_timer_finished';
-  static const _alertModeKey = 'rest_timer_alert_mode';
+  static const _alertModeKey = kRestTimerAlertModeKey;
   static const _backgroundAckKey = 'rest_timer_background_ack';
 
   int _selectedSeconds = 90;
@@ -52,7 +53,7 @@ class _RestTimerPageState extends State<RestTimerPage>
   String? _pendingSettingsHint;
   bool _restoring = true;
   bool _modeChanging = false;
-  RestTimerAlertMode _alertMode = RestTimerAlertMode.ringAndVibrate;
+  RestTimerAlertMode _alertMode = RestTimerAlertMode.vibrateOnly;
 
   /// Guards [_start] itself: `_running` only flips true after the
   /// permission-request await resolves, so without this a rapid double-tap
@@ -154,7 +155,7 @@ class _RestTimerPageState extends State<RestTimerPage>
     final savedMode = prefs.getString(_alertModeKey);
     final alertMode = RestTimerAlertMode.values.firstWhere(
       (mode) => mode.name == savedMode,
-      orElse: () => RestTimerAlertMode.ringAndVibrate,
+      orElse: () => RestTimerAlertMode.vibrateOnly,
     );
     final deadlineMs = prefs.getInt(_deadlineKey);
     final deadline = deadlineMs == null

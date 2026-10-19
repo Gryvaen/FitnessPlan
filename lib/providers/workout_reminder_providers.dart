@@ -67,22 +67,43 @@ class RemindersNotifier extends Notifier<Map<ReminderKind, ReminderSetting>> {
     () => ref.read(remindersRepositoryProvider).setWeekdays(kind, weekdays),
   );
 
-  Future<void> setAlertMode(ReminderKind kind, ReminderAlertMode mode) =>
-      _apply(
-        kind,
-        settingFor(kind).copyWith(alertMode: mode),
-        () => ref.read(remindersRepositoryProvider).setAlertMode(kind, mode),
-      );
+  /// The ring/vibrate choice and tone every kind shares: the first enabled
+  /// kind's (they are kept identical), or the workout reminder's.
+  ReminderSetting get sharedAlert => settingFor(
+    ReminderKind.values.firstWhere(
+      (kind) => settingFor(kind).enabled,
+      orElse: () => ReminderKind.workout,
+    ),
+  );
 
-  /// Pass `uri: null` to reset to the system default notification sound.
-  Future<void> setSound(ReminderKind kind, {String? uri, String? title}) =>
-      _apply(
-        kind,
-        settingFor(kind).copyWith(soundUri: uri, soundTitle: title),
-        () => ref
-            .read(remindersRepositoryProvider)
-            .setSound(kind, uri: uri, title: title),
-      );
+  Future<void> _applyAll(
+    ReminderSetting Function(ReminderSetting) update,
+    Future<void> Function() persist,
+  ) async {
+    await persist();
+    state = {
+      for (final kind in ReminderKind.values) kind: update(settingFor(kind)),
+    };
+    try {
+      await syncSchedule();
+    } catch (e) {
+      debugPrint('reminder sync failed: $e');
+    }
+  }
+
+  /// Ring or vibrate, for every kind at once.
+  Future<void> setAlertModeAll(ReminderAlertMode mode) => _applyAll(
+    (s) => s.copyWith(alertMode: mode),
+    () => ref.read(remindersRepositoryProvider).setAlertModeAll(mode),
+  );
+
+  /// The tone for every kind; `uri: null` resets to the system default.
+  Future<void> setSoundAll({String? uri, String? title}) => _applyAll(
+    (s) => s.copyWith(soundUri: uri, soundTitle: title),
+    () => ref
+        .read(remindersRepositoryProvider)
+        .setSoundAll(uri: uri, title: title),
+  );
 
   Future<void> setNotificationContent(
     ReminderKind kind, {
@@ -121,15 +142,15 @@ class RemindersNotifier extends Notifier<Map<ReminderKind, ReminderSetting>> {
     return nextWrite;
   }
 
-  /// Opens the system ringtone picker for [kind]'s current tone and, if the
-  /// user picked one, saves and reschedules. Returns the picked title, or
-  /// null if the user cancelled.
-  Future<String?> pickAndSetSound(ReminderKind kind) async {
+  /// Opens the system ringtone picker for the shared tone and, if the user
+  /// picked one, saves it for every kind and reschedules. Returns the picked
+  /// title, or null if the user cancelled.
+  Future<String?> pickAndSetSharedSound() async {
     final picked = await ReminderNotifications.pickRingtone(
-      currentUri: settingFor(kind).soundUri,
+      currentUri: sharedAlert.soundUri,
     );
     if (picked == null) return null;
-    await setSound(kind, uri: picked.uri, title: picked.title);
+    await setSoundAll(uri: picked.uri, title: picked.title);
     return picked.title;
   }
 

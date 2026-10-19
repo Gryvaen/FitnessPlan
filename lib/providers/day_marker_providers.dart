@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/day_marker.dart';
 import 'core_providers.dart';
 
-/// Marker (放纵日/休息日/none) for a single local day.
+/// Marker (放纵日/休息日/冲碳日/none) for a single local day.
 final dayMarkerProvider = StreamProvider.family<DayMarkerType?, DateTime>((
   ref,
   day,
@@ -16,8 +16,15 @@ final dayMarkerSettingsProvider =
       return ref.watch(dayMarkerRepositoryProvider).watchSettingsForDay(day);
     });
 
-/// Rest dates eligible and selected to pause the carb cycle. Previews stay
-/// live as markers change.
+/// Marker settings from today on, for carb-cycle previews (paused-row labels
+/// and 冲碳日 macros).
+final upcomingDayMarkersProvider =
+    StreamProvider<Map<DateTime, DayMarkerSettings>>((ref) {
+      return ref.watch(dayMarkerRepositoryProvider).watchUpcomingSettings();
+    });
+
+/// Marker dates (any type) eligible and selected to pause the carb cycle.
+/// Previews stay live as markers change.
 final restDayDatesProvider = StreamProvider<List<DateTime>>((ref) {
   return ref.watch(dayMarkerRepositoryProvider).watchRestDayDates();
 });

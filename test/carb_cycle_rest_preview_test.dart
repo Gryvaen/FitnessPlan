@@ -1,3 +1,4 @@
+import 'package:diet/domain/day_marker.dart';
 import 'package:diet/domain/diet_strategy.dart';
 import 'package:diet/l10n/app_localizations.dart';
 import 'package:diet/ui/strategy/carb_cycle_view.dart';
@@ -111,5 +112,71 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('preview labels paused days by marker and shows carb loads', (
+    tester,
+  ) async {
+    final start = DateTime(2026, 10, 13);
+    final cheat = DateTime(2026, 10, 14);
+    final load = DateTime(2026, 10, 15);
+    final plan = CarbCyclePlanner.compute(
+      referenceWeightKg: 75,
+      rates: CarbCycleRates.defaults(),
+      schedule: CarbCycleSchedule.tryParse('HMLL')!,
+    );
+    CarbCycleSchedule? edited;
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: CarbCycleView(
+            plan: plan,
+            cycleStart: start,
+            onScheduleChanged: (s) => edited = s,
+            windowStart: start,
+            restDayDates: [cheat],
+            markers: {
+              cheat: const DayMarkerSettings(
+                type: DayMarkerType.cheatMeal,
+                pauseCarbCycle: true,
+              ),
+              load: const DayMarkerSettings(
+                type: DayMarkerType.carbLoad,
+                carbLoadCarbPerKg: 6,
+              ),
+            },
+          ),
+        ),
+      ),
+    );
+    final cheatRow = find.byKey(const ValueKey('cycleDay-1'));
+    final loadRow = find.byKey(const ValueKey('cycleDay-2'));
+    expect(
+      find.descendant(of: cheatRow, matching: find.text('Cheat day')),
+      findsOneWidget,
+    );
+    expect(find.text('Rest day'), findsNothing);
+    expect(
+      find.descendant(of: loadRow, matching: find.text('Carb-load day')),
+      findsOneWidget,
+    );
+    final loadDay = plan.carbLoadDay(6);
+    expect(
+      find.descendant(
+        of: loadRow,
+        matching: find.text('${loadDay.energy.round()}'),
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(loadRow);
+    expect(edited, isNull);
   });
 }

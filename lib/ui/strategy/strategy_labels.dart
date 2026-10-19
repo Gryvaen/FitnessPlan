@@ -1,7 +1,9 @@
+import '../../domain/day_marker.dart';
 import '../../domain/diet_plan.dart';
 import '../../domain/diet_strategy.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
+import '../ink/ink_icon.dart';
 
 extension DietStrategyKindL10n on DietStrategyKind {
   String label(AppLocalizations l10n) => switch (this) {
@@ -31,6 +33,26 @@ extension CarbDayTypeL10n on CarbDayType {
   };
 }
 
+extension DayMarkerTypeL10n on DayMarkerType {
+  String label(AppLocalizations l10n) => switch (this) {
+    DayMarkerType.cheatMeal => l10n.cheatMealLabel,
+    DayMarkerType.restDay => l10n.restDayLabel,
+    DayMarkerType.carbLoad => l10n.carbLoadLabel,
+  };
+
+  String shortLabel(AppLocalizations l10n) => switch (this) {
+    DayMarkerType.cheatMeal => l10n.cheatMealShortLabel,
+    DayMarkerType.restDay => l10n.restDayShortLabel,
+    DayMarkerType.carbLoad => l10n.carbLoadShortLabel,
+  };
+
+  InkGlyph get glyph => switch (this) {
+    DayMarkerType.cheatMeal => InkGlyph.celebration,
+    DayMarkerType.restDay => InkGlyph.bedtime,
+    DayMarkerType.carbLoad => InkGlyph.foodGrains,
+  };
+}
+
 extension StrategyIssueL10n on StrategyIssue {
   String message(AppLocalizations l10n) => switch (this) {
     StrategyIssue.invalidWeight => l10n.issueInvalidWeight,
@@ -50,12 +72,14 @@ extension StrategyIssueL10n on StrategyIssue {
   };
 }
 
-/// Compact label for the Today hero chip, e.g. "碳循环 · 高碳日".
+/// Compact label for the Today hero chip, e.g. "碳循环 · 高碳日". [marker] is
+/// the day's marker, naming a cycle day it paused (休息日 when unknown).
 String targetChipLabel(
   DailyNutritionTarget target,
   UserProfile profile,
-  AppLocalizations l10n,
-) {
+  AppLocalizations l10n, {
+  DayMarkerType? marker,
+}) {
   switch (target.source) {
     case TargetSource.override:
       return l10n.targetSourceOverride;
@@ -65,7 +89,12 @@ String targetChipLabel(
         case DietStrategyKind.balanced:
           return kind.label(l10n);
         case DietStrategyKind.carbCycle:
-          if (target.cyclePaused == true) return l10n.restDayLabel;
+          if (target.isCarbLoad) {
+            return '${kind.label(l10n)} · ${l10n.carbLoadLabel}';
+          }
+          if (target.cyclePaused == true) {
+            return (marker ?? DayMarkerType.restDay).label(l10n);
+          }
           final day = target.dayType;
           return day == null
               ? kind.label(l10n)

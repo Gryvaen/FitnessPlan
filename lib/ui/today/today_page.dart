@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/db.dart';
-import '../../domain/day_marker.dart';
 import '../../domain/diet_plan.dart';
 import '../../domain/diet_strategy.dart';
 import '../../domain/goal_quotes.dart';
@@ -95,7 +94,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     final dayMarker = ref.watch(dayMarkerProvider(day)).value;
     final strategyLabel = dayTarget == null
         ? null
-        : targetChipLabel(dayTarget, profile, l10n);
+        : targetChipLabel(dayTarget, profile, l10n, marker: dayMarker);
     final canChooseDietStrategy =
         profile.goal == FitnessGoal.cut &&
         dayTarget?.source == TargetSource.profile &&
@@ -114,6 +113,8 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         loadTargets: (start, end) => repo.targetsBetween(start, end, profile),
         loadStrategyForDay: (date) async =>
             (await repo.planCovering(date))?.kind,
+        loadCarbLoadFloor: (date) async =>
+            (await repo.planCovering(date))?.carbCyclePlan?.highDayCarbPerKg,
         calorieStandardSince: profile.calorieStandardSince,
         markUntil: DateTime(today.year + 1, today.month, today.day),
       );
@@ -199,17 +200,13 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                                       ),
                                       const SizedBox(width: AppSpacing.compact),
                                       InkIcon(
-                                        dayMarker == DayMarkerType.restDay
-                                            ? InkGlyph.bedtime
-                                            : InkGlyph.celebration,
+                                        dayMarker.glyph,
                                         size: 16,
                                         color: onHeroMuted,
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
-                                        dayMarker == DayMarkerType.restDay
-                                            ? l10n.restDayLabel
-                                            : l10n.cheatMealLabel,
+                                        dayMarker.label(l10n),
                                         style: theme.textTheme.bodySmall
                                             ?.copyWith(color: onHeroMuted),
                                       ),
