@@ -13,8 +13,9 @@ import '../../data/services/oem_background_guide.dart';
 import '../../data/services/steps_sync_service.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
-import '../meals/daily_meals_page.dart';
 import '../ink/ink_icon.dart';
+import '../meals/daily_meals_page.dart';
+import '../meals/save_preset_flow.dart';
 import '../shell/swipe_tab_view.dart';
 import '../strategy/strategy_labels.dart';
 import '../theme/app_theme.dart';
@@ -625,60 +626,12 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     } else if (value == 'preset') {
       final meals = await ref.read(mealRepositoryProvider).forDay(day);
       if (!mounted) return;
-      if (meals.isEmpty) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.noLogsToSave)));
-        return;
-      }
-      final nameCtrl = TextEditingController(
-        text: isSelectedToday ? l10n.mealPresets : dayLabel,
-      );
-      final nameFocus = FocusNode();
-      suppressInitialTextFocus(nameFocus);
-      final ok = await showDialog<bool>(
+      await saveMealPresetFromEntries(
         context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(l10n.saveAsPreset),
-          content: TextField(
-            controller: nameCtrl,
-            focusNode: nameFocus,
-            decoration: InputDecoration(labelText: l10n.name),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l10n.cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l10n.save),
-            ),
-          ],
-        ),
+        ref: ref,
+        initialName: isSelectedToday ? l10n.mealPresets : dayLabel,
+        entries: meals,
       );
-      final presetName = nameCtrl.text;
-      // Defer dispose until after the dialog route finishes unmounting.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        nameCtrl.dispose();
-        nameFocus.dispose();
-      });
-      if (ok != true) return;
-      try {
-        await ref
-            .read(mealPresetRepositoryProvider)
-            .createFromEntries(name: presetName, entries: meals);
-        ref.invalidate(mealPresetsProvider);
-        if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.presetSaved)));
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('$e')));
-      }
     }
   }
 }

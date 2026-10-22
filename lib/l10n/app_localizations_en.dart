@@ -57,6 +57,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get replace => 'Replace';
 
   @override
+  String get overwrite => 'Overwrite';
+
+  @override
+  String get changeName => 'Change name';
+
+  @override
   String get append => 'Append';
 
   @override
@@ -539,7 +545,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String presetNameExistsConfirm(String name) {
-    return 'A preset named \"$name\" already exists. Replace it?';
+    return 'A preset named \"$name\" already exists. Overwrite it, or change the name?';
   }
 
   @override

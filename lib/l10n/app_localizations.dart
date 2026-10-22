@@ -194,6 +194,18 @@ abstract class AppLocalizations {
   /// **'Replace'**
   String get replace;
 
+  /// No description provided for @overwrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Overwrite'**
+  String get overwrite;
+
+  /// No description provided for @changeName.
+  ///
+  /// In en, this message translates to:
+  /// **'Change name'**
+  String get changeName;
+
   /// No description provided for @append.
   ///
   /// In en, this message translates to:
@@ -1127,7 +1139,7 @@ abstract class AppLocalizations {
   /// No description provided for @presetNameExistsConfirm.
   ///
   /// In en, this message translates to:
-  /// **'A preset named \"{name}\" already exists. Replace it?'**
+  /// **'A preset named \"{name}\" already exists. Overwrite it, or change the name?'**
   String presetNameExistsConfirm(String name);
 
   /// No description provided for @saveAsPlan.

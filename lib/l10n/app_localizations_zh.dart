@@ -57,6 +57,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get replace => '替换';
 
   @override
+  String get overwrite => '覆盖';
+
+  @override
+  String get changeName => '修改名称';
+
+  @override
   String get append => '追加';
 
   @override
@@ -537,7 +543,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String presetNameExistsConfirm(String name) {
-    return '已存在名为“$name”的套餐，是否替换？';
+    return '已存在名为“$name”的套餐。覆盖已有套餐，还是修改名称？';
   }
 
   @override

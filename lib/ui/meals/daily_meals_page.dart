@@ -13,6 +13,7 @@ import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/food_name_link.dart';
 import '../widgets/search_field_focus.dart';
+import 'save_preset_flow.dart';
 
 /// Route to the per-day food log.
 String dailyMealsPath(DateTime day) {
@@ -368,86 +369,12 @@ class _MealTypeSection extends ConsumerWidget {
   }
 
   Future<void> _saveAsPreset(BuildContext context, WidgetRef ref) async {
-    final l10n = context.l10n;
-    if (entries.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.noLogsToSave)));
-      return;
-    }
-    final nameCtrl = TextEditingController(text: type.label(l10n));
-    final nameFocus = FocusNode();
-    suppressInitialTextFocus(nameFocus);
-    final ok = await showDialog<bool>(
+    await saveMealPresetFromEntries(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.saveAsPreset),
-        content: TextField(
-          controller: nameCtrl,
-          focusNode: nameFocus,
-          decoration: InputDecoration(labelText: l10n.name),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.save),
-          ),
-        ],
-      ),
+      ref: ref,
+      initialName: type.label(context.l10n),
+      entries: entries,
     );
-    final presetName = nameCtrl.text;
-    // Defer dispose until after the dialog route finishes unmounting.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      nameCtrl.dispose();
-      nameFocus.dispose();
-    });
-    if (ok != true) return;
-
-    final repo = ref.read(mealPresetRepositoryProvider);
-    var replaceExisting = false;
-    final existing = await repo.presetByName(presetName);
-    if (existing != null) {
-      if (!context.mounted) return;
-      final confirmReplace = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(l10n.presetNameExists),
-          content: Text(l10n.presetNameExistsConfirm(presetName.trim())),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l10n.cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l10n.replace),
-            ),
-          ],
-        ),
-      );
-      if (confirmReplace != true) return;
-      replaceExisting = true;
-    }
-
-    try {
-      await repo.createFromEntries(
-        name: presetName,
-        entries: entries,
-        replaceExisting: replaceExisting,
-      );
-      ref.invalidate(mealPresetsProvider);
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.presetSaved)));
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-    }
   }
 
   @override
