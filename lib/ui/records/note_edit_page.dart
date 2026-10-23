@@ -6,17 +6,24 @@ import 'package:intl/intl.dart';
 
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import 'note_plan_text.dart';
+import 'note_mode_toggle.dart';
 import '../theme/app_theme.dart';
 import '../widgets/search_field_focus.dart';
 
 enum _SaveStatus { idle, dirty, saving, saved }
 
-/// Full-screen memo-style daily note editor with debounced autosave.
+const _modeRecord = 'record';
+const _modePlan = 'plan';
+
+/// Full-screen daily-note editor with debounced autosave. Each day holds one
+/// independent note per mode: free-text record and numbered plan.
 class NoteEditPage extends ConsumerStatefulWidget {
-  const NoteEditPage({super.key, this.date});
+  const NoteEditPage({super.key, this.date, this.mode = 'record'});
 
   /// Calendar day to edit; null means today.
   final DateTime? date;
+  final String mode;
 
   @override
   ConsumerState<NoteEditPage> createState() => _NoteEditPageState();
@@ -27,13 +34,18 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
 
   late final DateTime _day;
   late final TextEditingController _ctrl;
+  Future<bool>? _pendingSave;
+  bool _leaving = false;
+  bool _allowPop = false;
   final _focus = FocusNode();
   Timer? _timer;
   var _loading = true;
   var _status = _SaveStatus.idle;
+  var _mode = _modeRecord;
+  final _drafts = <String, String>{_modeRecord: '', _modePlan: '1. '};
+  final _saved = <String, String>{_modeRecord: '', _modePlan: ''};
   DateTime? _savedAt;
   bool _loadFailed = false;
-  String _lastSaved = '';
 
   @override
   void initState() {
@@ -48,12 +60,20 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
 
   Future<void> _load() async {
     try {
-      final note = await ref.read(noteRepositoryProvider).getByDate(_day);
+      final repo = ref.read(noteRepositoryProvider);
+      final record = await repo.getByDate(_day);
+      final plan = await repo.getByDate(_day, mode: _modePlan);
       if (!mounted) return;
-      final text = note?.content ?? '';
-      _lastSaved = text.trim();
-      _ctrl.text = text;
+      _drafts[_modeRecord] = record?.content ?? '';
+      _drafts[_modePlan] = displayPlan(plan?.content ?? '');
+      _saved[_modeRecord] = record?.content.trim() ?? '';
+      _saved[_modePlan] = plan?.content.trim() ?? '';
+      final mode = widget.mode == _modePlan ? _modePlan : _modeRecord;
+      final note = mode == _modePlan ? plan : record;
+      _ctrl.text = _drafts[mode]!;
+      _ctrl.selection = TextSelection.collapsed(offset: _ctrl.text.length);
       setState(() {
+        _mode = mode;
         _loading = false;
         _loadFailed = false;
         _savedAt = note?.updatedAt;
@@ -69,48 +89,93 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
     }
   }
 
-  void _onChanged() {
-    if (!AppDates.isLocalToday(_day)) return;
-    final trimmed = _ctrl.text.trim();
-    if (trimmed == _lastSaved) {
-      _timer?.cancel();
-      if (_status == _SaveStatus.dirty) {
-        setState(() => _status = _SaveStatus.saved);
-      }
-      return;
-    }
-    setState(() => _status = _SaveStatus.dirty);
-    _timer?.cancel();
-    _timer = Timer(_debounce, _persist);
+  String _currentContent() =>
+      _mode == _modePlan ? planContent(_ctrl.text) : _ctrl.text;
+
+  void _setMode(String mode) {
+    if (mode == _mode) return;
+    _drafts[_mode] = _ctrl.text;
+    _ctrl.removeListener(_onChanged);
+    _ctrl.text = _drafts[mode]!;
+    _ctrl.selection = TextSelection.collapsed(offset: _ctrl.text.length);
+    _ctrl.addListener(_onChanged);
+    setState(() => _mode = mode);
+    _onChanged();
   }
 
-  Future<void> _persist() async {
+  String _contentFor(String mode) {
+    final text = _drafts[mode]!;
+    return (mode == _modePlan ? planContent(text) : text).trim();
+  }
+
+  bool get _hasChanges =>
+      _saved.keys.any((mode) => _contentFor(mode) != _saved[mode]);
+
+  void _onChanged() {
+    if (_loading || !AppDates.isLocalToday(_day)) return;
+    _drafts[_mode] = _ctrl.text;
     _timer?.cancel();
-    if (!AppDates.isLocalToday(_day) || _status == _SaveStatus.saving) return;
-    final text = _ctrl.text;
-    final trimmed = text.trim();
-    if (trimmed == _lastSaved) {
-      if (mounted) setState(() => _status = _SaveStatus.saved);
-      return;
-    }
-    setState(() => _status = _SaveStatus.saving);
+    setState(
+      () => _status = _hasChanges ? _SaveStatus.dirty : _SaveStatus.saved,
+    );
+    if (_hasChanges) _timer = Timer(_debounce, _persist);
+  }
+
+  Future<bool> _persist() async {
+    _timer?.cancel();
+    if (_loading || _loadFailed) return false;
+    if (!AppDates.isLocalToday(_day)) return true;
+    if (_pendingSave != null) return _pendingSave!;
+    final pending = _saveUntilCurrent();
+    _pendingSave = pending;
     try {
-      await ref
-          .read(noteRepositoryProvider)
-          .saveOrClear(date: _day, content: text);
-      if (!mounted) return;
-      _lastSaved = trimmed;
-      setState(() {
-        _status = _SaveStatus.saved;
-        _savedAt = DateTime.now();
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _status = _SaveStatus.dirty);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(context.l10n.saveFailed('$e'))));
+      return await pending;
+    } finally {
+      _pendingSave = null;
     }
+  }
+
+  Future<bool> _saveUntilCurrent() async {
+    while (mounted) {
+      _drafts[_mode] = _ctrl.text;
+      if (!_hasChanges) {
+        setState(() => _status = _SaveStatus.saved);
+        return true;
+      }
+      final mode = _saved.keys.firstWhere(
+        (mode) => _contentFor(mode) != _saved[mode],
+      );
+      final content = _contentFor(mode);
+      setState(() => _status = _SaveStatus.saving);
+      try {
+        await ref
+            .read(noteRepositoryProvider)
+            .saveOrClear(date: _day, content: content, mode: mode);
+        _saved[mode] = content;
+        _savedAt = DateTime.now();
+      } catch (e) {
+        if (!mounted) return false;
+        setState(() => _status = _SaveStatus.dirty);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.saveFailed('$e'))));
+        return false;
+      }
+    }
+    return false;
+  }
+
+  Future<void> _leave() async {
+    if (_leaving) return;
+    _leaving = true;
+    final saved = await _persist();
+    if (!mounted) return;
+    _leaving = false;
+    if (!saved) return;
+    setState(() => _allowPop = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.of(context).pop();
+    });
   }
 
   String _statusLabel(AppLocalizations l10n) {
@@ -147,31 +212,32 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
     final editable = AppDates.isLocalToday(_day);
 
     return PopScope(
-      canPop: !editable || _status != _SaveStatus.saving,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (didPop || !editable) return;
-        // Autosave already keeps the note current; flush any pending edit.
-        final navigator = Navigator.of(context);
-        _timer?.cancel();
-        await _persist();
-        if (mounted) navigator.pop();
+      canPop: _allowPop || !editable || _loadFailed,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && editable) _leave();
       },
       child: Scaffold(
         resizeToAvoidBottomInset: true,
         backgroundColor: scheme.surface,
         appBar: AppBar(
+          leading: BackButton(
+            onPressed: editable && !_loadFailed
+                ? _leave
+                : () => Navigator.of(context).maybePop(),
+          ),
           backgroundColor: scheme.surface,
           surfaceTintColor: Colors.transparent,
           actions: [
+            NoteModeToggle(
+              isPlan: _mode == _modePlan,
+              onPressed: _loading || _loadFailed
+                  ? null
+                  : () =>
+                        _setMode(_mode == _modePlan ? _modeRecord : _modePlan),
+            ),
             if (editable)
               TextButton(
-                onPressed: _loading
-                    ? null
-                    : () async {
-                        _timer?.cancel();
-                        await _persist();
-                        if (context.mounted) Navigator.of(context).pop();
-                      },
+                onPressed: _loading || _loadFailed ? null : _leave,
                 child: Text(l10n.done),
               ),
           ],
@@ -192,65 +258,37 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      AppDates.ymdWithWeekday(_day, locale),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _statusLabel(l10n),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          AppDates.ymdWithWeekday(_day, locale),
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                        Text(
+                          _statusLabel(l10n),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: AppSpacing.field),
                     Expanded(
-                      child: Theme(
-                        data: theme.copyWith(
-                          inputDecorationTheme: const InputDecorationTheme(
-                            filled: false,
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                        ),
-                        child: TextField(
-                          controller: _ctrl,
-                          focusNode: _focus,
-                          // Never toggle readOnly mid-session: flipping it while
-                          // an autosave runs tears down and rebuilds the input
-                          // connection, so the keyboard flickers shut on every
-                          // debounced save.
-                          readOnly: !editable,
-                          expands: true,
-                          maxLines: null,
-                          minLines: null,
-                          textAlignVertical: TextAlignVertical.top,
-                          style: bodyStyle,
-                          cursorColor: scheme.primary,
-                          decoration: InputDecoration(
-                            filled: false,
-                            hintText: editable ? l10n.noteHint : null,
-                            hintStyle: bodyStyle?.copyWith(
-                              color: scheme.onSurfaceVariant.withValues(
-                                alpha: 0.55,
-                              ),
-                            ),
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                        ),
+                      child: _buildRecordBody(
+                        theme,
+                        scheme,
+                        l10n,
+                        bodyStyle,
+                        editable,
                       ),
                     ),
                     Align(
                       alignment: Alignment.centerRight,
                       child: Text(
-                        l10n.charCount(_ctrl.text.trim().runes.length),
+                        l10n.charCount(_currentContent().trim().runes.length),
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: scheme.onSurfaceVariant,
                         ),
@@ -259,6 +297,54 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
                   ],
                 ),
               ),
+      ),
+    );
+  }
+
+  Widget _buildRecordBody(
+    ThemeData theme,
+    ColorScheme scheme,
+    AppLocalizations l10n,
+    TextStyle? bodyStyle,
+    bool editable,
+  ) {
+    return Theme(
+      data: theme.copyWith(
+        inputDecorationTheme: const InputDecorationTheme(
+          filled: false,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
+      child: TextField(
+        controller: _ctrl,
+        inputFormatters: _mode == _modePlan ? [PlanNumberFormatter()] : null,
+        keyboardType: TextInputType.multiline,
+        textInputAction: TextInputAction.newline,
+        focusNode: _focus,
+        // Never toggle readOnly mid-session: flipping it while an autosave runs
+        // tears down and rebuilds the input connection, so the keyboard
+        // flickers shut on every debounced save.
+        readOnly: !editable,
+        expands: true,
+        maxLines: null,
+        minLines: null,
+        textAlignVertical: TextAlignVertical.top,
+        style: bodyStyle,
+        cursorColor: scheme.primary,
+        decoration: InputDecoration(
+          filled: false,
+          hintText: editable && _mode == _modeRecord ? l10n.noteHint : null,
+          hintStyle: bodyStyle?.copyWith(
+            color: scheme.onSurfaceVariant.withValues(alpha: 0.55),
+          ),
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          contentPadding: EdgeInsets.zero,
+        ),
       ),
     );
   }

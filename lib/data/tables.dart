@@ -337,8 +337,11 @@ class DailyNotes extends Table {
   TextColumn get content => text()();
   DateTimeColumn get updatedAt => dateTime()();
 
+  /// Editor mode: `record` (free text) or `plan` (newline-separated items).
+  TextColumn get mode => text().withDefault(const Constant('record'))();
+
   @override
   List<Set<Column>> get uniqueKeys => [
-    {date},
+    {date, mode},
   ];
 }

@@ -1270,25 +1270,13 @@ Future<void> showQuickAddDayItemDialog({
   Exercise? selected = initial;
   final memory = ref.read(formMemoryRepositoryProvider).loadWorkoutTargets();
   final initialUnit = ExerciseUnit.fromStorage(initial.unit);
+  // Sets/reps default from the remembered form values only; weight and note
+  // carry over on the repository side from the exercise's last trained item.
   var sets = FormOptions.snapInt(FormOptions.targetSets, memory.sets);
   var reps = FormOptions.snapInt(
     FormOptions.exerciseTargetOptions(initialUnit, category: initial.category),
     memory.valueFor(initialUnit, category: initial.category),
   );
-  final initialLast = await ref
-      .read(workoutRepositoryProvider)
-      .lastExerciseTargets(initial.id);
-  if (!context.mounted) return;
-  if (initialLast != null) {
-    sets = FormOptions.snapInt(FormOptions.targetSets, initialLast.sets);
-    reps = FormOptions.snapInt(
-      FormOptions.exerciseTargetOptions(
-        initialUnit,
-        category: initial.category,
-      ),
-      initialLast.reps,
-    );
-  }
 
   // Let any prior route (empty-plan dialog / bottom sheet) finish popping
   // before pushing onto the root overlay.
@@ -1319,11 +1307,7 @@ Future<void> showQuickAddDayItemDialog({
                   displayText: selected!.name,
                   selectedId: selected!.id,
                   exercises: exercises,
-                  onChanged: (v) async {
-                    final last = await ref
-                        .read(workoutRepositoryProvider)
-                        .lastExerciseTargets(v.id);
-                    if (!ctx.mounted) return;
+                  onChanged: (v) {
                     final remembered = ref
                         .read(formMemoryRepositoryProvider)
                         .loadWorkoutTargets();
@@ -1336,15 +1320,11 @@ Future<void> showQuickAddDayItemDialog({
                       );
                       sets = FormOptions.snapInt(
                         FormOptions.targetSets,
-                        last?.sets ?? remembered.sets,
+                        remembered.sets,
                       );
                       reps = FormOptions.snapInt(
                         options,
-                        last?.reps ??
-                            remembered.valueFor(
-                              pickedUnit,
-                              category: v.category,
-                            ),
+                        remembered.valueFor(pickedUnit, category: v.category),
                       );
                     });
                   },

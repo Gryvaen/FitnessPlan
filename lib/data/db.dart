@@ -42,7 +42,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 34;
+  int get schemaVersion => 36;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -301,6 +301,13 @@ UPDATE day_markers SET
         await customStatement(
           "UPDATE day_markers SET pause_carb_cycle = 0 WHERE type = 'cheatMeal'",
         );
+      }
+      if (from < 35) {
+        // Additive: existing notes default to the free-text `record` mode.
+        await _addColumnIfMissing(m, dailyNotes, dailyNotes.mode);
+      }
+      if (from < 36) {
+        await m.alterTable(TableMigration(dailyNotes));
       }
     },
   );
