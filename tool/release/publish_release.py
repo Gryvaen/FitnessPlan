@@ -60,7 +60,8 @@ class Platform:
             headers['Content-Type'] = content_type
         try:
             with self.opener.open(urllib.request.Request(url, data=data, headers=headers, method=method), timeout=120) as response:
-                return json.load(response)
+                body = response.read()
+                return json.loads(body) if body else None
         except urllib.error.HTTPError as error:
             raise ApiError(error.code) from None
 

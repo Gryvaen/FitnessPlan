@@ -159,6 +159,9 @@ git push -q "$GITHUB_REMOTE" "$BRANCH" "refs/tags/$TAG"
 step "Push $BRANCH and $TAG to Gitee"
 push_gitee -q "HEAD:refs/heads/$BRANCH" "refs/tags/$TAG"
 
+step "Clean old Gitee APKs (keep the latest 3 versions, including $TAG)"
+python3 tool/release/cleanup_gitee_releases.py --tag "$TAG" --repo "$GITEE_REPO"
+
 step "Publish $TAG to GitHub and Gitee"
 python3 tool/release/publish_release.py --tag "$TAG" --notes-file "$RELEASE_NOTES" \
   --github-repo "$GITHUB_REPO" --gitee-repo "$GITEE_REPO" \
