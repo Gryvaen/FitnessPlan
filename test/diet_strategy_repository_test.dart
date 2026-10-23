@@ -825,6 +825,16 @@ CREATE TABLE workout_set_logs (
   duration_sec INTEGER NULL,
   day_workout_item_id INTEGER NULL
 )''');
+      // Present since v10; needed so the v35 ADD COLUMN migration has a table
+      // to alter, matching every real pre-v35 install.
+      await legacy.runCustom('''
+CREATE TABLE daily_notes (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  date INTEGER NOT NULL,
+  content TEXT NOT NULL,
+  updated_at INTEGER NOT NULL,
+  UNIQUE (date)
+)''');
       await legacy.runCustom(
         'INSERT INTO weight_logs (date, weight_kg) VALUES (1700000000, 80.5)',
       );
@@ -853,6 +863,9 @@ CREATE TABLE workout_set_logs (
       // v20 additive columns exist (empty tables, so just check they open).
       expect(await migrated.select(migrated.workoutPlanItems).get(), isEmpty);
       expect(await migrated.select(migrated.dayWorkoutItems).get(), isEmpty);
+      // v35 additive column: selecting reads `mode`, so this fails unless the
+      // ADD COLUMN migration ran on the pre-existing daily_notes table.
+      expect(await migrated.select(migrated.dailyNotes).get(), isEmpty);
       // v24: date indices exist on the tables that previously had none.
       final indexNames =
           (await migrated

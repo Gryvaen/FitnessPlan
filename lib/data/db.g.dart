@@ -6910,8 +6910,18 @@ class $DailyNotesTable extends DailyNotes
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _modeMeta = const VerificationMeta('mode');
   @override
-  List<GeneratedColumn> get $columns => [id, date, content, updatedAt];
+  late final GeneratedColumn<String> mode = GeneratedColumn<String>(
+    'mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('record'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, date, content, updatedAt, mode];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -6951,6 +6961,12 @@ class $DailyNotesTable extends DailyNotes
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
     }
+    if (data.containsKey('mode')) {
+      context.handle(
+        _modeMeta,
+        mode.isAcceptableOrUnknown(data['mode']!, _modeMeta),
+      );
+    }
     return context;
   }
 
@@ -6958,7 +6974,7 @@ class $DailyNotesTable extends DailyNotes
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
   List<Set<GeneratedColumn>> get uniqueKeys => [
-    {date},
+    {date, mode},
   ];
   @override
   DailyNote map(Map<String, dynamic> data, {String? tablePrefix}) {
@@ -6980,6 +6996,10 @@ class $DailyNotesTable extends DailyNotes
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       )!,
+      mode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mode'],
+      )!,
     );
   }
 
@@ -6994,11 +7014,15 @@ class DailyNote extends DataClass implements Insertable<DailyNote> {
   final DateTime date;
   final String content;
   final DateTime updatedAt;
+
+  /// Editor mode: `record` (free text) or `plan` (newline-separated items).
+  final String mode;
   const DailyNote({
     required this.id,
     required this.date,
     required this.content,
     required this.updatedAt,
+    required this.mode,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -7007,6 +7031,7 @@ class DailyNote extends DataClass implements Insertable<DailyNote> {
     map['date'] = Variable<DateTime>(date);
     map['content'] = Variable<String>(content);
     map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['mode'] = Variable<String>(mode);
     return map;
   }
 
@@ -7016,6 +7041,7 @@ class DailyNote extends DataClass implements Insertable<DailyNote> {
       date: Value(date),
       content: Value(content),
       updatedAt: Value(updatedAt),
+      mode: Value(mode),
     );
   }
 
@@ -7029,6 +7055,7 @@ class DailyNote extends DataClass implements Insertable<DailyNote> {
       date: serializer.fromJson<DateTime>(json['date']),
       content: serializer.fromJson<String>(json['content']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      mode: serializer.fromJson<String>(json['mode']),
     );
   }
   @override
@@ -7039,6 +7066,7 @@ class DailyNote extends DataClass implements Insertable<DailyNote> {
       'date': serializer.toJson<DateTime>(date),
       'content': serializer.toJson<String>(content),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'mode': serializer.toJson<String>(mode),
     };
   }
 
@@ -7047,11 +7075,13 @@ class DailyNote extends DataClass implements Insertable<DailyNote> {
     DateTime? date,
     String? content,
     DateTime? updatedAt,
+    String? mode,
   }) => DailyNote(
     id: id ?? this.id,
     date: date ?? this.date,
     content: content ?? this.content,
     updatedAt: updatedAt ?? this.updatedAt,
+    mode: mode ?? this.mode,
   );
   DailyNote copyWithCompanion(DailyNotesCompanion data) {
     return DailyNote(
@@ -7059,6 +7089,7 @@ class DailyNote extends DataClass implements Insertable<DailyNote> {
       date: data.date.present ? data.date.value : this.date,
       content: data.content.present ? data.content.value : this.content,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      mode: data.mode.present ? data.mode.value : this.mode,
     );
   }
 
@@ -7068,13 +7099,14 @@ class DailyNote extends DataClass implements Insertable<DailyNote> {
           ..write('id: $id, ')
           ..write('date: $date, ')
           ..write('content: $content, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('mode: $mode')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, date, content, updatedAt);
+  int get hashCode => Object.hash(id, date, content, updatedAt, mode);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -7082,7 +7114,8 @@ class DailyNote extends DataClass implements Insertable<DailyNote> {
           other.id == this.id &&
           other.date == this.date &&
           other.content == this.content &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.mode == this.mode);
 }
 
 class DailyNotesCompanion extends UpdateCompanion<DailyNote> {
@@ -7090,17 +7123,20 @@ class DailyNotesCompanion extends UpdateCompanion<DailyNote> {
   final Value<DateTime> date;
   final Value<String> content;
   final Value<DateTime> updatedAt;
+  final Value<String> mode;
   const DailyNotesCompanion({
     this.id = const Value.absent(),
     this.date = const Value.absent(),
     this.content = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.mode = const Value.absent(),
   });
   DailyNotesCompanion.insert({
     this.id = const Value.absent(),
     required DateTime date,
     required String content,
     required DateTime updatedAt,
+    this.mode = const Value.absent(),
   }) : date = Value(date),
        content = Value(content),
        updatedAt = Value(updatedAt);
@@ -7109,12 +7145,14 @@ class DailyNotesCompanion extends UpdateCompanion<DailyNote> {
     Expression<DateTime>? date,
     Expression<String>? content,
     Expression<DateTime>? updatedAt,
+    Expression<String>? mode,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (date != null) 'date': date,
       if (content != null) 'content': content,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (mode != null) 'mode': mode,
     });
   }
 
@@ -7123,12 +7161,14 @@ class DailyNotesCompanion extends UpdateCompanion<DailyNote> {
     Value<DateTime>? date,
     Value<String>? content,
     Value<DateTime>? updatedAt,
+    Value<String>? mode,
   }) {
     return DailyNotesCompanion(
       id: id ?? this.id,
       date: date ?? this.date,
       content: content ?? this.content,
       updatedAt: updatedAt ?? this.updatedAt,
+      mode: mode ?? this.mode,
     );
   }
 
@@ -7147,6 +7187,9 @@ class DailyNotesCompanion extends UpdateCompanion<DailyNote> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (mode.present) {
+      map['mode'] = Variable<String>(mode.value);
+    }
     return map;
   }
 
@@ -7156,7 +7199,8 @@ class DailyNotesCompanion extends UpdateCompanion<DailyNote> {
           ..write('id: $id, ')
           ..write('date: $date, ')
           ..write('content: $content, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('mode: $mode')
           ..write(')'))
         .toString();
   }
@@ -14263,6 +14307,7 @@ typedef $$DailyNotesTableCreateCompanionBuilder =
       required DateTime date,
       required String content,
       required DateTime updatedAt,
+      Value<String> mode,
     });
 typedef $$DailyNotesTableUpdateCompanionBuilder =
     DailyNotesCompanion Function({
@@ -14270,6 +14315,7 @@ typedef $$DailyNotesTableUpdateCompanionBuilder =
       Value<DateTime> date,
       Value<String> content,
       Value<DateTime> updatedAt,
+      Value<String> mode,
     });
 
 class $$DailyNotesTableFilterComposer
@@ -14298,6 +14344,11 @@ class $$DailyNotesTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mode => $composableBuilder(
+    column: $table.mode,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -14330,6 +14381,11 @@ class $$DailyNotesTableOrderingComposer
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get mode => $composableBuilder(
+    column: $table.mode,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DailyNotesTableAnnotationComposer
@@ -14352,6 +14408,9 @@ class $$DailyNotesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get mode =>
+      $composableBuilder(column: $table.mode, builder: (column) => column);
 }
 
 class $$DailyNotesTableTableManager
@@ -14389,11 +14448,13 @@ class $$DailyNotesTableTableManager
                 Value<DateTime> date = const Value.absent(),
                 Value<String> content = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> mode = const Value.absent(),
               }) => DailyNotesCompanion(
                 id: id,
                 date: date,
                 content: content,
                 updatedAt: updatedAt,
+                mode: mode,
               ),
           createCompanionCallback:
               ({
@@ -14401,11 +14462,13 @@ class $$DailyNotesTableTableManager
                 required DateTime date,
                 required String content,
                 required DateTime updatedAt,
+                Value<String> mode = const Value.absent(),
               }) => DailyNotesCompanion.insert(
                 id: id,
                 date: date,
                 content: content,
                 updatedAt: updatedAt,
+                mode: mode,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

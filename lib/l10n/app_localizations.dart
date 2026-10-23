@@ -1832,6 +1832,30 @@ abstract class AppLocalizations {
   /// **'Log today\'s training feel, sleep, or diet…'**
   String get noteHint;
 
+  /// No description provided for @noteModeRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Journal'**
+  String get noteModeRecord;
+
+  /// No description provided for @noteModePlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan'**
+  String get noteModePlan;
+
+  /// No description provided for @notePlanItemHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan item'**
+  String get notePlanItemHint;
+
+  /// No description provided for @addPlanItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Add item'**
+  String get addPlanItem;
+
   /// No description provided for @unsavedChanges.
   ///
   /// In en, this message translates to:

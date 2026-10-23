@@ -39,7 +39,7 @@ void main() {
   });
 
   test(
-    'applying a plan uses the latest trained exercise, not an idle plan',
+    'applying a plan keeps plan sets/reps but carries last trained weight and note',
     () async {
       final trained = await addTestExercise(repo, name: '卧推');
       final fresh = await addTestExercise(repo, name: '深蹲');
@@ -121,11 +121,11 @@ void main() {
       await repo.applyPlanToDay(planId: planId, day: today);
       final items = (await repo.daySnapshot(today)).items;
       final carried = items.firstWhere((e) => e.item.exerciseId == trained.id);
-      expect(carried.item.targetSets, 5);
-      expect(carried.item.targetReps, 6);
+      expect(carried.item.targetSets, 3);
+      expect(carried.item.targetReps, 12);
       expect(carried.item.actualWeightKg, 60);
       expect(carried.item.actualWeightUnit, 'lbs');
-      expect(carried.item.note, isNull);
+      expect(carried.item.note, '旧心得');
       expect(carried.item.done, isFalse);
       expect(carried.completedSets, 0);
       final fallback = items.firstWhere((e) => e.item.exerciseId == fresh.id);
@@ -133,6 +133,19 @@ void main() {
       expect(fallback.item.targetReps, 8);
       expect(fallback.item.actualWeightKg, isNull);
       expect((await repo.itemsFor(planId)).first.targetSets, 3);
+      await repo.addQuickDayItem(
+        day: today,
+        exerciseId: trained.id,
+        targetSets: 7,
+        targetReps: 9,
+      );
+      final quick = (await repo.daySnapshot(today)).items.singleWhere(
+        (e) => e.item.exerciseId == trained.id && e.item.targetSets == 7,
+      );
+      expect(quick.item.targetReps, 9);
+      expect(quick.item.actualWeightKg, 60);
+      expect(quick.item.actualWeightUnit, 'lbs');
+      expect(quick.item.note, '旧心得');
     },
   );
 

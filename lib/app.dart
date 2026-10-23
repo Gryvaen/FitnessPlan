@@ -189,7 +189,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                       if (raw != null && raw.isNotEmpty) {
                         day = DateTime.tryParse(raw);
                       }
-                      return NoteEditPage(date: day);
+                      return NoteEditPage(
+                        date: day,
+                        mode: state.uri.queryParameters['mode'] ?? 'record',
+                      );
                     },
                   ),
                 ],
@@ -426,7 +429,9 @@ class _FitnessAppState extends ConsumerState<FitnessApp> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(remindersProvider.notifier).syncSchedule().catchError((Object e) {
+      ref.read(remindersProvider.notifier).syncSchedule().catchError((
+        Object e,
+      ) {
         debugPrint('reminder sync failed: $e');
       });
       // Reading this forces StepServiceNotifier.build() to run, which

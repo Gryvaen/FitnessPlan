@@ -812,10 +812,11 @@ class WorkoutRepository {
                 dayWorkoutId: dayId,
                 exerciseId: item.exerciseId,
                 exerciseName: item.exerciseName,
-                targetSets: previous?.targetSets ?? item.targetSets,
-                targetReps: previous?.targetReps ?? item.targetReps,
+                targetSets: item.targetSets,
+                targetReps: item.targetReps,
                 actualWeightKg: Value(previous?.actualWeightKg),
                 actualWeightUnit: Value(previous?.actualWeightUnit),
+                note: Value(previous?.note),
                 sortOrder: Value(i),
               ),
             );
@@ -978,6 +979,9 @@ class WorkoutRepository {
     final ex = await exerciseById(exerciseId);
     if (ex == null) throw StateError('动作不存在');
     final start = _dayStart(day);
+    // Sets/reps come from the caller; weight and note carry over from this
+    // exercise's last trained day item so the single-add remembers them.
+    final previous = await _lastTrainedItem(ex.id, start);
 
     await _db.transaction(() async {
       final existing =
@@ -1011,6 +1015,9 @@ class WorkoutRepository {
               exerciseName: ex.name,
               targetSets: targetSets,
               targetReps: targetReps,
+              actualWeightKg: Value(previous?.actualWeightKg),
+              actualWeightUnit: Value(previous?.actualWeightUnit),
+              note: Value(previous?.note),
               sortOrder: Value(items.length),
             ),
           );

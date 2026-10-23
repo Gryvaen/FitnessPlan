@@ -906,6 +906,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noteHint => '记录今天的训练感受、睡眠或饮食偏差…';
 
   @override
+  String get noteModeRecord => '记录';
+
+  @override
+  String get noteModePlan => '计划';
+
+  @override
+  String get notePlanItemHint => '计划项';
+
+  @override
+  String get addPlanItem => '添加一项';
+
+  @override
   String get unsavedChanges => '未保存的更改';
 
   @override

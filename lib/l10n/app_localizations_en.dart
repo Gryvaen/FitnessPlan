@@ -914,6 +914,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noteHint => 'Log today\'s training feel, sleep, or diet…';
 
   @override
+  String get noteModeRecord => 'Journal';
+
+  @override
+  String get noteModePlan => 'Plan';
+
+  @override
+  String get notePlanItemHint => 'Plan item';
+
+  @override
+  String get addPlanItem => 'Add item';
+
+  @override
   String get unsavedChanges => 'Unsaved changes';
 
   @override

@@ -1,3 +1,4 @@
+import 'note_plan_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,10 +11,10 @@ import '../theme/app_theme.dart';
 import '../ink/ink_icon.dart';
 import '../theme/sport_chrome.dart';
 
-String noteEditPath(DateTime day) {
+String noteEditPath(DateTime day, {String mode = 'record'}) {
   final d = AppDates.dayOnly(day);
   final key = DateFormat('yyyy-MM-dd').format(d);
-  return '/records/notes/edit?date=$key';
+  return '/records/notes/edit?date=$key&mode=$mode';
 }
 
 String _noteMeta(DailyNote note, AppLocalizations l10n, Locale locale) {
@@ -134,7 +135,8 @@ class NotesRecordsTab extends ConsumerWidget {
                           ),
                         ),
                       InkWell(
-                        onTap: () => context.push(noteEditPath(day)),
+                        onTap: () =>
+                            context.push(noteEditPath(day, mode: note.mode)),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Row(
@@ -172,13 +174,27 @@ class NotesRecordsTab extends ConsumerWidget {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        title,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: theme.textTheme.titleSmall,
-                                      ),
-                                      if (lines.length > 1) ...[
+                                      ...[
+                                        Text(
+                                          note.mode == 'plan'
+                                              ? l10n.noteModePlan
+                                              : l10n.noteModeRecord,
+                                          style: theme.textTheme.labelSmall
+                                              ?.copyWith(color: scheme.primary),
+                                        ),
+                                        const SizedBox(height: 4),
+                                      ],
+                                      if (note.mode == 'plan')
+                                        Text(displayPlan(note.content))
+                                      else
+                                        Text(
+                                          title,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: theme.textTheme.titleSmall,
+                                        ),
+                                      if (note.mode != 'plan' &&
+                                          lines.length > 1) ...[
                                         const SizedBox(height: 6),
                                         Text(
                                           lines.skip(1).join('\n'),
