@@ -113,9 +113,7 @@ Meals, weight, workouts, and preferences stay on the device. You can export a ba
 
 ## Download
 
-Download an APK from [GitHub Releases](https://github.com/Gryvaen/FitnessPlan/releases) or [Gitee Releases](https://gitee.com/Gryvaen/FitnessPlan/releases). Try Gitee when GitHub is unreachable. Most phones want `FitnessPlan-*-android-arm64-v8a.apk`.
-
-If an older version cannot reach GitHub, install a version with dual-source updates manually. After that, the update dialog lets you choose Automatic, Gitee, or GitHub.
+Download an APK from [GitHub Releases](https://github.com/Gryvaen/FitnessPlan/releases). Most phones want `FitnessPlan-*-android-arm64-v8a.apk`.
 
 ## Roadmap
 
