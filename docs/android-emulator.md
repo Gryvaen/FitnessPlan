@@ -27,7 +27,7 @@ emulator -avd Pixel_9_API_36_Play &
 等模拟器开机后，运行应用：
 
 ```bash
-cd /home/user/projs/FitnessPlan
+cd /path/to/FitnessPlan
 flutter pub get
 flutter run
 ```
@@ -104,7 +104,7 @@ emulator -avd <名字> &       # 启动指定模拟器
 1. 先启动模拟器（或连接真机），然后执行：
 
 ```bash
-cd /home/user/projs/FitnessPlan
+cd /path/to/FitnessPlan
 flutter pub get
 flutter run                  # 仅一台设备时自动选择
 ```
