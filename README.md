@@ -113,7 +113,7 @@
 
 ## 下载安装
 
-从 [GitHub Releases](https://github.com/Gryvaen/FitnessPlan/releases) 下载 APK。大多数真机用 `FitnessPlan-*-android-arm64-v8a.apk`。
+从 [GitHub Releases](https://github.com/Gryvaen/FitnessPlan/releases) 或 [Gitee Releases](https://gitee.com/Gryvaen/FitnessPlan/releases) 下载 APK，大陆网络可优先尝试 Gitee。大多数真机用 `FitnessPlan-*-android-arm64-v8a.apk`。
 
 
 ## 路线图
