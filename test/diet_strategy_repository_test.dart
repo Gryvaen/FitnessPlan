@@ -60,7 +60,7 @@ void main() {
   late AppDatabase db;
   late DietStrategyRepository repo;
   final today = CalendarDay.todayLocal();
-  final yesterday = today.subtract(const Duration(days: 1));
+  final yesterday = DateTime(today.year, today.month, today.day - 1);
 
   setUp(() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -97,7 +97,7 @@ void main() {
     });
 
     test('plan starting tomorrow leaves today on the profile target', () async {
-      final from = today.add(const Duration(days: 1));
+      final from = DateTime(today.year, today.month, today.day + 1);
       final plan = await repo.createPlan(_carbCycleDraft(from));
       expect(plan.version, 1);
       expect(plan.status, DietPlanStatus.active);
@@ -141,7 +141,7 @@ void main() {
 
     test('history is not rewritten when a new version starts later', () async {
       // Simulate a plan that has governed the last 10 days.
-      final start = today.subtract(const Duration(days: 10));
+      final start = DateTime(today.year, today.month, today.day - 10);
       await db
           .into(db.dietStrategyPlans)
           .insert(
@@ -229,7 +229,7 @@ void main() {
     test(
       'stopping a not-yet-started version reinstates the previous one',
       () async {
-        final tomorrow = today.add(const Duration(days: 1));
+        final tomorrow = DateTime(today.year, today.month, today.day + 1);
         final v1 = await repo.createPlan(_carbCycleDraft(today));
         await repo.createPlan(
           DietStrategyPlanDraft(
@@ -284,18 +284,22 @@ void main() {
     });
 
     test('targetsBetween mixes snapshots, plans and estimates', () async {
+      // This range crosses the November DST transition in America/New_York.
+      final today = DateTime(2026, 10, 25);
+      final yesterday = DateTime(2026, 10, 24);
       final profile = _profile(calories: 2137, since: yesterday);
-      await repo.createPlan(_carbCycleDraft(today));
+      await repo.createPlan(_carbCycleDraft(today), now: today);
       final map = await repo.targetsBetween(
-        today.subtract(const Duration(days: 3)),
-        today.add(const Duration(days: 8)),
+        DateTime(today.year, today.month, today.day - 3),
+        DateTime(today.year, today.month, today.day + 8),
         profile,
+        now: today,
       );
       expect(map.length, 12);
       expect(map[today]!.source, TargetSource.strategy);
       expect(map[yesterday]!.source, TargetSource.profile);
       expect(map[yesterday]!.isLegacyEstimate, isFalse);
-      final older = today.subtract(const Duration(days: 2));
+      final older = DateTime(today.year, today.month, today.day - 2);
       expect(map[older]!.isLegacyEstimate, isTrue);
       // Each day within the cycle repeats the schedule's H/M/L/L pattern
       // (effectiveFrom = today = cycle day 0).
@@ -305,7 +309,7 @@ void main() {
         schedule: CarbCycleSchedule.tryParse('HMLL')!,
       );
       for (var i = 0; i < 8; i++) {
-        final t = map[today.add(Duration(days: i))]!;
+        final t = map[DateTime(today.year, today.month, today.day + i)]!;
         expect(t.calories, closeTo(cyclePlan.dayAt(i % 4).energy, 1e-6));
       }
     });
@@ -341,7 +345,7 @@ void main() {
 
     test('overeating today does not change tomorrow\'s quota', () async {
       await repo.createPlan(_carbCycleDraft(today));
-      final tomorrow = today.add(const Duration(days: 1));
+      final tomorrow = DateTime(today.year, today.month, today.day + 1);
       final before = (await repo.targetForDay(tomorrow, _profile()))!;
 
       await db
@@ -496,8 +500,8 @@ void main() {
       rates: _carbCycleRates,
       schedule: CarbCycleSchedule.tryParse('HMLL')!,
     );
-    final tomorrow = today.add(const Duration(days: 1));
-    final dayAfter = today.add(const Duration(days: 2));
+    final tomorrow = DateTime(today.year, today.month, today.day + 1);
+    final dayAfter = DateTime(today.year, today.month, today.day + 2);
 
     test('raises carbs on the high day and keeps the cycle going', () async {
       await repo.createPlan(_carbCycleDraft(today));
@@ -589,7 +593,7 @@ void main() {
     test('completeDaysBetween only returns confirmed-true days', () async {
       await repo.setDayComplete(today, true);
       final set = await repo.completeDaysBetween(
-        today.subtract(const Duration(days: 13)),
+        DateTime(today.year, today.month, today.day - 13),
         today,
       );
       expect(set, {today});
@@ -604,8 +608,8 @@ void main() {
         rates: _carbCycleRates,
         schedule: CarbCycleSchedule.tryParse('HMLL')!,
       );
-      final tomorrow = today.add(const Duration(days: 1));
-      final dayAfter = today.add(const Duration(days: 2));
+      final tomorrow = DateTime(today.year, today.month, today.day + 1);
+      final dayAfter = DateTime(today.year, today.month, today.day + 2);
       await DayMarkerRepository(db).setRestDay(tomorrow);
       expect(
         (await repo.targetForDay(dayAfter, _profile()))!.calories,
@@ -622,10 +626,10 @@ void main() {
           rates: _carbCycleRates,
           schedule: CarbCycleSchedule.tryParse('HMLL')!,
         );
-        final tomorrow = today.add(const Duration(days: 1));
-        final dayAfter = today.add(const Duration(days: 2));
-        final day3 = today.add(const Duration(days: 3));
-        final day4 = today.add(const Duration(days: 4));
+        final tomorrow = DateTime(today.year, today.month, today.day + 1);
+        final dayAfter = DateTime(today.year, today.month, today.day + 2);
+        final day3 = DateTime(today.year, today.month, today.day + 3);
+        final day4 = DateTime(today.year, today.month, today.day + 4);
 
         // Unshifted: today=H(0) tomorrow=M(1) dayAfter=L(2) day3=L(3) day4=H(0)
         expect(
@@ -659,19 +663,19 @@ void main() {
         rates: _carbCycleRates,
         schedule: CarbCycleSchedule.tryParse('HMLL')!,
       );
-      final tomorrow = today.add(const Duration(days: 1));
+      final tomorrow = DateTime(today.year, today.month, today.day + 1);
       final markerRepo = DayMarkerRepository(db);
       await markerRepo.setRestDay(tomorrow, pauseCarbCycle: true);
 
       final map = await repo.targetsBetween(
         today,
-        today.add(const Duration(days: 4)),
+        DateTime(today.year, today.month, today.day + 4),
         _profile(),
       );
       expect(map[today]!.calories, closeTo(cyclePlan.dayAt(0).energy, 1e-6));
-      final dayAfter = today.add(const Duration(days: 2));
-      final day3 = today.add(const Duration(days: 3));
-      final day4 = today.add(const Duration(days: 4));
+      final dayAfter = DateTime(today.year, today.month, today.day + 2);
+      final day3 = DateTime(today.year, today.month, today.day + 3);
+      final day4 = DateTime(today.year, today.month, today.day + 4);
       expect(map[dayAfter]!.calories, closeTo(cyclePlan.dayAt(1).energy, 1e-6));
       expect(map[day3]!.calories, closeTo(cyclePlan.dayAt(2).energy, 1e-6));
       expect(map[day4]!.calories, closeTo(cyclePlan.dayAt(3).energy, 1e-6));
@@ -685,8 +689,8 @@ void main() {
         rates: _carbCycleRates,
         schedule: CarbCycleSchedule.tryParse('HMLL')!,
       );
-      final dayAfter = today.add(const Duration(days: 2)); // unshifted: L
-      final day4 = today.add(const Duration(days: 4)); // unshifted: H
+      final dayAfter = DateTime(today.year, today.month, today.day + 2); // unshifted: L
+      final day4 = DateTime(today.year, today.month, today.day + 4); // unshifted: H
 
       final markerRepo = DayMarkerRepository(db);
       // Backfilled well after the fact — updatedAt trails the marked date
@@ -695,7 +699,7 @@ void main() {
       await markerRepo.setRestDay(
         dayAfter,
         pauseCarbCycle: true,
-        now: today.add(const Duration(days: 5)),
+        now: DateTime(today.year, today.month, today.day + 5),
       );
 
       final t = (await repo.targetForDay(day4, _profile()))!;
@@ -715,10 +719,10 @@ void main() {
           baseEnergy: 2000,
         ),
       );
-      final tomorrow = today.add(const Duration(days: 1));
+      final tomorrow = DateTime(today.year, today.month, today.day + 1);
       final markerRepo = DayMarkerRepository(db);
       await markerRepo.setRestDay(tomorrow);
-      final dayAfter = today.add(const Duration(days: 2));
+      final dayAfter = DateTime(today.year, today.month, today.day + 2);
       final t = (await repo.targetForDay(dayAfter, _profile()))!;
       expect(t.calories, 2000);
     });

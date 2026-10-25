@@ -432,7 +432,7 @@ void main() {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     addTearDown(db.close);
     final today = CalendarDay.todayLocal();
-    final yesterday = today.subtract(const Duration(days: 1));
+    final yesterday = DateTime(today.year, today.month, today.day - 1);
     await openPicker(
       tester,
       db,
@@ -473,7 +473,7 @@ void main() {
     addTearDown(db.close);
     final repo = DayMarkerRepository(db);
     final today = CalendarDay.todayLocal();
-    final yesterday = today.subtract(const Duration(days: 1));
+    final yesterday = DateTime(today.year, today.month, today.day - 1);
     await tester.pumpWidget(
       MaterialApp(
         locale: const Locale('en'),
@@ -597,7 +597,7 @@ void main() {
     final strategyRepo = DietStrategyRepository(db);
     final markerRepo = DayMarkerRepository(db);
     final today = CalendarDay.todayLocal();
-    final tomorrow = today.add(const Duration(days: 1));
+    final tomorrow = DateTime(today.year, today.month, today.day + 1);
     await strategyRepo.createPlan(_cycleDraft(tomorrow));
 
     await _openMarkerSheet(tester, db, markerRepo, strategyRepo, today);
@@ -639,7 +639,7 @@ void main() {
       final strategyRepo = DietStrategyRepository(db);
       final markerRepo = DayMarkerRepository(db);
       final today = CalendarDay.todayLocal();
-      final yesterday = today.subtract(const Duration(days: 1));
+      final yesterday = DateTime(today.year, today.month, today.day - 1);
       await strategyRepo.createPlan(_cycleDraft(yesterday), now: yesterday);
       await markerRepo.setRestDay(
         yesterday,
@@ -777,6 +777,9 @@ Future<void> _openMarkerSheet(
     ),
   );
   await tester.tap(find.text('Open calendar'));
+  await tester.pumpAndSettle();
+  // Month length and weekday alignment can put the cell below the viewport.
+  await tester.ensureVisible(_dayFinder(day));
   await tester.pumpAndSettle();
   await tester.longPress(_dayFinder(day));
   await tester.pumpAndSettle();
