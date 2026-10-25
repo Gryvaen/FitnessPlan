@@ -45,7 +45,7 @@
 | 保存说明 | 把说明复制到 `dist/release-notes-v2.6.2.md`。重跑时必须用完全相同的说明 |
 | 改版本 | `pubspec.yaml` 改成 `2.6.2+(N+1)`，提交 `chore(release): 发布 2.6.2`，打附注 tag `v2.6.2` |
 | 构建 | 运行 `tool/release/build_release_apk.sh`：分析、测试、构建四个 APK 和清单 |
-| 推送 | 把 `main` 和 tag 推到 GitHub 和 Gitee（Gitee 走 HTTPS，令牌通过 `GIT_ASKPASS` 传给 git，不会出现在 URL 里） |
+| 推送 | 把 `main` 和 tag 推到 GitHub 和 Gitee。Gitee 默认走 SSH（`git@gitee.com:Gryvaen/FitnessPlan.git`，用 `~/.ssh/config` 里为 gitee.com 配的专用密钥），因为 Gitee 拒绝用这个账号的令牌做 HTTPS 推送；设置 `RELEASE_GITEE_URL` 为 https 地址时，仍按旧方式通过 `GIT_ASKPASS` 传令牌，令牌不会出现在 URL 里 |
 | 发布 | 运行 `publish_release.py`，上传到两边并逐个校验 |
 
 **测试或构建失败时，什么都不会推送出去。**

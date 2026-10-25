@@ -105,6 +105,11 @@ void main() {
     for (final uri in listRequests) {
       expect(uri.queryParameters['per_page'], '$kReleasePageSize');
       expect(uri.queryParameters['page'], '1');
+      // Gitee lists oldest first unless asked; GitHub is newest first already.
+      expect(
+        uri.queryParameters['direction'],
+        uri.host == 'gitee.com' ? 'desc' : isNull,
+      );
     }
   });
 

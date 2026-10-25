@@ -364,12 +364,18 @@ class AppUpdateRepository {
     // Only the newest few releases matter. Each GitHub release is ~15 KB of
     // JSON, so the full history (~800 KB) could not finish within
     // [sourceTimeout] on slow mainland links to api.github.com.
+    // GitHub lists newest first; Gitee defaults to oldest first, so without
+    // `direction` a new Gitee release falls off the first page.
     final uri = Uri.https(
       github ? 'api.github.com' : 'gitee.com',
       github
           ? '/repos/$kGithubOwner/$kGithubRepo/releases'
           : '/api/v5/repos/$kGiteeRepo/releases',
-      {'per_page': '$kReleasePageSize', 'page': '1'},
+      {
+        'per_page': '$kReleasePageSize',
+        'page': '1',
+        if (!github) 'direction': 'desc',
+      },
     );
     final response = await client.get(
       uri,

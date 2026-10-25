@@ -26,7 +26,10 @@ GITEE_REPO="Gryvaen/FitnessPlan"
 BRANCH="main"
 # Overridable only to rehearse the flow against local bare repositories.
 GITHUB_REMOTE="${RELEASE_GITHUB_REMOTE:-origin}"
-GITEE_URL="${RELEASE_GITEE_URL:-https://gitee.com/$GITEE_REPO.git}"
+# SSH by default: Gitee rejects HTTPS pushes with this account's token
+# ("The token username invalid"). Set RELEASE_GITEE_URL to an https:// URL to
+# fall back to the token-over-GIT_ASKPASS path below.
+GITEE_URL="${RELEASE_GITEE_URL:-git@gitee.com:$GITEE_REPO.git}"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/fitnessplan"
 TOKEN_FILE="$CONFIG_DIR/gitee_token"
 

@@ -128,7 +128,7 @@
 
 代码：`lib/data/repositories/app_update_repository.dart`、`lib/providers/app_update_providers.dart`、`lib/ui/profile/update_available_dialog.dart`。发布这一侧的流程见 [release.md](release.md)。
 
-1. **拉取**：同时请求 Gitee（`Gryvaen/FitnessPlan`）和 GitHub（`Gryvaen/FitnessPlan`）的发布列表，**每边只要最新 `kReleasePageSize`（5）个、不翻页**，每边超时 15 秒。每个 GitHub 发布的 JSON 约 15 KB，大陆网络下拉全部历史会超时。一边失败不影响另一边，两边都失败才报错。
+1. **拉取**：同时请求 Gitee（`Gryvaen/FitnessPlan`）和 GitHub（`Gryvaen/FitnessPlan`）的发布列表，**每边只要最新 `kReleasePageSize`（5）个、不翻页**，每边超时 15 秒。每个 GitHub 发布的 JSON 约 15 KB，大陆网络下拉全部历史会超时。Gitee 的列表默认按创建时间正序（最早的在前），所以请求时带 `direction=desc`，否则发布超过 5 个后新版本会落到第一页之外；GitHub 本来就是最新的在前。一边失败不影响另一边，两边都失败才报错。
    - **GitHub 的文件一律走 REST 资源接口**（`api.github.com/repos/…/releases/assets/<id>`，请求头 `Accept: application/octet-stream`），不用 `github.com` 的下载链接：大陆网络下 `github.com` 时常连不上，`api.github.com` 稳定。清单、测速和 DownloadManager（`ApkDownloader.kt` 加同样的请求头）都这样做。
    - **Gitee 的发布 API 常被它的防火墙按 IP 限流（403）**，但直接下载链接不受影响。Gitee 一边拿不到结果、GitHub 有结果时，就从 `gitee.com/<仓库>/releases/download/<tag>/update-manifest.json` 直接读清单，按 `…/download/<tag>/<文件名>` 拼出 Gitee 下载地址；超过 `kGiteeMaxAssetBytes`（100 MB）的文件不拼（Gitee 上没有）。
 2. **校验**：
