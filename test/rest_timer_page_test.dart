@@ -385,4 +385,31 @@ void main() {
     },
     variant: TargetPlatformVariant.only(TargetPlatform.android),
   );
+
+  testWidgets(
+    'round controls sit side by side and fit small and landscape screens',
+    (tester) async {
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      for (final size in const [Size(360, 640), Size(640, 360)]) {
+        await tester.binding.setSurfaceSize(size);
+        await tester.pumpWidget(const SizedBox.shrink());
+        await showPage(tester);
+        expect(tester.takeException(), isNull);
+        final reset = tester.getCenter(
+          find.byKey(const ValueKey('rest-timer-reset')),
+        );
+        final primary = tester.getCenter(
+          find.byKey(const ValueKey('rest-timer-primary')),
+        );
+        expect(reset.dx, lessThan(primary.dx));
+        expect(reset.dy, primary.dy);
+      }
+
+      await tester.tap(find.byKey(const ValueKey('rest-timer-primary')));
+      await flush(tester);
+      expect(find.text('Resting'), findsOneWidget);
+      expect(find.text('Pause'), findsOneWidget);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
 }

@@ -589,7 +589,9 @@ class _RestTimerPageState extends State<RestTimerPage>
         ? l10n.restTimerPaused
         : _finished
         ? l10n.restTimerFinished
-        : l10n.toolRestTimer;
+        : l10n.restTimerReady;
+    final idle = !_running && !_paused;
+    final busy = _restoring || _starting || _modeChanging;
 
     return Scaffold(
       appBar: AppBar(
@@ -599,9 +601,7 @@ class _RestTimerPageState extends State<RestTimerPage>
             IconButton(
               key: const ValueKey('rest-timer-settings'),
               tooltip: l10n.restTimerAlertSettings,
-              onPressed: _restoring || _starting || _modeChanging
-                  ? null
-                  : _showAlertSettings,
+              onPressed: busy ? null : _showAlertSettings,
               icon: Badge(
                 isLabelVisible: hasIssue,
                 smallSize: 8,
@@ -612,93 +612,156 @@ class _RestTimerPageState extends State<RestTimerPage>
         ],
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.formPage),
+        child: Column(
           children: [
-            const SizedBox(height: 24),
-            Center(
-              child: SizedBox.square(
-                dimension: 248,
-                child: CustomPaint(
-                  painter: _RingPainter(
-                    progress: progress.toDouble(),
-                    track: scheme.surfaceContainerHighest,
-                    fill: scheme.primary,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        _format(display),
-                        style: theme.textTheme.displayLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -2,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        statusLabel,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: scheme.onSurfaceVariant,
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final contentWidth =
+                      constraints.maxWidth - 2 * AppSpacing.formPage;
+                  // Two rows of presets (4 + 3) under the ring.
+                  const presetsHeight = 2 * kMinTapTarget + 10;
+                  final roomForRing =
+                      constraints.maxHeight -
+                      2 * AppSpacing.section -
+                      32 -
+                      presetsHeight;
+                  final ringSize = math
+                      .min(contentWidth, roomForRing)
+                      .clamp(160.0, 300.0);
+                  return CustomScrollView(
+                    slivers: [
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.formPage,
+                            AppSpacing.section,
+                            AppSpacing.formPage,
+                            AppSpacing.section,
+                          ),
+                          child: Column(
+                            children: [
+                              const Spacer(),
+                              SizedBox.square(
+                                dimension: ringSize,
+                                child: CustomPaint(
+                                  painter: _RingPainter(
+                                    progress: progress.toDouble(),
+                                    track: scheme.surfaceContainerHighest,
+                                    fill: scheme.primary,
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(32),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(
+                                            _format(display),
+                                            style: theme.textTheme.displayLarge
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w600,
+                                                  letterSpacing: -2,
+                                                  fontFeatures: const [
+                                                    FontFeature.tabularFigures(),
+                                                  ],
+                                                ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          statusLabel,
+                                          style: theme.textTheme.bodyMedium
+                                              ?.copyWith(
+                                                color: scheme.onSurfaceVariant,
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 32),
+                              // Kept in place while counting down so the ring and
+                              // the controls never jump.
+                              IgnorePointer(
+                                ignoring: !idle,
+                                child: AnimatedOpacity(
+                                  opacity: idle ? 1 : 0,
+                                  duration: const Duration(milliseconds: 200),
+                                  child: Wrap(
+                                    spacing: 10,
+                                    runSpacing: 10,
+                                    alignment: WrapAlignment.center,
+                                    children: [
+                                      for (final seconds in _presets)
+                                        _PresetChip(
+                                          width: (contentWidth - 3 * 10) / 4,
+                                          label: _presetLabel(seconds),
+                                          selected: _selectedSeconds == seconds,
+                                          onTap: () {
+                                            setState(() {
+                                              _selectedSeconds = seconds;
+                                              _remainingSeconds = seconds;
+                                              _totalSeconds = seconds;
+                                              _finished = false;
+                                            });
+                                            unawaited(_persist());
+                                          },
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const Spacer(),
+                            ],
+                          ),
                         ),
                       ),
                     ],
-                  ),
-                ),
+                  );
+                },
               ),
             ),
-            const SizedBox(height: 32),
-            if (!_running && !_paused)
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                alignment: WrapAlignment.center,
+            // Pinned to the thumb zone; never scrolls out of reach.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.formPage + 12,
+                AppSpacing.compact,
+                AppSpacing.formPage + 12,
+                AppSpacing.section,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  for (final seconds in _presets)
-                    _PresetChip(
-                      label: _presetLabel(seconds),
-                      selected: _selectedSeconds == seconds,
-                      onTap: () {
-                        setState(() {
-                          _selectedSeconds = seconds;
-                          _remainingSeconds = seconds;
-                          _totalSeconds = seconds;
-                          _finished = false;
-                        });
-                        unawaited(_persist());
-                      },
-                    ),
+                  _RoundControl(
+                    key: const ValueKey('rest-timer-reset'),
+                    glyph: InkGlyph.replay,
+                    label: l10n.reset,
+                    background: scheme.surfaceContainerHighest,
+                    foreground: scheme.onSurface,
+                    onPressed: busy ? null : _reset,
+                  ),
+                  _RoundControl(
+                    key: const ValueKey('rest-timer-primary'),
+                    glyph: _running ? InkGlyph.pause : InkGlyph.play,
+                    label: _running
+                        ? l10n.restTimerPause
+                        : _paused
+                        ? l10n.restTimerResume
+                        : l10n.start,
+                    background: scheme.primary,
+                    foreground: scheme.onPrimary,
+                    onPressed: busy
+                        ? null
+                        : _running
+                        ? _pause
+                        : () => _start(resume: _paused),
+                  ),
                 ],
-              ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: _restoring || _starting || _modeChanging
-                    ? null
-                    : _running
-                    ? _pause
-                    : () => _start(resume: _paused),
-                icon: InkIcon(_running ? InkGlyph.pause : InkGlyph.play),
-                label: Text(
-                  _running
-                      ? l10n.restTimerPause
-                      : _paused
-                      ? l10n.restTimerResume
-                      : l10n.start,
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: TextButton.icon(
-                onPressed: _restoring || _starting || _modeChanging
-                    ? null
-                    : _reset,
-                icon: const InkIcon(InkGlyph.replay),
-                label: Text(l10n.reset),
               ),
             ),
           ],
@@ -755,11 +818,13 @@ class _RingPainter extends CustomPainter {
 
 class _PresetChip extends StatelessWidget {
   const _PresetChip({
+    required this.width,
     required this.label,
     required this.selected,
     required this.onTap,
   });
 
+  final double width;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -767,19 +832,92 @@ class _PresetChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: selected ? scheme.primary : scheme.surfaceContainerHighest,
-      shape: const StadiumBorder(),
-      child: InkWell(
-        customBorder: const StadiumBorder(),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
+    return SizedBox(
+      width: width,
+      height: kMinTapTarget,
+      child: Material(
+        color: selected ? scheme.primary : scheme.surfaceContainerHighest,
+        shape: const StadiumBorder(),
+        child: InkWell(
+          customBorder: const StadiumBorder(),
+          onTap: onTap,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: selected
+                        ? scheme.onPrimary
+                        : scheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Large circular timer control, sized for a quick thumb tap between sets.
+class _RoundControl extends StatelessWidget {
+  const _RoundControl({
+    super.key,
+    required this.glyph,
+    required this.label,
+    required this.background,
+    required this.foreground,
+    required this.onPressed,
+  });
+
+  static const _diameter = 88.0;
+
+  final InkGlyph glyph;
+  final String label;
+  final Color background;
+  final Color foreground;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      enabled: onPressed != null,
+      label: label,
+      excludeSemantics: true,
+      child: AnimatedOpacity(
+        opacity: onPressed == null ? 0.5 : 1,
+        duration: const Duration(milliseconds: 150),
+        child: SizedBox.square(
+          dimension: _diameter,
+          child: Material(
+            color: background,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: onPressed,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  InkIcon(glyph, size: 28, color: foreground),
+                  const SizedBox(height: 4),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: foreground,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
