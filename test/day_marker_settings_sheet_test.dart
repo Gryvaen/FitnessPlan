@@ -316,6 +316,7 @@ void main() {
     AppDatabase db, {
     required DateTime firstDate,
     required DietStrategyKind? strategy,
+    DateTime? initialDate,
   }) async {
     final today = CalendarDay.todayLocal();
     await tester.pumpWidget(
@@ -333,7 +334,7 @@ void main() {
             builder: (context) => TextButton(
               onPressed: () => showDeficitDatePicker(
                 context: context,
-                initialDate: today,
+                initialDate: initialDate ?? today,
                 firstDate: firstDate,
                 lastDate: today,
                 plannedDeficit: 0,
@@ -428,6 +429,8 @@ void main() {
       db,
       firstDate: yesterday,
       strategy: DietStrategyKind.carbCycle,
+      // On the 1st, yesterday is only on the previous month's page.
+      initialDate: yesterday,
     );
     final option = find.byKey(const ValueKey('marker-option-carbLoad'));
     await _longPressDay(tester, yesterday);
