@@ -33,7 +33,13 @@ Future<void> showPlanEditSheet({
         padding: EdgeInsets.only(bottom: bottom),
         child: SizedBox(
           height: (maxHeight - bottom).clamp(0.0, maxHeight),
-          child: PlanEditPage(planId: planId, syncDay: syncDay),
+          // The sheet is already lifted above the keyboard; strip the inset
+          // so the inner Scaffold doesn't shrink by the keyboard height again.
+          child: MediaQuery.removeViewInsets(
+            context: ctx,
+            removeBottom: true,
+            child: PlanEditPage(planId: planId, syncDay: syncDay),
+          ),
         ),
       );
     },
@@ -377,6 +383,8 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
                   );
                 }
                 return ListView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.all(AppSpacing.formPage),
                   children: [
                     TextField(
@@ -395,7 +403,7 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
                                 ),
                         ),
                       ),
-                      textInputAction: TextInputAction.next,
+                      textInputAction: TextInputAction.done,
                     ),
                     const SizedBox(height: AppSpacing.section),
                     Text(l10n.exercise, style: theme.textTheme.titleMedium),

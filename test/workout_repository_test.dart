@@ -227,6 +227,10 @@ void main() {
         expect(await events.moveNext(), isTrue);
         expect(events.current, isEmpty);
         final exercise = await addTestExercise(repo, name: 'Squat');
+        // History also reads `exercises` (categories), so the new exercise
+        // re-emits once with nothing logged yet.
+        expect(await events.moveNext(), isTrue);
+        expect(events.current, isEmpty);
         final today = DateTime.now();
         await repo.logSet(
           day: today,
@@ -557,53 +561,56 @@ void main() {
     },
   );
 
-  test('plan summary stream drops an exercise moved out of the template', () async {
-    final pushup = await addTestExercise(repo, name: '俯卧撑');
-    final squat = await addTestExercise(repo, name: '深蹲', category: 'legs');
-    final planId = await repo.createPlan(
-      name: '上肢',
-      items: [
-        PlanDraftItem(
-          exerciseId: pushup.id,
-          exerciseName: pushup.name,
-          targetSets: 3,
-          targetReps: 10,
-        ),
-        PlanDraftItem(
-          exerciseId: squat.id,
-          exerciseName: squat.name,
-          targetSets: 4,
-          targetReps: 8,
-        ),
-      ],
-    );
-    final events = StreamIterator(repo.watchPlanSummaries());
-    try {
-      expect(await events.moveNext(), isTrue);
-      expect(events.current.single.items, hasLength(2));
+  test(
+    'plan summary stream drops an exercise moved out of the template',
+    () async {
+      final pushup = await addTestExercise(repo, name: '俯卧撑');
+      final squat = await addTestExercise(repo, name: '深蹲', category: 'legs');
+      final planId = await repo.createPlan(
+        name: '上肢',
+        items: [
+          PlanDraftItem(
+            exerciseId: pushup.id,
+            exerciseName: pushup.name,
+            targetSets: 3,
+            targetReps: 10,
+          ),
+          PlanDraftItem(
+            exerciseId: squat.id,
+            exerciseName: squat.name,
+            targetSets: 4,
+            targetReps: 8,
+          ),
+        ],
+      );
+      final events = StreamIterator(repo.watchPlanSummaries());
+      try {
+        expect(await events.moveNext(), isTrue);
+        expect(events.current.single.items, hasLength(2));
 
-      final day = CalendarDay.todayLocal();
-      await repo.applyPlanToDay(planId: planId, day: day);
-      final before = await repo.daySnapshot(day);
-      final squatItem = before.items
-          .firstWhere((e) => e.item.exerciseName == '深蹲')
-          .item;
-      await repo.moveDayWorkoutItemToOther(squatItem.id);
+        final day = CalendarDay.todayLocal();
+        await repo.applyPlanToDay(planId: planId, day: day);
+        final before = await repo.daySnapshot(day);
+        final squatItem = before.items
+            .firstWhere((e) => e.item.exerciseName == '深蹲')
+            .item;
+        await repo.moveDayWorkoutItemToOther(squatItem.id);
 
-      var length = events.current.single.items.length;
-      for (var i = 0; length != 1 && i < 8; i++) {
-        expect(
-          await events.moveNext().timeout(const Duration(seconds: 2)),
-          isTrue,
-        );
-        length = events.current.single.items.length;
+        var length = events.current.single.items.length;
+        for (var i = 0; length != 1 && i < 8; i++) {
+          expect(
+            await events.moveNext().timeout(const Duration(seconds: 2)),
+            isTrue,
+          );
+          length = events.current.single.items.length;
+        }
+        expect(length, 1);
+        expect(events.current.single.plan.name, '上肢');
+      } finally {
+        await events.cancel();
       }
-      expect(length, 1);
-      expect(events.current.single.plan.name, '上肢');
-    } finally {
-      await events.cancel();
-    }
-  });
+    },
+  );
 
   test('moveDayWorkoutItemToOther drops an emptied plan group', () async {
     final pushup = await addTestExercise(repo, name: '俯卧撑');

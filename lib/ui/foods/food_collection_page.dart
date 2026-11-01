@@ -78,7 +78,6 @@ class FoodCollectionPage extends ConsumerWidget {
     if (confirmed != true || !context.mounted) return;
     try {
       await ref.read(mealPresetRepositoryProvider).deletePreset(preset.id);
-      ref.invalidate(mealPresetsProvider);
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(

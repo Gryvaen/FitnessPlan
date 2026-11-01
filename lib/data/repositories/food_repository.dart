@@ -305,9 +305,21 @@ class FoodRepository {
   /// Excludes anything swiped off the list via [hideFromRecent] — unless
   /// it's been logged again since, which naturally un-hides it.
   Future<List<FoodItem>> recentFoods({int limit = 20}) async {
-    final rows = await _db
-        .customSelect(
-          '''
+    final rows = await _recentFoodIdsQuery(limit).get();
+    return _byIds(rows.map((r) => r.read<int>('food_id')).toList());
+  }
+
+  /// Live version of [recentFoods]: re-emits when meals, hidden entries or
+  /// the food catalog change.
+  Stream<List<FoodItem>> watchRecentFoods({int limit = 20}) {
+    return _recentFoodIdsQuery(limit).watch().asyncMap(
+      (rows) => _byIds(rows.map((r) => r.read<int>('food_id')).toList()),
+    );
+  }
+
+  Selectable<QueryRow> _recentFoodIdsQuery(int limit) {
+    return _db.customSelect(
+      '''
 SELECT meal_entries.food_id AS food_id FROM meal_entries
 LEFT JOIN hidden_recent_foods
   ON hidden_recent_foods.food_id = meal_entries.food_id
@@ -317,12 +329,11 @@ HAVING hidden_recent_foods.food_id IS NULL
 ORDER BY MAX(meal_entries.id) DESC
 LIMIT ?
 ''',
-          variables: [Variable.withInt(limit)],
-          readsFrom: {_db.mealEntries, _db.hiddenRecentFoods},
-        )
-        .get();
-    final ids = rows.map((r) => r.read<int>('food_id')).toList();
-    return _byIds(ids);
+      variables: [Variable.withInt(limit)],
+      // foodItems: rows are resolved through [_byIds], so catalog edits
+      // (rename / delete) must re-emit too.
+      readsFrom: {_db.mealEntries, _db.hiddenRecentFoods, _db.foodItems},
+    );
   }
 
   /// Swipes [foodId] off the 最近 (Recent) list without touching its past

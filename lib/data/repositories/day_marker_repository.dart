@@ -52,11 +52,15 @@ class DayMarkerRepository {
     return _settingsOf(row, frozenPause: snap?.cyclePaused);
   }
 
-  Stream<DayMarkerSettings?> watchSettingsForDay(DateTime day) =>
-      (_db.select(_db.dayMarkers)
-            ..where((t) => t.date.equals(StrategyDates.encode(day))))
-          .watchSingleOrNull()
-          .asyncMap((_) => settingsForDay(day));
+  /// Re-emits on marker and snapshot writes: a past day's pause state comes
+  /// from its frozen `dailyNutritionTargets` row.
+  Stream<DayMarkerSettings?> watchSettingsForDay(DateTime day) => _db
+      .customSelect(
+        'SELECT 1',
+        readsFrom: {_db.dayMarkers, _db.dailyNutritionTargets},
+      )
+      .watch()
+      .asyncMap((_) => settingsForDay(day));
 
   Future<DayMarkerType?> markerForDay(DateTime day) async {
     final row = await _rowForDay(day);

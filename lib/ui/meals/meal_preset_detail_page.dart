@@ -62,7 +62,6 @@ class _MealPresetDetailPageState extends ConsumerState<MealPresetDetailPage> {
         if (food != null) foods[id] = food;
       }
       if (!mounted) return;
-      if (removed > 0) ref.invalidate(mealPresetsProvider);
       setState(() {
         _preset = preset;
         _items = items;
@@ -105,7 +104,6 @@ class _MealPresetDetailPageState extends ConsumerState<MealPresetDetailPage> {
     setState(() => _saving = true);
     try {
       await action();
-      ref.invalidate(mealPresetsProvider);
       await _load();
     } catch (error) {
       await _load();
@@ -473,6 +471,12 @@ class _MealPresetDetailPageState extends ConsumerState<MealPresetDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    // A food edited from this page (or elsewhere) changes the totals.
+    ref.listen(foodCatalogChangesProvider, (previous, next) {
+      if (previous == null || !previous.hasValue || !next.hasValue) return;
+      if (previous.value == next.value) return;
+      _load();
+    });
     final l10n = context.l10n;
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));

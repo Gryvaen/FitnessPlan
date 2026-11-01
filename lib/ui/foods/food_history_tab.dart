@@ -63,7 +63,7 @@ class _FoodHistoryTabState extends ConsumerState<FoodHistoryTab> {
 
   void _showDays(
     BuildContext context,
-    List<MealHistoryDay> days,
+    bool all,
     Locale locale, {
     required String title,
   }) {
@@ -76,7 +76,7 @@ class _FoodHistoryTabState extends ConsumerState<FoodHistoryTab> {
       builder: (_) => FractionallySizedBox(
         heightFactor: .9,
         child: _MealHistorySheet(
-          days: days,
+          all: all,
           locale: locale,
           title: title,
           labelFor: (day) => mealHistoryLabel(day, l10n),
@@ -129,9 +129,9 @@ class _FoodHistoryTabState extends ConsumerState<FoodHistoryTab> {
                     for (final s in scopes)
                       _MealHistoryScopeList(
                         all: s == 1,
-                        onOpen: (days, title) => _showDays(
+                        onOpen: (title) => _showDays(
                           context,
-                          days,
+                          s == 1,
                           Localizations.localeOf(context),
                           title: title,
                         ),
@@ -140,9 +140,9 @@ class _FoodHistoryTabState extends ConsumerState<FoodHistoryTab> {
                 )
               : _MealHistoryScopeList(
                   all: scope == 1,
-                  onOpen: (days, title) => _showDays(
+                  onOpen: (title) => _showDays(
                     context,
-                    days,
+                    scope == 1,
                     Localizations.localeOf(context),
                     title: title,
                   ),
@@ -157,7 +157,7 @@ class _MealHistoryScopeList extends ConsumerWidget {
   const _MealHistoryScopeList({required this.all, required this.onOpen});
 
   final bool all;
-  final void Function(List<MealHistoryDay> days, String title) onOpen;
+  final void Function(String title) onOpen;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -204,7 +204,7 @@ class _MealHistoryScopeList extends ConsumerWidget {
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
               ),
-              onTap: () => onOpen(days, title),
+              onTap: () => onOpen(title),
             );
           },
         ),
@@ -249,13 +249,14 @@ bool mealHistoryHighlightsDay({
 
 class _MealHistorySheet extends ConsumerStatefulWidget {
   const _MealHistorySheet({
-    required this.days,
+    required this.all,
     required this.locale,
     required this.title,
     required this.labelFor,
   });
 
-  final List<MealHistoryDay> days;
+  /// Which history list to show live: every logged day, or the recent window.
+  final bool all;
   final Locale locale;
   final String title;
   final String Function(MealHistoryDay day) labelFor;
@@ -274,16 +275,29 @@ class _MealHistorySheetState extends ConsumerState<_MealHistorySheet> {
     _targets = _loadTargets();
   }
 
+  StreamProvider<List<MealHistoryDay>> get _daysProvider =>
+      widget.all ? allMealHistoryProvider : mealHistoryProvider;
+
   Future<Map<DateTime, DailyNutritionTarget>> _loadTargets() {
-    if (widget.days.isEmpty) return Future.value(const {});
-    final dates = widget.days.map((day) => day.date).toList()..sort();
+    final days = ref.read(_daysProvider).value ?? const <MealHistoryDay>[];
+    if (days.isEmpty) return Future.value(const {});
+    final dates = days.map((day) => day.date).toList()..sort();
     return ref
         .read(dietStrategyRepositoryProvider)
         .targetsBetween(dates.first, dates.last, ref.read(profileProvider));
   }
 
+  void _reloadTargets() {
+    if (mounted) setState(() => _targets = _loadTargets());
+  }
+
   @override
   Widget build(BuildContext context) {
+    final days = ref.watch(_daysProvider).value ?? const <MealHistoryDay>[];
+    // Meals, plan and profile edits all change the per-day targets/highlight.
+    ref.listen(_daysProvider, (_, _) => _reloadTargets());
+    ref.listen(activeDietPlanProvider, (_, _) => _reloadTargets());
+    ref.listen(profileProvider, (_, _) => _reloadTargets());
     final theme = Theme.of(context);
     final highlightStyle = theme.textTheme.bodyMedium?.copyWith(
       color: theme.colorScheme.primary,
@@ -301,7 +315,7 @@ class _MealHistorySheetState extends ConsumerState<_MealHistorySheet> {
               snapshot.data ?? const <DateTime, DailyNutritionTarget>{};
           return ListView.builder(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            itemCount: widget.days.length + 1,
+            itemCount: days.length + 1,
             itemBuilder: (context, index) {
               if (index == 0) {
                 return Padding(
@@ -309,7 +323,7 @@ class _MealHistorySheetState extends ConsumerState<_MealHistorySheet> {
                   child: Text(widget.title, style: theme.textTheme.titleMedium),
                 );
               }
-              final day = widget.days[index - 1];
+              final day = days[index - 1];
               final highlighted = mealHistoryHighlightsDay(
                 goal: goal,
                 selectedStrategy: selectedStrategy,
@@ -329,8 +343,7 @@ class _MealHistorySheetState extends ConsumerState<_MealHistorySheet> {
                           () => _selectedDay = CalendarDay.dayOnly(day.date),
                         );
                         await context.push(dailyMealsPath(day.date));
-                        if (!mounted) return;
-                        setState(() => _targets = _loadTargets());
+                        _reloadTargets();
                       },
               );
             },

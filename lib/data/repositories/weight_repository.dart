@@ -62,6 +62,13 @@ class WeightRepository {
     )..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
+  Future<WeightLog?> latest() {
+    return (_db.select(_db.weightLogs)
+          ..orderBy([(t) => OrderingTerm.desc(t.date)])
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
   /// Updates [bodyFatPct] on an existing day log. Returns false if none.
   Future<bool> updateBodyFatForDate(DateTime date, double bodyFatPct) async {
     CalendarDay.ensureEditableDay(date);

@@ -66,12 +66,10 @@ final _entry = MealEntry(
 void main() {
   late AppDatabase db;
   late _PresetRepository repository;
-  var presetListLoads = 0;
 
   setUp(() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
     repository = _PresetRepository(db);
-    presetListLoads = 0;
   });
   tearDown(() => db.close());
 
@@ -80,10 +78,9 @@ void main() {
       ProviderScope(
         overrides: [
           mealPresetRepositoryProvider.overrideWithValue(repository),
-          mealPresetsProvider.overrideWith((ref) async {
-            presetListLoads++;
-            return <MealPreset>[];
-          }),
+          mealPresetsProvider.overrideWith(
+            (ref) => Stream.value(<MealPreset>[]),
+          ),
         ],
         child: MaterialApp(
           locale: const Locale('zh'),
@@ -133,7 +130,6 @@ void main() {
       await tap(tester, '保存');
       expect(repository.saves.single, (name: '早餐', replaceExisting: false));
       expect(find.text('套餐已保存'), findsOneWidget);
-      expect(presetListLoads, 2);
       expect(tester.takeException(), isNull);
     },
   );

@@ -43,15 +43,6 @@ final _foodSearchProvider = FutureProvider.autoDispose<List<FoodItem>>((
   return ref.watch(foodRepositoryProvider).search(q);
 });
 
-final _recentFoodsProvider = FutureProvider.autoDispose<List<FoodItem>>((
-  ref,
-) async {
-  ref.watch(foodCatalogChangesProvider);
-  ref.watch(todayMealsProvider);
-  await ref.watch(foodsSeedProvider.future);
-  return ref.watch(foodRepositoryProvider).recentFoods();
-});
-
 enum _FoodsTab { recent, categories, history }
 
 class FoodsPage extends ConsumerStatefulWidget {
@@ -118,7 +109,7 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final searching = ref.watch(_foodQueryProvider).trim().isNotEmpty;
-    final recentAsync = ref.watch(_recentFoodsProvider);
+    final recentAsync = ref.watch(recentFoodsProvider);
     final hasRecent = recentAsync.maybeWhen(
       data: (v) => v.isNotEmpty,
       orElse: () => false,
@@ -271,7 +262,7 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                               child: switch (t) {
                                 _FoodsTab.recent => _FoodListView(
                                   watch: (ref) =>
-                                      ref.watch(_recentFoodsProvider),
+                                      ref.watch(recentFoodsProvider),
                                   emptyGlyph: InkGlyph.loading,
                                   emptyTitle: l10n.noRecentFoods,
                                   openDetail: (context, foodId) =>
@@ -310,7 +301,6 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                                     await ref
                                         .read(foodRepositoryProvider)
                                         .hideFromRecent(food.id);
-                                    ref.invalidate(_recentFoodsProvider);
                                   },
                                 ),
                                 _FoodsTab.categories =>

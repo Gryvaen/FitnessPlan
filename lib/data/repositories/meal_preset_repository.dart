@@ -23,11 +23,13 @@ class MealPresetRepository {
   final AppDatabase _db;
   final MealRepository _meals;
 
-  Future<List<MealPreset>> listPresets() {
-    return (_db.select(
-      _db.mealPresets,
-    )..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).get();
-  }
+  SimpleSelectStatement<$MealPresetsTable, MealPreset> _presetsQuery() =>
+      _db.select(_db.mealPresets)
+        ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]);
+
+  Future<List<MealPreset>> listPresets() => _presetsQuery().get();
+
+  Stream<List<MealPreset>> watchPresets() => _presetsQuery().watch();
 
   Future<MealPreset?> presetByName(String name) {
     final trimmed = name.trim();

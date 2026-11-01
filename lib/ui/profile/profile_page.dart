@@ -246,6 +246,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       );
       if (result == null || result.files.isEmpty || !mounted) return;
 
+      // Strategy-review state is read from prefs once in build().
+      ref.invalidate(profileStrategyReviewProvider);
+      ref.invalidate(strategyReviewDismissalProvider);
       final file = result.files.single;
       final bytes = file.bytes;
       if (bytes == null || bytes.isEmpty) {

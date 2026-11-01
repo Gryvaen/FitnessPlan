@@ -137,7 +137,17 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
     );
     if (confirmed != true || !mounted) return;
     try {
-      await ref.read(weightRepositoryProvider).delete(log.id);
+      final repo = ref.read(weightRepositoryProvider);
+      await repo.delete(log.id);
+      // The profile (and every target derived from it) followed the deleted
+      // log; fall back to the latest remaining one.
+      final latest = await repo.latest();
+      if (latest != null &&
+          latest.weightKg != ref.read(profileProvider)?.weightKg) {
+        await ref
+            .read(profileProvider.notifier)
+            .applyLatestWeight(latest.weightKg);
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(

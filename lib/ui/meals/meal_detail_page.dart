@@ -86,6 +86,22 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
     });
   }
 
+  /// Picks up macro/serving edits to this entry's food (e.g. made from the
+  /// food link) without discarding the grams/meal type being edited.
+  Future<void> _refreshFood() async {
+    final foodId = _entry?.foodId;
+    if (foodId == null) return;
+    final repo = ref.read(foodRepositoryProvider);
+    final food = await repo.byId(foodId);
+    if (food == null) return;
+    final servings = await repo.listServings(food.id);
+    if (!mounted) return;
+    setState(() {
+      _food = food;
+      _servings = servings;
+    });
+  }
+
   MacroIntake get _preview {
     final food = _food!;
     return MacroIntake.fromGrams(
@@ -288,6 +304,11 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(foodCatalogChangesProvider, (previous, next) {
+      if (previous == null || !previous.hasValue || !next.hasValue) return;
+      if (previous.value == next.value) return;
+      _refreshFood();
+    });
     final l10n = context.l10n;
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
