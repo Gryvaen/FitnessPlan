@@ -358,7 +358,7 @@ void main() {
   testWidgets('matching scheduled plan shows disabled scheduled status', (
     tester,
   ) async {
-    final tomorrow = CalendarDay.todayLocal().add(const Duration(days: 1));
+    final tomorrow = CalendarDay.addDays(CalendarDay.todayLocal(), 1);
     await _createPlan(DietStrategyKind.balanced, effectiveFrom: tomorrow);
     await _pump(tester, '/profile/nutrition/strategy/configure?kind=balanced');
     expect(find.text('Scheduled to apply'), findsOneWidget);
@@ -534,7 +534,7 @@ void main() {
   testWidgets('future strategy does not suggest review', (tester) async {
     await _createPlan(
       DietStrategyKind.balanced,
-      effectiveFrom: CalendarDay.todayLocal().add(const Duration(days: 1)),
+      effectiveFrom: CalendarDay.addDays(CalendarDay.todayLocal(), 1),
     );
     await _pump(tester, '/profile/nutrition');
     await _container.read(profileProvider.notifier).applyLatestWeight(70);
@@ -638,7 +638,7 @@ void main() {
     (tester) async {
       await _createPlan(
         DietStrategyKind.balanced,
-        effectiveFrom: CalendarDay.todayLocal().add(const Duration(days: 1)),
+        effectiveFrom: CalendarDay.addDays(CalendarDay.todayLocal(), 1),
       );
       await _pump(tester, '/profile/edit');
       tester
@@ -942,7 +942,7 @@ void main() {
   ) async {
     await _createPlan(
       DietStrategyKind.carbTaper,
-      effectiveFrom: CalendarDay.todayLocal().add(const Duration(days: 1)),
+      effectiveFrom: CalendarDay.addDays(CalendarDay.todayLocal(), 1),
     );
     await _pump(tester, '/profile/nutrition');
 
@@ -1251,7 +1251,7 @@ void main() {
     final cycleLength = active.schedule!.cycleLengthDays;
     for (var i = 0; i < cycleLength * 2; i++) {
       final t = (await repo.targetForDay(
-        today.add(Duration(days: i)),
+        CalendarDay.addDays(today, i),
         profile,
       ))!;
       expect(
@@ -1262,7 +1262,7 @@ void main() {
     // Cycle last day is the high-carb day by default.
     expect(
       (await repo.targetForDay(
-        today.add(Duration(days: cycleLength - 1)),
+        CalendarDay.addDays(today, cycleLength - 1),
         profile,
       ))!.dayType,
       CarbDayType.high,

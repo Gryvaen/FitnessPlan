@@ -88,6 +88,10 @@ addTearDown(() => messenger.setMockMethodCallHandler(alarm, null));
 
 需要中文界面时，给 `MaterialApp` 传 `locale: Locale('zh')` 和 `AppLocalizations.localizationsDelegates`。断言文案时，优先用 `AppLocalizations.of(context)` 取 key，而不是把中文字符串写死在测试里。
 
+### 日期
+
+构造相对日期用 `CalendarDay.addDays(today, n)`，不要用 `today.add(Duration(days: n))`。在有夏令时的时区里，「本地零点 + 24 小时」跨过切换日会落到错误的日期；本机时区正好碰上切换日时，测试会突然失败。`test/calendar_day_test.dart` 需要在有夏令时的时区里跑才能真正测到问题：`TZ=America/New_York flutter test test/calendar_day_test.dart`。
+
 ### 文件系统（path_provider）
 
 参考 `test/data_backup_repository_test.dart` 里的 `_FakePathProvider`（配合 `MockPlatformInterfaceMixin` 使用）。`path_provider_platform_interface` 和 `plugin_platform_interface` 两个开发依赖就是为它准备的。

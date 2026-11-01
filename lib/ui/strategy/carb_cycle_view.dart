@@ -157,7 +157,7 @@ class CarbCycleView extends StatelessWidget {
     Locale locale,
     bool editable,
   ) {
-    final date = anchor.add(Duration(days: i));
+    final date = CalendarDay.addDays(anchor, i);
     final cycleDay = resolveCycleDay(
       day: date,
       start: start,

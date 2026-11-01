@@ -268,7 +268,7 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
     final monday = DateTime(2024, 1, 1);
     return [
       for (var i = 0; i < 7; i++)
-        DateFormat.E(locale.languageCode).format(monday.add(Duration(days: i))),
+        DateFormat.E(locale.languageCode).format(AppDates.addDays(monday, i)),
     ];
   }
 

@@ -54,7 +54,7 @@ class StepRepository {
   /// Continuous local calendar days ending today (newest first), missing → 0.
   Future<List<StepDay>> recentDays({int limitDays = 14}) async {
     final today = CalendarDay.todayLocal();
-    final oldest = today.subtract(Duration(days: limitDays - 1));
+    final oldest = CalendarDay.addDays(today, 1 - limitDays);
     final rows =
         await (_db.select(_db.stepLogs)
               ..where((t) => t.date.isBiggerOrEqualValue(oldest))
@@ -65,7 +65,7 @@ class StepRepository {
     };
     final out = <StepDay>[];
     for (var i = 0; i < limitDays; i++) {
-      final date = CalendarDay.dayOnly(today.subtract(Duration(days: i)));
+      final date = CalendarDay.addDays(today, -i);
       out.add(StepDay(date: date, steps: byDay[date] ?? 0));
     }
     return out;

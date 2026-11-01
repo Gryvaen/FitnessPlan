@@ -268,7 +268,7 @@ void main() {
 
     h.container
         .read(selectedDayProvider.notifier)
-        .setDay(CalendarDay.todayLocal().subtract(const Duration(days: 1)));
+        .setDay(CalendarDay.addDays(CalendarDay.todayLocal(), -1));
     await tester.pump(const Duration(milliseconds: 400));
     await _shot(tester, 'en-03-today-yesterday-history.png');
 
@@ -347,7 +347,7 @@ void main() {
 
     h.container
         .read(selectedDayProvider.notifier)
-        .setDay(CalendarDay.todayLocal().subtract(const Duration(days: 1)));
+        .setDay(CalendarDay.addDays(CalendarDay.todayLocal(), -1));
     await tester.pump(const Duration(milliseconds: 400));
     await _shot(tester, 'zh-03-today-yesterday-history.png');
 

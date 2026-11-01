@@ -57,11 +57,7 @@ void main() {
       );
       await tester.tap(find.text('Open calendar'));
       await tester.pumpAndSettle();
-      await tester.longPress(
-        find.byKey(
-          ValueKey('deficitDay-${today.year}-${today.month}-${today.day}'),
-        ),
-      );
+      await _longPressDay(tester, today);
       await tester.pumpAndSettle();
       final rest = find.byKey(const ValueKey('marker-option-restDay'));
       final cheat = find.byKey(const ValueKey('marker-option-cheatMeal'));
@@ -164,9 +160,6 @@ void main() {
     addTearDown(db.close);
     final repo = DayMarkerRepository(db);
     final today = CalendarDay.todayLocal();
-    final dayKey = ValueKey(
-      'deficitDay-${today.year}-${today.month}-${today.day}',
-    );
     await tester.pumpWidget(
       MaterialApp(
         locale: const Locale('en'),
@@ -200,7 +193,7 @@ void main() {
     await tester.tap(find.text('Open calendar'));
     await tester.pumpAndSettle();
 
-    await tester.longPress(find.byKey(dayKey));
+    await _longPressDay(tester, today);
     await tester.pumpAndSettle();
     expect(find.text('Rest day'), findsOneWidget);
     expect(find.text('Cheat day'), findsOneWidget);
@@ -223,7 +216,7 @@ void main() {
     await tester.pumpAndSettle();
     expect((await repo.settingsForDay(today))!.pauseCarbCycle, isFalse);
 
-    await tester.longPress(find.byKey(dayKey));
+    await _longPressDay(tester, today);
     await tester.pumpAndSettle();
     expect(find.textContaining('Cycle unchanged'), findsOneWidget);
     expect(find.text('Delay carb cycle by one day'), findsNothing);
@@ -235,7 +228,7 @@ void main() {
     await tester.pumpAndSettle();
     expect((await repo.settingsForDay(today))!.pauseCarbCycle, isTrue);
 
-    await tester.longPress(find.byKey(dayKey));
+    await _longPressDay(tester, today);
     await tester.pumpAndSettle();
     expect(find.textContaining('Cycle delayed one day'), findsOneWidget);
     expect(find.text('Delay carb cycle by one day'), findsNothing);
@@ -264,7 +257,7 @@ void main() {
     expect((await repo.settingsForDay(today))!.includeSteps, isFalse);
     expect((await repo.settingsForDay(today))!.includeDiet, isFalse);
 
-    await tester.longPress(find.byKey(dayKey));
+    await _longPressDay(tester, today);
     await tester.pumpAndSettle();
     expect(find.textContaining('Deduct 650 kcal'), findsOneWidget);
     expect(find.byType(TextField), findsNothing);
@@ -293,7 +286,7 @@ void main() {
     expect(disabled.penaltyKcal, 0);
     expect(disabled.cheatPenaltyKcal, 650);
 
-    await tester.longPress(find.byKey(dayKey));
+    await _longPressDay(tester, today);
     await tester.pumpAndSettle();
     expect(find.textContaining('No cultivation deduction'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('marker-option-cheatMeal')));
@@ -311,7 +304,7 @@ void main() {
     expect((await repo.settingsForDay(today))!.includeSteps, isFalse);
     expect((await repo.settingsForDay(today))!.includeDiet, isFalse);
 
-    await tester.longPress(find.byKey(dayKey));
+    await _longPressDay(tester, today);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Clear marker'));
     await tester.pumpAndSettle();
@@ -360,9 +353,6 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  ValueKey<String> dayKey(DateTime d) =>
-      ValueKey('deficitDay-${d.year}-${d.month}-${d.day}');
-
   testWidgets('carb-load day saves its carbs and an optional delay', (
     tester,
   ) async {
@@ -376,7 +366,7 @@ void main() {
       firstDate: today,
       strategy: DietStrategyKind.carbCycle,
     );
-    await tester.longPress(find.byKey(dayKey(today)));
+    await _longPressDay(tester, today);
     await tester.pumpAndSettle();
     final option = find.byKey(const ValueKey('marker-option-carbLoad'));
     await tester.ensureVisible(option);
@@ -410,7 +400,7 @@ void main() {
     expect(saved.pauseCarbCycle, isTrue);
     expect(saved.includeDiet, isTrue);
 
-    await tester.longPress(find.byKey(dayKey(today)));
+    await _longPressDay(tester, today);
     await tester.pumpAndSettle();
     expect(find.textContaining('Carbs 6.9 g/kg'), findsOneWidget);
     expect(find.textContaining('Cycle delayed one day'), findsOneWidget);
@@ -432,7 +422,7 @@ void main() {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     addTearDown(db.close);
     final today = CalendarDay.todayLocal();
-    final yesterday = DateTime(today.year, today.month, today.day - 1);
+    final yesterday = CalendarDay.addDays(today, -1);
     await openPicker(
       tester,
       db,
@@ -440,7 +430,7 @@ void main() {
       strategy: DietStrategyKind.carbCycle,
     );
     final option = find.byKey(const ValueKey('marker-option-carbLoad'));
-    await tester.longPress(find.byKey(dayKey(yesterday)));
+    await _longPressDay(tester, yesterday);
     await tester.pumpAndSettle();
     expect(option, findsNothing);
   });
@@ -458,7 +448,7 @@ void main() {
       firstDate: today,
       strategy: DietStrategyKind.balanced,
     );
-    await tester.longPress(find.byKey(dayKey(today)));
+    await _longPressDay(tester, today);
     await tester.pumpAndSettle();
     expect(option, findsNothing);
     await tester.tap(find.byKey(const ValueKey('marker-option-cheatMeal')));
@@ -473,7 +463,7 @@ void main() {
     addTearDown(db.close);
     final repo = DayMarkerRepository(db);
     final today = CalendarDay.todayLocal();
-    final yesterday = DateTime(today.year, today.month, today.day - 1);
+    final yesterday = CalendarDay.addDays(today, -1);
     await tester.pumpWidget(
       MaterialApp(
         locale: const Locale('en'),
@@ -506,13 +496,7 @@ void main() {
     );
     await tester.tap(find.text('Open calendar'));
     await tester.pumpAndSettle();
-    await tester.longPress(
-      find.byKey(
-        ValueKey(
-          'deficitDay-${yesterday.year}-${yesterday.month}-${yesterday.day}',
-        ),
-      ),
-    );
+    await _longPressDay(tester, yesterday);
     await tester.pumpAndSettle();
     expect(
       find.text('Marking a past day will not change later carb-cycle days.'),
@@ -582,7 +566,7 @@ void main() {
           (await markerRepo.settingsForDay(today))!.pauseCarbCycle,
           isFalse,
         );
-        await tester.longPress(_dayFinder(today));
+        await _longPressDay(tester, today);
         await tester.pumpAndSettle();
         expect(find.textContaining('Cycle unchanged'), findsNothing);
       },
@@ -597,7 +581,7 @@ void main() {
     final strategyRepo = DietStrategyRepository(db);
     final markerRepo = DayMarkerRepository(db);
     final today = CalendarDay.todayLocal();
-    final tomorrow = DateTime(today.year, today.month, today.day + 1);
+    final tomorrow = CalendarDay.addDays(today, 1);
     await strategyRepo.createPlan(_cycleDraft(tomorrow));
 
     await _openMarkerSheet(tester, db, markerRepo, strategyRepo, today);
@@ -639,7 +623,7 @@ void main() {
       final strategyRepo = DietStrategyRepository(db);
       final markerRepo = DayMarkerRepository(db);
       final today = CalendarDay.todayLocal();
-      final yesterday = DateTime(today.year, today.month, today.day - 1);
+      final yesterday = CalendarDay.addDays(today, -1);
       await strategyRepo.createPlan(_cycleDraft(yesterday), now: yesterday);
       await markerRepo.setRestDay(
         yesterday,
@@ -738,6 +722,14 @@ DietStrategyPlanDraft _cycleDraft(DateTime from) {
 Finder _dayFinder(DateTime day) =>
     find.byKey(ValueKey('deficitDay-${day.year}-${day.month}-${day.day}'));
 
+/// The calendar scrolls on short test surfaces, so a day in the month's last
+/// row can sit below the fold.
+Future<void> _longPressDay(WidgetTester tester, DateTime day) async {
+  await tester.ensureVisible(_dayFinder(day));
+  await tester.pumpAndSettle();
+  await tester.longPress(_dayFinder(day));
+}
+
 Future<void> _openMarkerSheet(
   WidgetTester tester,
   AppDatabase db,
@@ -778,9 +770,6 @@ Future<void> _openMarkerSheet(
   );
   await tester.tap(find.text('Open calendar'));
   await tester.pumpAndSettle();
-  // Month length and weekday alignment can put the cell below the viewport.
-  await tester.ensureVisible(_dayFinder(day));
-  await tester.pumpAndSettle();
-  await tester.longPress(_dayFinder(day));
+  await _longPressDay(tester, day);
   await tester.pumpAndSettle();
 }

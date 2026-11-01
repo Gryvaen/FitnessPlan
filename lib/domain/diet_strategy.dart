@@ -11,6 +11,8 @@ library;
 
 import 'dart:math' as math;
 
+import 'calendar_day.dart';
+
 /// Mutually exclusive primary strategy.
 enum DietStrategyKind {
   /// Same energy / macros every day.
@@ -806,7 +808,7 @@ abstract final class CarbTaperPlanner {
 
 /// Cycle-date helpers (local calendar).
 abstract final class StrategyDates {
-  static DateTime dayOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+  static DateTime dayOnly(DateTime d) => CalendarDay.dayOnly(d);
 
   /// 0-based position of [date] within a [cycleLengthDays]-day cycle
   /// anchored at [cycleStart], whose position is [startIndex] (default 0).
@@ -823,9 +825,7 @@ abstract final class StrategyDates {
     int startIndex = 0,
   }) {
     final diff =
-        dayOnly(date).difference(dayOnly(cycleStart)).inDays -
-        restDaysBefore +
-        startIndex;
+        CalendarDay.daysBetween(cycleStart, date) - restDaysBefore + startIndex;
     final idx = diff % cycleLengthDays;
     return idx < 0 ? idx + cycleLengthDays : idx;
   }

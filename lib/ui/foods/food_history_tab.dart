@@ -26,8 +26,7 @@ List<int> mealHistoryScopes({
   final hasRecent = recent.any((day) => day.hasActivity);
   final first = all.isEmpty ? null : all.last.date;
   final showAll =
-      first != null &&
-      AppDates.todayLocal().difference(AppDates.dayOnly(first)).inDays >= 13;
+      first != null && AppDates.daysBetween(first, AppDates.todayLocal()) >= 13;
   return [if (hasRecent) 0, if (showAll) 1];
 }
 

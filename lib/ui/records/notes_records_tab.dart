@@ -26,7 +26,7 @@ String _noteMeta(DailyNote note, AppLocalizations l10n, Locale locale) {
   final String dayPart;
   if (updatedDay == today) {
     dayPart = l10n.todayWord;
-  } else if (updatedDay == today.subtract(const Duration(days: 1))) {
+  } else if (updatedDay == AppDates.addDays(today, -1)) {
     dayPart = l10n.yesterday;
   } else {
     dayPart = AppDates.md(updated, locale);

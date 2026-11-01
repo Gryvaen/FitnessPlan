@@ -280,7 +280,8 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
       if (first == null || day.isBefore(first)) first = day;
     }
     final showAll =
-        first != null && AppDates.todayLocal().difference(first).inDays >= 13;
+        first != null &&
+        AppDates.daysBetween(first, AppDates.todayLocal()) >= 13;
     return [if (hasRecent) 0, if (showAll) 1];
   }
 

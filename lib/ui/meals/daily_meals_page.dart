@@ -58,7 +58,7 @@ class DailyMealsPage extends ConsumerWidget {
     final today = AppDates.todayLocal();
     final earliest = DateTime(today.year - 1, today.month, today.day);
     final mealsAsync = ref.watch(mealsForDayProvider(day));
-    final yesterday = day.subtract(const Duration(days: 1));
+    final yesterday = AppDates.addDays(day, -1);
     final yesterdayMeals = editable
         ? ref.watch(mealsForDayProvider(yesterday)).value ?? const []
         : const <MealEntry>[];
@@ -75,7 +75,7 @@ class DailyMealsPage extends ConsumerWidget {
                 tooltip: l10n.prevDay,
                 visualDensity: VisualDensity.compact,
                 onPressed: day.isAfter(earliest)
-                    ? () => go(day.subtract(const Duration(days: 1)))
+                    ? () => go(AppDates.addDays(day, -1))
                     : null,
                 icon: const InkIcon(InkGlyph.chevronLeft),
               ),
@@ -97,7 +97,7 @@ class DailyMealsPage extends ConsumerWidget {
                 IconButton(
                   tooltip: l10n.nextDay,
                   visualDensity: VisualDensity.compact,
-                  onPressed: () => go(day.add(const Duration(days: 1))),
+                  onPressed: () => go(AppDates.addDays(day, 1)),
                   icon: const InkIcon(InkGlyph.chevronRight),
                 )
               else
@@ -232,7 +232,7 @@ Future<void> copyMealTypeFromYesterday({
   required MealType mealType,
 }) async {
   final l10n = context.l10n;
-  final from = day.subtract(const Duration(days: 1));
+  final from = AppDates.addDays(day, -1);
   final existingToday = await ref.read(mealRepositoryProvider).forDay(day);
   final hasToday = existingToday.any((m) => m.mealType == mealType.name);
   if (hasToday) {
@@ -299,7 +299,7 @@ class _MealTypeSection extends ConsumerWidget {
 
   Future<void> _copyYesterday(BuildContext context, WidgetRef ref) async {
     final l10n = context.l10n;
-    final from = day.subtract(const Duration(days: 1));
+    final from = AppDates.addDays(day, -1);
     if (entries.isNotEmpty) {
       final ok = await showDialog<bool>(
         context: context,

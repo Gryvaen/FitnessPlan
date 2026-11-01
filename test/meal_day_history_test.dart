@@ -293,7 +293,7 @@ void main() {
     'meal history pads recent days and keeps food ids on active days',
     () async {
       final today = CalendarDay.todayLocal();
-      final older = today.subtract(const Duration(days: 20));
+      final older = CalendarDay.addDays(today, -20);
       await _seedMeal(
         db,
         date: today,

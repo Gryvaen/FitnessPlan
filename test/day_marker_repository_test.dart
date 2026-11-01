@@ -16,8 +16,8 @@ void main() {
   late AppDatabase db;
   late DayMarkerRepository repo;
   final today = CalendarDay.todayLocal();
-  final yesterday = today.subtract(const Duration(days: 1));
-  final tomorrow = today.add(const Duration(days: 1));
+  final yesterday = CalendarDay.addDays(today, -1);
+  final tomorrow = CalendarDay.addDays(today, 1);
 
   setUp(() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -325,7 +325,7 @@ CREATE TABLE day_markers (
   test('every marker type can pause the carb cycle', () async {
     await repo.setCheatMeal(today, pauseCarbCycle: true);
     await repo.setCarbLoad(tomorrow, carbPerKg: 6, pauseCarbCycle: true);
-    final later = tomorrow.add(const Duration(days: 1));
+    final later = CalendarDay.addDays(tomorrow, 1);
     await repo.setRestDay(later, pauseCarbCycle: true);
     expect(await repo.restDayDates(), [today, tomorrow, later]);
     await repo.setCheatMeal(today);

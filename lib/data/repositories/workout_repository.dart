@@ -1740,9 +1740,9 @@ class WorkoutRepository {
     final today = CalendarDay.todayLocal();
     return [
       for (var i = 0; i < limitDays; i++)
-        byDate[CalendarDay.dayOnly(today.subtract(Duration(days: i)))] ??
+        byDate[CalendarDay.addDays(today, -i)] ??
             WorkoutHistoryDay(
-              date: CalendarDay.dayOnly(today.subtract(Duration(days: i))),
+              date: CalendarDay.addDays(today, -i),
               sets: const [],
             ),
     ];

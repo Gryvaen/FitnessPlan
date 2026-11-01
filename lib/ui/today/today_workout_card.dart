@@ -200,7 +200,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     int? sourceDayWorkoutId,
   }) async {
     final l10n = context.l10n;
-    final from = widget.day.subtract(const Duration(days: 1));
+    final from = AppDates.addDays(widget.day, -1);
     final existing = await ref
         .read(workoutRepositoryProvider)
         .daySnapshot(widget.day);
@@ -785,11 +785,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     final editable = AppDates.isLocalToday(widget.day);
     final yesterdayGroups = editable
         ? (ref
-                  .watch(
-                    dayWorkoutProvider(
-                      widget.day.subtract(const Duration(days: 1)),
-                    ),
-                  )
+                  .watch(dayWorkoutProvider(AppDates.addDays(widget.day, -1)))
                   .value
                   ?.groups ??
               const <DayWorkoutGroup>[])

@@ -44,8 +44,8 @@ void main() {
       final trained = await addTestExercise(repo, name: '卧推');
       final fresh = await addTestExercise(repo, name: '深蹲');
       final today = CalendarDay.todayLocal();
-      final older = today.subtract(const Duration(days: 3));
-      final newer = today.subtract(const Duration(days: 1));
+      final older = CalendarDay.addDays(today, -3);
+      final newer = CalendarDay.addDays(today, -1);
       final planId = await repo.createPlan(
         name: '上肢',
         items: [
@@ -152,7 +152,7 @@ void main() {
   test('appending yesterday skips existing and repeated plan names', () async {
     final exercise = await addTestExercise(repo, name: '卧推');
     final today = CalendarDay.todayLocal();
-    final yesterday = today.subtract(const Duration(days: 1));
+    final yesterday = CalendarDay.addDays(today, -1);
     Future<int> seed(DateTime day, String name) async {
       final group = await db
           .into(db.dayWorkouts)
@@ -195,7 +195,7 @@ void main() {
   test('unnamed workout groups share one append name', () async {
     final exercise = await addTestExercise(repo, name: '平板支撑');
     final today = CalendarDay.todayLocal();
-    final yesterday = today.subtract(const Duration(days: 1));
+    final yesterday = CalendarDay.addDays(today, -1);
     for (var i = 0; i < 2; i++) {
       final group = await db.into(db.dayWorkouts).insert(
         DayWorkoutsCompanion.insert(date: yesterday),
@@ -349,7 +349,7 @@ void main() {
   test('recent calendar history pads empty days within the window', () async {
     final squat = await addTestExercise(repo, name: 'Squat');
     final today = CalendarDay.todayLocal();
-    final threeDaysAgo = today.subtract(const Duration(days: 3));
+    final threeDaysAgo = CalendarDay.addDays(today, -3);
     await db
         .into(db.workoutSetLogs)
         .insert(
@@ -1287,9 +1287,7 @@ void main() {
         ),
       ],
     );
-    final yesterday = CalendarDay.todayLocal().subtract(
-      const Duration(days: 1),
-    );
+    final yesterday = CalendarDay.addDays(CalendarDay.todayLocal(), -1);
     await expectLater(
       repo.applyPlanToDay(planId: planId, day: yesterday),
       throwsA(isA<StateError>()),
@@ -1361,7 +1359,7 @@ void main() {
     await repo.applyPlanToDay(planId: planId, day: today);
     final snapshot = await repo.daySnapshot(today);
     final itemId = snapshot.items.single.item.id;
-    final yesterday = today.subtract(const Duration(days: 1));
+    final yesterday = CalendarDay.addDays(today, -1);
     await (db.update(db.dayWorkouts)
           ..where((t) => t.id.equals(snapshot.groups.single.workout.id)))
         .write(DayWorkoutsCompanion(date: Value(yesterday)));
@@ -1665,7 +1663,7 @@ void main() {
       );
 
       final today = CalendarDay.todayLocal();
-      final yesterday = today.subtract(const Duration(days: 1));
+      final yesterday = CalendarDay.addDays(today, -1);
       final events = <Map<DateTime, DayWorkoutSnapshot>>[];
       final sub = repo
           .watchDayWorkoutsForDays([today, yesterday])
@@ -1726,7 +1724,7 @@ void main() {
         targetSets: 3,
         targetReps: 10,
       );
-      final yesterday = today.subtract(const Duration(days: 1));
+      final yesterday = CalendarDay.addDays(today, -1);
       final yesterdayId = await db
           .into(db.dayWorkouts)
           .insert(DayWorkoutsCompanion.insert(date: yesterday));
@@ -1765,8 +1763,8 @@ void main() {
       final plank = await addTestExercise(repo, name: '平板支撑', category: 'core');
 
       final today = CalendarDay.todayLocal();
-      final yesterday = today.subtract(const Duration(days: 1));
-      final older = today.subtract(const Duration(days: 2));
+      final yesterday = CalendarDay.addDays(today, -1);
+      final older = CalendarDay.addDays(today, -2);
 
       for (final exercise in [bench, squat, run, hiit, plank]) {
         await repo.addQuickDayItem(
