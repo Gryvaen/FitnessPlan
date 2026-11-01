@@ -300,4 +300,29 @@ void main() {
     await repo.syncSeedFromAsset();
     expect(await foodCount(), list.length);
   }, timeout: const Timeout(Duration(minutes: 2)));
+
+  test('syncSeedFromAsset keeps a custom food that shares a seed name', () async {
+    final raw = await File('assets/food_seed.json').readAsString();
+    final list = jsonDecode(raw) as List<dynamic>;
+    final seedName = (list.first as Map<String, dynamic>)['name'] as String;
+    final customId = await db.into(db.foodItems).insert(
+          FoodItemsCompanion.insert(
+            name: seedName,
+            category: '我的',
+            kcalPer100: 999,
+            proteinPer100: 1,
+            carbPer100: 1,
+            fatPer100: 1,
+            isCustom: const Value(true),
+          ),
+        );
+
+    await repo.syncSeedFromAsset();
+
+    final row = (await repo.byId(customId))!;
+    expect(row.isCustom, isTrue);
+    expect(row.category, '我的');
+    expect(row.kcalPer100, 999);
+    expect(await foodCount(), list.length);
+  }, timeout: const Timeout(Duration(minutes: 2)));
 }

@@ -148,7 +148,7 @@ class FoodRepository {
             calciumMgPer100: Value(calciumMg),
             isCustom: const Value(false),
           ),
-          onConflict: DoUpdate(
+          onConflict: DoUpdate<$FoodItemsTable, FoodItem>(
             (_) => FoodItemsCompanion(
               nameEn: Value(nameEn),
               category: Value(category),
@@ -162,11 +162,11 @@ class FoodRepository {
               sugarPer100: Value(sugar),
               saturatedFatPer100: Value(saturatedFat),
               calciumMgPer100: Value(calciumMg),
-              // Never flip a custom row back to seed via name collision handling
-              // after insert — conflict target is name; customs use unique names.
-              isCustom: const Value(false),
             ),
             target: [_db.foodItems.name],
+            // A user's own food that happens to share a seed name wins: the
+            // seed row is simply not offered on this device.
+            where: (old) => old.isCustom.equals(false),
           ),
         );
       }
@@ -583,6 +583,26 @@ LIMIT ?
   Future<void> toggleFavorite(int foodId) async {
     final fav = await isFavorite(foodId);
     await _setFavorite(foodId, !fav);
+  }
+
+  /// Deletes every user-made food plus all servings (only users add those).
+  /// Run after meals and presets are cleared so nothing still points here.
+  Future<void> clearCustomFoods() async {
+    final customIds = _db.selectOnly(_db.foodItems)
+      ..addColumns([_db.foodItems.id])
+      ..where(_db.foodItems.isCustom.equals(true));
+    await _db.transaction(() async {
+      await _db.delete(_db.foodServings).go();
+      await (_db.delete(
+        _db.favoriteFoods,
+      )..where((t) => t.foodId.isInQuery(customIds))).go();
+      await (_db.delete(
+        _db.hiddenRecentFoods,
+      )..where((t) => t.foodId.isInQuery(customIds))).go();
+      await (_db.delete(
+        _db.foodItems,
+      )..where((t) => t.isCustom.equals(true))).go();
+    });
   }
 
   Future<void> clearFavorites() => _db.delete(_db.favoriteFoods).go();

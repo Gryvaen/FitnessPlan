@@ -55,6 +55,11 @@ class ProfileStrategyReviewNotifier extends Notifier<ProfileStrategyReview?> {
     ref.read(sharedPreferencesProvider).getString(_profileReviewKey),
   );
 
+  Future<void> clear() async {
+    await ref.read(sharedPreferencesProvider).remove(_profileReviewKey);
+    state = null;
+  }
+
   Future<void> record(DietStrategyPlan plan) async {
     final previous = state;
     final samePlan = previous?.planKey == StrategyReviewDismissal.keyFor(plan);
@@ -163,6 +168,11 @@ class StrategyReviewDismissalNotifier
   StrategyReviewDismissal? build() => StrategyReviewDismissal.fromJson(
     ref.read(sharedPreferencesProvider).getString(_dismissalKey),
   );
+
+  Future<void> clear() async {
+    await ref.read(sharedPreferencesProvider).remove(_dismissalKey);
+    state = null;
+  }
 
   Future<void> dismiss(DietStrategyPlan plan, double weightKg) async {
     final dismissal = StrategyReviewDismissal(

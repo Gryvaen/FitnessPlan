@@ -7,6 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../data/repositories/data_backup_repository.dart';
 import '../../data/repositories/app_update_repository.dart';
 import '../../data/services/permission_gate.dart';
 import '../../domain/calorie_calculator.dart';
@@ -84,20 +85,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
     if (confirmed != true || !mounted) return;
     try {
-      await Future.wait([
-        ref.read(mealRepositoryProvider).clearAll(),
-        ref.read(weightRepositoryProvider).clearAll(),
-        ref.read(workoutRepositoryProvider).clearAll(),
-        ref.read(noteRepositoryProvider).clearAll(),
-        ref.read(foodRepositoryProvider).clearFavorites(),
-        ref.read(foodRepositoryProvider).clearHiddenRecentFoods(),
-        ref.read(formMemoryRepositoryProvider).clear(),
-        ref.read(mealPresetRepositoryProvider).clearAll(),
-        ref.read(waterRepositoryProvider).clearAll(),
-        ref.read(dietStrategyRepositoryProvider).clearAll(),
-        ref.read(dayMarkerRepositoryProvider).clearAll(),
-      ]);
-      await ref.read(profileProvider.notifier).clear();
+      await clearUserData(ref.read);
+      // Workout reminder copy depends on whether yesterday had sets.
       await ref.read(remindersProvider.notifier).syncSchedule();
     } catch (e) {
       if (!mounted) return;
@@ -246,9 +235,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       );
       if (result == null || result.files.isEmpty || !mounted) return;
 
-      // Strategy-review state is read from prefs once in build().
-      ref.invalidate(profileStrategyReviewProvider);
-      ref.invalidate(strategyReviewDismissalProvider);
       final file = result.files.single;
       final bytes = file.bytes;
       if (bytes == null || bytes.isEmpty) {
@@ -260,6 +246,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       ref.invalidate(themeProvider);
       ref.invalidate(localeProvider);
       ref.invalidate(remindersProvider);
+      // Strategy-review state is read from prefs once in build().
+      ref.invalidate(profileStrategyReviewProvider);
+      ref.invalidate(strategyReviewDismissalProvider);
       ref.read(profileProvider.notifier).reload();
       // The 境界 ledger lives in prefs too; drop the pre-import copy.
       ref.read(cutCultivationStateProvider.notifier).reload();
@@ -268,6 +257,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
       if (!mounted) return;
       messenger.showSnackBar(SnackBar(content: Text(l10n.importDataDone)));
+    } on BackupTooNewException {
+      // Rejected before the live database was closed; nothing to recover.
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(l10n.importBackupTooNew)));
     } catch (e) {
       // DB may already be closed; force a fresh connection so the app recovers.
       ref.invalidate(databaseProvider);

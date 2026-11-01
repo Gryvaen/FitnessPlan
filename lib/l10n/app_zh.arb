@@ -133,6 +133,7 @@
       }
     }
   },
+  "importBackupTooNew": "这份备份来自更新版本的应用，请先升级应用再导入。",
   "exportDataDone": "数据已导出，请保存到安全位置",
   "exportDataFailed": "导出失败：{error}",
   "@exportDataFailed": {
@@ -605,7 +606,7 @@
   "themeForest": "森林绿",
   "themeMidnight": "午夜蓝",
   "themeSunrise": "暖阳橙",
-  "clearDataBody": "将清除所有饮食、体重、训练、便签、收藏与身体档案，相当于重新使用本程序。确定继续？",
+  "clearDataBody": "将清除所有饮食、体重、训练、步数、便签、收藏、自定义食材与身体档案。主题、语言和提醒设置会保留。确定继续？",
   "noInstallPackage": "新版本没有可用的安装包",
   "copyYesterdayConfirm": "仅追加昨日此餐别中今日尚无的食物，确定？",
   "activitySedentary": "久坐",
@@ -1308,7 +1309,7 @@
   "themeMidnight": "午夜蓝",
   "themeSunrise": "暖阳橙",
   "themeGraphite": "石墨灰",
-  "clearDataBody": "将清除所有饮食、体重、训练、便签、收藏与身体档案，相当于重新使用本程序。确定继续？",
+  "clearDataBody": "将清除所有饮食、体重、训练、步数、便签、收藏、自定义食材与身体档案。主题、语言和提醒设置会保留。确定继续？",
   "noInstallPackage": "新版本没有可用的安装包",
   "copyYesterdayConfirm": "仅追加昨日此餐别中今日尚无的食物，确定？",
   "activitySedentary": "久坐",
