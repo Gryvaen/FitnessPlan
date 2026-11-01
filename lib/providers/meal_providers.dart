@@ -26,8 +26,7 @@ class SelectedDayNotifier extends Notifier<DateTime> {
   void shiftDay(int delta, {DateTime? earliest}) {
     final today = CalendarDay.todayLocal();
     final min = earliest ?? DateTime(today.year - 1, today.month, today.day);
-    var next = state.add(Duration(days: delta));
-    next = CalendarDay.dayOnly(next);
+    var next = CalendarDay.addDays(state, delta);
     if (next.isBefore(min)) next = min;
     if (next.isAfter(today)) next = today;
     state = next;
@@ -79,8 +78,8 @@ class WaterGoalNotifier extends Notifier<int> {
   }
 }
 
-final mealPresetsProvider = FutureProvider.autoDispose<List<MealPreset>>((ref) {
-  return ref.watch(mealPresetRepositoryProvider).listPresets();
+final mealPresetsProvider = StreamProvider<List<MealPreset>>((ref) {
+  return ref.watch(mealPresetRepositoryProvider).watchPresets();
 });
 
 final mealsForDayProvider = StreamProvider.autoDispose

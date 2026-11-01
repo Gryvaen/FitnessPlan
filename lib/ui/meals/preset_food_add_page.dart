@@ -148,7 +148,6 @@ class _PresetFoodAddPageState extends ConsumerState<PresetFoodAddPage> {
             grams: _grams,
             mealType: _mealType,
           );
-      ref.invalidate(mealPresetsProvider);
       if (mounted) context.pop(true);
     } catch (error) {
       if (mounted) {
@@ -217,6 +216,15 @@ class _PresetFoodAddPageState extends ConsumerState<PresetFoodAddPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Keep the cached browse lists in step with edits made anywhere else.
+    ref.listen(favoriteFoodsProvider, (_, next) {
+      final favorites = next.value;
+      if (favorites != null) setState(() => _favorites = favorites);
+    });
+    ref.listen(recentFoodsProvider, (_, next) {
+      final recent = next.value;
+      if (recent != null) setState(() => _recent = recent);
+    });
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final preview = _preview;

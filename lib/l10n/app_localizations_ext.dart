@@ -121,6 +121,11 @@ abstract final class AppDates {
 
   static DateTime todayLocal([DateTime? now]) => CalendarDay.todayLocal(now);
 
+  static DateTime addDays(DateTime d, int n) => CalendarDay.addDays(d, n);
+
+  static int daysBetween(DateTime from, DateTime to) =>
+      CalendarDay.daysBetween(from, to);
+
   static bool isLocalToday(DateTime d, [DateTime? now]) =>
       CalendarDay.isLocalToday(d, now);
 

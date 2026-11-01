@@ -72,6 +72,19 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
     });
   }
 
+  Future<void> _refreshFood() async {
+    final repo = ref.read(foodRepositoryProvider);
+    final food = await repo.byId(widget.foodId);
+    final servings = food == null
+        ? <FoodServing>[]
+        : await repo.listServings(food.id);
+    if (!mounted) return;
+    setState(() {
+      _food = food;
+      _servings = servings;
+    });
+  }
+
   void _stepGrams(double delta) {
     setState(() => _grams = (_grams + delta).clamp(5, 3000));
   }
@@ -300,6 +313,13 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Edits made elsewhere (or a delete) refresh the macros/servings shown,
+    // keeping the grams the user has dialled in.
+    ref.listen(foodCatalogChangesProvider, (previous, next) {
+      if (previous == null || !previous.hasValue || !next.hasValue) return;
+      if (previous.value == next.value) return;
+      _refreshFood();
+    });
     final favAsync = ref.watch(foodFavoriteProvider(widget.foodId));
     final l10n = context.l10n;
     if (_loading) {
@@ -362,7 +382,6 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
                 await ref
                     .read(foodRepositoryProvider)
                     .toggleFavorite(widget.foodId);
-                ref.invalidate(foodFavoriteProvider(widget.foodId));
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(

@@ -63,7 +63,7 @@ class CultivationRepository {
     final lastEnd = current.segments.isEmpty ? null : current.segments.last.end;
     var start = CalendarDay.dayOnly(preferredStart ?? today);
     if (lastEnd != null && !start.isAfter(CalendarDay.dayOnly(lastEnd))) {
-      start = CalendarDay.dayOnly(lastEnd).add(const Duration(days: 1));
+      start = CalendarDay.addDays(lastEnd, 1);
     }
     final next = current.copyWith(
       segments: [

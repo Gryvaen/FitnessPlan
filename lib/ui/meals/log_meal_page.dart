@@ -210,7 +210,6 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
   Future<void> _toggleFavorite(int foodId) async {
     try {
       await ref.read(foodRepositoryProvider).toggleFavorite(foodId);
-      ref.invalidate(foodFavoriteProvider(foodId));
       await _refreshFavorites();
     } catch (e) {
       if (!mounted) return;
@@ -456,7 +455,6 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
             ),
             onRemove: () async {
               await ref.read(mealPresetRepositoryProvider).deletePreset(p.id);
-              ref.invalidate(mealPresetsProvider);
             },
             child: ListTile(
               leading: const InkIcon(InkGlyph.restaurant),
@@ -485,7 +483,6 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
             ),
             onRemove: () async {
               await ref.read(foodRepositoryProvider).toggleFavorite(f.id);
-              ref.invalidate(foodFavoriteProvider(f.id));
               await _refreshFavorites();
             },
             child: _foodTile(f, badge: l10n.badgeFavorite),
@@ -525,6 +522,15 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Keep the cached browse lists in step with edits made anywhere else.
+    ref.listen(favoriteFoodsProvider, (_, next) {
+      final favorites = next.value;
+      if (favorites != null) setState(() => _favorites = favorites);
+    });
+    ref.listen(recentFoodsProvider, (_, next) {
+      final recent = next.value;
+      if (recent != null) setState(() => _recent = recent);
+    });
     ref.listen(foodCatalogChangesProvider, (previous, next) {
       if (previous == null || !previous.hasValue || !next.hasValue) return;
       if (previous.value == next.value) return;

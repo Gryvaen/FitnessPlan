@@ -200,7 +200,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     int? sourceDayWorkoutId,
   }) async {
     final l10n = context.l10n;
-    final from = widget.day.subtract(const Duration(days: 1));
+    final from = AppDates.addDays(widget.day, -1);
     final existing = await ref
         .read(workoutRepositoryProvider)
         .daySnapshot(widget.day);
@@ -785,11 +785,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     final editable = AppDates.isLocalToday(widget.day);
     final yesterdayGroups = editable
         ? (ref
-                  .watch(
-                    dayWorkoutProvider(
-                      widget.day.subtract(const Duration(days: 1)),
-                    ),
-                  )
+                  .watch(dayWorkoutProvider(AppDates.addDays(widget.day, -1)))
                   .value
                   ?.groups ??
               const <DayWorkoutGroup>[])
@@ -1233,14 +1229,12 @@ class _WorkoutItemTile extends ConsumerWidget {
     final theme = Theme.of(context);
     final note = item.note?.trim();
     final weightKg = item.actualWeightKg;
-    final progressLine = item.done
-        ? l10n.completed
-        : l10n.setsProgress(
-            progress.completedSets,
-            item.targetSets,
-            '${item.targetReps}',
-            unitLabel,
-          );
+    final progressLine = l10n.setsProgress(
+      progress.completedSets,
+      item.targetSets,
+      '${item.targetReps}',
+      unitLabel,
+    );
     final metaStyle = theme.textTheme.meta;
     final weightSpans = weightKg == null
         ? null
@@ -1286,15 +1280,17 @@ class _WorkoutItemTile extends ConsumerWidget {
             TextSpan(
               style: metaStyle,
               children: [
-                TextSpan(
-                  text: progressLine,
-                  style: item.done
-                      ? metaStyle?.copyWith(
-                          color: AppColors.success,
-                          fontWeight: FontWeight.w600,
-                        )
-                      : null,
-                ),
+                if (item.done) ...[
+                  TextSpan(
+                    text: l10n.completed,
+                    style: metaStyle?.copyWith(
+                      color: AppColors.success,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const TextSpan(text: ' · '),
+                ],
+                TextSpan(text: progressLine),
                 if (weightSpans != null) ...[
                   const TextSpan(text: ' · '),
                   ...weightSpans,

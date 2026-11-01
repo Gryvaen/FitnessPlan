@@ -47,6 +47,10 @@ flowchart TD
 
 `lib/features/loading/` 是一套旧的启动动画（剑客），应用里已经不再使用，只有 `test/swordsman_loading_test.dart` 还在引用。当前的启动页是 `lib/ui/loading/discipline_freedom_loading_page.dart`。
 
+### 日期计算
+
+日期一律存为本地零点的 `DateTime`。日期加减用 `CalendarDay.addDays`，算相隔天数用 `CalendarDay.daysBetween`（UI 层也可以用 `AppDates` 上的同名方法）。不要用 `Duration(days: n)` 或 `difference().inDays`，因为夏令时切换那天只有 23 或 25 小时，这两种写法会差一天。
+
 ### 数据放在哪里
 
 - **SQLite**：所有日志和计划，包括饮食、体重、饮水、步数、训练、笔记、饮食策略版本、每日目标快照、日期标记、食材库。

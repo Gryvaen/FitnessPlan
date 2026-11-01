@@ -146,4 +146,83 @@ void main() {
       throwsA(isA<FormatException>()),
     );
   });
+
+  group('database checks run before the live database is replaced', () {
+    /// Rewrites [backup]'s embedded database bytes with [edit].
+    Uint8List rewriteDb(Uint8List backup, void Function(Uint8List db) edit) {
+      final map =
+          jsonDecode(utf8.decode(gzip.decode(backup))) as Map<String, dynamic>;
+      final dbBytes = base64Decode(map['databaseBase64'] as String);
+      edit(dbBytes);
+      map['databaseBase64'] = base64Encode(dbBytes);
+      return Uint8List.fromList(gzip.encode(utf8.encode(jsonEncode(map))));
+    }
+
+    Future<void> expectLiveDataKept() async {
+      final rows = await db.select(db.weightLogs).get();
+      expect(rows.single.weightKg, 70.5);
+      expect(prefs.getString('theme_id'), 'forest');
+    }
+
+    setUp(() async {
+      await db
+          .into(db.weightLogs)
+          .insert(
+            WeightLogsCompanion.insert(
+              date: DateTime(2026, 1, 1),
+              weightKg: 70.5,
+            ),
+          );
+      await prefs.setString('theme_id', 'forest');
+    });
+
+    test('a backup from a newer schema is refused', () async {
+      final repo = DataBackupRepository(db, prefs);
+      final payload = await repo.buildBackup();
+      final newer = rewriteDb(payload.bytes, (bytes) {
+        ByteData.sublistView(
+          bytes,
+          60,
+          64,
+        ).setUint32(0, AppDatabase.currentSchemaVersion + 1);
+      });
+
+      await expectLater(
+        repo.importFromBytes(newer),
+        throwsA(
+          isA<BackupTooNewException>().having(
+            (e) => e.backupVersion,
+            'backupVersion',
+            AppDatabase.currentSchemaVersion + 1,
+          ),
+        ),
+      );
+      await expectLiveDataKept();
+    });
+
+    test('an older schema still imports', () async {
+      final repo = DataBackupRepository(db, prefs);
+      final payload = await repo.buildBackup();
+      final older = rewriteDb(payload.bytes, (bytes) {
+        ByteData.sublistView(
+          bytes,
+          60,
+          64,
+        ).setUint32(0, AppDatabase.currentSchemaVersion - 1);
+      });
+      await repo.importFromBytes(older);
+    });
+
+    test('a payload that is not a SQLite file is refused', () async {
+      final repo = DataBackupRepository(db, prefs);
+      final payload = await repo.buildBackup();
+      final broken = rewriteDb(payload.bytes, (bytes) => bytes[0] = 0);
+
+      await expectLater(
+        repo.importFromBytes(broken),
+        throwsA(isA<FormatException>()),
+      );
+      await expectLiveDataKept();
+    });
+  });
 }

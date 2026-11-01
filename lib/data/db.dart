@@ -41,8 +41,11 @@ class AppDatabase extends _$AppDatabase {
 
   AppDatabase.forTesting(super.e);
 
+  /// Bump together with a new migration step.
+  static const currentSchemaVersion = 36;
+
   @override
-  int get schemaVersion => 36;
+  int get schemaVersion => currentSchemaVersion;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(

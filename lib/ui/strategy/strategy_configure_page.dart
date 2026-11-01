@@ -206,8 +206,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
     fatPerKg: _fatPerKg,
   );
 
-  DateTime get _tomorrow =>
-      CalendarDay.todayLocal().add(const Duration(days: 1));
+  DateTime get _tomorrow => CalendarDay.addDays(CalendarDay.todayLocal(), 1);
 
   DateTime get _effectiveFrom =>
       _startToday ? CalendarDay.todayLocal() : _tomorrow;

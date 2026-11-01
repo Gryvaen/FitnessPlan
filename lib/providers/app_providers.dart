@@ -11,6 +11,7 @@ export 'note_providers.dart';
 export 'profile_providers.dart';
 export 'step_providers.dart';
 export 'theme_providers.dart';
+export 'user_data_reset.dart';
 export 'weight_providers.dart';
 export 'workout_providers.dart';
 export 'workout_reminder_providers.dart';

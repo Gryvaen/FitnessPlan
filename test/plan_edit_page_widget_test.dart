@@ -459,4 +459,67 @@ void main() {
       expect(logs.single.exerciseName, '宽距俯卧撑');
     },
   );
+
+  testWidgets('plan sheet only lifts above the keyboard once', (tester) async {
+    await _repo.addCustomExercise(
+      name: '深蹲',
+      unit: ExerciseUnit.reps,
+      category: 'legs',
+    );
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, _) => Scaffold(
+            body: Center(
+              child: FilledButton(
+                onPressed: () => showPlanEditSheet(context: context),
+                child: const Text('新建计划'),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: _container,
+        child: MaterialApp.router(
+          locale: const Locale('zh'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router,
+        ),
+      ),
+    );
+    await tester.tap(find.text('新建计划'));
+    await tester.pumpAndSettle();
+
+    // Keyboard up: 300 logical px of an 800px-tall screen.
+    tester.view.viewInsets = const FakeViewPadding(bottom: 900);
+    await tester.pumpAndSettle();
+
+    final body = find.descendant(
+      of: find.byType(PlanEditPage),
+      matching: find.byType(ListView),
+    );
+    final appBarHeight = tester.getSize(find.byType(AppBar)).height;
+    // Sheet is 0.9 * 800 - 300 tall; the body loses only the app bar, not
+    // the keyboard a second time.
+    expect(
+      tester.getSize(body.first).height,
+      moreOrLessEquals(0.9 * 800 - 300 - appBarHeight, epsilon: 1),
+    );
+    expect(find.byType(TextField).hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

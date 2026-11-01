@@ -27,7 +27,7 @@ void main() {
 
   test('setStepsForDay upserts and allows historical days', () async {
     final today = CalendarDay.todayLocal();
-    final yesterday = today.subtract(const Duration(days: 1));
+    final yesterday = CalendarDay.addDays(today, -1);
 
     await steps.setStepsForDay(today, 1200);
     await steps.setStepsForDay(yesterday, 800);
@@ -41,10 +41,7 @@ void main() {
   test('recentDays returns continuous 14 days with missing as 0', () async {
     final today = CalendarDay.todayLocal();
     await steps.setStepsForDay(today, 3000);
-    await steps.setStepsForDay(
-      today.subtract(const Duration(days: 2)),
-      1000,
-    );
+    await steps.setStepsForDay(CalendarDay.addDays(today, -2), 1000);
 
     final recent = await steps.recentDays(limitDays: 14);
     expect(recent, hasLength(14));
@@ -52,30 +49,26 @@ void main() {
     expect(recent.first.steps, 3000);
     expect(recent[1].steps, 0);
     expect(recent[2].steps, 1000);
-    expect(recent.last.date, today.subtract(const Duration(days: 13)));
+    expect(recent.last.date, CalendarDay.addDays(today, -13));
     expect(recent.last.steps, 0);
   });
 
   test('historyDays keeps only active days and respects limit', () async {
     final today = CalendarDay.todayLocal();
     await steps.setStepsForDay(today, 0);
-    await steps.setStepsForDay(today.subtract(const Duration(days: 1)), 500);
-    await steps.setStepsForDay(today.subtract(const Duration(days: 3)), 900);
-    await steps.setStepsForDay(today.subtract(const Duration(days: 20)), 1200);
+    await steps.setStepsForDay(CalendarDay.addDays(today, -1), 500);
+    await steps.setStepsForDay(CalendarDay.addDays(today, -3), 900);
+    await steps.setStepsForDay(CalendarDay.addDays(today, -20), 1200);
 
     expect(await steps.historyDays(limitDays: 14), [
       isA<StepDay>()
-          .having((d) => d.date, 'date', today.subtract(const Duration(days: 1)))
+          .having((d) => d.date, 'date', CalendarDay.addDays(today, -1))
           .having((d) => d.steps, 'steps', 500),
       isA<StepDay>()
-          .having((d) => d.date, 'date', today.subtract(const Duration(days: 3)))
+          .having((d) => d.date, 'date', CalendarDay.addDays(today, -3))
           .having((d) => d.steps, 'steps', 900),
       isA<StepDay>()
-          .having(
-            (d) => d.date,
-            'date',
-            today.subtract(const Duration(days: 20)),
-          )
+          .having((d) => d.date, 'date', CalendarDay.addDays(today, -20))
           .having((d) => d.steps, 'steps', 1200),
     ]);
 

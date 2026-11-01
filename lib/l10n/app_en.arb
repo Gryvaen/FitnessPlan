@@ -133,6 +133,7 @@
       }
     }
   },
+  "importBackupTooNew": "This backup was made by a newer version of the app. Update the app, then import it again.",
   "exportDataDone": "Data exported — save it somewhere safe",
   "exportDataFailed": "Export failed: {error}",
   "@exportDataFailed": {
@@ -637,7 +638,7 @@
   "themeForest": "Forest",
   "themeMidnight": "Midnight",
   "themeSunrise": "Sunrise",
-  "clearDataBody": "Clears all meals, weight, workouts, notes, favorites, and profile. Continue?",
+  "clearDataBody": "Clears all meals, weight, workouts, steps, notes, favorites, custom foods, and profile. Theme, language, and reminder settings are kept. Continue?",
   "noInstallPackage": "No install package for the new version",
   "copyYesterdayConfirm": "Append yesterday's foods that are not already in this meal?",
   "activitySedentary": "Sedentary",
@@ -1337,7 +1338,7 @@
   "themeMidnight": "Midnight",
   "themeSunrise": "Sunrise",
   "themeGraphite": "Graphite",
-  "clearDataBody": "Clears all meals, weight, workouts, notes, favorites, and profile. Continue?",
+  "clearDataBody": "Clears all meals, weight, workouts, steps, notes, favorites, custom foods, and profile. Theme, language, and reminder settings are kept. Continue?",
   "noInstallPackage": "No install package for the new version",
   "copyYesterdayConfirm": "Append yesterday's foods that are not already in this meal?",
   "activitySedentary": "Sedentary",

@@ -295,8 +295,8 @@ Set<DateTime> _daysInSegment(CutCultivationSegment segment) {
   final end = CalendarDay.dayOnly(segment.end ?? today);
   if (end.isBefore(start)) return {};
   final out = <DateTime>{};
-  for (var d = start; !d.isAfter(end); d = d.add(const Duration(days: 1))) {
-    out.add(CalendarDay.dayOnly(d));
+  for (var d = start; !d.isAfter(end); d = CalendarDay.addDays(d, 1)) {
+    out.add(d);
   }
   return out;
 }

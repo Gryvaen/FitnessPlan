@@ -16,6 +16,12 @@ final foodCatalogChangesProvider = StreamProvider<int>((ref) {
   return ref.watch(foodRepositoryProvider).watchChanges();
 });
 
+/// Recently logged foods (live): follows meals, hidden entries and catalog.
+final recentFoodsProvider = StreamProvider<List<FoodItem>>((ref) async* {
+  await ref.watch(foodsSeedProvider.future);
+  yield* ref.watch(foodRepositoryProvider).watchRecentFoods();
+});
+
 final foodByIdProvider = StreamProvider.autoDispose.family<FoodItem?, int>((
   ref,
   id,
@@ -23,9 +29,10 @@ final foodByIdProvider = StreamProvider.autoDispose.family<FoodItem?, int>((
   return ref.watch(foodRepositoryProvider).watchById(id);
 });
 
-final foodFavoriteProvider = FutureProvider.autoDispose.family<bool, int>((
-  ref,
-  foodId,
-) async {
-  return ref.watch(foodRepositoryProvider).isFavorite(foodId);
-});
+/// Derived from [favoriteFoodsProvider] so every star follows toggles made
+/// anywhere, without opening a DB stream per list row.
+final foodFavoriteProvider = Provider.autoDispose.family<AsyncValue<bool>, int>(
+  (ref, foodId) => ref
+      .watch(favoriteFoodsProvider)
+      .whenData((foods) => foods.any((f) => f.id == foodId)),
+);

@@ -439,7 +439,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                           ? (ref
                                     .watch(
                                       mealsForDayProvider(
-                                        day.subtract(const Duration(days: 1)),
+                                        AppDates.addDays(day, -1),
                                       ),
                                     )
                                     .value ??
@@ -578,7 +578,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     final l10n = context.l10n;
     if (value == 'copy') {
       if (!isSelectedToday) return;
-      final from = day.subtract(const Duration(days: 1));
+      final from = AppDates.addDays(day, -1);
       final existing = await ref.read(mealRepositoryProvider).forDay(day);
       if (existing.isNotEmpty && mounted) {
         final ok = await showDialog<bool>(

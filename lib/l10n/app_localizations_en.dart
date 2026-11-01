@@ -389,6 +389,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get importBackupTooNew =>
+      'This backup was made by a newer version of the app. Update the app, then import it again.';
+
+  @override
   String get exportDataDone => 'Data exported — save it somewhere safe';
 
   @override
@@ -1660,7 +1664,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clearDataBody =>
-      'Clears all meals, weight, workouts, notes, favorites, and profile. Continue?';
+      'Clears all meals, weight, workouts, steps, notes, favorites, custom foods, and profile. Theme, language, and reminder settings are kept. Continue?';
 
   @override
   String get noInstallPackage => 'No install package for the new version';

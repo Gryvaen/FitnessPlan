@@ -663,6 +663,9 @@ class WorkoutRepository {
             _db.dayWorkouts,
           )..where((t) => t.date.equals(start))).watch().listen((_) => push()),
           (_db.select(_db.dayWorkoutItems)).watch().listen((_) => push()),
+          // Unit / category edits only touch `exercises`, but the snapshot
+          // reads them for per-item progress and labels.
+          (_db.select(_db.exercises)).watch().listen((_) => push()),
           (_db.select(
             _db.workoutSetLogs,
           )..where((t) => t.date.equals(start))).watch().listen((_) => push()),
@@ -723,6 +726,9 @@ class WorkoutRepository {
             _db.dayWorkouts,
           )..where((t) => t.date.isIn(starts))).watch().listen((_) => push()),
           (_db.select(_db.dayWorkoutItems)).watch().listen((_) => push()),
+          // Unit / category edits only touch `exercises`, but the snapshot
+          // reads them for per-item progress and labels.
+          (_db.select(_db.exercises)).watch().listen((_) => push()),
           (_db.select(
             _db.workoutSetLogs,
           )..where((t) => t.date.isIn(starts))).watch().listen((_) => push()),
@@ -1613,7 +1619,12 @@ class WorkoutRepository {
         'SELECT date FROM workout_set_logs UNION '
         'SELECT day_workouts.date FROM day_workouts '
         'JOIN day_workout_items ON day_workout_items.day_workout_id = day_workouts.id',
-        readsFrom: {_db.workoutSetLogs, _db.dayWorkouts, _db.dayWorkoutItems},
+        readsFrom: {
+          _db.workoutSetLogs,
+          _db.dayWorkouts,
+          _db.dayWorkoutItems,
+          _db.exercises,
+        },
       )
       .watch()
       .asyncMap((_) => recentHistory(limitDays: limitDays));
@@ -1627,7 +1638,12 @@ class WorkoutRepository {
         'SELECT date FROM workout_set_logs UNION '
         'SELECT day_workouts.date FROM day_workouts '
         'JOIN day_workout_items ON day_workout_items.day_workout_id = day_workouts.id',
-        readsFrom: {_db.workoutSetLogs, _db.dayWorkouts, _db.dayWorkoutItems},
+        readsFrom: {
+          _db.workoutSetLogs,
+          _db.dayWorkouts,
+          _db.dayWorkoutItems,
+          _db.exercises,
+        },
       )
       .watch()
       .asyncMap((_) => recentCalendarHistory(limitDays: limitDays));
@@ -1724,9 +1740,9 @@ class WorkoutRepository {
     final today = CalendarDay.todayLocal();
     return [
       for (var i = 0; i < limitDays; i++)
-        byDate[CalendarDay.dayOnly(today.subtract(Duration(days: i)))] ??
+        byDate[CalendarDay.addDays(today, -i)] ??
             WorkoutHistoryDay(
-              date: CalendarDay.dayOnly(today.subtract(Duration(days: i))),
+              date: CalendarDay.addDays(today, -i),
               sets: const [],
             ),
     ];

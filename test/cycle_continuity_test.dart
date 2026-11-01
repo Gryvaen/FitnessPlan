@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:diet/domain/calendar_day.dart';
 import 'package:diet/data/cycle_alignment_migration.dart';
 import 'package:diet/data/db.dart';
 import 'package:diet/data/repositories/day_marker_repository.dart';
@@ -74,7 +75,7 @@ void main() {
     'schedule growth, shrink, and reorder inherit position modulo new length',
     () async {
       await repo.createPlan(cycle(start), now: start);
-      final fourth = start.add(const Duration(days: 3));
+      final fourth = CalendarDay.addDays(start, 3);
       final longer = await repo.createPlan(
         cycle(fourth, code: 'LLLMH'),
         now: fourth,
@@ -98,21 +99,21 @@ void main() {
     await repo.createPlan(cycle(start), now: start);
     final markers = DayMarkerRepository(db);
     for (final n in [1, 2]) {
-      final date = start.add(Duration(days: n));
+      final date = CalendarDay.addDays(start, n);
       await markers.setRestDay(date, pauseCarbCycle: true, now: date);
     }
-    final from = start.add(const Duration(days: 3));
+    final from = CalendarDay.addDays(start, 3);
     final next = await repo.createPlan(cycle(from), now: from);
     expect(next.cycleStartIndex, 1);
     await markers.setRestDay(from, pauseCarbCycle: true, now: from);
-    final after = from.add(const Duration(days: 1));
+    final after = CalendarDay.addDays(from, 1);
     expect(
       (await repo.targetForDay(after, null, now: after))!.dayType,
       CarbDayType.low,
     );
     final third = await repo.createPlan(cycle(after), now: after);
     expect(third.cycleStartIndex, 1);
-    final mid = after.add(const Duration(days: 1));
+    final mid = CalendarDay.addDays(after, 1);
     expect(
       (await repo.targetForDay(mid, null, now: mid))!.dayType,
       CarbDayType.mid,
@@ -123,7 +124,7 @@ void main() {
     'pending replacement and same-day saves preserve the actual effective slot',
     () async {
       await repo.createPlan(cycle(start), now: start);
-      final tomorrow = change.add(const Duration(days: 1));
+      final tomorrow = CalendarDay.addDays(change, 1);
       final pending = await repo.createPlan(cycle(tomorrow), now: change);
       expect(pending.cycleStartIndex, 3);
       final replacement = await repo.createPlan(
@@ -194,10 +195,7 @@ void main() {
     await repo.targetForDay(change, null, now: change); // Legacy low snapshot.
     await repo.targetForDay(today, null, now: today);
     if (future) {
-      await repo.createPlan(
-        cycle(today.add(const Duration(days: 2))),
-        now: today,
-      );
+      await repo.createPlan(cycle(CalendarDay.addDays(today, 2)), now: today);
       await db.customStatement(
         'UPDATE diet_strategy_plans SET cycle_start_index = 0',
       );
@@ -221,10 +219,7 @@ void main() {
       );
       final count = (await repo.listPlans()).length;
       expect(count, 3);
-      await repairLegacyCycleAlignment(
-        db,
-        now: today.add(const Duration(days: 1)),
-      );
+      await repairLegacyCycleAlignment(db, now: CalendarDay.addDays(today, 1));
       expect((await repo.listPlans()).length, count);
     },
   );
@@ -233,7 +228,7 @@ void main() {
     'legacy repair preserves pending switch boundary and parameters',
     () async {
       await legacyChain(future: true);
-      final future = today.add(const Duration(days: 2));
+      final future = CalendarDay.addDays(today, 2);
       final pending = (await repo.activePlan())!;
       await repairLegacyCycleAlignment(db, now: today);
       final current = (await repo.planCovering(today))!;
@@ -262,8 +257,8 @@ void main() {
         DateTime.now().month,
         DateTime.now().day,
       );
-      final oldStart = realToday.subtract(const Duration(days: 31));
-      final yesterday = realToday.subtract(const Duration(days: 1));
+      final oldStart = CalendarDay.addDays(realToday, -31);
+      final yesterday = CalendarDay.addDays(realToday, -1);
       final seed = AppDatabase.forTesting(NativeDatabase(file));
       final seedRepo = DietStrategyRepository(seed);
       await seedRepo.createPlan(cycle(oldStart), now: oldStart);

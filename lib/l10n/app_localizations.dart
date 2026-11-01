@@ -848,6 +848,12 @@ abstract class AppLocalizations {
   /// **'Import failed: {error}'**
   String importDataFailed(String error);
 
+  /// No description provided for @importBackupTooNew.
+  ///
+  /// In en, this message translates to:
+  /// **'This backup was made by a newer version of the app. Update the app, then import it again.'**
+  String get importBackupTooNew;
+
   /// No description provided for @exportDataDone.
   ///
   /// In en, this message translates to:
@@ -3174,7 +3180,7 @@ abstract class AppLocalizations {
   /// No description provided for @clearDataBody.
   ///
   /// In en, this message translates to:
-  /// **'Clears all meals, weight, workouts, notes, favorites, and profile. Continue?'**
+  /// **'Clears all meals, weight, workouts, steps, notes, favorites, custom foods, and profile. Theme, language, and reminder settings are kept. Continue?'**
   String get clearDataBody;
 
   /// No description provided for @noInstallPackage.

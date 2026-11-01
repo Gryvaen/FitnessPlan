@@ -158,7 +158,6 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
   Future<void> _toggleFavorite(int foodId) async {
     try {
       await ref.read(foodRepositoryProvider).toggleFavorite(foodId);
-      ref.invalidate(foodFavoriteProvider(foodId));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

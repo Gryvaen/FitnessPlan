@@ -180,7 +180,7 @@ void main() {
     final today = CalendarDay.todayLocal();
     final steps = StepRepository(db);
     await steps.setStepsForDay(today, 4000);
-    await steps.setStepsForDay(today.subtract(const Duration(days: 13)), 6000);
+    await steps.setStepsForDay(CalendarDay.addDays(today, -13), 6000);
     final subscriptions = [
       container.listen(recentStepsProvider, (_, _) {}),
       container.listen(allStepsProvider, (_, _) {}),

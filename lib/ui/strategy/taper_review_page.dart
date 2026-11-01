@@ -60,7 +60,7 @@ class _TaperReviewPageState extends ConsumerState<TaperReviewPage> {
     if (ok != true) return;
     setState(() => _busy = true);
     try {
-      final tomorrow = CalendarDay.todayLocal().add(const Duration(days: 1));
+      final tomorrow = CalendarDay.addDays(CalendarDay.todayLocal(), 1);
       final draft = DietStrategyPlanDraft(
         kind: DietStrategyKind.carbTaper,
         effectiveFrom: tomorrow,

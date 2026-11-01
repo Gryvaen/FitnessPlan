@@ -548,7 +548,7 @@ void main() {
     (tester) async {
       final stepRepo = StepRepository(_db);
       final today = CalendarDay.todayLocal();
-      final longAgo = today.subtract(const Duration(days: 13));
+      final longAgo = CalendarDay.addDays(today, -13);
       await stepRepo.setStepsForDay(today, 4000);
       await stepRepo.setStepsForDay(longAgo, 6000);
 
@@ -612,7 +612,7 @@ void main() {
     (tester) async {
       final stepRepo = StepRepository(_db);
       final today = CalendarDay.todayLocal();
-      final longAgo = today.subtract(const Duration(days: 13));
+      final longAgo = CalendarDay.addDays(today, -13);
       await stepRepo.setStepsForDay(today, 4000);
       await stepRepo.setStepsForDay(longAgo, 6000);
 

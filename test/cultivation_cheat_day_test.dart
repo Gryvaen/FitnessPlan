@@ -43,7 +43,7 @@ void main() {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     addTearDown(db.close);
     final today = CalendarDay.todayLocal();
-    final yesterday = today.subtract(const Duration(days: 1));
+    final yesterday = CalendarDay.addDays(today, -1);
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     await CultivationRepository(prefs).save(
@@ -159,7 +159,7 @@ void main() {
     () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(db.close);
-      final day = CalendarDay.todayLocal().subtract(const Duration(days: 1));
+      final day = CalendarDay.addDays(CalendarDay.todayLocal(), -1);
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       await CultivationRepository(prefs).save(

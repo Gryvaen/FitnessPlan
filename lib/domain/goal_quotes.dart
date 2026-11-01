@@ -7,6 +7,7 @@ library;
 
 import 'package:flutter/widgets.dart' show Locale;
 
+import 'calendar_day.dart';
 import 'models.dart';
 
 const List<String> kCutQuotes = [
@@ -640,9 +641,7 @@ String goalQuoteForDay(FitnessGoal goal, DateTime day, Locale locale) {
     FitnessGoal.maintain => useEn ? kMaintainQuotesEn : kMaintainQuotes,
     FitnessGoal.bulk => useEn ? kBulkQuotesEn : kBulkQuotes,
   };
-  final epochDay = DateTime(day.year, day.month, day.day)
-      .difference(DateTime(2020, 1, 1))
-      .inDays;
+  final epochDay = CalendarDay.daysBetween(DateTime(2020, 1, 1), day);
   final index = epochDay % quotes.length;
   return quotes[index < 0 ? index + quotes.length : index];
 }

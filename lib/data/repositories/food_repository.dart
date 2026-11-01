@@ -148,7 +148,7 @@ class FoodRepository {
             calciumMgPer100: Value(calciumMg),
             isCustom: const Value(false),
           ),
-          onConflict: DoUpdate(
+          onConflict: DoUpdate<$FoodItemsTable, FoodItem>(
             (_) => FoodItemsCompanion(
               nameEn: Value(nameEn),
               category: Value(category),
@@ -162,11 +162,11 @@ class FoodRepository {
               sugarPer100: Value(sugar),
               saturatedFatPer100: Value(saturatedFat),
               calciumMgPer100: Value(calciumMg),
-              // Never flip a custom row back to seed via name collision handling
-              // after insert — conflict target is name; customs use unique names.
-              isCustom: const Value(false),
             ),
             target: [_db.foodItems.name],
+            // A user's own food that happens to share a seed name wins: the
+            // seed row is simply not offered on this device.
+            where: (old) => old.isCustom.equals(false),
           ),
         );
       }
@@ -305,9 +305,21 @@ class FoodRepository {
   /// Excludes anything swiped off the list via [hideFromRecent] — unless
   /// it's been logged again since, which naturally un-hides it.
   Future<List<FoodItem>> recentFoods({int limit = 20}) async {
-    final rows = await _db
-        .customSelect(
-          '''
+    final rows = await _recentFoodIdsQuery(limit).get();
+    return _byIds(rows.map((r) => r.read<int>('food_id')).toList());
+  }
+
+  /// Live version of [recentFoods]: re-emits when meals, hidden entries or
+  /// the food catalog change.
+  Stream<List<FoodItem>> watchRecentFoods({int limit = 20}) {
+    return _recentFoodIdsQuery(limit).watch().asyncMap(
+      (rows) => _byIds(rows.map((r) => r.read<int>('food_id')).toList()),
+    );
+  }
+
+  Selectable<QueryRow> _recentFoodIdsQuery(int limit) {
+    return _db.customSelect(
+      '''
 SELECT meal_entries.food_id AS food_id FROM meal_entries
 LEFT JOIN hidden_recent_foods
   ON hidden_recent_foods.food_id = meal_entries.food_id
@@ -317,12 +329,11 @@ HAVING hidden_recent_foods.food_id IS NULL
 ORDER BY MAX(meal_entries.id) DESC
 LIMIT ?
 ''',
-          variables: [Variable.withInt(limit)],
-          readsFrom: {_db.mealEntries, _db.hiddenRecentFoods},
-        )
-        .get();
-    final ids = rows.map((r) => r.read<int>('food_id')).toList();
-    return _byIds(ids);
+      variables: [Variable.withInt(limit)],
+      // foodItems: rows are resolved through [_byIds], so catalog edits
+      // (rename / delete) must re-emit too.
+      readsFrom: {_db.mealEntries, _db.hiddenRecentFoods, _db.foodItems},
+    );
   }
 
   /// Swipes [foodId] off the 最近 (Recent) list without touching its past
@@ -572,6 +583,26 @@ LIMIT ?
   Future<void> toggleFavorite(int foodId) async {
     final fav = await isFavorite(foodId);
     await _setFavorite(foodId, !fav);
+  }
+
+  /// Deletes every user-made food plus all servings (only users add those).
+  /// Run after meals and presets are cleared so nothing still points here.
+  Future<void> clearCustomFoods() async {
+    final customIds = _db.selectOnly(_db.foodItems)
+      ..addColumns([_db.foodItems.id])
+      ..where(_db.foodItems.isCustom.equals(true));
+    await _db.transaction(() async {
+      await _db.delete(_db.foodServings).go();
+      await (_db.delete(
+        _db.favoriteFoods,
+      )..where((t) => t.foodId.isInQuery(customIds))).go();
+      await (_db.delete(
+        _db.hiddenRecentFoods,
+      )..where((t) => t.foodId.isInQuery(customIds))).go();
+      await (_db.delete(
+        _db.foodItems,
+      )..where((t) => t.isCustom.equals(true))).go();
+    });
   }
 
   Future<void> clearFavorites() => _db.delete(_db.favoriteFoods).go();

@@ -42,6 +42,35 @@ Uint8List _encodeBackup(_BackupEncodeInput input) {
   return Uint8List.fromList(gzip.encode(encoded));
 }
 
+/// The backup's database was written by a newer app build (its schema
+/// version is ahead of this one), so it can't be migrated here.
+class BackupTooNewException implements Exception {
+  const BackupTooNewException(this.backupVersion, this.appVersion);
+
+  final int backupVersion;
+  final int appVersion;
+
+  @override
+  String toString() =>
+      'BackupTooNewException(backup: $backupVersion, app: $appVersion)';
+}
+
+/// SQLite's header magic; `PRAGMA user_version` sits big-endian at byte 60.
+const _sqliteMagic = 'SQLite format 3\u0000';
+
+/// Rejects anything that isn't a SQLite file, and databases from a newer
+/// schema, before the live database is touched.
+void _checkBackupDatabase(Uint8List dbBytes) {
+  if (dbBytes.length < 100 ||
+      String.fromCharCodes(dbBytes, 0, _sqliteMagic.length) != _sqliteMagic) {
+    throw const FormatException('invalid_backup');
+  }
+  final userVersion = ByteData.sublistView(dbBytes, 60, 64).getUint32(0);
+  if (userVersion > AppDatabase.currentSchemaVersion) {
+    throw BackupTooNewException(userVersion, AppDatabase.currentSchemaVersion);
+  }
+}
+
 typedef _DecodedBackup = ({Uint8List dbBytes, Map<String, dynamic> prefsMap});
 
 /// Top-level so it can run via [compute]; same rationale as [_encodeBackup].
@@ -140,6 +169,7 @@ class DataBackupRepository {
     final decoded = await compute(_decodeBackup, bytes);
     final dbBytes = decoded.dbBytes;
     final prefsMap = decoded.prefsMap;
+    _checkBackupDatabase(dbBytes);
 
     await _db.close();
 

@@ -145,7 +145,7 @@ void main() {
     );
     final food = (await foods.byId(id))!;
     final today = CalendarDay.todayLocal();
-    final from = today.subtract(const Duration(days: 1));
+    final from = CalendarDay.addDays(today, -1);
     // Seed yesterday via raw insert (past days are not writable via API).
     await db
         .into(db.mealEntries)
@@ -196,7 +196,7 @@ void main() {
       final rice = (await foods.byId(riceId))!;
       final egg = (await foods.byId(eggId))!;
       final today = CalendarDay.todayLocal();
-      final yesterday = today.subtract(const Duration(days: 1));
+      final yesterday = CalendarDay.addDays(today, -1);
       Future<void> seed(MealType type, FoodItem food, double grams) async {
         await db
             .into(db.mealEntries)
@@ -264,9 +264,7 @@ void main() {
       fatPer100: 1,
     );
     final food = (await foods.byId(id))!;
-    final yesterday = CalendarDay.todayLocal().subtract(
-      const Duration(days: 1),
-    );
+    final yesterday = CalendarDay.addDays(CalendarDay.todayLocal(), -1);
     await expectLater(
       meals.add(
         date: yesterday,
@@ -469,14 +467,14 @@ void main() {
     await water.addMl(day, -250);
     expect(await water.mlForDay(day), 500);
 
-    final other = day.subtract(const Duration(days: 1));
+    final other = CalendarDay.addDays(day, -1);
     expect(await water.mlForDay(other), 0);
     await expectLater(water.addMl(other, 250), throwsA(isA<StateError>()));
   });
 
   test('past daily records reject update and delete operations', () async {
     final today = CalendarDay.todayLocal();
-    final yesterday = today.subtract(const Duration(days: 1));
+    final yesterday = CalendarDay.addDays(today, -1);
     final foodId = await foods.createCustom(
       name: '历史守卫测试食材',
       kcalPer100: 100,

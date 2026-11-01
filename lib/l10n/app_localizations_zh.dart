@@ -388,6 +388,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get importBackupTooNew => '这份备份来自更新版本的应用，请先升级应用再导入。';
+
+  @override
   String get exportDataDone => '数据已导出，请保存到安全位置';
 
   @override
@@ -1622,7 +1625,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get themeSunrise => '暖阳橙';
 
   @override
-  String get clearDataBody => '将清除所有饮食、体重、训练、便签、收藏与身体档案，相当于重新使用本程序。确定继续？';
+  String get clearDataBody =>
+      '将清除所有饮食、体重、训练、步数、便签、收藏、自定义食材与身体档案。主题、语言和提醒设置会保留。确定继续？';
 
   @override
   String get noInstallPackage => '新版本没有可用的安装包';

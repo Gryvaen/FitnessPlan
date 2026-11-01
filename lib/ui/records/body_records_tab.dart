@@ -45,7 +45,10 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
   static List<int> _availablePeriods(List<WeightLog> orderedOldestFirst) {
     if (orderedOldestFirst.isEmpty) return const [0];
     final firstDay = AppDates.dayOnly(orderedOldestFirst.first.date);
-    final daysSinceFirst = AppDates.todayLocal().difference(firstDay).inDays;
+    final daysSinceFirst = AppDates.daysBetween(
+      firstDay,
+      AppDates.todayLocal(),
+    );
     return [7, if (daysSinceFirst >= 6) 30, if (daysSinceFirst >= 13) 0];
   }
 
@@ -137,7 +140,17 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
     );
     if (confirmed != true || !mounted) return;
     try {
-      await ref.read(weightRepositoryProvider).delete(log.id);
+      final repo = ref.read(weightRepositoryProvider);
+      await repo.delete(log.id);
+      // The profile (and every target derived from it) followed the deleted
+      // log; fall back to the latest remaining one.
+      final latest = await repo.latest();
+      if (latest != null &&
+          latest.weightKg != ref.read(profileProvider)?.weightKg) {
+        await ref
+            .read(profileProvider.notifier)
+            .applyLatestWeight(latest.weightKg);
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -291,7 +304,7 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
   ) {
     final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
-    final cutoff = AppDates.todayLocal().subtract(Duration(days: period - 1));
+    final cutoff = AppDates.addDays(AppDates.todayLocal(), 1 - period);
     final visible = ordered
         .where((log) => period == 0 || !log.date.isBefore(cutoff))
         .toList();

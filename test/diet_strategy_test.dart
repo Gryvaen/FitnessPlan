@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:diet/domain/calendar_day.dart';
 import 'package:diet/domain/diet_plan.dart';
 import 'package:diet/domain/diet_strategy.dart';
 import 'package:diet/domain/models.dart';
@@ -393,36 +394,20 @@ void main() {
       final anchor = DateTime(2026, 9, 1);
       expect(StrategyDates.cycleIndexOf(anchor, anchor, 4), 0);
       expect(
-        StrategyDates.cycleIndexOf(
-          anchor.add(const Duration(days: 3)),
-          anchor,
-          4,
-        ),
+        StrategyDates.cycleIndexOf(CalendarDay.addDays(anchor, 3), anchor, 4),
         3,
       );
       expect(
-        StrategyDates.cycleIndexOf(
-          anchor.add(const Duration(days: 4)),
-          anchor,
-          4,
-        ),
+        StrategyDates.cycleIndexOf(CalendarDay.addDays(anchor, 4), anchor, 4),
         0,
       );
       expect(
-        StrategyDates.cycleIndexOf(
-          anchor.add(const Duration(days: 9)),
-          anchor,
-          4,
-        ),
+        StrategyDates.cycleIndexOf(CalendarDay.addDays(anchor, 9), anchor, 4),
         1,
       );
       // Before the anchor still resolves to a valid 0-based index.
       expect(
-        StrategyDates.cycleIndexOf(
-          anchor.subtract(const Duration(days: 1)),
-          anchor,
-          4,
-        ),
+        StrategyDates.cycleIndexOf(CalendarDay.addDays(anchor, -1), anchor, 4),
         3,
       );
     });

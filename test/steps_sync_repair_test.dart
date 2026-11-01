@@ -67,7 +67,7 @@ void main() {
     'repair replaces 110k with zero and later sync never restores it',
     () async {
       final today = CalendarDay.todayLocal();
-      final yesterday = today.subtract(const Duration(days: 1));
+      final yesterday = CalendarDay.addDays(today, -1);
       await repo.setStepsForDay(today, 110000);
       await repo.setStepsForDay(yesterday, 4200);
       final sensor = _Sensor();

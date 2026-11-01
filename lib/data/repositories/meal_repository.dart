@@ -383,10 +383,8 @@ class MealRepository {
     final today = CalendarDay.todayLocal();
     return [
       for (var i = 0; i < limitDays; i++)
-        byDate[CalendarDay.dayOnly(today.subtract(Duration(days: i)))] ??
-            MealHistoryDay(
-              date: CalendarDay.dayOnly(today.subtract(Duration(days: i))),
-            ),
+        byDate[CalendarDay.addDays(today, -i)] ??
+            MealHistoryDay(date: CalendarDay.addDays(today, -i)),
     ];
   }
 }

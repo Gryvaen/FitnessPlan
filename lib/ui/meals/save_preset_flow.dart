@@ -66,7 +66,6 @@ Future<void> saveMealPresetFromEntries({
       replaceExisting: replaceExisting,
     );
     if (!context.mounted) return;
-    ref.invalidate(mealPresetsProvider);
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(l10n.presetSaved)));

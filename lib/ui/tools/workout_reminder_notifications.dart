@@ -299,8 +299,8 @@ abstract final class ReminderNotifications {
           final prev = DateTime(
             whenLocal.year,
             whenLocal.month,
-            whenLocal.day,
-          ).subtract(const Duration(days: 1));
+            whenLocal.day - 1,
+          );
           workedOut = await hasWorkoutOnDay(prev);
         }
         items.add(
