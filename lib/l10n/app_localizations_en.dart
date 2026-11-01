@@ -3282,4 +3282,66 @@ class AppLocalizationsEn extends AppLocalizations {
   String updateVersionMeta(String current, String size) {
     return 'Current $current · $size download';
   }
+
+  @override
+  String get temporaryFood => 'Temporary food';
+
+  @override
+  String get temporaryFoodHint =>
+      'For this record only; excluded from your food library';
+
+  @override
+  String get invalidFoodWeight => 'Enter a valid weight greater than 0';
+
+  @override
+  String get invalidFoodNutrition =>
+      'Enter a name and valid non-negative nutrition values';
+
+  @override
+  String get addDietRecord => 'Add to food diary';
+
+  @override
+  String get dietRecordAdded => 'Added to food diary';
+
+  @override
+  String get temporaryBadge => 'One-time';
+
+  @override
+  String skippedTemporaryFoods(int count) {
+    return 'Skipped $count temporary food items';
+  }
+
+  @override
+  String get optionalNutrition => 'More nutrients (optional)';
+
+  @override
+  String get recordTemporaryFood => 'Record temporary food';
+
+  @override
+  String get recordTemporaryCalories => 'Record temporary calories';
+
+  @override
+  String get normalFoodMode => 'Normal food';
+
+  @override
+  String get temporaryCaloriesMode => 'Temporary calories';
+
+  @override
+  String cycleFoodMode(String current, String next) {
+    return '$current; tap to switch to $next';
+  }
+
+  @override
+  String get actualFoodWeight => 'Weight eaten (g)';
+
+  @override
+  String get thisIntakeCalories => 'Calories consumed';
+
+  @override
+  String get normalFoodTitle => 'Add custom food';
+
+  @override
+  String presetSavedSkippedTemporary(int count) {
+    return 'Preset saved; skipped $count one-time items';
+  }
 }

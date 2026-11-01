@@ -45,6 +45,7 @@ class _PresetRepository extends MealPresetRepository {
 }
 
 final _entry = MealEntry(
+  caloriesOnly: false,
   id: 1,
   date: DateTime(2026),
   mealType: 'breakfast',
@@ -77,6 +78,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          databaseProvider.overrideWithValue(db),
           mealPresetRepositoryProvider.overrideWithValue(repository),
           mealPresetsProvider.overrideWith(
             (ref) => Stream.value(<MealPreset>[]),

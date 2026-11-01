@@ -34,9 +34,16 @@ class DailyMealsSheetPage extends Page<void> {
     settings: this,
     isScrollControlled: true,
     showDragHandle: true,
+    // Own messenger: SnackBars raised inside the sheet (存为套餐, 复制昨日)
+    // would otherwise land on the page underneath, hidden by the sheet.
     builder: (_) => FractionallySizedBox(
       heightFactor: .9,
-      child: SafeArea(child: DailyMealsPage(date: date)),
+      child: ScaffoldMessenger(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: SafeArea(child: DailyMealsPage(date: date)),
+        ),
+      ),
     ),
   );
 }
@@ -272,11 +279,17 @@ Future<void> copyMealTypeFromYesterday({
       content: Text(
         result.copied == 0 &&
                 result.skippedDuplicate > 0 &&
-                result.skippedMissingFood == 0
+                result.skippedMissingFood == 0 &&
+                result.skippedTemporary == 0
             ? l10n.nothingNewToAppend
-            : result.copied == 0 && result.skippedMissingFood == 0
+            : result.copied == 0 &&
+                  result.skippedMissingFood == 0 &&
+                  result.skippedTemporary == 0
             ? l10n.yesterdayNoLogs
-            : l10n.copiedItems(result.copied, '$skip$duplicateSkip'),
+            : l10n.copiedItems(
+                result.copied,
+                '$skip$duplicateSkip${result.skippedTemporary > 0 ? l10n.skippedTemporaryFoods(result.skippedTemporary) : ''}',
+              ),
       ),
     ),
   );
@@ -336,11 +349,17 @@ class _MealTypeSection extends ConsumerWidget {
         content: Text(
           result.copied == 0 &&
                   result.skippedDuplicate > 0 &&
-                  result.skippedMissingFood == 0
+                  result.skippedMissingFood == 0 &&
+                  result.skippedTemporary == 0
               ? l10n.nothingNewToAppend
-              : result.copied == 0 && result.skippedMissingFood == 0
+              : result.copied == 0 &&
+                    result.skippedMissingFood == 0 &&
+                    result.skippedTemporary == 0
               ? l10n.yesterdayNoLogs
-              : l10n.copiedItems(result.copied, '$skip$duplicateSkip'),
+              : l10n.copiedItems(
+                  result.copied,
+                  '$skip$duplicateSkip${result.skippedTemporary > 0 ? l10n.skippedTemporaryFoods(result.skippedTemporary) : ''}',
+                ),
         ),
       ),
     );
@@ -382,7 +401,13 @@ class _MealTypeSection extends ConsumerWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final kcal = entries.fold<double>(0, (s, m) => s + m.calories);
-    final canSaveAsPreset = entries.isNotEmpty;
+    // One-time foods never go into a preset, so a meal of only those has
+    // nothing to save.
+    final canSaveAsPreset = entries.any(
+      (m) =>
+          ref.watch(foodByIdProvider(m.foodId)).asData?.value?.isTemporary !=
+          true,
+    );
     final canClear = editable && entries.isNotEmpty;
     final showMenu = canCopyYesterday || canSaveAsPreset;
 
@@ -544,16 +569,21 @@ class _MealEntryTile extends ConsumerWidget {
       title: FoodNameLink(
         name: name,
         foodId: m.foodId,
+        isTemporary:
+            ref.watch(foodByIdProvider(m.foodId)).asData?.value?.isTemporary ??
+            false,
         carbG: m.carbG,
         proteinG: m.proteinG,
         fatG: m.fatG,
         style: theme.textTheme.bodyLarge,
       ),
       subtitle: Text(
-        '${m.grams.toStringAsFixed(0)} g · '
-        'P ${m.proteinG.toStringAsFixed(0)} · '
-        'C ${m.carbG.toStringAsFixed(0)} · '
-        'F ${m.fatG.toStringAsFixed(0)}',
+        m.caloriesOnly
+            ? l10n.temporaryCaloriesMode
+            : '${m.grams.toStringAsFixed(0)} g · '
+                  'P ${m.proteinG.toStringAsFixed(0)} · '
+                  'C ${m.carbG.toStringAsFixed(0)} · '
+                  'F ${m.fatG.toStringAsFixed(0)}',
         style: theme.textTheme.meta,
       ),
       trailing: Text(

@@ -615,11 +615,17 @@ class _TodayPageState extends ConsumerState<TodayPage> {
           content: Text(
             result.copied == 0 &&
                     result.skippedDuplicate > 0 &&
-                    result.skippedMissingFood == 0
+                    result.skippedMissingFood == 0 &&
+                    result.skippedTemporary == 0
                 ? l10n.nothingNewToAppend
-                : result.copied == 0 && result.skippedMissingFood == 0
+                : result.copied == 0 &&
+                      result.skippedMissingFood == 0 &&
+                      result.skippedTemporary == 0
                 ? l10n.yesterdayNoLogs
-                : l10n.copiedItems(result.copied, '$skip$duplicateSkip'),
+                : l10n.copiedItems(
+                    result.copied,
+                    '$skip$duplicateSkip${result.skippedTemporary > 0 ? l10n.skippedTemporaryFoods(result.skippedTemporary) : ''}',
+                  ),
           ),
         ),
       );

@@ -15,6 +15,18 @@ Future<void> saveMealPresetFromEntries({
   required List<MealEntry> entries,
 }) async {
   final l10n = context.l10n;
+  final kept = <MealEntry>[];
+  var skipped = 0;
+  for (final entry in entries) {
+    final food = await ref.read(foodRepositoryProvider).byId(entry.foodId);
+    if (food?.isTemporary == true) {
+      skipped++;
+    } else {
+      kept.add(entry);
+    }
+  }
+  if (!context.mounted) return;
+  entries = kept;
   if (entries.isEmpty) {
     ScaffoldMessenger.of(
       context,
@@ -66,12 +78,27 @@ Future<void> saveMealPresetFromEntries({
       replaceExisting: replaceExisting,
     );
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(l10n.presetSaved)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          skipped > 0
+              ? l10n.presetSavedSkippedTemporary(skipped)
+              : l10n.presetSaved,
+        ),
+      ),
+    );
   } catch (e) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    // Repository guards carry a readable message; drop the
+    // "Invalid argument(s): " / "Bad state: " prefix.
+    final message = switch (e) {
+      ArgumentError(:final message) => '$message',
+      StateError(:final message) => message,
+      _ => l10n.saveFailed('$e'),
+    };
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
 

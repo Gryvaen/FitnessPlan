@@ -20,6 +20,7 @@ void main() {
     sugarPer100: 0,
     saturatedFatPer100: 2.2,
     calciumMgPer100: 6,
+    isTemporary: false,
     isCustom: false,
   );
 
@@ -37,6 +38,7 @@ void main() {
     sugarPer100: 1,
     saturatedFatPer100: 0.5,
     calciumMgPer100: 20,
+    isTemporary: false,
     isCustom: true,
   );
 

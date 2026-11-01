@@ -326,7 +326,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     final food = _food;
-    if (food == null) {
+    if (food == null || food.isTemporary) {
       return Scaffold(
         appBar: AppBar(),
         body: Center(child: Text(l10n.foodNotFound)),

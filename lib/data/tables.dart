@@ -35,10 +35,7 @@ class FoodItems extends Table {
   /// User-created foods survive seed sync deletion.
   BoolColumn get isCustom => boolean().withDefault(const Constant(false))();
 
-  @override
-  List<Set<Column>> get uniqueKeys => [
-    {name},
-  ];
+  BoolColumn get isTemporary => boolean().withDefault(const Constant(false))();
 }
 
 class FoodServings extends Table {
@@ -82,6 +79,7 @@ class WeightLogs extends Table {
 }
 
 class MealEntries extends Table {
+  BoolColumn get caloriesOnly => boolean().withDefault(const Constant(false))();
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get date => dateTime()();
   TextColumn get mealType => text()();

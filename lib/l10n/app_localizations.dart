@@ -5738,6 +5738,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Current {current} · {size} download'**
   String updateVersionMeta(String current, String size);
+
+  /// No description provided for @temporaryFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Temporary food'**
+  String get temporaryFood;
+
+  /// No description provided for @temporaryFoodHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For this record only; excluded from your food library'**
+  String get temporaryFoodHint;
+
+  /// No description provided for @invalidFoodWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid weight greater than 0'**
+  String get invalidFoodWeight;
+
+  /// No description provided for @invalidFoodNutrition.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name and valid non-negative nutrition values'**
+  String get invalidFoodNutrition;
+
+  /// No description provided for @addDietRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to food diary'**
+  String get addDietRecord;
+
+  /// No description provided for @dietRecordAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to food diary'**
+  String get dietRecordAdded;
+
+  /// No description provided for @temporaryBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'One-time'**
+  String get temporaryBadge;
+
+  /// No description provided for @skippedTemporaryFoods.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped {count} temporary food items'**
+  String skippedTemporaryFoods(int count);
+
+  /// No description provided for @optionalNutrition.
+  ///
+  /// In en, this message translates to:
+  /// **'More nutrients (optional)'**
+  String get optionalNutrition;
+
+  /// No description provided for @recordTemporaryFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Record temporary food'**
+  String get recordTemporaryFood;
+
+  /// No description provided for @recordTemporaryCalories.
+  ///
+  /// In en, this message translates to:
+  /// **'Record temporary calories'**
+  String get recordTemporaryCalories;
+
+  /// No description provided for @normalFoodMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal food'**
+  String get normalFoodMode;
+
+  /// No description provided for @temporaryCaloriesMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Temporary calories'**
+  String get temporaryCaloriesMode;
+
+  /// No description provided for @cycleFoodMode.
+  ///
+  /// In en, this message translates to:
+  /// **'{current}; tap to switch to {next}'**
+  String cycleFoodMode(String current, String next);
+
+  /// No description provided for @actualFoodWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight eaten (g)'**
+  String get actualFoodWeight;
+
+  /// No description provided for @thisIntakeCalories.
+  ///
+  /// In en, this message translates to:
+  /// **'Calories consumed'**
+  String get thisIntakeCalories;
+
+  /// No description provided for @normalFoodTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add custom food'**
+  String get normalFoodTitle;
+
+  /// No description provided for @presetSavedSkippedTemporary.
+  ///
+  /// In en, this message translates to:
+  /// **'Preset saved; skipped {count} one-time items'**
+  String presetSavedSkippedTemporary(int count);
 }
 
 class _AppLocalizationsDelegate

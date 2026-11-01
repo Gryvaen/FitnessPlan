@@ -160,6 +160,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
             'returnId': '1',
             'mealType': _mealType.name,
             if (!widget.openDayMealsAfterSearchAdd) 'openDayMealsAfterAdd': '0',
+            if (widget.fromMeal) 'fromMeal': '1',
           },
         ).toString(),
       ),

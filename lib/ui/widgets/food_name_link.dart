@@ -69,8 +69,10 @@ class FoodNameLink extends StatelessWidget {
     this.maxLines,
     this.overflow,
     this.onTap,
+    this.isTemporary = false,
   });
 
+  final bool isTemporary;
   final String name;
   final int foodId;
   final double carbG;
@@ -91,10 +93,12 @@ class FoodNameLink extends StatelessWidget {
       fatG: fatG,
     );
     return GestureDetector(
-      onTap: onTap ?? () => openFoodDetail(context, foodId),
+      onTap: isTemporary
+          ? null
+          : (onTap ?? () => openFoodDetail(context, foodId)),
       behavior: HitTestBehavior.translucent,
       child: Text(
-        name,
+        isTemporary ? "$name · ${context.l10n.temporaryBadge}" : name,
         maxLines: maxLines,
         overflow: overflow,
         style: (style ?? DefaultTextStyle.of(context).style).copyWith(

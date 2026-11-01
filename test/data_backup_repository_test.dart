@@ -1,3 +1,6 @@
+import 'package:diet/data/repositories/meal_repository.dart';
+import 'package:diet/domain/temporary_food_draft.dart';
+import 'package:diet/domain/models.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -60,6 +63,35 @@ void main() {
     await root.delete(recursive: true);
   });
 
+  test(
+    'calorie-only meal survives backup restore without invented grams',
+    () async {
+      await MealRepository(db).addTemporary(
+        date: DateTime.now(),
+        mealType: MealType.lunch,
+        grams: 0,
+        draft: const TemporaryFoodDraft(
+          name: '一次热量',
+          input: TemporaryFoodInput.caloriesOnly,
+          nutrition: MacroIntake(calories: 500),
+        ),
+      );
+      final repo = DataBackupRepository(db, prefs);
+      final payload = await repo.buildBackup();
+      await repo.importFromBytes(payload.bytes);
+      final restored = AppDatabase.forTesting(NativeDatabase(dbFile));
+      addTearDown(restored.close);
+      final entry = (await restored.select(restored.mealEntries).get()).single;
+      expect(entry.caloriesOnly, isTrue);
+      expect(entry.grams, 0);
+      expect(entry.calories, 500);
+      expect(
+        (await restored.select(restored.foodItems).get()).single.isTemporary,
+        isTrue,
+      );
+    },
+  );
+
   test('buildBackup output is gzip-compressed', () async {
     final repo = DataBackupRepository(db, prefs);
     final payload = await repo.buildBackup();
@@ -72,34 +104,43 @@ void main() {
     expect(payload.bytes[1], 0x8b);
   });
 
-  test('export then import round-trips DB rows and SharedPreferences', () async {
-    await db
-        .into(db.weightLogs)
-        .insert(
-          WeightLogsCompanion.insert(date: DateTime(2026, 1, 1), weightKg: 70.5),
-        );
-    await prefs.setString('theme_id', 'forest');
+  test(
+    'export then import round-trips DB rows and SharedPreferences',
+    () async {
+      await db
+          .into(db.weightLogs)
+          .insert(
+            WeightLogsCompanion.insert(
+              date: DateTime(2026, 1, 1),
+              weightKg: 70.5,
+            ),
+          );
+      await prefs.setString('theme_id', 'forest');
 
-    final repo = DataBackupRepository(db, prefs);
-    final payload = await repo.buildBackup();
+      final repo = DataBackupRepository(db, prefs);
+      final payload = await repo.buildBackup();
 
-    // Mutate state after the backup so a successful import is observable.
-    await db
-        .into(db.weightLogs)
-        .insert(
-          WeightLogsCompanion.insert(date: DateTime(2026, 2, 2), weightKg: 999),
-        );
-    await prefs.setString('theme_id', 'graphite');
+      // Mutate state after the backup so a successful import is observable.
+      await db
+          .into(db.weightLogs)
+          .insert(
+            WeightLogsCompanion.insert(
+              date: DateTime(2026, 2, 2),
+              weightKg: 999,
+            ),
+          );
+      await prefs.setString('theme_id', 'graphite');
 
-    await repo.importFromBytes(payload.bytes);
+      await repo.importFromBytes(payload.bytes);
 
-    final restored = AppDatabase.forTesting(NativeDatabase(dbFile));
-    addTearDown(restored.close);
-    final rows = await restored.select(restored.weightLogs).get();
-    expect(rows, hasLength(1));
-    expect(rows.single.weightKg, 70.5);
-    expect(prefs.getString('theme_id'), 'forest');
-  });
+      final restored = AppDatabase.forTesting(NativeDatabase(dbFile));
+      addTearDown(restored.close);
+      final rows = await restored.select(restored.weightLogs).get();
+      expect(rows, hasLength(1));
+      expect(rows.single.weightKg, 70.5);
+      expect(prefs.getString('theme_id'), 'forest');
+    },
+  );
 
   test(
     'a legacy (pre-gzip) plain-JSON backup still imports correctly',
@@ -139,13 +180,16 @@ void main() {
     },
   );
 
-  test('garbage bytes are rejected as invalid, not silently accepted', () async {
-    final repo = DataBackupRepository(db, prefs);
-    await expectLater(
-      repo.importFromBytes(Uint8List.fromList(utf8.encode('not a backup'))),
-      throwsA(isA<FormatException>()),
-    );
-  });
+  test(
+    'garbage bytes are rejected as invalid, not silently accepted',
+    () async {
+      final repo = DataBackupRepository(db, prefs);
+      await expectLater(
+        repo.importFromBytes(Uint8List.fromList(utf8.encode('not a backup'))),
+        throwsA(isA<FormatException>()),
+      );
+    },
+  );
 
   group('database checks run before the live database is replaced', () {
     /// Rewrites [backup]'s embedded database bytes with [edit].

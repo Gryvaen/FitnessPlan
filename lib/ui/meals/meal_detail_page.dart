@@ -32,6 +32,18 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
   List<FoodServing> _servings = [];
   MealType _mealType = MealType.lunch;
   double _grams = 100;
+  double _calories = 0;
+  final _calorieInput = TextEditingController();
+  bool get _validCalories {
+    final value = double.tryParse(_calorieInput.text);
+    return value != null && value.isFinite && value >= 0;
+  }
+
+  @override
+  void dispose() {
+    _calorieInput.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -69,6 +81,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
       calciumMgPer100: entry.grams > 0
           ? entry.calciumMg / entry.grams * 100
           : 0,
+      isTemporary: false,
       isCustom: false,
     );
     final servings = await ref
@@ -81,7 +94,9 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
       _food = food;
       _servings = servings;
       _mealType = MealType.values.byName(entry.mealType);
-      _grams = FormOptions.snapDouble(FormOptions.mealGrams(), entry.grams);
+      _grams = entry.grams;
+      _calories = entry.calories;
+      _calorieInput.text = entry.calories.toString();
       _loading = false;
     });
   }
@@ -103,6 +118,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
   }
 
   MacroIntake get _preview {
+    if (_entry!.caloriesOnly) return MacroIntake(calories: _calories);
     final food = _food!;
     return MacroIntake.fromGrams(
       grams: _grams,
@@ -123,6 +139,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
     final entry = _entry;
     var food = _food;
     if (food == null || entry == null || _saving) return;
+    if (entry.caloriesOnly && !_validCalories) return;
     if (!AppDates.isLocalToday(entry.date)) return;
     final fresh = await ref.read(foodRepositoryProvider).byId(food.id);
     if (!mounted) return;
@@ -132,14 +149,24 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
     }
     setState(() => _saving = true);
     try {
-      await ref
-          .read(mealRepositoryProvider)
-          .update(
-            id: widget.entryId,
-            mealType: _mealType,
-            food: food,
-            grams: _grams,
-          );
+      if (entry.caloriesOnly) {
+        await ref
+            .read(mealRepositoryProvider)
+            .updateCaloriesOnly(
+              id: entry.id,
+              mealType: _mealType,
+              calories: _calories,
+            );
+      } else {
+        await ref
+            .read(mealRepositoryProvider)
+            .update(
+              id: widget.entryId,
+              mealType: _mealType,
+              food: food,
+              grams: _grams,
+            );
+      }
       final updated = await ref
           .read(mealRepositoryProvider)
           .byId(widget.entryId);
@@ -160,7 +187,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
   Future<void> _onMealTypeChanged(MealType value) async {
     if (value == _mealType) return;
     setState(() => _mealType = value);
-    await _persist();
+    if (_entry?.caloriesOnly != true) await _persist();
   }
 
   Future<void> _onGramsChanged(double value) async {
@@ -337,6 +364,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
       appBar: AppBar(
         title: FoodNameLink(
           name: foodName,
+          isTemporary: food.isTemporary,
           foodId: food.id,
           carbG: food.carbPer100,
           proteinG: food.proteinPer100,
@@ -376,7 +404,9 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
           ],
           const SizedBox(height: 4),
           Text(
-            '${food.kcalPer100.round()} kcal / 100g',
+            entry.caloriesOnly
+                ? l10n.temporaryCaloriesMode
+                : '${food.kcalPer100.round()} kcal / 100g',
             style: theme.textTheme.meta,
           ),
           const SizedBox(height: AppSpacing.section),
@@ -395,17 +425,40 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
                     onChanged: _onMealTypeChanged,
                   ),
                   const SizedBox(height: AppSpacing.field),
-                  AppDropdown<double>(
-                    label: l10n.grams,
-                    value: FormOptions.snapDouble(
-                      FormOptions.mealGrams(),
-                      _grams,
+                  if (entry.caloriesOnly)
+                    TextFormField(
+                      controller: _calorieInput,
+                      decoration: InputDecoration(
+                        labelText: l10n.thisIntakeCalories,
+                        suffixText: 'kcal',
+                        errorText: _validCalories
+                            ? null
+                            : l10n.invalidFoodNutrition,
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      onChanged: (text) {
+                        setState(() {
+                          final value = double.tryParse(text);
+                          if (value != null && value.isFinite && value >= 0) {
+                            _calories = value;
+                          }
+                        });
+                      },
+                      onFieldSubmitted: (_) => _persist(),
+                      onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                    )
+                  else
+                    AppDropdown<double>(
+                      label: l10n.grams,
+                      value: _grams,
+                      items: ({...FormOptions.mealGrams(), _grams}.toList()
+                        ..sort()),
+                      suffixText: 'g',
+                      itemLabel: formatKg,
+                      onChanged: _onGramsChanged,
                     ),
-                    items: FormOptions.mealGrams(),
-                    suffixText: 'g',
-                    itemLabel: formatKg,
-                    onChanged: _onGramsChanged,
-                  ),
                   if (_servings.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.field),
                     Text(
@@ -445,57 +498,70 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
             value: '${preview.calories.round()} kcal',
             color: theme.colorScheme.primary,
           ),
-          _MacroRow(
-            label: l10n.protein,
-            value: '${preview.proteinG.toStringAsFixed(1)} g',
-            color: AppColors.protein,
-          ),
-          _MacroRow(
-            label: l10n.carbs,
-            value: '${preview.carbG.toStringAsFixed(1)} g',
-            color: AppColors.carb,
-          ),
-          _MacroRow(
-            label: l10n.fat,
-            value: '${preview.fatG.toStringAsFixed(1)} g',
-            color: AppColors.fat,
-          ),
-          if (preview.saturatedFatG > 0)
+          if (!entry.caloriesOnly) ...[
             _MacroRow(
-              label: l10n.saturatedFat,
-              value: '${preview.saturatedFatG.toStringAsFixed(1)} g',
+              label: l10n.protein,
+              value: '${preview.proteinG.toStringAsFixed(1)} g',
+              color: AppColors.protein,
+            ),
+            _MacroRow(
+              label: l10n.carbs,
+              value: '${preview.carbG.toStringAsFixed(1)} g',
+              color: AppColors.carb,
+            ),
+            _MacroRow(
+              label: l10n.fat,
+              value: '${preview.fatG.toStringAsFixed(1)} g',
               color: AppColors.fat,
             ),
-          if (preview.sugarG > 0)
-            _MacroRow(
-              label: l10n.sugar,
-              value: '${preview.sugarG.toStringAsFixed(1)} g',
-              color: AppColors.carb,
+            if (preview.saturatedFatG > 0)
+              _MacroRow(
+                label: l10n.saturatedFat,
+                value: '${preview.saturatedFatG.toStringAsFixed(1)} g',
+                color: AppColors.fat,
+              ),
+            if (preview.sugarG > 0)
+              _MacroRow(
+                label: l10n.sugar,
+                value: '${preview.sugarG.toStringAsFixed(1)} g',
+                color: AppColors.carb,
+              ),
+            if (preview.fiberG > 0)
+              _MacroRow(
+                label: l10n.fiber,
+                value: '${preview.fiberG.toStringAsFixed(1)} g',
+                color: AppColors.carb,
+              ),
+            if (preview.sodiumMg > 0)
+              _MacroRow(
+                label: l10n.sodium,
+                value: '${preview.sodiumMg.toStringAsFixed(0)} mg',
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            if (preview.calciumMg > 0)
+              _MacroRow(
+                label: l10n.calcium,
+                value: '${preview.calciumMg.toStringAsFixed(0)} mg',
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            if (preview.alcoholG > 0)
+              _MacroRow(
+                label: l10n.alcohol,
+                value: '${preview.alcoholG.toStringAsFixed(1)} g',
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+          ],
+          if (entry.caloriesOnly && editable) ...[
+            const SizedBox(height: AppSpacing.section),
+            FilledButton(
+              onPressed: _saving || !_validCalories
+                  ? null
+                  : () async {
+                      await _persist();
+                    },
+              child: Text(l10n.save),
             ),
-          if (preview.fiberG > 0)
-            _MacroRow(
-              label: l10n.fiber,
-              value: '${preview.fiberG.toStringAsFixed(1)} g',
-              color: AppColors.carb,
-            ),
-          if (preview.sodiumMg > 0)
-            _MacroRow(
-              label: l10n.sodium,
-              value: '${preview.sodiumMg.toStringAsFixed(0)} mg',
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          if (preview.calciumMg > 0)
-            _MacroRow(
-              label: l10n.calcium,
-              value: '${preview.calciumMg.toStringAsFixed(0)} mg',
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          if (preview.alcoholG > 0)
-            _MacroRow(
-              label: l10n.alcohol,
-              value: '${preview.alcoholG.toStringAsFixed(1)} g',
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+          ],
         ],
       ),
     );

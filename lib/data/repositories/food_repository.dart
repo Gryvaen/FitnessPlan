@@ -163,7 +163,10 @@ class FoodRepository {
               saturatedFatPer100: Value(saturatedFat),
               calciumMgPer100: Value(calciumMg),
             ),
+
             target: [_db.foodItems.name],
+            targetCondition: (t) =>
+                t.isTemporary.equalsExp(const Constant(false)),
             // A user's own food that happens to share a seed name wins: the
             // seed row is simply not offered on this device.
             where: (old) => old.isCustom.equals(false),
@@ -232,14 +235,16 @@ class FoodRepository {
     final select = _db.select(_db.foodItems)
       ..where((t) {
         final whole = matches(t, q);
-        if (!expanded) return whole;
-        return whole |
-            groups
-                .map(
-                  (g) =>
-                      g.map((term) => matches(t, term)).reduce((a, b) => a | b),
-                )
-                .reduce((a, b) => a & b);
+        if (!expanded) return whole & t.isTemporary.equals(false);
+        return (whole |
+                groups
+                    .map(
+                      (g) => g
+                          .map((term) => matches(t, term))
+                          .reduce((a, b) => a | b),
+                    )
+                    .reduce((a, b) => a & b)) &
+            t.isTemporary.equals(false);
       })
       ..orderBy([(t) => OrderingTerm.asc(t.name)])
       ..limit(limit);
@@ -252,7 +257,7 @@ class FoodRepository {
     int offset = 0,
   }) {
     final select = _db.select(_db.foodItems)
-      ..where((t) => t.category.equals(category))
+      ..where((t) => t.category.equals(category) & t.isTemporary.equals(false))
       ..orderBy([(t) => OrderingTerm.asc(t.name)]);
     if (limit != null) {
       select.limit(limit, offset: offset);
@@ -264,7 +269,7 @@ class FoodRepository {
     final rows = await _db
         .customSelect(
           'SELECT category, COUNT(*) AS cnt FROM food_items '
-          'GROUP BY category ORDER BY category',
+          'WHERE is_temporary = 0 GROUP BY category ORDER BY category',
         )
         .get();
     return rows
@@ -284,16 +289,16 @@ class FoodRepository {
   }
 
   Future<FoodItem?> byName(String name) {
-    return (_db.select(
-      _db.foodItems,
-    )..where((t) => t.name.equals(name))).getSingleOrNull();
+    return (_db.select(_db.foodItems)
+          ..where((t) => t.name.equals(name) & t.isTemporary.equals(false)))
+        .getSingleOrNull();
   }
 
   Future<List<FoodItem>> _byIds(List<int> ids) async {
     if (ids.isEmpty) return const [];
     final rows = await (_db.select(
       _db.foodItems,
-    )..where((t) => t.id.isIn(ids))).get();
+    )..where((t) => t.id.isIn(ids) & t.isTemporary.equals(false))).get();
     final byId = {for (final r in rows) r.id: r};
     return [
       for (final id in ids)
@@ -321,6 +326,7 @@ class FoodRepository {
     return _db.customSelect(
       '''
 SELECT meal_entries.food_id AS food_id FROM meal_entries
+JOIN food_items ON food_items.id = meal_entries.food_id AND food_items.is_temporary = 0
 LEFT JOIN hidden_recent_foods
   ON hidden_recent_foods.food_id = meal_entries.food_id
 GROUP BY meal_entries.food_id
@@ -564,6 +570,7 @@ LIMIT ?
   }
 
   Future<void> _setFavorite(int foodId, bool favorite) async {
+    if (favorite && (await byId(foodId))?.isTemporary == true) return;
     if (favorite) {
       await _db
           .into(_db.favoriteFoods)

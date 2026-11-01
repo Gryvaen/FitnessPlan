@@ -182,6 +182,21 @@ class $FoodItemsTable extends FoodItems
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _isTemporaryMeta = const VerificationMeta(
+    'isTemporary',
+  );
+  @override
+  late final GeneratedColumn<bool> isTemporary = GeneratedColumn<bool>(
+    'is_temporary',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_temporary" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -199,6 +214,7 @@ class $FoodItemsTable extends FoodItems
     saturatedFatPer100,
     calciumMgPer100,
     isCustom,
+    isTemporary,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -332,15 +348,20 @@ class $FoodItemsTable extends FoodItems
         isCustom.isAcceptableOrUnknown(data['is_custom']!, _isCustomMeta),
       );
     }
+    if (data.containsKey('is_temporary')) {
+      context.handle(
+        _isTemporaryMeta,
+        isTemporary.isAcceptableOrUnknown(
+          data['is_temporary']!,
+          _isTemporaryMeta,
+        ),
+      );
+    }
     return context;
   }
 
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  List<Set<GeneratedColumn>> get uniqueKeys => [
-    {name},
-  ];
   @override
   FoodItem map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -405,6 +426,10 @@ class $FoodItemsTable extends FoodItems
         DriftSqlType.bool,
         data['${effectivePrefix}is_custom'],
       )!,
+      isTemporary: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_temporary'],
+      )!,
     );
   }
 
@@ -447,6 +472,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
 
   /// User-created foods survive seed sync deletion.
   final bool isCustom;
+  final bool isTemporary;
   const FoodItem({
     required this.id,
     required this.name,
@@ -463,6 +489,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     required this.saturatedFatPer100,
     required this.calciumMgPer100,
     required this.isCustom,
+    required this.isTemporary,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -484,6 +511,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     map['saturated_fat_per100'] = Variable<double>(saturatedFatPer100);
     map['calcium_mg_per100'] = Variable<double>(calciumMgPer100);
     map['is_custom'] = Variable<bool>(isCustom);
+    map['is_temporary'] = Variable<bool>(isTemporary);
     return map;
   }
 
@@ -506,6 +534,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       saturatedFatPer100: Value(saturatedFatPer100),
       calciumMgPer100: Value(calciumMgPer100),
       isCustom: Value(isCustom),
+      isTemporary: Value(isTemporary),
     );
   }
 
@@ -532,6 +561,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       ),
       calciumMgPer100: serializer.fromJson<double>(json['calciumMgPer100']),
       isCustom: serializer.fromJson<bool>(json['isCustom']),
+      isTemporary: serializer.fromJson<bool>(json['isTemporary']),
     );
   }
   @override
@@ -553,6 +583,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       'saturatedFatPer100': serializer.toJson<double>(saturatedFatPer100),
       'calciumMgPer100': serializer.toJson<double>(calciumMgPer100),
       'isCustom': serializer.toJson<bool>(isCustom),
+      'isTemporary': serializer.toJson<bool>(isTemporary),
     };
   }
 
@@ -572,6 +603,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     double? saturatedFatPer100,
     double? calciumMgPer100,
     bool? isCustom,
+    bool? isTemporary,
   }) => FoodItem(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -588,6 +620,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     saturatedFatPer100: saturatedFatPer100 ?? this.saturatedFatPer100,
     calciumMgPer100: calciumMgPer100 ?? this.calciumMgPer100,
     isCustom: isCustom ?? this.isCustom,
+    isTemporary: isTemporary ?? this.isTemporary,
   );
   FoodItem copyWithCompanion(FoodItemsCompanion data) {
     return FoodItem(
@@ -624,6 +657,9 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
           ? data.calciumMgPer100.value
           : this.calciumMgPer100,
       isCustom: data.isCustom.present ? data.isCustom.value : this.isCustom,
+      isTemporary: data.isTemporary.present
+          ? data.isTemporary.value
+          : this.isTemporary,
     );
   }
 
@@ -644,7 +680,8 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
           ..write('sugarPer100: $sugarPer100, ')
           ..write('saturatedFatPer100: $saturatedFatPer100, ')
           ..write('calciumMgPer100: $calciumMgPer100, ')
-          ..write('isCustom: $isCustom')
+          ..write('isCustom: $isCustom, ')
+          ..write('isTemporary: $isTemporary')
           ..write(')'))
         .toString();
   }
@@ -666,6 +703,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     saturatedFatPer100,
     calciumMgPer100,
     isCustom,
+    isTemporary,
   );
   @override
   bool operator ==(Object other) =>
@@ -685,7 +723,8 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
           other.sugarPer100 == this.sugarPer100 &&
           other.saturatedFatPer100 == this.saturatedFatPer100 &&
           other.calciumMgPer100 == this.calciumMgPer100 &&
-          other.isCustom == this.isCustom);
+          other.isCustom == this.isCustom &&
+          other.isTemporary == this.isTemporary);
 }
 
 class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
@@ -704,6 +743,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
   final Value<double> saturatedFatPer100;
   final Value<double> calciumMgPer100;
   final Value<bool> isCustom;
+  final Value<bool> isTemporary;
   const FoodItemsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -720,6 +760,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     this.saturatedFatPer100 = const Value.absent(),
     this.calciumMgPer100 = const Value.absent(),
     this.isCustom = const Value.absent(),
+    this.isTemporary = const Value.absent(),
   });
   FoodItemsCompanion.insert({
     this.id = const Value.absent(),
@@ -737,6 +778,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     this.saturatedFatPer100 = const Value.absent(),
     this.calciumMgPer100 = const Value.absent(),
     this.isCustom = const Value.absent(),
+    this.isTemporary = const Value.absent(),
   }) : name = Value(name),
        category = Value(category),
        kcalPer100 = Value(kcalPer100),
@@ -759,6 +801,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     Expression<double>? saturatedFatPer100,
     Expression<double>? calciumMgPer100,
     Expression<bool>? isCustom,
+    Expression<bool>? isTemporary,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -777,6 +820,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
         'saturated_fat_per100': saturatedFatPer100,
       if (calciumMgPer100 != null) 'calcium_mg_per100': calciumMgPer100,
       if (isCustom != null) 'is_custom': isCustom,
+      if (isTemporary != null) 'is_temporary': isTemporary,
     });
   }
 
@@ -796,6 +840,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     Value<double>? saturatedFatPer100,
     Value<double>? calciumMgPer100,
     Value<bool>? isCustom,
+    Value<bool>? isTemporary,
   }) {
     return FoodItemsCompanion(
       id: id ?? this.id,
@@ -813,6 +858,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
       saturatedFatPer100: saturatedFatPer100 ?? this.saturatedFatPer100,
       calciumMgPer100: calciumMgPer100 ?? this.calciumMgPer100,
       isCustom: isCustom ?? this.isCustom,
+      isTemporary: isTemporary ?? this.isTemporary,
     );
   }
 
@@ -864,6 +910,9 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     if (isCustom.present) {
       map['is_custom'] = Variable<bool>(isCustom.value);
     }
+    if (isTemporary.present) {
+      map['is_temporary'] = Variable<bool>(isTemporary.value);
+    }
     return map;
   }
 
@@ -884,7 +933,8 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
           ..write('sugarPer100: $sugarPer100, ')
           ..write('saturatedFatPer100: $saturatedFatPer100, ')
           ..write('calciumMgPer100: $calciumMgPer100, ')
-          ..write('isCustom: $isCustom')
+          ..write('isCustom: $isCustom, ')
+          ..write('isTemporary: $isTemporary')
           ..write(')'))
         .toString();
   }
@@ -1964,6 +2014,21 @@ class $MealEntriesTable extends MealEntries
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
   $MealEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _caloriesOnlyMeta = const VerificationMeta(
+    'caloriesOnly',
+  );
+  @override
+  late final GeneratedColumn<bool> caloriesOnly = GeneratedColumn<bool>(
+    'calories_only',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("calories_only" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<int> id = GeneratedColumn<int>(
@@ -2136,6 +2201,7 @@ class $MealEntriesTable extends MealEntries
   );
   @override
   List<GeneratedColumn> get $columns => [
+    caloriesOnly,
     id,
     date,
     mealType,
@@ -2165,6 +2231,15 @@ class $MealEntriesTable extends MealEntries
   }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
+    if (data.containsKey('calories_only')) {
+      context.handle(
+        _caloriesOnlyMeta,
+        caloriesOnly.isAcceptableOrUnknown(
+          data['calories_only']!,
+          _caloriesOnlyMeta,
+        ),
+      );
+    }
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
@@ -2288,6 +2363,10 @@ class $MealEntriesTable extends MealEntries
   MealEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return MealEntry(
+      caloriesOnly: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}calories_only'],
+      )!,
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}id'],
@@ -2362,6 +2441,7 @@ class $MealEntriesTable extends MealEntries
 }
 
 class MealEntry extends DataClass implements Insertable<MealEntry> {
+  final bool caloriesOnly;
   final int id;
   final DateTime date;
   final String mealType;
@@ -2379,6 +2459,7 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
   final double saturatedFatG;
   final double calciumMg;
   const MealEntry({
+    required this.caloriesOnly,
     required this.id,
     required this.date,
     required this.mealType,
@@ -2399,6 +2480,7 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
+    map['calories_only'] = Variable<bool>(caloriesOnly);
     map['id'] = Variable<int>(id);
     map['date'] = Variable<DateTime>(date);
     map['meal_type'] = Variable<String>(mealType);
@@ -2420,6 +2502,7 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
 
   MealEntriesCompanion toCompanion(bool nullToAbsent) {
     return MealEntriesCompanion(
+      caloriesOnly: Value(caloriesOnly),
       id: Value(id),
       date: Value(date),
       mealType: Value(mealType),
@@ -2445,6 +2528,7 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return MealEntry(
+      caloriesOnly: serializer.fromJson<bool>(json['caloriesOnly']),
       id: serializer.fromJson<int>(json['id']),
       date: serializer.fromJson<DateTime>(json['date']),
       mealType: serializer.fromJson<String>(json['mealType']),
@@ -2467,6 +2551,7 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
+      'caloriesOnly': serializer.toJson<bool>(caloriesOnly),
       'id': serializer.toJson<int>(id),
       'date': serializer.toJson<DateTime>(date),
       'mealType': serializer.toJson<String>(mealType),
@@ -2487,6 +2572,7 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
   }
 
   MealEntry copyWith({
+    bool? caloriesOnly,
     int? id,
     DateTime? date,
     String? mealType,
@@ -2504,6 +2590,7 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
     double? saturatedFatG,
     double? calciumMg,
   }) => MealEntry(
+    caloriesOnly: caloriesOnly ?? this.caloriesOnly,
     id: id ?? this.id,
     date: date ?? this.date,
     mealType: mealType ?? this.mealType,
@@ -2523,6 +2610,9 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
   );
   MealEntry copyWithCompanion(MealEntriesCompanion data) {
     return MealEntry(
+      caloriesOnly: data.caloriesOnly.present
+          ? data.caloriesOnly.value
+          : this.caloriesOnly,
       id: data.id.present ? data.id.value : this.id,
       date: data.date.present ? data.date.value : this.date,
       mealType: data.mealType.present ? data.mealType.value : this.mealType,
@@ -2547,6 +2637,7 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
   @override
   String toString() {
     return (StringBuffer('MealEntry(')
+          ..write('caloriesOnly: $caloriesOnly, ')
           ..write('id: $id, ')
           ..write('date: $date, ')
           ..write('mealType: $mealType, ')
@@ -2569,6 +2660,7 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
 
   @override
   int get hashCode => Object.hash(
+    caloriesOnly,
     id,
     date,
     mealType,
@@ -2590,6 +2682,7 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is MealEntry &&
+          other.caloriesOnly == this.caloriesOnly &&
           other.id == this.id &&
           other.date == this.date &&
           other.mealType == this.mealType &&
@@ -2609,6 +2702,7 @@ class MealEntry extends DataClass implements Insertable<MealEntry> {
 }
 
 class MealEntriesCompanion extends UpdateCompanion<MealEntry> {
+  final Value<bool> caloriesOnly;
   final Value<int> id;
   final Value<DateTime> date;
   final Value<String> mealType;
@@ -2626,6 +2720,7 @@ class MealEntriesCompanion extends UpdateCompanion<MealEntry> {
   final Value<double> saturatedFatG;
   final Value<double> calciumMg;
   const MealEntriesCompanion({
+    this.caloriesOnly = const Value.absent(),
     this.id = const Value.absent(),
     this.date = const Value.absent(),
     this.mealType = const Value.absent(),
@@ -2644,6 +2739,7 @@ class MealEntriesCompanion extends UpdateCompanion<MealEntry> {
     this.calciumMg = const Value.absent(),
   });
   MealEntriesCompanion.insert({
+    this.caloriesOnly = const Value.absent(),
     this.id = const Value.absent(),
     required DateTime date,
     required String mealType,
@@ -2670,6 +2766,7 @@ class MealEntriesCompanion extends UpdateCompanion<MealEntry> {
        carbG = Value(carbG),
        fatG = Value(fatG);
   static Insertable<MealEntry> custom({
+    Expression<bool>? caloriesOnly,
     Expression<int>? id,
     Expression<DateTime>? date,
     Expression<String>? mealType,
@@ -2688,6 +2785,7 @@ class MealEntriesCompanion extends UpdateCompanion<MealEntry> {
     Expression<double>? calciumMg,
   }) {
     return RawValuesInsertable({
+      if (caloriesOnly != null) 'calories_only': caloriesOnly,
       if (id != null) 'id': id,
       if (date != null) 'date': date,
       if (mealType != null) 'meal_type': mealType,
@@ -2708,6 +2806,7 @@ class MealEntriesCompanion extends UpdateCompanion<MealEntry> {
   }
 
   MealEntriesCompanion copyWith({
+    Value<bool>? caloriesOnly,
     Value<int>? id,
     Value<DateTime>? date,
     Value<String>? mealType,
@@ -2726,6 +2825,7 @@ class MealEntriesCompanion extends UpdateCompanion<MealEntry> {
     Value<double>? calciumMg,
   }) {
     return MealEntriesCompanion(
+      caloriesOnly: caloriesOnly ?? this.caloriesOnly,
       id: id ?? this.id,
       date: date ?? this.date,
       mealType: mealType ?? this.mealType,
@@ -2748,6 +2848,9 @@ class MealEntriesCompanion extends UpdateCompanion<MealEntry> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
+    if (caloriesOnly.present) {
+      map['calories_only'] = Variable<bool>(caloriesOnly.value);
+    }
     if (id.present) {
       map['id'] = Variable<int>(id.value);
     }
@@ -2802,6 +2905,7 @@ class MealEntriesCompanion extends UpdateCompanion<MealEntry> {
   @override
   String toString() {
     return (StringBuffer('MealEntriesCompanion(')
+          ..write('caloriesOnly: $caloriesOnly, ')
           ..write('id: $id, ')
           ..write('date: $date, ')
           ..write('mealType: $mealType, ')
@@ -10658,6 +10762,7 @@ typedef $$FoodItemsTableCreateCompanionBuilder =
       Value<double> saturatedFatPer100,
       Value<double> calciumMgPer100,
       Value<bool> isCustom,
+      Value<bool> isTemporary,
     });
 typedef $$FoodItemsTableUpdateCompanionBuilder =
     FoodItemsCompanion Function({
@@ -10676,6 +10781,7 @@ typedef $$FoodItemsTableUpdateCompanionBuilder =
       Value<double> saturatedFatPer100,
       Value<double> calciumMgPer100,
       Value<bool> isCustom,
+      Value<bool> isTemporary,
     });
 
 class $$FoodItemsTableFilterComposer
@@ -10759,6 +10865,11 @@ class $$FoodItemsTableFilterComposer
 
   ColumnFilters<bool> get isCustom => $composableBuilder(
     column: $table.isCustom,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isTemporary => $composableBuilder(
+    column: $table.isTemporary,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -10846,6 +10957,11 @@ class $$FoodItemsTableOrderingComposer
     column: $table.isCustom,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isTemporary => $composableBuilder(
+    column: $table.isTemporary,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$FoodItemsTableAnnotationComposer
@@ -10919,6 +11035,11 @@ class $$FoodItemsTableAnnotationComposer
 
   GeneratedColumn<bool> get isCustom =>
       $composableBuilder(column: $table.isCustom, builder: (column) => column);
+
+  GeneratedColumn<bool> get isTemporary => $composableBuilder(
+    column: $table.isTemporary,
+    builder: (column) => column,
+  );
 }
 
 class $$FoodItemsTableTableManager
@@ -10964,6 +11085,7 @@ class $$FoodItemsTableTableManager
                 Value<double> saturatedFatPer100 = const Value.absent(),
                 Value<double> calciumMgPer100 = const Value.absent(),
                 Value<bool> isCustom = const Value.absent(),
+                Value<bool> isTemporary = const Value.absent(),
               }) => FoodItemsCompanion(
                 id: id,
                 name: name,
@@ -10980,6 +11102,7 @@ class $$FoodItemsTableTableManager
                 saturatedFatPer100: saturatedFatPer100,
                 calciumMgPer100: calciumMgPer100,
                 isCustom: isCustom,
+                isTemporary: isTemporary,
               ),
           createCompanionCallback:
               ({
@@ -10998,6 +11121,7 @@ class $$FoodItemsTableTableManager
                 Value<double> saturatedFatPer100 = const Value.absent(),
                 Value<double> calciumMgPer100 = const Value.absent(),
                 Value<bool> isCustom = const Value.absent(),
+                Value<bool> isTemporary = const Value.absent(),
               }) => FoodItemsCompanion.insert(
                 id: id,
                 name: name,
@@ -11014,6 +11138,7 @@ class $$FoodItemsTableTableManager
                 saturatedFatPer100: saturatedFatPer100,
                 calciumMgPer100: calciumMgPer100,
                 isCustom: isCustom,
+                isTemporary: isTemporary,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -11696,6 +11821,7 @@ typedef $$WeightLogsTableProcessedTableManager =
     >;
 typedef $$MealEntriesTableCreateCompanionBuilder =
     MealEntriesCompanion Function({
+      Value<bool> caloriesOnly,
       Value<int> id,
       required DateTime date,
       required String mealType,
@@ -11715,6 +11841,7 @@ typedef $$MealEntriesTableCreateCompanionBuilder =
     });
 typedef $$MealEntriesTableUpdateCompanionBuilder =
     MealEntriesCompanion Function({
+      Value<bool> caloriesOnly,
       Value<int> id,
       Value<DateTime> date,
       Value<String> mealType,
@@ -11742,6 +11869,11 @@ class $$MealEntriesTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnFilters<bool> get caloriesOnly => $composableBuilder(
+    column: $table.caloriesOnly,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<int> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnFilters(column),
@@ -11832,6 +11964,11 @@ class $$MealEntriesTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnOrderings<bool> get caloriesOnly => $composableBuilder(
+    column: $table.caloriesOnly,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnOrderings(column),
@@ -11922,6 +12059,11 @@ class $$MealEntriesTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  GeneratedColumn<bool> get caloriesOnly => $composableBuilder(
+    column: $table.caloriesOnly,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
@@ -12004,6 +12146,7 @@ class $$MealEntriesTableTableManager
               $$MealEntriesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
+                Value<bool> caloriesOnly = const Value.absent(),
                 Value<int> id = const Value.absent(),
                 Value<DateTime> date = const Value.absent(),
                 Value<String> mealType = const Value.absent(),
@@ -12021,6 +12164,7 @@ class $$MealEntriesTableTableManager
                 Value<double> saturatedFatG = const Value.absent(),
                 Value<double> calciumMg = const Value.absent(),
               }) => MealEntriesCompanion(
+                caloriesOnly: caloriesOnly,
                 id: id,
                 date: date,
                 mealType: mealType,
@@ -12040,6 +12184,7 @@ class $$MealEntriesTableTableManager
               ),
           createCompanionCallback:
               ({
+                Value<bool> caloriesOnly = const Value.absent(),
                 Value<int> id = const Value.absent(),
                 required DateTime date,
                 required String mealType,
@@ -12057,6 +12202,7 @@ class $$MealEntriesTableTableManager
                 Value<double> saturatedFatG = const Value.absent(),
                 Value<double> calciumMg = const Value.absent(),
               }) => MealEntriesCompanion.insert(
+                caloriesOnly: caloriesOnly,
                 id: id,
                 date: date,
                 mealType: mealType,

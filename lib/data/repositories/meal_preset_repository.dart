@@ -73,7 +73,7 @@ class MealPresetRepository {
     final food = await (_db.select(
       _db.foodItems,
     )..where((t) => t.id.equals(foodId))).getSingleOrNull();
-    if (food == null) throw StateError('食材不存在');
+    if (food == null || food.isTemporary) throw StateError('食材不存在');
     return _db
         .into(_db.mealPresetItems)
         .insert(
@@ -130,7 +130,7 @@ class MealPresetRepository {
     final ids = {for (final item in items) item.foodId}.toList();
     final foods = await (_db.select(
       _db.foodItems,
-    )..where((t) => t.id.isIn(ids))).get();
+    )..where((t) => t.id.isIn(ids) & t.isTemporary.equals(false))).get();
     final present = {for (final food in foods) food.id};
     final missing = [
       for (final item in items)
@@ -163,7 +163,7 @@ class MealPresetRepository {
     final ids = {for (final item in items) item.foodId}.toList();
     final foods = await (_db.select(
       _db.foodItems,
-    )..where((t) => t.id.isIn(ids))).get();
+    )..where((t) => t.id.isIn(ids) & t.isTemporary.equals(false))).get();
     final byId = {for (final food in foods) food.id: food};
     if (byId.length != ids.length) throw StateError('套餐中有已删除的食材');
     await (_db.update(_db.mealPresets)..where((t) => t.id.equals(presetId)))
@@ -195,6 +195,13 @@ class MealPresetRepository {
     if (trimmed.isEmpty) throw ArgumentError('套餐名称不能为空');
     if (entries.isEmpty) throw ArgumentError('没有可保存的记录');
 
+    final ids = entries.map((e) => e.foodId).toList();
+    final temporary = await (_db.select(
+      _db.foodItems,
+    )..where((t) => t.id.isIn(ids) & t.isTemporary.equals(true))).get();
+    final excluded = temporary.map((f) => f.id).toSet();
+    entries = entries.where((e) => !excluded.contains(e.foodId)).toList();
+    if (entries.isEmpty) throw ArgumentError('没有可保存的记录');
     return _db.transaction(() async {
       if (replaceExisting) {
         final existing = await (_db.select(
@@ -270,7 +277,7 @@ class MealPresetRepository {
       }
       for (final item in items) {
         final food = foodById[item.foodId];
-        if (food == null) {
+        if (food == null || food.isTemporary) {
           skipped++;
           continue;
         }

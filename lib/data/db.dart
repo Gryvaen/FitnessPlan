@@ -42,7 +42,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   /// Bump together with a new migration step.
-  static const currentSchemaVersion = 36;
+  static const currentSchemaVersion = 38;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -51,6 +51,7 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
       await m.createAll();
+      await _createFoodNameIndex();
       await _createDateIndices();
       await seedBuiltinExercises();
     },
@@ -309,10 +310,34 @@ UPDATE day_markers SET
         // Additive: existing notes default to the free-text `record` mode.
         await _addColumnIfMissing(m, dailyNotes, dailyNotes.mode);
       }
+      if (from < 38) {
+        final exists = await customSelect(
+          "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'meal_entries'",
+        ).get();
+        if (exists.isNotEmpty) {
+          await _addColumnIfMissing(m, mealEntries, mealEntries.caloriesOnly);
+        }
+      }
+      if (from < 37) {
+        final existingFoodTable = await customSelect(
+          "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'food_items'",
+        ).get();
+        if (existingFoodTable.isNotEmpty) {
+          await _addColumnIfMissing(m, foodItems, foodItems.isTemporary);
+          await customStatement('DROP INDEX IF EXISTS food_items_name_unique');
+          await m.alterTable(TableMigration(foodItems));
+          await _createFoodNameIndex();
+        }
+      }
       if (from < 36) {
         await m.alterTable(TableMigration(dailyNotes));
       }
     },
+  );
+
+  Future<void> _createFoodNameIndex() => customStatement(
+    'CREATE UNIQUE INDEX IF NOT EXISTS food_items_name_unique '
+    'ON food_items(name) WHERE is_temporary = 0',
   );
 
   /// Non-unique indices on the `date` columns behind the app's most common

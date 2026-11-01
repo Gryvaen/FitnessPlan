@@ -35,6 +35,9 @@ enum InkGlyph {
   foodVegetables,
   foodSeasonings,
   foodCustom,
+  foodTemporary,
+  foodSaved,
+  caloriesTemporary,
   addRing,
   training,
   food,
@@ -128,6 +131,22 @@ class InkIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    if (glyph == InkGlyph.foodTemporary ||
+        glyph == InkGlyph.foodSaved ||
+        glyph == InkGlyph.caloriesTemporary) {
+      final foreground = color ?? theme.colorScheme.onSurface;
+      return SizedBox.square(
+        dimension: size,
+        child: CustomPaint(
+          painter: _InkIconPainter(
+            glyph: glyph,
+            color: foreground,
+            secondaryColor: secondaryColor ?? foreground,
+            strokeWidth: strokeWidth,
+          ),
+        ),
+      );
+    }
     final variant = theme.brightness == Brightness.dark ? 'dark' : 'light';
     final asset = 'assets/ink/icons/$variant/${glyph.assetName}-v1.png';
     // Dark PNG variants are treated as alpha masks. Their embedded RGB can
@@ -186,6 +205,9 @@ extension InkGlyphAssetName on InkGlyph {
     InkGlyph.foodVegetables => 'food-vegetables',
     InkGlyph.foodSeasonings => 'food-seasonings',
     InkGlyph.foodCustom => 'food-custom',
+    InkGlyph.foodTemporary => 'food-temporary',
+    InkGlyph.foodSaved => 'food-saved',
+    InkGlyph.caloriesTemporary => 'calories-temporary',
     InkGlyph.bodyFat => 'body-fat',
     InkGlyph.swapVertical => 'swap-vertical',
     InkGlyph.batteryAlert => 'battery-alert',
@@ -413,6 +435,74 @@ class _InkIconPainter extends CustomPainter {
     canvas.scale(size.width / 24, size.height / 24);
     final p = _stroke(color);
     switch (glyph) {
+      case InkGlyph.foodSaved:
+        canvas.drawArc(
+          const Rect.fromLTWH(2.5, 2.5, 16, 16),
+          1.4,
+          5.0,
+          false,
+          p,
+        );
+        canvas.drawArc(
+          const Rect.fromLTWH(6, 6, 9, 9),
+          1.5,
+          4.7,
+          false,
+          _stroke(color, width: .8),
+        );
+        canvas.drawPath(
+          Path()
+            ..moveTo(14, 13)
+            ..lineTo(21, 13)
+            ..lineTo(21, 22)
+            ..lineTo(17.5, 19.6)
+            ..lineTo(14, 22)
+            ..close(),
+          p,
+        );
+      case InkGlyph.caloriesTemporary:
+        canvas.drawPath(
+          Path()
+            ..moveTo(11.5, 21)
+            ..cubicTo(3, 21, 1.8, 13.5, 7, 8.2)
+            ..quadraticBezierTo(6.8, 11.5, 9, 12.5)
+            ..cubicTo(12, 10, 9, 5, 12, 2)
+            ..cubicTo(13, 6.5, 19.5, 8, 18.5, 11.2),
+          p,
+        );
+        canvas.drawArc(const Rect.fromLTWH(13, 13, 9, 9), -.45, 5.95, false, p);
+        canvas.drawPath(
+          Path()
+            ..moveTo(17.5, 14.9)
+            ..lineTo(17.5, 17.5)
+            ..lineTo(19.3, 18.5),
+          p,
+        );
+      case InkGlyph.foodTemporary:
+        // The lower-right rim opens around the clock; no overlapping strokes.
+        canvas.drawArc(
+          const Rect.fromLTWH(2.5, 2.5, 16, 16),
+          1.4,
+          5.0,
+          false,
+          p,
+        );
+        canvas.drawArc(
+          const Rect.fromLTWH(6, 6, 9, 9),
+          1.5,
+          4.7,
+          false,
+          _stroke(color, width: .8),
+        );
+        canvas.drawArc(const Rect.fromLTWH(13, 13, 9, 9), -.45, 5.95, false, p);
+        canvas.drawPath(
+          Path()
+            ..moveTo(17.5, 14.9)
+            ..lineTo(17.5, 17.5)
+            ..lineTo(19.3, 18.5),
+          p,
+        );
+
       case InkGlyph.calendar:
         _calendar(canvas, p);
       case InkGlyph.chevronLeft:

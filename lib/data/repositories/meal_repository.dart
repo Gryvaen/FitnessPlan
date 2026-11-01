@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import '../../domain/calendar_day.dart';
 import '../../domain/models.dart';
 import '../db.dart';
+import '../../domain/temporary_food_draft.dart';
 
 /// One calendar day of logged meals, newest-first when listed as history.
 class MealHistoryDay {
@@ -34,8 +35,10 @@ class CopyDayResult {
     required this.copied,
     required this.skippedMissingFood,
     this.skippedDuplicate = 0,
+    this.skippedTemporary = 0,
   });
 
+  final int skippedTemporary;
   final int copied;
   final int skippedMissingFood;
   final int skippedDuplicate;
@@ -87,18 +90,82 @@ class MealRepository {
     );
   }
 
+  Future<int> addTemporary({
+    required DateTime date,
+    required MealType mealType,
+    required TemporaryFoodDraft draft,
+    required double grams,
+  }) => _db.transaction(() async {
+    CalendarDay.ensureEditableDay(date);
+    if (draft.name.trim().isEmpty ||
+        !grams.isFinite ||
+        (draft.caloriesOnly ? grams != 0 : grams <= 0) ||
+        (draft.totalGrams != null &&
+            (!draft.totalGrams!.isFinite ||
+                draft.totalGrams! <= 0 ||
+                draft.totalGrams != grams))) {
+      throw ArgumentError('Invalid temporary food');
+    }
+    final food = draft.per100g();
+    final values = [
+      draft.nutrition.calories,
+      food.kcalPer100,
+      food.proteinPer100,
+      food.carbPer100,
+      food.fatPer100,
+      food.alcoholPer100,
+      food.fiberPer100,
+      food.sodiumMgPer100,
+      food.sugarPer100,
+      food.saturatedFatPer100,
+      food.calciumMgPer100,
+    ];
+    if (values.any((v) => !v.isFinite || v < 0)) {
+      throw ArgumentError('Invalid nutrition');
+    }
+    final intake = draft.intake(grams);
+    if ([
+      intake.calories,
+      intake.proteinG,
+      intake.carbG,
+      intake.fatG,
+      intake.alcoholG,
+      intake.fiberG,
+      intake.sodiumMg,
+      intake.sugarG,
+      intake.saturatedFatG,
+      intake.calciumMg,
+    ].any((v) => !v.isFinite || v < 0)) {
+      throw ArgumentError('Invalid nutrition');
+    }
+    final id = await _db
+        .into(_db.foodItems)
+        .insert(food.toCompanion(true).copyWith(id: const Value.absent()));
+    return add(
+      date: date,
+      mealType: mealType,
+      food: food.copyWith(id: id),
+      grams: grams,
+      intakeOverride: intake,
+      caloriesOnly: draft.caloriesOnly,
+    );
+  });
+
   Future<int> add({
     required DateTime date,
     required MealType mealType,
     required FoodItem food,
     required double grams,
+    MacroIntake? intakeOverride,
+    bool caloriesOnly = false,
   }) async {
     CalendarDay.ensureEditableDay(date);
-    final intake = _intakeFor(food, grams);
+    final intake = intakeOverride ?? _intakeFor(food, grams);
     return _db
         .into(_db.mealEntries)
         .insert(
           MealEntriesCompanion.insert(
+            caloriesOnly: Value(caloriesOnly),
             date: _dayStart(date),
             mealType: mealType.name,
             foodId: food.id,
@@ -122,6 +189,27 @@ class MealRepository {
     _db.mealEntries,
   )..where((t) => t.id.equals(id))).getSingleOrNull();
 
+  Future<void> updateCaloriesOnly({
+    required int id,
+    required MealType mealType,
+    required double calories,
+  }) async {
+    final entry = await byId(id);
+    if (entry == null || !entry.caloriesOnly) {
+      throw StateError('Not a calorie record');
+    }
+    CalendarDay.ensureEditableDay(entry.date);
+    if (!calories.isFinite || calories < 0) {
+      throw ArgumentError('Invalid calories');
+    }
+    await (_db.update(_db.mealEntries)..where((t) => t.id.equals(id))).write(
+      MealEntriesCompanion(
+        mealType: Value(mealType.name),
+        calories: Value(calories),
+      ),
+    );
+  }
+
   Future<void> update({
     required int id,
     required MealType mealType,
@@ -131,6 +219,7 @@ class MealRepository {
     final existing = await byId(id);
     if (existing == null) return;
     CalendarDay.ensureEditableDay(existing.date);
+    if (existing.caloriesOnly) throw StateError("Use updateCaloriesOnly");
     final intake = _intakeFor(food, grams);
     await (_db.update(_db.mealEntries)..where((t) => t.id.equals(id))).write(
       MealEntriesCompanion(
@@ -210,6 +299,7 @@ class MealRepository {
     )..where((t) => t.id.isIn(foodIds))).get();
     final foodById = {for (final f in foods) f.id: f};
 
+    var skippedTemporary = 0;
     var copied = 0;
     var skipped = 0;
     var skippedDuplicate = 0;
@@ -228,6 +318,10 @@ class MealRepository {
         final food = foodById[entry.foodId];
         if (food == null) {
           skipped++;
+          continue;
+        }
+        if (food.isTemporary) {
+          skippedTemporary++;
           continue;
         }
         final names = namesByMealType.putIfAbsent(
@@ -251,6 +345,7 @@ class MealRepository {
       copied: copied,
       skippedMissingFood: skipped,
       skippedDuplicate: skippedDuplicate,
+      skippedTemporary: skippedTemporary,
     );
   }
 

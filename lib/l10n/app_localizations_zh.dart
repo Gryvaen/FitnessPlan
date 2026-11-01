@@ -3204,4 +3204,64 @@ class AppLocalizationsZh extends AppLocalizations {
   String updateVersionMeta(String current, String size) {
     return '当前 $current · 安装包 $size';
   }
+
+  @override
+  String get temporaryFood => '临时食物';
+
+  @override
+  String get temporaryFoodHint => '仅用于本次记录，不加入食物库';
+
+  @override
+  String get invalidFoodWeight => '请输入大于 0 的有效重量';
+
+  @override
+  String get invalidFoodNutrition => '请填写名称和有效的非负营养数值';
+
+  @override
+  String get addDietRecord => '加入饮食记录';
+
+  @override
+  String get dietRecordAdded => '已加入饮食记录';
+
+  @override
+  String get temporaryBadge => '仅一次';
+
+  @override
+  String skippedTemporaryFoods(int count) {
+    return '已跳过 $count 项临时食物';
+  }
+
+  @override
+  String get optionalNutrition => '更多营养成分（可选）';
+
+  @override
+  String get recordTemporaryFood => '记录临时食物';
+
+  @override
+  String get recordTemporaryCalories => '记录临时热量';
+
+  @override
+  String get normalFoodMode => '正常模式';
+
+  @override
+  String get temporaryCaloriesMode => '临时热量';
+
+  @override
+  String cycleFoodMode(String current, String next) {
+    return '$current，点击切换为$next';
+  }
+
+  @override
+  String get actualFoodWeight => '摄入重量（g）';
+
+  @override
+  String get thisIntakeCalories => '本次摄入热量';
+
+  @override
+  String get normalFoodTitle => '添加自定义食物';
+
+  @override
+  String presetSavedSkippedTemporary(int count) {
+    return '套餐已保存，已跳过 $count 项临时食物';
+  }
 }

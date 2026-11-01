@@ -2325,5 +2325,47 @@
   "updateSourceAutoHint": "测速后选最快的源",
   "updateSourceGiteeHint": "国内网络通常更快",
   "updateSourceGithubHint": "海外网络通常更快",
-  "updateVersionMeta": "当前 {current} · 安装包 {size}"
+  "updateVersionMeta": "当前 {current} · 安装包 {size}",
+  "temporaryFood": "临时食物",
+  "temporaryFoodHint": "仅用于本次记录，不加入食物库",
+  "invalidFoodWeight": "请输入大于 0 的有效重量",
+  "invalidFoodNutrition": "请填写名称和有效的非负营养数值",
+  "addDietRecord": "加入饮食记录",
+  "dietRecordAdded": "已加入饮食记录",
+  "temporaryBadge": "仅一次",
+  "skippedTemporaryFoods": "已跳过 {count} 项临时食物",
+  "@skippedTemporaryFoods": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optionalNutrition": "更多营养成分（可选）",
+  "recordTemporaryFood": "记录临时食物",
+  "recordTemporaryCalories": "记录临时热量",
+  "normalFoodMode": "正常模式",
+  "temporaryCaloriesMode": "临时热量",
+  "cycleFoodMode": "{current}，点击切换为{next}",
+  "actualFoodWeight": "摄入重量（g）",
+  "thisIntakeCalories": "本次摄入热量",
+  "@cycleFoodMode": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "next": {
+        "type": "String"
+      }
+    }
+  },
+  "normalFoodTitle": "添加自定义食物",
+  "presetSavedSkippedTemporary": "套餐已保存，已跳过 {count} 项临时食物",
+  "@presetSavedSkippedTemporary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }
