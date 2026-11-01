@@ -182,6 +182,8 @@
   "@collectionItems": {"placeholders": {"count": {"type": "int"}}},
   "noPresets": "还没有常用套餐",
   "presetAddToday": "加入今天",
+  "presetAddToMeal": "加入今天{meal}",
+  "@presetAddToMeal": {"placeholders": {"meal": {"type": "String"}}},
   "presetEdit": "编辑套餐",
   "presetAddFood": "添加食材",
   "presetEmpty": "套餐中没有食材",

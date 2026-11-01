@@ -234,9 +234,12 @@ class MealPresetRepository {
     });
   }
 
+  /// Logs the preset's items for [date], each under its own meal, or all
+  /// under [intoMealType] when the preset was opened from that meal.
   Future<CopyDayResult> applyPreset({
     required int presetId,
     required DateTime date,
+    MealType? intoMealType,
   }) async {
     CalendarDay.ensureEditableDay(date);
     final items = await itemsFor(presetId);
@@ -271,14 +274,15 @@ class MealPresetRepository {
           skipped++;
           continue;
         }
-        final names = namesByType.putIfAbsent(item.mealType, () => <String>{});
+        final mealType = intoMealType ?? MealType.values.byName(item.mealType);
+        final names = namesByType.putIfAbsent(mealType.name, () => <String>{});
         if (!names.add(food.name.trim())) {
           skippedDuplicate++;
           continue;
         }
         await _meals.add(
           date: date,
-          mealType: MealType.values.byName(item.mealType),
+          mealType: mealType,
           food: food,
           grams: item.grams,
         );

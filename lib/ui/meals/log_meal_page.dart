@@ -25,11 +25,16 @@ class LogMealPage extends ConsumerStatefulWidget {
     /// when 记一笔 was pushed from [DailyMealsPage] so a plain pop returns
     /// there without stacking a second copy.
     this.openDayMealsAfterSearchAdd = true,
+
+    /// True when opened from one meal's add button: a preset picked here
+    /// is logged entirely under the selected meal instead of per item.
+    this.fromMeal = false,
   });
 
   final int? initialFoodId;
   final MealType? initialMealType;
   final bool openDayMealsAfterSearchAdd;
+  final bool fromMeal;
 
   @override
   ConsumerState<LogMealPage> createState() => _LogMealPageState();
@@ -459,7 +464,11 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
             child: ListTile(
               leading: const InkIcon(InkGlyph.restaurant),
               title: Text(p.name),
-              onTap: () => context.push('/meal-preset/${p.id}'),
+              onTap: () => context.push(
+                widget.fromMeal
+                    ? '/meal-preset/${p.id}?mealType=${_mealType.name}'
+                    : '/meal-preset/${p.id}',
+              ),
             ),
           ),
         );

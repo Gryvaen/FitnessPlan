@@ -496,6 +496,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get presetAddToday => '加入今天';
 
   @override
+  String presetAddToMeal(String meal) {
+    return '加入今天$meal';
+  }
+
+  @override
   String get presetEdit => '编辑套餐';
 
   @override

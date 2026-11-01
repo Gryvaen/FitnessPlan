@@ -74,7 +74,15 @@ Future<void> pumpPresetApp(
           ),
         ],
       ),
-      GoRoute(path: '/log-meal', builder: (_, _) => const LogMealPage()),
+      GoRoute(
+        path: '/log-meal',
+        builder: (_, state) => LogMealPage(
+          initialMealType: MealType.tryParse(
+            state.uri.queryParameters['mealType'],
+          ),
+          fromMeal: state.uri.queryParameters['fromMeal'] == '1',
+        ),
+      ),
       GoRoute(
         path: '/custom-food',
         builder: (_, state) => CustomFoodEditPage(
@@ -96,6 +104,9 @@ Future<void> pumpPresetApp(
         path: '/meal-preset/:id',
         builder: (_, state) => MealPresetDetailPage(
           presetId: int.parse(state.pathParameters['id']!),
+          intoMealType: MealType.tryParse(
+            state.uri.queryParameters['mealType'],
+          ),
         ),
       ),
       GoRoute(path: '/today', builder: (_, _) => const Scaffold()),
@@ -182,6 +193,45 @@ void main() {
     expect(find.text('测试燕麦'), findsOneWidget);
     expect(find.text('380'), findsOneWidget);
     expect(await MealRepository(db).forDay(DateTime.now()), isEmpty);
+  });
+
+  testWidgets('preset opened from one meal is logged entirely under it', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    await seedPreset(db);
+    await pumpPresetApp(
+      tester,
+      db: db,
+      initialLocation: '/log-meal?mealType=dinner&fromMeal=1',
+    );
+    await tester.tap(find.text('测试套餐'));
+    await tester.pumpAndSettle();
+    expect(find.text('加入今天'), findsNothing);
+    await tester.tap(find.text('加入今天晚餐'));
+    await tester.pumpAndSettle();
+    final logged = await MealRepository(db).forDay(DateTime.now());
+    expect(logged.map((e) => e.mealType), [MealType.dinner.name]);
+  });
+
+  testWidgets('preset opened from today records keeps each item meal', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    await seedPreset(db);
+    await pumpPresetApp(
+      tester,
+      db: db,
+      initialLocation: '/log-meal?mealType=dinner',
+    );
+    await tester.tap(find.text('测试套餐'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('加入今天'));
+    await tester.pumpAndSettle();
+    final logged = await MealRepository(db).forDay(DateTime.now());
+    expect(logged.map((e) => e.mealType), [MealType.breakfast.name]);
   });
 
   testWidgets('applying from detail shows counts and opens today records', (

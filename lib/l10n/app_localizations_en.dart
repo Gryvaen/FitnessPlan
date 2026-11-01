@@ -499,6 +499,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get presetAddToday => 'Add to today';
 
   @override
+  String presetAddToMeal(String meal) {
+    return 'Add to today\'s $meal';
+  }
+
+  @override
   String get presetEdit => 'Edit preset';
 
   @override

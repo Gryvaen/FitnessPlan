@@ -182,6 +182,8 @@
   "@collectionItems": {"placeholders": {"count": {"type": "int"}}},
   "noPresets": "No meal presets yet",
   "presetAddToday": "Add to today",
+  "presetAddToMeal": "Add to today's {meal}",
+  "@presetAddToMeal": {"placeholders": {"meal": {"type": "String"}}},
   "presetEdit": "Edit preset",
   "presetAddFood": "Add food",
   "presetEmpty": "This preset has no foods",

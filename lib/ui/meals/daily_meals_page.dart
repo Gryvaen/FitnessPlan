@@ -405,7 +405,8 @@ class _MealTypeSection extends ConsumerWidget {
             onPressed: () {
               unfocusForNavigation();
               context.push(
-                '/log-meal?mealType=${type.name}&openDayMealsAfterSearchAdd=0',
+                '/log-meal?mealType=${type.name}'
+                '&openDayMealsAfterSearchAdd=0&fromMeal=1',
               );
             },
           ),
@@ -446,7 +447,7 @@ class _MealTypeSection extends ConsumerWidget {
                       unfocusForNavigation();
                       context.push(
                         '/log-meal?mealType=${type.name}'
-                        '&openDayMealsAfterSearchAdd=0',
+                        '&openDayMealsAfterSearchAdd=0&fromMeal=1',
                       );
                     },
                     icon: const InkIcon(InkGlyph.add, size: 18),

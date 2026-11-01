@@ -16,9 +16,17 @@ import '../widgets/search_field_focus.dart';
 import 'daily_meals_page.dart';
 
 class MealPresetDetailPage extends ConsumerStatefulWidget {
-  const MealPresetDetailPage({super.key, required this.presetId});
+  const MealPresetDetailPage({
+    super.key,
+    required this.presetId,
+    this.intoMealType,
+  });
 
   final int presetId;
+
+  /// The meal the preset was opened from; when set, every item is logged
+  /// under it instead of under the item's own meal.
+  final MealType? intoMealType;
 
   @override
   ConsumerState<MealPresetDetailPage> createState() =>
@@ -365,7 +373,11 @@ class _MealPresetDetailPageState extends ConsumerState<MealPresetDetailPage> {
     try {
       final result = await ref
           .read(mealPresetRepositoryProvider)
-          .applyPreset(presetId: widget.presetId, date: day);
+          .applyPreset(
+            presetId: widget.presetId,
+            date: day,
+            intoMealType: widget.intoMealType,
+          );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -567,7 +579,10 @@ class _MealPresetDetailPageState extends ConsumerState<MealPresetDetailPage> {
           width: double.infinity,
           child: FilledButton(
             onPressed: _items.isEmpty || _saving ? null : _apply,
-            child: Text(l10n.presetAddToday),
+            child: Text(switch (widget.intoMealType) {
+              final meal? => l10n.presetAddToMeal(meal.label(l10n)),
+              null => l10n.presetAddToday,
+            }),
           ),
         ),
       ),

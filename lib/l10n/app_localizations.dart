@@ -1052,6 +1052,12 @@ abstract class AppLocalizations {
   /// **'Add to today'**
   String get presetAddToday;
 
+  /// No description provided for @presetAddToMeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to today\'s {meal}'**
+  String presetAddToMeal(String meal);
+
   /// No description provided for @presetEdit.
   ///
   /// In en, this message translates to:

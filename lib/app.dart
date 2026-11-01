@@ -322,6 +322,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             initialFoodId: id,
             initialMealType: mealType,
             openDayMealsAfterSearchAdd: openDayMealsAfterSearchAdd,
+            fromMeal: state.uri.queryParameters['fromMeal'] == '1',
           );
         },
       ),
@@ -346,7 +347,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               body: Center(child: Text(context.l10n.presetNotFound)),
             );
           }
-          return MealPresetDetailPage(presetId: id);
+          return MealPresetDetailPage(
+            presetId: id,
+            intoMealType: MealType.tryParse(
+              state.uri.queryParameters['mealType'],
+            ),
+          );
         },
       ),
       // Root-level twins of /foods/custom and /foods/:id. Pushing a shell
