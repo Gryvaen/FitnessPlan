@@ -14,10 +14,10 @@
 ## Python 环境
 
 - `tool/release/` 和 `tool/food_seed/` 只用 Python 标准库，直接用系统的 `python3` 运行。
-- `tool/copyright/` 需要第三方库，使用本地虚拟环境 `tool/.venv/`（不提交；仓库也没有 requirements 文件）。重建方法：
+- `tool/copyright/` 需要第三方库，使用本地虚拟环境 `tool/.venv/`（不提交）。重建方法：
   ```bash
   python3 -m venv tool/.venv
-  tool/.venv/bin/pip install python-docx reportlab
+  tool/.venv/bin/pip install -r tool/copyright/requirements.txt
   ```
 - `tool/docs/generate_readme_banner.py` 需要 `art` 库：`pip install art`。
 
@@ -39,7 +39,7 @@ tool/release/release.sh 2.6.2 --notes-file notes.md      # 每次发版
 ```
 
 - **前置条件**：`android/key.properties` 和它指向的 keystore（见 [release.md](release.md#签名)）；`flutter pub get` 已经执行过。
-- **执行步骤**：`flutter analyze --no-fatal-infos` → `flutter test --exclude-tags=copyright` → 预下载 sqlite3 原生库 → 按 ABI 拆分构建 → 构建通用包 → 生成清单。构建都加了 `--obfuscate --split-debug-info=dist/symbols`。
+- **执行步骤**：`flutter analyze --no-fatal-infos` → `flutter test` → 预下载 sqlite3 原生库 → 按 ABI 拆分构建 → 构建通用包 → 生成清单。构建都加了 `--obfuscate --split-debug-info=dist/symbols`。
 - **产出**（在 `dist/`，已被 git 忽略）：
   - `FitnessPlan-<版本>-android.apk`（通用包）、`-android-arm64-v8a.apk`、`-android-armeabi-v7a.apk`、`-android-x86_64.apk`
   - `update-manifest.json`、`SHA256SUMS`
@@ -117,20 +117,26 @@ python3 -m unittest discover -s tool/release -p 'test_*.py'
 
 所有产物都输出到 `docs/copyright/`，这个目录被 git 忽略。申请步骤说明在 `docs/copyright/申请步骤.md`（同样只在本地）。
 
+软件名称和版本号写在 `copyright_meta.py` 里（`SOFTWARE_NAME` 和 `VERSION`），必须和 R11 申请表里的「软件全称」「版本号」逐字一致，包括大小写。页眉、封面和文件名统一使用 `FULL_NAME`（全称 + 版本号）。审查员会逐页核对页眉，名称不一致会被要求补正。
+
+著作权人通过 `--holder` 传入（填申请人身份证上的姓名），不写进仓库，因为仓库是公开的。开发完成日期 `--completed YYYY-MM-DD` 是可选参数，不传时封面不写日期。
+
 | 脚本 | 作用 | 产出 |
 |---|---|---|
-| `generate_copyright_screenshots.sh` | 用 golden 测试生成 12 张界面截图（`test/copyright_screenshots_test.dart`） | `docs/copyright/screenshots/*.png` |
-| `generate_copyright_manual_pdf.sh` | 用 reportlab 生成说明书 PDF，嵌入上面的 12 张截图 | `docs/copyright/健身饮食管理助手软件V1.0-说明书.pdf` |
-| `generate_copyright_manual_docx.sh` | 用 python-docx 生成说明书 Word 版 | `docs/copyright/健身饮食管理助手软件V1.0-说明书.docx` |
-| `generate_copyright_source_pdf.py` | 源代码材料：`lib/` 下有效代码行的前 30 页和后 30 页，每页 50 行，跳过生成文件、空行和注释 | `docs/copyright/健身饮食管理助手软件V1.0-源代码.pdf` |
+| `generate_copyright_source_pdf.sh` | 源代码材料：`lib/` 下有效代码行的前 30 页和后 30 页，每页 50 行，跳过生成文件、空行和注释 | `docs/copyright/<FULL_NAME>-源代码.pdf` |
+| `generate_copyright_manual_pdf.sh` | 说明书 PDF（上传用），每页都有页眉和页码 | `docs/copyright/<FULL_NAME>-说明书.pdf` |
+| `generate_copyright_manual_docx.sh` | 说明书 Word 版（可编辑），内容和 PDF 相同 | `docs/copyright/<FULL_NAME>-说明书.docx` |
 
 ```bash
-./tool/copyright/generate_copyright_screenshots.sh
-./tool/copyright/generate_copyright_manual_pdf.sh
-tool/.venv/bin/python tool/copyright/generate_copyright_source_pdf.py
+./tool/copyright/generate_copyright_source_pdf.sh --holder <姓名>
+./tool/copyright/generate_copyright_manual_pdf.sh --holder <姓名>
+./tool/copyright/generate_copyright_manual_docx.sh --holder <姓名>
 ```
 
-注意：Word 版脚本读取的 `docs/display/*.jpg` 目录并不存在，生成的文档里会出现「图片缺失」占位，见 [known-issues.md](known-issues.md)。
+说明书正文定义在 `manual_content.py`，PDF 和 Word 两个脚本都从这里读取。截图使用 `design/display/*.png` 里的真机截图。有两点要注意：
+
+- 截图里不能出现应用版本号（例如 2.5.3），否则会和登记的版本号冲突。「我的」页截图因此通过 `Shot.crop` 裁掉了顶部的版本号和「关于」那一行。
+- 截图上显示的日期不能晚于申请表里的开发完成日期。
 
 ## tool/docs/
 

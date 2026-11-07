@@ -11,9 +11,7 @@
 | 高 | 发布用的签名是维护机的 `~/.android/debug.keystore` | 这个文件丢失、或换一台机器构建，新包就无法覆盖安装；debug 密钥的安全性也很弱 | 立即离线备份这个 keystore。更换签名密钥需要用户卸载重装，只能结合「先导出备份」的引导一起做 |
 | 中 | CI 没有固定 Flutter 版本（只写了 `channel: stable`） | Flutter 新版本发布后，CI 可能突然失败，而且和本地结果不一致 | 在 `ci.yml` 里固定 `flutter-version`，和本地开发环境保持一致 |
 | 中 | CI 不跑原生测试、不跑发版脚本的 Python 测试，也不检查生成的代码是否最新 | 这几部分的回归只能靠本地发现 | 在 CI 里加上 `python3 -m unittest`；可选加上 Gradle 单元测试，以及 `build_runner` / `gen-l10n` 之后 `git diff --exit-code` 的检查 |
-| 低 | 软著 Word 版脚本读取的 `docs/display/*.jpg` 目录不存在 | 生成的文档里出现「图片缺失」占位 | 改为读取 `design/display/*.png`，或者改用 golden 截图 |
 | 低 | `design-handoff/` 不在仓库里，也没有被 git 忽略 | 运行 `tool/docs/generate_implementation_preview.sh` 后会多出一堆未跟踪文件 | 在 `.gitignore` 里加上 `/design-handoff/` |
-| 低 | 软著脚本的 Python 依赖没有 requirements 文件 | 换机器后要自己猜该装哪些包 | 加 `tool/copyright/requirements.txt` |
 
 ## 数据
 

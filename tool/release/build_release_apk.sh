@@ -35,8 +35,7 @@ echo "==> flutter analyze"
 flutter analyze --no-fatal-infos
 
 echo "==> flutter test"
-# Soft著截图 golden 依赖本地 docs/copyright（已 gitignore），默认排除。
-flutter test --exclude-tags=copyright
+flutter test
 
 # shellcheck source=tool/release/prefetch_sqlite3_android_libs.sh
 source "$ROOT/tool/release/prefetch_sqlite3_android_libs.sh"

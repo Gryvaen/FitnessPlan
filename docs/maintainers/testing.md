@@ -15,8 +15,7 @@
 | 全部 Dart 测试 | `flutter test` |
 | 单个文件 | `flutter test test/food_seed_sync_test.dart` |
 | 单个用例 | `flutter test test/xxx_test.dart --plain-name "用例名"` |
-| 排除某个 tag | `flutter test --exclude-tags=copyright` |
-| 生成软著截图 | `./tool/copyright/generate_copyright_screenshots.sh` |
+| 排除某个 tag | `flutter test --exclude-tags=implementation_preview` |
 | 生成设计预览截图 | `./tool/docs/generate_implementation_preview.sh` |
 | 发版脚本测试 | `python3 -m unittest discover -s tool/release -p 'test_*.py'` |
 | 原生测试 | `cd android && JAVA_HOME=<JDK 21 路径> ./gradlew :app:testDebugUnitTest` |
@@ -33,7 +32,7 @@
 | 页面与交互 | `today_page_widget_test.dart`、`strategy_pages_widget_test.dart`、`log_meal_page_widget_test.dart`、`train_records_tab_widget_test.dart`、`swipe_tab_view_test.dart`、`folded_notes_test.dart`、`search_field_focus_test.dart` 等 |
 | 图标与资源审查 | `ink_icon_assets_test.dart`（每个图标都有可解码的浅色和深色 PNG）、`home_flow_ink_icon_audit_test.dart`、`profile_tools_ink_icon_audit_test.dart`（扫描 `lib/ui` 源码，禁止使用 Material 的 `Icons.*`） |
 | 多语言 | `food_category_l10n_test.dart`、`food_item_l10n_test.dart`、`append_yesterday_l10n_test.dart` |
-| 截图生成（默认跳过） | `copyright_screenshots_test.dart`、`implementation_preview_test.dart` |
+| 截图生成（默认跳过） | `implementation_preview_test.dart` |
 
 ## 常见写法
 
@@ -98,9 +97,11 @@ addTearDown(() => messenger.setMockMethodCallHandler(alarm, null));
 
 ## tag 与截图测试
 
-`dart_test.yaml` 定义了两个 tag：`copyright` 和 `implementation_preview`。两者都设置了 `skip`，所以平时的 `flutter test`（包括 CI）不会运行它们。要运行，就加上 `--run-skipped`，最好直接用上表中的两个生成脚本。
+`dart_test.yaml` 定义了 tag `implementation_preview`，并设置了 `skip`，所以平时的 `flutter test`（包括 CI）不会运行它。要运行，就加上 `--run-skipped`，最好直接用上表中的生成脚本。
 
-这两组测试的输出都是生成的截图，不是用来比对的基线：`docs/copyright/` 被 git 忽略，`design-handoff/` 也不在仓库里。
+它的输出是生成的截图，不是用来比对的基线：`design-handoff/` 不在仓库里。
+
+软著说明书不用测试截图（golden 测试里的文字是 Ahem 方块字），而是直接使用 `design/display/` 里的真机截图，见 [tools.md](tools.md)。
 
 ## CI
 

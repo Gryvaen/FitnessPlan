@@ -3,20 +3,23 @@
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
+from copyright_meta import (
+    FULL_NAME,
+    MONO_FONT,
+    OUT_DIR,
+    ROOT,
+    SANS_FONT,
+    Applicant,
+    parse_applicant,
+    register_fonts,
+)
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 from reportlab.pdfgen import canvas
 
-ROOT = Path(__file__).resolve().parents[2]
 LIB = ROOT / "lib"
-OUT_DIR = ROOT / "docs" / "copyright"
-
-SOFTWARE_NAME = "健身饮食管理助手软件V1.0"
 LINES_PER_PAGE = 50
 PAGES_EACH_SIDE = 30
 TOTAL_LINES_EACH_SIDE = LINES_PER_PAGE * PAGES_EACH_SIDE
@@ -28,7 +31,6 @@ EXCLUDED_PREFIXES = (
     str(LIB / "l10n" / "app_localizations"),
 )
 
-FONT_NAME = "STSong-Light"
 FONT_SIZE = 9
 LINE_HEIGHT = 11.5
 LEFT_MARGIN = 2 * cm
@@ -165,10 +167,10 @@ def draw_page(
     section_label: str,
 ) -> None:
     width, height = A4
-    pdf.setFont(FONT_NAME, FONT_SIZE)
-
-    header = f"{SOFTWARE_NAME}    {section_label}    第 {page_number} 页"
+    pdf.setFont(SANS_FONT, FONT_SIZE)
+    header = f"{FULL_NAME}    {section_label}    第 {page_number} 页"
     pdf.drawString(LEFT_MARGIN, height - 1.5 * cm, header)
+    pdf.setFont(MONO_FONT, FONT_SIZE)
 
     y = height - TOP_MARGIN
     usable_height = height - TOP_MARGIN - BOTTOM_MARGIN
@@ -182,7 +184,7 @@ def draw_page(
     pdf.showPage()
 
 
-def build_pdf(output_path: Path) -> None:
+def build_pdf(output_path: Path, applicant: Applicant) -> None:
     front_files = front_file_order()
     back_files = back_file_order()
 
@@ -200,10 +202,14 @@ def build_pdf(output_path: Path) -> None:
             f"Not enough back source lines: {len(back_lines)} < {TOTAL_LINES_EACH_SIDE}"
         )
 
-    pdfmetrics.registerFont(UnicodeCIDFont(FONT_NAME))
+    register_fonts()
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     pdf = canvas.Canvas(str(output_path), pagesize=A4)
+    pdf.setTitle(f"{FULL_NAME} 源程序")
+    pdf.setSubject(FULL_NAME)
+    pdf.setAuthor(applicant.holder)
+    pdf.setCreator(FULL_NAME)
     page_no = 1
     for page_index in range(PAGES_EACH_SIDE):
         start = page_index * LINES_PER_PAGE
@@ -234,8 +240,9 @@ def build_pdf(output_path: Path) -> None:
 
 
 def main() -> None:
-    output = OUT_DIR / f"{SOFTWARE_NAME}-源代码.pdf"
-    build_pdf(output)
+    applicant = parse_applicant(__doc__.strip())
+    output = OUT_DIR / f"{FULL_NAME}-源代码.pdf"
+    build_pdf(output, applicant)
 
 
 if __name__ == "__main__":
