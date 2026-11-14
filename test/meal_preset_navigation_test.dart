@@ -88,6 +88,11 @@ Future<void> pumpPresetApp(
         builder: (_, state) => CustomFoodEditPage(
           returnFoodIdOnCreate:
               state.uri.queryParameters['returnFoodId'] == '1',
+          openDetailOnCreate: state.uri.queryParameters['returnId'] == '1',
+          initialMealType: MealType.tryParse(
+            state.uri.queryParameters['mealType'],
+          ),
+          allowTemporary: state.uri.queryParameters['allowTemporary'] == '1',
         ),
       ),
       GoRoute(
@@ -213,6 +218,63 @@ void main() {
     await tester.pumpAndSettle();
     final logged = await MealRepository(db).forDay(DateTime.now());
     expect(logged.map((e) => e.mealType), [MealType.dinner.name]);
+  });
+
+  testWidgets('today records add can log temporary calories', (tester) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    await pumpPresetApp(
+      tester,
+      db: db,
+      initialLocation: '/log-meal?mealType=dinner',
+    );
+    await tester.tap(find.byTooltip('添加自定义食材'));
+    await tester.pumpAndSettle();
+    final toggle = find.byKey(const ValueKey('temporary-food-toggle'));
+    expect(toggle, findsOneWidget);
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (w) => w is TextField && w.decoration?.labelText == '名称',
+      ),
+      '夜宵',
+    );
+    // normal → temporary food → temporary calories
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (w) =>
+            w is TextField && w.decoration?.labelText?.contains('kcal') == true,
+      ),
+      '320',
+    );
+    tester.testTextInput.hide();
+    final submit = find.text('加入饮食记录');
+    await tester.scrollUntilVisible(
+      submit,
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(submit);
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    });
+    await tester.pumpAndSettle();
+    final logged = await tester.runAsync(
+      () => MealRepository(db).forDay(DateTime.now()),
+    );
+    expect(logged, hasLength(1));
+    expect(logged!.single.mealType, MealType.dinner.name);
+    expect(logged.single.caloriesOnly, isTrue);
+    expect(logged.single.calories, 320);
   });
 
   testWidgets('preset opened from today records keeps each item meal', (

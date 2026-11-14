@@ -29,7 +29,7 @@ Future<void> openForm(
   bool preset = false,
   int? foodId,
   bool fromRecord = true,
-  bool fromMeal = true,
+  bool allowTemporary = true,
   MealType? mealType = MealType.lunch,
 }) async {
   SharedPreferences.setMockInitialValues({});
@@ -49,7 +49,7 @@ Future<void> openForm(
         path: '/create',
         builder: (context, state) => CustomFoodEditPage(
           openDetailOnCreate: fromRecord,
-          fromMeal: fromMeal,
+          allowTemporary: allowTemporary,
           initialMealType: mealType,
           returnFoodIdOnCreate: preset,
           foodId: foodId,
@@ -248,9 +248,9 @@ void main() {
   });
 
   for (final scenario in [
-    (fromRecord: false, fromMeal: true, mealType: MealType.lunch),
-    (fromRecord: true, fromMeal: true, mealType: null),
-    (fromRecord: true, fromMeal: false, mealType: MealType.lunch),
+    (fromRecord: false, allowTemporary: true, mealType: MealType.lunch),
+    (fromRecord: true, allowTemporary: true, mealType: null),
+    (fromRecord: true, allowTemporary: false, mealType: MealType.lunch),
   ]) {
     testWidgets('no temporary modes outside specified meal flow: $scenario', (
       tester,
@@ -261,7 +261,7 @@ void main() {
         tester,
         db,
         fromRecord: scenario.fromRecord,
-        fromMeal: scenario.fromMeal,
+        allowTemporary: scenario.allowTemporary,
         mealType: scenario.mealType,
       );
       expect(toggle, findsNothing);

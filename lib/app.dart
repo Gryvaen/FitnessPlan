@@ -130,7 +130,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                         openDayMealsAfterAdd:
                             state.uri.queryParameters['openDayMealsAfterAdd'] !=
                             '0',
-                        fromMeal: state.uri.queryParameters['fromMeal'] == '1',
+                        allowTemporary:
+                            state.uri.queryParameters['allowTemporary'] == '1',
                       );
                     },
                   ),
@@ -375,7 +376,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
             openDayMealsAfterAdd:
                 state.uri.queryParameters['openDayMealsAfterAdd'] != '0',
-            fromMeal: state.uri.queryParameters['fromMeal'] == '1',
+            allowTemporary: state.uri.queryParameters['allowTemporary'] == '1',
           );
         },
       ),

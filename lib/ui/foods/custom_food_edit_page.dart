@@ -23,7 +23,7 @@ class CustomFoodEditPage extends ConsumerStatefulWidget {
     this.returnFoodIdOnCreate = false,
     this.initialMealType,
     this.openDayMealsAfterAdd = true,
-    this.fromMeal = false,
+    this.allowTemporary = false,
   });
 
   final int? foodId;
@@ -42,9 +42,10 @@ class CustomFoodEditPage extends ConsumerStatefulWidget {
   /// Forwarded to food detail: after logging, open 饮食记录 (unless false).
   final bool openDayMealsAfterAdd;
 
-  /// True when reached from one meal's add button: only then can the user
-  /// log a temporary food / calories straight into [initialMealType].
-  final bool fromMeal;
+  /// True when reached from 记一笔 (today's add, the day page's add or one
+  /// meal's add), which always fixes [initialMealType]: only then can the
+  /// user log a temporary food / calories straight into that meal.
+  final bool allowTemporary;
 
   @override
   ConsumerState<CustomFoodEditPage> createState() => _CustomFoodEditPageState();
@@ -200,7 +201,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
 
   bool get _canUseTemporaryModes =>
       !_isEdit &&
-      widget.fromMeal &&
+      widget.allowTemporary &&
       widget.openDetailOnCreate &&
       widget.initialMealType != null &&
       !widget.returnFoodIdOnCreate;

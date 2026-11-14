@@ -160,7 +160,9 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
             'returnId': '1',
             'mealType': _mealType.name,
             if (!widget.openDayMealsAfterSearchAdd) 'openDayMealsAfterAdd': '0',
-            if (widget.fromMeal) 'fromMeal': '1',
+            // The meal dropdown above always names the target meal, so a
+            // temporary record can be logged from any 记一笔 entry.
+            'allowTemporary': '1',
           },
         ).toString(),
       ),
