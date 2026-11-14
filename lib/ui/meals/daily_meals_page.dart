@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../data/db.dart';
+import '../../data/repositories/meal_repository.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
@@ -411,10 +412,25 @@ class _MealTypeSection extends ConsumerWidget {
     final canClear = editable && entries.isNotEmpty;
     final showMenu = canCopyYesterday || canSaveAsPreset;
 
+    final loggedAt = mealLoggedAt(entries);
     final headerRow = Row(
       children: [
         Expanded(
-          child: Text(type.label(l10n), style: theme.textTheme.titleSmall),
+          child: Text.rich(
+            TextSpan(
+              text: type.label(l10n),
+              children: [
+                if (loggedAt != null)
+                  TextSpan(
+                    text: '  ${AppDates.hm(loggedAt)}',
+                    style: theme.textTheme.meta?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+              ],
+            ),
+            style: theme.textTheme.titleSmall,
+          ),
         ),
         Text(
           entries.isEmpty ? l10n.mealNotLogged : '${kcal.round()} kcal',
@@ -578,12 +594,15 @@ class _MealEntryTile extends ConsumerWidget {
         style: theme.textTheme.bodyLarge,
       ),
       subtitle: Text(
-        m.caloriesOnly
-            ? l10n.temporaryCaloriesMode
-            : '${m.grams.toStringAsFixed(0)} g · '
-                  'P ${m.proteinG.toStringAsFixed(0)} · '
-                  'C ${m.carbG.toStringAsFixed(0)} · '
-                  'F ${m.fatG.toStringAsFixed(0)}',
+        [
+          if (m.loggedAt case final at?) AppDates.hm(at),
+          m.caloriesOnly
+              ? l10n.temporaryCaloriesMode
+              : '${m.grams.toStringAsFixed(0)} g · '
+                    'P ${m.proteinG.toStringAsFixed(0)} · '
+                    'C ${m.carbG.toStringAsFixed(0)} · '
+                    'F ${m.fatG.toStringAsFixed(0)}',
+        ].join(' · '),
         style: theme.textTheme.meta,
       ),
       trailing: Text(

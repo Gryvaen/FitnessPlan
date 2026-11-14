@@ -129,6 +129,9 @@ abstract final class AppDates {
   static bool isLocalToday(DateTime d, [DateTime? now]) =>
       CalendarDay.isLocalToday(d, now);
 
+  /// 24-hour clock time of a logged moment, e.g. `08:05`.
+  static String hm(DateTime d) => DateFormat('HH:mm').format(d.toLocal());
+
   static String md(DateTime d, Locale locale) {
     final code = locale.languageCode;
     if (code == 'zh') return DateFormat('M月d日', 'zh').format(d);

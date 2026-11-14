@@ -42,7 +42,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   /// Bump together with a new migration step.
-  static const currentSchemaVersion = 38;
+  static const currentSchemaVersion = 39;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -331,6 +331,20 @@ UPDATE day_markers SET
       }
       if (from < 36) {
         await m.alterTable(TableMigration(dailyNotes));
+      }
+      if (from < 39) {
+        // Additive: rows logged before v39 keep a null time. Partial legacy
+        // databases may lack either table.
+        for (final (table, column) in <(TableInfo, GeneratedColumn)>[
+          (mealEntries, mealEntries.loggedAt),
+          (dayWorkoutItems, dayWorkoutItems.performedAt),
+        ]) {
+          final exists = await customSelect(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+            variables: [Variable.withString(table.actualTableName)],
+          ).get();
+          if (exists.isNotEmpty) await _addColumnIfMissing(m, table, column);
+        }
       }
     },
   );

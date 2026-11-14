@@ -1280,6 +1280,8 @@ class _WorkoutItemTile extends ConsumerWidget {
             TextSpan(
               style: metaStyle,
               children: [
+                if (item.performedAt case final at?)
+                  TextSpan(text: '${AppDates.hm(at)} · '),
                 if (item.done) ...[
                   TextSpan(
                     text: l10n.completed,

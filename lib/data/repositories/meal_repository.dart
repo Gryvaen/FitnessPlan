@@ -5,6 +5,17 @@ import '../../domain/models.dart';
 import '../db.dart';
 import '../../domain/temporary_food_draft.dart';
 
+/// A meal's time: the earliest [MealEntry.loggedAt] among its entries, or
+/// null when none carries one (rows logged before v39).
+DateTime? mealLoggedAt(Iterable<MealEntry> entries) {
+  DateTime? first;
+  for (final entry in entries) {
+    final at = entry.loggedAt;
+    if (at != null && (first == null || at.isBefore(first))) first = at;
+  }
+  return first;
+}
+
 /// One calendar day of logged meals, newest-first when listed as history.
 class MealHistoryDay {
   const MealHistoryDay({
@@ -158,8 +169,9 @@ class MealRepository {
     required double grams,
     MacroIntake? intakeOverride,
     bool caloriesOnly = false,
+    DateTime? now,
   }) async {
-    CalendarDay.ensureEditableDay(date);
+    CalendarDay.ensureEditableDay(date, now);
     final intake = intakeOverride ?? _intakeFor(food, grams);
     return _db
         .into(_db.mealEntries)
@@ -181,6 +193,7 @@ class MealRepository {
             sugarG: Value(intake.sugarG),
             saturatedFatG: Value(intake.saturatedFatG),
             calciumMg: Value(intake.calciumMg),
+            loggedAt: Value(now ?? DateTime.now()),
           ),
         );
   }

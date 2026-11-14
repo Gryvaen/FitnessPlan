@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/db.dart';
+import '../../data/repositories/meal_repository.dart';
 import '../../domain/diet_plan.dart';
 import '../../domain/diet_strategy.dart';
 import '../../domain/goal_quotes.dart';
@@ -750,6 +751,7 @@ class _MealGroups extends ConsumerWidget {
       final group = meals.where((m) => m.mealType == type.name).toList();
       if (group.isEmpty) continue;
       final calories = group.fold<double>(0, (sum, m) => sum + m.calories);
+      final loggedAt = mealLoggedAt(group);
       final accent = switch (type) {
         MealType.breakfast => AppColors.fat,
         MealType.lunch => AppColors.carb,
@@ -773,6 +775,15 @@ class _MealGroups extends ConsumerWidget {
                 ),
                 const SizedBox(width: 10),
                 Text(type.label(l10n), style: theme.textTheme.titleSmall),
+                if (loggedAt != null) ...[
+                  const SizedBox(width: 6),
+                  Text(
+                    AppDates.hm(loggedAt),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text.rich(

@@ -96,6 +96,10 @@ class MealEntries extends Table {
   RealColumn get sugarG => real().withDefault(const Constant(0.0))();
   RealColumn get saturatedFatG => real().withDefault(const Constant(0.0))();
   RealColumn get calciumMg => real().withDefault(const Constant(0.0))();
+
+  /// Moment the food was logged (v39); null for older rows. A meal's time is
+  /// the earliest of its entries' — see `mealLoggedAt`.
+  DateTimeColumn get loggedAt => dateTime().nullable()();
 }
 
 class MealPresets extends Table {
@@ -212,6 +216,10 @@ class DayWorkoutItems extends Table {
   /// Set count just before the done checkbox filled the rest. Unchecking
   /// restores this many sets instead of wiping the item back to zero.
   IntColumn get setsBeforeDone => integer().nullable()();
+
+  /// Moment the first set was logged or the item was checked done (v39);
+  /// cleared when its sets drop back to zero. Null for older rows.
+  DateTimeColumn get performedAt => dateTime().nullable()();
 }
 
 class WorkoutSetLogs extends Table {

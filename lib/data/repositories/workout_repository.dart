@@ -756,6 +756,24 @@ class WorkoutRepository {
     return rows.length;
   }
 
+  /// Keeps [DayWorkoutItem.performedAt] in step with the item: stamped when
+  /// the first set lands (or it is checked done), kept while any set remains,
+  /// cleared once it is back to zero sets and not done.
+  Future<void> _syncPerformedAt(int dayWorkoutItemId) async {
+    final item = await (_db.select(
+      _db.dayWorkoutItems,
+    )..where((t) => t.id.equals(dayWorkoutItemId))).getSingleOrNull();
+    if (item == null) return;
+    final count = await _countSetsForDayItem(dayWorkoutItemId);
+    final next = count == 0 && !item.done
+        ? null
+        : item.performedAt ?? DateTime.now();
+    if (next == item.performedAt) return;
+    await (_db.update(_db.dayWorkoutItems)
+          ..where((t) => t.id.equals(dayWorkoutItemId)))
+        .write(DayWorkoutItemsCompanion(performedAt: Value(next)));
+  }
+
   /// Most recent earlier day on which this exercise was actually performed.
   Future<DayWorkoutItem?> _lastTrainedItem(int exerciseId, DateTime day) async {
     final rows =
@@ -1062,6 +1080,7 @@ class WorkoutRepository {
             setsBeforeDone: Value(null),
           ),
         );
+        await _syncPerformedAt(dayWorkoutItemId);
       });
       return;
     }
@@ -1108,6 +1127,7 @@ class WorkoutRepository {
           setsBeforeDone: item.done ? const Value.absent() : Value(existing),
         ),
       );
+      await _syncPerformedAt(dayWorkoutItemId);
     });
   }
 
@@ -1531,6 +1551,7 @@ class WorkoutRepository {
               ),
             );
       }
+      await _syncPerformedAt(dayWorkoutItemId);
 
       final workout = await (_db.select(
         _db.dayWorkouts,
@@ -1591,6 +1612,7 @@ class WorkoutRepository {
           );
 
       if (dayWorkoutItemId != null) {
+        await _syncPerformedAt(dayWorkoutItemId);
         final item = await (_db.select(
           _db.dayWorkoutItems,
         )..where((t) => t.id.equals(dayWorkoutItemId))).getSingleOrNull();

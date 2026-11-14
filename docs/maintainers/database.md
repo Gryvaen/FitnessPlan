@@ -33,7 +33,7 @@
 
 ## 迁移
 
-全部写在 `db.dart` 的 `onUpgrade` 里，形式是一串 `if (from < N) { ... }`，从 v2 一直到 v38。
+全部写在 `db.dart` 的 `onUpgrade` 里，形式是一串 `if (from < N) { ... }`，从 v2 一直到 v39。
 
 几条约定：
 - **加列用 `_addColumnIfMissing`**。它先用 `PRAGMA table_info` 检查列是否已经存在，这样中途中断的升级可以安全地重跑，同一次升级里前面刚建好的表也不会因为重复加列而出错。
@@ -54,6 +54,7 @@
 | v35–v36 | `daily_notes` 加 `mode` 列（旧笔记默认为自由记录），随后重建该表 |
 | v37 | `food_items` 加 `is_temporary`（临时食物，只服务一条饮食记录）；去掉 `name` 的表级唯一约束，改为部分唯一索引 `food_items_name_unique ON food_items(name) WHERE is_temporary = 0`，`onCreate` 也会建它 |
 | v38 | `meal_entries` 加 `calories_only`（临时热量：只记热量，克数为 0） |
+| v39 | `meal_entries` 加 `logged_at`、`day_workout_items` 加 `performed_at`（记录时刻；一餐取最早食物的时间，动作在首次记组/打勾时记、清零时清空；旧数据为空） |
 
 ### 改表的完整步骤
 

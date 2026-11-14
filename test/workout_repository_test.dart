@@ -612,6 +612,84 @@ void main() {
     },
   );
 
+  test('performedAt is stamped by the first set and cleared at zero', () async {
+    final squat = await addTestExercise(repo, name: 'Squat');
+    final row = await addTestExercise(repo, name: 'Row');
+    final plan = await repo.createPlan(
+      name: 'Pull',
+      items: [
+        PlanDraftItem(
+          exerciseId: squat.id,
+          exerciseName: squat.name,
+          targetSets: 3,
+          targetReps: 8,
+        ),
+        PlanDraftItem(
+          exerciseId: row.id,
+          exerciseName: row.name,
+          targetSets: 3,
+          targetReps: 10,
+        ),
+      ],
+    );
+    final day = CalendarDay.todayLocal();
+    await repo.applyPlanToDay(planId: plan, day: day);
+    Future<DayWorkoutItem> itemOf(int exerciseId) async =>
+        (await repo.daySnapshot(
+          day,
+        )).items.firstWhere((p) => p.item.exerciseId == exerciseId).item;
+
+    var squatItem = await itemOf(squat.id);
+    // Applying a plan only schedules the exercise.
+    expect(squatItem.performedAt, isNull);
+
+    final before = DateTime.now().subtract(const Duration(seconds: 1));
+    await repo.logSet(
+      day: day,
+      exerciseId: squat.id,
+      exerciseName: squat.name,
+      dayWorkoutItemId: squatItem.id,
+      reps: 8,
+    );
+    squatItem = await itemOf(squat.id);
+    final stamped = squatItem.performedAt;
+    expect(stamped, isNotNull);
+    expect(stamped!.isBefore(before), isFalse);
+
+    // Later sets and the done check keep the first moment.
+    await repo.logSet(
+      day: day,
+      exerciseId: squat.id,
+      exerciseName: squat.name,
+      dayWorkoutItemId: squatItem.id,
+      reps: 8,
+    );
+    await repo.setItemDone(squatItem.id, true);
+    expect((await itemOf(squat.id)).performedAt, stamped);
+
+    // Moving the item keeps its row, and so its time.
+    await repo.moveDayWorkoutItemToOther(squatItem.id);
+    expect((await itemOf(squat.id)).performedAt, stamped);
+
+    // Editing progress down to zero sets clears it.
+    await repo.updateDayItemProgress(
+      dayWorkoutItemId: squatItem.id,
+      day: day,
+      completedSets: 0,
+      perSetValue: 8,
+      unit: ExerciseUnit.reps,
+    );
+    expect((await itemOf(squat.id)).performedAt, isNull);
+
+    // Checking an untouched item stamps it; unchecking back to zero clears.
+    var rowItem = await itemOf(row.id);
+    await repo.setItemDone(rowItem.id, true);
+    rowItem = await itemOf(row.id);
+    expect(rowItem.performedAt, isNotNull);
+    await repo.setItemDone(rowItem.id, false);
+    expect((await itemOf(row.id)).performedAt, isNull);
+  });
+
   test('moveDayWorkoutItemToOther drops an emptied plan group', () async {
     final pushup = await addTestExercise(repo, name: '俯卧撑');
     final planId = await repo.createPlan(
