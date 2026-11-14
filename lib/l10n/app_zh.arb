@@ -575,6 +575,7 @@
   "carbLoadSummary": "碳水 {perKg} g/kg",
   "@carbLoadSummary": {"placeholders": {"perKg": {"type": "String"}}},
   "carbLoadHint": "蛋白、脂肪同高碳日，碳水最高可到 7 g/kg",
+  "carbLoadLockedHint": "已标记冲碳日，需先取消标记",
   "dayMarkerSettingsTitle": "设置当天标记",
   "pauseCarbCycleLabel": "碳循环顺延一天",
   "pauseCarbCycleSummary": "碳循环顺延一天",

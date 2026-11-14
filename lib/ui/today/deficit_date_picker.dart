@@ -585,7 +585,14 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
     });
   }
 
+  /// A saved 冲碳日 must be cleared before the day can become a 休息日/放纵日:
+  /// switching would silently drop its carb-cycle–specific settings.
+  bool _lockedByCarbLoad(DayMarkerType type) =>
+      type != DayMarkerType.carbLoad &&
+      widget.existing?.type == DayMarkerType.carbLoad;
+
   void _select(DayMarkerType type) {
+    if (_lockedByCarbLoad(type)) return;
     _amountFocus.unfocus();
     setState(() {
       _editingAmount = false;
@@ -736,6 +743,7 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
         theme.extension<AppThemeVisuals>()?.accent ?? theme.colorScheme.primary;
     final selected = _type == type;
     final expanded = _expandedType == type;
+    final locked = _lockedByCarbLoad(type);
     // Rest days always list the switch (disabled off-cycle, as before); the
     // others only once a carb cycle applies.
     final showPause = type == DayMarkerType.restDay || widget.hasCarbCycle;
@@ -744,7 +752,7 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
       children: [
         InkWell(
           key: ValueKey('marker-option-${type.name}'),
-          onTap: () => _select(type),
+          onTap: locked ? null : () => _select(type),
           child: Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.compact,
@@ -754,7 +762,11 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
               children: [
                 InkIcon(
                   type.glyph,
-                  color: selected ? accent : theme.colorScheme.onSurface,
+                  color: locked
+                      ? theme.disabledColor
+                      : selected
+                      ? accent
+                      : theme.colorScheme.onSurface,
                 ),
                 const SizedBox(width: AppSpacing.field),
                 Expanded(
@@ -764,10 +776,21 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                       Text(
                         type.label(l10n),
                         style: theme.textTheme.titleSmall?.copyWith(
-                          color: selected ? accent : null,
+                          color: locked
+                              ? theme.disabledColor
+                              : selected
+                              ? accent
+                              : null,
                         ),
                       ),
-                      if (selected && !expanded)
+                      if (locked)
+                        Text(
+                          l10n.carbLoadLockedHint,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        )
+                      else if (selected && !expanded)
                         Text(
                           _summary(context, type),
                           style: theme.textTheme.bodySmall?.copyWith(
@@ -784,7 +807,11 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                       ? InkGlyph.radioChecked
                       : InkGlyph.radioEmpty,
                   size: 20,
-                  color: selected ? accent : theme.colorScheme.onSurfaceVariant,
+                  color: locked
+                      ? theme.disabledColor
+                      : selected
+                      ? accent
+                      : theme.colorScheme.onSurfaceVariant,
                 ),
               ],
             ),

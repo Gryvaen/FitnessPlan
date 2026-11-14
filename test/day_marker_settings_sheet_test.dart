@@ -405,6 +405,29 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Carbs 6.9 g/kg'), findsOneWidget);
     expect(find.textContaining('Cycle delayed one day'), findsOneWidget);
+    // A saved 冲碳日 locks the general markers until it is cleared.
+    expect(
+      find.text('Marked as carb-load day — clear it first'),
+      findsNWidgets(2),
+    );
+    await tester.tap(find.byKey(const ValueKey('marker-option-cheatMeal')));
+    await tester.tap(find.byKey(const ValueKey('marker-option-restDay')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('marker-pause-cheatMeal')), findsNothing);
+    expect(find.byKey(const ValueKey('marker-pause-restDay')), findsNothing);
+    await tester.tap(find.byType(FilledButton).last);
+    await tester.pumpAndSettle();
+    expect((await repo.settingsForDay(today))!.type, DayMarkerType.carbLoad);
+
+    await _longPressDay(tester, today);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Clear marker'));
+    await tester.pumpAndSettle();
+    expect(await repo.settingsForDay(today), isNull);
+
+    await _longPressDay(tester, today);
+    await tester.pumpAndSettle();
+    expect(find.text('Marked as carb-load day — clear it first'), findsNothing);
     await tester.tap(find.byKey(const ValueKey('marker-option-cheatMeal')));
     await tester.pumpAndSettle();
     final cheatPause = find.byKey(const ValueKey('marker-pause-cheatMeal'));
@@ -417,6 +440,32 @@ void main() {
     expect(cheat.type, DayMarkerType.cheatMeal);
     expect(cheat.pauseCarbCycle, isTrue);
     expect(cheat.carbLoadCarbPerKg, isNull);
+  });
+
+  testWidgets('a rest day can still be switched straight to a carb-load day', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final repo = DayMarkerRepository(db);
+    final today = CalendarDay.todayLocal();
+    await repo.setRestDay(today);
+    await openPicker(
+      tester,
+      db,
+      firstDate: today,
+      strategy: DietStrategyKind.carbCycle,
+    );
+    await _longPressDay(tester, today);
+    await tester.pumpAndSettle();
+    expect(find.text('Marked as carb-load day — clear it first'), findsNothing);
+    final option = find.byKey(const ValueKey('marker-option-carbLoad'));
+    await tester.ensureVisible(option);
+    await tester.tap(option);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(FilledButton).last);
+    await tester.pumpAndSettle();
+    expect((await repo.settingsForDay(today))!.type, DayMarkerType.carbLoad);
   });
 
   testWidgets('carb-load day is not offered on a past day', (tester) async {

@@ -2991,6 +2991,12 @@ abstract class AppLocalizations {
   /// **'High-day protein and fat, carbs raised up to 7 g/kg'**
   String get carbLoadHint;
 
+  /// No description provided for @carbLoadLockedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked as carb-load day — clear it first'**
+  String get carbLoadLockedHint;
+
   /// No description provided for @dayMarkerSettingsTitle.
   ///
   /// In en, this message translates to:

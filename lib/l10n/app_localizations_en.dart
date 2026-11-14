@@ -1566,6 +1566,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'High-day protein and fat, carbs raised up to 7 g/kg';
 
   @override
+  String get carbLoadLockedHint => 'Marked as carb-load day — clear it first';
+
+  @override
   String get dayMarkerSettingsTitle => 'Set day marker';
 
   @override

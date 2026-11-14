@@ -1532,6 +1532,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get carbLoadHint => '蛋白、脂肪同高碳日，碳水最高可到 7 g/kg';
 
   @override
+  String get carbLoadLockedHint => '已标记冲碳日，需先取消标记';
+
+  @override
   String get dayMarkerSettingsTitle => '设置当天标记';
 
   @override

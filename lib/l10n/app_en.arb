@@ -607,6 +607,7 @@
   "carbLoadSummary": "Carbs {perKg} g/kg",
   "@carbLoadSummary": {"placeholders": {"perKg": {"type": "String"}}},
   "carbLoadHint": "High-day protein and fat, carbs raised up to 7 g/kg",
+  "carbLoadLockedHint": "Marked as carb-load day — clear it first",
   "dayMarkerSettingsTitle": "Set day marker",
   "pauseCarbCycleLabel": "Delay carb cycle by one day",
   "pauseCarbCycleSummary": "Cycle delayed one day",
