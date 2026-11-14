@@ -2931,6 +2931,24 @@ abstract class AppLocalizations {
   /// **'After: past green/red'**
   String get legendAfterGreenRed;
 
+  /// No description provided for @legendCutRound.
+  ///
+  /// In en, this message translates to:
+  /// **'Cut round'**
+  String get legendCutRound;
+
+  /// No description provided for @legendCutRoundStartLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Line = cut round starts'**
+  String get legendCutRoundStartLine;
+
+  /// No description provided for @legendCutRoundGreenRed.
+  ///
+  /// In en, this message translates to:
+  /// **'In round: past green/red, kept across standard changes'**
+  String get legendCutRoundGreenRed;
+
   /// No description provided for @cheatMealLabel.
   ///
   /// In en, this message translates to:

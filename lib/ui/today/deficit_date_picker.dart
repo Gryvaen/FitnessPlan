@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../data/repositories/day_marker_repository.dart';
 import '../../data/repositories/meal_repository.dart';
+import '../../domain/cut_cultivation.dart';
 import '../../domain/day_marker.dart';
 import '../../domain/deficit.dart';
 import '../../domain/diet_plan.dart';
@@ -45,6 +46,11 @@ Future<DateTime?> showDeficitDatePicker({
   CarbLoadFloorLoader? loadCarbLoadFloor,
   DateTime? calorieStandardSince,
 
+  /// Cut rounds (修行时段). Inside a round every past day keeps its own
+  /// green/red verdict even after a later standard change; outside, the
+  /// [calorieStandardSince] cut-off still applies.
+  List<CutCultivationSegment> cutSegments = const [],
+
   /// How far into the future the calendar may be paged for 放纵日/休息日
   /// marking (long-press). Defaults to [lastDate] — pure date *selection*
   /// (tap + Confirm) always stays bounded by [firstDate]/[lastDate].
@@ -71,6 +77,13 @@ Future<DateTime?> showDeficitDatePicker({
       loadStrategyForDay: loadStrategyForDay,
       loadCarbLoadFloor: loadCarbLoadFloor,
       calorieStandardSince: since,
+      cutSegments: [
+        for (final s in cutSegments)
+          CutCultivationSegment(
+            start: AppDates.dayOnly(s.start),
+            end: s.end == null ? null : AppDates.dayOnly(s.end!),
+          ),
+      ],
       markUntil: markUntil == null
           ? null
           : DateTime(markUntil.year, markUntil.month, markUntil.day),
@@ -90,6 +103,7 @@ class _DeficitDatePickerDialog extends StatefulWidget {
     required this.loadStrategyForDay,
     this.loadCarbLoadFloor,
     this.calorieStandardSince,
+    this.cutSegments = const [],
     this.markUntil,
   });
 
@@ -105,6 +119,7 @@ class _DeficitDatePickerDialog extends StatefulWidget {
   final DayStrategyLoader loadStrategyForDay;
   final CarbLoadFloorLoader? loadCarbLoadFloor;
   final DateTime? calorieStandardSince;
+  final List<CutCultivationSegment> cutSegments;
   final DateTime? markUntil;
 
   @override
@@ -381,7 +396,22 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
                   ),
                 ],
               ),
-              if (widget.calorieStandardSince != null) ...[
+              if (widget.cutSegments.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _LegendSection(
+                  title: l10n.legendCutRound,
+                  children: [
+                    _LegendLine(
+                      leading: Text('|', style: theme.textTheme.titleSmall),
+                      label: l10n.legendCutRoundStartLine,
+                    ),
+                    _LegendLine(
+                      leading: const InkIcon(InkGlyph.radioEmpty, size: 10),
+                      label: l10n.legendCutRoundGreenRed,
+                    ),
+                  ],
+                ),
+              ] else if (widget.calorieStandardSince != null) ...[
                 const SizedBox(height: 12),
                 _LegendSection(
                   title: l10n.legendStandardChange,
@@ -450,6 +480,7 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
                       intake: _caloriesByDay[date],
                       target: _targetsByDay[date],
                       calorieStandardSince: widget.calorieStandardSince,
+                      cutSegments: widget.cutSegments,
                       okColor: _okGreen,
                       badColor: _badRed,
                       marker: _markersByDay[date],
@@ -1113,6 +1144,7 @@ class _DayCell extends StatelessWidget {
     required this.marker,
     required this.markable,
     this.calorieStandardSince,
+    this.cutSegments = const [],
     this.onLongPress,
   });
 
@@ -1125,6 +1157,9 @@ class _DayCell extends StatelessWidget {
   /// Target that governed this day (null when unknown → no verdict).
   final DailyNutritionTarget? target;
   final DateTime? calorieStandardSince;
+
+  /// Cut rounds; a day inside one ignores the [calorieStandardSince] cut-off.
+  final List<CutCultivationSegment> cutSegments;
   final Color okColor;
   final Color badColor;
   final VoidCallback onTap;
@@ -1149,8 +1184,13 @@ class _DayCell extends StatelessWidget {
     final hasLog = intake != null;
     final since = calorieStandardSince;
     final t = target;
-    final beforeStandard = since != null && date.isBefore(since);
-    final showStandardBar = since != null && date == since;
+    // A cut round is judged as a whole: each day against its own snapshot
+    // target, so a mid-round standard change doesn't blank earlier days.
+    final inCutRound = cutSegments.any((s) => s.containsDay(date));
+    final beforeStandard = !inCutRound && since != null && date.isBefore(since);
+    final showStandardBar = cutSegments.isNotEmpty
+        ? cutSegments.any((s) => s.start == date)
+        : since != null && date == since;
     // Only days with meal logs and a known target show remaining calories;
     // empty days stay uncolored. The cell shows what's left of the day's
     // own target (target − intake); the plan-wide actual deficit — which

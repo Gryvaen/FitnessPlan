@@ -24,6 +24,7 @@
 - 平台期修正：`calorieAdjustment` 最多 300 kcal。
 - 平台期检测（`lib/domain/plateau.dart`）：最近 7 次体重记录的变化不超过 0.3 kg，就判定为平台期，在今日页给出提示。
 - **「新标准」标记**：`UserProfile.calorieStandardSince`。只有策略发生结构性变化（`isStructuralChange`）或切换目标时才会重新打这个标记；碳循环只调整排期（周期长度、高/中/低顺序）不算结构性变化。在此之前的日期显示为「旧标准估算」。
+- **月历绿/红按减脂轮次判定**：今日页月历（`deficit_date_picker.dart`）里，落在某一轮减脂（`CutCultivationSegment`）内的过去日期，各按自己当天的目标快照判绿/红，轮内中途重新打「新标准」标记不会让之前的颜色消失；竖线标在每轮减脂的开始日。不在任何减脂轮内的日期（维持/增肌期）仍按 `calorieStandardSince` 截断。没有快照的「旧标准估算」日（`isLegacyEstimate`）始终不判定。
 
 ## 饮食策略
 

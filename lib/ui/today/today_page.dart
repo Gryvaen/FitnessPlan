@@ -117,6 +117,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         loadCarbLoadFloor: (date) async =>
             (await repo.planCovering(date))?.carbCyclePlan?.highDayCarbPerKg,
         calorieStandardSince: profile.calorieStandardSince,
+        cutSegments: ref.read(cutCultivationStateProvider).segments,
         markUntil: DateTime(today.year + 1, today.month, today.day),
       );
       if (picked == null) return;

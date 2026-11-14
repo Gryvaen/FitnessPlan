@@ -1500,6 +1500,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get legendAfterGreenRed => '生效后：过去绿/红';
 
   @override
+  String get legendCutRound => '减脂轮次';
+
+  @override
+  String get legendCutRoundStartLine => '竖线＝本轮减脂开始';
+
+  @override
+  String get legendCutRoundGreenRed => '轮内：过去绿/红，改标准不影响';
+
+  @override
   String get cheatMealLabel => '放纵日';
 
   @override

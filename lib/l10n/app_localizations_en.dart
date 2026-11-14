@@ -1533,6 +1533,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get legendAfterGreenRed => 'After: past green/red';
 
   @override
+  String get legendCutRound => 'Cut round';
+
+  @override
+  String get legendCutRoundStartLine => 'Line = cut round starts';
+
+  @override
+  String get legendCutRoundGreenRed =>
+      'In round: past green/red, kept across standard changes';
+
+  @override
   String get cheatMealLabel => 'Cheat day';
 
   @override
