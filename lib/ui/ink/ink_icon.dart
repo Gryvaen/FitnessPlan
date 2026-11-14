@@ -71,6 +71,7 @@ enum InkGlyph {
   edit,
   error,
   factCheck,
+  cultivationStats,
   fire,
   playlistAdd,
   restaurant,
@@ -183,6 +184,7 @@ extension InkGlyphAssetName on InkGlyph {
     InkGlyph.radioChecked => 'radio-checked',
     InkGlyph.dragHandle => 'drag-handle',
     InkGlyph.factCheck => 'fact-check',
+    InkGlyph.cultivationStats => 'cultivation-stats',
     InkGlyph.playlistAdd => 'playlist-add',
     InkGlyph.starOutline => 'star-outline',
     InkGlyph.swapHorizontal => 'swap-horizontal',
@@ -614,6 +616,7 @@ class _InkIconPainter extends CustomPainter {
           InkGlyph.edit ||
           InkGlyph.error ||
           InkGlyph.factCheck ||
+          InkGlyph.cultivationStats ||
           InkGlyph.fire ||
           InkGlyph.playlistAdd ||
           InkGlyph.restaurant ||

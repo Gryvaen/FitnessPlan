@@ -51,6 +51,23 @@ class StepRepository {
     }
   }
 
+  /// Raw logged steps summed over local days `[start, end]` (inclusive). Day
+  /// markers do not zero anything here — this is what was actually walked.
+  Future<int> totalStepsBetween(DateTime start, DateTime end) async {
+    final total = _db.stepLogs.steps.sum();
+    final row =
+        await (_db.selectOnly(_db.stepLogs)
+              ..addColumns([total])
+              ..where(
+                _db.stepLogs.date.isBetweenValues(
+                  _dayStart(start),
+                  _dayStart(end),
+                ),
+              ))
+            .getSingle();
+    return row.read(total) ?? 0;
+  }
+
   /// Continuous local calendar days ending today (newest first), missing → 0.
   Future<List<StepDay>> recentDays({int limitDays = 14}) async {
     final today = CalendarDay.todayLocal();

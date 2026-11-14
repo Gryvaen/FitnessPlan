@@ -3193,6 +3193,181 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String cutRoundDayN(String day) {
+    return 'Day $day';
+  }
+
+  @override
+  String get cutRoundStepsTitle => 'Steps';
+
+  @override
+  String get cutRoundTotalSteps => 'Total';
+
+  @override
+  String get cutRoundAvgSteps => 'Daily average';
+
+  @override
+  String get cutRoundTrainingTitle => 'Training';
+
+  @override
+  String get cutRoundTrainingDays => 'Training days';
+
+  @override
+  String get cutRoundPlanSessions => 'Plan sessions';
+
+  @override
+  String get cutRoundDietTitle => 'Diet';
+
+  @override
+  String get cutRoundDietOnTarget => 'On target';
+
+  @override
+  String get cutRoundDietOver => 'Over';
+
+  @override
+  String get cutRoundWeightTitle => 'Weight';
+
+  @override
+  String get cutRoundStartWeight => 'Start';
+
+  @override
+  String cutRoundWeightDelta(String delta) {
+    return '$delta kg vs start';
+  }
+
+  @override
+  String get cultivationSideStats => 'Cut stats';
+
+  @override
+  String get cutRoundRulesTitle => 'How it\'s counted';
+
+  @override
+  String get cutRoundNone => 'Not in a cut right now';
+
+  @override
+  String get cutRoundRule1 =>
+      'This cut: from the day this cut began through today, both ends included. It ends when you switch away from the cut goal.';
+
+  @override
+  String get cutRoundRule2 =>
+      'Steps: each day\'s logged steps added up as walked; the cheat/rest day \"steps don\'t count\" switch doesn\'t apply here. Daily average = total ÷ days in this cut.';
+
+  @override
+  String get cutRoundRule3 =>
+      'Training days: a day counts once any exercise was checked off or had a set logged.';
+
+  @override
+  String get cutRoundRule4 =>
+      'Plan sessions: counted by plan name. A plan counts once on a day when at least one of its exercises was done; same-named plans on one day count once. The untitled \"Other\" group isn\'t a plan.';
+
+  @override
+  String get cutRoundRule5 =>
+      'Exercise times and sets: counted by exercise name, once per day it was done, however many groups repeat it. Sets are all sets logged for it this cut.';
+
+  @override
+  String get cutRoundRule6 =>
+      'Diet: only days before today, and only those with a meal log and a target: on target when intake stays within the target, over otherwise. Cheat days, rest days and legacy estimates aren\'t judged; carb-load days are.';
+
+  @override
+  String get cutRoundRule7 =>
+      'Weight: weigh-ins on a cheat day or the 3 days after it are dropped first (cheat days up to 3 days before the cut count too). Of the rest, start averages the first 3 and latest averages the last 3; with fewer than 6 they are split in halves. Change = latest − start.';
+
+  @override
+  String get cutRoundEndWeight => 'Latest';
+
+  @override
+  String cutRoundWeightStartAvg(String n) {
+    return 'First $n avg';
+  }
+
+  @override
+  String cutRoundWeightEndAvg(String n) {
+    return 'Last $n avg';
+  }
+
+  @override
+  String get cutRoundWeightSingle => 'Single weigh-in';
+
+  @override
+  String cutRoundWeightExcluded(String n) {
+    return '$n weigh-ins within 3 days after a cheat day excluded';
+  }
+
+  @override
+  String get cutRoundWeightAllExcluded =>
+      'All weigh-ins fall within 3 days after a cheat day';
+
+  @override
+  String get cutRoundCategoriesTitle => 'Body parts';
+
+  @override
+  String get cutRoundRule8 =>
+      'Body parts: counted by each exercise\'s body part. A part counts once on a day any of its exercises was done; sets are summed over all its exercises.';
+
+  @override
+  String get cutRoundLiftsTitle => 'Current strength';
+
+  @override
+  String get cutRoundLiftsHint => 'Latest · vs first';
+
+  @override
+  String cutRoundLiftOn(String date) {
+    return 'on $date';
+  }
+
+  @override
+  String cutRoundLiftDelta(String delta) {
+    return '$delta vs first';
+  }
+
+  @override
+  String get cutRoundNoLifts => 'No loads logged this cut';
+
+  @override
+  String get cutRoundRule9 =>
+      'Current strength: each exercise\'s last load entered this cut (the heaviest that day), compared with its first; only exercises checked off or with a set logged, and with a load entered, count.';
+
+  @override
+  String get cutRoundNoWeight => 'No weigh-ins this cut';
+
+  @override
+  String get cutRoundPlansTitle => 'Plans';
+
+  @override
+  String get cutRoundPlansHint => 'By name · times';
+
+  @override
+  String get cutRoundExercisesTitle => 'Exercises';
+
+  @override
+  String get cutRoundExercisesHint => 'Times · sets';
+
+  @override
+  String get cutRoundNoExercises => 'No exercises yet';
+
+  @override
+  String cutRoundTimes(String n) {
+    return '$n×';
+  }
+
+  @override
+  String cutRoundSets(String n) {
+    return '$n sets';
+  }
+
+  @override
+  String get unitSteps => 'steps';
+
+  @override
+  String get unitDays => 'days';
+
+  @override
+  String get unitTimes => 'times';
+
+  @override
+  String get cutRoundNoPlanWorkouts => 'No plan workouts yet';
+
+  @override
   String cultivationHistorySegmentCurrent(String start) {
     return 'Current cut · since $start';
   }

@@ -5583,6 +5583,300 @@ abstract class AppLocalizations {
   /// **'{done}/{total}'**
   String cultivationHistoryWorkoutProgress(String done, String total);
 
+  /// No description provided for @cutRoundDayN.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day}'**
+  String cutRoundDayN(String day);
+
+  /// No description provided for @cutRoundStepsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps'**
+  String get cutRoundStepsTitle;
+
+  /// No description provided for @cutRoundTotalSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get cutRoundTotalSteps;
+
+  /// No description provided for @cutRoundAvgSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily average'**
+  String get cutRoundAvgSteps;
+
+  /// No description provided for @cutRoundTrainingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Training'**
+  String get cutRoundTrainingTitle;
+
+  /// No description provided for @cutRoundTrainingDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Training days'**
+  String get cutRoundTrainingDays;
+
+  /// No description provided for @cutRoundPlanSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan sessions'**
+  String get cutRoundPlanSessions;
+
+  /// No description provided for @cutRoundDietTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Diet'**
+  String get cutRoundDietTitle;
+
+  /// No description provided for @cutRoundDietOnTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'On target'**
+  String get cutRoundDietOnTarget;
+
+  /// No description provided for @cutRoundDietOver.
+  ///
+  /// In en, this message translates to:
+  /// **'Over'**
+  String get cutRoundDietOver;
+
+  /// No description provided for @cutRoundWeightTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight'**
+  String get cutRoundWeightTitle;
+
+  /// No description provided for @cutRoundStartWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get cutRoundStartWeight;
+
+  /// No description provided for @cutRoundWeightDelta.
+  ///
+  /// In en, this message translates to:
+  /// **'{delta} kg vs start'**
+  String cutRoundWeightDelta(String delta);
+
+  /// No description provided for @cultivationSideStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Cut stats'**
+  String get cultivationSideStats;
+
+  /// No description provided for @cutRoundRulesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How it\'s counted'**
+  String get cutRoundRulesTitle;
+
+  /// No description provided for @cutRoundNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Not in a cut right now'**
+  String get cutRoundNone;
+
+  /// No description provided for @cutRoundRule1.
+  ///
+  /// In en, this message translates to:
+  /// **'This cut: from the day this cut began through today, both ends included. It ends when you switch away from the cut goal.'**
+  String get cutRoundRule1;
+
+  /// No description provided for @cutRoundRule2.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps: each day\'s logged steps added up as walked; the cheat/rest day \"steps don\'t count\" switch doesn\'t apply here. Daily average = total ÷ days in this cut.'**
+  String get cutRoundRule2;
+
+  /// No description provided for @cutRoundRule3.
+  ///
+  /// In en, this message translates to:
+  /// **'Training days: a day counts once any exercise was checked off or had a set logged.'**
+  String get cutRoundRule3;
+
+  /// No description provided for @cutRoundRule4.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan sessions: counted by plan name. A plan counts once on a day when at least one of its exercises was done; same-named plans on one day count once. The untitled \"Other\" group isn\'t a plan.'**
+  String get cutRoundRule4;
+
+  /// No description provided for @cutRoundRule5.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercise times and sets: counted by exercise name, once per day it was done, however many groups repeat it. Sets are all sets logged for it this cut.'**
+  String get cutRoundRule5;
+
+  /// No description provided for @cutRoundRule6.
+  ///
+  /// In en, this message translates to:
+  /// **'Diet: only days before today, and only those with a meal log and a target: on target when intake stays within the target, over otherwise. Cheat days, rest days and legacy estimates aren\'t judged; carb-load days are.'**
+  String get cutRoundRule6;
+
+  /// No description provided for @cutRoundRule7.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight: weigh-ins on a cheat day or the 3 days after it are dropped first (cheat days up to 3 days before the cut count too). Of the rest, start averages the first 3 and latest averages the last 3; with fewer than 6 they are split in halves. Change = latest − start.'**
+  String get cutRoundRule7;
+
+  /// No description provided for @cutRoundEndWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest'**
+  String get cutRoundEndWeight;
+
+  /// No description provided for @cutRoundWeightStartAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'First {n} avg'**
+  String cutRoundWeightStartAvg(String n);
+
+  /// No description provided for @cutRoundWeightEndAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'Last {n} avg'**
+  String cutRoundWeightEndAvg(String n);
+
+  /// No description provided for @cutRoundWeightSingle.
+  ///
+  /// In en, this message translates to:
+  /// **'Single weigh-in'**
+  String get cutRoundWeightSingle;
+
+  /// No description provided for @cutRoundWeightExcluded.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} weigh-ins within 3 days after a cheat day excluded'**
+  String cutRoundWeightExcluded(String n);
+
+  /// No description provided for @cutRoundWeightAllExcluded.
+  ///
+  /// In en, this message translates to:
+  /// **'All weigh-ins fall within 3 days after a cheat day'**
+  String get cutRoundWeightAllExcluded;
+
+  /// No description provided for @cutRoundCategoriesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Body parts'**
+  String get cutRoundCategoriesTitle;
+
+  /// No description provided for @cutRoundRule8.
+  ///
+  /// In en, this message translates to:
+  /// **'Body parts: counted by each exercise\'s body part. A part counts once on a day any of its exercises was done; sets are summed over all its exercises.'**
+  String get cutRoundRule8;
+
+  /// No description provided for @cutRoundLiftsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Current strength'**
+  String get cutRoundLiftsTitle;
+
+  /// No description provided for @cutRoundLiftsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest · vs first'**
+  String get cutRoundLiftsHint;
+
+  /// No description provided for @cutRoundLiftOn.
+  ///
+  /// In en, this message translates to:
+  /// **'on {date}'**
+  String cutRoundLiftOn(String date);
+
+  /// No description provided for @cutRoundLiftDelta.
+  ///
+  /// In en, this message translates to:
+  /// **'{delta} vs first'**
+  String cutRoundLiftDelta(String delta);
+
+  /// No description provided for @cutRoundNoLifts.
+  ///
+  /// In en, this message translates to:
+  /// **'No loads logged this cut'**
+  String get cutRoundNoLifts;
+
+  /// No description provided for @cutRoundRule9.
+  ///
+  /// In en, this message translates to:
+  /// **'Current strength: each exercise\'s last load entered this cut (the heaviest that day), compared with its first; only exercises checked off or with a set logged, and with a load entered, count.'**
+  String get cutRoundRule9;
+
+  /// No description provided for @cutRoundNoWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'No weigh-ins this cut'**
+  String get cutRoundNoWeight;
+
+  /// No description provided for @cutRoundPlansTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Plans'**
+  String get cutRoundPlansTitle;
+
+  /// No description provided for @cutRoundPlansHint.
+  ///
+  /// In en, this message translates to:
+  /// **'By name · times'**
+  String get cutRoundPlansHint;
+
+  /// No description provided for @cutRoundExercisesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercises'**
+  String get cutRoundExercisesTitle;
+
+  /// No description provided for @cutRoundExercisesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Times · sets'**
+  String get cutRoundExercisesHint;
+
+  /// No description provided for @cutRoundNoExercises.
+  ///
+  /// In en, this message translates to:
+  /// **'No exercises yet'**
+  String get cutRoundNoExercises;
+
+  /// No description provided for @cutRoundTimes.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}×'**
+  String cutRoundTimes(String n);
+
+  /// No description provided for @cutRoundSets.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} sets'**
+  String cutRoundSets(String n);
+
+  /// No description provided for @unitSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'steps'**
+  String get unitSteps;
+
+  /// No description provided for @unitDays.
+  ///
+  /// In en, this message translates to:
+  /// **'days'**
+  String get unitDays;
+
+  /// No description provided for @unitTimes.
+  ///
+  /// In en, this message translates to:
+  /// **'times'**
+  String get unitTimes;
+
+  /// No description provided for @cutRoundNoPlanWorkouts.
+  ///
+  /// In en, this message translates to:
+  /// **'No plan workouts yet'**
+  String get cutRoundNoPlanWorkouts;
+
   /// No description provided for @cultivationHistorySegmentCurrent.
   ///
   /// In en, this message translates to:

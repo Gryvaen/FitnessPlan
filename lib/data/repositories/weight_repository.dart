@@ -62,6 +62,18 @@ class WeightRepository {
     )..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
+  /// Weights logged on local days `[start, end]` (inclusive), oldest first.
+  Future<List<WeightLog>> logsBetween(DateTime start, DateTime end) =>
+      (_db.select(_db.weightLogs)
+            ..where(
+              (t) => t.date.isBetweenValues(
+                CalendarDay.dayOnly(start),
+                CalendarDay.dayOnly(end),
+              ),
+            )
+            ..orderBy([(t) => OrderingTerm.asc(t.date)]))
+          .get();
+
   Future<WeightLog?> latest() {
     return (_db.select(_db.weightLogs)
           ..orderBy([(t) => OrderingTerm.desc(t.date)])

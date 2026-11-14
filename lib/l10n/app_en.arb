@@ -2356,6 +2356,82 @@
   "cultivationHistoryWorkoutLabel": "Training",
   "cultivationHistoryWorkoutProgress": "{done}/{total}",
   "@cultivationHistoryWorkoutProgress": {"placeholders": {"done": {"type": "String"}, "total": {"type": "String"}}},
+  "cutRoundDayN": "Day {day}",
+  "@cutRoundDayN": {
+    "placeholders": { "day": { "type": "String" } }
+  },
+  "cutRoundStepsTitle": "Steps",
+  "cutRoundTotalSteps": "Total",
+  "cutRoundAvgSteps": "Daily average",
+  "cutRoundTrainingTitle": "Training",
+  "cutRoundTrainingDays": "Training days",
+  "cutRoundPlanSessions": "Plan sessions",
+  "cutRoundDietTitle": "Diet",
+  "cutRoundDietOnTarget": "On target",
+  "cutRoundDietOver": "Over",
+  "cutRoundWeightTitle": "Weight",
+  "cutRoundStartWeight": "Start",
+  "cutRoundWeightDelta": "{delta} kg vs start",
+  "@cutRoundWeightDelta": {
+    "placeholders": { "delta": { "type": "String" } }
+  },
+  "cultivationSideStats": "Cut stats",
+  "cutRoundRulesTitle": "How it's counted",
+  "cutRoundNone": "Not in a cut right now",
+  "cutRoundRule1": "This cut: from the day this cut began through today, both ends included. It ends when you switch away from the cut goal.",
+  "cutRoundRule2": "Steps: each day's logged steps added up as walked; the cheat/rest day \"steps don't count\" switch doesn't apply here. Daily average = total ÷ days in this cut.",
+  "cutRoundRule3": "Training days: a day counts once any exercise was checked off or had a set logged.",
+  "cutRoundRule4": "Plan sessions: counted by plan name. A plan counts once on a day when at least one of its exercises was done; same-named plans on one day count once. The untitled \"Other\" group isn't a plan.",
+  "cutRoundRule5": "Exercise times and sets: counted by exercise name, once per day it was done, however many groups repeat it. Sets are all sets logged for it this cut.",
+  "cutRoundRule6": "Diet: only days before today, and only those with a meal log and a target: on target when intake stays within the target, over otherwise. Cheat days, rest days and legacy estimates aren't judged; carb-load days are.",
+  "cutRoundRule7": "Weight: weigh-ins on a cheat day or the 3 days after it are dropped first (cheat days up to 3 days before the cut count too). Of the rest, start averages the first 3 and latest averages the last 3; with fewer than 6 they are split in halves. Change = latest − start.",
+  "cutRoundEndWeight": "Latest",
+  "cutRoundWeightStartAvg": "First {n} avg",
+  "@cutRoundWeightStartAvg": {
+    "placeholders": { "n": { "type": "String" } }
+  },
+  "cutRoundWeightEndAvg": "Last {n} avg",
+  "@cutRoundWeightEndAvg": {
+    "placeholders": { "n": { "type": "String" } }
+  },
+  "cutRoundWeightSingle": "Single weigh-in",
+  "cutRoundWeightExcluded": "{n} weigh-ins within 3 days after a cheat day excluded",
+  "@cutRoundWeightExcluded": {
+    "placeholders": { "n": { "type": "String" } }
+  },
+  "cutRoundWeightAllExcluded": "All weigh-ins fall within 3 days after a cheat day",
+  "cutRoundCategoriesTitle": "Body parts",
+  "cutRoundRule8": "Body parts: counted by each exercise's body part. A part counts once on a day any of its exercises was done; sets are summed over all its exercises.",
+  "cutRoundLiftsTitle": "Current strength",
+  "cutRoundLiftsHint": "Latest · vs first",
+  "cutRoundLiftOn": "on {date}",
+  "@cutRoundLiftOn": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "cutRoundLiftDelta": "{delta} vs first",
+  "@cutRoundLiftDelta": {
+    "placeholders": { "delta": { "type": "String" } }
+  },
+  "cutRoundNoLifts": "No loads logged this cut",
+  "cutRoundRule9": "Current strength: each exercise's last load entered this cut (the heaviest that day), compared with its first; only exercises checked off or with a set logged, and with a load entered, count.",
+  "cutRoundNoWeight": "No weigh-ins this cut",
+  "cutRoundPlansTitle": "Plans",
+  "cutRoundPlansHint": "By name · times",
+  "cutRoundExercisesTitle": "Exercises",
+  "cutRoundExercisesHint": "Times · sets",
+  "cutRoundNoExercises": "No exercises yet",
+  "cutRoundTimes": "{n}×",
+  "@cutRoundTimes": {
+    "placeholders": { "n": { "type": "String" } }
+  },
+  "cutRoundSets": "{n} sets",
+  "@cutRoundSets": {
+    "placeholders": { "n": { "type": "String" } }
+  },
+  "unitSteps": "steps",
+  "unitDays": "days",
+  "unitTimes": "times",
+  "cutRoundNoPlanWorkouts": "No plan workouts yet",
   "cultivationHistorySegmentCurrent": "Current cut · since {start}",
   "@cultivationHistorySegmentCurrent": {
     "placeholders": { "start": { "type": "String" } }

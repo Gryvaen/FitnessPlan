@@ -3116,6 +3116,178 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String cutRoundDayN(String day) {
+    return '第 $day 天';
+  }
+
+  @override
+  String get cutRoundStepsTitle => '步数';
+
+  @override
+  String get cutRoundTotalSteps => '累计';
+
+  @override
+  String get cutRoundAvgSteps => '日均';
+
+  @override
+  String get cutRoundTrainingTitle => '训练';
+
+  @override
+  String get cutRoundTrainingDays => '训练天数';
+
+  @override
+  String get cutRoundPlanSessions => '计划次数合计';
+
+  @override
+  String get cutRoundDietTitle => '饮食';
+
+  @override
+  String get cutRoundDietOnTarget => '达标';
+
+  @override
+  String get cutRoundDietOver => '超标';
+
+  @override
+  String get cutRoundWeightTitle => '体重';
+
+  @override
+  String get cutRoundStartWeight => '起始';
+
+  @override
+  String cutRoundWeightDelta(String delta) {
+    return '较起始 $delta kg';
+  }
+
+  @override
+  String get cultivationSideStats => '本轮统计';
+
+  @override
+  String get cutRoundRulesTitle => '统计说明';
+
+  @override
+  String get cutRoundNone => '当前不在减脂轮内';
+
+  @override
+  String get cutRoundRule1 => '本轮：从这一轮减脂开始当天算起，到今天为止，首尾两天都算。切换目标离开减脂后，这一轮结束。';
+
+  @override
+  String get cutRoundRule2 =>
+      '步数：每天实际记录的步数直接相加，不受放纵日、休息日「步数不计入修为」开关的影响。日均 = 累计 ÷ 本轮天数。';
+
+  @override
+  String get cutRoundRule3 => '训练天数：当天有任一动作打勾或记了组，就算练过一天。';
+
+  @override
+  String get cutRoundRule4 =>
+      '计划次数：按计划名称统计。当天该计划里至少练过一个动作算一次，同名计划同一天只算一次。未命名的「其他」分组不算计划。';
+
+  @override
+  String get cutRoundRule5 =>
+      '动作次数与组数：按动作名称统计。当天练过算一次，同名动作同一天只算一次。组数是本轮该动作记录的组数之和。';
+
+  @override
+  String get cutRoundRule6 =>
+      '饮食：只统计今天之前的日子。当天有饮食记录且有目标时才判定：摄入不超过目标为达标，否则为超标。放纵日、休息日和旧标准估算日不判定，冲碳日照常判定。';
+
+  @override
+  String get cutRoundRule7 =>
+      '体重：先剔除放纵日当天及之后 3 天内的称重（本轮开始前 3 天内的放纵日也算）。剩下的称重里，起始取前 3 次的均值，最终取后 3 次的均值；不足 6 次时前后对半分。较起始 = 最终 − 起始。';
+
+  @override
+  String get cutRoundEndWeight => '最终';
+
+  @override
+  String cutRoundWeightStartAvg(String n) {
+    return '前 $n 次均值';
+  }
+
+  @override
+  String cutRoundWeightEndAvg(String n) {
+    return '后 $n 次均值';
+  }
+
+  @override
+  String get cutRoundWeightSingle => '单次称重';
+
+  @override
+  String cutRoundWeightExcluded(String n) {
+    return '已排除放纵日后 3 天内的 $n 次称重';
+  }
+
+  @override
+  String get cutRoundWeightAllExcluded => '本轮称重都在放纵日后 3 天内，暂不计算';
+
+  @override
+  String get cutRoundCategoriesTitle => '部位';
+
+  @override
+  String get cutRoundRule8 =>
+      '部位：按动作所属的部位分类统计。当天练过该部位任一动作算一次，同一部位同一天只算一次；组数是该部位所有动作的组数之和。';
+
+  @override
+  String get cutRoundLiftsTitle => '当前实力';
+
+  @override
+  String get cutRoundLiftsHint => '最终重量 · 较首次';
+
+  @override
+  String cutRoundLiftOn(String date) {
+    return '$date 记录';
+  }
+
+  @override
+  String cutRoundLiftDelta(String delta) {
+    return '较首次 $delta';
+  }
+
+  @override
+  String get cutRoundNoLifts => '本轮动作暂无重量记录';
+
+  @override
+  String get cutRoundRule9 =>
+      '当前实力：每个动作取本轮最后一次填写的重量（同一天取最大），并与本轮第一次填写的重量比较；只统计打勾或记了组且填了重量的动作。';
+
+  @override
+  String get cutRoundNoWeight => '本轮暂无体重记录';
+
+  @override
+  String get cutRoundPlansTitle => '计划';
+
+  @override
+  String get cutRoundPlansHint => '按名称 · 次数';
+
+  @override
+  String get cutRoundExercisesTitle => '动作';
+
+  @override
+  String get cutRoundExercisesHint => '次数 · 组数';
+
+  @override
+  String get cutRoundNoExercises => '暂无动作记录';
+
+  @override
+  String cutRoundTimes(String n) {
+    return '$n 次';
+  }
+
+  @override
+  String cutRoundSets(String n) {
+    return '$n 组';
+  }
+
+  @override
+  String get unitSteps => '步';
+
+  @override
+  String get unitDays => '天';
+
+  @override
+  String get unitTimes => '次';
+
+  @override
+  String get cutRoundNoPlanWorkouts => '暂无计划训练';
+
+  @override
   String cultivationHistorySegmentCurrent(String start) {
     return '本轮减脂 · 自 $start';
   }

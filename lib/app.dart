@@ -21,6 +21,7 @@ import 'domain/models.dart';
 import 'ui/profile/cultivation_goal_picker_page.dart';
 import 'ui/profile/cultivation_history_page.dart';
 import 'ui/profile/cultivation_page.dart';
+import 'ui/profile/cut_round_stats_page.dart';
 import 'ui/profile/realm_guide_page.dart';
 import 'ui/profile/profile_edit_page.dart';
 import 'ui/profile/profile_page.dart';
@@ -225,6 +226,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                         path: 'history',
                         builder: (context, state) =>
                             const CultivationHistoryPage(),
+                      ),
+                      GoRoute(
+                        path: 'stats',
+                        builder: (context, state) => const CutRoundStatsPage(),
                       ),
                       GoRoute(
                         path: 'settings',

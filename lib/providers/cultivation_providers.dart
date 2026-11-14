@@ -7,6 +7,7 @@ import '../data/services/steps_sync_service.dart';
 import '../domain/calendar_day.dart';
 import '../domain/cultivation.dart';
 import '../domain/cut_cultivation.dart';
+import '../domain/cut_round_stats.dart';
 import '../domain/day_marker.dart';
 import '../domain/deficit.dart';
 import '../domain/models.dart';
@@ -349,3 +350,150 @@ final cultivationProgressProvider = Provider<CultivationProgress>((ref) {
   final totalKcal = ledger.frozenKcal + openKcal;
   return computeCultivationProgress(totalKcal / kKcalPerKg);
 });
+
+/// One cut round's totals (see [cutRoundStatsProvider]).
+class CutRoundStats {
+  const CutRoundStats({
+    required this.dayCount,
+    required this.steps,
+    required this.training,
+    this.weight,
+    this.weightExcluded = 0,
+    this.dietMetDays = 0,
+    this.dietMissedDays = 0,
+  });
+
+  /// Days from the round's start through its end (or today), inclusive.
+  final int dayCount;
+
+  /// Raw logged steps — day markers don't zero anything here.
+  final int steps;
+  final TrainingTally training;
+
+  /// Start / end weight: the first / last 3 weigh-ins averaged, post-cheat
+  /// ones dropped (see [roundWeightTrend]); null when none are left.
+  final RoundWeightTrend? weight;
+
+  /// Weigh-ins dropped for falling on or within 3 days after a 放纵日.
+  final int weightExcluded;
+
+  /// Past days judged within / over target (see [dietDayMet]).
+  final int dietMetDays;
+  final int dietMissedDays;
+
+  int get avgSteps => dayCount <= 0 ? 0 : (steps / dayCount).round();
+}
+
+/// Like [_cultivationDbTickProvider], plus weight logs — kept separate so a
+/// weigh-in doesn't rebuild the heavier cultivation history.
+final _cutRoundTickProvider = StreamProvider.autoDispose<int>((ref) {
+  final db = ref.watch(databaseProvider);
+  var n = 0;
+  return db
+      .tableUpdates(
+        TableUpdateQuery.onAllTables([
+          db.stepLogs,
+          db.mealEntries,
+          db.dayWorkouts,
+          db.dayWorkoutItems,
+          db.workoutSetLogs,
+          db.dailyNutritionTargets,
+          db.dietStrategyPlans,
+          db.dayMarkers,
+          db.weightLogs,
+        ]),
+      )
+      .map((_) => ++n);
+});
+
+/// Totals for the cut round spanning `[start, end]`; an open round (`end`
+/// null) runs through today.
+final cutRoundStatsProvider = FutureProvider.autoDispose
+    .family<CutRoundStats, ({DateTime start, DateTime? end})>((
+      ref,
+      range,
+    ) async {
+      ref.watch(_cutRoundTickProvider);
+      final profile = ref.watch(profileProvider);
+      final today = CalendarDay.todayLocal();
+      final start = CalendarDay.dayOnly(range.start);
+      final end = CalendarDay.dayOnly(range.end ?? today);
+      if (end.isBefore(start)) {
+        return const CutRoundStats(
+          dayCount: 0,
+          steps: 0,
+          training: TrainingTally(),
+        );
+      }
+
+      final steps = await ref
+          .read(stepRepositoryProvider)
+          .totalStepsBetween(start, end);
+      final training = await ref
+          .read(workoutRepositoryProvider)
+          .trainingTallyBetween(start, end);
+      final weighIns = await ref
+          .read(weightRepositoryProvider)
+          .logsBetween(start, end);
+      // 放纵日 shortly before the round still inflate its first weigh-ins.
+      final markersForWeight = await ref
+          .read(dayMarkerRepositoryProvider)
+          .markersBetween(CalendarDay.addDays(start, -3), end);
+      final weight = roundWeightTrend(
+        logs: [for (final w in weighIns) (day: w.date, kg: w.weightKg)],
+        cheatDays: {
+          for (final e in markersForWeight.entries)
+            if (e.value == DayMarkerType.cheatMeal) e.key,
+        },
+      );
+
+      // Only finished days get a verdict.
+      final yesterday = CalendarDay.addDays(today, -1);
+      final judgedEnd = end.isAfter(yesterday) ? yesterday : end;
+      var met = 0;
+      var missed = 0;
+      if (!judgedEnd.isBefore(start)) {
+        final targets = await ref
+            .read(dietStrategyRepositoryProvider)
+            .targetsBetween(start, judgedEnd, profile);
+        final intake = await ref
+            .read(mealRepositoryProvider)
+            .calorieTotalsBetween(start, judgedEnd);
+        final markers = await ref
+            .read(dayMarkerRepositoryProvider)
+            .markersBetween(start, judgedEnd);
+        for (
+          var d = start;
+          !d.isAfter(judgedEnd);
+          d = CalendarDay.addDays(d, 1)
+        ) {
+          switch (dietDayMet(
+            target: targets[d],
+            intake: intake[d],
+            marker: markers[d],
+          )) {
+            case true:
+              met++;
+            case false:
+              missed++;
+            case null:
+              break;
+          }
+        }
+      }
+
+      return CutRoundStats(
+        dayCount: CalendarDay.daysBetween(start, end) + 1,
+        steps: steps,
+        training: training,
+        weight: weight.trend,
+        weightExcluded: weight.excluded,
+        dietMetDays: met,
+        dietMissedDays: missed,
+      );
+    });
+
+/// The cut round in progress, if any.
+final currentCutRoundProvider = Provider<CutCultivationSegment?>(
+  (ref) => ref.watch(cutCultivationStateProvider).openSegment,
+);

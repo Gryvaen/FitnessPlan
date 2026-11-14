@@ -152,6 +152,7 @@ UI 统一 import `app_providers.dart`（汇总导出）。
 | `cultivation_page.dart` | 修仙主页和目标页 |
 | `cultivation_goal_picker_page.dart` | 三卷轴目标选择 |
 | `cultivation_history_page.dart` | 修仙历史 |
+| `cut_round_stats_page.dart` / `cut_round_stats_view.dart` | 本轮减脂统计（境界修行侧栏「本轮统计」），附默认折叠的统计说明 |
 | `realm_guide_page.dart` | 境界说明 |
 | `cultivation_labels.dart` | 境界文案、颜色、配图路径 |
 | `update_available_dialog.dart` | 新版本弹窗（更新说明、下载源选择） |

@@ -99,6 +99,62 @@ class WorkoutHistoryDay {
 }
 
 /// Per-day-workout completion summary (one per [DayWorkout] on that day).
+typedef NameCount = ({String name, int count});
+
+/// One exercise's tally over a date range: distinct days it was done and the
+/// sets logged for it.
+typedef ExerciseTally = ({String name, int count, int sets});
+
+/// Training done over a date range, counted by name (see
+/// [WorkoutRepository.trainingTallyBetween]).
+class TrainingTally {
+  const TrainingTally({
+    this.plans = const [],
+    this.exercises = const [],
+    this.categories = const [],
+    this.lifts = const {},
+    this.trainingDays = 0,
+  });
+
+  /// Named plans, by the distinct days at least one of their exercises was
+  /// done. The untitled 「其他」 group is not a plan.
+  final List<NameCount> plans;
+
+  /// Exercises (any group), by distinct days done, with summed sets.
+  final List<ExerciseTally> exercises;
+
+  /// Body-part categories (`exercises.category` keys, legacy ones folded in;
+  /// unknown exercises fall under `other`), by distinct days and summed sets.
+  /// Unordered — the UI sorts by its category order.
+  final List<ExerciseTally> categories;
+
+  /// Logged loads by exercise name, for exercises done with a weight.
+  final Map<String, LiftRecord> lifts;
+
+  /// Distinct days with any exercise done.
+  final int trainingDays;
+}
+
+/// An exercise's logged load over a date range: the first and last day it
+/// was done with a weight (each day's heaviest across groups).
+class LiftRecord {
+  const LiftRecord({
+    required this.firstKg,
+    required this.firstDay,
+    required this.lastKg,
+    required this.lastDay,
+    required this.unit,
+  });
+
+  final double firstKg;
+  final DateTime firstDay;
+  final double lastKg;
+  final DateTime lastDay;
+
+  /// Unit the last load was entered in: `kg` or `lbs`.
+  final String unit;
+}
+
 class WorkoutHistoryPlanSummary {
   const WorkoutHistoryPlanSummary({
     required this.planId,
@@ -1771,6 +1827,121 @@ class WorkoutRepository {
   }
 
   /// True when [day] has at least one set log (counts as "worked out").
+  /// Counts training on local days `[start, end]` by name. An item counts as
+  /// done once it is checked or has a logged set; a plan or exercise name is
+  /// counted at most once per day, however many groups repeat it.
+  Future<TrainingTally> trainingTallyBetween(
+    DateTime start,
+    DateTime end,
+  ) async {
+    final workouts =
+        await (_db.select(_db.dayWorkouts)..where(
+              (t) => t.date.isBetweenValues(_dayStart(start), _dayStart(end)),
+            ))
+            .get();
+    if (workouts.isEmpty) return const TrainingTally();
+    final workoutById = {for (final w in workouts) w.id: w};
+    final items = await (_db.select(
+      _db.dayWorkoutItems,
+    )..where((t) => t.dayWorkoutId.isIn(workoutById.keys))).get();
+    if (items.isEmpty) return const TrainingTally();
+
+    final setCount = _db.workoutSetLogs.id.count();
+    final itemId = _db.workoutSetLogs.dayWorkoutItemId;
+    final setRows =
+        await (_db.selectOnly(_db.workoutSetLogs)
+              ..addColumns([itemId, setCount])
+              ..where(itemId.isIn([for (final i in items) i.id]))
+              ..groupBy([itemId]))
+            .get();
+    final setsByItem = {
+      for (final row in setRows) row.read(itemId)!: row.read(setCount) ?? 0,
+    };
+
+    final catalog = await (_db.select(
+      _db.exercises,
+    )..where((t) => t.id.isIn({for (final i in items) i.exerciseId}))).get();
+    final categoryById = {
+      for (final e in catalog)
+        e.id: switch (e.category) {
+          'shoulders_arms' => 'arms',
+          'core_timed' || 'custom' => 'core',
+          final c => c,
+        },
+    };
+
+    final planDays = <String, Set<DateTime>>{};
+    final exerciseDays = <String, Set<DateTime>>{};
+    final exerciseSets = <String, int>{};
+    final categoryDays = <String, Set<DateTime>>{};
+    final categorySets = <String, int>{};
+    final trainedDays = <DateTime>{};
+    // Exercise name → day → that day's heaviest load and its entry unit.
+    final loads = <String, Map<DateTime, (double, String)>>{};
+    for (final item in items) {
+      final sets = setsByItem[item.id] ?? 0;
+      if (!item.done && sets == 0) continue;
+      final workout = workoutById[item.dayWorkoutId]!;
+      final day = _dayStart(workout.date);
+      trainedDays.add(day);
+      final planName = workout.planName?.trim();
+      if (planName != null && planName.isNotEmpty) {
+        planDays.putIfAbsent(planName, () => <DateTime>{}).add(day);
+      }
+      final exerciseName = item.exerciseName.trim();
+      exerciseDays.putIfAbsent(exerciseName, () => <DateTime>{}).add(day);
+      exerciseSets[exerciseName] = (exerciseSets[exerciseName] ?? 0) + sets;
+      final category = categoryById[item.exerciseId] ?? 'other';
+      categoryDays.putIfAbsent(category, () => <DateTime>{}).add(day);
+      categorySets[category] = (categorySets[category] ?? 0) + sets;
+      final kg = item.actualWeightKg;
+      if (kg != null) {
+        final byDay = loads.putIfAbsent(exerciseName, () => {});
+        final prior = byDay[day];
+        if (prior == null || kg > prior.$1) {
+          byDay[day] = (kg, item.actualWeightUnit == 'lbs' ? 'lbs' : 'kg');
+        }
+      }
+    }
+
+    int byCountThenName(int countA, String a, int countB, String b) {
+      final c = countB.compareTo(countA);
+      return c != 0 ? c : a.compareTo(b);
+    }
+
+    final plans = [
+      for (final e in planDays.entries) (name: e.key, count: e.value.length),
+    ]..sort((a, b) => byCountThenName(a.count, a.name, b.count, b.name));
+    final exercises = [
+      for (final e in exerciseDays.entries)
+        (name: e.key, count: e.value.length, sets: exerciseSets[e.key] ?? 0),
+    ]..sort((a, b) => byCountThenName(a.count, a.name, b.count, b.name));
+    return TrainingTally(
+      plans: plans,
+      exercises: exercises,
+      categories: [
+        for (final e in categoryDays.entries)
+          (name: e.key, count: e.value.length, sets: categorySets[e.key] ?? 0),
+      ],
+      lifts: {
+        for (final e in loads.entries)
+          e.key: () {
+            final days = e.value.keys.toList()..sort();
+            final first = e.value[days.first]!;
+            final last = e.value[days.last]!;
+            return LiftRecord(
+              firstKg: first.$1,
+              firstDay: days.first,
+              lastKg: last.$1,
+              lastDay: days.last,
+              unit: last.$2,
+            );
+          }(),
+      },
+      trainingDays: trainedDays.length,
+    );
+  }
+
   Future<bool> hasAnySetOn(DateTime day) async {
     final key = _dayStart(day);
     final row =

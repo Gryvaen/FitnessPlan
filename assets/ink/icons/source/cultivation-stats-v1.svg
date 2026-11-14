@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <filter id="rough" x="-18%" y="-18%" width="136%" height="136%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.022 0.075" numOctaves="2" seed="61" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+  <g fill="none" stroke="#075866" stroke-linecap="round" stroke-linejoin="round" filter="url(#rough)">
+    <!-- Three accumulating brush-columns: a readable statistic that also climbs like a cultivation path. -->
+    <path d="M55 190 L55 151 C55 143 61 138 69 138 L84 138 C92 138 97 143 97 151 L97 190" stroke-width="11"/>
+    <path d="M110 190 L110 112 C110 104 116 99 124 99 L139 99 C147 99 152 104 152 112 L152 190" stroke-width="11"/>
+    <path d="M165 190 L165 72 C165 64 171 59 179 59 L194 59 C202 59 207 64 207 72 L207 190" stroke-width="11"/>
+    <!-- One broken horizon keeps the columns grounded without looking like a conventional chart. -->
+    <path d="M43 193 C85 198 151 198 214 191" stroke-width="7"/>
+    <path d="M48 208 C96 215 166 213 207 205" stroke-width="3" opacity=".48"/>
+    <!-- The rising curve turns the numerical progression into a path of breakthrough. -->
+    <path d="M48 124 C78 102 95 99 110 101 C130 104 143 91 160 70" stroke-width="5" opacity=".72"/>
+    <path d="M153 72 L162 70 L161 79" stroke-width="5" opacity=".72"/>
+    <path d="M61 119 L65 113 M82 105 L85 99" stroke-width="3" opacity=".38"/>
+  </g>
+  <g fill="#075866" opacity=".55">
+    <circle cx="213" cy="46" r="4"/><circle cx="45" cy="133" r="2.5"/><circle cx="218" cy="178" r="2"/>
+  </g>
+</svg>

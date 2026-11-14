@@ -137,6 +137,12 @@ class _CultivationHomeState extends ConsumerState<_CultivationHome> {
                 ),
                 const SizedBox(height: 12),
                 _SideAction(
+                  glyph: InkGlyph.cultivationStats,
+                  label: l10n.cultivationSideStats,
+                  onTap: () => context.push('/profile/cultivation/stats'),
+                ),
+                const SizedBox(height: 12),
+                _SideAction(
                   glyph: InkGlyph.trophy,
                   label: l10n.cultivationSideRealmGuide,
                   onTap: () => context.push('/profile/cultivation/realm-guide'),
