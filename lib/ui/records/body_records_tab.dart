@@ -36,20 +36,13 @@ class BodyRecordsTab extends ConsumerStatefulWidget {
 }
 
 class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
-  /// 0 = all. Prefer all until shorter ranges unlock from history.
-  int _period = 0;
+  /// Days shown: 30, or 0 = all. Opens on the last 30 days.
+  int _period = 30;
 
-  /// Progressive ranges: 7d once any log exists → +30d on the 7th calendar
-  /// day after the first log → +全部(all) on the 14th calendar day after the
-  /// first log (first day counts as day 1).
+  /// 「30 天」 and 「全部」 once any weight is logged; just all before that.
   static List<int> _availablePeriods(List<WeightLog> orderedOldestFirst) {
     if (orderedOldestFirst.isEmpty) return const [0];
-    final firstDay = AppDates.dayOnly(orderedOldestFirst.first.date);
-    final daysSinceFirst = AppDates.daysBetween(
-      firstDay,
-      AppDates.todayLocal(),
-    );
-    return [7, if (daysSinceFirst >= 6) 30, if (daysSinceFirst >= 13) 0];
+    return const [30, 0];
   }
 
   void _ensurePeriodAvailable(List<int> periods) {

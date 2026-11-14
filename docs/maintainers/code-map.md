@@ -138,7 +138,7 @@ UI 统一 import `app_providers.dart`（汇总导出）。
 | 文件 | 作用 |
 |---|---|
 | `records_page.dart` | 三个分段：身体、训练、笔记 |
-| `body_records_tab.dart` | 体重和体脂图表（7 天 / 30 天 / 全部） |
+| `body_records_tab.dart` | 体重和体脂图表（30 天 / 全部） |
 | `train_records_tab.dart` | 训练：计划、动作库、历史 |
 | `plan_edit_page.dart`、`exercise_picker.dart`、`exercise_form_dialog.dart`、`log_set_sheet.dart` | 编辑训练计划、选择动作、编辑动作、记一组 |
 | `notes_records_tab.dart`、`note_edit_page.dart` | 笔记列表与编辑 |

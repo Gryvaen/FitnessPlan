@@ -127,6 +127,15 @@ void main() {
       );
     }
     expect(find.text('70.50 kg'), findsWidgets);
+    // Only 「30 天」 and 「全部」, opening on the last 30 days.
+    expect(find.widgetWithText(ChoiceChip, '7 天'), findsNothing);
+    expect(find.widgetWithText(ChoiceChip, '全部'), findsOneWidget);
+    expect(
+      tester
+          .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '30 天'))
+          .selected,
+      isTrue,
+    );
     expect(tester.takeException(), isNull);
   });
 
