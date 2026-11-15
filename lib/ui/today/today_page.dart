@@ -104,6 +104,8 @@ class _TodayPageState extends ConsumerState<TodayPage> {
 
     Future<void> openDatePicker() async {
       final repo = ref.read(dietStrategyRepositoryProvider);
+      final plans = await repo.listPlans();
+      if (!context.mounted) return;
       final picked = await showDeficitDatePicker(
         context: context,
         initialDate: day,
@@ -119,6 +121,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
             (await repo.planCovering(date))?.carbCyclePlan?.highDayCarbPerKg,
         calorieStandardSince: profile.calorieStandardSince,
         cutSegments: ref.read(cutCultivationStateProvider).segments,
+        strategyChangeDays: strategyChangeDays(plans, today: today),
         markUntil: DateTime(today.year + 1, today.month, today.day),
       );
       if (picked == null) return;

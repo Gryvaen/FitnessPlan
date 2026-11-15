@@ -567,6 +567,8 @@
   "legendCutRound": "减脂轮次",
   "legendCutRoundStartLine": "竖线＝本轮减脂开始",
   "legendCutRoundGreenRed": "轮内：过去绿/红，改标准不影响",
+  "legendStrategyChange": "策略调整",
+  "legendStrategyChangeFlag": "左上角三角＝新策略从这天生效",
   "cheatMealLabel": "放纵日",
   "restDayLabel": "休息日",
   "clearMarkerLabel": "取消标记",

@@ -599,6 +599,8 @@
   "legendCutRound": "Cut round",
   "legendCutRoundStartLine": "Line = cut round starts",
   "legendCutRoundGreenRed": "In round: past green/red, kept across standard changes",
+  "legendStrategyChange": "Strategy change",
+  "legendStrategyChangeFlag": "Corner flag = new strategy version starts",
   "cheatMealLabel": "Cheat day",
   "restDayLabel": "Rest day",
   "clearMarkerLabel": "Clear marker",

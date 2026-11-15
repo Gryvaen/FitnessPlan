@@ -2949,6 +2949,18 @@ abstract class AppLocalizations {
   /// **'In round: past green/red, kept across standard changes'**
   String get legendCutRoundGreenRed;
 
+  /// No description provided for @legendStrategyChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Strategy change'**
+  String get legendStrategyChange;
+
+  /// No description provided for @legendStrategyChangeFlag.
+  ///
+  /// In en, this message translates to:
+  /// **'Corner flag = new strategy version starts'**
+  String get legendStrategyChangeFlag;
+
   /// No description provided for @cheatMealLabel.
   ///
   /// In en, this message translates to:

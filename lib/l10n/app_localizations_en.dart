@@ -1543,6 +1543,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'In round: past green/red, kept across standard changes';
 
   @override
+  String get legendStrategyChange => 'Strategy change';
+
+  @override
+  String get legendStrategyChangeFlag =>
+      'Corner flag = new strategy version starts';
+
+  @override
   String get cheatMealLabel => 'Cheat day';
 
   @override

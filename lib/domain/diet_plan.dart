@@ -176,6 +176,27 @@ class DietStrategyPlan {
   double get weeklyAverage => baseEnergy;
 }
 
+/// Days on which a strategy version took effect, for the calendar's
+/// "strategy change" corner flag.
+///
+/// Only days up to [today] count (a scheduled switch is not shown yet), and a
+/// version replaced before it ever started (`endedOn <= effectiveFrom`) is
+/// skipped. Several versions saved on one day collapse into one entry.
+/// Stopping a strategy only sets `endedOn`, so it never adds a day.
+Set<DateTime> strategyChangeDays(
+  Iterable<DietStrategyPlan> plans, {
+  required DateTime today,
+}) {
+  final limit = StrategyDates.dayOnly(today);
+  final days = <DateTime>{};
+  for (final p in plans) {
+    final from = StrategyDates.dayOnly(p.effectiveFrom);
+    if (from.isAfter(limit) || !p.spansAnyDay) continue;
+    days.add(from);
+  }
+  return days;
+}
+
 /// User-facing "第 N 版" for [plan]: its position among versions that
 /// actually govern at least one day ([DietStrategyPlan.spansAnyDay]).
 ///

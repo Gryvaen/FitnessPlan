@@ -51,6 +51,10 @@ Future<DateTime?> showDeficitDatePicker({
   /// [calorieStandardSince] cut-off still applies.
   List<CutCultivationSegment> cutSegments = const [],
 
+  /// Days a strategy version took effect (see [strategyChangeDays]); each
+  /// gets a corner flag, alongside the cut-round start line.
+  Set<DateTime> strategyChangeDays = const {},
+
   /// How far into the future the calendar may be paged for 放纵日/休息日
   /// marking (long-press). Defaults to [lastDate] — pure date *selection*
   /// (tap + Confirm) always stays bounded by [firstDate]/[lastDate].
@@ -84,6 +88,9 @@ Future<DateTime?> showDeficitDatePicker({
             end: s.end == null ? null : AppDates.dayOnly(s.end!),
           ),
       ],
+      strategyChangeDays: {
+        for (final d in strategyChangeDays) AppDates.dayOnly(d),
+      },
       markUntil: markUntil == null
           ? null
           : DateTime(markUntil.year, markUntil.month, markUntil.day),
@@ -104,6 +111,7 @@ class _DeficitDatePickerDialog extends StatefulWidget {
     this.loadCarbLoadFloor,
     this.calorieStandardSince,
     this.cutSegments = const [],
+    this.strategyChangeDays = const {},
     this.markUntil,
   });
 
@@ -120,6 +128,7 @@ class _DeficitDatePickerDialog extends StatefulWidget {
   final CarbLoadFloorLoader? loadCarbLoadFloor;
   final DateTime? calorieStandardSince;
   final List<CutCultivationSegment> cutSegments;
+  final Set<DateTime> strategyChangeDays;
   final DateTime? markUntil;
 
   @override
@@ -431,6 +440,21 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
                   ],
                 ),
               ],
+              if (widget.strategyChangeDays.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _LegendSection(
+                  title: l10n.legendStrategyChange,
+                  children: [
+                    _LegendLine(
+                      leading: _CornerFlag(
+                        color: theme.colorScheme.primary,
+                        size: 9,
+                      ),
+                      label: l10n.legendStrategyChangeFlag,
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -481,6 +505,7 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
                       target: _targetsByDay[date],
                       calorieStandardSince: widget.calorieStandardSince,
                       cutSegments: widget.cutSegments,
+                      strategyChange: widget.strategyChangeDays.contains(date),
                       okColor: _okGreen,
                       badColor: _badRed,
                       marker: _markersByDay[date],
@@ -1145,6 +1170,7 @@ class _DayCell extends StatelessWidget {
     required this.markable,
     this.calorieStandardSince,
     this.cutSegments = const [],
+    this.strategyChange = false,
     this.onLongPress,
   });
 
@@ -1160,6 +1186,9 @@ class _DayCell extends StatelessWidget {
 
   /// Cut rounds; a day inside one ignores the [calorieStandardSince] cut-off.
   final List<CutCultivationSegment> cutSegments;
+
+  /// A strategy version took effect on this day (corner flag).
+  final bool strategyChange;
   final Color okColor;
   final Color badColor;
   final VoidCallback onTap;
@@ -1258,52 +1287,101 @@ class _DayCell extends StatelessWidget {
                   ),
                 )
               : const BoxDecoration(),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '${date.day}',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    fontWeight: selected || isToday
-                        ? FontWeight.w700
-                        : FontWeight.w500,
-                    color: fg,
-                  ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '${date.day}',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: selected || isToday
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        color: fg,
+                      ),
+                    ),
+                    if (marked) ...[
+                      const SizedBox(height: 1),
+                      Text(
+                        marker!.shortLabel(l10n),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          height: 1.1,
+                          fontWeight: FontWeight.w600,
+                          color: fg,
+                          fontSize: 10,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.clip,
+                      ),
+                    ] else if (remaining != null) ...[
+                      const SizedBox(height: 1),
+                      Text(
+                        '${remaining.round()}',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          height: 1.1,
+                          fontWeight: FontWeight.w600,
+                          color: fg,
+                          fontSize: 10,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.clip,
+                      ),
+                    ],
+                  ],
                 ),
-                if (marked) ...[
-                  const SizedBox(height: 1),
-                  Text(
-                    marker!.shortLabel(l10n),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      height: 1.1,
-                      fontWeight: FontWeight.w600,
-                      color: fg,
-                      fontSize: 10,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.clip,
-                  ),
-                ] else if (remaining != null) ...[
-                  const SizedBox(height: 1),
-                  Text(
-                    '${remaining.round()}',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      height: 1.1,
-                      fontWeight: FontWeight.w600,
-                      color: fg,
-                      fontSize: 10,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.clip,
-                  ),
-                ],
-              ],
-            ),
+              ),
+              if (strategyChange)
+                Positioned(
+                  top: 2,
+                  left: 2,
+                  child: _CornerFlag(color: theme.colorScheme.primary),
+                ),
+            ],
           ),
         ),
       ),
     );
   }
+}
+
+/// Small right-angled triangle pinned to a day cell's top-left corner: a
+/// strategy version took effect that day. Also used as the legend glyph.
+class _CornerFlag extends StatelessWidget {
+  const _CornerFlag({required this.color, this.size = 7})
+    : super(key: const ValueKey('strategyChangeFlag'));
+
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: Size.square(size),
+      painter: _CornerFlagPainter(color),
+    );
+  }
+}
+
+class _CornerFlagPainter extends CustomPainter {
+  const _CornerFlagPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(path, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(_CornerFlagPainter oldDelegate) =>
+      oldDelegate.color != color;
 }

@@ -1509,6 +1509,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get legendCutRoundGreenRed => '轮内：过去绿/红，改标准不影响';
 
   @override
+  String get legendStrategyChange => '策略调整';
+
+  @override
+  String get legendStrategyChangeFlag => '左上角三角＝新策略从这天生效';
+
+  @override
   String get cheatMealLabel => '放纵日';
 
   @override
