@@ -3226,6 +3226,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cutRoundWeightSingle => '单次称重';
 
   @override
+  String get weightSkippedAfterCheat => '放纵日后 3 天内的体重只记录，不更新档案';
+
+  @override
   String cutRoundWeightExcluded(String n) {
     return '已排除放纵日后 3 天内的 $n 次称重';
   }

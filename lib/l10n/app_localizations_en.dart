@@ -3303,6 +3303,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cutRoundWeightSingle => 'Single weigh-in';
 
   @override
+  String get weightSkippedAfterCheat =>
+      'Logged. Weigh-ins within 3 days after a cheat day don’t update your profile.';
+
+  @override
   String cutRoundWeightExcluded(String n) {
     return '$n weigh-ins within 3 days after a cheat day excluded';
   }

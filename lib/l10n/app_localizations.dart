@@ -5757,6 +5757,12 @@ abstract class AppLocalizations {
   /// **'Single weigh-in'**
   String get cutRoundWeightSingle;
 
+  /// No description provided for @weightSkippedAfterCheat.
+  ///
+  /// In en, this message translates to:
+  /// **'Logged. Weigh-ins within 3 days after a cheat day don’t update your profile.'**
+  String get weightSkippedAfterCheat;
+
   /// No description provided for @cutRoundWeightExcluded.
   ///
   /// In en, this message translates to:

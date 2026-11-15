@@ -88,7 +88,7 @@ UI 统一 import `app_providers.dart`（汇总导出）。
 | `workout_providers.dart` | 动作库、训练计划、当天训练、训练历史 |
 | `workout_reminder_providers.dart` | `remindersProvider`：保存提醒设置，并尽力重新排期 |
 | `app_update_providers.dart` | `appUpdateProvider`：检查更新、下载、切换下载源、安装 |
-| `note_providers.dart` / `weight_providers.dart` / `theme_providers.dart` / `locale_providers.dart` | 笔记、体重记录、主题、语言 |
+| `note_providers.dart` / `weight_providers.dart` / `theme_providers.dart` / `locale_providers.dart` | 笔记、体重记录（含 `latestProfileWeighIn`：档案跟随的最新一次非放纵窗口称重）、主题、语言 |
 | `app_providers.dart` | 汇总导出 |
 
 ## lib/ui

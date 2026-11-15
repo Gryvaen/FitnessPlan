@@ -22,6 +22,7 @@
 - 档案存在 prefs 的 `user_profile`（JSON），由 `ProfileRepository` 读写。
 - `CalorieCalculator`（`lib/domain/calorie_calculator.dart`）：先用 Mifflin-St Jeor 公式算 BMR，乘以活动系数得到 TDEE，再按目标给出摄入：维持 = TDEE，减脂 = TDEE（缺口由策略提供），增肌 = TDEE × 1.1；最后分配三大营养素。
 - 平台期修正：`calorieAdjustment` 最多 300 kcal。
+- 放纵日当天及之后 3 天内记的体重只写入称重记录，不更新档案（`weighInSkewedByCheatDay`，口径同 `isWithinCheatWindow`）；删除称重后档案回退到最新一次不在放纵窗口内的称重。
 - 平台期检测（`lib/domain/plateau.dart`）：最近 7 次体重记录的变化不超过 0.3 kg，就判定为平台期，在今日页给出提示。
 - **「新标准」标记**：`UserProfile.calorieStandardSince`。只有策略发生结构性变化（`isStructuralChange`）或切换目标时才会重新打这个标记；碳循环只调整排期（周期长度、高/中/低顺序）不算结构性变化。在此之前的日期显示为「旧标准估算」。
 - **月历绿/红按减脂轮次判定**：今日页月历（`deficit_date_picker.dart`）里，落在某一轮减脂（`CutCultivationSegment`）内的过去日期，各按自己当天的目标快照判绿/红，轮内中途重新打「新标准」标记不会让之前的颜色消失；竖线标在每轮减脂的开始日。不在任何减脂轮内的日期（维持/增肌期）仍按 `calorieStandardSince` 截断。没有快照的「旧标准估算」日（`isLegacyEstimate`）始终不判定。策略每个新版本的生效日在格子左上角画一个主题色小三角（`strategyChangeDays()`，在 `domain/diet_plan.dart`）：只标今天及以前的日期，未来预约的切换不标；还没生效就被替换掉的零长度版本不标；停止策略不标。三角可以和竖线出现在同一天。

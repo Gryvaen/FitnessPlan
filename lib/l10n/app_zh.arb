@@ -2318,6 +2318,7 @@
     "placeholders": { "n": { "type": "String" } }
   },
   "cutRoundWeightSingle": "单次称重",
+  "weightSkippedAfterCheat": "放纵日后 3 天内的体重只记录，不更新档案",
   "cutRoundWeightExcluded": "已排除放纵日后 3 天内的 {n} 次称重",
   "@cutRoundWeightExcluded": {
     "placeholders": { "n": { "type": "String" } }

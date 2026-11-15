@@ -83,6 +83,19 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
             weightKg: draft.weightKg,
             bodyFatPct: draft.bodyFatPct,
           );
+      // A weigh-in on or shortly after a 放纵日 is mostly water and glycogen:
+      // keep the record, but don't let it move the profile and its targets.
+      final skewed = await weighInSkewedByCheatDay(
+        ref.read(dayMarkerRepositoryProvider),
+        DateTime.now(),
+      );
+      if (skewed) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.weightSkippedAfterCheat)));
+        return;
+      }
       final updated = await ref
           .read(profileProvider.notifier)
           .applyLatestWeight(draft.weightKg);
@@ -136,8 +149,11 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
       final repo = ref.read(weightRepositoryProvider);
       await repo.delete(log.id);
       // The profile (and every target derived from it) followed the deleted
-      // log; fall back to the latest remaining one.
-      final latest = await repo.latest();
+      // log; fall back to the latest remaining one not skewed by a 放纵日.
+      final latest = await latestProfileWeighIn(
+        repo,
+        ref.read(dayMarkerRepositoryProvider),
+      );
       if (latest != null &&
           latest.weightKg != ref.read(profileProvider)?.weightKg) {
         await ref

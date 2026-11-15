@@ -38,6 +38,24 @@ class RoundWeightTrend {
   final int startSamples;
 }
 
+/// Days a weigh-in is skewed by a 放纵日 (water and glycogen, not fat): the
+/// 放纵日 itself and the [afterCheatDays] days after it.
+const cheatWeightWindowDays = 3;
+
+/// Whether [day] falls on a 放纵日 in [cheatDays] or within
+/// [afterCheatDays] days after one. [cheatDays] must be day-only dates.
+bool isWithinCheatWindow(
+  DateTime day,
+  Set<DateTime> cheatDays, {
+  int afterCheatDays = cheatWeightWindowDays,
+}) {
+  final d = CalendarDay.dayOnly(day);
+  for (var back = 0; back <= afterCheatDays; back++) {
+    if (cheatDays.contains(CalendarDay.addDays(d, -back))) return true;
+  }
+  return false;
+}
+
 /// Drops weigh-ins taken on a 放纵日 or the [afterCheatDays] days after it
 /// (water and glycogen, not fat), then averages the first [window] kept for
 /// the start and the last [window] for the end. With fewer than
@@ -50,19 +68,13 @@ class RoundWeightTrend {
   required List<({DateTime day, double kg})> logs,
   required Set<DateTime> cheatDays,
   int window = 3,
-  int afterCheatDays = 3,
+  int afterCheatDays = cheatWeightWindowDays,
 }) {
   final cheat = {for (final d in cheatDays) CalendarDay.dayOnly(d)};
-  bool afterCheat(DateTime day) {
-    for (var back = 0; back <= afterCheatDays; back++) {
-      if (cheat.contains(CalendarDay.addDays(day, -back))) return true;
-    }
-    return false;
-  }
-
   final kept = [
     for (final log in logs)
-      if (!afterCheat(CalendarDay.dayOnly(log.day))) log,
+      if (!isWithinCheatWindow(log.day, cheat, afterCheatDays: afterCheatDays))
+        log,
   ]..sort((a, b) => a.day.compareTo(b.day));
   final excluded = logs.length - kept.length;
   final n = kept.length;

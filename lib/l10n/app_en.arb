@@ -2402,6 +2402,7 @@
     "placeholders": { "n": { "type": "String" } }
   },
   "cutRoundWeightSingle": "Single weigh-in",
+  "weightSkippedAfterCheat": "Logged. Weigh-ins within 3 days after a cheat day don’t update your profile.",
   "cutRoundWeightExcluded": "{n} weigh-ins within 3 days after a cheat day excluded",
   "@cutRoundWeightExcluded": {
     "placeholders": { "n": { "type": "String" } }
