@@ -177,6 +177,27 @@ Future<Finder> _show(
   return finder;
 }
 
+/// Like [_show], but scrolls the visible vertical list. The nutrition page
+/// nests its lists in a horizontal goal pager, which is the first Scrollable.
+Future<Finder> _showInPage(
+  WidgetTester tester,
+  Finder finder, {
+  double delta = 120,
+}) async {
+  await tester.scrollUntilVisible(
+    finder,
+    delta,
+    scrollable: find
+        .byWidgetPredicate(
+          (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
+        )
+        .hitTestable()
+        .first,
+  );
+  await _settle(tester);
+  return finder;
+}
+
 Future<void> _openStrategySection(WidgetTester tester, String key) async {
   await tester.tap(await _show(tester, find.byKey(ValueKey(key))));
   await _settle(tester);
@@ -226,12 +247,16 @@ void main() {
   testWidgets('nutrition targets page renders without a plan', (tester) async {
     await _pump(tester, '/profile/nutrition');
     _expectNoLayoutErrors(tester);
-    expect(find.text('Fat-loss strategy'), findsOneWidget);
+    expect(find.byKey(const ValueKey('noStrategyEmpty')), findsOneWidget);
     expect(find.text('No strategy'), findsOneWidget);
+    expect(find.text('Choose strategy'), findsOneWidget);
     expect(find.text('Stop strategy'), findsNothing);
+    await tester.tap(find.text('Choose strategy'));
+    await _settle(tester);
+    expect(find.text('Balanced deficit'), findsOneWidget);
   });
 
-  testWidgets('weight change suggests review without changing saved plan', (
+  testWidgets('weight change keeps saved plan until re-applied', (
     tester,
   ) async {
     await _createPlan(DietStrategyKind.balanced);
@@ -253,20 +278,19 @@ void main() {
         .applyLatestWeight(72.7))!;
     await _settle(tester);
     expect(updated.tdee, isNot(2400));
-    expect(find.byKey(const ValueKey('strategyReviewPrompt')), findsOneWidget);
-    expect(find.textContaining('Current weight 72.7 kg'), findsOneWidget);
+    // No review prompt any more: the saved plan simply stays in force.
+    expect(find.byKey(const ValueKey('strategyReviewPrompt')), findsNothing);
     expect((await repo.activePlan())!.estimatedTdee, original.estimatedTdee);
     expect(
       (await repo.targetForDay(today, updated))!.calories,
       originalTarget.calories,
     );
-    await tester.tap(
-      await _show(tester, find.byKey(const ValueKey('activeStrategyDetails'))),
-    );
-    await _settle(tester);
+    await _show(tester, find.text('This plan’s baseline'));
     expect(find.text('This plan’s baseline'), findsOneWidget);
-    expect(find.textContaining('Ref. weight 75.0 kg'), findsOneWidget);
-    await tester.tap(await _show(tester, find.text('Review strategy')));
+    expect(find.textContaining('75.0'), findsWidgets);
+    await tester.pumpWidget(
+      _app('/profile/nutrition/strategy/configure?kind=balanced'),
+    );
     await _settle(tester);
     expect(
       find.descendant(
@@ -350,9 +374,58 @@ void main() {
     await tester.ensureVisible(find.byType(Slider));
     await tester.drag(find.byType(Slider), const Offset(100, 0));
     await _settle(tester);
-    expect(find.text('Proposed target'), findsOneWidget);
+    // Sections stay open together, so the summary sits above the viewport.
+    expect(
+      await _show(tester, find.text('Proposed target'), delta: -120),
+      findsOneWidget,
+    );
     expect(find.textContaining('Apply from'), findsOneWidget);
     _expectNoLayoutErrors(tester);
+  });
+
+  testWidgets('applied plan can be re-applied from a different start date', (
+    tester,
+  ) async {
+    final today = CalendarDay.todayLocal();
+    final tomorrow = CalendarDay.addDays(today, 1);
+    await _createPlan(DietStrategyKind.balanced);
+    await _pump(tester, '/profile/nutrition/strategy/configure?kind=balanced');
+    VoidCallback? applyPressed() => tester
+        .widget<FilledButton>(
+          find.ancestor(
+            of: find.textContaining(RegExp('Currently applied|Apply from')),
+            matching: find.byType(FilledButton),
+          ),
+        )
+        .onPressed;
+    expect(find.text('Currently applied'), findsOneWidget);
+    expect(applyPressed(), isNull);
+
+    await _openStrategySection(tester, 'strategy-section-effective');
+    // The section summary repeats the chosen label; the option comes last.
+    final tomorrowOption = find.textContaining('Tomorrow (').last;
+    await tester.tap(await _show(tester, tomorrowOption));
+    await _settle(tester);
+    await _show(tester, find.textContaining('Apply from'), delta: -120);
+    expect(applyPressed(), isNotNull);
+    expect(find.text('Proposed target'), findsNothing);
+
+    await tester.tap(await _show(tester, find.text('Start today').last));
+    await _settle(tester);
+    await _show(tester, find.text('Currently applied'), delta: -120);
+    expect(applyPressed(), isNull);
+
+    await tester.tap(await _show(tester, tomorrowOption));
+    await _settle(tester);
+    await tester.tap(
+      await _show(tester, find.textContaining('Apply from'), delta: -120),
+    );
+    await _settle(tester);
+    final repo = _container.read(dietStrategyRepositoryProvider);
+    final active = (await repo.activePlan())!;
+    expect(active.version, 2);
+    expect(active.effectiveFrom, tomorrow);
+    expect((await repo.planCovering(today))!.version, 1);
   });
 
   testWidgets('matching scheduled plan shows disabled scheduled status', (
@@ -376,6 +449,68 @@ void main() {
           .version,
       1,
     );
+  });
+
+  testWidgets('scheduled carb cycle can be moved to start today', (
+    tester,
+  ) async {
+    final today = CalendarDay.todayLocal();
+    final tomorrow = CalendarDay.addDays(today, 1);
+    final schedule = CarbCycleSchedule.defaultFor(4);
+    final rates = CarbCycleRates.defaults();
+    await _container
+        .read(dietStrategyActionsProvider)
+        .applyPlan(
+          DietStrategyPlanDraft(
+            kind: DietStrategyKind.carbCycle,
+            effectiveFrom: tomorrow,
+            referenceWeightKg: 75,
+            estimatedTdee: 2400,
+            baseEnergy: CarbCyclePlanner.compute(
+              referenceWeightKg: 75,
+              rates: rates,
+              schedule: schedule,
+            ).cycleAverageEnergy,
+            schedule: schedule,
+            carbCycleRates: rates,
+            reason: 'test',
+          ),
+        );
+    expect(_container.read(profileProvider)!.calorieStandardSince, tomorrow);
+    await _pump(tester, '/profile/nutrition/strategy/configure?kind=carbCycle');
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'Scheduled to apply'),
+          )
+          .onPressed,
+      isNull,
+    );
+
+    await _openStrategySection(tester, 'strategy-section-effective');
+    await tester.tap(await _show(tester, find.text('Start today')));
+    await _settle(tester);
+    expect(find.text('Scheduled to apply'), findsNothing);
+    expect(find.text('Proposed target'), findsNothing);
+    final apply = await _show(tester, find.textContaining('Apply from'));
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.ancestor(of: apply, matching: find.byType(FilledButton)),
+          )
+          .onPressed,
+      isNotNull,
+    );
+    await tester.tap(apply);
+    await _settle(tester);
+
+    final repo = _container.read(dietStrategyRepositoryProvider);
+    final active = (await repo.activePlan())!;
+    expect(active.version, 2);
+    expect(active.effectiveFrom, today);
+    expect((await repo.planCovering(tomorrow))!.version, 2);
+    // The new standard now starts today, not on the cancelled tomorrow.
+    expect(_container.read(profileProvider)!.calorieStandardSince, today);
   });
 
   testWidgets('65 kg cycle shows advisory and still applies', (tester) async {
@@ -507,173 +642,6 @@ void main() {
     );
   });
 
-  testWidgets('review prompt dismissal persists until another 3% change', (
-    tester,
-  ) async {
-    await _createPlan(DietStrategyKind.balanced);
-    await _pump(tester, '/profile/nutrition');
-    await _container.read(profileProvider.notifier).applyLatestWeight(72.7);
-    await _settle(tester);
-    expect(find.byKey(const ValueKey('strategyReviewPrompt')), findsOneWidget);
-    await tester.tap(await _show(tester, find.text('Later')));
-    await _settle(tester);
-    expect(find.byKey(const ValueKey('strategyReviewPrompt')), findsNothing);
-    _container.invalidate(strategyReviewDismissalProvider);
-    await _settle(tester);
-    expect(find.byKey(const ValueKey('strategyReviewPrompt')), findsNothing);
-
-    await _container.read(profileProvider.notifier).applyLatestWeight(70.6);
-    await _settle(tester);
-    expect(find.byKey(const ValueKey('strategyReviewPrompt')), findsNothing);
-    await _container.read(profileProvider.notifier).applyLatestWeight(70.5);
-    await _settle(tester);
-    expect(find.byKey(const ValueKey('strategyReviewPrompt')), findsOneWidget);
-    _expectNoLayoutErrors(tester);
-  });
-
-  testWidgets('future strategy does not suggest review', (tester) async {
-    await _createPlan(
-      DietStrategyKind.balanced,
-      effectiveFrom: CalendarDay.addDays(CalendarDay.todayLocal(), 1),
-    );
-    await _pump(tester, '/profile/nutrition');
-    await _container.read(profileProvider.notifier).applyLatestWeight(70);
-    await _settle(tester);
-    expect(find.byKey(const ValueKey('strategyReviewPrompt')), findsNothing);
-  });
-
-  for (final field in ['sex', 'age', 'height', 'weight', 'activity']) {
-    testWidgets('saving $field in profile suggests strategy review', (
-      tester,
-    ) async {
-      await _createPlan(DietStrategyKind.balanced);
-      final savedPlan = (await _container
-          .read(dietStrategyRepositoryProvider)
-          .activePlan())!;
-      await _pump(tester, '/profile/edit');
-      switch (field) {
-        case 'sex':
-          tester
-              .widget<AppDropdown<Sex>>(find.byType(AppDropdown<Sex>))
-              .onChanged(Sex.female);
-        case 'age':
-          tester
-              .widget<AppDropdown<int>>(find.byType(AppDropdown<int>).first)
-              .onChanged(31);
-        case 'height':
-          tester
-              .widget<AppDropdown<int>>(find.byType(AppDropdown<int>).last)
-              .onChanged(176);
-        case 'weight':
-          tester
-              .widget<AppDropdown<double>>(find.byType(AppDropdown<double>))
-              .onChanged(74.75);
-        case 'activity':
-          tester
-              .widget<AppDropdown<ActivityLevel>>(
-                find.byType(AppDropdown<ActivityLevel>),
-              )
-              .onChanged(ActivityLevel.light);
-      }
-      await _settle(tester);
-      await tester.tap(await _show(tester, find.text('Save')));
-      await _settle(tester);
-      expect(
-        (await _container.read(dietStrategyRepositoryProvider).activePlan())!
-            .id,
-        savedPlan.id,
-      );
-      expect(_container.read(profileStrategyReviewProvider)?.revision, 1);
-      await _pump(tester, '/profile/nutrition');
-      expect(find.textContaining('Profile updated'), findsOneWidget);
-      expect(find.text('Compare targets'), findsOneWidget);
-      _expectNoLayoutErrors(tester);
-    });
-  }
-
-  testWidgets('water-only edit does not suggest nutrition review', (
-    tester,
-  ) async {
-    await _createPlan(DietStrategyKind.balanced);
-    await _pump(tester, '/profile/edit');
-    await _show(tester, find.byType(AppOptionalDropdown<int>));
-    tester
-        .widget<AppOptionalDropdown<int>>(find.byType(AppOptionalDropdown<int>))
-        .onChanged(2500);
-    await _settle(tester);
-    await tester.tap(await _show(tester, find.text('Save')));
-    await _settle(tester);
-    expect(_container.read(profileStrategyReviewProvider), isNull);
-  });
-
-  testWidgets(
-    'profile review survives restart and Later only dismisses this edit',
-    (tester) async {
-      await _createPlan(DietStrategyKind.balanced);
-      final plan = (await _container
-          .read(dietStrategyRepositoryProvider)
-          .activePlan())!;
-      await _container.read(profileProvider.notifier).applyLatestWeight(74.75);
-      await _container
-          .read(profileStrategyReviewProvider.notifier)
-          .record(plan);
-      await _pump(tester, '/profile/nutrition');
-      expect(find.text('Compare targets'), findsOneWidget);
-      await tester.tap(await _show(tester, find.text('Later')));
-      await _settle(tester);
-      expect(find.byKey(const ValueKey('strategyReviewPrompt')), findsNothing);
-      _container.invalidate(profileStrategyReviewProvider);
-      await _settle(tester);
-      expect(find.byKey(const ValueKey('strategyReviewPrompt')), findsNothing);
-      await _container
-          .read(profileStrategyReviewProvider.notifier)
-          .record(plan);
-      await _settle(tester);
-      expect(find.text('Compare targets'), findsOneWidget);
-    },
-  );
-
-  testWidgets(
-    'scheduled strategy reviews a saved profile change before start',
-    (tester) async {
-      await _createPlan(
-        DietStrategyKind.balanced,
-        effectiveFrom: CalendarDay.addDays(CalendarDay.todayLocal(), 1),
-      );
-      await _pump(tester, '/profile/edit');
-      tester
-          .widget<AppDropdown<double>>(find.byType(AppDropdown<double>))
-          .onChanged(74.75);
-      await _settle(tester);
-      await tester.tap(await _show(tester, find.text('Save')));
-      await _settle(tester);
-      await _pump(tester, '/profile/nutrition');
-      expect(find.text('Compare targets'), findsOneWidget);
-      await tester.tap(await _show(tester, find.text('Compare targets')));
-      await _settle(tester);
-      expect(find.byType(StrategyConfigurePage), findsOneWidget);
-      expect(find.text('Proposed target'), findsOneWidget);
-    },
-  );
-
-  testWidgets('profile and weight reviews collapse into one dismissal', (
-    tester,
-  ) async {
-    await _createPlan(DietStrategyKind.balanced);
-    final plan = (await _container
-        .read(dietStrategyRepositoryProvider)
-        .activePlan())!;
-    await _container.read(profileProvider.notifier).applyLatestWeight(70);
-    await _container.read(profileStrategyReviewProvider.notifier).record(plan);
-    await _pump(tester, '/profile/nutrition');
-    expect(find.byKey(const ValueKey('strategyReviewPrompt')), findsOneWidget);
-    expect(find.text('Compare targets'), findsOneWidget);
-    await tester.tap(await _show(tester, find.text('Later')));
-    await _settle(tester);
-    expect(find.byKey(const ValueKey('strategyReviewPrompt')), findsNothing);
-    expect(_container.read(strategyReviewDismissalProvider)?.weightKg, 70);
-  });
-
   testWidgets('profile edit without strategy reports updated profile target', (
     tester,
   ) async {
@@ -693,7 +661,6 @@ void main() {
       find.text('Profile calorie target updated: $oldKcal → $newKcal kcal'),
       findsOneWidget,
     );
-    expect(_container.read(profileStrategyReviewProvider), isNull);
   });
 
   testWidgets('leaving cut stops its strategy and explains the change', (
@@ -732,9 +699,11 @@ void main() {
     await _settle(tester);
     await tester.tap(await _show(tester, find.text('Save')));
     await _settle(tester);
-    for (var i = 0;
-        i < 20 && _container.read(profileProvider)?.goal != FitnessGoal.maintain;
-        i++) {
+    for (
+      var i = 0;
+      i < 20 && _container.read(profileProvider)?.goal != FitnessGoal.maintain;
+      i++
+    ) {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(_container.read(profileProvider)?.goal, FitnessGoal.maintain);
@@ -743,154 +712,36 @@ void main() {
     expect(ledger.frozenKcal, -500);
   });
 
-  testWidgets(
-    'failed profile save keeps the edit and creates no review event',
-    (tester) async {
-      await _setUp(failProfile: true);
-      await _createPlan(DietStrategyKind.balanced);
-      await _pump(tester, '/profile/edit');
-      tester
-          .widget<AppDropdown<double>>(find.byType(AppDropdown<double>))
-          .onChanged(74.75);
-      await _settle(tester);
-      await tester.tap(await _show(tester, find.text('Save')));
-      await _settle(tester);
-      expect(find.byType(ProfileEditPage), findsOneWidget);
-      expect(find.textContaining('profile save failure'), findsOneWidget);
-      expect(_container.read(profileStrategyReviewProvider), isNull);
-    },
-  );
-
-  test('new matching version clears the prior profile review', () async {
+  testWidgets('failed profile save keeps the edit', (tester) async {
+    await _setUp(failProfile: true);
     await _createPlan(DietStrategyKind.balanced);
-    final repo = _container.read(dietStrategyRepositoryProvider);
-    final first = (await repo.activePlan())!;
-    final profile = await _container
-        .read(profileProvider.notifier)
-        .applyLatestWeight(74.75);
-    await _container.read(profileStrategyReviewProvider.notifier).record(first);
-    expect(
-      shouldSuggestProfileStrategyReview(
-        plan: first,
-        profile: profile,
-        review: _container.read(profileStrategyReviewProvider),
-      ),
-      isTrue,
-    );
-    final second = await repo.createPlan(
-      DietStrategyPlanDraft(
-        kind: DietStrategyKind.balanced,
-        effectiveFrom: CalendarDay.todayLocal(),
-        referenceWeightKg: profile!.weightKg,
-        estimatedTdee: profile.tdee!,
-        baseEnergy: profile.tdee! * (1 - first.deficitFraction),
-        proteinPerKg: first.proteinPerKg,
-        fatPerKg: first.fatPerKg,
-      ),
-    );
-    expect(second.version, first.version + 1);
-    expect(
-      shouldSuggestProfileStrategyReview(
-        plan: second,
-        profile: profile,
-        review: _container.read(profileStrategyReviewProvider),
-      ),
-      isFalse,
-    );
+    await _pump(tester, '/profile/edit');
+    tester
+        .widget<AppDropdown<double>>(find.byType(AppDropdown<double>))
+        .onChanged(74.75);
+    await _settle(tester);
+    await tester.tap(await _show(tester, find.text('Save')));
+    await _settle(tester);
+    expect(find.byType(ProfileEditPage), findsOneWidget);
+    expect(find.textContaining('profile save failure'), findsOneWidget);
   });
 
-  test('review threshold covers gains and resets for a new version', () async {
-    await _createPlan(DietStrategyKind.balanced);
-    final repo = _container.read(dietStrategyRepositoryProvider);
-    final first = (await repo.activePlan())!;
-    expect(
-      shouldSuggestStrategyReview(
-        plan: first,
-        currentWeightKg: 77.24,
-        dismissal: null,
-      ),
-      isFalse,
-    );
-    expect(
-      shouldSuggestStrategyReview(
-        plan: first,
-        currentWeightKg: 77.25,
-        dismissal: null,
-      ),
-      isTrue,
-    );
-    await _container
-        .read(strategyReviewDismissalProvider.notifier)
-        .dismiss(first, 77.25);
-    final dismissal = _container.read(strategyReviewDismissalProvider);
-    expect(
-      shouldSuggestStrategyReview(
-        plan: first,
-        currentWeightKg: 77.25,
-        dismissal: dismissal,
-      ),
-      isFalse,
-    );
-    await _createPlan(DietStrategyKind.balanced);
-    final second = (await repo.activePlan())!;
-    expect(second.version, first.version + 1);
-    expect(
-      shouldSuggestStrategyReview(
-        plan: second,
-        currentWeightKg: 77.25,
-        dismissal: dismissal,
-      ),
-      isTrue,
-    );
-  });
-
-  for (final themeId in [AppThemeId.fresh, AppThemeId.graphite]) {
-    testWidgets('review prompt fits ${themeId.name} at 360px', (tester) async {
-      await _createPlan(DietStrategyKind.balanced);
-      await _container.read(profileProvider.notifier).applyLatestWeight(72.7);
-      await _pump(tester, '/profile/nutrition', themeId: themeId);
-      expect(
-        find.byKey(const ValueKey('strategyReviewPrompt')),
-        findsOneWidget,
-      );
-      _expectNoLayoutErrors(tester);
-    });
-    testWidgets('profile review fits ${themeId.name} at 360px', (tester) async {
-      await _createPlan(DietStrategyKind.balanced);
-      final plan = (await _container
-          .read(dietStrategyRepositoryProvider)
-          .activePlan())!;
-      await _container.read(profileProvider.notifier).applyLatestWeight(74.75);
-      await _container
-          .read(profileStrategyReviewProvider.notifier)
-          .record(plan);
-      await _pump(tester, '/profile/nutrition', themeId: themeId);
-      expect(find.text('Compare targets'), findsOneWidget);
-      _expectNoLayoutErrors(tester);
-    });
-  }
-
-  testWidgets('carb-cycle actions expand with strategy details', (
+  testWidgets('carb-cycle page shows schedule and actions without folds', (
     tester,
   ) async {
     await _createPlan(DietStrategyKind.carbCycle);
     await _pump(tester, '/profile/nutrition');
 
-    expect(find.text('Adjust schedule'), findsNothing);
-    expect(find.text('Stop strategy'), findsNothing);
-
-    await tester.tap(find.byKey(const ValueKey('activeStrategyDetails')));
-    await _settle(tester);
-
-    expect(find.byKey(const ValueKey('cycleDay-0')), findsNothing);
-    await _openStrategySection(tester, 'activeCyclePreview');
+    expect(find.byKey(const ValueKey('strategyOverviewCard')), findsOneWidget);
+    expect(find.textContaining('Today ·'), findsOneWidget);
     expect(find.byKey(const ValueKey('cycleDay-0')), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('activeCyclePreview')));
-    await _settle(tester);
+    await _showInPage(tester, find.text('Adjust schedule'));
     expect(find.text('Adjust schedule'), findsOneWidget);
+    await _showInPage(tester, find.text('Stop strategy'));
     expect(find.text('Stop strategy'), findsOneWidget);
+    expect(find.text('Change strategy'), findsOneWidget);
 
-    await tester.tap(await _show(tester, find.text('Stop strategy')));
+    await tester.tap(await _showInPage(tester, find.text('Stop strategy')));
     await _settle(tester);
     expect(find.byType(AlertDialog), findsOneWidget);
     expect(
@@ -902,9 +753,15 @@ void main() {
     );
     await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
     await _settle(tester);
+    expect(
+      (await _container.read(dietStrategyRepositoryProvider).activePlan())
+          ?.kind,
+      DietStrategyKind.carbCycle,
+    );
 
-    await tester.ensureVisible(find.text('Adjust schedule'));
-    await tester.tap(find.text('Adjust schedule'));
+    await tester.tap(
+      await _showInPage(tester, find.text('Adjust schedule'), delta: -120),
+    );
     await _settle(tester);
     await _openStrategySection(tester, 'strategy-section-profile');
     expect(
@@ -915,29 +772,43 @@ void main() {
     _expectNoLayoutErrors(tester);
   });
 
-  testWidgets('carb-taper actions expand with strategy details', (
+  testWidgets('re-applying on the same day does not bump the shown version', (
     tester,
   ) async {
+    await _createPlan(DietStrategyKind.balanced);
+    await _createPlan(DietStrategyKind.balanced);
+    await _createPlan(DietStrategyKind.carbCycle);
+    final repo = _container.read(dietStrategyRepositoryProvider);
+    expect((await repo.activePlan())!.version, 3);
+    await _pump(tester, '/profile/nutrition');
+    expect(find.text('Carb cycling · v1'), findsOneWidget);
+
+    // A switch scheduled for tomorrow will be the second applied version.
+    await _createPlan(
+      DietStrategyKind.balanced,
+      effectiveFrom: CalendarDay.addDays(CalendarDay.todayLocal(), 1),
+    );
+    await _settle(tester);
+    expect(find.text('Balanced deficit · v2'), findsOneWidget);
+  });
+
+  testWidgets('carb-taper page shows stage entry and actions', (tester) async {
     await _createPlan(DietStrategyKind.carbTaper);
     await _pump(tester, '/profile/nutrition');
 
-    expect(find.text('Taper stages'), findsNothing);
-    expect(find.text('Stop strategy'), findsNothing);
-
-    await tester.tap(find.byKey(const ValueKey('activeStrategyDetails')));
-    await _settle(tester);
-
     expect(find.text('Taper stages'), findsOneWidget);
+    await _showInPage(tester, find.text('Stop strategy'));
     expect(find.text('Stop strategy'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('Taper stages'));
-    await tester.tap(find.text('Taper stages'));
+    await tester.tap(
+      await _showInPage(tester, find.text('Taper stages'), delta: -120),
+    );
     await _settle(tester);
     expect(find.textContaining('Stage 0'), findsWidgets);
     _expectNoLayoutErrors(tester);
   });
 
-  testWidgets('scheduled strategy cancellation expands with details', (
+  testWidgets('scheduled strategy shows status and cancellation', (
     tester,
   ) async {
     await _createPlan(
@@ -946,9 +817,9 @@ void main() {
     );
     await _pump(tester, '/profile/nutrition');
 
-    expect(find.text('Cancel scheduled change'), findsNothing);
-    await tester.tap(find.byKey(const ValueKey('activeStrategyDetails')));
-    await _settle(tester);
+    expect(find.text('Scheduled'), findsOneWidget);
+    expect(find.textContaining('First day'), findsOneWidget);
+    await _showInPage(tester, find.text('Cancel scheduled change'));
     expect(find.text('Cancel scheduled change'), findsOneWidget);
 
     await tester.ensureVisible(find.text('Cancel scheduled change'));
@@ -986,15 +857,13 @@ void main() {
     expect(find.text('Balanced deficit'), findsOneWidget);
     expect(find.text('Carb cycling'), findsOneWidget);
     expect(find.text('Carb taper'), findsOneWidget);
-    expect(find.textContaining('A 3-5 day cycle'), findsNothing);
+    // Descriptions are always visible; a row opens configuration directly.
+    expect(find.textContaining('A 3-5 day cycle'), findsOneWidget);
+    expect(find.textContaining('Start at the baseline'), findsOneWidget);
     await tester.tap(find.text('Carb cycling'));
     await _settle(tester);
-    expect(find.textContaining('A 3-5 day cycle'), findsOneWidget);
-    expect(find.text('Configure strategy'), findsOneWidget);
-    await tester.tap(find.text('Carb taper'));
-    await _settle(tester);
-    expect(find.textContaining('A 3-5 day cycle'), findsNothing);
-    expect(find.textContaining('Start at the baseline'), findsOneWidget);
+    expect(find.byType(StrategyConfigurePage), findsOneWidget);
+    expect(find.byKey(const ValueKey('strategyTopSummary')), findsOneWidget);
   });
 
   testWidgets('picker rules are secondary and expand independently', (
@@ -1020,15 +889,9 @@ void main() {
     expect(find.textContaining('Choose one primary strategy'), findsNothing);
     expect(find.textContaining('Switching to maintain'), findsNothing);
     expect(find.textContaining('Product defaults'), findsNothing);
-    expect(
-      find.byWidgetPredicate(
-        (widget) => widget is InkIcon && widget.glyph == InkGlyph.radioChecked,
-      ),
-      findsOneWidget,
-    );
+    // The active strategy is marked with a "Current" chip, not a radio.
+    expect(find.text('Current'), findsOneWidget);
 
-    await tester.tap(find.text('Carb cycling'));
-    await _settle(tester);
     await tester.tap(rules);
     await _settle(tester);
     expect(tester.getSemantics(rules).label, 'Rules, Collapse');
@@ -1037,22 +900,12 @@ void main() {
     expect(find.textContaining('Switching to maintain'), findsOneWidget);
     expect(find.textContaining('Product defaults'), findsOneWidget);
 
-    await tester.tap(find.text('Carb taper'));
-    await _settle(tester);
-    expect(find.textContaining('A 3-5 day cycle'), findsNothing);
-    expect(find.textContaining('Start at the baseline'), findsOneWidget);
-    expect(find.textContaining('Choose one primary strategy'), findsOneWidget);
     await tester.tap(rules);
     await _settle(tester);
     expect(tester.getSemantics(rules).label, 'Rules, Expand');
     expect(find.textContaining('Choose one primary strategy'), findsNothing);
     expect(find.textContaining('Start at the baseline'), findsOneWidget);
-    expect(
-      find.byWidgetPredicate(
-        (widget) => widget is InkIcon && widget.glyph == InkGlyph.radioChecked,
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('Current'), findsOneWidget);
     _expectNoLayoutErrors(tester);
     semantics.dispose();
   });
@@ -1072,8 +925,6 @@ void main() {
   ) async {
     await _pump(tester, '/profile/nutrition/strategy');
     await tester.tap(find.text('Balanced deficit'));
-    await _settle(tester);
-    await tester.tap(find.text('Configure strategy'));
     await _settle(tester);
 
     expect(find.byKey(const ValueKey('strategyReferenceWeight')), findsNothing);
@@ -1096,7 +947,8 @@ void main() {
 
     await _openStrategySection(tester, 'strategy-section-target');
     final energy = find.byKey(const ValueKey('strategyAverageTargetEnergy'));
-    expect(weight, findsNothing);
+    // Opening another section keeps the profile section open.
+    expect(weight, findsOneWidget);
     expect(energy, findsOneWidget);
     expect(
       find.descendant(of: energy, matching: find.byType(TextField)),
@@ -1156,17 +1008,30 @@ void main() {
     await _settle(tester);
     final after = tester.widget<Text>(summary).data;
     expect(after, isNot(before));
+    // Sections open independently: the target stays open beside profile.
     await _openStrategySection(tester, 'strategy-section-profile');
+    expect(find.byType(Slider), findsOneWidget);
+    expect(tester.widget<Text>(summary).data, after);
+    // Collapse via the header row; the expanded body would take a centre tap.
+    final targetSection = await _show(
+      tester,
+      find.byKey(const ValueKey('strategy-section-target')),
+      delta: -120,
+    );
+    await tester.tapAt(tester.getTopLeft(targetSection) + const Offset(24, 24));
+    await _settle(tester);
     expect(find.byType(Slider), findsNothing);
     expect(tester.widget<Text>(summary).data, after);
     await _openStrategySection(tester, 'strategy-section-target');
     expect(find.byType(Slider), findsOneWidget);
     expect(tester.widget<Text>(summary).data, after);
     await _openStrategySection(tester, 'strategy-section-effective');
-    expect(find.byType(Slider), findsNothing);
-    await tester.tap(find.text('Start today'));
+    await tester.tap(await _show(tester, find.text('Start today')));
     await _settle(tester);
-    expect(find.textContaining('Apply from'), findsOneWidget);
+    expect(
+      await _show(tester, find.textContaining('Apply from'), delta: -120),
+      findsOneWidget,
+    );
     _expectNoLayoutErrors(tester);
   });
 
@@ -1176,9 +1041,6 @@ void main() {
     ) async {
       await _pump(tester, '/profile/nutrition/strategy', themeId: themeId);
       await tester.tap(find.text('Carb cycling'));
-      await _settle(tester);
-      expect(find.text('Configure strategy'), findsOneWidget);
-      await tester.tap(find.text('Configure strategy'));
       await _settle(tester);
       expect(find.byKey(const ValueKey('strategyTopSummary')), findsOneWidget);
       expect(find.byKey(const ValueKey('cycleDay-0')), findsNothing);
@@ -1233,7 +1095,11 @@ void main() {
     await _openStrategySection(tester, 'strategy-section-effective');
     await tester.tap(await _show(tester, find.text('Start today')));
     await _settle(tester);
-    final apply = await _show(tester, find.textContaining('Apply from'));
+    final apply = await _show(
+      tester,
+      find.textContaining('Apply from'),
+      delta: -120,
+    );
     await tester.tap(apply);
     await _settle(tester);
     await tester.pump(const Duration(seconds: 1));
@@ -1296,11 +1162,11 @@ void main() {
     );
     await _pump(tester, '/profile/nutrition/taper');
     _expectNoLayoutErrors(tester);
-    // No observation/review gating — every reachable stage is listed and
-    // immediately tappable (other than the current one).
+    // No observation/review gating — every reachable stage is listed flat
+    // and immediately tappable (other than the current one).
+    expect(find.byKey(const ValueKey('taperOverviewCard')), findsOneWidget);
     expect(find.textContaining('Stage 0'), findsWidgets);
-    expect(find.textContaining('Stage 1'), findsNothing);
-    await _openStrategySection(tester, 'taperStageSection');
+    expect(find.byKey(const ValueKey('taperStageSection')), findsOneWidget);
     expect(find.textContaining('Stage 1'), findsWidgets);
     expect(
       find.byWidgetPredicate(
@@ -1308,8 +1174,9 @@ void main() {
       ),
       findsWidgets,
     );
+    // Rules open beside the stages; both stay expanded.
     await _openStrategySection(tester, 'taperRulesSection');
-    expect(find.textContaining('Stage 1'), findsNothing);
+    expect(find.textContaining('Stage 1'), findsWidgets);
     expect(
       find.textContaining('Each stage reduces carbohydrate'),
       findsOneWidget,
@@ -1341,15 +1208,10 @@ void main() {
     );
     await _pump(tester, '/profile/nutrition');
     _expectNoLayoutErrors(tester);
-    // Strategy row is a list tile (aligned with TDEE); it stays non-tappable
-    // while eligibility is blocked.
-    final tile = tester.widget<ListTile>(
-      find.ancestor(
-        of: find.text('Fat-loss strategy'),
-        matching: find.byType(ListTile),
-      ),
-    );
-    expect(tile.onTap, isNull);
+    // The empty state hides "Choose strategy" while eligibility is blocked
+    // and lists the reason instead.
+    expect(find.byKey(const ValueKey('noStrategyEmpty')), findsOneWidget);
+    expect(find.text('Choose strategy'), findsNothing);
     expect(find.textContaining('adults (18+)'), findsOneWidget);
   });
 
@@ -1366,13 +1228,8 @@ void main() {
     // 减脂/Cut to see the (blocked) strategy section this test is about.
     await tester.tap(find.text('Cut'));
     await tester.pumpAndSettle();
-    final tile = tester.widget<ListTile>(
-      find.ancestor(
-        of: find.text('Fat-loss strategy'),
-        matching: find.byType(ListTile),
-      ),
-    );
-    expect(tile.onTap, isNull);
+    expect(find.byKey(const ValueKey('noStrategyEmpty')), findsOneWidget);
+    expect(find.text('Choose strategy'), findsNothing);
     expect(find.text('Only available with the cut goal.'), findsOneWidget);
   });
 }

@@ -12,6 +12,7 @@ import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import 'strategy_fold_section.dart';
 import 'strategy_labels.dart';
+import 'strategy_target_card.dart';
 
 /// Carb-taper stage control: every reachable stage's kcal/carbs, tap any of
 /// them to switch. No observation window, no automatic review — the app
@@ -26,10 +27,12 @@ class TaperReviewPage extends ConsumerStatefulWidget {
 
 class _TaperReviewPageState extends ConsumerState<TaperReviewPage> {
   bool _busy = false;
-  String? _openSection;
+
+  /// Sections open independently; several can be expanded at once.
+  final Set<String> _openSections = {};
 
   void _toggle(String section) => setState(() {
-    _openSection = _openSection == section ? null : section;
+    if (!_openSections.remove(section)) _openSections.add(section);
   });
 
   Future<void> _switchStage(DietStrategyPlan plan, int stage) async {
@@ -95,8 +98,8 @@ class _TaperReviewPageState extends ConsumerState<TaperReviewPage> {
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context);
     final theme = Theme.of(context);
-    final visuals = AppThemeVisuals.of(context);
     final plan = ref.watch(activeDietPlanProvider).value;
+    final plans = ref.watch(dietPlansProvider).value ?? const [];
 
     if (plan == null || plan.kind != DietStrategyKind.carbTaper) {
       return AppChromeScaffold(
@@ -123,58 +126,39 @@ class _TaperReviewPageState extends ConsumerState<TaperReviewPage> {
           listBottomInset(context, hasFab: false),
         ),
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Expanded(
-                child: Text(
-                  '${l10n.currentStage} · ${l10n.taperStageLabel(current.stage)}',
-                  style: theme.textTheme.titleMedium,
-                ),
-              ),
-              Text(
-                '${current.day.energy.round()} kcal',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: visuals.accent,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.compact),
-          Text(
-            'P ${current.day.proteinG.toStringAsFixed(0)} · '
-            'C ${current.day.carbG.toStringAsFixed(0)} · '
-            'F ${current.day.fatG.toStringAsFixed(0)} g',
-            style: theme.textTheme.bodySmall,
-          ),
-          Text(
-            l10n.planActiveSince(
+          StrategyTargetCard(
+            key: const ValueKey('taperOverviewCard'),
+            title:
+                '${plan.kind.label(l10n)} · '
+                '${l10n.taperStageLabel(current.stage)}',
+            status: l10n.strategyStatusActive,
+            kcal: current.day.energy,
+            kcalCaption: l10n.currentStage,
+            proteinG: current.day.proteinG,
+            carbG: current.day.carbG,
+            fatG: current.day.fatG,
+            footnote: l10n.planActiveSince(
               AppDates.md(plan.effectiveFrom, locale),
-              plan.version,
+              appliedVersionNumber(plan, plans),
             ),
-            style: theme.textTheme.bodySmall,
           ),
-          const SizedBox(height: AppSpacing.card),
-          StrategyFoldSection(
+          StrategySectionHeader(
             key: const ValueKey('taperStageSection'),
             title: l10n.taperLadderTitle,
-            summary: l10n.taperFreeChoiceHint,
-            expanded: _openSection == 'stages',
-            onTap: () => _toggle('stages'),
-            leading: InkGlyph.chart,
-            child: _StageLadder(
-              baseline: baseline,
-              currentStage: plan.taperStage,
-              busy: _busy,
-              onSelect: (stage) => _switchStage(plan, stage),
-            ),
+            hint: l10n.taperFreeChoiceHint,
           ),
+          _StageLadder(
+            baseline: baseline,
+            currentStage: plan.taperStage,
+            busy: _busy,
+            onSelect: (stage) => _switchStage(plan, stage),
+          ),
+          const SizedBox(height: AppSpacing.section),
           StrategyFoldSection(
             key: const ValueKey('taperRulesSection'),
             title: l10n.strategyRulesTitle,
             summary: l10n.taperLadderHint,
-            expanded: _openSection == 'rules',
+            expanded: _openSections.contains('rules'),
             onTap: () => _toggle('rules'),
             leading: InkGlyph.info,
             child: Column(
@@ -235,9 +219,20 @@ class _StageLadder extends StatelessWidget {
                 ? null
                 : () => onSelect(s.stage),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.symmetric(vertical: 12),
               child: Row(
                 children: [
+                  Container(
+                    width: 3,
+                    height: 20,
+                    margin: const EdgeInsets.only(right: AppSpacing.field),
+                    decoration: BoxDecoration(
+                      color: s.stage == currentStage
+                          ? visuals.accent
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                   SizedBox(
                     width: 64,
                     child: Text(
@@ -268,9 +263,12 @@ class _StageLadder extends StatelessWidget {
           ),
           Divider(height: 1, color: visuals.divider),
         ],
+        const SizedBox(height: AppSpacing.compact),
         Text(
           l10n.taperFloorLine(StrategyRules.minCarbG.round()),
-          style: theme.textTheme.bodySmall,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     );

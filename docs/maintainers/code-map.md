@@ -161,11 +161,12 @@ UI 统一 import `app_providers.dart`（汇总导出）。
 
 | 文件 | 作用 |
 |---|---|
-| `nutrition_targets_page.dart` | 营养目标页；只有「减脂」完整实现，增肌和维持是占位 |
-| `strategy_picker_page.dart` / `strategy_configure_page.dart` | 选择策略、配置参数（每次保存都生成一个新版本） |
+| `nutrition_targets_page.dart` | 营养目标页；只有「减脂」完整实现，增肌和维持是占位。减脂 tab 是平铺布局：顶部开放式概览区（今日目标）、循环安排、本版策略基准、管理（更换 / 停用） |
+| `strategy_picker_page.dart` / `strategy_configure_page.dart` | 选择策略（点一行直接进配置）、配置参数（顶部概览区，应用按钮固定在底部；每次保存都生成一个新版本） |
 | `taper_review_page.dart` | 碳水递减的阶段复盘 |
 | `carb_cycle_view.dart` | 碳循环的周期表 |
-| `strategy_fold_section.dart` | 可折叠的分区组件（也被更新弹窗复用） |
+| `strategy_fold_section.dart` | 可折叠的分区组件（配置页、渐降页规则区；也被更新弹窗复用） |
+| `strategy_target_card.dart` | 策略页共用组件：`StrategyTargetCard`（开放式概览区，没有卡片外框，底部一条细线：大号热量 + `MacroSplitBar` 三大营养素比例条）、`StrategySectionHeader`、`StrategyFactRow`、`StrategyActionRow` |
 | `strategy_labels.dart` | 策略相关的文案扩展 |
 
 ### tools — 工具箱、提醒、计时器

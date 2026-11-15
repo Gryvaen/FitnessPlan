@@ -199,7 +199,15 @@ Future<void> _pump(
 Future<void> _go(WidgetTester tester, _Harness h, String location) async {
   h.container.read(routerProvider).go(location);
   await tester.pump(const Duration(milliseconds: 400));
-  await tester.pump(const Duration(milliseconds: 400));
+  // Let drift streams for the new route deliver before the shot.
+  for (var i = 0; i < 10; i++) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 30)),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    if (find.byType(CircularProgressIndicator).evaluate().isEmpty) break;
+  }
+  await tester.pump(const Duration(milliseconds: 300));
 }
 
 Future<void> _shot(WidgetTester tester, String file) async {

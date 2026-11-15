@@ -250,12 +250,16 @@ class AppChromeScaffold extends StatelessWidget {
     required this.body,
     this.floatingActionButton,
     this.floatingActionButtonLocation,
+    this.bottomNavigationBar,
   });
 
   final PreferredSizeWidget? appBar;
   final Widget body;
   final Widget? floatingActionButton;
   final FloatingActionButtonLocation? floatingActionButtonLocation;
+
+  /// Pinned footer (e.g. a page's primary action), above the shell nav.
+  final Widget? bottomNavigationBar;
 
   @override
   Widget build(BuildContext context) {
@@ -266,6 +270,7 @@ class AppChromeScaffold extends StatelessWidget {
       body: body,
       floatingActionButton: floatingActionButton,
       floatingActionButtonLocation: floatingActionButtonLocation,
+      bottomNavigationBar: bottomNavigationBar,
     );
   }
 }

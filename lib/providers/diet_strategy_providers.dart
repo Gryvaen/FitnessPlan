@@ -23,8 +23,14 @@ class DietStrategyActions {
   Future<DietStrategyPlan> applyPlan(DietStrategyPlanDraft draft) async {
     final repo = _ref.read(dietStrategyRepositoryProvider);
     final old = await repo.activePlan();
+    // Moving a scheduled plan earlier: compare against what actually governs
+    // the new start day, not the never-effective scheduled version.
+    final baseline =
+        old != null && old.effectiveFrom.isAfter(draft.effectiveFrom)
+        ? await repo.planCovering(draft.effectiveFrom)
+        : old;
     final created = await repo.createPlan(draft);
-    if (DietStrategyRepository.isStructuralChange(old, draft)) {
+    if (DietStrategyRepository.isStructuralChange(baseline, draft)) {
       await _ref
           .read(profileProvider.notifier)
           .markStandardChanged(draft.effectiveFrom);

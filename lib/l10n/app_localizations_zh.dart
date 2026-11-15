@@ -2227,6 +2227,49 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get strategyStatusActive => '进行中';
+
+  @override
+  String get strategyStatusScheduled => '待生效';
+
+  @override
+  String get strategyStatusPreview => '预览';
+
+  @override
+  String strategyCardTitle(String kind, int version) {
+    return '$kind · 第 $version 版';
+  }
+
+  @override
+  String todayDayTypeCaption(String type) {
+    return '今日 · $type';
+  }
+
+  @override
+  String firstDayCaption(String date) {
+    return '$date 首日';
+  }
+
+  @override
+  String get dailyAverageCaption => '日均';
+
+  @override
+  String get everyDayCaption => '每日';
+
+  @override
+  String strategyAvgSinceLine(String kcal, String date) {
+    return '日均 $kcal kcal · $date 起生效';
+  }
+
+  @override
+  String get strategyManageTitle => '管理';
+
+  @override
+  String strategyBasisCompare(String from, String to) {
+    return '$from → $to kcal';
+  }
+
+  @override
   String planActiveSince(String date, int version) {
     return '$date 起生效 · 第 $version 版';
   }

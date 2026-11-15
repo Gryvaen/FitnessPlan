@@ -2274,6 +2274,49 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get strategyStatusActive => 'Active';
+
+  @override
+  String get strategyStatusScheduled => 'Scheduled';
+
+  @override
+  String get strategyStatusPreview => 'Preview';
+
+  @override
+  String strategyCardTitle(String kind, int version) {
+    return '$kind · v$version';
+  }
+
+  @override
+  String todayDayTypeCaption(String type) {
+    return 'Today · $type';
+  }
+
+  @override
+  String firstDayCaption(String date) {
+    return 'First day $date';
+  }
+
+  @override
+  String get dailyAverageCaption => 'Daily avg';
+
+  @override
+  String get everyDayCaption => 'Every day';
+
+  @override
+  String strategyAvgSinceLine(String kcal, String date) {
+    return 'Daily avg $kcal kcal · since $date';
+  }
+
+  @override
+  String get strategyManageTitle => 'Manage';
+
+  @override
+  String strategyBasisCompare(String from, String to) {
+    return '$from → $to kcal';
+  }
+
+  @override
   String planActiveSince(String date, int version) {
     return 'In effect since $date · v$version';
   }

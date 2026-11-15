@@ -20,7 +20,6 @@ class StrategyPickerPage extends ConsumerStatefulWidget {
 }
 
 class _StrategyPickerPageState extends ConsumerState<StrategyPickerPage> {
-  DietStrategyKind? _expanded;
   bool _rulesExpanded = false;
 
   @override
@@ -46,15 +45,27 @@ class _StrategyPickerPageState extends ConsumerState<StrategyPickerPage> {
             for (final i in blocking)
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.compact),
-                child: Text(
-                  i.message(l10n),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.error,
-                  ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    InkIcon(
+                      InkGlyph.error,
+                      size: 18,
+                      color: theme.colorScheme.error,
+                    ),
+                    const SizedBox(width: AppSpacing.compact),
+                    Expanded(
+                      child: Text(
+                        i.message(l10n),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.error,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             Divider(height: 1, color: visuals.divider),
-            const SizedBox(height: AppSpacing.card),
           ],
           for (final kind in DietStrategyKind.values)
             _StrategyOption(
@@ -62,10 +73,7 @@ class _StrategyPickerPageState extends ConsumerState<StrategyPickerPage> {
               current: active?.kind == kind,
               isDefault: kind == DietStrategyKind.balanced,
               enabled: blocking.isEmpty,
-              expanded: _expanded == kind,
-              onTap: () =>
-                  setState(() => _expanded = _expanded == kind ? null : kind),
-              onConfigure: () => context.push(
+              onTap: () => context.push(
                 '/profile/nutrition/strategy/configure?kind=${kind.name}',
               ),
             ),
@@ -178,18 +186,20 @@ class _StrategyOption extends StatelessWidget {
     required this.current,
     required this.isDefault,
     required this.enabled,
-    required this.expanded,
     required this.onTap,
-    required this.onConfigure,
   });
 
   final DietStrategyKind kind;
   final bool current;
   final bool isDefault;
   final bool enabled;
-  final bool expanded;
   final VoidCallback onTap;
-  final VoidCallback onConfigure;
+
+  static InkGlyph glyphFor(DietStrategyKind kind) => switch (kind) {
+    DietStrategyKind.balanced => InkGlyph.target,
+    DietStrategyKind.carbCycle => InkGlyph.cycle,
+    DietStrategyKind.carbTaper => InkGlyph.chart,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -197,87 +207,100 @@ class _StrategyOption extends StatelessWidget {
     final theme = Theme.of(context);
     final visuals = AppThemeVisuals.of(context);
     final scheme = theme.colorScheme;
-    return Column(
-      children: [
-        Semantics(
-          button: true,
-          selected: current,
-          label:
-              '${kind.label(l10n)}, '
-              '${expanded ? l10n.collapseSection : l10n.expandSection}',
-          child: InkWell(
-            key: ValueKey('strategy-option-${kind.name}'),
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.card),
+    final muted = enabled ? scheme.onSurfaceVariant : theme.disabledColor;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      selected: current,
+      label: kind.label(l10n),
+      child: Material(
+        color: Colors.transparent,
+        shape: Border(bottom: BorderSide(color: visuals.divider)),
+        child: InkWell(
+          key: ValueKey('strategy-option-${kind.name}'),
+          onTap: enabled ? onTap : null,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.card),
+            child: ExcludeSemantics(
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  InkIcon(
-                    current ? InkGlyph.radioChecked : InkGlyph.radioEmpty,
-                    color: current ? visuals.accent : scheme.onSurfaceVariant,
+                  Container(
+                    width: 40,
+                    height: 40,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: current
+                          ? visuals.accentSoft
+                          : scheme.surfaceContainerHighest.withValues(
+                              alpha: 0.5,
+                            ),
+                      borderRadius: BorderRadius.circular(AppRadius.control),
+                    ),
+                    child: InkIcon(
+                      glyphFor(kind),
+                      size: 22,
+                      color: current ? visuals.accent : muted,
+                    ),
                   ),
-                  const SizedBox(width: AppSpacing.card),
+                  const SizedBox(width: AppSpacing.field),
                   Expanded(
-                    child: Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 6,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: [
+                            Text(
+                              kind.label(l10n),
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: !enabled
+                                    ? theme.disabledColor
+                                    : current
+                                    ? visuals.accent
+                                    : null,
+                              ),
+                            ),
+                            if (current)
+                              SoftChip(
+                                label: l10n.currentWord,
+                                color: visuals.accentSoft,
+                                foreground: visuals.accent,
+                              )
+                            else if (isDefault)
+                              SoftChip(label: l10n.defaultWord),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
                         Text(
-                          kind.label(l10n),
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: current ? visuals.accent : null,
+                          kind.description(l10n),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: muted,
+                            height: 1.4,
                           ),
                         ),
-                        if (isDefault) SoftChip(label: l10n.defaultWord),
-                        if (current)
-                          SoftChip(
-                            label: l10n.currentWord,
-                            color: visuals.accentSoft,
-                            foreground: visuals.accent,
-                          ),
                       ],
                     ),
                   ),
-                  InkIcon(
-                    expanded ? InkGlyph.collapse : InkGlyph.expand,
-                    size: 20,
-                    color: scheme.onSurfaceVariant,
+                  const SizedBox(width: AppSpacing.compact),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: InkIcon(
+                      InkGlyph.chevronRight,
+                      size: 18,
+                      color: muted,
+                    ),
                   ),
                 ],
               ),
             ),
           ),
         ),
-        AnimatedSize(
-          duration: const Duration(milliseconds: 180),
-          child: expanded
-              ? Padding(
-                  padding: const EdgeInsets.only(
-                    left: 40,
-                    bottom: AppSpacing.card,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        kind.description(l10n),
-                        style: theme.textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: AppSpacing.compact),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: FilledButton.tonal(
-                          onPressed: enabled ? onConfigure : null,
-                          child: Text(l10n.configureStrategy),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : const SizedBox(width: double.infinity),
-        ),
-        Divider(height: 1, color: visuals.divider),
-      ],
+      ),
     );
   }
 }

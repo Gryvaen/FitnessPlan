@@ -4041,6 +4041,72 @@ abstract class AppLocalizations {
   /// **'Starts {date}'**
   String planStartsOn(String date);
 
+  /// No description provided for @strategyStatusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get strategyStatusActive;
+
+  /// No description provided for @strategyStatusScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled'**
+  String get strategyStatusScheduled;
+
+  /// No description provided for @strategyStatusPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get strategyStatusPreview;
+
+  /// No description provided for @strategyCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind} · v{version}'**
+  String strategyCardTitle(String kind, int version);
+
+  /// No description provided for @todayDayTypeCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Today · {type}'**
+  String todayDayTypeCaption(String type);
+
+  /// No description provided for @firstDayCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'First day {date}'**
+  String firstDayCaption(String date);
+
+  /// No description provided for @dailyAverageCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily avg'**
+  String get dailyAverageCaption;
+
+  /// No description provided for @everyDayCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Every day'**
+  String get everyDayCaption;
+
+  /// No description provided for @strategyAvgSinceLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily avg {kcal} kcal · since {date}'**
+  String strategyAvgSinceLine(String kcal, String date);
+
+  /// No description provided for @strategyManageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get strategyManageTitle;
+
+  /// No description provided for @strategyBasisCompare.
+  ///
+  /// In en, this message translates to:
+  /// **'{from} → {to} kcal'**
+  String strategyBasisCompare(String from, String to);
+
   /// No description provided for @planActiveSince.
   ///
   /// In en, this message translates to:

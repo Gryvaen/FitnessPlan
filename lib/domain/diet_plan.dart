@@ -114,6 +114,17 @@ class DietStrategyPlan {
     );
   }
 
+  /// Whether this version governs at least one day. A version replaced or
+  /// stopped on its own start day (`endedOn <= effectiveFrom`) never took
+  /// effect; a scheduled or open-ended one counts.
+  bool get spansAnyDay {
+    final end = endedOn;
+    if (end == null) return true;
+    return StrategyDates.dayOnly(
+      end,
+    ).isAfter(StrategyDates.dayOnly(effectiveFrom));
+  }
+
   bool covers(DateTime day) {
     final d = StrategyDates.dayOnly(day);
     if (d.isBefore(effectiveFrom)) return false;
@@ -163,6 +174,28 @@ class DietStrategyPlan {
 
   /// Weekly average energy (carb cycle keeps 7 × E0 by construction).
   double get weeklyAverage => baseEnergy;
+}
+
+/// User-facing "第 N 版" for [plan]: its position among versions that
+/// actually govern at least one day ([DietStrategyPlan.spansAnyDay]).
+///
+/// The stored `version` still grows on every apply (it orders versions), but
+/// re-applying on the same day or replacing a scheduled switch before it
+/// starts doesn't consume a number. A pending scheduled version shows the
+/// number it will have once it starts.
+int appliedVersionNumber(
+  DietStrategyPlan plan,
+  Iterable<DietStrategyPlan> plans,
+) {
+  var n = 0;
+  var sawSelf = false;
+  for (final q in plans) {
+    if (q.id == plan.id) sawSelf = true;
+    if (q.version <= plan.version && q.spansAnyDay) n++;
+  }
+  // The list may lag behind a just-created plan; count it anyway.
+  if (!sawSelf && plan.spansAnyDay) n++;
+  return n < 1 ? 1 : n;
 }
 
 /// Where a day's target came from.

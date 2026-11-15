@@ -16,6 +16,7 @@ import 'carb_cycle_view.dart';
 import 'stepper_row.dart';
 import 'strategy_fold_section.dart';
 import 'strategy_labels.dart';
+import 'strategy_target_card.dart';
 
 enum _ConfigSection { profile, target, schedule, low, high, taper, effective }
 
@@ -120,12 +121,27 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
   double _highFatPerKg = StrategyRules.defaultHighFatPerKg;
 
   bool _startToday = false;
+
+  /// Set once the user picks a start date. Until then the preselected date
+  /// is not a change, even when it differs from an older plan's start.
+  bool _dateTouched = false;
   bool _initialised = false;
   bool _saving = false;
-  _ConfigSection? _openSection;
+
+  /// Sections open independently; several can be expanded at once.
+  final Set<_ConfigSection> _openSections = {};
+
+  /// Whether applying [draft] would re-apply [active] unchanged: same target
+  /// and, once the user has picked a date, the same start date. Choosing a
+  /// different start date than the active plan's is a real change.
+  bool _alreadyApplied(DietStrategyPlan active, DietStrategyPlanDraft draft) =>
+      _matchesAppliedTarget(active, draft) &&
+      (!_dateTouched ||
+          CalendarDay.dayOnly(active.effectiveFrom) ==
+              CalendarDay.dayOnly(draft.effectiveFrom));
 
   void _toggleSection(_ConfigSection section) => setState(() {
-    _openSection = _openSection == section ? null : section;
+    if (!_openSections.remove(section)) _openSections.add(section);
   });
 
   Widget _section(
@@ -138,7 +154,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
     key: ValueKey('strategy-section-${section.name}'),
     title: title,
     summary: summary,
-    expanded: _openSection == section,
+    expanded: _openSections.contains(section),
     onTap: () => _toggleSection(section),
     leading: icon,
     child: child,
@@ -245,6 +261,16 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
     );
   }
 
+  static double _avg(Iterable<double> xs) {
+    var sum = 0.0;
+    var n = 0;
+    for (final x in xs) {
+      sum += x;
+      n++;
+    }
+    return n == 0 ? 0 : sum / n;
+  }
+
   /// Longer observation when switching from carb cycling (large carb shift).
   int _taperObservationDays() {
     final active = ref.read(activeDietPlanProvider).value;
@@ -282,7 +308,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
       final current = await ref
           .read(dietStrategyRepositoryProvider)
           .activePlan();
-      if (current != null && _matchesAppliedTarget(current, draft)) return;
+      if (current != null && _alreadyApplied(current, draft)) return;
       await ref.read(dietStrategyActionsProvider).applyPlan(draft);
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -331,13 +357,29 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
     }
     final effective = _effectiveFrom;
     final matchesAppliedTarget =
-        active != null && _matchesAppliedTarget(active, draft);
-    final hasPendingTarget = active != null && !matchesAppliedTarget;
+        active != null && _alreadyApplied(active, draft);
+    // Only a different target shows the proposed basis; a date-only move of a
+    // scheduled plan keeps the same numbers.
+    final hasPendingTarget =
+        active != null && !_matchesAppliedTarget(active, draft);
     final canApply =
         issues.isEmpty &&
         !_saving &&
         !matchesAppliedTarget &&
         !activeAsync.isLoading;
+    final preview = cyclePlan != null && cyclePlan.days.isNotEmpty
+        ? (
+            energy: cyclePlan.cycleAverageEnergy,
+            proteinG: _avg(cyclePlan.days.map((d) => d.proteinG)),
+            carbG: _avg(cyclePlan.days.map((d) => d.carbG)),
+            fatG: _avg(cyclePlan.days.map((d) => d.fatG)),
+          )
+        : (
+            energy: baseline.energy,
+            proteinG: baseline.proteinG,
+            carbG: baseline.carbG,
+            fatG: baseline.fatG,
+          );
     final lowEnergy = issues.isEmpty
         ? _lowEnergyPreview(l10n, widget.kind, baseline, cyclePlan)
         : null;
@@ -347,6 +389,35 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
         title: Text(widget.kind.label(l10n)),
         leading: BackButton(onPressed: () => context.pop()),
       ),
+      bottomNavigationBar: DecoratedBox(
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          border: Border(
+            top: BorderSide(color: AppThemeVisuals.of(context).divider),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.formPage,
+            AppSpacing.field,
+            AppSpacing.formPage,
+            AppSpacing.field,
+          ),
+          child: FilledButton(
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+            ),
+            onPressed: canApply ? _apply : null,
+            child: Text(
+              matchesAppliedTarget
+                  ? active.effectiveFrom.isAfter(CalendarDay.todayLocal())
+                        ? l10n.strategyAlreadyScheduled
+                        : l10n.strategyAlreadyApplied
+                  : l10n.applyStrategyFrom(AppDates.md(effective, locale)),
+            ),
+          ),
+        ),
+      ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           AppSpacing.formPage,
@@ -355,44 +426,46 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
           listBottomInset(context, hasFab: false),
         ),
         children: [
-          Text(l10n.dailyBaselineTitle, style: theme.textTheme.titleSmall),
-          const SizedBox(height: AppSpacing.compact),
-          Text(
-            cyclePlan != null
+          StrategyTargetCard(
+            title: widget.kind.label(l10n),
+            status: l10n.strategyStatusPreview,
+            kcal: preview.energy,
+            kcalCaption: cyclePlan != null
+                ? l10n.dailyAverageCaption
+                : l10n.everyDayCaption,
+            proteinG: preview.proteinG,
+            carbG: preview.carbG,
+            fatG: preview.fatG,
+            footnote: cyclePlan != null
                 ? l10n.carbCyclePlanSummaryLine(
                     _weight.toStringAsFixed(1),
                     '$_cycleLengthDays',
                     '${cyclePlan.cycleAverageEnergy.round()}',
                   )
-                : '${baseline.energy.round()} kcal · '
-                      'P ${baseline.proteinG.toStringAsFixed(0)} · '
-                      'C ${baseline.carbG.isFinite ? baseline.carbG.toStringAsFixed(0) : '–'} · '
-                      'F ${baseline.fatG.toStringAsFixed(0)} g',
-            key: const ValueKey('strategyTopSummary'),
-            style: theme.textTheme.bodyLarge,
+                : l10n.planBaselineLine(
+                    _weight.toStringAsFixed(1),
+                    '${_tdee.round()}',
+                    '${baseline.energy.round()}',
+                  ),
+            footnoteKey: const ValueKey('strategyTopSummary'),
           ),
           if (active != null) ...[
-            const SizedBox(height: AppSpacing.card),
-            Text(l10n.strategySavedBasis, style: theme.textTheme.titleSmall),
-            Text(
-              '${active.kind.label(l10n)} · '
-              '${l10n.planBaselineLine(active.referenceWeightKg.toStringAsFixed(1), '${active.estimatedTdee.round()}', '${active.baseEnergy.round()}')}',
-              style: theme.textTheme.bodySmall,
+            const SizedBox(height: AppSpacing.compact),
+            StrategyFactRow(
+              label: l10n.strategySavedBasis,
+              value:
+                  '${active.kind.label(l10n)} · '
+                  '${active.baseEnergy.round()}',
+              unit: 'kcal',
             ),
-            if (hasPendingTarget) ...[
-              const SizedBox(height: AppSpacing.compact),
-              Text(
-                l10n.strategyProposedBasis,
-                style: theme.textTheme.titleSmall,
+            if (hasPendingTarget)
+              StrategyFactRow(
+                label: l10n.strategyProposedBasis,
+                value: l10n.strategyBasisCompare(
+                  '${active.baseEnergy.round()}',
+                  '${(cyclePlan?.cycleAverageEnergy ?? baseline.energy).round()}',
+                ),
               ),
-              Text(
-                '${l10n.currentWeight} ${_weight.toStringAsFixed(1)} kg · '
-                '${l10n.estimatedTdee} ${_tdee.round()} kcal · '
-                '${l10n.averageTargetEnergy} '
-                '${(cyclePlan?.cycleAverageEnergy ?? baseline.energy).round()} kcal',
-                style: theme.textTheme.bodySmall,
-              ),
-            ],
           ],
           if (issues.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.field),
@@ -439,17 +512,6 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
               ],
             ),
           ],
-          const SizedBox(height: AppSpacing.card),
-          FilledButton(
-            onPressed: canApply ? _apply : null,
-            child: Text(
-              matchesAppliedTarget
-                  ? active.effectiveFrom.isAfter(CalendarDay.todayLocal())
-                        ? l10n.strategyAlreadyScheduled
-                        : l10n.strategyAlreadyApplied
-                  : l10n.applyStrategyFrom(AppDates.md(effective, locale)),
-            ),
-          ),
           const SizedBox(height: AppSpacing.section),
           _section(
             _ConfigSection.profile,
@@ -699,12 +761,18 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
                 _EffectiveDateOption(
                   label: l10n.startTomorrow(AppDates.md(_tomorrow, locale)),
                   selected: !_startToday,
-                  onTap: () => setState(() => _startToday = false),
+                  onTap: () => setState(() {
+                    _startToday = false;
+                    _dateTouched = true;
+                  }),
                 ),
                 _EffectiveDateOption(
                   label: l10n.startToday,
                   selected: _startToday,
-                  onTap: () => setState(() => _startToday = true),
+                  onTap: () => setState(() {
+                    _startToday = true;
+                    _dateTouched = true;
+                  }),
                 ),
               ],
             ),
