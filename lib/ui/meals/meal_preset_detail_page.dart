@@ -90,19 +90,23 @@ class _MealPresetDetailPageState extends ConsumerState<MealPresetDetailPage> {
 
   MacroIntake get _total => _totalFor(null);
 
+  MacroIntake _intakeFor(MealPresetItem item) {
+    final food = _foods[item.foodId];
+    if (food == null) return const MacroIntake();
+    return MacroIntake.fromGrams(
+      grams: item.grams,
+      kcalPer100: food.kcalPer100,
+      proteinPer100: food.proteinPer100,
+      carbPer100: food.carbPer100,
+      fatPer100: food.fatPer100,
+    );
+  }
+
   MacroIntake _totalFor(MealType? type) {
     var sum = const MacroIntake();
     for (final item in _items) {
       if (type != null && item.mealType != type.name) continue;
-      final food = _foods[item.foodId];
-      if (food == null) continue;
-      sum += MacroIntake.fromGrams(
-        grams: item.grams,
-        kcalPer100: food.kcalPer100,
-        proteinPer100: food.proteinPer100,
-        carbPer100: food.carbPer100,
-        fatPer100: food.fatPer100,
-      );
+      sum += _intakeFor(item);
     }
     return sum;
   }
@@ -185,13 +189,20 @@ class _MealPresetDetailPageState extends ConsumerState<MealPresetDetailPage> {
   Future<void> _editGrams(MealPresetItem item) async {
     if (_saving) return;
     final l10n = context.l10n;
+    List<FoodServing> servings;
+    try {
+      servings = await ref
+          .read(foodRepositoryProvider)
+          .listServings(item.foodId);
+    } catch (_) {
+      servings = const [];
+    }
+    if (!mounted) return;
     final options = FormOptions.mealGrams();
-    var grams = FormOptions.snapDouble(options, item.grams);
-    var useManual = !options.contains(item.grams);
+    var grams = item.grams;
+    var useManual = false;
     String? manualError;
-    final manual = TextEditingController(
-      text: useManual ? formatKg(item.grams) : '',
-    );
+    final manual = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
@@ -202,10 +213,36 @@ class _MealPresetDetailPageState extends ConsumerState<MealPresetDetailPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (servings.isNotEmpty) ...[
+                Text(
+                  l10n.commonPortions,
+                  style: Theme.of(context).textTheme.fieldLabel,
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final s in servings)
+                      SoftChip(
+                        key: ValueKey('preset-serving-${s.id}'),
+                        label: '${s.label} · ${s.grams.round()}g',
+                        selected: !useManual && (grams - s.grams).abs() < 0.01,
+                        onTap: () => setDialogState(() {
+                          grams = s.grams;
+                          useManual = false;
+                          manual.clear();
+                          manualError = null;
+                        }),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.field),
+              ],
               AppDropdown<double>(
                 label: l10n.grams,
                 value: grams,
-                items: options,
+                items: ({...options, grams}.toList()..sort()),
                 suffixText: 'g',
                 itemLabel: formatKg,
                 onChanged: (value) => setDialogState(() => grams = value),
@@ -293,11 +330,27 @@ class _MealPresetDetailPageState extends ConsumerState<MealPresetDetailPage> {
     );
   }
 
-  Future<void> _addFood() async {
+  Future<void> _addFood([MealType? mealType]) async {
     if (_saving) return;
-    await context.push('/meal-preset/${widget.presetId}/add');
+    unfocusForNavigation();
+    await context.push(
+      mealType == null
+          ? '/meal-preset/${widget.presetId}/add'
+          : '/meal-preset/${widget.presetId}/add?mealType=${mealType.name}',
+    );
     if (mounted) await _load();
   }
+
+  Future<void> _moveItem(MealPresetItem item, MealType mealType) => _persist(
+    () => ref
+        .read(mealPresetRepositoryProvider)
+        .updateItem(
+          presetId: widget.presetId,
+          itemId: item.id,
+          grams: item.grams,
+          mealType: mealType,
+        ),
+  );
 
   Future<bool> _confirmDeleteItem(MealPresetItem item) async {
     if (_saving) return false;
@@ -414,69 +467,158 @@ class _MealPresetDetailPageState extends ConsumerState<MealPresetDetailPage> {
     child: const InkIcon(InkGlyph.delete, color: Colors.white),
   );
 
+  Widget _itemTile(BuildContext context, MealPresetItem item) {
+    final theme = Theme.of(context);
+    final name = _foods[item.foodId]?.displayName(context) ?? item.foodName;
+    final intake = _intakeFor(item);
+    final tile = ListTile(
+      key: ValueKey('preset-grams-${item.id}'),
+      contentPadding: EdgeInsets.zero,
+      title: FoodNameLink(
+        name: name,
+        foodId: item.foodId,
+        carbG: intake.carbG,
+        proteinG: intake.proteinG,
+        fatG: intake.fatG,
+        style: theme.textTheme.bodyLarge,
+        onTap: () async {
+          await openFoodDetail(context, item.foodId);
+          if (mounted) await _load();
+        },
+      ),
+      subtitle: Text(
+        '${item.grams.toStringAsFixed(0)} g · '
+        'P ${intake.proteinG.toStringAsFixed(0)} · '
+        'C ${intake.carbG.toStringAsFixed(0)} · '
+        'F ${intake.fatG.toStringAsFixed(0)}',
+        style: theme.textTheme.meta,
+      ),
+      trailing: Text(
+        '${intake.calories.round()} kcal',
+        style: theme.textTheme.titleSmall,
+      ),
+      onTap: () => _editGrams(item),
+    );
+    final dismissible = Dismissible(
+      key: ValueKey('preset-item-${item.id}'),
+      direction: DismissDirection.endToStart,
+      background: _deleteBackground(context),
+      confirmDismiss: (_) => _confirmDeleteItem(item),
+      // Own Material so the drop-target highlight doesn't hide the ink.
+      child: Material(color: Colors.transparent, child: tile),
+    );
+    // Long-press to drag this food into a different meal section.
+    return LongPressDraggable<MealPresetItem>(
+      data: item,
+      axis: Axis.vertical,
+      feedback: Material(
+        elevation: 4,
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(12),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 280),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Text(
+              name,
+              style: theme.textTheme.bodyLarge,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
+      ),
+      childWhenDragging: Opacity(opacity: 0.3, child: dismissible),
+      child: dismissible,
+    );
+  }
+
   Widget _mealSection(BuildContext context, MealType type) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final entries = _items.where((item) => item.mealType == type.name).toList();
-    return Dismissible(
-      key: ValueKey('preset-meal-${type.name}'),
-      direction: DismissDirection.endToStart,
-      background: _deleteBackground(context),
-      confirmDismiss: (_) => _confirmDeleteMeal(type),
-      child: Column(
+    final total = _totalFor(type);
+    final header = Row(
+      children: [
+        Expanded(
+          child: Text(
+            type.label(l10n),
+            key: ValueKey('preset-meal-title-${type.name}'),
+            style: theme.textTheme.titleLarge,
+          ),
+        ),
+        if (entries.isNotEmpty) ...[
+          Text(
+            '${total.calories.round()} kcal',
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          IconButton(
+            key: ValueKey('preset-meal-add-${type.name}'),
+            tooltip: l10n.addMealNamed(type.label(l10n)),
+            visualDensity: VisualDensity.compact,
+            onPressed: _saving ? null : () => _addFood(type),
+            icon: const InkIcon(InkGlyph.add, size: 18),
+          ),
+        ],
+      ],
+    );
+    final Widget block;
+    if (entries.isEmpty) {
+      block = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Divider(
-            key: ValueKey('preset-meal-header-divider-${type.name}'),
-            height: 1,
-          ),
-          const SizedBox(height: AppSpacing.compact),
-          Text(type.label(l10n), style: theme.textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.compact),
-          _PresetMacroRow(
-            key: ValueKey('preset-meal-macros-${type.name}'),
-            total: _totalFor(type),
-          ),
-          const SizedBox(height: AppSpacing.compact),
-          Divider(key: ValueKey('preset-meal-divider-${type.name}'), height: 1),
-          const SizedBox(height: AppSpacing.compact),
-          for (final item in entries)
-            Dismissible(
-              key: ValueKey('preset-item-${item.id}'),
-              direction: DismissDirection.endToStart,
-              background: _deleteBackground(context),
-              confirmDismiss: (_) => _confirmDeleteItem(item),
-              child: ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: FoodNameLink(
-                  name:
-                      _foods[item.foodId]?.displayName(context) ??
-                      item.foodName,
-                  foodId: item.foodId,
-                  carbG: _foods[item.foodId]?.carbPer100 ?? 0,
-                  proteinG: _foods[item.foodId]?.proteinPer100 ?? 0,
-                  fatG: _foods[item.foodId]?.fatPer100 ?? 0,
-                  style: theme.textTheme.bodyLarge,
-                  onTap: () async {
-                    await openFoodDetail(context, item.foodId);
-                    if (mounted) await _load();
-                  },
-                ),
-                trailing: InkWell(
-                  key: ValueKey('preset-grams-${item.id}'),
-                  onTap: () => _editGrams(item),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 4,
-                    ),
-                    child: Text('${item.grams.toStringAsFixed(0)} g'),
-                  ),
-                ),
-              ),
+          header,
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              key: ValueKey('preset-meal-add-${type.name}'),
+              onPressed: _saving ? null : () => _addFood(type),
+              icon: const InkIcon(InkGlyph.add, size: 18),
+              label: Text(l10n.addMealNamed(type.label(l10n))),
             ),
-          const SizedBox(height: AppSpacing.section),
+          ),
         ],
+      );
+    } else {
+      // Swipe left on the meal block to clear it — the header and the foods
+      // under it leave together. Individual foods keep their own swipe.
+      block = Dismissible(
+        key: ValueKey('preset-meal-${type.name}'),
+        direction: DismissDirection.endToStart,
+        background: _deleteBackground(context),
+        confirmDismiss: (_) => _confirmDeleteMeal(type),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            header,
+            const SizedBox(height: AppSpacing.compact),
+            _PresetMacroRow(
+              key: ValueKey('preset-meal-macros-${type.name}'),
+              total: total,
+            ),
+            const SizedBox(height: AppSpacing.compact),
+            for (final item in entries) _itemTile(context, item),
+          ],
+        ),
+      );
+    }
+    // Long-press-drag a food from another meal section drops it here,
+    // moving it to this meal type.
+    return DragTarget<MealPresetItem>(
+      onWillAcceptWithDetails: (details) =>
+          !_saving && details.data.mealType != type.name,
+      onAcceptWithDetails: (details) => _moveItem(details.data, type),
+      builder: (context, candidateData, rejectedData) => AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.only(bottom: AppSpacing.section),
+        decoration: BoxDecoration(
+          color: candidateData.isNotEmpty
+              ? theme.colorScheme.primary.withValues(alpha: 0.06)
+              : null,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: block,
       ),
     );
   }
@@ -563,9 +705,7 @@ class _MealPresetDetailPageState extends ConsumerState<MealPresetDetailPage> {
           _PresetMacroRow(total: total),
           const SizedBox(height: AppSpacing.section),
           if (_items.isEmpty) SportEmptyState(title: l10n.presetEmpty),
-          for (final type in MealType.values)
-            if (_items.any((item) => item.mealType == type.name))
-              _mealSection(context, type),
+          for (final type in MealType.values) _mealSection(context, type),
         ],
       ),
       bottomNavigationBar: SafeArea(
@@ -606,7 +746,7 @@ class _PresetMacroRow extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             '${grams.toStringAsFixed(1)} g',
-            style: theme.textTheme.titleSmall?.copyWith(color: color),
+            style: theme.textTheme.titleMedium?.copyWith(color: color),
           ),
         ],
       ),

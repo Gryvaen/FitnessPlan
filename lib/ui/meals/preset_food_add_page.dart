@@ -15,8 +15,15 @@ import '../widgets/search_field_focus.dart';
 
 /// Uses the food-picking controls from 记一笔, but saves to a preset only.
 class PresetFoodAddPage extends ConsumerStatefulWidget {
-  const PresetFoodAddPage({super.key, required this.presetId});
+  const PresetFoodAddPage({
+    super.key,
+    required this.presetId,
+    this.initialMealType,
+  });
   final int presetId;
+
+  /// Preselected meal when opened from a meal section's add button.
+  final MealType? initialMealType;
 
   @override
   ConsumerState<PresetFoodAddPage> createState() => _PresetFoodAddPageState();
@@ -40,10 +47,9 @@ class _PresetFoodAddPageState extends ConsumerState<PresetFoodAddPage> {
   void initState() {
     super.initState();
     suppressInitialSearchFocus(_searchFocus);
-    _mealType = ref
-        .read(formMemoryRepositoryProvider)
-        .loadMealDefaults()
-        .mealType;
+    _mealType =
+        widget.initialMealType ??
+        ref.read(formMemoryRepositoryProvider).loadMealDefaults().mealType;
     _loadFoods();
   }
 

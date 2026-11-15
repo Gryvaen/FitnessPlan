@@ -342,7 +342,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               body: Center(child: Text(context.l10n.presetNotFound)),
             );
           }
-          return PresetFoodAddPage(presetId: id);
+          return PresetFoodAddPage(
+            presetId: id,
+            initialMealType: MealType.tryParse(
+              state.uri.queryParameters['mealType'],
+            ),
+          );
         },
       ),
       GoRoute(

@@ -102,8 +102,12 @@ Future<void> pumpPresetApp(
       ),
       GoRoute(
         path: '/meal-preset/:id/add',
-        builder: (_, state) =>
-            PresetFoodAddPage(presetId: int.parse(state.pathParameters['id']!)),
+        builder: (_, state) => PresetFoodAddPage(
+          presetId: int.parse(state.pathParameters['id']!),
+          initialMealType: MealType.tryParse(
+            state.uri.queryParameters['mealType'],
+          ),
+        ),
       ),
       GoRoute(
         path: '/meal-preset/:id',
@@ -737,16 +741,65 @@ void main() {
       addTearDown(db.close);
       await seedPreset(db);
       await pumpPresetApp(tester, db: db, initialLocation: '/foods');
+      final open = find.byKey(const ValueKey('food-search-open'));
+      final search = find.byKey(const ValueKey('food-search'));
+      bool focused() => tester.widget<TextField>(search).focusNode!.hasFocus;
       expect(find.byKey(const ValueKey('category-presets')), findsOneWidget);
-      await tester.enterText(find.byType(TextField).first, '测试燕麦');
+
+      // At rest the search is just its icon. Tapping it slides the box
+      // open without focusing it, so no keyboard yet.
+      expect(open, findsOneWidget);
+      await tester.tap(open);
+      await tester.pumpAndSettle();
+      expect(open, findsNothing);
+      expect(focused(), isFalse);
+
+      // Tapping elsewhere (here the page title) folds the unused box again.
+      await tester.tap(find.text('食材').first);
+      await tester.pumpAndSettle();
+      expect(open, findsOneWidget);
+
+      // Only the text area brings the keyboard up.
+      await tester.tap(open);
+      await tester.pumpAndSettle();
+      await tester.tap(search);
+      await tester.pumpAndSettle();
+      expect(focused(), isTrue);
+
+      await tester.enterText(search, '测试燕麦');
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('category-presets')), findsNothing);
       expect(find.text('测试套餐'), findsNothing);
-      await tester.enterText(find.byType(TextField).first, '');
+      await tester.enterText(search, '');
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('category-presets')), findsOneWidget);
     },
   );
+
+  testWidgets('food search clear button folds the box back to its icon', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    await seedPreset(db);
+    await pumpPresetApp(tester, db: db, initialLocation: '/foods');
+    final open = find.byKey(const ValueKey('food-search-open'));
+    final search = find.byKey(const ValueKey('food-search'));
+    await tester.tap(open);
+    await tester.pumpAndSettle();
+    await tester.enterText(search, '测试燕麦');
+    await tester.pumpAndSettle();
+    // A keyword keeps the box open after the keyboard goes away.
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
+    expect(open, findsNothing);
+    await tester.tap(
+      find.descendant(of: search, matching: find.byType(IconButton)),
+    );
+    await tester.pumpAndSettle();
+    expect(open, findsOneWidget);
+    expect(find.byKey(const ValueKey('category-presets')), findsOneWidget);
+  });
 
   testWidgets(
     'preset food name opens detail and refreshes nutrition on return',
@@ -968,68 +1021,41 @@ void main() {
       const ValueKey('preset-meal-macros-breakfast'),
     );
     final dinner = find.byKey(const ValueKey('preset-meal-macros-dinner'));
-    final breakfastHeaderDivider = find.byKey(
-      const ValueKey('preset-meal-header-divider-breakfast'),
-    );
-    final dinnerHeaderDivider = find.byKey(
-      const ValueKey('preset-meal-header-divider-dinner'),
-    );
-    final breakfastDivider = find.byKey(
-      const ValueKey('preset-meal-divider-breakfast'),
-    );
-    final dinnerDivider = find.byKey(
-      const ValueKey('preset-meal-divider-dinner'),
-    );
-    expect(breakfastDivider, findsOneWidget);
-    expect(dinnerDivider, findsOneWidget);
-    expect(breakfastHeaderDivider, findsOneWidget);
-    expect(dinnerHeaderDivider, findsOneWidget);
+    // Sections are separated by type size and spacing, not divider lines.
     expect(
-      find.descendant(
-        of: find.byKey(const ValueKey('preset-meal-breakfast')),
-        matching: breakfastDivider,
-      ),
-      findsOneWidget,
+      find.byKey(const ValueKey('preset-meal-header-divider-breakfast')),
+      findsNothing,
     );
     expect(
-      find.descendant(
-        of: find.byKey(const ValueKey('preset-meal-dinner')),
-        matching: dinnerDivider,
-      ),
-      findsOneWidget,
+      find.byKey(const ValueKey('preset-meal-divider-breakfast')),
+      findsNothing,
+    );
+    expect(find.byType(Divider), findsNothing);
+    final breakfastTitle = find.byKey(
+      const ValueKey('preset-meal-title-breakfast'),
+    );
+    final dinnerTitle = find.byKey(const ValueKey('preset-meal-title-dinner'));
+    final context = tester.element(breakfastTitle);
+    expect(
+      tester.widget<Text>(breakfastTitle).style,
+      Theme.of(context).textTheme.titleLarge,
     );
     expect(
-      tester.getTopLeft(breakfastHeaderDivider).dy,
-      lessThan(tester.getTopLeft(find.text('早餐')).dy),
-    );
-    expect(
-      tester.getTopLeft(find.text('早餐')).dy,
+      tester.getTopLeft(breakfastTitle).dy,
       lessThan(tester.getTopLeft(breakfast).dy),
     );
     expect(
       tester.getTopLeft(breakfast).dy,
-      lessThan(tester.getTopLeft(breakfastDivider).dy),
-    );
-    expect(
-      tester.getTopLeft(breakfastDivider).dy,
       lessThan(
         tester.getTopLeft(find.byKey(ValueKey('preset-item-${oat.id}'))).dy,
       ),
     );
     expect(
-      tester.getTopLeft(dinnerHeaderDivider).dy,
-      lessThan(tester.getTopLeft(find.text('晚餐')).dy),
-    );
-    expect(
-      tester.getTopLeft(find.text('晚餐')).dy,
+      tester.getTopLeft(dinnerTitle).dy,
       lessThan(tester.getTopLeft(dinner).dy),
     );
     expect(
       tester.getTopLeft(dinner).dy,
-      lessThan(tester.getTopLeft(dinnerDivider).dy),
-    );
-    expect(
-      tester.getTopLeft(dinnerDivider).dy,
       lessThan(
         tester.getTopLeft(find.byKey(ValueKey('preset-item-$milkItemId'))).dy,
       ),
@@ -1073,11 +1099,140 @@ void main() {
     await tester.tap(find.text('删除').last);
     await tester.pumpAndSettle();
     expect(dinner, findsNothing);
-    expect(dinnerDivider, findsNothing);
-    expect(dinnerHeaderDivider, findsNothing);
     expect(
       find.descendant(of: breakfast, matching: find.text('24.0 g')),
       findsOneWidget,
     );
+  });
+
+  testWidgets('preset item row shows kcal and macros like today records', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final presetId = await seedPreset(db);
+    final repo = MealPresetRepository(db, MealRepository(db));
+    final oat = (await repo.itemsFor(presetId)).single;
+    await pumpPresetApp(
+      tester,
+      db: db,
+      initialLocation: '/meal-preset/$presetId',
+    );
+    final row = find.byKey(ValueKey('preset-item-${oat.id}'));
+    expect(
+      find.descendant(of: row, matching: find.text('380 kcal')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: row,
+        matching: find.text('100 g · P 12 · C 65 · F 7'),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('meal add buttons preselect that meal in the preset picker', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final presetId = await seedPreset(db);
+    await pumpPresetApp(
+      tester,
+      db: db,
+      initialLocation: '/meal-preset/$presetId',
+    );
+    MealType pickedMeal() => tester
+        .widget<AppDropdown<MealType>>(find.byType(AppDropdown<MealType>))
+        .value;
+
+    // Non-empty meal: the + in the section header.
+    await tester.tap(find.byKey(const ValueKey('preset-meal-add-breakfast')));
+    await tester.pumpAndSettle();
+    expect(find.byType(PresetFoodAddPage), findsOneWidget);
+    expect(pickedMeal(), MealType.breakfast);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    // Empty meal: the 添加晚餐 button.
+    final addDinner = find.byKey(const ValueKey('preset-meal-add-dinner'));
+    await tester.ensureVisible(addDinner);
+    expect(
+      find.descendant(of: addDinner, matching: find.text('添加晚餐')),
+      findsOneWidget,
+    );
+    await tester.tap(addDinner);
+    await tester.pumpAndSettle();
+    expect(pickedMeal(), MealType.dinner);
+  });
+
+  testWidgets('long-press drag moves a preset food to another meal', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final presetId = await seedPreset(db);
+    final repo = MealPresetRepository(db, MealRepository(db));
+    final oat = (await repo.itemsFor(presetId)).single;
+    await pumpPresetApp(
+      tester,
+      db: db,
+      initialLocation: '/meal-preset/$presetId',
+    );
+    final row = find.byKey(ValueKey('preset-item-${oat.id}'));
+    final target = find.byKey(const ValueKey('preset-meal-add-dinner'));
+    await tester.ensureVisible(target);
+    await tester.pumpAndSettle();
+    final gesture = await tester.startGesture(tester.getCenter(row));
+    await tester.pump(const Duration(milliseconds: 700));
+    await gesture.moveTo(tester.getCenter(target));
+    await tester.pump();
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    final moved = (await repo.itemsFor(presetId)).single;
+    expect(moved.mealType, MealType.dinner.name);
+    expect(moved.grams, 100);
+    expect(
+      find.byKey(const ValueKey('preset-meal-macros-dinner')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('preset-meal-macros-breakfast')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('grams dialog offers common portions', (tester) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final presetId = await seedPreset(db);
+    final repo = MealPresetRepository(db, MealRepository(db));
+    final oat = (await repo.itemsFor(presetId)).single;
+    final servingId = await db
+        .into(db.foodServings)
+        .insert(
+          FoodServingsCompanion.insert(
+            foodId: oat.foodId,
+            label: '一碗',
+            grams: 50,
+          ),
+        );
+    await pumpPresetApp(
+      tester,
+      db: db,
+      initialLocation: '/meal-preset/$presetId',
+    );
+    await tester.tap(find.byKey(ValueKey('preset-grams-${oat.id}')));
+    await tester.pumpAndSettle();
+    expect(find.text('一碗 · 50g'), findsOneWidget);
+    await tester.tap(find.byKey(ValueKey('preset-serving-$servingId')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('保存'));
+    await tester.pumpAndSettle();
+
+    expect((await repo.itemsFor(presetId)).single.grams, 50);
+    expect(find.text('190 kcal'), findsWidgets);
   });
 }
