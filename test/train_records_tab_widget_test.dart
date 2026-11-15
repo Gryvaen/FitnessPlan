@@ -65,7 +65,7 @@ Future<void> _setUp() async {
       );
 }
 
-Widget _app(Widget child) {
+Widget _app(Widget child, {Locale locale = const Locale('zh')}) {
   // TrainRecordsTab reads GoRouterState (deep-link `?tab=&sub=` sync), so it
   // needs a real router under it, not a bare MaterialApp — matches the
   // '/records' location _syncSubFromRoute checks for.
@@ -82,7 +82,7 @@ Widget _app(Widget child) {
     container: _container,
     child: MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      locale: const Locale('zh'),
+      locale: locale,
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -95,12 +95,60 @@ Widget _app(Widget child) {
   );
 }
 
-Future<void> _pump(WidgetTester tester, Widget child) async {
-  await tester.binding.setSurfaceSize(const Size(412, 915));
+Future<void> _pump(
+  WidgetTester tester,
+  Widget child, {
+  Size size = const Size(412, 915),
+  Locale locale = const Locale('zh'),
+}) async {
+  await tester.binding.setSurfaceSize(size);
   addTearDown(() => tester.binding.setSurfaceSize(null));
-  await tester.pumpWidget(_app(child));
+  await tester.pumpWidget(_app(child, locale: locale));
   await tester.pumpAndSettle();
 }
+
+Finder _row(String name) => find.widgetWithText(SportListTile, name);
+
+/// Opens the category pill [filterKey] and picks [label]. The pill itself may
+/// show the same label, so the menu item is the last match.
+Future<void> _pickCategory(
+  WidgetTester tester,
+  String filterKey,
+  String label,
+) async {
+  await tester.tap(find.byKey(ValueKey(filterKey)));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(label).last);
+  await tester.pumpAndSettle();
+}
+
+Finder _pillLabel(String filterKey, String label) => find.descendant(
+  of: find.byKey(ValueKey(filterKey)),
+  matching: find.text(label),
+);
+
+/// Width of the animated container that reveals the search box [searchKey].
+double _searchWidth(WidgetTester tester, String searchKey) => tester
+    .getSize(
+      find
+          .ancestor(
+            of: find.byKey(ValueKey(searchKey)),
+            matching: find.byType(AnimatedContainer),
+          )
+          .first,
+    )
+    .width;
+
+/// Taps a collapsed search icon and waits for the box to slide open.
+Future<void> _open(WidgetTester tester, String openKey) async {
+  await tester.tap(find.byKey(ValueKey(openKey)));
+  await tester.pumpAndSettle();
+}
+
+Finder _clearButton(String searchKey) => find.descendant(
+  of: find.byKey(ValueKey(searchKey)),
+  matching: find.byType(IconButton),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -178,156 +226,164 @@ void main() {
   testWidgets(
     'exercise library search and category menu narrow the lazily-rendered list',
     (tester) async {
-      // Matches only the exercise row, not the search TextField's own
-      // echoed text once it contains the same string.
-      Finder row(String name) => find.widgetWithText(SportListTile, name);
+      const searchKey = 'exercise-library-search';
+      const openKey = 'exercise-library-search-open';
+      const filterKey = 'exercise-category-filter';
+      final search = find.byKey(const ValueKey(searchKey));
 
       await _pump(tester, const TrainRecordsTab(initialTab: 1));
 
-      expect(row('杠铃卧推'), findsOneWidget);
-      expect(row('深蹲'), findsOneWidget);
-      expect(row('跑步机慢跑'), findsOneWidget);
-      expect(find.byType(TextField), findsNothing);
+      // At rest it is just the search icon, unfocused (no keyboard).
+      expect(_searchWidth(tester, searchKey), 48);
+      expect(find.byKey(const ValueKey(openKey)), findsOneWidget);
+      expect(tester.widget<TextField>(search).focusNode!.hasFocus, isFalse);
 
-      await tester.tap(find.byKey(const ValueKey('exercise-library-search')));
+      // Tapping it slides the box open to the right, without focusing it:
+      // no keyboard for someone who only wants to pick a category.
+      await tester.tap(find.byKey(const ValueKey(openKey)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 130));
+      final midway = _searchWidth(tester, searchKey);
       await tester.pumpAndSettle();
-      expect(
-        tester.widget<TextField>(find.byType(TextField)).focusNode!.hasFocus,
-        isFalse,
-      );
-      await tester.tapAt(const Offset(380, 24));
-      await tester.pumpAndSettle();
-      expect(find.byType(TextField), findsNothing);
+      final full = _searchWidth(tester, searchKey);
+      expect(midway, greaterThan(48));
+      expect(midway, lessThan(full));
+      expect(full, greaterThan(300));
+      expect(find.byKey(const ValueKey(openKey)), findsNothing);
+      expect(tester.widget<TextField>(search).focusNode!.hasFocus, isFalse);
+      expect(_pillLabel(filterKey, '全部'), findsOneWidget);
+      expect(_clearButton(searchKey), findsNothing);
 
-      await tester.tap(find.byKey(const ValueKey('exercise-library-search')));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField), '深蹲');
-      await tester.pumpAndSettle();
-      expect(row('深蹲'), findsOneWidget);
-      expect(row('杠铃卧推'), findsNothing);
-      expect(row('跑步机慢跑'), findsNothing);
+      // Filtering by category never brings the keyboard up either.
+      await _pickCategory(tester, filterKey, '腿');
+      expect(tester.widget<TextField>(search).focusNode!.hasFocus, isFalse);
+      expect(_row('深蹲'), findsOneWidget);
+      expect(_row('杠铃卧推'), findsNothing);
+      await _pickCategory(tester, filterKey, '全部');
 
-      await tester.enterText(find.byType(TextField), '');
+      // Only tapping the text area focuses the box.
+      if (find.byKey(const ValueKey(openKey)).evaluate().isNotEmpty) {
+        await _open(tester, openKey);
+      }
+      await tester.tap(search);
       await tester.pumpAndSettle();
-      expect(row('杠铃卧推'), findsOneWidget);
-      expect(row('深蹲'), findsOneWidget);
-      expect(row('跑步机慢跑'), findsOneWidget);
+      expect(tester.widget<TextField>(search).focusNode!.hasFocus, isTrue);
+      expect(_row('杠铃卧推'), findsOneWidget);
+      expect(_row('深蹲'), findsOneWidget);
+      expect(_row('跑步机慢跑'), findsOneWidget);
 
-      await tester.tap(find.byKey(const ValueKey('exercise-category-filter')));
+      await tester.enterText(search, '深蹲');
+      await tester.pumpAndSettle();
+      expect(_row('深蹲'), findsOneWidget);
+      expect(_row('杠铃卧推'), findsNothing);
+      expect(_row('跑步机慢跑'), findsNothing);
+
+      // The clear button empties the box and restores the list.
+      await tester.tap(_clearButton(searchKey));
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(search).controller!.text, isEmpty);
+      expect(_clearButton(searchKey), findsNothing);
+      expect(_row('杠铃卧推'), findsOneWidget);
+      expect(_row('深蹲'), findsOneWidget);
+      expect(_row('跑步机慢跑'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey(filterKey)));
       await tester.pumpAndSettle();
       expect(find.text('其他'), findsNothing);
-      await tester.tap(find.text('腿'));
+      await tester.tap(find.text('腿').last);
       await tester.pumpAndSettle();
-      expect(row('深蹲'), findsOneWidget);
-      expect(row('杠铃卧推'), findsNothing);
-      expect(row('跑步机慢跑'), findsNothing);
+      // The filter names the active part.
+      expect(_pillLabel(filterKey, '腿'), findsOneWidget);
+      expect(_row('深蹲'), findsOneWidget);
+      expect(_row('杠铃卧推'), findsNothing);
+      expect(_row('跑步机慢跑'), findsNothing);
 
-      final search = find.byKey(const ValueKey('exercise-library-search'));
-      if (search.evaluate().isNotEmpty) {
-        await tester.tap(search);
-        await tester.pumpAndSettle();
-      }
-      await tester.tap(find.byKey(const ValueKey('exercise-category-filter')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('全部'));
-      await tester.pumpAndSettle();
-      expect(row('杠铃卧推'), findsOneWidget);
-      expect(row('深蹲'), findsOneWidget);
-      expect(row('跑步机慢跑'), findsOneWidget);
+      await _pickCategory(tester, filterKey, '全部');
+      expect(_pillLabel(filterKey, '全部'), findsOneWidget);
+      expect(_row('杠铃卧推'), findsOneWidget);
+      expect(_row('深蹲'), findsOneWidget);
+      expect(_row('跑步机慢跑'), findsOneWidget);
 
-      await tester.tap(find.byKey(const ValueKey('exercise-library-search')));
+      await tester.enterText(search, '卧推');
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField), '卧推');
-      await tester.pumpAndSettle();
-      expect(row('杠铃卧推'), findsOneWidget);
-      expect(row('深蹲'), findsNothing);
+      expect(_row('杠铃卧推'), findsOneWidget);
+      expect(_row('深蹲'), findsNothing);
 
       // Tapping the field itself keeps the query; blank space clears it.
-      await tester.tap(find.byType(TextField));
+      await tester.tap(search);
       await tester.pumpAndSettle();
-      expect(find.byType(TextField), findsOneWidget);
-      expect(row('杠铃卧推'), findsOneWidget);
-      expect(row('深蹲'), findsNothing);
+      expect(_row('杠铃卧推'), findsOneWidget);
+      expect(_row('深蹲'), findsNothing);
 
       await tester.tapAt(const Offset(200, 700));
       await tester.pumpAndSettle();
-      expect(find.byType(TextField), findsNothing);
-      expect(row('杠铃卧推'), findsOneWidget);
-      expect(row('深蹲'), findsOneWidget);
-      expect(row('跑步机慢跑'), findsOneWidget);
+      expect(tester.widget<TextField>(search).controller!.text, isEmpty);
+      // No keyword and no category left: it folds back to the icon.
+      expect(find.byKey(const ValueKey(openKey)), findsOneWidget);
+      expect(_row('杠铃卧推'), findsOneWidget);
+      expect(_row('深蹲'), findsOneWidget);
+      expect(_row('跑步机慢跑'), findsOneWidget);
 
-      await tester.tap(find.byKey(const ValueKey('exercise-library-search')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('exercise-category-filter')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('腿'));
-      await tester.pumpAndSettle();
-      expect(row('深蹲'), findsOneWidget);
-      expect(row('杠铃卧推'), findsNothing);
+      await _open(tester, openKey);
+      await _pickCategory(tester, filterKey, '腿');
+      expect(_row('深蹲'), findsOneWidget);
+      expect(_row('杠铃卧推'), findsNothing);
 
-      await tester.tap(row('深蹲'));
+      await tester.tap(_row('深蹲'));
       await tester.pumpAndSettle();
       expect(find.text('取消'), findsOneWidget);
       await tester.tap(find.text('取消'));
       await tester.pumpAndSettle();
-      expect(row('深蹲'), findsOneWidget);
-      expect(row('杠铃卧推'), findsNothing);
+      expect(_row('深蹲'), findsOneWidget);
+      expect(_row('杠铃卧推'), findsNothing);
 
+      // Blank space keeps the chosen category, and the box stays open.
       await tester.tapAt(const Offset(200, 700));
       await tester.pumpAndSettle();
-      expect(find.byType(TextField), findsOneWidget);
-      expect(row('深蹲'), findsOneWidget);
-      expect(row('杠铃卧推'), findsNothing);
-      expect(row('跑步机慢跑'), findsNothing);
+      expect(find.byKey(const ValueKey(openKey)), findsNothing);
+      expect(_pillLabel(filterKey, '腿'), findsOneWidget);
+      expect(_row('深蹲'), findsOneWidget);
+      expect(_row('杠铃卧推'), findsNothing);
+      expect(_row('跑步机慢跑'), findsNothing);
     },
   );
 
   testWidgets('add exercise uses the selected category filter', (tester) async {
-    Finder row(String name) => find.widgetWithText(SportListTile, name);
-
     await _pump(tester, const TrainRecordsTab(initialTab: 1));
-    await tester.tap(find.byKey(const ValueKey('exercise-library-search')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('exercise-category-filter')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('腿'));
-    await tester.pumpAndSettle();
+    await _open(tester, 'exercise-library-search-open');
+    await _pickCategory(tester, 'exercise-category-filter', '腿');
 
     await tester.tap(find.byTooltip('添加动作'));
     await tester.pumpAndSettle();
-    expect(find.text('腿'), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(AlertDialog), matching: find.text('腿')),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('取消'));
     await tester.pumpAndSettle();
-    expect(find.byType(TextField), findsOneWidget);
-    expect(row('深蹲'), findsOneWidget);
-    expect(row('杠铃卧推'), findsNothing);
-    expect(row('跑步机慢跑'), findsNothing);
+    expect(_row('深蹲'), findsOneWidget);
+    expect(_row('杠铃卧推'), findsNothing);
+    expect(_row('跑步机慢跑'), findsNothing);
   });
 
   testWidgets('saving an exercise edit keeps the category filter', (
     tester,
   ) async {
-    Finder row(String name) => find.widgetWithText(SportListTile, name);
-
     await _pump(tester, const TrainRecordsTab(initialTab: 1));
-    await tester.tap(find.byKey(const ValueKey('exercise-library-search')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('exercise-category-filter')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('腿'));
-    await tester.pumpAndSettle();
-    expect(row('深蹲'), findsOneWidget);
-    expect(row('杠铃卧推'), findsNothing);
+    await _open(tester, 'exercise-library-search-open');
+    await _pickCategory(tester, 'exercise-category-filter', '腿');
+    expect(_row('深蹲'), findsOneWidget);
+    expect(_row('杠铃卧推'), findsNothing);
 
-    await tester.tap(row('深蹲'));
+    await tester.tap(_row('深蹲'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, '保存'));
     await tester.pumpAndSettle();
 
-    expect(row('深蹲'), findsOneWidget);
-    expect(row('杠铃卧推'), findsNothing);
-    expect(row('跑步机慢跑'), findsNothing);
+    expect(_row('深蹲'), findsOneWidget);
+    expect(_row('杠铃卧推'), findsNothing);
+    expect(_row('跑步机慢跑'), findsNothing);
   });
 
   testWidgets('plan search filters the list and blank space clears it', (
@@ -374,32 +430,32 @@ void main() {
           ),
         );
 
+    const searchKey = 'plan-search';
+    const openKey = 'plan-search-open';
+    const filterKey = 'plan-category-filter';
+    final search = find.byKey(const ValueKey(searchKey));
+
     await _pump(tester, const TrainRecordsTab());
 
     expect(row('上肢'), findsOneWidget);
     expect(row('腿部'), findsOneWidget);
-    expect(find.byType(TextField), findsNothing);
+    expect(_searchWidth(tester, searchKey), 48);
+    expect(tester.widget<TextField>(search).focusNode!.hasFocus, isFalse);
+    await _open(tester, openKey);
+    expect(_pillLabel(filterKey, '全部'), findsOneWidget);
+    expect(tester.widget<TextField>(search).focusNode!.hasFocus, isFalse);
 
-    await tester.tap(find.byKey(const ValueKey('plan-search')));
-    await tester.pumpAndSettle();
-    expect(
-      tester.widget<TextField>(find.byType(TextField)).focusNode!.hasFocus,
-      isFalse,
-    );
-    // Keyboard never came up. Blank space outside the plan list — here the
-    // empty area beside the sub-tabs — still closes the field.
-    await tester.tapAt(const Offset(380, 24));
-    await tester.pumpAndSettle();
-    expect(find.byType(TextField), findsNothing);
-
-    await tester.tap(find.byKey(const ValueKey('plan-search')));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), '上肢');
+    await tester.enterText(search, '上肢');
     await tester.pumpAndSettle();
     expect(row('上肢'), findsOneWidget);
     expect(row('腿部'), findsNothing);
 
-    await tester.enterText(find.byType(TextField), '不存在');
+    await tester.tap(_clearButton(searchKey));
+    await tester.pumpAndSettle();
+    expect(row('上肢'), findsOneWidget);
+    expect(row('腿部'), findsOneWidget);
+
+    await tester.enterText(search, '不存在');
     await tester.pumpAndSettle();
     expect(find.text('没有匹配的计划'), findsOneWidget);
     expect(row('上肢'), findsNothing);
@@ -407,27 +463,25 @@ void main() {
 
     await tester.tapAt(const Offset(200, 700));
     await tester.pumpAndSettle();
-    expect(find.byType(TextField), findsNothing);
+    expect(tester.widget<TextField>(search).controller!.text, isEmpty);
+    expect(find.byKey(const ValueKey(openKey)), findsOneWidget);
     expect(row('上肢'), findsOneWidget);
     expect(row('腿部'), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('plan-search')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('plan-category-filter')));
+    await _open(tester, openKey);
+    await tester.tap(find.byKey(const ValueKey(filterKey)));
     await tester.pumpAndSettle();
     expect(find.text('其他'), findsNothing);
-    await tester.tap(find.text('腿'));
+    await tester.tap(find.text('腿').last);
     await tester.pumpAndSettle();
+    expect(_pillLabel(filterKey, '腿'), findsOneWidget);
     expect(row('腿部'), findsOneWidget);
     expect(row('上肢'), findsNothing);
-    await tester.tap(find.byKey(const ValueKey('plan-category-filter')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('全部'));
-    await tester.pumpAndSettle();
+    // Back to 全部 without ever typing: the idle box folds to its icon.
+    await _pickCategory(tester, filterKey, '全部');
+    expect(find.byKey(const ValueKey(openKey)), findsOneWidget);
     expect(row('上肢'), findsOneWidget);
     expect(row('腿部'), findsOneWidget);
-    await tester.tapAt(const Offset(200, 700));
-    await tester.pumpAndSettle();
 
     final plank = await _db
         .into(_db.exercises)
@@ -483,40 +537,29 @@ void main() {
         );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const ValueKey('plan-search')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('plan-category-filter')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('核心'));
-    await tester.pumpAndSettle();
+    await _open(tester, openKey);
+    await _pickCategory(tester, filterKey, '核心');
     expect(row('核心单练'), findsOneWidget);
     expect(row('腿加核心'), findsNothing);
     expect(row('上肢'), findsNothing);
     await tester.tapAt(const Offset(200, 700));
     await tester.pumpAndSettle();
-    expect(find.byType(TextField), findsOneWidget);
+    expect(_pillLabel(filterKey, '核心'), findsOneWidget);
     expect(row('核心单练'), findsOneWidget);
     expect(row('腿加核心'), findsNothing);
     expect(row('上肢'), findsNothing);
 
-    await tester.tap(find.byKey(const ValueKey('plan-category-filter')));
+    // Back to 全部 while unfocused folds the box; open it again to type.
+    await _pickCategory(tester, filterKey, '全部');
+    expect(find.byKey(const ValueKey(openKey)), findsOneWidget);
+    await _open(tester, openKey);
+    await tester.enterText(search, '上肢');
     await tester.pumpAndSettle();
-    await tester.tap(find.text('全部'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('plan-search')));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), '上肢');
-    await tester.pumpAndSettle();
-    expect(
-      tester.widget<TextField>(find.byType(TextField)).focusNode!.hasFocus,
-      isTrue,
-    );
+    expect(tester.widget<TextField>(search).focusNode!.hasFocus, isTrue);
     await tester.tap(find.text('动作库'));
     await tester.pumpAndSettle();
-    expect(
-      find.byKey(const ValueKey('exercise-library-search')),
-      findsOneWidget,
-    );
+    final librarySearch = find.byKey(const ValueKey('exercise-library-search'));
+    expect(librarySearch, findsOneWidget);
     expect(
       tester
           .widgetList<TextField>(find.byType(TextField))
@@ -524,17 +567,13 @@ void main() {
       isTrue,
     );
 
-    await tester.tap(find.byKey(const ValueKey('exercise-library-search')));
+    await _open(tester, 'exercise-library-search-open');
+    await tester.enterText(librarySearch, '深蹲');
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), '深蹲');
-    await tester.pumpAndSettle();
-    expect(
-      tester.widget<TextField>(find.byType(TextField)).focusNode!.hasFocus,
-      isTrue,
-    );
+    expect(tester.widget<TextField>(librarySearch).focusNode!.hasFocus, isTrue);
     await tester.tap(find.text('计划'));
     await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('plan-search')), findsOneWidget);
+    expect(search, findsOneWidget);
     expect(
       tester
           .widgetList<TextField>(find.byType(TextField))
@@ -542,6 +581,70 @@ void main() {
       isTrue,
     );
   });
+
+  testWidgets('search box folds back only when idle', (tester) async {
+    const openKey = 'exercise-library-search-open';
+    const filterKey = 'exercise-category-filter';
+    final icon = find.byKey(const ValueKey(openKey));
+    Future<void> blank() async {
+      await tester.tapAt(const Offset(200, 700));
+      await tester.pumpAndSettle();
+    }
+
+    await _pump(tester, const TrainRecordsTab(initialTab: 1));
+
+    // Opened but left empty: blank space folds it.
+    await _open(tester, openKey);
+    await blank();
+    expect(icon, findsOneWidget);
+
+    // A chosen category keeps it open, so the filter stays visible.
+    await _open(tester, openKey);
+    await _pickCategory(tester, filterKey, '腿');
+    await blank();
+    expect(icon, findsNothing);
+    expect(_pillLabel(filterKey, '腿'), findsOneWidget);
+
+    // Clearing the category while unfocused folds it.
+    await _pickCategory(tester, filterKey, '全部');
+    expect(icon, findsOneWidget);
+
+    // Leaving the sub-tab folds an empty box too.
+    await _open(tester, openKey);
+    await tester.tap(find.text('计划'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('动作库'));
+    await tester.pumpAndSettle();
+    expect(icon, findsOneWidget);
+  });
+
+  for (final (name, locale) in [
+    ('zh', const Locale('zh')),
+    ('en', const Locale('en')),
+  ]) {
+    testWidgets('search header fits a narrow screen with large text: $name', (
+      tester,
+    ) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await _pump(
+        tester,
+        const TrainRecordsTab(initialTab: 1),
+        size: const Size(320, 700),
+        locale: locale,
+      );
+      await _open(tester, 'exercise-library-search-open');
+      await _pickCategory(
+        tester,
+        'exercise-category-filter',
+        name == 'zh' ? '肩' : 'Shoulders',
+      );
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text(name == 'zh' ? '计划' : 'Plans'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets(
     '全部 step history sheet lists every logged day via the lazy ListView.builder',

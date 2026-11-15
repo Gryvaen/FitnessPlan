@@ -10,6 +10,7 @@ import '../shell/swipe_tab_view.dart';
 import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
+import '../widgets/expanding_search.dart';
 import '../widgets/food_name_link.dart';
 import '../widgets/search_field_focus.dart';
 import 'food_category_art.dart';
@@ -56,6 +57,10 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
   var _tab = _FoodsTab.categories;
   final _searchController = TextEditingController();
   final _searchFocus = FocusNode();
+
+  /// The search box rests as its icon; tapping it slides the box open
+  /// without focusing it. It stays open while there is a keyword.
+  bool _searchOpen = false;
   bool _pickedInitialTab = false;
   var _ignoredMissingHistory = false;
 
@@ -63,16 +68,38 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
   void initState() {
     super.initState();
     suppressInitialSearchFocus(_searchFocus);
+    _searchFocus.addListener(_onSearchFocusChanged);
   }
 
   @override
   void dispose() {
+    _searchFocus.removeListener(_onSearchFocusChanged);
     _searchController.dispose();
     _searchFocus.dispose();
     super.dispose();
   }
 
   void _setQuery(String v) => ref.read(_foodQueryProvider.notifier).set(v);
+
+  bool get _hasQuery => ref.read(_foodQueryProvider).trim().isNotEmpty;
+
+  /// Folds the box back to its icon once it is idle: unfocused, no keyword.
+  void _foldIdleSearch() {
+    if (!_searchOpen || _searchFocus.hasFocus || _hasQuery) return;
+    setState(() => _searchOpen = false);
+  }
+
+  void _onSearchFocusChanged() {
+    if (!_searchFocus.hasFocus) _foldIdleSearch();
+  }
+
+  /// Clears the keyword and folds the box.
+  void _clearSearch() {
+    _searchFocus.unfocus();
+    _searchController.clear();
+    _setQuery('');
+    setState(() => _searchOpen = false);
+  }
 
   bool _routeWantsHistory() {
     if (GoRouter.maybeOf(context) == null) return false;
@@ -84,6 +111,7 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
   void _selectFoodsTab(_FoodsTab tab) {
     unfocusForNavigation();
     _searchFocus.unfocus();
+    _foldIdleSearch();
     if (tab != _tab) setState(() => _tab = tab);
     if (GoRouter.maybeOf(context) == null) return;
     final state = GoRouterState.of(context);
@@ -190,32 +218,43 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.listPage,
               ),
-              child: UnfocusOnKeyboardHide(
-                focusNode: _searchFocus,
-                child: TextField(
-                  controller: _searchController,
-                  focusNode: _searchFocus,
-                  decoration: InputDecoration(
-                    hintText: l10n.searchFood,
-                    prefixIcon: InkIcon(
-                      InkGlyph.search,
-                      color: foodUtilityIconColor(context),
+              // Tapping anywhere else folds an open-but-empty box.
+              child: TapRegion(
+                onTapOutside: (_) {
+                  if (_hasQuery) return;
+                  _searchFocus.unfocus();
+                  _foldIdleSearch();
+                },
+                child: ExpandingSearch(
+                  expanded: _searchOpen || searching,
+                  openKey: const ValueKey('food-search-open'),
+                  tooltip: l10n.searchFood,
+                  onExpand: () => setState(() => _searchOpen = true),
+                  child: UnfocusOnKeyboardHide(
+                    focusNode: _searchFocus,
+                    child: TextField(
+                      key: const ValueKey('food-search'),
+                      controller: _searchController,
+                      focusNode: _searchFocus,
+                      decoration: InputDecoration(
+                        hintText: l10n.searchFood,
+                        prefixIcon: InkIcon(
+                          InkGlyph.search,
+                          color: foodUtilityIconColor(context),
+                        ),
+                        suffixIcon: searching
+                            ? IconButton(
+                                icon: InkIcon(
+                                  InkGlyph.close,
+                                  color: foodUtilityIconColor(context),
+                                ),
+                                onPressed: _clearSearch,
+                              )
+                            : null,
+                      ),
+                      onChanged: _setQuery,
                     ),
-                    suffixIcon: searching
-                        ? IconButton(
-                            icon: InkIcon(
-                              InkGlyph.close,
-                              color: foodUtilityIconColor(context),
-                            ),
-                            onPressed: () {
-                              _searchFocus.unfocus();
-                              _searchController.clear();
-                              _setQuery('');
-                            },
-                          )
-                        : null,
                   ),
-                  onChanged: _setQuery,
                 ),
               ),
             ),
@@ -323,11 +362,7 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                             focus: _searchFocus,
                             action: () => openFoodDetail(context, foodId),
                           ),
-                          onClearQuery: () {
-                            _searchFocus.unfocus();
-                            _searchController.clear();
-                            _setQuery('');
-                          },
+                          onClearQuery: _clearSearch,
                         ),
                       ],
                     ),

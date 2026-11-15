@@ -15,6 +15,7 @@ import '../shell/swipe_tab_view.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/form_options.dart';
+import '../widgets/expanding_search.dart';
 import '../widgets/search_field_focus.dart';
 import 'exercise_form_dialog.dart';
 import 'exercise_picker.dart';
@@ -68,12 +69,18 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   String _query = '';
   String? _category;
   String? _planCategory;
-  bool _exerciseSearchOpen = false;
   bool _categoryMenuOpen = false;
-  final _exerciseSearchFocus = FocusNode();
-  String _planQuery = '';
+
+  /// Whether each search box is expanded from its collapsed search icon. A
+  /// box stays open while it has a keyword or a category, so the active
+  /// filter stays visible.
+  bool _exerciseSearchOpen = false;
   bool _planSearchOpen = false;
+  final _exerciseSearchFocus = FocusNode();
+  final _exerciseSearchController = TextEditingController();
+  String _planQuery = '';
   final _planSearchFocus = FocusNode();
+  final _planSearchController = TextEditingController();
   final Object _planSearchGroup = Object();
   final Object _exerciseSearchGroup = Object();
   Offset? _planOutsidePointer;
@@ -100,24 +107,62 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   @override
   void dispose() {
     _exerciseSearchFocus.removeListener(_onExerciseSearchFocusChanged);
-    _exerciseSearchFocus.dispose();
     _planSearchFocus.removeListener(_onPlanSearchFocusChanged);
+    _exerciseSearchFocus.dispose();
+    _exerciseSearchController.dispose();
     _planSearchFocus.dispose();
+    _planSearchController.dispose();
     super.dispose();
   }
 
+  /// Collapses an idle box — unfocused, no keyword, no category — back to
+  /// its search icon. The category menu takes focus while open; ignore that.
   void _onExerciseSearchFocusChanged() {
     if (_exerciseSearchFocus.hasFocus || _categoryMenuOpen) return;
-    if (_query.isNotEmpty || _category != null || !_exerciseSearchOpen) return;
+    if (!_exerciseSearchOpen || _query.isNotEmpty || _category != null) return;
     setState(() => _exerciseSearchOpen = false);
   }
 
   void _onPlanSearchFocusChanged() {
-    if (_planSearchFocus.hasFocus || _categoryMenuOpen || !_planSearchOpen) {
+    if (_planSearchFocus.hasFocus || _categoryMenuOpen) return;
+    if (!_planSearchOpen || _planQuery.isNotEmpty || _planCategory != null) {
       return;
     }
-    if (_planQuery.isNotEmpty || _planCategory != null) return;
     setState(() => _planSearchOpen = false);
+  }
+
+  /// Expands a collapsed box without focusing it: someone who only wants to
+  /// filter by category shouldn't get the keyboard. Tapping the text area
+  /// focuses it.
+  void _openSearch({required bool plan}) {
+    setState(() {
+      if (plan) {
+        _planSearchOpen = true;
+      } else {
+        _exerciseSearchOpen = true;
+      }
+    });
+  }
+
+  /// Folds every expanded box that is idle — unfocused, no keyword, no
+  /// category. A box opened but never focused gets no focus-change event, so
+  /// blank taps and sub-tab switches fold it explicitly.
+  void _foldIdleSearches() {
+    final foldPlan =
+        _planSearchOpen &&
+        !_planSearchFocus.hasFocus &&
+        _planQuery.isEmpty &&
+        _planCategory == null;
+    final foldExercise =
+        _exerciseSearchOpen &&
+        !_exerciseSearchFocus.hasFocus &&
+        _query.isEmpty &&
+        _category == null;
+    if (!foldPlan && !foldExercise) return;
+    setState(() {
+      if (foldPlan) _planSearchOpen = false;
+      if (foldExercise) _exerciseSearchOpen = false;
+    });
   }
 
   void _onSearchOutsideDown(PointerDownEvent event, {required bool plan}) {
@@ -152,13 +197,16 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     });
   }
 
-  /// 点记录页里搜索框和结果行以外的位置：清掉关键字。
-  /// 已选分类保留，搜索框也不收起。
+  /// 点记录页里搜索框和结果行以外的位置：清掉关键字，已选分类保留；
+  /// 没有分类时搜索框收回成图标。
   void _discardPlanSearch() {
     if (_categoryMenuOpen) return;
     _dropSearchFocus(_planSearchFocus);
-    if (!_planSearchOpen && _planQuery.isEmpty) return;
-    if (_planCategory != null && _planQuery.isEmpty) return;
+    if (_planQuery.isEmpty) {
+      _foldIdleSearches();
+      return;
+    }
+    _planSearchController.clear();
     setState(() {
       _planQuery = '';
       if (_planCategory == null) _planSearchOpen = false;
@@ -176,15 +224,18 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     });
   }
 
-  /// 点动作列表或标题行的空白处：清掉关键字。
-  /// 已选分类保留，搜索框也不收起。
+  /// 点动作列表或标题行的空白处：清掉关键字，已选分类保留；
+  /// 没有分类时搜索框收回成图标。
   void _discardExerciseSearch() {
     if (_categoryMenuOpen || _exerciseDialogDepth > 0) return;
     final route = ModalRoute.of(context);
     if (route != null && !route.isCurrent) return;
     _dropSearchFocus(_exerciseSearchFocus);
-    if (!_exerciseSearchOpen && _query.isEmpty) return;
-    if (_category != null && _query.isEmpty) return;
+    if (_query.isEmpty) {
+      _foldIdleSearches();
+      return;
+    }
+    _exerciseSearchController.clear();
     setState(() {
       _query = '';
       if (_category == null) _exerciseSearchOpen = false;
@@ -193,6 +244,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
 
   Future<void> _openCategoryMenu(
     BuildContext buttonContext, {
+    required String? current,
     required void Function(String? category) apply,
   }) async {
     final button = buttonContext.findRenderObject()! as RenderBox;
@@ -215,11 +267,26 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
       context: buttonContext,
       position: position,
       items: [
-        PopupMenuItem(value: '', child: Text(l10n.filterAll)),
-        for (final c in kExerciseCategoryOrder)
+        for (final c in <String?>[null, ...kExerciseCategoryOrder])
           PopupMenuItem(
-            value: c,
-            child: Text(c.localizedExerciseCategory(l10n)),
+            value: c ?? '',
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    c == null
+                        ? l10n.filterAll
+                        : c.localizedExerciseCategory(l10n),
+                  ),
+                ),
+                if (c == current)
+                  InkIcon(
+                    InkGlyph.check,
+                    size: 18,
+                    color: Theme.of(buttonContext).colorScheme.primary,
+                  ),
+              ],
+            ),
           ),
       ],
     );
@@ -228,6 +295,103 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     setState(() {
       if (selected != null) apply(selected.isEmpty ? null : selected);
     });
+  }
+
+  /// Always-visible search box. The body-part filter sits inside it at the
+  /// right end, after a hairline, so search and filter read as one control:
+  /// grey 「全部」 when unfiltered, the primary-coloured part name otherwise.
+  Widget _searchField({
+    required Key key,
+    required Key categoryKey,
+    required TextEditingController controller,
+    required FocusNode focusNode,
+    required String hint,
+    required bool hasQuery,
+    required ValueChanged<String> onChanged,
+    required VoidCallback onClear,
+    required String? category,
+
+    /// Called with the picked category and whether the box was focused when
+    /// the menu opened.
+    required void Function(String? category, bool hadFocus) applyCategory,
+  }) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
+    final active = category != null;
+    final categoryColor = active ? theme.colorScheme.primary : muted;
+    return TextField(
+      key: key,
+      controller: controller,
+      focusNode: focusNode,
+      decoration: InputDecoration(
+        hintText: hint,
+        prefixIcon: InkIcon(InkGlyph.search, color: muted),
+        suffixIconConstraints: const BoxConstraints(minHeight: 48),
+        suffixIcon: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (hasQuery)
+              IconButton(
+                tooltip: MaterialLocalizations.of(context).deleteButtonTooltip,
+                icon: InkIcon(InkGlyph.close, color: muted),
+                onPressed: onClear,
+              ),
+            Container(
+              width: 1,
+              height: 20,
+              color: AppThemeVisuals.of(context).divider,
+            ),
+            Builder(
+              builder: (buttonContext) => Tooltip(
+                message: l10n.categories,
+                child: InkWell(
+                  key: categoryKey,
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  onTap: () {
+                    final hadFocus = focusNode.hasFocus;
+                    _openCategoryMenu(
+                      buttonContext,
+                      current: category,
+                      apply: (picked) => applyCategory(picked, hadFocus),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 14, 12, 14),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 80),
+                          child: Text(
+                            active
+                                ? category.localizedExerciseCategory(l10n)
+                                : l10n.filterAll,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: categoryColor,
+                              fontWeight: active ? FontWeight.w600 : null,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        InkIcon(
+                          InkGlyph.expand,
+                          size: 16,
+                          color: categoryColor,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      onChanged: onChanged,
+    );
   }
 
   @override
@@ -338,6 +502,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     if (v == _tab) return;
     if (_tab == 0) _dropSearchFocus(_planSearchFocus);
     if (_tab == 1) _dropSearchFocus(_exerciseSearchFocus);
+    _foldIdleSearches();
     setState(() => _tab = v);
     final path = '/records?tab=train&sub=${_subName(v)}';
     _appliedRouteKey = '/records?tab=train&sub=${_subName(v)}';
@@ -606,7 +771,6 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
 
   Widget _plansPanel(BuildContext context, {required bool showHistory}) {
     final l10n = context.l10n;
-    final theme = Theme.of(context);
     final categoryById = {
       for (final exercise
           in ref.watch(exercisesProvider).asData?.value ?? const <Exercise>[])
@@ -622,55 +786,44 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
             child: Row(
               children: [
-                if (!_planSearchOpen)
-                  IconButton(
-                    key: const ValueKey('plan-search'),
-                    tooltip: l10n.planName,
-                    onPressed: () => setState(() => _planSearchOpen = true),
-                    icon: const InkIcon(InkGlyph.search),
-                  )
-                else
-                  Expanded(
-                    child: TapRegion(
-                      groupId: _planSearchGroup,
-                      onTapOutside: (event) =>
-                          _onSearchOutsideDown(event, plan: true),
-                      onTapUpOutside: (event) =>
-                          _onSearchOutsideUp(event, plan: true),
-                      child: TextField(
+                Expanded(
+                  child: TapRegion(
+                    groupId: _planSearchGroup,
+                    onTapOutside: (event) =>
+                        _onSearchOutsideDown(event, plan: true),
+                    onTapUpOutside: (event) =>
+                        _onSearchOutsideUp(event, plan: true),
+                    child: ExpandingSearch(
+                      expanded: _planSearchOpen,
+                      openKey: const ValueKey('plan-search-open'),
+                      tooltip: l10n.planName,
+                      onExpand: () => _openSearch(plan: true),
+                      child: _searchField(
+                        key: const ValueKey('plan-search'),
+                        controller: _planSearchController,
                         focusNode: _planSearchFocus,
-                        decoration: InputDecoration(
-                          hintText: l10n.planName,
-                          prefixIcon: Builder(
-                            builder: (buttonContext) => IconButton(
-                              key: const ValueKey('plan-category-filter'),
-                              tooltip: l10n.categories,
-                              onPressed: () => _openCategoryMenu(
-                                buttonContext,
-                                apply: (category) {
-                                  _planCategory = category;
-                                  if (!_planSearchFocus.hasFocus &&
-                                      _planQuery.isEmpty &&
-                                      _planCategory == null) {
-                                    _planSearchOpen = false;
-                                  }
-                                },
-                              ),
-                              icon: InkIcon(
-                                InkGlyph.folder,
-                                color: _planCategory == null
-                                    ? theme.colorScheme.onSurfaceVariant
-                                    : theme.colorScheme.primary,
-                              ),
-                            ),
-                          ),
-                        ),
+                        hint: l10n.planName,
+                        hasQuery: _planQuery.isNotEmpty,
                         onChanged: (v) =>
                             setState(() => _planQuery = v.trim().toLowerCase()),
+                        onClear: () {
+                          _planSearchController.clear();
+                          setState(() => _planQuery = '');
+                        },
+                        categoryKey: const ValueKey('plan-category-filter'),
+                        category: _planCategory,
+                        applyCategory: (category, hadFocus) {
+                          _planCategory = category;
+                          if (!hadFocus &&
+                              category == null &&
+                              _planQuery.isEmpty) {
+                            _planSearchOpen = false;
+                          }
+                        },
                       ),
                     ),
                   ),
-                if (!_planSearchOpen) const Spacer(),
+                ),
                 PlainIconAction(
                   iconWidget: const InkIcon(InkGlyph.add),
                   label: l10n.fabNewPlan,
@@ -922,7 +1075,6 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
 
   Widget _exercisesPanel(BuildContext context) {
     final l10n = context.l10n;
-    final theme = Theme.of(context);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: _discardExerciseSearch,
@@ -933,55 +1085,42 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
             child: Row(
               children: [
-                if (!_exerciseSearchOpen)
-                  IconButton(
-                    key: const ValueKey('exercise-library-search'),
-                    tooltip: l10n.exerciseName,
-                    onPressed: () => setState(() => _exerciseSearchOpen = true),
-                    icon: const InkIcon(InkGlyph.search),
-                  )
-                else
-                  Expanded(
-                    child: TapRegion(
-                      groupId: _exerciseSearchGroup,
-                      onTapOutside: (event) =>
-                          _onSearchOutsideDown(event, plan: false),
-                      onTapUpOutside: (event) =>
-                          _onSearchOutsideUp(event, plan: false),
-                      child: TextField(
+                Expanded(
+                  child: TapRegion(
+                    groupId: _exerciseSearchGroup,
+                    onTapOutside: (event) =>
+                        _onSearchOutsideDown(event, plan: false),
+                    onTapUpOutside: (event) =>
+                        _onSearchOutsideUp(event, plan: false),
+                    child: ExpandingSearch(
+                      expanded: _exerciseSearchOpen,
+                      openKey: const ValueKey('exercise-library-search-open'),
+                      tooltip: l10n.exerciseName,
+                      onExpand: () => _openSearch(plan: false),
+                      child: _searchField(
+                        key: const ValueKey('exercise-library-search'),
+                        controller: _exerciseSearchController,
                         focusNode: _exerciseSearchFocus,
-                        decoration: InputDecoration(
-                          hintText: l10n.exerciseName,
-                          prefixIcon: Builder(
-                            builder: (buttonContext) => IconButton(
-                              key: const ValueKey('exercise-category-filter'),
-                              tooltip: l10n.categories,
-                              onPressed: () => _openCategoryMenu(
-                                buttonContext,
-                                apply: (category) {
-                                  _category = category;
-                                  if (!_exerciseSearchFocus.hasFocus &&
-                                      _query.isEmpty &&
-                                      _category == null) {
-                                    _exerciseSearchOpen = false;
-                                  }
-                                },
-                              ),
-                              icon: InkIcon(
-                                InkGlyph.folder,
-                                color: _category == null
-                                    ? theme.colorScheme.onSurfaceVariant
-                                    : theme.colorScheme.primary,
-                              ),
-                            ),
-                          ),
-                        ),
+                        hint: l10n.exerciseName,
+                        hasQuery: _query.isNotEmpty,
                         onChanged: (v) =>
                             setState(() => _query = v.trim().toLowerCase()),
+                        onClear: () {
+                          _exerciseSearchController.clear();
+                          setState(() => _query = '');
+                        },
+                        categoryKey: const ValueKey('exercise-category-filter'),
+                        category: _category,
+                        applyCategory: (category, hadFocus) {
+                          _category = category;
+                          if (!hadFocus && category == null && _query.isEmpty) {
+                            _exerciseSearchOpen = false;
+                          }
+                        },
                       ),
                     ),
                   ),
-                if (!_exerciseSearchOpen) const Spacer(),
+                ),
                 TapRegion(
                   groupId: _exerciseSearchGroup,
                   child: PlainIconAction(
