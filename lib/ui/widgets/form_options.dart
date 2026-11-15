@@ -248,7 +248,7 @@ class FormOptions {
   /// Meal portion options; consecutive values differ by at most [step] (default 5g).
   static List<double> mealGrams({
     double min = 5,
-    double max = 500,
+    double max = 1000,
     double step = 5,
   }) {
     final out = <double>[];
