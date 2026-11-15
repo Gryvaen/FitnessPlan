@@ -519,6 +519,19 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                                       value: 'preset',
                                       child: Text(l10n.saveAsPreset),
                                     ),
+                                    if (isSelectedToday)
+                                      PopupMenuItem(
+                                        key: const ValueKey(
+                                          'today-clear-day-meals',
+                                        ),
+                                        value: 'clearDay',
+                                        child: Text(
+                                          l10n.clearTodayMeals,
+                                          style: TextStyle(
+                                            color: theme.colorScheme.error,
+                                          ),
+                                        ),
+                                      ),
                                   ],
                                 ),
                             ],
@@ -643,6 +656,40 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         initialName: isSelectedToday ? l10n.mealPresets : dayLabel,
         entries: meals,
       );
+    } else if (value == 'clearDay') {
+      if (!isSelectedToday) return;
+      final repo = ref.read(mealRepositoryProvider);
+      final count = (await repo.forDay(day)).length;
+      if (count == 0 || !mounted) return;
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l10n.clearTodayMeals),
+          content: Text(l10n.confirmClearTodayMeals(count)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l10n.delete),
+            ),
+          ],
+        ),
+      );
+      if (ok != true || !mounted) return;
+      final messenger = ScaffoldMessenger.of(context);
+      try {
+        final deleted = await repo.deleteDay(day);
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.clearedTodayMeals(deleted))),
+        );
+      } catch (error) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.clearFailed('$error'))),
+        );
+      }
     }
   }
 }

@@ -288,6 +288,16 @@ class MealRepository {
         .go();
   }
 
+  /// 「删除今日所有记录」: deletes every entry on [day]; returns how many.
+  Future<int> deleteDay(DateTime day) async {
+    CalendarDay.ensureEditableDay(day);
+    final start = _dayStart(day);
+    final end = _dayEnd(day);
+    return (_db.delete(
+      _db.mealEntries,
+    )..where((t) => t.date.isBetweenValues(start, end))).go();
+  }
+
   /// Appends [from] day's meals not already named in the same meal type on
   /// [to]. Recalculates macros from current food rows.
   /// [to] must be today; [from] may be any past day.

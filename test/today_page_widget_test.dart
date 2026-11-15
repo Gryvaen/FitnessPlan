@@ -417,6 +417,83 @@ void main() {
       expect(find.text('LOG_MEAL_PAGE'), findsOneWidget);
     });
 
+    Future<void> seedTodayAndYesterday() async {
+      final db = h.db;
+      final foodId = await db
+          .into(db.foodItems)
+          .insert(
+            FoodItemsCompanion.insert(
+              name: 'Test rice',
+              category: 'test',
+              kcalPer100: 100,
+              proteinPer100: 2,
+              carbPer100: 22,
+              fatPer100: 0.5,
+            ),
+          );
+      final today = CalendarDay.todayLocal();
+      for (final (day, type) in [
+        (today, MealType.breakfast),
+        (today, MealType.lunch),
+        (CalendarDay.addDays(today, -1), MealType.dinner),
+      ]) {
+        await db
+            .into(db.mealEntries)
+            .insert(
+              MealEntriesCompanion.insert(
+                date: day,
+                mealType: type.name,
+                foodId: foodId,
+                foodName: 'Test rice',
+                grams: 100,
+                calories: 100,
+                proteinG: 2,
+                carbG: 22,
+                fatG: 0.5,
+              ),
+            );
+      }
+    }
+
+    Future<void> openClearDayDialog(WidgetTester tester) async {
+      final more = await _show(tester, find.byTooltip('More'));
+      await tester.tap(more);
+      await _settle(tester);
+      await tester.tap(find.text('Delete all of today’s logs'));
+      await _settle(tester);
+      expect(
+        find.text('Delete all 2 meal logs from today? This can’t be undone.'),
+        findsOneWidget,
+      );
+    }
+
+    testWidgets('more menu deletes all of today’s meal logs', (tester) async {
+      await seedTodayAndYesterday();
+      await _pump(tester, h);
+      await openClearDayDialog(tester);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await _settle(tester);
+      final meals = h.container.read(mealRepositoryProvider);
+      final today = CalendarDay.todayLocal();
+      expect(await meals.forDay(today), isEmpty);
+      expect(await meals.forDay(CalendarDay.addDays(today, -1)), hasLength(1));
+      expect(find.text('Deleted 2 logs'), findsOneWidget);
+    });
+
+    testWidgets('cancelling the delete-all dialog keeps today’s logs', (
+      tester,
+    ) async {
+      await seedTodayAndYesterday();
+      await _pump(tester, h);
+      await openClearDayDialog(tester);
+
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await _settle(tester);
+      final meals = h.container.read(mealRepositoryProvider);
+      expect(await meals.forDay(CalendarDay.todayLocal()), hasLength(2));
+    });
+
     testWidgets('plain plus on workout opens the plan picker', (tester) async {
       await _pump(tester, h);
       final plus = _semantic("Add today's workout");

@@ -234,6 +234,27 @@ void main() {
     expect(empty.proteinG, 0);
   });
 
+  test('deleteDay clears only today and refuses past days', () async {
+    final today = CalendarDay.todayLocal();
+    final yesterday = CalendarDay.addDays(today, -1);
+    for (final type in [MealType.breakfast, MealType.lunch]) {
+      await _seedMeal(db, date: today, mealType: type, food: rice, grams: 100);
+    }
+    await _seedMeal(
+      db,
+      date: yesterday,
+      mealType: MealType.dinner,
+      food: chicken,
+      grams: 100,
+    );
+
+    expect(await repo.deleteDay(today), 2);
+    expect(await repo.forDay(today), isEmpty);
+    expect(await repo.forDay(yesterday), hasLength(1));
+    expect(() => repo.deleteDay(yesterday), throwsA(anything));
+    expect(await repo.forDay(yesterday), hasLength(1));
+  });
+
   test('day boundaries do not bleed across midnight', () async {
     final dayA = DateTime(2026, 7, 10);
     final dayB = DateTime(2026, 7, 11);

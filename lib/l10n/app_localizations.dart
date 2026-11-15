@@ -2072,6 +2072,24 @@ abstract class AppLocalizations {
   /// **'Delete all {name} entries logged today?'**
   String confirmClearMeal(String name);
 
+  /// No description provided for @clearTodayMeals.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all of today’s logs'**
+  String get clearTodayMeals;
+
+  /// No description provided for @confirmClearTodayMeals.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all {count} meal logs from today? This can’t be undone.'**
+  String confirmClearTodayMeals(int count);
+
+  /// No description provided for @clearedTodayMeals.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted {count} logs'**
+  String clearedTodayMeals(int count);
+
   /// No description provided for @toolBodyFat.
   ///
   /// In en, this message translates to:

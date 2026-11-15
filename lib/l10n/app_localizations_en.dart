@@ -1043,6 +1043,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get clearTodayMeals => 'Delete all of today’s logs';
+
+  @override
+  String confirmClearTodayMeals(int count) {
+    return 'Delete all $count meal logs from today? This can’t be undone.';
+  }
+
+  @override
+  String clearedTodayMeals(int count) {
+    return 'Deleted $count logs';
+  }
+
+  @override
   String get toolBodyFat => 'Body-fat estimate';
 
   @override
