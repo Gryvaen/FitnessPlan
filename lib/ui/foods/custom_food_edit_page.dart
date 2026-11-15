@@ -146,8 +146,9 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
       return;
     }
     final fields = _caloriesOnly ? [_kcal] : _nutrients;
+    // 临时热量可只写名称（不知道热量时），空热量按 0 记，之后可在详情里补。
     if (_name.text.trim().isEmpty ||
-        _kcal.text.trim().isEmpty ||
+        (!_caloriesOnly && _kcal.text.trim().isEmpty) ||
         fields.any(
           (c) =>
               c.text.trim().isNotEmpty &&

@@ -178,6 +178,32 @@ void main() {
     );
   }
 
+  testWidgets('calorie mode saves with only a name as 0 kcal', (tester) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    await openForm(tester, db);
+    await tester.enterText(field('名称'), '朋友请的饭');
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(find.text('记录临时热量'), findsOneWidget);
+    await reveal(tester, find.text('加入饮食记录'));
+    await tester.tap(find.text('加入饮食记录'));
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    });
+    await tester.pumpAndSettle();
+    final entries = await tester.runAsync(
+      () => db.select(db.mealEntries).get(),
+    );
+    expect(entries, hasLength(1));
+    expect(entries!.single.caloriesOnly, isTrue);
+    expect(entries.single.calories, 0);
+    expect(entries.single.grams, 0);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('calorie mode saves without grams and edits total calories', (
     tester,
   ) async {
