@@ -2090,6 +2090,24 @@ abstract class AppLocalizations {
   /// **'Deleted {count} logs'**
   String clearedTodayMeals(int count);
 
+  /// No description provided for @clearTodayWorkouts.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all of today’s logs'**
+  String get clearTodayWorkouts;
+
+  /// No description provided for @confirmClearTodayWorkouts.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all {count} exercises from today, including logged sets? This can’t be undone.'**
+  String confirmClearTodayWorkouts(int count);
+
+  /// No description provided for @clearedTodayWorkouts.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted {count} exercises'**
+  String clearedTodayWorkouts(int count);
+
   /// No description provided for @toolBodyFat.
   ///
   /// In en, this message translates to:

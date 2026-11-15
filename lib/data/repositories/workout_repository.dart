@@ -1005,6 +1005,20 @@ class WorkoutRepository {
     });
   }
 
+  /// 「删除今日所有记录」: removes every day-workout group on [day] with
+  /// their items and set logs; returns how many exercises were removed.
+  Future<int> deleteDayWorkouts(DateTime day) async {
+    CalendarDay.ensureEditableDay(day);
+    return _db.transaction(() async {
+      var removed = 0;
+      for (final workout in await dayWorkoutsFor(day)) {
+        removed += (await dayItemsFor(workout.id)).length;
+        await _deleteDayWorkoutById(workout.id);
+      }
+      return removed;
+    });
+  }
+
   /// Last chosen sets and reps/seconds for [exerciseId].
   ///
   /// Prefers the newest day-workout item (logging a set writes the chosen

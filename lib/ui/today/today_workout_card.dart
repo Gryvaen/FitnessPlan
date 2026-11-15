@@ -455,6 +455,47 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     ref.invalidate(allWorkoutHistoryProvider);
   }
 
+  /// 「删除今日所有记录」: after confirming, removes every group on the day.
+  Future<void> _clearDay(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
+    final count = ref.read(dayWorkoutProvider(widget.day)).value?.items.length;
+    if (count == null || count == 0) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      useRootNavigator: true,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.clearTodayWorkouts),
+        content: Text(l10n.confirmClearTodayWorkouts(count)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final removed = await ref
+          .read(workoutRepositoryProvider)
+          .deleteDayWorkouts(widget.day);
+      _itemOrder.clear();
+      _groupOrder = null;
+      ref.invalidate(workoutHistoryProvider);
+      ref.invalidate(allWorkoutHistoryProvider);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.clearedTodayWorkouts(removed))),
+      );
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.clearFailed('$e'))));
+    }
+  }
+
   Future<void> _editGroupPlan(
     BuildContext context,
     DayWorkoutGroup group,
@@ -475,6 +516,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     required bool canAdd,
     required bool canCopyYesterday,
     required bool canSaveAsPlan,
+    required bool canClearDay,
     required List<DayWorkoutGroup> yesterdayGroups,
     required String? summary,
   }) {
@@ -502,17 +544,32 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
                 ),
             ],
           ),
-        if (canSaveAsPlan)
+        if (canSaveAsPlan || canClearDay)
           PopupMenuButton<String>(
+            key: const ValueKey('today-workout-more'),
             tooltip: l10n.more,
             icon: const InkIcon(InkGlyph.moreVertical),
             onSelected: (value) async {
               if (value == 'savePlan') {
                 await _saveAsPlan(context, ref);
+              } else if (value == 'clearDay') {
+                await _clearDay(context, ref);
               }
             },
             itemBuilder: (context) => [
-              PopupMenuItem(value: 'savePlan', child: Text(l10n.saveAsPlan)),
+              if (canSaveAsPlan)
+                PopupMenuItem(value: 'savePlan', child: Text(l10n.saveAsPlan)),
+              if (canClearDay)
+                PopupMenuItem(
+                  key: const ValueKey('today-clear-day-workouts'),
+                  value: 'clearDay',
+                  child: Text(
+                    l10n.clearTodayWorkouts,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ),
             ],
           ),
       ],
@@ -803,6 +860,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
             canAdd: editable,
             canCopyYesterday: canCopyYesterday,
             canSaveAsPlan: false,
+            canClearDay: false,
             yesterdayGroups: yesterdayGroups,
             summary: null,
           ),
@@ -830,6 +888,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
                 canAdd: editable,
                 canCopyYesterday: canCopyYesterday,
                 canSaveAsPlan: canSaveAsPlan,
+                canClearDay: false,
                 yesterdayGroups: yesterdayGroups,
                 summary: l10n.noWorkoutShort,
               ),
@@ -864,6 +923,7 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
               canAdd: editable,
               canCopyYesterday: canCopyYesterday,
               canSaveAsPlan: canSaveAsPlan,
+              canClearDay: editable,
               yesterdayGroups: yesterdayGroups,
               summary: '$done/$total',
             ),

@@ -107,7 +107,7 @@ UI 统一 import `app_providers.dart`（汇总导出）。
 |---|---|
 | `today_page.dart` | 今日页：热量环、三大营养素、饮水、步数、各餐摘要、平台期提示、激励语、日期切换；也包含步数详情弹窗；饮食记录的三点菜单有「保存为套餐」和「删除今日所有记录」（`MealRepository.deleteDay`，仅当天） |
 | `today_summary_widgets.dart` | `CalorieRing`、`MacroColumn`、`WaterCupControl` |
-| `today_workout_card.dart` | 当天训练清单和记组 |
+| `today_workout_card.dart` | 当天训练清单和记组；三点菜单有「保存为计划」和「删除今日所有记录」（`WorkoutRepository.deleteDayWorkouts`，仅当天） |
 | `deficit_date_picker.dart` | 月历，显示每天的实际热量缺口；长按标记放纵日/休息日 |
 | `today_section_header.dart` | 分区标题 |
 

@@ -1352,6 +1352,73 @@ void main() {
     expect(snap.groups.single.workout.planName, '下肢');
   });
 
+  test('deleteDayWorkouts clears only today and refuses past days', () async {
+    final pushup = await addTestExercise(repo, name: '俯卧撑');
+    final squat = await addTestExercise(repo, name: '深蹲', category: 'legs');
+    final upperId = await repo.createPlan(
+      name: '上肢',
+      items: [
+        PlanDraftItem(
+          exerciseId: pushup.id,
+          exerciseName: pushup.name,
+          targetSets: 3,
+          targetReps: 10,
+        ),
+        PlanDraftItem(
+          exerciseId: squat.id,
+          exerciseName: squat.name,
+          targetSets: 3,
+          targetReps: 10,
+        ),
+      ],
+    );
+    final lowerId = await repo.createPlan(
+      name: '下肢',
+      items: [
+        PlanDraftItem(
+          exerciseId: squat.id,
+          exerciseName: squat.name,
+          targetSets: 4,
+          targetReps: 8,
+        ),
+      ],
+    );
+    final today = CalendarDay.todayLocal();
+    final yesterday = CalendarDay.addDays(today, -1);
+    final oldGroup = await db
+        .into(db.dayWorkouts)
+        .insert(DayWorkoutsCompanion.insert(date: yesterday));
+    await db
+        .into(db.dayWorkoutItems)
+        .insert(
+          DayWorkoutItemsCompanion.insert(
+            dayWorkoutId: oldGroup,
+            exerciseId: pushup.id,
+            exerciseName: pushup.name,
+            targetSets: 3,
+            targetReps: 10,
+          ),
+        );
+    await repo.applyPlanToDay(planId: upperId, day: today);
+    await repo.applyPlanToDay(planId: lowerId, day: today);
+    final snap = await repo.daySnapshot(today);
+    await repo.logSet(
+      day: today,
+      exerciseId: pushup.id,
+      exerciseName: pushup.name,
+      dayWorkoutItemId: snap.items.first.item.id,
+      reps: 10,
+    );
+
+    expect(await repo.deleteDayWorkouts(today), 3);
+    expect(await repo.dayWorkoutsFor(today), isEmpty);
+    expect((await repo.daySnapshot(today)).isEmpty, isTrue);
+    expect(await db.select(db.workoutSetLogs).get(), isEmpty);
+    expect(await repo.dayWorkoutsFor(yesterday), hasLength(1));
+    expect(await repo.dayItemsFor(oldGroup), hasLength(1));
+    expect(() => repo.deleteDayWorkouts(yesterday), throwsA(anything));
+  });
+
   test('applyPlanToDay rejects past days', () async {
     final pushup = await addTestExercise(repo, name: '俯卧撑');
     final planId = await repo.createPlan(

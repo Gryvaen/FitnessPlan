@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:diet/data/db.dart';
 import 'package:diet/data/repositories/diet_strategy_repository.dart';
+import 'package:diet/data/repositories/workout_repository.dart';
 import 'package:diet/domain/calendar_day.dart';
 import 'package:diet/domain/diet_plan.dart';
 import 'package:diet/domain/diet_strategy.dart';
@@ -492,6 +493,76 @@ void main() {
       await _settle(tester);
       final meals = h.container.read(mealRepositoryProvider);
       expect(await meals.forDay(CalendarDay.todayLocal()), hasLength(2));
+    });
+
+    Future<void> seedTodayWorkout() async {
+      final repo = h.container.read(workoutRepositoryProvider);
+      final ids = [
+        for (final name in ['Test press', 'Test squat'])
+          await repo.addCustomExercise(
+            name: name,
+            unit: ExerciseUnit.reps,
+            category: 'chest',
+          ),
+      ];
+      final planId = await repo.createPlan(
+        name: 'Test plan',
+        items: [
+          for (final (i, id) in ids.indexed)
+            PlanDraftItem(
+              exerciseId: id,
+              exerciseName: 'Test exercise $i',
+              targetSets: 3,
+              targetReps: 10,
+            ),
+        ],
+      );
+      await repo.applyPlanToDay(planId: planId, day: CalendarDay.todayLocal());
+    }
+
+    Future<void> openClearWorkoutsDialog(WidgetTester tester) async {
+      final more = await _show(
+        tester,
+        find.byKey(const ValueKey('today-workout-more')),
+      );
+      await tester.tap(more);
+      await _settle(tester);
+      await tester.tap(find.byKey(const ValueKey('today-clear-day-workouts')));
+      await _settle(tester);
+      expect(
+        find.text(
+          'Delete all 2 exercises from today, including logged sets? '
+          'This can’t be undone.',
+        ),
+        findsOneWidget,
+      );
+    }
+
+    testWidgets('workout more menu deletes all of today’s workouts', (
+      tester,
+    ) async {
+      await seedTodayWorkout();
+      await _pump(tester, h);
+      await openClearWorkoutsDialog(tester);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await _settle(tester);
+      final repo = h.container.read(workoutRepositoryProvider);
+      expect(await repo.dayWorkoutsFor(CalendarDay.todayLocal()), isEmpty);
+      expect(find.text('Deleted 2 exercises'), findsOneWidget);
+    });
+
+    testWidgets('cancelling the delete-all workouts dialog keeps them', (
+      tester,
+    ) async {
+      await seedTodayWorkout();
+      await _pump(tester, h);
+      await openClearWorkoutsDialog(tester);
+
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await _settle(tester);
+      final repo = h.container.read(workoutRepositoryProvider);
+      expect(await repo.dayWorkoutsFor(CalendarDay.todayLocal()), hasLength(1));
     });
 
     testWidgets('plain plus on workout opens the plan picker', (tester) async {

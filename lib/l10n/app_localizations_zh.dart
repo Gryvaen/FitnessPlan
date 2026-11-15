@@ -1045,6 +1045,19 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get clearTodayWorkouts => '删除今日所有记录';
+
+  @override
+  String confirmClearTodayWorkouts(int count) {
+    return '确定删除今天的全部 $count 个训练动作及已记录的组？此操作无法撤销。';
+  }
+
+  @override
+  String clearedTodayWorkouts(int count) {
+    return '已删除 $count 个训练动作';
+  }
+
+  @override
   String get toolBodyFat => '体脂估算';
 
   @override

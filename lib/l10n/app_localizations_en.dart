@@ -1056,6 +1056,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get clearTodayWorkouts => 'Delete all of today’s logs';
+
+  @override
+  String confirmClearTodayWorkouts(int count) {
+    return 'Delete all $count exercises from today, including logged sets? This can’t be undone.';
+  }
+
+  @override
+  String clearedTodayWorkouts(int count) {
+    return 'Deleted $count exercises';
+  }
+
+  @override
   String get toolBodyFat => 'Body-fat estimate';
 
   @override
