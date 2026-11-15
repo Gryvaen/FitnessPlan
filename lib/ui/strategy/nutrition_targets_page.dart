@@ -236,7 +236,7 @@ class _CutNutritionTargets extends ConsumerWidget {
               Expanded(
                 child: Text(
                   i.message(l10n),
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  style: theme.textTheme.meta?.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
                 ),
@@ -513,11 +513,11 @@ class _TdeeCalcMethodTile extends ConsumerWidget {
         InkGlyph.calculator,
         color: AppThemeVisuals.of(context).accent,
       ),
-      title: Text(l10n.tdeeCalcMethod, style: theme.textTheme.titleSmall),
+      title: Text(l10n.tdeeCalcMethod, style: theme.textTheme.rowTitle),
       subtitle: Text(
         '${l10n.currentWeight} ${profile.weightKg.toStringAsFixed(1)} kg · '
         '${l10n.estimatedTdee} ${plan.tdee.round()} kcal',
-        style: theme.textTheme.bodySmall,
+        style: theme.textTheme.meta,
       ),
       trailing: const InkIcon(InkGlyph.chevronRight),
       onTap: () => showModalBottomSheet<void>(
@@ -531,13 +531,13 @@ class _TdeeCalcMethodTile extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(l10n.tdeeCalcMethod, style: theme.textTheme.titleMedium),
+                Text(l10n.tdeeCalcMethod, style: theme.textTheme.sectionTitle),
                 const SizedBox(height: AppSpacing.field),
                 CalorieBreakdown(plan: plan, compact: true),
                 const SizedBox(height: AppSpacing.compact),
-                Text(l10n.strategyBasisBody, style: theme.textTheme.bodySmall),
+                Text(l10n.strategyBasisBody, style: theme.textTheme.meta),
                 const SizedBox(height: 6),
-                Text(l10n.strategyDisclaimer, style: theme.textTheme.bodySmall),
+                Text(l10n.strategyDisclaimer, style: theme.textTheme.meta),
               ],
             ),
           ),

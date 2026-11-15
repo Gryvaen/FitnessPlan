@@ -61,7 +61,7 @@ class CutRoundStatsView extends ConsumerWidget {
               l10n.cultivationHistorySegmentCurrent(
                 AppDates.md(segment.start, locale),
               ),
-              style: theme.textTheme.titleMedium,
+              style: theme.textTheme.subsectionTitle,
             ),
             const SizedBox(height: 4),
             Text(
@@ -312,7 +312,7 @@ class CutRoundStatsView extends ConsumerWidget {
         const SizedBox(height: 12),
         Text(
           l10n.cutRoundWeightDelta('$sign${formatKg(rounded.abs())}'),
-          style: theme.textTheme.bodyMedium?.copyWith(
+          style: theme.textTheme.bodyText?.copyWith(
             color: deltaColor,
             fontWeight: FontWeight.w600,
             fontFeatures: _tabular,
@@ -367,12 +367,12 @@ class _Block extends StatelessWidget {
               child: InkIcon(glyph, color: color),
             ),
             const SizedBox(width: 10),
-            Expanded(child: Text(title, style: theme.textTheme.titleSmall)),
+            Expanded(child: Text(title, style: theme.textTheme.rowTitle)),
             if (hint != null)
               Flexible(
                 child: Text(
                   hint!,
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  style: theme.textTheme.meta?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                   textAlign: TextAlign.right,
@@ -434,14 +434,14 @@ class _Metric extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: theme.textTheme.bodySmall?.copyWith(color: muted)),
+        Text(label, style: theme.textTheme.meta?.copyWith(color: muted)),
         const SizedBox(height: 4),
         Text.rich(
           TextSpan(
             children: [
               TextSpan(
                 text: value,
-                style: theme.textTheme.headlineSmall?.copyWith(
+                style: theme.textTheme.statValue?.copyWith(
                   color: color,
                   fontWeight: FontWeight.w600,
                   fontFeatures: _tabular,
@@ -450,7 +450,7 @@ class _Metric extends StatelessWidget {
               if (unit.isNotEmpty)
                 TextSpan(
                   text: ' $unit',
-                  style: theme.textTheme.bodyMedium?.copyWith(color: muted),
+                  style: theme.textTheme.bodyText?.copyWith(color: muted),
                 ),
             ],
           ),
@@ -461,7 +461,7 @@ class _Metric extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             caption!,
-            style: theme.textTheme.bodySmall?.copyWith(color: muted),
+            style: theme.textTheme.meta?.copyWith(color: muted),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -522,7 +522,7 @@ class _NameRows extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final divider = AppThemeVisuals.of(context).divider;
-    final figureStyle = theme.textTheme.bodyMedium?.copyWith(
+    final figureStyle = theme.textTheme.bodyText?.copyWith(
       fontFeatures: _tabular,
     );
     return Column(
@@ -536,7 +536,7 @@ class _NameRows extends StatelessWidget {
                 Expanded(
                   child: Text(
                     rows[i].$1,
-                    style: theme.textTheme.bodyLarge,
+                    style: theme.textTheme.rowTitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -586,7 +586,7 @@ class _LiftRows extends StatelessWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final locale = Localizations.localeOf(context);
-    final caption = theme.textTheme.bodySmall?.copyWith(
+    final caption = theme.textTheme.meta?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
     final (name, lift) = entry;
@@ -607,7 +607,7 @@ class _LiftRows extends StatelessWidget {
               children: [
                 Text(
                   name,
-                  style: theme.textTheme.bodyLarge,
+                  style: theme.textTheme.rowTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -645,7 +645,7 @@ class _LiftRows extends StatelessWidget {
               children: [
                 TextSpan(
                   text: gym.formatKg(last),
-                  style: theme.textTheme.titleMedium?.copyWith(
+                  style: theme.textTheme.statFigure?.copyWith(
                     fontWeight: FontWeight.w600,
                     fontFeatures: _tabular,
                   ),
@@ -671,7 +671,7 @@ class _EmptyLine extends StatelessWidget {
     final theme = Theme.of(context);
     return Text(
       text,
-      style: theme.textTheme.bodyMedium?.copyWith(
+      style: theme.textTheme.bodyText?.copyWith(
         color: theme.colorScheme.onSurfaceVariant,
       ),
     );

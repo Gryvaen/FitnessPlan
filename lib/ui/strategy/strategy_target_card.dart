@@ -100,7 +100,7 @@ class StrategyTargetCard extends StatelessWidget {
     final theme = Theme.of(context);
     final v = AppThemeVisuals.of(context);
     final scheme = theme.colorScheme;
-    final muted = theme.textTheme.bodySmall?.copyWith(
+    final muted = theme.textTheme.meta?.copyWith(
       color: scheme.onSurfaceVariant,
     );
     return Padding(
@@ -115,7 +115,7 @@ class StrategyTargetCard extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleMedium,
+                  style: theme.textTheme.subsectionTitle,
                 ),
               ),
               if (status != null) ...[
@@ -137,7 +137,7 @@ class StrategyTargetCard extends StatelessWidget {
             children: [
               Text(
                 kcal.isFinite ? '${kcal.round()}' : '–',
-                style: theme.textTheme.headlineMedium?.copyWith(
+                style: theme.textTheme.statValue?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -227,7 +227,7 @@ class _MacroLegend extends StatelessWidget {
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall,
+              style: theme.textTheme.statLabel,
             ),
           ),
         ],
@@ -254,11 +254,11 @@ class StrategySectionHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: theme.textTheme.titleMedium),
+          Text(title, style: theme.textTheme.sectionTitle),
           if (hint != null && hint!.isNotEmpty)
             Text(
               hint!,
-              style: theme.textTheme.bodySmall?.copyWith(
+              style: theme.textTheme.meta?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
@@ -296,26 +296,30 @@ class StrategyFactRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style: theme.textTheme.rowTitle?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
           ),
           const SizedBox(width: AppSpacing.field),
+          // Value takes at most half the row but hugs the right edge.
           Flexible(
-            child: Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: value,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  if (unit != null)
-                    TextSpan(text: ' $unit', style: theme.textTheme.bodySmall),
-                ],
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: value,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    if (unit != null)
+                      TextSpan(text: ' $unit', style: theme.textTheme.meta),
+                  ],
+                ),
+                textAlign: TextAlign.end,
+                style: theme.textTheme.rowValue,
               ),
-              textAlign: TextAlign.end,
-              style: theme.textTheme.bodyMedium,
             ),
           ),
         ],
@@ -367,7 +371,7 @@ class StrategyActionRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: theme.textTheme.bodyLarge?.copyWith(
+                  style: theme.textTheme.rowTitle?.copyWith(
                     color: destructive && enabled ? scheme.error : null,
                   ),
                 ),

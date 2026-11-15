@@ -1002,6 +1002,13 @@ void main() {
     await _pump(tester, '/profile/nutrition/strategy/configure?kind=balanced');
     expect(find.byType(Slider), findsNothing);
     final summary = find.byKey(const ValueKey('strategyTopSummary'));
+    // The summary sits at the top; scroll back before reading it, since the
+    // list may have recycled it while lower sections were opened.
+    Future<String?> summaryText() async {
+      await _show(tester, summary, delta: -120);
+      return tester.widget<Text>(summary).data;
+    }
+
     final before = tester.widget<Text>(summary).data;
     await _openStrategySection(tester, 'strategy-section-target');
     await tester.drag(find.byType(Slider), const Offset(70, 0));
@@ -1011,7 +1018,7 @@ void main() {
     // Sections open independently: the target stays open beside profile.
     await _openStrategySection(tester, 'strategy-section-profile');
     expect(find.byType(Slider), findsOneWidget);
-    expect(tester.widget<Text>(summary).data, after);
+    expect(await summaryText(), after);
     // Collapse via the header row; the expanded body would take a centre tap.
     final targetSection = await _show(
       tester,
@@ -1021,10 +1028,10 @@ void main() {
     await tester.tapAt(tester.getTopLeft(targetSection) + const Offset(24, 24));
     await _settle(tester);
     expect(find.byType(Slider), findsNothing);
-    expect(tester.widget<Text>(summary).data, after);
+    expect(await summaryText(), after);
     await _openStrategySection(tester, 'strategy-section-target');
     expect(find.byType(Slider), findsOneWidget);
-    expect(tester.widget<Text>(summary).data, after);
+    expect(await summaryText(), after);
     await _openStrategySection(tester, 'strategy-section-effective');
     await tester.tap(await _show(tester, find.text('Start today')));
     await _settle(tester);

@@ -172,7 +172,7 @@ class _PresetFoodAddPageState extends ConsumerState<PresetFoodAddPage> {
       key: ValueKey('preset-picker-food-${food.id}'),
       title: Text(
         food.displayName(context),
-        style: theme.textTheme.bodyLarge?.copyWith(
+        style: theme.textTheme.rowTitle?.copyWith(
           color: dominantMacroColor(
             carbG: food.carbPer100,
             proteinG: food.proteinPer100,
@@ -205,14 +205,17 @@ class _PresetFoodAddPageState extends ConsumerState<PresetFoodAddPage> {
         if (_favorites.isNotEmpty) ...[
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(l10n.favorites, style: theme.textTheme.titleSmall),
+            child: Text(l10n.favorites, style: theme.textTheme.sectionTitle),
           ),
           for (final food in _favorites) _foodTile(food),
         ],
         if (_recent.isNotEmpty) ...[
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: Text(l10n.recentlyEaten, style: theme.textTheme.titleSmall),
+            child: Text(
+              l10n.recentlyEaten,
+              style: theme.textTheme.sectionTitle,
+            ),
           ),
           for (final food in _recent) _foodTile(food),
         ],

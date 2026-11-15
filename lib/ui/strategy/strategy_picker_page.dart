@@ -57,7 +57,7 @@ class _StrategyPickerPageState extends ConsumerState<StrategyPickerPage> {
                     Expanded(
                       child: Text(
                         i.message(l10n),
-                        style: theme.textTheme.bodySmall?.copyWith(
+                        style: theme.textTheme.meta?.copyWith(
                           color: theme.colorScheme.error,
                         ),
                       ),
@@ -101,7 +101,7 @@ class _StrategyRulesNote extends StatelessWidget {
     final theme = Theme.of(context);
     final visuals = AppThemeVisuals.of(context);
     final muted = theme.colorScheme.onSurfaceVariant;
-    final noteStyle = theme.textTheme.bodySmall?.copyWith(height: 1.5);
+    final noteStyle = theme.textTheme.meta?.copyWith(height: 1.5);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -129,7 +129,7 @@ class _StrategyRulesNote extends StatelessWidget {
                     Expanded(
                       child: Text(
                         l10n.strategyRulesTitle,
-                        style: theme.textTheme.bodySmall?.copyWith(
+                        style: theme.textTheme.meta?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: expanded ? visuals.accent : muted,
                         ),
@@ -255,7 +255,7 @@ class _StrategyOption extends StatelessWidget {
                           children: [
                             Text(
                               kind.label(l10n),
-                              style: theme.textTheme.titleMedium?.copyWith(
+                              style: theme.textTheme.rowTitle?.copyWith(
                                 color: !enabled
                                     ? theme.disabledColor
                                     : current
@@ -278,7 +278,7 @@ class _StrategyOption extends StatelessWidget {
                           kind.description(l10n),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
+                          style: theme.textTheme.meta?.copyWith(
                             color: muted,
                             height: 1.4,
                           ),

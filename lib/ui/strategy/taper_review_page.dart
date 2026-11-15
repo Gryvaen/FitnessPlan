@@ -164,9 +164,9 @@ class _TaperReviewPageState extends ConsumerState<TaperReviewPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(l10n.taperRulesBody, style: theme.textTheme.bodySmall),
+                Text(l10n.taperRulesBody, style: theme.textTheme.meta),
                 const SizedBox(height: AppSpacing.compact),
-                Text(l10n.strategyDisclaimer, style: theme.textTheme.bodySmall),
+                Text(l10n.strategyDisclaimer, style: theme.textTheme.meta),
               ],
             ),
           ),
@@ -205,9 +205,7 @@ class _StageLadder extends StatelessWidget {
     if (stages.isEmpty) {
       return Text(
         StrategyIssue.carbBelowMinimum.message(l10n),
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.error,
-        ),
+        style: theme.textTheme.meta?.copyWith(color: theme.colorScheme.error),
       );
     }
     return Column(
@@ -246,7 +244,7 @@ class _StageLadder extends StatelessWidget {
                     child: Text(
                       '${s.day.energy.round()} kcal · '
                       'C ${s.day.carbG.toStringAsFixed(0)} g',
-                      style: theme.textTheme.bodyMedium,
+                      style: theme.textTheme.rowTitle,
                     ),
                   ),
                   if (s.stage == currentStage)
@@ -266,7 +264,7 @@ class _StageLadder extends StatelessWidget {
         const SizedBox(height: AppSpacing.compact),
         Text(
           l10n.taperFloorLine(StrategyRules.minCarbG.round()),
-          style: theme.textTheme.bodySmall?.copyWith(
+          style: theme.textTheme.meta?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),

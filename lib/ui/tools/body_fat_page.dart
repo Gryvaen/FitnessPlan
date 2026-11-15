@@ -91,7 +91,7 @@ class _BodyFatPageState extends ConsumerState<BodyFatPage> {
           const SizedBox(height: 4),
           Text(
             l10n.metricsFromProfileShort(_sex.label(l10n), _age),
-            style: theme.textTheme.bodySmall?.copyWith(
+            style: theme.textTheme.meta?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
@@ -128,12 +128,15 @@ class _BodyFatPageState extends ConsumerState<BodyFatPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(l10n.estimatedBf, style: theme.textTheme.titleMedium),
+                  Text(
+                    l10n.estimatedBf,
+                    style: theme.textTheme.subsectionTitle,
+                  ),
                   const SizedBox(height: 8),
                   if (pct == null)
                     Text(
                       l10n.bfCircumferenceError,
-                      style: theme.textTheme.bodyMedium,
+                      style: theme.textTheme.bodyText,
                     )
                   else
                     Row(

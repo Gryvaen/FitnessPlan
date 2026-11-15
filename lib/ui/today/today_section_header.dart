@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../ink/ink_icon.dart';
+import '../theme/app_theme.dart';
 
 /// Open section heading. Add and overflow remain independent actions.
 class TodaySectionHeader extends StatelessWidget {
@@ -25,9 +26,9 @@ class TodaySectionHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: Theme.of(context).textTheme.titleMedium),
+              Text(title, style: Theme.of(context).textTheme.sectionTitle),
               if (summary != null && summary!.isNotEmpty)
-                Text(summary!, style: Theme.of(context).textTheme.bodySmall),
+                Text(summary!, style: Theme.of(context).textTheme.meta),
             ],
           ),
         ),

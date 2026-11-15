@@ -369,7 +369,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                                 : l10n.filterAll,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodyMedium?.copyWith(
+                            style: theme.textTheme.bodyText?.copyWith(
                               color: categoryColor,
                               fontWeight: active ? FontWeight.w600 : null,
                             ),
@@ -559,7 +559,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
                   title,
-                  style: Theme.of(context).textTheme.titleMedium,
+                  style: Theme.of(context).textTheme.sectionTitle,
                 ),
               );
             }
@@ -1295,7 +1295,7 @@ class _HistoryDayRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(dateLabel, style: theme.textTheme.titleSmall),
+                    Text(dateLabel, style: theme.textTheme.rowTitle),
                     const SizedBox(height: 2),
                     Text(detailLabel, style: detailStyle),
                   ],
@@ -1340,7 +1340,7 @@ class _WorkoutHistorySheetState extends State<_WorkoutHistorySheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final highlightStyle = theme.textTheme.bodyMedium?.copyWith(
+    final highlightStyle = theme.textTheme.bodyText?.copyWith(
       color: theme.colorScheme.primary,
     );
     return SafeArea(
@@ -1351,7 +1351,7 @@ class _WorkoutHistorySheetState extends State<_WorkoutHistorySheet> {
           if (index == 0) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: Text(widget.title, style: theme.textTheme.titleMedium),
+              child: Text(widget.title, style: theme.textTheme.sectionTitle),
             );
           }
           final day = widget.days[index - 1];
@@ -1361,7 +1361,7 @@ class _WorkoutHistorySheetState extends State<_WorkoutHistorySheet> {
             detailLabel: widget.labelFor(day),
             detailStyle: highlighted
                 ? highlightStyle
-                : theme.textTheme.bodySmall?.copyWith(
+                : theme.textTheme.meta?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
             onTap: !day.hasActivity

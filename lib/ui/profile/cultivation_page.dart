@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../theme/app_theme.dart';
 import '../../domain/cultivation.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
@@ -273,7 +274,7 @@ class _RealmPanel extends StatelessWidget {
                 realm.label(l10n),
                 '${progress.layer}',
               ),
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              style: Theme.of(context).textTheme.sectionTitle?.copyWith(
                 color: realm.textColor,
                 fontWeight: FontWeight.w500,
               ),
@@ -301,12 +302,12 @@ class _RealmPanel extends StatelessWidget {
                 l10n.cultivationMaxCaption,
                 style: Theme.of(
                   context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                ).textTheme.bodyText?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 2),
               Text(
                 l10n.cultivationMaxSubcaption(formatKg(progress.kgLost)),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                style: Theme.of(context).textTheme.meta?.copyWith(
                   color: const Color(0xFF1B2A24).withValues(alpha: 0.6),
                 ),
               ),
@@ -342,12 +343,12 @@ class _RealmPanel extends StatelessWidget {
                       ),
                 style: Theme.of(
                   context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                ).textTheme.bodyText?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 2),
               Text(
                 l10n.cultivationLostCaption(formatKg(progress.kgLost)),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                style: Theme.of(context).textTheme.meta?.copyWith(
                   color: const Color(0xFF1B2A24).withValues(alpha: 0.6),
                 ),
               ),
@@ -556,7 +557,7 @@ class _CultivationLockedView extends ConsumerWidget {
                   Text(
                     titleText,
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    style: Theme.of(context).textTheme.sectionTitle?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w500,
                     ),
@@ -565,7 +566,7 @@ class _CultivationLockedView extends ConsumerWidget {
                   Text(
                     bodyText,
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    style: Theme.of(context).textTheme.bodyText?.copyWith(
                       color: Colors.white.withValues(alpha: 0.9),
                       height: 1.6,
                     ),
@@ -679,7 +680,7 @@ class _CultivationComingSoonHome extends StatelessWidget {
                 children: [
                   Text(
                     l10n.cultivationComingSoonTitle(goal.label(l10n)),
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    style: Theme.of(context).textTheme.sectionTitle?.copyWith(
                       color: goal.cultivationAccentColor,
                       fontWeight: FontWeight.w500,
                     ),
@@ -687,7 +688,7 @@ class _CultivationComingSoonHome extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     l10n.cultivationComingSoonBody,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    style: Theme.of(context).textTheme.bodyText?.copyWith(
                       color: const Color(0xFF1B2A24).withValues(alpha: 0.75),
                       height: 1.6,
                     ),

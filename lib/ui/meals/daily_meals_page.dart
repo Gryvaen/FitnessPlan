@@ -134,12 +134,12 @@ class DailyMealsPage extends ConsumerWidget {
                       Expanded(
                         child: Text(
                           l10n.mealsRecordSection,
-                          style: Theme.of(context).textTheme.titleMedium,
+                          style: Theme.of(context).textTheme.subsectionTitle,
                         ),
                       ),
                       Text(
                         '${total.round()} kcal',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: Theme.of(context).textTheme.meta,
                       ),
                       if (editable && yesterdayMeals.isNotEmpty)
                         IconButton(
@@ -429,12 +429,12 @@ class _MealTypeSection extends ConsumerWidget {
                   ),
               ],
             ),
-            style: theme.textTheme.titleSmall,
+            style: theme.textTheme.sectionTitle,
           ),
         ),
         Text(
           entries.isEmpty ? l10n.mealNotLogged : '${kcal.round()} kcal',
-          style: theme.textTheme.bodySmall?.copyWith(
+          style: theme.textTheme.rowValue?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
@@ -591,7 +591,7 @@ class _MealEntryTile extends ConsumerWidget {
         carbG: m.carbG,
         proteinG: m.proteinG,
         fatG: m.fatG,
-        style: theme.textTheme.bodyLarge,
+        style: theme.textTheme.rowTitle,
       ),
       subtitle: Text(
         [
@@ -607,7 +607,7 @@ class _MealEntryTile extends ConsumerWidget {
       ),
       trailing: Text(
         '${m.calories.round()} kcal',
-        style: theme.textTheme.titleSmall,
+        style: theme.textTheme.rowValue,
       ),
       onTap: () => context.push('/meal/${m.id}'),
     );
@@ -657,7 +657,7 @@ class _MealEntryTile extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Text(
               name,
-              style: theme.textTheme.bodyLarge,
+              style: theme.textTheme.rowTitle,
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -687,7 +687,7 @@ class _DayTitle extends StatelessWidget {
       textAlign: TextAlign.center,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: Theme.of(context).textTheme.titleMedium,
+      style: Theme.of(context).textTheme.subsectionTitle,
     );
     if (onBackToToday == null) return text;
     return Tooltip(

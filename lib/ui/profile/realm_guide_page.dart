@@ -36,7 +36,7 @@ class RealmGuidePage extends ConsumerWidget {
         children: [
           Text(
             l10n.realmGuideIntro,
-            style: theme.textTheme.bodyMedium?.copyWith(
+            style: theme.textTheme.bodyText?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
               height: 1.5,
             ),
@@ -57,7 +57,7 @@ class RealmGuidePage extends ConsumerWidget {
           const SizedBox(height: AppSpacing.compact),
           Text.rich(
             TextSpan(
-              style: theme.textTheme.bodySmall?.copyWith(
+              style: theme.textTheme.meta?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
                 height: 1.6,
               ),
@@ -137,7 +137,7 @@ class _RealmGuideCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         realm.label(l10n),
-                        style: theme.textTheme.titleMedium?.copyWith(
+                        style: theme.textTheme.rowTitle?.copyWith(
                           color: realm.textColor,
                           fontWeight: FontWeight.w500,
                         ),
@@ -160,7 +160,7 @@ class _RealmGuideCard extends StatelessWidget {
                           _kg(realm.ceilKg),
                           formatKcal(realm.perLayerKcal!),
                         ),
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  style: theme.textTheme.meta?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
@@ -171,7 +171,7 @@ class _RealmGuideCard extends StatelessWidget {
                       realm.next!.label(l10n),
                       _kg(realm.ceilKg),
                     ),
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: theme.textTheme.meta?.copyWith(
                       color: realm.textColor,
                       fontWeight: FontWeight.w600,
                     ),

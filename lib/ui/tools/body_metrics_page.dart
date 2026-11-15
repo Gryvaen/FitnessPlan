@@ -115,7 +115,7 @@ class _BodyMetricsPageState extends ConsumerState<BodyMetricsPage> {
               _age,
               _activity.label(l10n),
             ),
-            style: theme.textTheme.bodySmall?.copyWith(
+            style: theme.textTheme.meta?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
@@ -230,7 +230,7 @@ class _BodyMetricsPageState extends ConsumerState<BodyMetricsPage> {
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.card),
-                child: Text(l10n.ffmiNeedBf, style: theme.textTheme.bodyMedium),
+                child: Text(l10n.ffmiNeedBf, style: theme.textTheme.bodyText),
               ),
             )
           else ...[
@@ -298,11 +298,11 @@ class _ResultCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: theme.textTheme.titleSmall),
+                Text(title, style: theme.textTheme.subsectionTitle),
                 const SizedBox(height: 2),
                 Text(
                   formula,
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  style: theme.textTheme.meta?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                     height: 1.4,
                   ),

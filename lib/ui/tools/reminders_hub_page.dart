@@ -460,7 +460,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
       builder: (sheetContext) => Consumer(
         builder: (sheetContext, ref, _) {
           final theme = Theme.of(sheetContext);
-          final muted = theme.textTheme.bodySmall?.copyWith(
+          final muted = theme.textTheme.meta?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           );
           final settings = ref.watch(remindersProvider);
@@ -480,7 +480,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
                       child: Text(
                         l10n.reminderSettingsTitle,
-                        style: theme.textTheme.titleLarge,
+                        style: theme.textTheme.sectionTitle,
                       ),
                     ),
                     // Problems first: they are why the dot is on the gear.
@@ -500,7 +500,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
                           children: [
                             Text(
                               l10n.reminderRestrictionsSheetTitle,
-                              style: theme.textTheme.titleSmall,
+                              style: theme.textTheme.sectionTitle,
                             ),
                             const SizedBox(height: 4),
                             Text(l10n.reminderLimitSheetIntro, style: muted),
@@ -553,7 +553,7 @@ class _RemindersHubPageState extends ConsumerState<RemindersHubPage>
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
                       child: Text(
                         l10n.reminderContentLabel,
-                        style: theme.textTheme.titleSmall,
+                        style: theme.textTheme.subsectionTitle,
                       ),
                     ),
                     for (final kind in ReminderKind.values)
@@ -610,7 +610,7 @@ class _TrailingValue extends StatelessWidget {
               value,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall?.copyWith(color: muted),
+              style: theme.textTheme.meta?.copyWith(color: muted),
             ),
           ),
           InkIcon(InkGlyph.chevronRight, size: 18, color: muted),
@@ -662,7 +662,7 @@ class _ContentSheetState extends State<_ContentSheet> {
           children: [
             Padding(
               padding: const EdgeInsets.only(top: 4, bottom: 12),
-              child: Text(widget.title, style: theme.textTheme.titleLarge),
+              child: Text(widget.title, style: theme.textTheme.sectionTitle),
             ),
             TextField(
               key: const ValueKey('reminder-content-title'),
@@ -757,7 +757,7 @@ class _ReminderTile extends StatelessWidget {
           title: Text(label),
           subtitle: Text(
             setting.enabled ? l10n.reminderDailyAt(_timeText) : description,
-            style: theme.textTheme.bodySmall?.copyWith(color: muted),
+            style: theme.textTheme.meta?.copyWith(color: muted),
           ),
           trailing: InkToggle(
             value: setting.enabled,
@@ -783,13 +783,13 @@ class _ReminderTile extends StatelessWidget {
                         Expanded(
                           child: Text(
                             l10n.reminderTimeLabel,
-                            style: theme.textTheme.bodyMedium,
+                            style: theme.textTheme.rowTitle,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Text(_timeText, style: theme.textTheme.bodyMedium),
+                        Text(_timeText, style: theme.textTheme.rowValue),
                         InkIcon(InkGlyph.chevronRight, size: 18, color: muted),
                       ],
                     ),

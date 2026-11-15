@@ -24,7 +24,7 @@ class _FoldedNotesState extends State<FoldedNotes> {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final muted = theme.colorScheme.onSurfaceVariant;
-    final noteStyle = theme.textTheme.bodySmall?.copyWith(color: muted);
+    final noteStyle = theme.textTheme.meta?.copyWith(color: muted);
     return Semantics(
       expanded: _expanded,
       hint: _expanded ? l10n.collapseSection : l10n.expandSection,
@@ -43,7 +43,7 @@ class _FoldedNotesState extends State<FoldedNotes> {
                     Expanded(
                       child: Text(
                         widget.title,
-                        style: theme.textTheme.titleSmall,
+                        style: theme.textTheme.subsectionTitle,
                       ),
                     ),
                     InkIcon(

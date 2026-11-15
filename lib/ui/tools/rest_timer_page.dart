@@ -469,7 +469,7 @@ class _RestTimerPageState extends State<RestTimerPage>
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
                     child: Text(
                       l10n.restTimerAlertSettings,
-                      style: theme.textTheme.titleLarge,
+                      style: theme.textTheme.sectionTitle,
                     ),
                   ),
                   if (_android)
@@ -501,7 +501,7 @@ class _RestTimerPageState extends State<RestTimerPage>
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
                       child: Text(
                         l10n.reminderRestrictionsSheetTitle,
-                        style: theme.textTheme.titleSmall,
+                        style: theme.textTheme.sectionTitle,
                       ),
                     ),
                     for (final issue in issues)
@@ -674,7 +674,7 @@ class _RestTimerPageState extends State<RestTimerPage>
                                         const SizedBox(height: 6),
                                         Text(
                                           statusLabel,
-                                          style: theme.textTheme.bodyMedium
+                                          style: theme.textTheme.bodyText
                                               ?.copyWith(
                                                 color: scheme.onSurfaceVariant,
                                               ),

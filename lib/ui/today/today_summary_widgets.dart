@@ -93,7 +93,7 @@ class CalorieRing extends StatelessWidget {
               children: [
                 Text(
                   '$percent%',
-                  style: theme.textTheme.titleLarge?.copyWith(
+                  style: theme.textTheme.sectionTitle?.copyWith(
                     fontWeight: FontWeight.w500,
                     color: centerColor,
                     height: 1.0,

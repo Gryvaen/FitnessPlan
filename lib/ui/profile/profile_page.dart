@@ -127,7 +127,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(l10n.exportData, style: theme.textTheme.titleMedium),
+                Text(l10n.exportData, style: theme.textTheme.sectionTitle),
                 const SizedBox(height: AppSpacing.compact),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
@@ -426,12 +426,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(l10n.me, style: theme.textTheme.headlineSmall),
+                      Text(l10n.me, style: theme.textTheme.pageTitle),
                       if (versionLabel != null) ...[
                         const SizedBox(width: 8),
                         Text(
                           'v$versionLabel',
-                          style: theme.textTheme.bodySmall?.copyWith(
+                          style: theme.textTheme.meta?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
@@ -507,10 +507,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     InkGlyph.profile,
                     color: AppThemeVisuals.of(context).accent,
                   ),
-                  title: Text(
-                    l10n.myProfile,
-                    style: theme.textTheme.titleMedium,
-                  ),
+                  title: Text(l10n.myProfile, style: theme.textTheme.rowTitle),
                   subtitle: Text(
                     l10n.profileSubtitle(
                       profile.sex.label(l10n),
@@ -638,11 +635,11 @@ class _AboutSheet extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(l10n.appTitle, style: theme.textTheme.titleLarge),
+                      Text(l10n.appTitle, style: theme.textTheme.sectionTitle),
                       if (version != null)
                         Text(
                           l10n.appVersionLabel(version!),
-                          style: theme.textTheme.bodySmall,
+                          style: theme.textTheme.meta,
                         ),
                     ],
                   ),
@@ -670,7 +667,7 @@ class _AboutSheet extends StatelessWidget {
             const SizedBox(height: AppSpacing.section),
             Divider(height: 1, color: AppThemeVisuals.of(context).divider),
             const SizedBox(height: AppSpacing.section),
-            Text(l10n.calcMethod, style: theme.textTheme.titleSmall),
+            Text(l10n.calcMethod, style: theme.textTheme.rowValue),
             const SizedBox(height: AppSpacing.compact),
             CalorieBreakdown(
               plan: plan,
@@ -682,7 +679,7 @@ class _AboutSheet extends StatelessWidget {
               l10n.kcalPerKgFatFact(
                 CalorieCalculator.kcalPerKgFat.toInt().toString(),
               ),
-              style: theme.textTheme.bodySmall,
+              style: theme.textTheme.meta,
             ),
             const SizedBox(height: AppSpacing.section),
             Divider(height: 1, color: AppThemeVisuals.of(context).divider),
@@ -828,7 +825,7 @@ class CultivationHeroCard extends ConsumerWidget {
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleLarge?.copyWith(
+                        style: theme.textTheme.sectionTitle?.copyWith(
                           color: accent,
                           fontFamily: AppTheme.displayFontFamily,
                           fontWeight: FontWeight.w600,
@@ -1125,7 +1122,7 @@ class _MenuRow extends StatelessWidget {
       title: Text(title),
       subtitle: Text(
         subtitle,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        style: Theme.of(context).textTheme.meta?.copyWith(
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),

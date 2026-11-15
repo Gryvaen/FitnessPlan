@@ -373,7 +373,7 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
             child: Text(
               monthLabel,
               textAlign: TextAlign.center,
-              style: theme.textTheme.titleMedium,
+              style: theme.textTheme.subsectionTitle,
             ),
           ),
           IconButton(
@@ -713,7 +713,7 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
             onTap: _editingAmount ? null : _startAmountEditing,
             child: Row(
               children: [
-                Text('−', style: theme.textTheme.bodySmall),
+                Text('−', style: theme.textTheme.meta),
                 const SizedBox(width: 4),
                 Expanded(
                   child: _editingAmount
@@ -730,7 +730,7 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                           inputFormatters: [
                             FilteringTextInputFormatter.digitsOnly,
                           ],
-                          style: theme.textTheme.bodySmall,
+                          style: theme.textTheme.meta,
                           textAlign: TextAlign.right,
                           decoration: InputDecoration(
                             isDense: true,
@@ -752,13 +752,13 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                           textAlign: TextAlign.right,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall,
+                          style: theme.textTheme.meta,
                         ),
                 ),
                 const SizedBox(width: 4),
                 Text(
                   'kcal',
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  style: theme.textTheme.meta?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
@@ -831,7 +831,7 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                     children: [
                       Text(
                         type.label(l10n),
-                        style: theme.textTheme.titleSmall?.copyWith(
+                        style: theme.textTheme.rowTitle?.copyWith(
                           color: locked
                               ? theme.disabledColor
                               : selected
@@ -842,14 +842,14 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                       if (locked)
                         Text(
                           l10n.carbLoadLockedHint,
-                          style: theme.textTheme.bodySmall?.copyWith(
+                          style: theme.textTheme.meta?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         )
                       else if (selected && !expanded)
                         Text(
                           _summary(context, type),
-                          style: theme.textTheme.bodySmall?.copyWith(
+                          style: theme.textTheme.meta?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
@@ -901,7 +901,7 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                           alignment: Alignment.centerLeft,
                           child: Text(
                             l10n.carbLoadHint,
-                            style: theme.textTheme.bodySmall?.copyWith(
+                            style: theme.textTheme.meta?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
@@ -958,7 +958,7 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                                     l10n.deductCultivationKcalLabel,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.bodyMedium,
+                                    style: theme.textTheme.rowTitle,
                                   ),
                                 ),
                               ),
@@ -1024,7 +1024,7 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                   Expanded(
                     child: Text(
                       l10n.dayMarkerSettingsTitle,
-                      style: theme.textTheme.titleMedium,
+                      style: theme.textTheme.sectionTitle,
                     ),
                   ),
                   if (widget.existing != null)
@@ -1146,9 +1146,7 @@ class _LegendLine extends StatelessWidget {
       children: [
         SizedBox(width: 16, child: Center(child: leading)),
         const SizedBox(width: 8),
-        Expanded(
-          child: Text(label, style: Theme.of(context).textTheme.bodySmall),
-        ),
+        Expanded(child: Text(label, style: Theme.of(context).textTheme.meta)),
       ],
     );
   }

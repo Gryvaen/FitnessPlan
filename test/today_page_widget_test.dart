@@ -237,7 +237,9 @@ void main() {
       final today = CalendarDay.todayLocal();
       final markers = h.container.read(dayMarkerRepositoryProvider);
       await markers.setRestDay(today);
-      await _pump(tester, h, size: const Size(600, 800));
+      // Wide enough that the 22px section heading (Ahem test font is very
+      // wide) and the marker still share one line.
+      await _pump(tester, h, size: const Size(800, 800));
 
       expect(find.text('Cut'), findsOneWidget);
       expect(find.text('Rest day'), findsOneWidget);

@@ -179,7 +179,7 @@ class _FoodCategoryPageState extends ConsumerState<FoodCategoryPage> {
                       carbG: f.carbPer100,
                       proteinG: f.proteinPer100,
                       fatG: f.fatPer100,
-                      style: theme.textTheme.bodyLarge,
+                      style: theme.textTheme.rowTitle,
                     ),
                     subtitle: Text(
                       '${f.kcalPer100.round()} kcal / 100g',

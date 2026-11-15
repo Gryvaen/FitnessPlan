@@ -27,7 +27,7 @@ class CultivationHistoryPage extends ConsumerWidget {
         error: (e, _) => Center(
           child: Text(
             '$e',
-            style: theme.textTheme.bodyMedium?.copyWith(
+            style: theme.textTheme.bodyText?.copyWith(
               color: theme.colorScheme.error,
             ),
           ),
@@ -41,7 +41,7 @@ class CultivationHistoryPage extends ConsumerWidget {
             return Center(
               child: Text(
                 l10n.cultivationHistoryEmpty,
-                style: theme.textTheme.bodyMedium?.copyWith(
+                style: theme.textTheme.bodyText?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
@@ -81,7 +81,7 @@ class _SectionBlock extends StatelessWidget {
         children: [
           Text(
             title,
-            style: theme.textTheme.titleSmall?.copyWith(
+            style: theme.textTheme.sectionTitle?.copyWith(
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -97,7 +97,7 @@ class _SectionBlock extends StatelessWidget {
           if (section.days.isEmpty)
             Text(
               l10n.cultivationHistorySegmentEmpty,
-              style: theme.textTheme.bodySmall?.copyWith(
+              style: theme.textTheme.meta?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             )
@@ -152,11 +152,11 @@ class _DayRow extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(dateLabel, style: theme.textTheme.titleMedium),
+              Text(dateLabel, style: theme.textTheme.rowTitle),
               const Spacer(),
               Text(
                 '${l10n.cultivationHistoryTotalLabel} ${formatSignedKcal(record.totalKcal)} kcal',
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: theme.textTheme.rowValue?.copyWith(
                   color: record.totalKcal < 0
                       ? theme.colorScheme.error
                       : theme.colorScheme.primary,
@@ -176,7 +176,7 @@ class _DayRow extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 '${l10n.cultivationHistoryStepsLabel} ${formatSignedKcal(record.stepsKcal)} kcal',
-                style: theme.textTheme.bodySmall?.copyWith(
+                style: theme.textTheme.meta?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
@@ -189,7 +189,7 @@ class _DayRow extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 '${l10n.cultivationHistoryDietLabel} ${formatSignedKcal(record.dietKcal)} kcal',
-                style: theme.textTheme.bodySmall?.copyWith(
+                style: theme.textTheme.meta?.copyWith(
                   color: record.dietKcal < 0
                       ? theme.colorScheme.error
                       : theme.colorScheme.onSurfaceVariant,
@@ -203,7 +203,7 @@ class _DayRow extends StatelessWidget {
               l10n.cultivationCheatPenalty(
                 formatSignedKcal(record.cheatPenaltyKcal),
               ),
-              style: theme.textTheme.bodySmall?.copyWith(
+              style: theme.textTheme.meta?.copyWith(
                 color: theme.colorScheme.error,
               ),
             ),
@@ -229,7 +229,7 @@ class _DayRow extends StatelessWidget {
                           Text(
                             '${_groupName(group.workout.planName, l10n)} '
                             '${l10n.cultivationHistoryWorkoutProgress('${group.doneCount}', '${group.items.length}')}',
-                            style: theme.textTheme.bodySmall?.copyWith(
+                            style: theme.textTheme.meta?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),

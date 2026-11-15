@@ -101,7 +101,9 @@ addTearDown(() => messenger.setMockMethodCallHandler(alarm, null));
 
 它的输出是生成的截图，不是用来比对的基线：`design-handoff/` 不在仓库里。
 
-软著说明书不用测试截图（golden 测试里的文字是 Ahem 方块字），而是直接使用 `design/display/` 里的真机截图，见 [tools.md](tools.md)。
+截图测试会在 `setUpAll` 里用 `FontLoader` 加载 `assets/fonts/` 的霞鹜文楷和 Noto Sans SC，所以截图里是真实字体，可以用来检查字号和排版；其他 widget 测试仍然是 Ahem 方块字（每个字符很宽，窄屏布局测试比真机更容易换行或溢出）。`_go` 切换路由后会循环等待，直到加载圈消失再截图。
+
+软著说明书不用测试截图（普通 golden 测试里的文字是 Ahem 方块字），而是直接使用 `design/display/` 里的真机截图，见 [tools.md](tools.md)。
 
 ## CI
 

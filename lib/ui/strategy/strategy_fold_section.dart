@@ -58,7 +58,7 @@ class StrategyFoldSection extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: theme.textTheme.titleSmall?.copyWith(
+                          style: theme.textTheme.subsectionTitle?.copyWith(
                             color: expanded ? visuals.accent : null,
                           ),
                         ),
@@ -67,7 +67,7 @@ class StrategyFoldSection extends StatelessWidget {
                             summary!,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(
+                            style: theme.textTheme.meta?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),

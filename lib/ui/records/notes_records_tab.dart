@@ -57,7 +57,7 @@ class NotesRecordsTab extends ConsumerWidget {
               Expanded(
                 child: Text(
                   l10n.dailyJournal,
-                  style: theme.textTheme.titleLarge,
+                  style: theme.textTheme.sectionTitle,
                 ),
               ),
               PlainIconAction(
@@ -67,7 +67,7 @@ class NotesRecordsTab extends ConsumerWidget {
               ),
             ],
           ),
-          Text(l10n.journalSubtitle, style: theme.textTheme.bodySmall),
+          Text(l10n.journalSubtitle, style: theme.textTheme.meta),
         ],
       ),
     );
@@ -131,7 +131,7 @@ class NotesRecordsTab extends ConsumerWidget {
                             DateFormat.yMMMM(
                               locale.toLanguageTag(),
                             ).format(day),
-                            style: theme.textTheme.titleMedium,
+                            style: theme.textTheme.sectionTitle,
                           ),
                         ),
                       InkWell(
@@ -155,7 +155,7 @@ class NotesRecordsTab extends ConsumerWidget {
                                       DateFormat.E(
                                         locale.toLanguageTag(),
                                       ).format(day),
-                                      style: theme.textTheme.bodySmall,
+                                      style: theme.textTheme.meta,
                                     ),
                                   ],
                                 ),
@@ -191,7 +191,7 @@ class NotesRecordsTab extends ConsumerWidget {
                                           title,
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
-                                          style: theme.textTheme.titleSmall,
+                                          style: theme.textTheme.rowTitle,
                                         ),
                                       if (note.mode != 'plan' &&
                                           lines.length > 1) ...[
@@ -205,7 +205,7 @@ class NotesRecordsTab extends ConsumerWidget {
                                       const SizedBox(height: 8),
                                       Text(
                                         _noteMeta(note, l10n, locale),
-                                        style: theme.textTheme.bodySmall,
+                                        style: theme.textTheme.meta,
                                       ),
                                     ],
                                   ),

@@ -463,7 +463,7 @@ class _FoodRow extends StatelessWidget {
         carbG: food.carbPer100,
         proteinG: food.proteinPer100,
         fatG: food.fatPer100,
-        style: theme.textTheme.bodyLarge,
+        style: theme.textTheme.rowTitle,
         onTap: () => openDetail(context, food.id),
       ),
       subtitle: Text(
@@ -472,7 +472,7 @@ class _FoodRow extends StatelessWidget {
       ),
       trailing: Text(
         '${food.kcalPer100.round()} kcal/100g',
-        style: theme.textTheme.bodySmall,
+        style: theme.textTheme.meta,
       ),
       onTap: () => openDetail(context, food.id),
     );
@@ -501,7 +501,7 @@ class _FoodCategoryList extends ConsumerWidget {
         key: const ValueKey('category-favorites'),
         contentPadding: EdgeInsets.zero,
         leading: const FoodCategoryAvatar(category: '收藏'),
-        title: Text(l10n.favorites, style: theme.textTheme.bodyLarge),
+        title: Text(l10n.favorites, style: theme.textTheme.rowTitle),
         subtitle: Text(
           l10n.collectionItems(favoriteCount),
           style: theme.textTheme.meta,
@@ -516,7 +516,7 @@ class _FoodCategoryList extends ConsumerWidget {
         key: const ValueKey('category-presets'),
         contentPadding: EdgeInsets.zero,
         leading: const FoodCategoryAvatar(category: '套餐'),
-        title: Text(l10n.presetsTab, style: theme.textTheme.bodyLarge),
+        title: Text(l10n.presetsTab, style: theme.textTheme.rowTitle),
         subtitle: Text(
           l10n.collectionItems(presetCount),
           style: theme.textTheme.meta,
@@ -568,7 +568,7 @@ class _FoodCategoryList extends ConsumerWidget {
                     leading: FoodCategoryAvatar(category: c.category),
                     title: Text(
                       c.category.localizedCategory(l10n),
-                      style: theme.textTheme.bodyLarge,
+                      style: theme.textTheme.rowTitle,
                     ),
                     subtitle: Text(
                       l10n.nKinds(c.count),
@@ -589,7 +589,7 @@ class _FoodCategoryList extends ConsumerWidget {
                 SportListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const FoodCategoryAvatar(category: '自定义'),
-                  title: Text(l10n.custom, style: theme.textTheme.bodyLarge),
+                  title: Text(l10n.custom, style: theme.textTheme.rowTitle),
                   trailing: InkIcon(
                     InkGlyph.chevronRight,
                     color: foodUtilityIconColor(context),

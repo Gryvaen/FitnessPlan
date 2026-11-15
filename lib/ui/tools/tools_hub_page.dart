@@ -74,7 +74,7 @@ class ToolsHubPage extends StatelessWidget {
           const SizedBox(height: AppSpacing.section),
           Text(
             l10n.toolsDisclaimer,
-            style: theme.textTheme.bodySmall?.copyWith(
+            style: theme.textTheme.meta?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
@@ -107,7 +107,7 @@ class _ToolRow extends StatelessWidget {
       title: Text(title),
       subtitle: Text(
         subtitle,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        style: Theme.of(context).textTheme.meta?.copyWith(
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),

@@ -105,11 +105,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   const SizedBox(height: 24),
                   Text(l10n.appTitle, style: theme.textTheme.displaySmall),
                   const SizedBox(height: 4),
-                  Text(l10n.appTagline, style: theme.textTheme.titleMedium),
+                  Text(l10n.appTagline, style: theme.textTheme.subsectionTitle),
                   const SizedBox(height: 8),
                   Text(
                     l10n.createProfileHint,
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: theme.textTheme.bodyText?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
@@ -155,7 +155,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 children: [
                   Text(
                     l10n.onboardingBasicTitle,
-                    style: theme.textTheme.headlineSmall,
+                    style: theme.textTheme.pageTitle,
                   ),
                   const SizedBox(height: AppSpacing.section),
                   AppDropdown<Sex>(
@@ -223,7 +223,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                         Expanded(
                           child: Text(
                             l10n.onboardingDataUseNote,
-                            style: theme.textTheme.bodySmall,
+                            style: theme.textTheme.meta,
                           ),
                         ),
                       ],
@@ -242,7 +242,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 children: [
                   Text(
                     l10n.onboardingGoalTitle,
-                    style: theme.textTheme.headlineSmall,
+                    style: theme.textTheme.pageTitle,
                   ),
                   const SizedBox(height: AppSpacing.section),
                   for (final g in FitnessGoal.values)
@@ -364,11 +364,11 @@ class _Feature extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: theme.textTheme.titleMedium),
+                Text(title, style: theme.textTheme.subsectionTitle),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  style: theme.textTheme.meta?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),

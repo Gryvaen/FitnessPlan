@@ -28,14 +28,14 @@ class CalorieBreakdown extends StatelessWidget {
     final l10n = context.l10n;
     final children = <Widget>[
       _sectionTitle(theme, l10n.bmrSection),
-      Text(plan.bmrFormula(l10n), style: theme.textTheme.bodyMedium),
+      Text(plan.bmrFormula(l10n), style: theme.textTheme.bodyText),
       const SizedBox(height: 4),
       Text(plan.bmrSubstituted, style: theme.textTheme.meta),
       const SizedBox(height: AppSpacing.field),
       _sectionTitle(theme, l10n.tdeeSection),
       Text(
         'BMR × ${plan.activityFactor} = ${plan.tdee.toStringAsFixed(0)} kcal',
-        style: theme.textTheme.bodyMedium,
+        style: theme.textTheme.bodyText,
       ),
       if (showTargetAndMacros) ...[
         const SizedBox(height: AppSpacing.field),
@@ -48,7 +48,7 @@ class CalorieBreakdown extends StatelessWidget {
           'P ${plan.targets.proteinG.toStringAsFixed(0)} · '
           'C ${plan.targets.carbG.toStringAsFixed(0)} · '
           'F ${plan.targets.fatG.toStringAsFixed(0)}',
-          style: theme.textTheme.bodyMedium,
+          style: theme.textTheme.bodyText,
         ),
         Text(
           l10n.macroRule(plan.proteinPerKg.toString()),
@@ -89,14 +89,14 @@ class CalorieBreakdown extends StatelessWidget {
         return [
           Text(
             l10n.maintainLine('${plan.targets.calories}'),
-            style: theme.textTheme.bodyMedium,
+            style: theme.textTheme.bodyText,
           ),
         ];
       case FitnessGoal.bulk:
         return [
           Text(
             l10n.bulkLine('${plan.targets.calories}'),
-            style: theme.textTheme.bodyMedium,
+            style: theme.textTheme.bodyText,
           ),
         ];
       case FitnessGoal.cut:
@@ -104,7 +104,7 @@ class CalorieBreakdown extends StatelessWidget {
         // active diet-strategy plan, so `cut` always eats at TDEE until one
         // exists. Target weight (if set) is shown purely as progress info.
         final lines = <Widget>[
-          Text(plan.goal.label(l10n), style: theme.textTheme.bodyMedium),
+          Text(plan.goal.label(l10n), style: theme.textTheme.bodyText),
         ];
         if (plan.kgToLose != null && plan.targetWeightKg != null) {
           lines.add(
@@ -119,7 +119,7 @@ class CalorieBreakdown extends StatelessWidget {
         lines.add(
           Text(
             l10n.cutDefaultsToTdeeLine('${plan.targets.calories}'),
-            style: theme.textTheme.bodyMedium,
+            style: theme.textTheme.bodyText,
           ),
         );
         return lines;
@@ -129,7 +129,7 @@ class CalorieBreakdown extends StatelessWidget {
   Widget _sectionTitle(ThemeData theme, String text) {
     return Padding(
       padding: EdgeInsets.only(bottom: compact ? 2 : 4),
-      child: Text(text, style: theme.textTheme.titleSmall),
+      child: Text(text, style: theme.textTheme.subsectionTitle),
     );
   }
 }

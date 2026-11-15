@@ -298,10 +298,10 @@ class _MealHistorySheetState extends ConsumerState<_MealHistorySheet> {
     ref.listen(activeDietPlanProvider, (_, _) => _reloadTargets());
     ref.listen(profileProvider, (_, _) => _reloadTargets());
     final theme = Theme.of(context);
-    final highlightStyle = theme.textTheme.bodyMedium?.copyWith(
+    final highlightStyle = theme.textTheme.bodyText?.copyWith(
       color: theme.colorScheme.primary,
     );
-    final muted = theme.textTheme.bodySmall?.copyWith(
+    final muted = theme.textTheme.meta?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
     final goal = ref.watch(profileProvider)?.goal;
@@ -319,7 +319,10 @@ class _MealHistorySheetState extends ConsumerState<_MealHistorySheet> {
               if (index == 0) {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(widget.title, style: theme.textTheme.titleMedium),
+                  child: Text(
+                    widget.title,
+                    style: theme.textTheme.sectionTitle,
+                  ),
                 );
               }
               final day = days[index - 1];
@@ -389,7 +392,7 @@ class _MealHistoryDayRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(dateLabel, style: theme.textTheme.titleSmall),
+                    Text(dateLabel, style: theme.textTheme.rowTitle),
                     const SizedBox(height: 2),
                     Text(detailLabel, style: detailStyle),
                   ],

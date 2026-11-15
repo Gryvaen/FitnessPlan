@@ -389,7 +389,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
     return ListTile(
       title: Text(
         f.displayName(context),
-        style: theme.textTheme.bodyLarge?.copyWith(
+        style: theme.textTheme.rowTitle?.copyWith(
           color: dominantMacroColor(
             carbG: f.carbPer100,
             proteinG: f.proteinPer100,
@@ -417,7 +417,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
         carbG: f.carbPer100,
         proteinG: f.proteinPer100,
         fatG: f.fatPer100,
-        style: theme.textTheme.bodyLarge,
+        style: theme.textTheme.rowTitle,
         onTap: () => _openFoodDetailFromSearch(f),
       ),
       subtitle: Text(
@@ -450,7 +450,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
       sections.add(
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-          child: Text(l10n.mealPresets, style: theme.textTheme.titleSmall),
+          child: Text(l10n.mealPresets, style: theme.textTheme.sectionTitle),
         ),
       );
       for (final p in presets) {
@@ -482,7 +482,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
       sections.add(
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-          child: Text(l10n.favorites, style: theme.textTheme.titleSmall),
+          child: Text(l10n.favorites, style: theme.textTheme.sectionTitle),
         ),
       );
       for (final f in _favorites) {
@@ -506,7 +506,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
       sections.add(
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-          child: Text(l10n.recentlyEaten, style: theme.textTheme.titleSmall),
+          child: Text(l10n.recentlyEaten, style: theme.textTheme.sectionTitle),
         ),
       );
       for (final f in _recent) {
@@ -607,7 +607,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                         carbG: _selected!.carbPer100,
                         proteinG: _selected!.proteinPer100,
                         fatG: _selected!.fatPer100,
-                        style: theme.textTheme.bodyLarge,
+                        style: theme.textTheme.rowTitle,
                         onTap: () => _openFoodDetailKeepSelection(_selected!),
                       ),
                       subtitle: Text(

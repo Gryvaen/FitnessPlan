@@ -480,7 +480,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
                     Expanded(
                       child: Text(
                         issue.message(l10n),
-                        style: theme.textTheme.bodySmall?.copyWith(
+                        style: theme.textTheme.meta?.copyWith(
                           color: scheme.error,
                         ),
                       ),
@@ -504,7 +504,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
                 Expanded(
                   child: Text(
                     l10n.lowEnergyNotice(lowEnergy.target, lowEnergy.kcal),
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: theme.textTheme.meta?.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),
                   ),
@@ -552,7 +552,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
                 children: [
                   Text(
                     l10n.cycleLengthLabel,
-                    style: theme.textTheme.titleSmall,
+                    style: theme.textTheme.subsectionTitle,
                   ),
                   const SizedBox(height: AppSpacing.compact),
                   Wrap(
@@ -734,7 +734,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
                   ),
                   Text(
                     l10n.dailyDeficitLine('${baseline.dailyDeficit.round()}'),
-                    style: theme.textTheme.bodySmall,
+                    style: theme.textTheme.meta,
                   ),
                 ],
               ),
@@ -778,7 +778,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
             ),
           ),
           const SizedBox(height: AppSpacing.section),
-          Text(l10n.strategyDisclaimer, style: theme.textTheme.bodySmall),
+          Text(l10n.strategyDisclaimer, style: theme.textTheme.meta),
         ],
       ),
     );
@@ -815,7 +815,7 @@ class _ReadOnlyMetric extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium,
+                  style: theme.textTheme.rowTitle,
                 ),
               ),
               const SizedBox(width: AppSpacing.field),
@@ -825,12 +825,12 @@ class _ReadOnlyMetric extends StatelessWidget {
                 children: [
                   Text(
                     value,
-                    style: theme.textTheme.titleMedium?.copyWith(
+                    style: theme.textTheme.rowValue?.copyWith(
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Text(unit, style: theme.textTheme.bodySmall),
+                  Text(unit, style: theme.textTheme.meta),
                 ],
               ),
             ],
@@ -870,7 +870,7 @@ class _EffectiveDateOption extends StatelessWidget {
               size: 20,
             ),
             const SizedBox(width: 12),
-            Expanded(child: Text(label, style: theme.textTheme.bodyMedium)),
+            Expanded(child: Text(label, style: theme.textTheme.rowTitle)),
           ],
         ),
       ),
@@ -899,9 +899,7 @@ class _TaperLadder extends StatelessWidget {
     if (stages.isEmpty) {
       return Text(
         StrategyIssue.carbBelowMinimum.message(l10n),
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.error,
-        ),
+        style: theme.textTheme.meta?.copyWith(color: theme.colorScheme.error),
       );
     }
     return Column(
@@ -926,7 +924,7 @@ class _TaperLadder extends StatelessWidget {
                 Expanded(
                   child: Text(
                     '${s.day.energy.round()} kcal · C ${s.day.carbG.toStringAsFixed(0)} g',
-                    style: theme.textTheme.bodyMedium,
+                    style: theme.textTheme.rowTitle,
                   ),
                 ),
                 if (s.stage == 0)
@@ -942,7 +940,7 @@ class _TaperLadder extends StatelessWidget {
         const SizedBox(height: AppSpacing.compact),
         Text(
           l10n.taperFloorLine(StrategyRules.minCarbG.round()),
-          style: theme.textTheme.bodySmall,
+          style: theme.textTheme.meta,
         ),
       ],
     );

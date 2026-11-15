@@ -951,14 +951,14 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
                             children: [
                               Text(
                                 _groupTitle(orderedGroups[i], l10n),
-                                style: theme.textTheme.titleSmall,
+                                style: theme.textTheme.subsectionTitle,
                               ),
                               Text(
                                 l10n.workoutProgressHint(
                                   orderedGroups[i].doneCount,
                                   orderedGroups[i].items.length,
                                 ),
-                                style: theme.textTheme.bodySmall,
+                                style: theme.textTheme.meta,
                               ),
                             ],
                           ),
@@ -1327,11 +1327,11 @@ class _WorkoutItemTile extends ConsumerWidget {
       title: Text(
         item.exerciseName,
         style: item.done
-            ? theme.textTheme.bodyLarge?.copyWith(
+            ? theme.textTheme.rowTitle?.copyWith(
                 decoration: TextDecoration.lineThrough,
                 color: theme.colorScheme.onSurfaceVariant,
               )
-            : theme.textTheme.bodyLarge,
+            : theme.textTheme.rowTitle,
       ),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1496,7 +1496,7 @@ class _TodayPlanPickerSheet extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
                 child: Text(
                   category.localizedExerciseCategory(l10n),
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  style: theme.textTheme.subsectionTitle?.copyWith(
                     color: theme.colorScheme.primary,
                   ),
                 ),
@@ -1546,7 +1546,7 @@ class _DayTitle extends StatelessWidget {
       textAlign: TextAlign.center,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: Theme.of(context).textTheme.titleMedium,
+      style: Theme.of(context).textTheme.subsectionTitle,
     );
     if (onBackToToday == null) return text;
     return Tooltip(

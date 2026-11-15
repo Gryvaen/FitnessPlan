@@ -114,6 +114,21 @@ flowchart TD
 - **页面不要硬编码颜色。** 通用颜色从 `Theme.of(context).colorScheme` 取；随主题变化的视觉 token 从 `AppThemeVisuals.of(context)` 取；固定的语义色（蛋白质、碳水、脂肪、饮水、成功、警告）用 `AppColors`。
 - 间距统一使用 `AppSpacing`（`listPage`/`formPage` 20、`card` 16、`section` 24、`field` 12、`compact` 8），圆角用 `AppRadius`，最小点击区域为 `kMinTapTarget`（44）。
 - 字体：`LXGWWenKai`（霞鹜文楷），另外打包了 `NotoSansSC` 备用。
+- **字号按布局角色取，不直接写 M3 样式名。** 规范参照套餐详情页，定义在 `app_theme.dart` 的 `AppTextStyles` 扩展里（2026-11 全 app 统一过一次）：
+
+  | 角色 | 对应 M3 | 字号 | 用在哪 |
+  |---|---|---|---|
+  | `pageTitle` | headlineSmall | 24 | tab 根页面顶部大标题、弹层主标题 |
+  | `sectionTitle` | titleLarge | 22 | 页面上的区块（今日热量、今日训练）、列表里的分组（餐别、最近吃过、按月分组）、底部弹层标题 |
+  | `subsectionTitle` | titleMedium | 16 | 区块内的小标题、折叠区标题、详情/表单页里的小节（营养结果、每份） |
+  | `rowTitle` | bodyLarge | 16 | 列表行主文字（食物名、设置项、碳循环表的日期） |
+  | `rowValue` | titleSmall（w600） | 14 | 行右侧的数值（320 kcal、75.0 kg） |
+  | `meta` | bodySmall | 12 | 行副文字、说明小字 |
+  | `statValue` / `statUnit` | headlineSmall 粗 / titleSmall | 24 / 14 | 页面的大号数字和单位 |
+  | `statLabel` / `statFigure` | bodySmall / titleMedium | 12 / 16 | 数值标签，以及标签下的数字（营养素克数） |
+  | `bodyText` | bodyMedium | 14 | 说明段落 |
+
+  `listTileTheme` 已经按 rowTitle / meta / rowValue 设好默认值，`ListTile` 不写样式就是对的。故意保留原始 M3 样式的只有：今日页剩余热量、最新体重、组数、计时器、计算器显示屏这类自成一体的大号数字，tab 和按钮上的标签文字，以及输入框。`labelSmall/Medium/Large` 继续用于组件标签。
 - 通用的页面外框和组件在 `lib/ui/theme/sport_chrome.dart`：`PageTitle`、`SportTabs`、`SportEmptyState`、`AppChromeScaffold` 等。
 
 ### ink 图标

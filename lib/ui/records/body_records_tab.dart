@@ -325,7 +325,7 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
         Text(
           '${up ? '+' : ''}${delta.toStringAsFixed(2)} kg · '
           '${context.l10n.sincePreviousRecord}',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
+          style: Theme.of(context).textTheme.meta?.copyWith(color: color),
         ),
       ],
     );
@@ -384,7 +384,7 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
           ),
         ],
         if (showCharts) const SizedBox(height: AppSpacing.section),
-        Text(l10n.history, style: Theme.of(context).textTheme.titleMedium),
+        Text(l10n.history, style: Theme.of(context).textTheme.sectionTitle),
         const SizedBox(height: 8),
         if (logs.isEmpty)
           SportEmptyState(
@@ -399,7 +399,7 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
             key: ValueKey(log.id),
             title: Text(
               '${log.weightKg.toStringAsFixed(2)} kg',
-              style: Theme.of(context).textTheme.bodyLarge,
+              style: Theme.of(context).textTheme.rowTitle,
             ),
             subtitle: Text(
               _logSubtitle(log, l10n),
@@ -461,7 +461,10 @@ class _SeriesChart extends StatelessWidget {
                 child: Row(
                   children: [
                     Expanded(
-                      child: Text(title, style: theme.textTheme.titleSmall),
+                      child: Text(
+                        title,
+                        style: theme.textTheme.subsectionTitle,
+                      ),
                     ),
                     InkIcon(
                       collapsed ? InkGlyph.expand : InkGlyph.collapse,

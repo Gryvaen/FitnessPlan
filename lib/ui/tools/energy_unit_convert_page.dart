@@ -65,7 +65,7 @@ class _EnergyUnitConvertPageState extends State<EnergyUnitConvertPage> {
         children: [
           Text(
             l10n.toolEnergyConvertSub,
-            style: theme.textTheme.bodySmall?.copyWith(
+            style: theme.textTheme.meta?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),

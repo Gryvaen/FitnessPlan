@@ -358,12 +358,12 @@ class _Section extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: theme.textTheme.titleMedium),
+          Text(title, style: theme.textTheme.subsectionTitle),
           if (hint != null) ...[
             const SizedBox(height: 2),
             Text(
               hint!,
-              style: theme.textTheme.bodySmall?.copyWith(
+              style: theme.textTheme.meta?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),

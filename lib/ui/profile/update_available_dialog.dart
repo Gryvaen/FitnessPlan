@@ -79,7 +79,7 @@ class _UpdateAvailableDialogState extends State<UpdateAvailableDialog> {
           children: [
             Text(
               l10n.updateVersionMeta(widget.localVersion, '$sizeMb MB'),
-              style: theme.textTheme.bodySmall?.copyWith(color: muted),
+              style: theme.textTheme.meta?.copyWith(color: muted),
             ),
             const SizedBox(height: AppSpacing.field),
             Flexible(
@@ -162,13 +162,13 @@ class _SourceOption extends StatelessWidget {
                   children: [
                     Text(
                       name,
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                      style: theme.textTheme.bodyText?.copyWith(
                         color: selected ? accent : null,
                       ),
                     ),
                     Text(
                       hint,
-                      style: theme.textTheme.bodySmall?.copyWith(
+                      style: theme.textTheme.meta?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
@@ -198,7 +198,7 @@ class ReleaseNotesView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final body = theme.textTheme.bodyMedium;
+    final body = theme.textTheme.bodyText;
     final children = <Widget>[];
     for (final raw in markdown.split('\n')) {
       final line = raw.trim();

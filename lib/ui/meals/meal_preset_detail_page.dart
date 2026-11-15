@@ -480,7 +480,7 @@ class _MealPresetDetailPageState extends ConsumerState<MealPresetDetailPage> {
         carbG: intake.carbG,
         proteinG: intake.proteinG,
         fatG: intake.fatG,
-        style: theme.textTheme.bodyLarge,
+        style: theme.textTheme.rowTitle,
         onTap: () async {
           await openFoodDetail(context, item.foodId);
           if (mounted) await _load();
@@ -495,7 +495,7 @@ class _MealPresetDetailPageState extends ConsumerState<MealPresetDetailPage> {
       ),
       trailing: Text(
         '${intake.calories.round()} kcal',
-        style: theme.textTheme.titleSmall,
+        style: theme.textTheme.rowValue,
       ),
       onTap: () => _editGrams(item),
     );
@@ -521,7 +521,7 @@ class _MealPresetDetailPageState extends ConsumerState<MealPresetDetailPage> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Text(
               name,
-              style: theme.textTheme.bodyLarge,
+              style: theme.textTheme.rowTitle,
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -543,13 +543,13 @@ class _MealPresetDetailPageState extends ConsumerState<MealPresetDetailPage> {
           child: Text(
             type.label(l10n),
             key: ValueKey('preset-meal-title-${type.name}'),
-            style: theme.textTheme.titleLarge,
+            style: theme.textTheme.sectionTitle,
           ),
         ),
         if (entries.isNotEmpty) ...[
           Text(
             '${total.calories.round()} kcal',
-            style: theme.textTheme.titleSmall?.copyWith(
+            style: theme.textTheme.rowValue?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
@@ -687,7 +687,7 @@ class _MealPresetDetailPageState extends ConsumerState<MealPresetDetailPage> {
           AppSpacing.section,
         ),
         children: [
-          Text(l10n.nutritionResult, style: theme.textTheme.titleMedium),
+          Text(l10n.nutritionResult, style: theme.textTheme.subsectionTitle),
           const SizedBox(height: AppSpacing.compact),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -742,11 +742,11 @@ class _PresetMacroRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: theme.textTheme.bodySmall),
+          Text(label, style: theme.textTheme.meta),
           const SizedBox(height: 2),
           Text(
             '${grams.toStringAsFixed(1)} g',
-            style: theme.textTheme.titleMedium?.copyWith(color: color),
+            style: theme.textTheme.statFigure?.copyWith(color: color),
           ),
         ],
       ),

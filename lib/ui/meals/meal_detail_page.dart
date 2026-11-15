@@ -491,7 +491,7 @@ class _MealDetailPageState extends ConsumerState<MealDetailPage> {
             ),
           ),
           const SizedBox(height: 28),
-          Text(l10n.nutritionIntake, style: theme.textTheme.titleMedium),
+          Text(l10n.nutritionIntake, style: theme.textTheme.subsectionTitle),
           const SizedBox(height: AppSpacing.section),
           _MacroRow(
             label: l10n.calories,
@@ -595,8 +595,8 @@ class _MacroRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(child: Text(label, style: theme.textTheme.bodyLarge)),
-          Text(value, style: theme.textTheme.titleMedium),
+          Expanded(child: Text(label, style: theme.textTheme.rowTitle)),
+          Text(value, style: theme.textTheme.rowValue),
         ],
       ),
     );

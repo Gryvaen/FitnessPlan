@@ -243,9 +243,7 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
       ),
       subtitle: Text(
         '${food.kcalPer100.round()} kcal / 100g',
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: scheme.onSurfaceVariant,
-        ),
+        style: theme.textTheme.meta?.copyWith(color: scheme.onSurfaceVariant),
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -320,9 +318,7 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
           'P ${intake.proteinG.toStringAsFixed(1)} · '
           'C ${intake.carbG.toStringAsFixed(1)} · '
           'F ${intake.fatG.toStringAsFixed(1)}',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: scheme.onSurfaceVariant,
-          ),
+          style: theme.textTheme.meta?.copyWith(color: scheme.onSurfaceVariant),
         ),
         onTap: () => _editPortion(index),
       ),
@@ -398,7 +394,7 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Text(
                   l10n.foodNotFoundShort,
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  style: theme.textTheme.meta?.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
                 ),
@@ -414,7 +410,7 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
                   Expanded(
                     child: Text(
                       l10n.addedFoodsTitle(_entries.length),
-                      style: theme.textTheme.titleSmall,
+                      style: theme.textTheme.subsectionTitle,
                     ),
                   ),
                   TextButton(
@@ -425,7 +421,7 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
               ),
               ...List.generate(_entries.length, _entryTile),
               const SizedBox(height: AppSpacing.section),
-              Text(l10n.convertResult, style: theme.textTheme.titleMedium),
+              Text(l10n.convertResult, style: theme.textTheme.subsectionTitle),
               const SizedBox(height: 8),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -458,7 +454,7 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
             ],
             if (favorites.isNotEmpty) ...[
               if (_entries.isEmpty) const SizedBox(height: AppSpacing.section),
-              Text(l10n.favorites, style: theme.textTheme.titleSmall),
+              Text(l10n.favorites, style: theme.textTheme.sectionTitle),
               const SizedBox(height: AppSpacing.compact),
               ...favorites.map(
                 (f) => _foodTile(f, favorite: true, pickOnTap: false),
@@ -468,7 +464,7 @@ class _FoodConvertPageState extends ConsumerState<FoodConvertPage> {
               const SizedBox(height: AppSpacing.section),
               Text(
                 l10n.foodConvertHint,
-                style: theme.textTheme.bodySmall?.copyWith(
+                style: theme.textTheme.meta?.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
               ),
@@ -539,18 +535,18 @@ class _PortionSheetState extends State<_PortionSheet> {
             carbG: food.carbPer100,
             proteinG: food.proteinPer100,
             fatG: food.fatPer100,
-            style: theme.textTheme.titleMedium,
+            style: theme.textTheme.rowTitle,
           ),
           const SizedBox(height: 4),
           Text(
             '${kcal.round()} kcal · ${_grams.round()} g',
-            style: theme.textTheme.bodyMedium?.copyWith(
+            style: theme.textTheme.bodyText?.copyWith(
               color: scheme.onSurfaceVariant,
             ),
           ),
           if (widget.servings.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.section),
-            Text(l10n.commonPortions, style: theme.textTheme.bodySmall),
+            Text(l10n.commonPortions, style: theme.textTheme.meta),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -681,16 +677,16 @@ class _MacroRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: theme.textTheme.bodySmall),
+          Text(label, style: theme.textTheme.meta),
           const SizedBox(height: 2),
           Text(
             '${v.toStringAsFixed(1)} g',
-            style: theme.textTheme.titleSmall?.copyWith(color: c),
+            style: theme.textTheme.statFigure?.copyWith(color: c),
           ),
           if (totalKcal > 0)
             Text(
               '${pct(kcal)}%',
-              style: theme.textTheme.bodySmall?.copyWith(
+              style: theme.textTheme.meta?.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
             ),

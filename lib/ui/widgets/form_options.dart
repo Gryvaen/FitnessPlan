@@ -393,10 +393,11 @@ class _CupertinoWheelSheetState<T> extends State<_CupertinoWheelSheet<T>> {
                     child: Text(
                       widget.title,
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        decoration: TextDecoration.none,
-                        color: labelColor,
-                      ),
+                      style: Theme.of(context).textTheme.subsectionTitle
+                          ?.copyWith(
+                            decoration: TextDecoration.none,
+                            color: labelColor,
+                          ),
                     ),
                   ),
                   CupertinoButton(
@@ -428,10 +429,11 @@ class _CupertinoWheelSheetState<T> extends State<_CupertinoWheelSheet<T>> {
                     Center(
                       child: Text(
                         widget.itemLabel(item),
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          decoration: TextDecoration.none,
-                          color: labelColor,
-                        ),
+                        style: Theme.of(context).textTheme.sectionTitle
+                            ?.copyWith(
+                              decoration: TextDecoration.none,
+                              color: labelColor,
+                            ),
                       ),
                     ),
                 ],
@@ -611,7 +613,7 @@ class _PickerField extends StatelessWidget {
                       flex: 4,
                       child: Text(
                         label,
-                        style: theme.textTheme.bodyLarge,
+                        style: theme.textTheme.rowTitle,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -626,7 +628,7 @@ class _PickerField extends StatelessWidget {
                       textAlign: hasLabel ? TextAlign.end : TextAlign.start,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleMedium,
+                      style: theme.textTheme.rowTitle,
                     ),
                   ),
                   const SizedBox(width: 4),

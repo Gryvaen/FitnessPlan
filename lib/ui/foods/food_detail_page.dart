@@ -416,7 +416,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
           const SizedBox(height: 4),
           Text(
             food.category.localizedCategory(l10n),
-            style: theme.textTheme.bodySmall?.copyWith(
+            style: theme.textTheme.meta?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
@@ -429,16 +429,16 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
           ),
           if (_extraRows(food, l10n).isNotEmpty) ...[
             const SizedBox(height: AppSpacing.section),
-            Text(l10n.per100g, style: theme.textTheme.titleSmall),
+            Text(l10n.per100g, style: theme.textTheme.subsectionTitle),
             for (final (label, value) in _extraRows(food, l10n))
               _kv(theme, label, value),
           ],
           const SizedBox(height: AppSpacing.section),
-          Text(l10n.servingSize, style: theme.textTheme.titleMedium),
+          Text(l10n.servingSize, style: theme.textTheme.subsectionTitle),
           const SizedBox(height: AppSpacing.compact),
           _GramsStepper(grams: _grams, onStep: _stepGrams),
           const SizedBox(height: AppSpacing.section),
-          Text(l10n.nutritionResult, style: theme.textTheme.titleMedium),
+          Text(l10n.nutritionResult, style: theme.textTheme.subsectionTitle),
           const SizedBox(height: 4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -466,7 +466,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
             children: [
               Text(
                 l10n.commonPortions,
-                style: theme.textTheme.titleSmall?.copyWith(
+                style: theme.textTheme.subsectionTitle?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -585,8 +585,8 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: theme.textTheme.bodyMedium),
-        Text(value, style: theme.textTheme.bodyMedium),
+        Text(label, style: theme.textTheme.rowTitle),
+        Text(value, style: theme.textTheme.rowValue),
       ],
     ),
   );
@@ -613,11 +613,11 @@ class _MacroRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: theme.textTheme.bodySmall),
+          Text(label, style: theme.textTheme.meta),
           const SizedBox(height: 2),
           Text(
             '${v.toStringAsFixed(1)} g',
-            style: theme.textTheme.titleSmall?.copyWith(color: c),
+            style: theme.textTheme.statFigure?.copyWith(color: c),
           ),
           if (unitSuffix != null)
             Text(
@@ -664,7 +664,7 @@ class _GramsStepper extends StatelessWidget {
           child: Text(
             '${grams.round()} g',
             textAlign: TextAlign.center,
-            style: theme.textTheme.titleLarge,
+            style: theme.textTheme.sectionTitle,
           ),
         ),
         _GramStepButton(

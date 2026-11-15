@@ -81,7 +81,7 @@ class _RestrictionIssueRowState extends State<RestrictionIssueRow> {
           subtitle: _expanded
               ? Text(
                   issue.detail,
-                  style: theme.textTheme.bodySmall?.copyWith(color: muted),
+                  style: theme.textTheme.meta?.copyWith(color: muted),
                 )
               : null,
           trailing: ConstrainedBox(

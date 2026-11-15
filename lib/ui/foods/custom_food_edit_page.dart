@@ -416,7 +416,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
           if (_temporary) ...[
             Text(
               l10n.temporaryBadge,
-              style: Theme.of(context).textTheme.titleSmall,
+              style: Theme.of(context).textTheme.subsectionTitle,
             ),
             const SizedBox(height: 8),
           ],
@@ -431,7 +431,7 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
             _numField(_weight, l10n.actualFoodWeight),
           Text(
             _caloriesOnly ? l10n.thisIntakeCalories : l10n.per100gNutrition,
-            style: Theme.of(context).textTheme.titleSmall,
+            style: Theme.of(context).textTheme.subsectionTitle,
           ),
           const SizedBox(height: 8),
           Row(

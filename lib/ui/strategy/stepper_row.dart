@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
 import '../ink/ink_icon.dart';
 
 /// Label + −/+ stepper for a 0.1-step multiplier (g/kg), bounded by
@@ -42,7 +43,7 @@ class StepperRow extends StatelessWidget {
               Flexible(
                 child: Text(
                   label,
-                  style: theme.textTheme.bodyMedium,
+                  style: theme.textTheme.rowTitle,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -74,7 +75,7 @@ class StepperRow extends StatelessWidget {
           child: Text(
             '${value.toStringAsFixed(1)} $unit',
             textAlign: TextAlign.center,
-            style: theme.textTheme.titleSmall,
+            style: theme.textTheme.rowValue,
           ),
         ),
         IconButton(

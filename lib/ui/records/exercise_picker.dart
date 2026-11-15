@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
 import '../../data/db.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../ink/ink_icon.dart';
@@ -44,9 +45,7 @@ class ExercisePicker extends StatelessWidget {
         },
         child: Row(
           children: [
-            Expanded(
-              child: Text(displayText, style: theme.textTheme.bodyLarge),
-            ),
+            Expanded(child: Text(displayText, style: theme.textTheme.rowTitle)),
             InkIcon(InkGlyph.expand, color: theme.colorScheme.onSurfaceVariant),
           ],
         ),
@@ -93,7 +92,7 @@ class ExercisePickerSheet extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
                 child: Text(
                   category.localizedExerciseCategory(l10n),
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  style: theme.textTheme.subsectionTitle?.copyWith(
                     color: theme.colorScheme.primary,
                   ),
                 ),

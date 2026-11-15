@@ -190,7 +190,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                                 IntrinsicWidth(
                                   child: Text(
                                     l10n.sectionCalories(sectionPrefix),
-                                    style: theme.textTheme.titleMedium
+                                    style: theme.textTheme.sectionTitle
                                         ?.copyWith(color: onHero),
                                   ),
                                 ),
@@ -201,8 +201,9 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                                     children: [
                                       Text(
                                         '|',
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(color: onHeroMuted),
+                                        style: theme.textTheme.meta?.copyWith(
+                                          color: onHeroMuted,
+                                        ),
                                       ),
                                       const SizedBox(width: AppSpacing.compact),
                                       InkIcon(
@@ -213,8 +214,9 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                                       const SizedBox(width: 4),
                                       Text(
                                         dayMarker.label(l10n),
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(color: onHeroMuted),
+                                        style: theme.textTheme.meta?.copyWith(
+                                          color: onHeroMuted,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -243,7 +245,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                                 canChooseDietStrategy
                                     ? l10n.goalCut
                                     : strategyLabel,
-                                style: theme.textTheme.bodySmall?.copyWith(
+                                style: theme.textTheme.meta?.copyWith(
                                   color: onHeroMuted,
                                 ),
                               ),
@@ -251,7 +253,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                             if (canChooseDietStrategy)
                               Text(
                                 '|',
-                                style: theme.textTheme.bodySmall?.copyWith(
+                                style: theme.textTheme.meta?.copyWith(
                                   color: onHeroMuted,
                                 ),
                               ),
@@ -262,7 +264,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                                 borderRadius: BorderRadius.circular(6),
                                 child: Text(
                                   l10n.canChooseDietStrategy,
-                                  style: theme.textTheme.bodySmall?.copyWith(
+                                  style: theme.textTheme.meta?.copyWith(
                                     color: scheme.primary,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -824,12 +826,12 @@ class _MealGroups extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 10),
-                Text(type.label(l10n), style: theme.textTheme.titleSmall),
+                Text(type.label(l10n), style: theme.textTheme.rowTitle),
                 if (loggedAt != null) ...[
                   const SizedBox(width: 6),
                   Text(
                     AppDates.hm(loggedAt),
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: theme.textTheme.meta?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
@@ -869,14 +871,11 @@ class _MealGroups extends ConsumerWidget {
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall,
+                    style: theme.textTheme.meta,
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  '${calories.round()} kcal',
-                  style: theme.textTheme.bodySmall,
-                ),
+                Text('${calories.round()} kcal', style: theme.textTheme.meta),
               ],
             ),
           ),
@@ -1183,10 +1182,13 @@ class _StepsDetailSheetState extends ConsumerState<_StepsDetailSheet>
                 Expanded(
                   child: Text(
                     l10n.stepsSheetTitle,
-                    style: theme.textTheme.titleLarge,
+                    style: theme.textTheme.sectionTitle,
                   ),
                 ),
-                Text(l10n.nSteps(steps), style: theme.textTheme.titleMedium),
+                Text(
+                  l10n.nSteps(steps),
+                  style: theme.textTheme.subsectionTitle,
+                ),
               ],
             ),
             const SizedBox(height: AppSpacing.compact),
@@ -1296,12 +1298,12 @@ class _TodayHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: theme.textTheme.headlineSmall),
+                Text(title, style: theme.textTheme.pageTitle),
                 if (showDate) ...[
                   const SizedBox(height: 2),
                   Text(
                     dateLabel,
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: theme.textTheme.meta?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),

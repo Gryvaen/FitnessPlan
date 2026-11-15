@@ -81,21 +81,18 @@ class CarbCycleView extends StatelessWidget {
           children: [
             Expanded(
               flex: 3,
-              child: Text(
-                l10n.cycleDayColumn,
-                style: theme.textTheme.labelSmall,
-              ),
+              child: Text(l10n.cycleDayColumn, style: theme.textTheme.meta),
             ),
             Expanded(
               flex: 4,
-              child: Text(l10n.carbDayType, style: theme.textTheme.labelSmall),
+              child: Text(l10n.carbDayType, style: theme.textTheme.meta),
             ),
             Expanded(
               flex: 3,
               child: Text(
                 l10n.targetKcalColumn,
                 textAlign: TextAlign.end,
-                style: theme.textTheme.labelSmall,
+                style: theme.textTheme.meta,
               ),
             ),
           ],
@@ -105,10 +102,10 @@ class CarbCycleView extends StatelessWidget {
           _dayRow(i, days, start, anchor, restDays, today, locale, editable),
         if (editable) ...[
           const SizedBox(height: 6),
-          Text(l10n.carbCycleEditHint, style: theme.textTheme.bodySmall),
+          Text(l10n.carbCycleEditHint, style: theme.textTheme.meta),
         ],
         const SizedBox(height: AppSpacing.section),
-        Text(l10n.cycleSummary, style: theme.textTheme.titleSmall),
+        Text(l10n.cycleSummary, style: theme.textTheme.subsectionTitle),
         const SizedBox(height: AppSpacing.compact),
         Row(
           children: [
@@ -137,7 +134,7 @@ class CarbCycleView extends StatelessWidget {
                 )
               : '${l10n.referenceWeightKg} '
                     '${plan.referenceWeightKg.toStringAsFixed(1)} kg',
-          style: theme.textTheme.bodySmall?.copyWith(
+          style: theme.textTheme.meta?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
@@ -258,7 +255,7 @@ class _DayRow extends StatelessWidget {
                     flex: 3,
                     child: Text(
                       name,
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                      style: theme.textTheme.rowTitle?.copyWith(
                         fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
                       ),
                     ),
@@ -267,7 +264,7 @@ class _DayRow extends StatelessWidget {
                     flex: 4,
                     child: Text(
                       marker?.label(l10n) ?? type.label(l10n),
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                      style: theme.textTheme.rowTitle?.copyWith(
                         color: typeColor,
                         fontWeight: FontWeight.w600,
                       ),
@@ -278,7 +275,7 @@ class _DayRow extends StatelessWidget {
                     child: Text(
                       '$kcal',
                       textAlign: TextAlign.end,
-                      style: theme.textTheme.bodyMedium,
+                      style: theme.textTheme.rowValue,
                     ),
                   ),
                   if (onTap != null)
@@ -295,7 +292,7 @@ class _DayRow extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 'P ${proteinG}g · C ${carbG}g · F ${fatG}g',
-                style: theme.textTheme.bodySmall?.copyWith(
+                style: theme.textTheme.meta?.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
               ),
@@ -320,10 +317,10 @@ class _SummaryCell extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(value, style: theme.textTheme.titleMedium),
+          Text(value, style: theme.textTheme.statFigure),
           Text(
             label,
-            style: theme.textTheme.labelSmall?.copyWith(
+            style: theme.textTheme.statLabel?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),

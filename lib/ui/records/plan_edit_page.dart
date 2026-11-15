@@ -406,7 +406,7 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
                       textInputAction: TextInputAction.done,
                     ),
                     const SizedBox(height: AppSpacing.section),
-                    Text(l10n.exercise, style: theme.textTheme.titleMedium),
+                    Text(l10n.exercise, style: theme.textTheme.subsectionTitle),
                     const SizedBox(height: 8),
                     ReorderableListView.builder(
                       shrinkWrap: true,
@@ -433,7 +433,7 @@ class _PlanEditPageState extends ConsumerState<PlanEditPage> {
                                   children: [
                                     Text(
                                       '${i + 1}'.padLeft(2, '0'),
-                                      style: theme.textTheme.bodySmall,
+                                      style: theme.textTheme.meta,
                                     ),
                                     const SizedBox(height: 2),
                                     InkIcon(
@@ -503,13 +503,13 @@ class _PlanNoExercisesEmpty extends StatelessWidget {
             Text(
               l10n.addExercisesFirstShort,
               textAlign: TextAlign.center,
-              style: theme.textTheme.titleMedium,
+              style: theme.textTheme.subsectionTitle,
             ),
             const SizedBox(height: AppSpacing.compact),
             Text(
               l10n.addExercisesFirst,
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style: theme.textTheme.bodyText?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),

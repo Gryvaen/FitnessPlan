@@ -454,7 +454,7 @@ class _HistorySheet extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 0, 8, 8),
           child: Row(
             children: [
-              Text(l10n.calcHistory, style: theme.textTheme.titleMedium),
+              Text(l10n.calcHistory, style: theme.textTheme.subsectionTitle),
               const Spacer(),
               TextButton(
                 onPressed: entries.isEmpty ? null : onClear,
@@ -479,13 +479,13 @@ class _HistorySheet extends StatelessWidget {
                       ),
                       title: Text(
                         e.expression,
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: theme.textTheme.bodyText?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                       subtitle: Text(
                         e.result,
-                        style: theme.textTheme.titleLarge,
+                        style: theme.textTheme.sectionTitle,
                       ),
                       trailing: Text(
                         timeFmt.format(e.at.toLocal()),

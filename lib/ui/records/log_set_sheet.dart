@@ -276,7 +276,7 @@ class _EditProgressSheetState extends ConsumerState<_EditProgressSheet> {
                       children: [
                         Text(
                           l10n.editTrainingRecord,
-                          style: theme.textTheme.titleSmall?.copyWith(
+                          style: theme.textTheme.rowValue?.copyWith(
                             color: scheme.onSurfaceVariant,
                           ),
                         ),
@@ -286,7 +286,7 @@ class _EditProgressSheetState extends ConsumerState<_EditProgressSheet> {
                           onDoubleTap: _saving ? null : _renameExercise,
                           child: Text(
                             _exerciseName,
-                            style: theme.textTheme.headlineSmall?.copyWith(
+                            style: theme.textTheme.pageTitle?.copyWith(
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -294,14 +294,14 @@ class _EditProgressSheetState extends ConsumerState<_EditProgressSheet> {
                         const SizedBox(height: 4),
                         Text(
                           l10n.trainingSetTarget(widget.targetSets),
-                          style: theme.textTheme.bodyMedium?.copyWith(
+                          style: theme.textTheme.bodyText?.copyWith(
                             color: scheme.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(height: 12),
                         Text(
                           l10n.completedSets,
-                          style: theme.textTheme.titleSmall,
+                          style: theme.textTheme.subsectionTitle,
                         ),
                         const SizedBox(height: 4),
                         Row(
@@ -330,10 +330,9 @@ class _EditProgressSheetState extends ConsumerState<_EditProgressSheet> {
                                     l10n.trainingSetDenominator(
                                       widget.targetSets,
                                     ),
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(
-                                          color: scheme.onSurfaceVariant,
-                                        ),
+                                    style: theme.textTheme.statFigure?.copyWith(
+                                      color: scheme.onSurfaceVariant,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -395,7 +394,7 @@ class _EditProgressSheetState extends ConsumerState<_EditProgressSheet> {
                                   l10n,
                                   category: widget.category,
                                 ),
-                                style: theme.textTheme.titleSmall,
+                                style: theme.textTheme.subsectionTitle,
                               ),
                             ),
                             _StepButton(
@@ -411,7 +410,7 @@ class _EditProgressSheetState extends ConsumerState<_EditProgressSheet> {
                               ),
                               child: Text(
                                 '$_perSetValue',
-                                style: theme.textTheme.headlineSmall?.copyWith(
+                                style: theme.textTheme.statValue?.copyWith(
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -612,10 +611,7 @@ class _DisclosureRow extends StatelessWidget {
               InkIcon(expanded ? InkGlyph.remove : InkGlyph.add, size: 24),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  label,
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
+                child: Text(label, style: Theme.of(context).textTheme.rowTitle),
               ),
               InkIcon(expanded ? InkGlyph.collapse : InkGlyph.expand),
             ],

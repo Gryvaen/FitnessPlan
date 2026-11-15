@@ -208,7 +208,7 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
     final locale = Localizations.localeOf(context);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final bodyStyle = theme.textTheme.bodyLarge?.copyWith(height: 1.55);
+    final bodyStyle = theme.textTheme.rowTitle?.copyWith(height: 1.55);
     final editable = AppDates.isLocalToday(_day);
 
     return PopScope(
@@ -265,7 +265,7 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
                       children: [
                         Text(
                           AppDates.ymdWithWeekday(_day, locale),
-                          style: theme.textTheme.bodyMedium,
+                          style: theme.textTheme.bodyText,
                         ),
                         Text(
                           _statusLabel(l10n),

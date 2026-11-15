@@ -102,9 +102,51 @@ double listBottomInset(BuildContext context, {bool hasFab = true}) {
   return (hasFab ? 72.0 : 16.0) + 60.0 + pad;
 }
 
-/// Semantic text roles on top of Material 3.
+/// Semantic text roles on top of Material 3, sized by layout role after the
+/// meal-preset detail page. Page code should use these role names instead of
+/// raw M3 styles, so the same role reads the same size everywhere:
+///
+/// | role              | M3            | size |
+/// |-------------------|---------------|------|
+/// | [pageTitle]       | headlineSmall | 24   |
+/// | [sectionTitle]    | titleLarge    | 22   |
+/// | [subsectionTitle] | titleMedium   | 16   |
+/// | [rowTitle]        | bodyLarge     | 16   |
+/// | [rowValue]        | titleSmall    | 14 (w600) |
+/// | [meta]            | bodySmall     | 12   |
+/// | [statValue]       | headlineSmall | 24 (w700) |
+/// | [statUnit]        | titleSmall    | 14   |
+/// | [statLabel]       | bodySmall     | 12   |
+/// | [statFigure]      | titleMedium   | 16   |
+/// | [bodyText]        | bodyMedium    | 14   |
 extension AppTextStyles on TextTheme {
+  /// Big inline title at the top of a tab-root page.
+  TextStyle? get pageTitle => headlineSmall;
+
+  /// A block on a page (e.g. a meal, "今日训练", "循环安排").
+  TextStyle? get sectionTitle => titleLarge;
+
+  /// A heading inside a section (fold headers, summary labels).
+  TextStyle? get subsectionTitle => titleMedium;
+
+  /// Primary text of a list row (food name, setting name).
+  TextStyle? get rowTitle => bodyLarge;
+
+  /// Trailing figure of a list row (e.g. "320 kcal").
+  TextStyle? get rowValue => titleSmall;
+
+  /// Explanatory paragraph text.
+  TextStyle? get bodyText => bodyMedium;
+
+  /// Small label above or below a stat figure.
+  TextStyle? get statLabel => bodySmall;
+
+  /// Secondary figure under a [statLabel] (e.g. macro grams "121.0 g").
+  TextStyle? get statFigure => titleMedium;
+
   TextStyle? get fieldLabel => labelMedium;
+
+  /// Secondary row text (e.g. "100 g · P · C · F").
   TextStyle? get meta => bodySmall;
   TextStyle? get statValue => headlineSmall?.copyWith(
     fontFamily: AppTheme.bodyFontFamily,
@@ -573,6 +615,11 @@ class AppTheme {
       ),
       listTileTheme: ListTileThemeData(
         iconColor: accent,
+        titleTextStyle: text.rowTitle?.copyWith(color: scheme.onSurface),
+        subtitleTextStyle: text.meta,
+        leadingAndTrailingTextStyle: text.rowValue?.copyWith(
+          color: scheme.onSurface,
+        ),
         selectedColor: scheme.onSurface,
         selectedTileColor: visuals.accentSoft,
         shape: RoundedRectangleBorder(
