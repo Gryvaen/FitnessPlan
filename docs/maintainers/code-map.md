@@ -80,7 +80,6 @@ UI 统一 import `app_providers.dart`（汇总导出）。
 | `core_providers.dart` | `sharedPreferencesProvider`（必须在 `main` 里覆盖）、`databaseProvider`、各仓库的 provider |
 | `profile_providers.dart` | `profileProvider`：保存档案时统一处理切换目标的连带操作（结算修仙热量、停止策略、开启或冻结修仙分段） |
 | `diet_strategy_providers.dart` | `dietStrategyActionsProvider`（应用/取消计划）、`activeDietPlanProvider`、`dailyTargetProvider`（按天的 family，每日目标的唯一出口）、`todayTargetProvider`、`selectedDayTargetProvider` |
-| `strategy_review_providers.dart` | 体重变化 ≥ 3% 或档案与计划不一致时，提示重新评估策略 |
 | `cultivation_providers.dart` | 修仙进度、今日热量贡献、历史分段 |
 | `day_marker_providers.dart` | 某天的标记、标记设置、休息日列表 |
 | `meal_providers.dart` | `selectedDayProvider`（今日页当前选中的日期）、当天饮食与摄入、饮水、套餐、饮食历史 |

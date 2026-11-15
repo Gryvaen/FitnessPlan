@@ -116,3 +116,11 @@ class ProfileNotifier extends Notifier<UserProfile?> {
     state = null;
   }
 }
+
+/// Whether a profile edit changes anything nutrition targets derive from.
+bool profileAffectsNutrition(UserProfile old, UserProfile next) =>
+    old.sex != next.sex ||
+    old.age != next.age ||
+    old.heightCm != next.heightCm ||
+    old.weightKg != next.weightKg ||
+    old.activity != next.activity;

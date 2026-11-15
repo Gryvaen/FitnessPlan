@@ -246,9 +246,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       ref.invalidate(themeProvider);
       ref.invalidate(localeProvider);
       ref.invalidate(remindersProvider);
-      // Strategy-review state is read from prefs once in build().
-      ref.invalidate(profileStrategyReviewProvider);
-      ref.invalidate(strategyReviewDismissalProvider);
       ref.read(profileProvider.notifier).reload();
       // The 境界 ledger lives in prefs too; drop the pre-import copy.
       ref.read(cutCultivationStateProvider.notifier).reload();

@@ -2164,9 +2164,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dietCompleteToggle => '今日饮食记录完整';
 
   @override
-  String get dietCompleteHint => '仅明确确认的日期计入渐降复核完整度';
-
-  @override
   String weeklyAvgLine(String kcal) {
     return '循环日均 $kcal kcal';
   }
@@ -2320,21 +2317,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get strategyProposedBasis => '待应用目标';
-
-  @override
-  String get strategyReviewHint => '当前体重与策略参考体重相差至少 3%，建议复核目标。';
-
-  @override
-  String get strategyReviewAction => '复核策略';
-
-  @override
-  String get strategyReviewDismiss => '稍后';
-
-  @override
-  String get profileStrategyReviewHint => '档案已更新，建议复核策略。当前目标仍按本版策略执行。';
-
-  @override
-  String get profileStrategyReviewAction => '查看新旧目标';
 
   @override
   String get profileSaveStoppedStrategy => '减脂目标已切换，原减脂策略已停用。';
@@ -2769,21 +2751,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get carbDayType => '碳水日类型';
-
-  @override
-  String get reviewPoints => '复核要点';
-
-  @override
-  String get dataPendingTitle => '数据待补齐';
-
-  @override
-  String get dataPendingHint => '请持续记录体重';
-
-  @override
-  String get keepCurrentPlan => '保持当前计划';
-
-  @override
-  String get addRecords => '补充记录';
 
   @override
   String get about => '关于';

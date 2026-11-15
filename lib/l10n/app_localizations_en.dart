@@ -2206,10 +2206,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dietCompleteToggle => 'Today\'s food log is complete';
 
   @override
-  String get dietCompleteHint =>
-      'Only confirmed days count toward the taper review';
-
-  @override
   String weeklyAvgLine(String kcal) {
     return 'Cycle avg $kcal kcal';
   }
@@ -2369,23 +2365,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get strategyProposedBasis => 'Proposed target';
-
-  @override
-  String get strategyReviewHint =>
-      'Your weight differs from this plan’s reference weight by at least 3%. Review the target.';
-
-  @override
-  String get strategyReviewAction => 'Review strategy';
-
-  @override
-  String get strategyReviewDismiss => 'Later';
-
-  @override
-  String get profileStrategyReviewHint =>
-      'Profile updated. Review this strategy\'s targets; the current plan stays in effect until you apply changes.';
-
-  @override
-  String get profileStrategyReviewAction => 'Compare targets';
 
   @override
   String get profileSaveStoppedStrategy =>
@@ -2833,21 +2812,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get carbDayType => 'Carb-day type';
-
-  @override
-  String get reviewPoints => 'Review points';
-
-  @override
-  String get dataPendingTitle => 'Data pending';
-
-  @override
-  String get dataPendingHint => 'Keep logging your weight';
-
-  @override
-  String get keepCurrentPlan => 'Keep current plan';
-
-  @override
-  String get addRecords => 'Add records';
 
   @override
   String get about => 'About';

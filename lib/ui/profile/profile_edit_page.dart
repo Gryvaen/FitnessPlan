@@ -159,15 +159,6 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
       if (!mounted) return false;
       final nutritionChanged =
           previous != null && profileAffectsNutrition(previous, saved);
-      if (nutritionChanged &&
-          previousPlan != null &&
-          saved.goal == FitnessGoal.cut &&
-          profileDiffersFromPlan(saved, previousPlan)) {
-        await ref
-            .read(profileStrategyReviewProvider.notifier)
-            .record(previousPlan);
-      }
-      if (!mounted) return false;
       final l10n = context.l10n;
       final feedback =
           previousPlan != null &&

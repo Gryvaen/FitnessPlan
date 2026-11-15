@@ -3927,12 +3927,6 @@ abstract class AppLocalizations {
   /// **'Today\'s food log is complete'**
   String get dietCompleteToggle;
 
-  /// No description provided for @dietCompleteHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Only confirmed days count toward the taper review'**
-  String get dietCompleteHint;
-
   /// No description provided for @weeklyAvgLine.
   ///
   /// In en, this message translates to:
@@ -4190,36 +4184,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Proposed target'**
   String get strategyProposedBasis;
-
-  /// No description provided for @strategyReviewHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Your weight differs from this plan’s reference weight by at least 3%. Review the target.'**
-  String get strategyReviewHint;
-
-  /// No description provided for @strategyReviewAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Review strategy'**
-  String get strategyReviewAction;
-
-  /// No description provided for @strategyReviewDismiss.
-  ///
-  /// In en, this message translates to:
-  /// **'Later'**
-  String get strategyReviewDismiss;
-
-  /// No description provided for @profileStrategyReviewHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Profile updated. Review this strategy\'s targets; the current plan stays in effect until you apply changes.'**
-  String get profileStrategyReviewHint;
-
-  /// No description provided for @profileStrategyReviewAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Compare targets'**
-  String get profileStrategyReviewAction;
 
   /// No description provided for @profileSaveStoppedStrategy.
   ///
@@ -4988,36 +4952,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Carb-day type'**
   String get carbDayType;
-
-  /// No description provided for @reviewPoints.
-  ///
-  /// In en, this message translates to:
-  /// **'Review points'**
-  String get reviewPoints;
-
-  /// No description provided for @dataPendingTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Data pending'**
-  String get dataPendingTitle;
-
-  /// No description provided for @dataPendingHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Keep logging your weight'**
-  String get dataPendingHint;
-
-  /// No description provided for @keepCurrentPlan.
-  ///
-  /// In en, this message translates to:
-  /// **'Keep current plan'**
-  String get keepCurrentPlan;
-
-  /// No description provided for @addRecords.
-  ///
-  /// In en, this message translates to:
-  /// **'Add records'**
-  String get addRecords;
 
   /// No description provided for @about.
   ///

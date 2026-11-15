@@ -80,8 +80,6 @@ void main() {
     expect(await db.select(db.stepLogs).get(), isEmpty);
     expect(container.read(waterRepositoryProvider).getGoalMlOrNull(), isNull);
     expect(container.read(calculatorHistoryRepositoryProvider).load(), isEmpty);
-    expect(container.read(strategyReviewDismissalProvider), isNull);
-    expect(container.read(profileStrategyReviewProvider), isNull);
     expect(prefs.getString('strategy_review_dismissal_v1'), isNull);
     expect(prefs.getString('strategy_profile_review_v1'), isNull);
     expect(prefs.getString(DataBackupRepository.importedOnDayKey), isNull);
