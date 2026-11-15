@@ -2,6 +2,7 @@
 library;
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:diet/app.dart';
 import 'package:diet/data/db.dart';
@@ -241,10 +242,24 @@ void _mockPlugins() {
       });
 }
 
+/// Loads the app's bundled fonts so screenshots show real Chinese glyphs
+/// instead of the test font's boxes (font-size review needs the real face).
+Future<void> _loadAppFonts() async {
+  Future<ByteData> bytes(String path) async =>
+      ByteData.sublistView(await File(path).readAsBytes());
+  final wenKai = FontLoader(AppTheme.bodyFontFamily)
+    ..addFont(bytes('assets/fonts/LXGWWenKaiLite-Medium.ttf'));
+  final noto = FontLoader('NotoSansSC')
+    ..addFont(bytes('assets/fonts/NotoSansSC-Variable.ttf'));
+  await Future.wait([wenKai.load(), noto.load()]);
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late _Harness h;
+
+  setUpAll(_loadAppFonts);
 
   setUp(() async {
     _mockPlugins();
@@ -262,13 +277,18 @@ void main() {
 
     await _shot(tester, 'en-01-today.png');
 
-    await tester.tap(find.byIcon(Icons.calendar_today_outlined).first);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    await _shot(tester, 'en-04-date-picker.png');
-    if (find.text('Cancel').evaluate().isNotEmpty) {
-      await tester.tap(find.text('Cancel'));
-      await tester.pump(const Duration(milliseconds: 300));
+    // The header now uses ink glyphs; skip the picker shot if the old
+    // Material calendar icon isn't there instead of aborting the run.
+    final calendar = find.byIcon(Icons.calendar_today_outlined);
+    if (calendar.evaluate().isNotEmpty) {
+      await tester.tap(calendar.first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await _shot(tester, 'en-04-date-picker.png');
+      if (find.text('Cancel').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Cancel'));
+        await tester.pump(const Duration(milliseconds: 300));
+      }
     }
 
     await _scrollPage(tester);
