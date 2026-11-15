@@ -104,6 +104,69 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  Future<void> insertBodyLog() => db
+      .into(db.weightLogs)
+      .insert(
+        WeightLogsCompanion.insert(
+          date: DateTime.now(),
+          weightKg: 70.5,
+          bodyFatPct: const Value(18.2),
+        ),
+      );
+
+  testWidgets('body charts fold by hand and stay folded across tabs', (
+    tester,
+  ) async {
+    await insertBodyLog();
+    await pump(tester, const BodyRecordsTab());
+    const weight = '体重 (kg)';
+    const bodyFat = '体脂率 (%)';
+    Finder chart(String title) =>
+        find.byKey(ValueKey('ink-series-chart-$title'));
+    expect(chart(weight), findsOneWidget);
+    expect(chart(bodyFat), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('body-chart-toggle-$weight')));
+    await tester.pumpAndSettle();
+    expect(chart(weight), findsNothing);
+    expect(find.text(weight), findsOneWidget);
+    expect(chart(bodyFat), findsOneWidget);
+    final prefs = container.read(sharedPreferencesProvider);
+    expect(prefs.getBool('body_weight_chart_collapsed'), isTrue);
+
+    await tester.tap(find.widgetWithText(ChoiceChip, '全部'));
+    await tester.pumpAndSettle();
+    expect(chart(weight), findsNothing);
+    expect(chart(bodyFat), findsWidgets);
+
+    await tester.tap(
+      find.byKey(const ValueKey('body-chart-toggle-$weight')).last,
+    );
+    await tester.pumpAndSettle();
+    expect(chart(weight), findsWidgets);
+    expect(prefs.getBool('body_weight_chart_collapsed'), isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('body charts open folded when remembered that way', (
+    tester,
+  ) async {
+    await container
+        .read(sharedPreferencesProvider)
+        .setBool('body_fat_chart_collapsed', true);
+    await insertBodyLog();
+    await pump(tester, const BodyRecordsTab());
+    expect(
+      find.byKey(const ValueKey('ink-series-chart-体重 (kg)')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('ink-series-chart-体脂率 (%)')),
+      findsNothing,
+    );
+    expect(find.text('体脂率 (%)'), findsOneWidget);
+  });
+
   testWidgets('body metrics use custom ink charts once logs exist', (
     tester,
   ) async {
@@ -173,9 +236,14 @@ void main() {
         );
     await pump(tester, const TrainRecordsTab(initialTab: 1));
 
-    await tester.tap(find.byKey(const ValueKey('exercise-library-search')));
+    await tester.tap(
+      find.byKey(const ValueKey('exercise-library-search-open')),
+    );
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), '不存在的动作');
+    await tester.enterText(
+      find.byKey(const ValueKey('exercise-library-search')),
+      '不存在的动作',
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('暂无动作'), findsOneWidget);

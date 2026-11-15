@@ -52,6 +52,8 @@ class FormMemoryRepository {
   static const _targetRepsKey = 'last_target_reps';
   static const _targetSecondsKey = 'last_target_seconds';
   static const _targetMinutesKey = 'last_target_minutes';
+  static const _weightChartCollapsedKey = 'body_weight_chart_collapsed';
+  static const _bodyFatChartCollapsedKey = 'body_fat_chart_collapsed';
 
   final SharedPreferences _prefs;
 
@@ -114,6 +116,22 @@ class FormMemoryRepository {
     }
   }
 
+  /// Whether the 身体 tab's weight / body-fat charts were folded away.
+  bool get weightChartCollapsed =>
+      _prefs.getBool(_weightChartCollapsedKey) ?? false;
+
+  bool get bodyFatChartCollapsed =>
+      _prefs.getBool(_bodyFatChartCollapsedKey) ?? false;
+
+  Future<void> saveBodyChartCollapsed({bool? weight, bool? bodyFat}) async {
+    if (weight != null) {
+      await _prefs.setBool(_weightChartCollapsedKey, weight);
+    }
+    if (bodyFat != null) {
+      await _prefs.setBool(_bodyFatChartCollapsedKey, bodyFat);
+    }
+  }
+
   String loadExerciseCategory({String fallback = 'chest'}) {
     final raw = _prefs.getString(_exerciseCategoryKey);
     if (raw != null && kExerciseCategoryOrder.contains(raw)) return raw;
@@ -162,6 +180,8 @@ class FormMemoryRepository {
       _prefs.remove(_targetRepsKey),
       _prefs.remove(_targetSecondsKey),
       _prefs.remove(_targetMinutesKey),
+      _prefs.remove(_weightChartCollapsedKey),
+      _prefs.remove(_bodyFatChartCollapsedKey),
     ]);
   }
 }

@@ -39,6 +39,32 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
   /// Days shown: 30, or 0 = all. Opens on the last 30 days.
   int _period = 30;
 
+  /// Charts folded away by hand; shared by both period tabs and remembered.
+  bool _weightChartCollapsed = false;
+  bool _bodyFatChartCollapsed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final memory = ref.read(formMemoryRepositoryProvider);
+    _weightChartCollapsed = memory.weightChartCollapsed;
+    _bodyFatChartCollapsed = memory.bodyFatChartCollapsed;
+  }
+
+  void _toggleWeightChart() {
+    setState(() => _weightChartCollapsed = !_weightChartCollapsed);
+    ref
+        .read(formMemoryRepositoryProvider)
+        .saveBodyChartCollapsed(weight: _weightChartCollapsed);
+  }
+
+  void _toggleBodyFatChart() {
+    setState(() => _bodyFatChartCollapsed = !_bodyFatChartCollapsed);
+    ref
+        .read(formMemoryRepositoryProvider)
+        .saveBodyChartCollapsed(bodyFat: _bodyFatChartCollapsed);
+  }
+
   /// 「30 天」 and 「全部」 once any weight is logged; just all before that.
   static List<int> _availablePeriods(List<WeightLog> orderedOldestFirst) {
     if (orderedOldestFirst.isEmpty) return const [0];
@@ -343,6 +369,8 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
             points: weightSeries,
             color: scheme.primary,
             emptyHint: l10n.chartWeightEmpty,
+            collapsed: _weightChartCollapsed,
+            onToggle: _toggleWeightChart,
           ),
         if (hasBodyFatHistory) ...[
           if (weightSeries.isNotEmpty) const SizedBox(height: AppSpacing.field),
@@ -351,6 +379,8 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
             points: bodyFatSeries,
             color: AppColors.protein,
             emptyHint: l10n.chartBfEmpty,
+            collapsed: _bodyFatChartCollapsed,
+            onToggle: _toggleBodyFatChart,
           ),
         ],
         if (showCharts) const SizedBox(height: AppSpacing.section),
@@ -395,6 +425,8 @@ class _SeriesChart extends StatelessWidget {
     required this.points,
     required this.color,
     required this.emptyHint,
+    required this.collapsed,
+    required this.onToggle,
   });
 
   final String title;
@@ -402,40 +434,74 @@ class _SeriesChart extends StatelessWidget {
   final Color color;
   final String emptyHint;
 
+  /// Folded down to just the title row.
+  final bool collapsed;
+  final VoidCallback onToggle;
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: Theme.of(context).textTheme.titleSmall),
-        const SizedBox(height: 8),
-        SizedBox(
-          key: ValueKey('ink-series-chart-$title'),
-          height: 180,
-          child: points.isEmpty
-              ? Center(
-                  child: Text(
-                    emptyHint,
-                    style: Theme.of(context).textTheme.meta,
-                  ),
-                )
-              : Semantics(
-                  label: '$title，${points.length}',
-                  image: true,
-                  child: CustomPaint(
-                    painter: _InkSeriesPainter(
-                      points: points,
-                      color: color,
-                      inkColor: Theme.of(context).colorScheme.onSurface,
-                      paperColor: AppThemeVisuals.of(context).card,
-                      labelStyle: Theme.of(context).textTheme.labelSmall,
-                      locale: Localizations.localeOf(context),
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeInOut,
+      alignment: Alignment.topCenter,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Semantics(
+            button: true,
+            expanded: !collapsed,
+            hint: collapsed ? l10n.expandSection : l10n.collapseSection,
+            child: InkWell(
+              key: ValueKey('body-chart-toggle-$title'),
+              onTap: onToggle,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(title, style: theme.textTheme.titleSmall),
                     ),
-                    size: Size.infinite,
-                  ),
+                    InkIcon(
+                      collapsed ? InkGlyph.expand : InkGlyph.collapse,
+                      size: 18,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ],
                 ),
-        ),
-      ],
+              ),
+            ),
+          ),
+          if (!collapsed) ...[const SizedBox(height: 2), _chart(context)],
+        ],
+      ),
+    );
+  }
+
+  Widget _chart(BuildContext context) {
+    return SizedBox(
+      key: ValueKey('ink-series-chart-$title'),
+      height: 180,
+      child: points.isEmpty
+          ? Center(
+              child: Text(emptyHint, style: Theme.of(context).textTheme.meta),
+            )
+          : Semantics(
+              label: '$title，${points.length}',
+              image: true,
+              child: CustomPaint(
+                painter: _InkSeriesPainter(
+                  points: points,
+                  color: color,
+                  inkColor: Theme.of(context).colorScheme.onSurface,
+                  paperColor: AppThemeVisuals.of(context).card,
+                  labelStyle: Theme.of(context).textTheme.labelSmall,
+                  locale: Localizations.localeOf(context),
+                ),
+                size: Size.infinite,
+              ),
+            ),
     );
   }
 }
