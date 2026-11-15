@@ -413,6 +413,13 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.formPage),
         children: [
+          if (_temporary) ...[
+            Text(
+              l10n.temporaryBadge,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+          ],
           TextField(
             controller: _name,
             focusNode: _nameFocus,
@@ -420,14 +427,8 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: AppSpacing.field),
-          if (_temporary) ...[
-            Text(
-              l10n.temporaryFoodHint,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: AppSpacing.section),
-            if (!_caloriesOnly) _numField(_weight, l10n.actualFoodWeight),
-          ],
+          if (_temporary && !_caloriesOnly)
+            _numField(_weight, l10n.actualFoodWeight),
           Text(
             _caloriesOnly ? l10n.thisIntakeCalories : l10n.per100gNutrition,
             style: Theme.of(context).textTheme.titleSmall,

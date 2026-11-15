@@ -3506,10 +3506,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get temporaryFood => 'Temporary food';
 
   @override
-  String get temporaryFoodHint =>
-      'For this record only; excluded from your food library';
-
-  @override
   String get invalidFoodWeight => 'Enter a valid weight greater than 0';
 
   @override

@@ -6099,12 +6099,6 @@ abstract class AppLocalizations {
   /// **'Temporary food'**
   String get temporaryFood;
 
-  /// No description provided for @temporaryFoodHint.
-  ///
-  /// In en, this message translates to:
-  /// **'For this record only; excluded from your food library'**
-  String get temporaryFoodHint;
-
   /// No description provided for @invalidFoodWeight.
   ///
   /// In en, this message translates to:

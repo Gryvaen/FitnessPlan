@@ -3425,9 +3425,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get temporaryFood => '临时食物';
 
   @override
-  String get temporaryFoodHint => '仅用于本次记录，不加入食物库';
-
-  @override
   String get invalidFoodWeight => '请输入大于 0 的有效重量';
 
   @override

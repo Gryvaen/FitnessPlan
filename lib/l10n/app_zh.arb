@@ -2413,7 +2413,6 @@
   "updateSourceGithubHint": "海外网络通常更快",
   "updateVersionMeta": "当前 {current} · 安装包 {size}",
   "temporaryFood": "临时食物",
-  "temporaryFoodHint": "仅用于本次记录，不加入食物库",
   "invalidFoodWeight": "请输入大于 0 的有效重量",
   "invalidFoodNutrition": "请填写名称和有效的非负营养数值",
   "addDietRecord": "加入饮食记录",

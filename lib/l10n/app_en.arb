@@ -2509,7 +2509,6 @@
     }
   },
   "temporaryFood": "Temporary food",
-  "temporaryFoodHint": "For this record only; excluded from your food library",
   "invalidFoodWeight": "Enter a valid weight greater than 0",
   "invalidFoodNutrition": "Enter a name and valid non-negative nutrition values",
   "addDietRecord": "Add to food diary",
