@@ -102,38 +102,43 @@ double listBottomInset(BuildContext context, {bool hasFab = true}) {
   return (hasFab ? 72.0 : 16.0) + 60.0 + pad;
 }
 
-/// Semantic text roles on top of Material 3, sized by layout role after the
-/// meal-preset detail page. Page code should use these role names instead of
-/// raw M3 styles, so the same role reads the same size everywhere:
+/// Semantic text roles on top of Material 3, sized by layout position.
+/// Headings are deliberately smaller than the M3 defaults so list pages show
+/// more content per screen; the base M3 styles (inputs, buttons, tabs, the
+/// standalone big numbers) keep their stock sizes. Page code should use these
+/// role names instead of raw M3 styles, so the same role reads the same size
+/// everywhere:
 ///
 /// | role              | M3            | size |
 /// |-------------------|---------------|------|
-/// | [pageTitle]       | headlineSmall | 24   |
-/// | [sectionTitle]    | titleLarge    | 22   |
-/// | [subsectionTitle] | titleMedium   | 16   |
-/// | [rowTitle]        | bodyLarge     | 16   |
-/// | [rowValue]        | titleSmall    | 14 (w600) |
+/// | [pageTitle]       | headlineSmall | 22   |
+/// | [sectionTitle]    | titleLarge    | 18   |
+/// | [subsectionTitle] | titleMedium   | 15   |
+/// | [rowTitle]        | bodyLarge     | 15   |
+/// | [rowValue]        | titleSmall    | 13 (w600) |
 /// | [meta]            | bodySmall     | 12   |
 /// | [statValue]       | headlineSmall | 24 (w700) |
 /// | [statUnit]        | titleSmall    | 14   |
 /// | [statLabel]       | bodySmall     | 12   |
-/// | [statFigure]      | titleMedium   | 16   |
+/// | [statFigure]      | titleMedium   | 15   |
 /// | [bodyText]        | bodyMedium    | 14   |
+///
+/// Second-level page app bars use [sectionTitle]'s size (18) too.
 extension AppTextStyles on TextTheme {
   /// Big inline title at the top of a tab-root page.
-  TextStyle? get pageTitle => headlineSmall;
+  TextStyle? get pageTitle => headlineSmall?.copyWith(fontSize: 22);
 
   /// A block on a page (e.g. a meal, "今日训练", "循环安排").
-  TextStyle? get sectionTitle => titleLarge;
+  TextStyle? get sectionTitle => titleLarge?.copyWith(fontSize: 18);
 
   /// A heading inside a section (fold headers, summary labels).
-  TextStyle? get subsectionTitle => titleMedium;
+  TextStyle? get subsectionTitle => titleMedium?.copyWith(fontSize: 15);
 
   /// Primary text of a list row (food name, setting name).
-  TextStyle? get rowTitle => bodyLarge;
+  TextStyle? get rowTitle => bodyLarge?.copyWith(fontSize: 15);
 
   /// Trailing figure of a list row (e.g. "320 kcal").
-  TextStyle? get rowValue => titleSmall;
+  TextStyle? get rowValue => titleSmall?.copyWith(fontSize: 13);
 
   /// Explanatory paragraph text.
   TextStyle? get bodyText => bodyMedium;
@@ -142,7 +147,7 @@ extension AppTextStyles on TextTheme {
   TextStyle? get statLabel => bodySmall;
 
   /// Secondary figure under a [statLabel] (e.g. macro grams "121.0 g").
-  TextStyle? get statFigure => titleMedium;
+  TextStyle? get statFigure => titleMedium?.copyWith(fontSize: 15);
 
   TextStyle? get fieldLabel => labelMedium;
 
@@ -599,7 +604,7 @@ class AppTheme {
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,
         foregroundColor: scheme.onSurface,
-        titleTextStyle: text.titleLarge?.copyWith(color: scheme.onSurface),
+        titleTextStyle: text.sectionTitle?.copyWith(color: scheme.onSurface),
       ),
       actionIconTheme: ActionIconThemeData(
         backButtonIconBuilder: (_) =>

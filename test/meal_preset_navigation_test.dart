@@ -1038,7 +1038,7 @@ void main() {
     final context = tester.element(breakfastTitle);
     expect(
       tester.widget<Text>(breakfastTitle).style,
-      Theme.of(context).textTheme.titleLarge,
+      Theme.of(context).textTheme.sectionTitle,
     );
     expect(
       tester.getTopLeft(breakfastTitle).dy,
