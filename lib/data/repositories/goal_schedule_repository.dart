@@ -6,7 +6,8 @@ import '../../domain/diet_strategy.dart';
 import '../../domain/models.dart';
 
 /// A profile-goal switch booked for a later day (e.g. 均衡维持 applied
-/// "from tomorrow"). Only one can be pending at a time.
+/// "from tomorrow"). Only one can be pending at a time. Booked for the goal
+/// already in force (维持), it is an adjustment: new rates from that day.
 class PendingGoalSwitch {
   const PendingGoalSwitch({
     required this.goal,

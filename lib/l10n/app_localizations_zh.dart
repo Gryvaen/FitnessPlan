@@ -2318,6 +2318,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String maintainCancelScheduledAdjustBody(String date) {
+    return '不再在 $date 调整维持目标，当前目标照常执行。';
+  }
+
+  @override
   String maintainRatesSummary(int pct, int kcal) {
     return '±$pct% · $kcal kcal';
   }
@@ -2381,19 +2386,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get maintainWeightTooFew => '称重太少，暂时算不出平均值';
-
-  @override
-  String get maintainRecalc => '按当前体重重算';
-
-  @override
-  String maintainRecalcBody(int from, int to) {
-    return '维持热量 $from → $to kcal';
-  }
-
-  @override
-  String maintainRecalcDone(int kcal) {
-    return '维持热量已更新为 $kcal kcal';
-  }
 
   @override
   String get strategyStatusActive => '进行中';

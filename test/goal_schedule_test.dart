@@ -184,6 +184,36 @@ void main() {
     expect(container.read(goalScheduleRepositoryProvider).load(), isNull);
   });
 
+  test('a booked 维持 adjustment re-fixes the target on its day', () async {
+    await setUpWith(FitnessGoal.maintain);
+    final tomorrow = CalendarDay.addDays(today, 1);
+    await container
+        .read(pendingGoalSwitchProvider.notifier)
+        .schedule(
+          PendingGoalSwitch(
+            goal: FitnessGoal.maintain,
+            from: tomorrow,
+            proteinPerKg: 1.6,
+          ),
+        );
+
+    // Not yet due.
+    expect(await container.read(applyDueGoalSwitchProvider)(), isFalse);
+    expect(container.read(profileProvider)!.targets.proteinG, 150);
+
+    // Due: new rate, re-fixed from the current profile; same start day.
+    expect(
+      await container.read(applyDueGoalSwitchProvider)(today: tomorrow),
+      isTrue,
+    );
+    final p = container.read(profileProvider)!;
+    expect(p.goal, FitnessGoal.maintain);
+    expect(p.maintainProteinPerKg, closeTo(1.6, 1e-9));
+    expect(p.targets.proteinG, closeTo(75 * 1.6, 0.05));
+    expect(p.calorieStandardSince, DateTime(2026, 1, 1));
+    expect(container.read(pendingGoalSwitchProvider), isNull);
+  });
+
   test('goal switches work while the cultivation history is watched', () async {
     // Riverpod (debug) rejects a notifier invalidating a provider that
     // depends on it; the history watches the profile, so the switch must

@@ -4167,6 +4167,12 @@ abstract class AppLocalizations {
   /// **'You won\'t switch to maintain on {date}; the current goal and strategy carry on.'**
   String maintainCancelScheduledBody(String date);
 
+  /// No description provided for @maintainCancelScheduledAdjustBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The maintenance target won’t change on {date}; the current one stays in force.'**
+  String maintainCancelScheduledAdjustBody(String date);
+
   /// No description provided for @maintainRatesSummary.
   ///
   /// In en, this message translates to:
@@ -4268,24 +4274,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not enough weigh-ins for an average yet'**
   String get maintainWeightTooFew;
-
-  /// No description provided for @maintainRecalc.
-  ///
-  /// In en, this message translates to:
-  /// **'Recalculate from current weight'**
-  String get maintainRecalc;
-
-  /// No description provided for @maintainRecalcBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Maintenance calories {from} → {to} kcal'**
-  String maintainRecalcBody(int from, int to);
-
-  /// No description provided for @maintainRecalcDone.
-  ///
-  /// In en, this message translates to:
-  /// **'Maintenance calories set to {kcal} kcal'**
-  String maintainRecalcDone(int kcal);
 
   /// No description provided for @strategyStatusActive.
   ///

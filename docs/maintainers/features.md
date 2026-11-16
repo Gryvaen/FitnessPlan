@@ -32,19 +32,19 @@
 
 档案目标切到「维持」就是维持期，沿用档案页的目标切换：停用减脂策略，结算并关闭当前减脂轮次；回到减脂时开新的一轮。维持只有一个策略「均衡维持」，它不入库：档案目标是维持就等于正在用它，所以在档案编辑页直接改成维持也算选了它。
 
-- **维持热量固定**：切到维持（或在档案页手动保存）时按 TDEE 确定。之后称重只更新体重、BMR、TDEE，不改 `targets`（`ProfileRepository.recalculateForWeight` 对维持目标单独处理），因为刚停止节食时，水分和糖原造成的体重上涨会把目标推高。维持页的「按当前体重重算」调用 `ProfileNotifier.recalculateMaintenance()` 重新确定。
+- **维持热量固定**：切到维持（或在档案页手动保存）时按 TDEE 确定。之后称重只更新体重、BMR、TDEE，不改 `targets`（`ProfileRepository.recalculateForWeight` 对维持目标单独处理），因为刚停止节食时，水分和糖原造成的体重上涨会把目标推高。固定时的体重和 TDEE 记在 `profile.maintainBasisWeightKg` / `maintainBasisTdee`（`saveFromInputs` 在目标为维持时写入，称重不动）。要按新体重重新确定，走「调整策略」→ 维持配置页：配置页按当前档案算出的目标和固定目标不同时，显示「待应用目标 旧 → 新」，应用按钮可用，应用即重新固定（和减脂体重变化后重新应用策略一样）。生效日期和减脂一样可选明天（默认）或今天：选明天时记一条同目标的 `PendingGoalSwitch`（goal = 维持），维持页签按「待生效」显示新版本，管理区为调整 / 更换 / 取消预约；到期由 `applyDueGoalSwitch` 按预约系数重新固定目标，不重打维持开始日。
 - **维持蛋白质、脂肪比例可调**：存在档案的 `maintainProteinPerKg` / `maintainFatPerKg`。蛋白质默认 2.0，范围 1.4–2.2（`MaintainProtein`）；脂肪默认 0.8，范围 0.6–1.0（`MaintainFat`），范围和减脂配置页一致。只在目标为维持时通过 `CalorieCalculator.plan(proteinPerKg:, fatPerKg:)` 生效，其他目标仍是蛋白质按目标默认、脂肪固定 0.8。碳水补足剩下的热量，所以改比例只会在蛋白质/脂肪和碳水之间挪热量，总热量不变。两个比例都在维持配置页「目标与营养」的步进器里调：还没在维持时，随切换（或预约，`PendingGoalSwitch.proteinPerKg` / `fatPerKg`）一起生效；已经在维持时，任一比例改了应用按钮才能点，今天生效，按当前档案重新确定目标，维持开始日不变。换到其他目标、称重都会保留这两个比例。
-- **维持开始日** = 目标为维持时的 `profile.calorieStandardSince`。切换目标时它被记为当天，维持期间没有其他逻辑会改它；手动重算不改目标，所以也不动它。
+- **维持开始日** = 目标为维持时的 `profile.calorieStandardSince`。切换目标时它被记为当天，维持期间没有其他逻辑会改它；在配置页重新应用不换目标，所以也不动它。
 - **维持日标记**：档案目标为维持时，`_fromProfile` 给当天目标的 `reason` 加上 `maintain` 标记（`;` 分隔，可以和 `plateauAdj:N` 并存），这个标记会写进当天快照。`DailyNutritionTarget.isMaintainDay` 读取它，所以切回减脂后，过去的维持日仍按维持的规则判定。
 - **达标判定**（`lib/domain/maintain.dart` 的 `intakeMet`）：维持日摄入在目标 ±10%（`maintainBandFraction`）以内算达标，少吃太多、吃得太多都不算；其他日子仍是「不超过目标」。月历的绿/红和今日页数字是否变红都用它。今日页只有超过区间上限才变红，标签后面显示「区间 low–high」；月历当月有维持日时，图例增加「维持日」一组。
-- **维持的选择路径**和减脂完全一样：档案目标不是维持时，维持 tab 显示和减脂无策略时相同的空状态（`noMaintainStrategyEmpty`：靶心图标、「未选择策略」、「选择策略」，下方是 TDEE 计算方法）→ `/profile/nutrition/maintain` 选择页（只有一行「均衡维持」，带「推荐」标签）→ `/profile/nutrition/maintain/configure` 配置页。配置页的布局和减脂配置页一样：预览概览，下面是默认折叠的「当前档案」「目标与营养」「生效日期」三行（`StrategyFoldSection`，只读行用 `StrategyReadOnlyMetric`，日期选项用 `StrategyDateOption`），再下面是免责说明，底部是共用的 `StrategyApplyBar`。已经是维持时，应用按钮禁用；已预约了同一天时，按钮也禁用。生效日期默认明天，也可以选今天：
+- **维持的选择路径**和减脂完全一样：档案目标不是维持时，维持 tab 显示和减脂无策略时相同的空状态（`noMaintainStrategyEmpty`：靶心图标、「未选择策略」、「选择策略」）→ `/profile/nutrition/maintain` 选择页（只有一行「均衡维持」，带「推荐」标签）→ `/profile/nutrition/maintain/configure` 配置页。配置页的布局和减脂配置页一样：预览概览，下面是默认折叠的「当前档案」「目标与营养」「生效日期」三行（`StrategyFoldSection`，只读行用 `StrategyReadOnlyMetric`，日期选项用 `StrategyDateOption`），再下面是免责说明，底部是共用的 `StrategyApplyBar`。已经是维持时，应用按钮禁用；已预约了同一天时，按钮也禁用。生效日期默认明天，也可以选今天：
   - **今天**：弹 `confirmGoalSwitch` 确认，然后立即 `switchGoal(maintain)`。
   - **明天**：确认框第一行是「自 M月d日 起：」。确认后只写入预约（`pendingGoalSwitchProvider`，存在 SharedPreferences 的 `pending_goal_switch` 键下），档案不变。这时维持 tab 显示「待生效」（`MaintainScheduledView`），可以「取消预约切换」。
   - **执行预约**：`MainShell` 在启动、本地零点（定时器，App 开着跨天时）和 resumed 时运行 `dayRolloverProvider`，由它调用 `applyDueGoalSwitch`。到了预约日（或更晚）就调用 `ProfileNotifier.save(effectiveFrom: 预约日)`，切换的各项结果都记在预约日，不是执行那天：减脂策略 `endedOn` = 预约日（`stopActivePlan(endOn:)`），修为轮次结束在前一天，`calorieStandardSince` = 预约日。所以 App 晚几天才打开，日期也不会错。
   - **自动清除预约**：任何一次真正的目标切换（`save` 改了目标），或者应用了一个减脂策略，都会清除预约。清空数据时也会一并删除。
   
   页面在 `lib/ui/strategy/maintain_strategy_pages.dart`，选择行复用 `StrategyOptionRow`。
-- **维持 tab**（`lib/ui/strategy/maintain_sections.dart`，档案目标为维持时显示）：版式和减脂 tab 一一对应，不能停用（换目标即停用）。从上到下依次是：概览区（「均衡维持 · 第 N 天」、热量、营养素、达标区间）→ 策略专属区块「体重」（对应碳循环的「循环安排」：近 7 天平均；较维持开始的变化，基准是开始日前一周的平均，开始当天不显示）→「策略基准」（参考体重、TDEE 估算直接读档案当前值，会随称重变化；维持热量和达标区间读固定的 `targets`，所以称重后两边可能对不上，按「按当前体重重算」后才一致）→ TDEE 计算方法 →「管理」（更换策略 → 维持选择页 / 配置页；按当前体重重算）。今日页的目标标签也显示「均衡维持」。软件不提醒什么时候切换，由用户自己决定。
+- **维持 tab**（`lib/ui/strategy/maintain_sections.dart`，档案目标为维持时显示）：版式和减脂 tab 一一对应，不能停用（换目标即停用）。从上到下依次是：概览区（「均衡维持 · 第 N 天」、热量、营养素、达标区间）→ 策略专属区块「体重」（对应碳循环的「循环安排」：近 7 天平均；较维持开始的变化，基准是开始日前一周的平均，开始当天不显示）→「策略基准」（参考体重、TDEE 估算读固定目标时记下的 `maintainBasis*`，和维持热量、达标区间一致；旧档案没有记录时回退到档案当前值）→「管理」（调整策略 → 维持配置页；更换策略 → 维持选择页）。TDEE 和目标无关，不在任何页签里重复，统一放在营养目标页右上角的计算器图标（`tdeeAction`）里，点开是当前体重、估算 TDEE 和热量推导明细。今日页的目标标签也显示「均衡维持」。软件不提醒什么时候切换，由用户自己决定。
 - **切换目标的入口**：档案编辑页、营养目标页里非当前目标的 tab（减脂和维持都显示「未选择策略」空状态：选好策略并应用时一并切换目标。减脂配置页在档案目标不是减脂时，先弹确认框，然后 `switchGoal(cut)` 开新一轮，再应用策略；减脂策略的资格检查不再要求目标是减脂）、境界页里非当前目标的「尚未开启」页。确认和切换都在 `lib/ui/profile/goal_switch.dart`：`confirmGoalSwitch` 负责确认，`switchGoal` 负责切换，境界页用两者组合起来的 `confirmAndSwitchGoal`：确认框只陈述后果（结算本轮减脂、停用策略、维持热量是多少），然后调用 `ProfileNotifier.save`；切到减脂后直接打开策略选择页。增肌 tab 仍是占位页。
 
 ## 饮食策略

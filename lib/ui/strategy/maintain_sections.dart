@@ -19,21 +19,14 @@ import 'strategy_target_card.dart';
 /// | overview「碳循环 · 第 N 版」     | overview「均衡维持 · 第 N 天」    |
 /// | strategy section (循环安排)      | strategy section (体重)          |
 /// | 本版策略基准 + facts             | 策略基准 + facts                  |
-/// | TDEE 计算方法                    | TDEE 计算方法                     |
-/// | 管理 (更换 / 停用)               | 管理 (按当前体重重算)             |
+/// | 管理 (调整 / 更换 / 停用)        | 管理 (调整 / 更换)                |
 ///
-/// There is nothing to choose or stop: switching the goal is the switch.
+/// There is nothing to stop: switching the goal is the switch. Re-fixing the
+/// target from a newer weight is 调整策略 → re-apply, as on the cut tab.
 class MaintainTargetsView extends ConsumerWidget {
-  const MaintainTargetsView({
-    super.key,
-    required this.profile,
-    required this.tdeeTile,
-  });
+  const MaintainTargetsView({super.key, required this.profile});
 
   final UserProfile profile;
-
-  /// The shared "TDEE 计算方法" row, in the same slot as on the cut tab.
-  final Widget tdeeTile;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -74,8 +67,12 @@ class MaintainTargetsView extends ConsumerWidget {
                 ),
         ),
         _WeightStability(since: since),
-        MaintainBasisSection(targets: t, profile: profile),
-        tdeeTile,
+        MaintainBasisSection(
+          targets: t,
+          profile: profile,
+          basisWeightKg: profile.maintainBasisWeightKg,
+          basisTdee: profile.maintainBasisTdee,
+        ),
         StrategySectionHeader(title: l10n.strategyManageTitle),
         // Same slot as the cut tab's 调整策略: straight to the configure page.
         StrategyActionRow(
@@ -92,7 +89,6 @@ class MaintainTargetsView extends ConsumerWidget {
           label: l10n.changeStrategy,
           onTap: () => context.push('/profile/nutrition/maintain'),
         ),
-        _RecalculateRow(profile: profile),
       ],
     );
   }
@@ -169,24 +165,29 @@ class MaintainBasisSection extends StatelessWidget {
     super.key = const ValueKey('maintainBasis'),
     required this.targets,
     required this.profile,
+    this.basisWeightKg,
+    this.basisTdee,
   });
 
   final MacroTargets targets;
-
-  /// Weight and TDEE are read from the profile as they are now (weigh-ins
-  /// move them), even though the maintenance target stays fixed until it is
-  /// recalculated.
   final UserProfile profile;
+
+  /// Weight and TDEE the fixed target came from, like the cut tab's「本版
+  /// 策略基准」. Null (a preview, or a profile saved before they were
+  /// recorded) falls back to the profile as it is now.
+  final double? basisWeightKg;
+  final double? basisTdee;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final t = targets;
     final band = maintainBand(t.calories.toDouble());
-    final basisWeight = profile.weightKg;
+    final basisWeight = basisWeightKg ?? profile.weightKg;
     // Maintenance = TDEE − plateau trim; fall back to that without a TDEE.
-    final basisTdee =
-        profile.tdee?.round() ?? t.calories + profile.calorieAdjustment;
+    final tdeeShown =
+        (basisTdee ?? profile.tdee)?.round() ??
+        t.calories + profile.calorieAdjustment;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -202,7 +203,7 @@ class MaintainBasisSection extends StatelessWidget {
         ),
         StrategyFactRow(
           label: l10n.estimatedTdee,
-          value: '$basisTdee',
+          value: '$tdeeShown',
           unit: 'kcal',
         ),
         StrategyFactRow(
@@ -223,87 +224,31 @@ class MaintainBasisSection extends StatelessWidget {
   }
 }
 
-/// 管理: re-fix the target from the current weight (weigh-ins never change it
-/// on their own). Disabled when it would come out the same.
-class _RecalculateRow extends ConsumerWidget {
-  const _RecalculateRow({required this.profile});
-
-  final UserProfile profile;
-
-  Future<void> _recalculate(
-    BuildContext context,
-    WidgetRef ref, {
-    required int from,
-    required int to,
-  }) async {
-    final l10n = context.l10n;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.maintainRecalc),
-        content: Text(l10n.maintainRecalcBody(from, to)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.confirm),
-          ),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    final updated = await ref
-        .read(profileProvider.notifier)
-        .recalculateMaintenance();
-    if (!context.mounted || updated == null) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(l10n.maintainRecalcDone(updated.targets.calories)),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = context.l10n;
-    final current = profile.targets.calories;
-    // What an explicit save would fix now (includes any plateau trim).
-    final byWeight = ref
-        .read(profileRepositoryProvider)
-        .buildPlan(profile)
-        .targets
-        .calories;
-    return StrategyActionRow(
-      key: const ValueKey('maintainRecalc'),
-      icon: InkGlyph.calculator,
-      label: l10n.maintainRecalc,
-      onTap: byWeight != current
-          ? () => _recalculate(context, ref, from: current, to: byWeight)
-          : null,
-    );
-  }
-}
-
-/// 维持 tab while a switch to maintain is booked for a later day: the same
-/// skeleton as a scheduled fat-loss strategy (status 待生效, first-day
-/// caption), the basis it would fix from the current profile, the TDEE row,
-/// and 管理 with 取消预约切换.
+/// 维持 tab while a switch to maintain — or, already maintaining, an
+/// adjustment — is booked for a later day: the same skeleton as a scheduled
+/// fat-loss strategy (status 待生效, first-day caption), the basis it would
+/// fix from the current profile at the booked rates, and 管理
+/// with 调整 / 更换 / 取消预约.
 class MaintainScheduledView extends ConsumerWidget {
   const MaintainScheduledView({
     super.key,
     required this.profile,
     required this.from,
-    required this.tdeeTile,
+    this.proteinPerKg,
+    this.fatPerKg,
   });
 
   final UserProfile profile;
 
-  /// The booked first day on maintain.
+  /// The booked first day on maintain (or of the new rates).
   final DateTime from;
-  final Widget tdeeTile;
+
+  /// Booked rates (null keeps the profile's).
+  final double? proteinPerKg;
+  final double? fatPerKg;
+
+  /// Already maintaining: the booking adjusts the target, not the goal.
+  bool get _adjusting => profile.goal == FitnessGoal.maintain;
 
   Future<void> _cancel(BuildContext context, WidgetRef ref) async {
     final l10n = context.l10n;
@@ -312,7 +257,11 @@ class MaintainScheduledView extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(l10n.cancelScheduledStrategy),
-        content: Text(l10n.maintainCancelScheduledBody(date)),
+        content: Text(
+          _adjusting
+              ? l10n.maintainCancelScheduledAdjustBody(date)
+              : l10n.maintainCancelScheduledBody(date),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -339,7 +288,13 @@ class MaintainScheduledView extends ConsumerWidget {
     final locale = Localizations.localeOf(context);
     final t = ref
         .read(profileRepositoryProvider)
-        .buildPlan(profile.copyWith(goal: FitnessGoal.maintain))
+        .buildPlan(
+          profile.copyWith(
+            goal: FitnessGoal.maintain,
+            maintainProteinPerKg: proteinPerKg,
+            maintainFatPerKg: fatPerKg,
+          ),
+        )
         .targets;
     final band = maintainBand(t.calories.toDouble());
     return ListView(
@@ -362,7 +317,6 @@ class MaintainScheduledView extends ConsumerWidget {
           footnote: l10n.maintainBandShort(band.low.round(), band.high.round()),
         ),
         MaintainBasisSection(targets: t, profile: profile),
-        tdeeTile,
         StrategySectionHeader(title: l10n.strategyManageTitle),
         // Same order as a scheduled fat-loss strategy: 调整 / 更换 / 取消预约.
         StrategyActionRow(

@@ -2367,6 +2367,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String maintainCancelScheduledAdjustBody(String date) {
+    return 'The maintenance target won’t change on $date; the current one stays in force.';
+  }
+
+  @override
   String maintainRatesSummary(int pct, int kcal) {
     return '±$pct% · $kcal kcal';
   }
@@ -2430,19 +2435,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get maintainWeightTooFew => 'Not enough weigh-ins for an average yet';
-
-  @override
-  String get maintainRecalc => 'Recalculate from current weight';
-
-  @override
-  String maintainRecalcBody(int from, int to) {
-    return 'Maintenance calories $from → $to kcal';
-  }
-
-  @override
-  String maintainRecalcDone(int kcal) {
-    return 'Maintenance calories set to $kcal kcal';
-  }
 
   @override
   String get strategyStatusActive => 'Active';

@@ -114,25 +114,6 @@ class ProfileNotifier extends Notifier<UserProfile?> {
     }
   }
 
-  /// Re-fixes the 维持 target from the current profile inputs (weigh-ins
-  /// leave it alone, see `ProfileRepository.recalculateForWeight`). The goal
-  /// doesn't change, so the "new standard" day — the maintenance start —
-  /// stays put.
-  Future<UserProfile?> recalculateMaintenance() async {
-    final p = state;
-    if (p == null || p.goal != FitnessGoal.maintain) return p;
-    return save(
-      sex: p.sex,
-      age: p.age,
-      heightCm: p.heightCm,
-      weightKg: p.weightKg,
-      activity: p.activity,
-      goal: p.goal,
-      targetWeightKg: p.targetWeightKg,
-      calorieAdjustment: p.calorieAdjustment,
-    );
-  }
-
   Future<UserProfile?> applyLatestWeight(double weightKg) async {
     final current = state;
     if (current == null) return null;

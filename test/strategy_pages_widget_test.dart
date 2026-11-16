@@ -19,6 +19,7 @@ import 'package:diet/ui/strategy/strategy_target_card.dart';
 import 'package:diet/ui/strategy/taper_review_page.dart';
 import 'package:diet/ui/profile/cultivation_page.dart';
 import 'package:diet/ui/profile/profile_edit_page.dart';
+import 'package:diet/ui/widgets/calorie_breakdown.dart';
 import 'package:diet/ui/widgets/form_options.dart';
 import 'package:diet/ui/theme/app_theme.dart';
 import 'package:diet/ui/ink/ink_icon.dart';
@@ -283,6 +284,7 @@ void main() {
       int startedDaysAgo = 2,
       double? weightKg,
       double? proteinPerKg,
+      double? basisWeightKg,
     }) async {
       _container.dispose();
       await _db.close();
@@ -300,6 +302,7 @@ void main() {
           tdee: base.tdee,
           calorieStandardSince: CalendarDay.addDays(today, -startedDaysAgo),
           maintainProteinPerKg: proteinPerKg,
+          maintainBasisWeightKg: basisWeightKg,
         ),
       );
     }
@@ -329,8 +332,8 @@ void main() {
         findsNWidgets(2),
       );
 
-      // Same layout as the cut tab: strategy basis, then TDEE method, then
-      // management. Weight and TDEE are the profile's current ones.
+      // Same layout as the cut tab: strategy basis, then management. TDEE
+      // lives behind the app-bar icon, not in the list.
       final basis = find.byKey(const ValueKey('maintainBasis'));
       await _showInPage(tester, basis);
       expect(
@@ -341,18 +344,20 @@ void main() {
         find.descendant(of: basis, matching: find.textContaining('75.0')),
         findsOneWidget,
       );
-      final tdee = await _showInPage(
+      final adjust = await _showInPage(
         tester,
-        find.text('TDEE calculation method'),
-      );
-      final recalc = await _showInPage(
-        tester,
-        find.byKey(const ValueKey('maintainRecalc')),
+        find.byKey(const ValueKey('maintainAdjustStrategy')),
       );
       expect(
-        tester.getTopLeft(tdee).dy,
-        lessThan(tester.getTopLeft(recalc).dy),
+        tester.getTopLeft(basis).dy,
+        lessThan(tester.getTopLeft(adjust).dy),
       );
+      expect(
+        find.text('TDEE calculation method', skipOffstage: false),
+        findsNothing,
+      );
+      // Re-fixing from a newer weight lives in 调整策略, not its own row.
+      expect(find.byKey(const ValueKey('maintainRecalc')), findsNothing);
       expect(find.text('Manage'), findsOneWidget);
       expect(find.textContaining('How to eat'), findsNothing);
       _expectNoLayoutErrors(tester);
@@ -411,6 +416,12 @@ void main() {
       tester,
     ) async {
       await setUpMaintain();
+      // Fixed at the current weight, so only a rate change is new.
+      final fresh = _container
+          .read(profileRepositoryProvider)
+          .buildPlan(_container.read(profileProvider)!)
+          .targets;
+      await setUpMaintain(targets: fresh);
       final since = _container.read(profileProvider)!.calorieStandardSince;
       await _pump(tester, '/profile/nutrition/maintain/configure');
       final apply = find.byKey(const ValueKey('strategyApplyButton'));
@@ -428,9 +439,11 @@ void main() {
       await _settle(tester);
       expect(find.textContaining('0.9 g/kg'), findsOneWidget);
       expect(tester.widget<FilledButton>(apply).onPressed, isNotNull);
-      // Only "today" can be picked for a change while maintaining.
+      // Like a fat-loss version: tomorrow (the default) or today.
       await _openStrategySection(tester, 'maintain-section-effective');
-      expect(find.textContaining('Tomorrow ('), findsNothing);
+      expect(find.textContaining('Tomorrow ('), findsWidgets);
+      await tester.tap(await _show(tester, find.text('Start today').last));
+      await _settle(tester);
 
       await tester.tap(apply);
       await _settle(tester);
@@ -480,7 +493,27 @@ void main() {
       expect(find.byKey(const ValueKey('maintainWeightDelta')), findsNothing);
     });
 
-    testWidgets('recalculate re-fixes the target from the current weight', (
+    testWidgets('basis shows the weight the target was fixed at', (
+      tester,
+    ) async {
+      // Weighed 72 kg since the target was fixed at 75 kg.
+      await setUpMaintain(weightKg: 72, basisWeightKg: 75);
+      await _pump(tester, '/profile/nutrition');
+      final basis = await _showInPage(
+        tester,
+        find.byKey(const ValueKey('maintainBasis')),
+      );
+      expect(
+        find.descendant(of: basis, matching: find.textContaining('75.0')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: basis, matching: find.textContaining('72.0')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('调整策略 re-fixes the target from the current weight', (
       tester,
     ) async {
       await setUpMaintain();
@@ -491,26 +524,41 @@ void main() {
           .calories;
       expect(fresh, isNot(2000));
       await _pump(tester, '/profile/nutrition');
-
       await tester.tap(
-        await _showInPage(tester, find.text('Recalculate from current weight')),
+        await _showInPage(
+          tester,
+          find.byKey(const ValueKey('maintainAdjustStrategy')),
+        ),
       );
       await _settle(tester);
+
+      // Like re-applying a fat-loss strategy: the target in force, then
+      // what re-applying would fix.
       expect(
-        find.text('Maintenance calories 2000 → $fresh kcal'),
+        find.descendant(
+          of: find.byKey(const ValueKey('maintainSavedBasis')),
+          matching: find.textContaining('2000'),
+        ),
         findsOneWidget,
       );
-      await tester.tap(find.widgetWithText(FilledButton, 'OK'));
+      expect(find.text('2000 → $fresh kcal'), findsOneWidget);
+      final apply = find.byKey(const ValueKey('strategyApplyButton'));
+      expect(tester.widget<FilledButton>(apply).onPressed, isNotNull);
+      await _openStrategySection(tester, 'maintain-section-effective');
+      await tester.tap(await _show(tester, find.text('Start today').last));
+      await _settle(tester);
+      await tester.tap(apply);
       await _settle(tester);
 
       final saved = _container.read(profileProvider)!;
       expect(saved.targets.calories, fresh);
       expect(saved.goal, FitnessGoal.maintain);
+      expect(saved.maintainBasisWeightKg, saved.weightKg);
       // The maintenance start (new-standard day) doesn't move.
       expect(saved.calorieStandardSince, CalendarDay.addDays(today, -2));
     });
 
-    testWidgets('recalculate is disabled when nothing would change', (
+    testWidgets('an adjustment from tomorrow is booked, not applied', (
       tester,
     ) async {
       await setUpMaintain();
@@ -519,13 +567,117 @@ void main() {
           .buildPlan(_container.read(profileProvider)!)
           .targets;
       await setUpMaintain(targets: fresh);
-      await _pump(tester, '/profile/nutrition');
-
-      final row = tester.widget<StrategyActionRow>(
-        await _showInPage(tester, find.byKey(const ValueKey('maintainRecalc'))),
+      final tomorrow = CalendarDay.addDays(today, 1);
+      await _pump(tester, '/profile/nutrition/maintain/configure');
+      await _openStrategySection(tester, 'maintain-section-target');
+      await tester.tap(
+        await _show(tester, _stepButton('Protein per kg', '−0.1')),
       );
-      expect(row.onTap, isNull);
+      await _settle(tester);
+      // Tomorrow is the default start.
+      await tester.tap(find.byKey(const ValueKey('strategyApplyButton')));
+      await _settle(tester);
+      expect(find.byType(AlertDialog), findsNothing);
+
+      // Today keeps the fixed target; the new rate is booked for tomorrow.
+      final p = _container.read(profileProvider)!;
+      expect(p.targets.calories, fresh.calories);
+      expect(p.targets.proteinG, fresh.proteinG);
+      final pending = _container.read(pendingGoalSwitchProvider);
+      expect(pending?.goal, FitnessGoal.maintain);
+      expect(pending?.from, tomorrow);
+      expect(pending?.proteinPerKg, closeTo(1.9, 1e-9));
+
+      // The tab shows the version to come, like a scheduled cut strategy.
+      await _pump(tester, '/profile/nutrition');
+      expect(
+        find.byKey(const ValueKey('maintainScheduledOverview')),
+        findsOneWidget,
+      );
+      await tester.tap(
+        await _showInPage(
+          tester,
+          find.byKey(const ValueKey('maintainCancelScheduled')),
+        ),
+      );
+      await _settle(tester);
+      expect(find.textContaining('won’t change on'), findsOneWidget);
+      await tester.tap(
+        find.widgetWithText(FilledButton, 'Cancel scheduled change'),
+      );
+      await _settle(tester);
+      expect(_container.read(pendingGoalSwitchProvider), isNull);
+      expect(find.byKey(const ValueKey('maintainOverview')), findsOneWidget);
     });
+
+    testWidgets('调整策略 shows already applied when nothing would change', (
+      tester,
+    ) async {
+      await setUpMaintain();
+      final fresh = _container
+          .read(profileRepositoryProvider)
+          .buildPlan(_container.read(profileProvider)!)
+          .targets;
+      await setUpMaintain(targets: fresh);
+      await _pump(tester, '/profile/nutrition/maintain/configure');
+
+      expect(find.byKey(const ValueKey('maintainSavedBasis')), findsOneWidget);
+      expect(find.byKey(const ValueKey('maintainProposedBasis')), findsNothing);
+      final apply = find.byKey(const ValueKey('strategyApplyButton'));
+      expect(tester.widget<FilledButton>(apply).onPressed, isNull);
+    });
+  });
+
+  testWidgets('TDEE sits behind the app-bar icon, not in any goal tab', (
+    tester,
+  ) async {
+    await _createPlan(DietStrategyKind.balanced);
+    await _pump(tester, '/profile/nutrition');
+    for (final tab in ['Bulk', 'Cut', 'Maintain']) {
+      await tester.tap(find.text(tab));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('TDEE calculation method', skipOffstage: false),
+        findsNothing,
+        reason: tab,
+      );
+    }
+
+    await tester.tap(find.byKey(const ValueKey('tdeeAction')));
+    await _settle(tester);
+    final sheet = find.byKey(const ValueKey('tdeeSheet'));
+    expect(sheet, findsOneWidget);
+    expect(
+      find.descendant(
+        of: sheet,
+        matching: find.text('TDEE calculation method'),
+      ),
+      findsOneWidget,
+    );
+    final profile = _container.read(profileProvider)!;
+    final tdee = _container
+        .read(profileRepositoryProvider)
+        .buildPlan(profile)
+        .tdee
+        .round();
+    expect(
+      find.descendant(
+        of: sheet,
+        matching: find.textContaining(
+          '${profile.weightKg.toStringAsFixed(1)} kg · ',
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: sheet, matching: find.textContaining('$tdee kcal')),
+      findsWidgets,
+    );
+    expect(
+      find.descendant(of: sheet, matching: find.byType(CalorieBreakdown)),
+      findsOneWidget,
+    );
+    _expectNoLayoutErrors(tester);
   });
 
   testWidgets('nutrition targets page renders without a plan', (tester) async {
@@ -1823,6 +1975,16 @@ void main() {
     _container.dispose();
     await _db.close();
     await _setUp(profile: _profile(goal: FitnessGoal.maintain));
+    // Fixed at the current weight, so re-applying would change nothing.
+    final fresh = _container
+        .read(profileRepositoryProvider)
+        .buildPlan(_container.read(profileProvider)!)
+        .targets;
+    _container.dispose();
+    await _db.close();
+    await _setUp(
+      profile: _profile(goal: FitnessGoal.maintain).copyWith(targets: fresh),
+    );
     await _pump(tester, '/profile/nutrition/maintain');
     expect(find.text('Current'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('strategy-option-maintain')));

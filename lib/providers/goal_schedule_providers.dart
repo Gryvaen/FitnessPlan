@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/repositories/goal_schedule_repository.dart';
 import '../domain/calendar_day.dart';
+import '../domain/models.dart';
 import 'core_providers.dart';
 import 'diet_strategy_providers.dart';
 import 'profile_providers.dart';
@@ -41,6 +42,10 @@ class PendingGoalSwitchNotifier extends Notifier<PendingGoalSwitch?> {
 /// opened days later (the cut strategy ends that day, the cut round closes
 /// the day before, and the new standard starts that day). Run on launch and
 /// on resume. Returns whether a switch happened.
+///
+/// A booking for the goal already in force is a 维持 adjustment booked from
+/// tomorrow: it re-fixes the target from the current profile at the booked
+/// rates, without moving the maintenance start.
 Future<bool> applyDueGoalSwitch(Ref ref, {DateTime? today}) async {
   final pending = ref.read(pendingGoalSwitchProvider);
   if (pending == null) return false;
@@ -48,7 +53,26 @@ Future<bool> applyDueGoalSwitch(Ref ref, {DateTime? today}) async {
   if (pending.from.isAfter(day)) return false;
   await ref.read(pendingGoalSwitchProvider.notifier).clear();
   final p = ref.read(profileProvider);
-  if (p == null || p.goal == pending.goal) return false;
+  if (p == null) return false;
+  if (p.goal == pending.goal) {
+    if (p.goal != FitnessGoal.maintain) return false;
+    await ref
+        .read(profileProvider.notifier)
+        .save(
+          sex: p.sex,
+          age: p.age,
+          heightCm: p.heightCm,
+          weightKg: p.weightKg,
+          activity: p.activity,
+          goal: p.goal,
+          targetWeightKg: p.targetWeightKg,
+          calorieAdjustment: p.calorieAdjustment,
+          maintainProteinPerKg: pending.proteinPerKg,
+          maintainFatPerKg: pending.fatPerKg,
+        );
+    ref.invalidate(todayTargetProvider);
+    return true;
+  }
   await ref
       .read(profileProvider.notifier)
       .save(

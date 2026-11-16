@@ -113,6 +113,8 @@ class UserProfile {
     this.calorieStandardSince,
     this._maintainProteinPerKg,
     this._maintainFatPerKg,
+    this.maintainBasisWeightKg,
+    this.maintainBasisTdee,
   });
 
   final Sex sex;
@@ -144,6 +146,12 @@ class UserProfile {
   /// Fat g/kg while maintaining (default [MaintainFat.defaultPerKg]).
   double get maintainFatPerKg => _maintainFatPerKg ?? MaintainFat.defaultPerKg;
 
+  /// Weight and TDEE the 维持 target was last fixed from (null on profiles
+  /// saved before this was recorded). Weigh-ins move [weightKg] / [tdee] but
+  /// not these, just as they leave the fixed target alone.
+  final double? maintainBasisWeightKg;
+  final double? maintainBasisTdee;
+
   UserProfile copyWith({
     Sex? sex,
     int? age,
@@ -160,6 +168,8 @@ class UserProfile {
     DateTime? calorieStandardSince,
     double? maintainProteinPerKg,
     double? maintainFatPerKg,
+    double? maintainBasisWeightKg,
+    double? maintainBasisTdee,
   }) {
     return UserProfile(
       sex: sex ?? this.sex,
@@ -177,6 +187,9 @@ class UserProfile {
       calorieStandardSince: calorieStandardSince ?? this.calorieStandardSince,
       maintainProteinPerKg: maintainProteinPerKg ?? _maintainProteinPerKg,
       maintainFatPerKg: maintainFatPerKg ?? _maintainFatPerKg,
+      maintainBasisWeightKg:
+          maintainBasisWeightKg ?? this.maintainBasisWeightKg,
+      maintainBasisTdee: maintainBasisTdee ?? this.maintainBasisTdee,
     );
   }
 
@@ -212,6 +225,8 @@ class UserProfile {
     calorieStandardSince: _dayFromJson(json['calorieStandardSince']),
     maintainProteinPerKg: (json['maintainProteinPerKg'] as num?)?.toDouble(),
     maintainFatPerKg: (json['maintainFatPerKg'] as num?)?.toDouble(),
+    maintainBasisWeightKg: (json['maintainBasisWeightKg'] as num?)?.toDouble(),
+    maintainBasisTdee: (json['maintainBasisTdee'] as num?)?.toDouble(),
   );
 
   Map<String, dynamic> toJson() => {
@@ -230,6 +245,8 @@ class UserProfile {
     'calorieStandardSince': _dayToJson(calorieStandardSince),
     'maintainProteinPerKg': _maintainProteinPerKg,
     'maintainFatPerKg': _maintainFatPerKg,
+    'maintainBasisWeightKg': maintainBasisWeightKg,
+    'maintainBasisTdee': maintainBasisTdee,
   };
 }
 

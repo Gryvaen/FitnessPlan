@@ -48,8 +48,23 @@ class _NutritionTargetsPageState extends ConsumerState<NutritionTargetsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final profile = ref.watch(profileProvider);
     return AppChromeScaffold(
-      appBar: AppBar(title: Text(l10n.nutritionTargets)),
+      appBar: AppBar(
+        title: Text(l10n.nutritionTargets),
+        actions: [
+          // TDEE doesn't depend on the goal, so it lives here once instead
+          // of in every goal tab.
+          IconButton(
+            key: const ValueKey('tdeeAction'),
+            tooltip: l10n.tdeeCalcMethod,
+            icon: const InkIcon(InkGlyph.calculator),
+            onPressed: profile == null
+                ? null
+                : () => _showTdeeSheet(context, ref, profile),
+          ),
+        ],
+      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -248,9 +263,6 @@ class _CutNutritionTargets extends ConsumerWidget {
           ),
         ),
     ];
-    // TDEE doesn't depend on the goal, so the row shows on every goal's
-    // strategy tab, active or not.
-    final tdeeTile = _TdeeCalcMethodTile(profile: profile);
     final padding = EdgeInsets.fromLTRB(
       AppSpacing.formPage,
       AppSpacing.compact,
@@ -277,8 +289,6 @@ class _CutNutritionTargets extends ConsumerWidget {
                 : null,
           ),
           ...blockingNotes,
-          const SizedBox(height: AppSpacing.section),
-          tdeeTile,
         ],
       );
     }
@@ -363,7 +373,6 @@ class _CutNutritionTargets extends ConsumerWidget {
               (active.deficitFraction * 100).round(),
             ),
           ),
-        tdeeTile,
         StrategySectionHeader(title: l10n.strategyManageTitle),
         // Straight to the active strategy's configure page (it loads the
         // current parameters), skipping the picker.
@@ -492,12 +501,15 @@ class _MaintainTab extends ConsumerWidget {
       return const Center(child: CircularProgressIndicator());
     }
     final pending = ref.watch(pendingGoalSwitchProvider);
-    if (profile.goal != FitnessGoal.maintain &&
-        pending?.goal == FitnessGoal.maintain) {
+    // A booked switch to maintain, or (already maintaining) a booked
+    // adjustment: show the version to come, like a scheduled cut strategy.
+    if (pending?.goal == FitnessGoal.maintain &&
+        pending!.from.isAfter(AppDates.todayLocal())) {
       return MaintainScheduledView(
         profile: profile,
-        from: pending!.from,
-        tdeeTile: _TdeeCalcMethodTile(profile: profile),
+        from: pending.from,
+        proteinPerKg: pending.proteinPerKg,
+        fatPerKg: pending.fatPerKg,
       );
     }
     if (profile.goal != FitnessGoal.maintain) {
@@ -523,20 +535,14 @@ class _MaintainTab extends ConsumerWidget {
             actionLabel: context.l10n.chooseStrategy,
             onAction: () => context.push('/profile/nutrition/maintain'),
           ),
-          const SizedBox(height: AppSpacing.section),
-          _TdeeCalcMethodTile(profile: profile),
         ],
       );
     }
-    return MaintainTargetsView(
-      profile: profile,
-      tdeeTile: _TdeeCalcMethodTile(profile: profile),
-    );
+    return MaintainTargetsView(profile: profile);
   }
 }
 
-/// 增肌/维持 tab: strategy playbooks are still TBD. TDEE is only shown when
-/// this tab matches the profile's current goal (the other two stay hidden).
+/// 增肌 tab: its strategy playbook is still TBD.
 class _NutritionComingSoon extends ConsumerWidget {
   const _NutritionComingSoon({required this.goal});
 
@@ -549,7 +555,6 @@ class _NutritionComingSoon extends ConsumerWidget {
     if (profile == null) {
       return const Center(child: CircularProgressIndicator());
     }
-    final showTdee = profile.goal == goal;
     return ListView(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.formPage,
@@ -563,63 +568,45 @@ class _NutritionComingSoon extends ConsumerWidget {
           title: l10n.nutritionComingSoonTitle(goal.label(l10n)),
           message: l10n.nutritionComingSoonBody,
         ),
-        if (showTdee) ...[
-          const SizedBox(height: AppSpacing.section),
-          _TdeeCalcMethodTile(profile: profile),
-        ],
       ],
     );
   }
 }
 
-/// Shared "TDEE 计算方法" row: summary always visible; full breakdown opens
-/// in a bottom sheet (hidden until the user asks for it).
-class _TdeeCalcMethodTile extends ConsumerWidget {
-  const _TdeeCalcMethodTile({required this.profile});
-
-  final UserProfile profile;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = context.l10n;
-    final theme = Theme.of(context);
-    final plan = ref.read(profileRepositoryProvider).buildPlan(profile);
-    return SportListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: InkIcon(
-        InkGlyph.calculator,
-        color: AppThemeVisuals.of(context).accent,
-      ),
-      title: Text(l10n.tdeeCalcMethod, style: theme.textTheme.rowTitle),
-      subtitle: Text(
-        '${l10n.currentWeight} ${profile.weightKg.toStringAsFixed(1)} kg · '
-        '${l10n.estimatedTdee} ${plan.tdee.round()} kcal',
-        style: theme.textTheme.meta,
-      ),
-      trailing: const InkIcon(InkGlyph.chevronRight),
-      onTap: () => showModalBottomSheet<void>(
-        context: context,
-        useRootNavigator: true,
-        isScrollControlled: true,
-        showDragHandle: true,
-        builder: (_) => SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.formPage),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(l10n.tdeeCalcMethod, style: theme.textTheme.sectionTitle),
-                const SizedBox(height: AppSpacing.field),
-                CalorieBreakdown(plan: plan, compact: true),
-                const SizedBox(height: AppSpacing.compact),
-                Text(l10n.strategyBasisBody, style: theme.textTheme.meta),
-                const SizedBox(height: 6),
-                Text(l10n.strategyDisclaimer, style: theme.textTheme.meta),
-              ],
+/// The "TDEE 计算方法" sheet behind the app-bar calculator icon: current
+/// weight and estimated TDEE first, then the full breakdown.
+void _showTdeeSheet(BuildContext context, WidgetRef ref, UserProfile profile) {
+  final l10n = context.l10n;
+  final theme = Theme.of(context);
+  final plan = ref.read(profileRepositoryProvider).buildPlan(profile);
+  showModalBottomSheet<void>(
+    context: context,
+    useRootNavigator: true,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (_) => SafeArea(
+      child: SingleChildScrollView(
+        key: const ValueKey('tdeeSheet'),
+        padding: const EdgeInsets.all(AppSpacing.formPage),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.tdeeCalcMethod, style: theme.textTheme.sectionTitle),
+            const SizedBox(height: 6),
+            Text(
+              '${l10n.currentWeight} ${profile.weightKg.toStringAsFixed(1)} kg · '
+              '${l10n.estimatedTdee} ${plan.tdee.round()} kcal',
+              style: theme.textTheme.meta,
             ),
-          ),
+            const SizedBox(height: AppSpacing.field),
+            CalorieBreakdown(plan: plan, compact: true),
+            const SizedBox(height: AppSpacing.compact),
+            Text(l10n.strategyBasisBody, style: theme.textTheme.meta),
+            const SizedBox(height: 6),
+            Text(l10n.strategyDisclaimer, style: theme.textTheme.meta),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }

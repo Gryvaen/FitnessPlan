@@ -81,11 +81,23 @@ class ProfileRepository {
       proteinPerKg: goal == FitnessGoal.maintain ? rate : null,
       fatPerKg: goal == FitnessGoal.maintain ? fatRate : null,
     );
-    var profile = _profileFromPlan(
-      plan: plan,
-      activity: activity,
-      calorieAdjustment: calorieAdjustment,
-    ).copyWith(maintainProteinPerKg: rate, maintainFatPerKg: fatRate);
+    var profile =
+        _profileFromPlan(
+          plan: plan,
+          activity: activity,
+          calorieAdjustment: calorieAdjustment,
+        ).copyWith(
+          maintainProteinPerKg: rate,
+          maintainFatPerKg: fatRate,
+          // A save under 维持 (re-)fixes the target: record what it came from.
+          // Otherwise keep the last basis; it's only read while maintaining.
+          maintainBasisWeightKg: goal == FitnessGoal.maintain
+              ? weightKg
+              : old?.maintainBasisWeightKg,
+          maintainBasisTdee: goal == FitnessGoal.maintain
+              ? plan.tdee
+              : old?.maintainBasisTdee,
+        );
     if (old != null && _calorieStandardChanged(old, profile)) {
       profile = profile.copyWith(calorieStandardSince: _todayLocal());
     } else {

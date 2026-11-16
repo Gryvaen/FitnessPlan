@@ -118,6 +118,11 @@ void main() {
       expect(after.targets.proteinG, before.targets.proteinG);
       expect(after.tdee, lessThan(before.tdee!));
       expect(profiles.load()!.targets.calories, before.targets.calories);
+      // The basis the target was fixed from stays with the target.
+      expect(before.maintainBasisWeightKg, 70.6);
+      expect(before.maintainBasisTdee, before.tdee);
+      expect(after.maintainBasisWeightKg, 70.6);
+      expect(after.maintainBasisTdee, before.tdee);
       // An explicit recompute picks up the new weight.
       expect(
         profiles.buildPlan(after).targets.calories,

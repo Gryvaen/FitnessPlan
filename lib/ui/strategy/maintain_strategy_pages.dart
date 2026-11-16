@@ -56,8 +56,9 @@ class MaintainStrategyPickerPage extends ConsumerWidget {
 /// the disclaimer and the pinned apply bar. The protein and fat rates
 /// (目标与营养) and the start day are adjustable. Applying switches the goal to maintain —
 /// today right away, or booked for tomorrow (carried out by
-/// `applyDueGoalSwitch`). While already maintaining, a new rate applies today
-/// and re-fixes the target from the current profile.
+/// `applyDueGoalSwitch`). While already maintaining, applying re-fixes the
+/// target from the current profile — today, or booked for tomorrow like a
+/// new fat-loss version.
 class MaintainStrategyConfigurePage extends ConsumerStatefulWidget {
   const MaintainStrategyConfigurePage({super.key});
 
@@ -82,13 +83,11 @@ class _MaintainStrategyConfigurePageState
 
   DateTime get _tomorrow => CalendarDay.addDays(CalendarDay.todayLocal(), 1);
 
-  /// Already maintaining: only a rate change can be applied, and it applies
-  /// today (there is no goal switch to book).
+  /// Already maintaining: applying is an adjustment, not a goal switch.
   bool get _maintaining =>
       ref.read(profileProvider)?.goal == FitnessGoal.maintain;
 
-  DateTime get _from =>
-      _startToday || _maintaining ? CalendarDay.todayLocal() : _tomorrow;
+  DateTime get _from => _startToday ? CalendarDay.todayLocal() : _tomorrow;
 
   static bool _sameRate(double a, double b) =>
       (a * 10).round() == (b * 10).round();
@@ -141,11 +140,38 @@ class _MaintainStrategyConfigurePageState
     }
   }
 
+  /// While maintaining, from tomorrow: book the new rates; the target is
+  /// re-fixed that day (see `applyDueGoalSwitch`).
+  Future<void> _bookAdjustment(double protein, double fat) async {
+    final l10n = context.l10n;
+    setState(() => _saving = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref
+          .read(pendingGoalSwitchProvider.notifier)
+          .schedule(
+            PendingGoalSwitch(
+              goal: FitnessGoal.maintain,
+              from: _tomorrow,
+              proteinPerKg: protein,
+              fatPerKg: fat,
+            ),
+          );
+      messenger.showSnackBar(SnackBar(content: Text(l10n.strategyApplied)));
+      if (mounted) context.go('/profile');
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.saveFailed('$e'))));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   Future<void> _apply() async {
     if (_saving) return;
     final protein = _protein!;
     final fat = _fat!;
-    if (_maintaining) return _applyRates(protein, fat);
+    if (_maintaining && _startToday) return _applyRates(protein, fat);
+    if (_maintaining) return _bookAdjustment(protein, fat);
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context);
     final from = _from;
@@ -216,28 +242,11 @@ class _MaintainStrategyConfigurePageState
     }
     final maintaining = profile.goal == FitnessGoal.maintain;
     // A booked switch opens with the rates it was booked with.
-    final booked = !maintaining && pending?.goal == FitnessGoal.maintain
-        ? pending
-        : null;
+    final booked = pending?.goal == FitnessGoal.maintain ? pending : null;
     final protein = _protein ??=
         booked?.proteinPerKg ?? profile.maintainProteinPerKg;
     final fat = _fat ??= booked?.fatPerKg ?? profile.maintainFatPerKg;
-    // Nothing new to apply while maintaining at the same rates.
-    final applied =
-        maintaining &&
-        _sameRate(protein, profile.maintainProteinPerKg) &&
-        _sameRate(fat, profile.maintainFatPerKg);
-    final scheduled =
-        !maintaining &&
-        pending?.goal == FitnessGoal.maintain &&
-        CalendarDay.dayOnly(pending!.from) == _from &&
-        _sameRate(
-          protein,
-          pending.proteinPerKg ?? profile.maintainProteinPerKg,
-        ) &&
-        _sameRate(fat, pending.fatPerKg ?? profile.maintainFatPerKg);
-    // While maintaining unchanged, show the fixed target; otherwise what
-    // applying would fix from the current profile at the chosen rate.
+    // What applying would fix from the current profile at the chosen rates.
     final plan = ref
         .read(profileRepositoryProvider)
         .buildPlan(
@@ -247,7 +256,29 @@ class _MaintainStrategyConfigurePageState
             maintainFatPerKg: fat,
           ),
         );
-    final t = applied ? profile.targets : plan.targets;
+    final fixed = profile.targets;
+    // Nothing new to apply while maintaining at the same rates and the
+    // current weight would fix the same target. After weigh-ins it differs,
+    // and re-applying re-fixes it (like re-applying a fat-loss strategy).
+    final applied =
+        maintaining &&
+        _sameRate(protein, profile.maintainProteinPerKg) &&
+        _sameRate(fat, profile.maintainFatPerKg) &&
+        plan.targets.calories == fixed.calories &&
+        plan.targets.proteinG == fixed.proteinG &&
+        plan.targets.carbG == fixed.carbG &&
+        plan.targets.fatG == fixed.fatG;
+    final scheduled =
+        pending?.goal == FitnessGoal.maintain &&
+        CalendarDay.dayOnly(pending!.from) == _from &&
+        _sameRate(
+          protein,
+          pending.proteinPerKg ?? profile.maintainProteinPerKg,
+        ) &&
+        _sameRate(fat, pending.fatPerKg ?? profile.maintainFatPerKg);
+    // While maintaining unchanged, show the fixed target; otherwise what
+    // applying would fix.
+    final t = applied ? fixed : plan.targets;
     final band = maintainBand(t.calories.toDouble());
     final weight = profile.weightKg;
     // Weight and TDEE of the current profile, from the same computation as
@@ -292,6 +323,26 @@ class _MaintainStrategyConfigurePageState
               '${t.calories}',
             ),
           ),
+          // Same two rows as the fat-loss configure page: the target in force
+          // and, when re-applying would change it, from → to.
+          if (maintaining) ...[
+            const SizedBox(height: AppSpacing.compact),
+            StrategyFactRow(
+              key: const ValueKey('maintainSavedBasis'),
+              label: l10n.strategySavedBasis,
+              value: '${l10n.maintainStrategyName} · ${fixed.calories}',
+              unit: 'kcal',
+            ),
+            if (!applied && plan.targets.calories != fixed.calories)
+              StrategyFactRow(
+                key: const ValueKey('maintainProposedBasis'),
+                label: l10n.strategyProposedBasis,
+                value: l10n.strategyBasisCompare(
+                  '${fixed.calories}',
+                  '${plan.targets.calories}',
+                ),
+              ),
+          ],
           const SizedBox(height: AppSpacing.section),
           _section(
             _MaintainSection.profile,
@@ -360,22 +411,18 @@ class _MaintainStrategyConfigurePageState
           _section(
             _MaintainSection.effective,
             title: l10n.effectiveDate,
-            summary: _startToday || maintaining
-                ? l10n.startToday
-                : tomorrowLabel,
+            summary: _startToday ? l10n.startToday : tomorrowLabel,
             icon: InkGlyph.calendar,
             child: Column(
               children: [
-                // Already maintaining: a rate change can only start today.
-                if (!maintaining)
-                  StrategyDateOption(
-                    label: tomorrowLabel,
-                    selected: !_startToday,
-                    onTap: () => setState(() => _startToday = false),
-                  ),
+                StrategyDateOption(
+                  label: tomorrowLabel,
+                  selected: !_startToday,
+                  onTap: () => setState(() => _startToday = false),
+                ),
                 StrategyDateOption(
                   label: l10n.startToday,
-                  selected: _startToday || maintaining,
+                  selected: _startToday,
                   onTap: () => setState(() => _startToday = true),
                 ),
               ],
