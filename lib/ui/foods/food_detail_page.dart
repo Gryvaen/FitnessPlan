@@ -12,6 +12,7 @@ import '../meals/daily_meals_page.dart';
 import '../theme/app_theme.dart';
 import '../theme/macro_color.dart';
 import '../widgets/form_options.dart';
+import '../widgets/macro_row.dart';
 import '../widgets/search_field_focus.dart';
 
 class FoodDetailPage extends ConsumerStatefulWidget {
@@ -421,7 +422,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
             ),
           ),
           const SizedBox(height: AppSpacing.section),
-          _MacroRow(
+          MacroRow(
             protein: food.proteinPer100,
             carb: food.carbPer100,
             fat: food.fatPer100,
@@ -429,16 +430,16 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
           ),
           if (_extraRows(food, l10n).isNotEmpty) ...[
             const SizedBox(height: AppSpacing.section),
-            Text(l10n.per100g, style: theme.textTheme.subsectionTitle),
+            Text(l10n.per100g, style: theme.textTheme.sectionTitle),
             for (final (label, value) in _extraRows(food, l10n))
               _kv(theme, label, value),
           ],
           const SizedBox(height: AppSpacing.section),
-          Text(l10n.servingSize, style: theme.textTheme.subsectionTitle),
+          Text(l10n.servingSize, style: theme.textTheme.sectionTitle),
           const SizedBox(height: AppSpacing.compact),
           _GramsStepper(grams: _grams, onStep: _stepGrams),
           const SizedBox(height: AppSpacing.section),
-          Text(l10n.nutritionResult, style: theme.textTheme.subsectionTitle),
+          Text(l10n.nutritionResult, style: theme.textTheme.sectionTitle),
           const SizedBox(height: 4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -456,7 +457,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
             ],
           ),
           const SizedBox(height: AppSpacing.field),
-          _MacroRow(
+          MacroRow(
             protein: intake.proteinG,
             carb: intake.carbG,
             fat: intake.fatG,
@@ -464,12 +465,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
           const SizedBox(height: AppSpacing.section),
           Row(
             children: [
-              Text(
-                l10n.commonPortions,
-                style: theme.textTheme.subsectionTitle?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              Text(l10n.commonPortions, style: theme.textTheme.sectionTitle),
               const Spacer(),
               TextButton.icon(
                 onPressed: _addServing,
@@ -516,10 +512,7 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
                 },
                 child: ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    s.label,
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
+                  title: Text(s.label, style: theme.textTheme.rowTitle),
                   subtitle: Text(
                     '${s.grams.round()} g',
                     style: theme.textTheme.meta,
@@ -590,53 +583,6 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
       ],
     ),
   );
-}
-
-class _MacroRow extends StatelessWidget {
-  const _MacroRow({
-    required this.protein,
-    required this.carb,
-    required this.fat,
-    this.unitSuffix,
-  });
-
-  final double protein;
-  final double carb;
-  final double fat;
-  final String? unitSuffix;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = Theme.of(context);
-    Widget col(String label, double v, Color c) => Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: theme.textTheme.meta),
-          const SizedBox(height: 2),
-          Text(
-            '${v.toStringAsFixed(1)} g',
-            style: theme.textTheme.statFigure?.copyWith(color: c),
-          ),
-          if (unitSuffix != null)
-            Text(
-              unitSuffix!,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-        ],
-      ),
-    );
-    return Row(
-      children: [
-        col(l10n.protein, protein, AppColors.protein),
-        col(l10n.carbs, carb, AppColors.carb),
-        col(l10n.fat, fat, AppColors.fat),
-      ],
-    );
-  }
 }
 
 class _GramsStepper extends StatelessWidget {

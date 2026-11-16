@@ -144,4 +144,133 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('打开记一笔'), findsOneWidget);
   });
+
+  testWidgets('search rests as an icon, opens on tap and clear folds it', (
+    tester,
+  ) async {
+    await _openLogMeal(tester);
+    final open = find.byKey(const ValueKey('log-meal-search-open'));
+    final search = find.byKey(const ValueKey('log-meal-search'));
+    bool focused() => tester.widget<TextField>(search).focusNode!.hasFocus;
+
+    expect(open, findsOneWidget);
+    expect(tester.getSize(open).width, lessThan(60));
+    await tester.tap(open);
+    await tester.pumpAndSettle();
+    expect(open, findsNothing);
+    expect(focused(), isFalse);
+
+    await tester.tap(search);
+    await tester.pumpAndSettle();
+    await tester.enterText(search, '鸡胸');
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('search-food-1')), findsOneWidget);
+
+    await tester.tap(
+      find.descendant(of: search, matching: find.byType(IconButton)),
+    );
+    await tester.pumpAndSettle();
+    expect(open, findsOneWidget);
+    expect(tester.widget<TextField>(search).controller!.text, isEmpty);
+  });
+
+  testWidgets('grams editor shows nutrition result with macro columns', (
+    tester,
+  ) async {
+    final foodId = await _openLogMeal(tester);
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(ValueKey('recent-$foodId')),
+        matching: find.text('测试鸡胸肉'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('营养结果'), findsOneWidget);
+    // Last logged 120 g → 132 kcal, 27.6 g protein, 2.4 g fat.
+    expect(find.text('132'), findsOneWidget);
+    expect(find.text('kcal · 120 g'), findsOneWidget);
+    expect(find.text('蛋白质'), findsOneWidget);
+    expect(find.text('27.6 g'), findsOneWidget);
+    expect(find.text('碳水'), findsOneWidget);
+    expect(find.text('脂肪'), findsOneWidget);
+    expect(find.text('2.4 g'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+}
+
+/// Opens 记一笔 over a home page with one food (id 1) that is both recent
+/// (last logged 120 g) and a favorite. Returns the food id.
+Future<int> _openLogMeal(WidgetTester tester) async {
+  SharedPreferences.setMockInitialValues({});
+  final prefs = await SharedPreferences.getInstance();
+  final db = AppDatabase.forTesting(NativeDatabase.memory());
+  addTearDown(db.close);
+  final foodId = await db
+      .into(db.foodItems)
+      .insert(
+        FoodItemsCompanion.insert(
+          name: '测试鸡胸肉',
+          category: '禽肉',
+          kcalPer100: 110,
+          proteinPer100: 23,
+          carbPer100: 0,
+          fatPer100: 2,
+        ),
+      );
+  await db
+      .into(db.mealEntries)
+      .insert(
+        MealEntriesCompanion.insert(
+          date: DateTime.now(),
+          mealType: 'lunch',
+          foodId: foodId,
+          foodName: '测试鸡胸肉',
+          grams: 120,
+          calories: 132,
+          proteinG: 27.6,
+          carbG: 0,
+          fatG: 2.4,
+        ),
+      );
+  await FoodRepository(db).toggleFavorite(foodId);
+  final container = ProviderContainer(
+    overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      databaseProvider.overrideWithValue(db),
+      foodsSeedProvider.overrideWith((ref) async {}),
+    ],
+  );
+  addTearDown(container.dispose);
+  await tester.pumpWidget(
+    UncontrolledProviderScope(
+      container: container,
+      child: MaterialApp(
+        theme: AppTheme.ofId(AppThemeId.fresh),
+        locale: const Locale('zh'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: TextButton(
+                onPressed: () => Navigator.of(context).push<void>(
+                  MaterialPageRoute(builder: (_) => const LogMealPage()),
+                ),
+                child: const Text('打开记一笔'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.tap(find.text('打开记一笔'));
+  await tester.pumpAndSettle();
+  return foodId;
 }

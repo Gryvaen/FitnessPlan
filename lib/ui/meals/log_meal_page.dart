@@ -9,9 +9,12 @@ import '../../providers/app_providers.dart';
 import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import '../theme/macro_color.dart';
+import '../foods/food_category_art.dart';
 import '../theme/sport_chrome.dart';
+import '../widgets/expanding_search.dart';
 import '../widgets/food_name_link.dart';
 import '../widgets/form_options.dart';
+import '../widgets/macro_row.dart';
 import '../widgets/search_field_focus.dart';
 import 'daily_meals_page.dart';
 
@@ -56,10 +59,35 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
   final _searchController = TextEditingController();
   final _searchFocus = FocusNode();
 
+  /// The search box rests as its icon (same as 食材); tapping it slides the
+  /// box open without focusing it. It stays open while there is a keyword.
+  bool _searchOpen = false;
+
+  bool get _hasQuery => _query.isNotEmpty;
+
+  /// Folds the box back to its icon once it is idle: unfocused, no keyword.
+  void _foldIdleSearch() {
+    if (!_searchOpen || _searchFocus.hasFocus || _hasQuery) return;
+    setState(() => _searchOpen = false);
+  }
+
+  void _onSearchFocusChanged() {
+    if (!_searchFocus.hasFocus) _foldIdleSearch();
+  }
+
+  /// Clears the keyword and folds the box.
+  void _clearSearch() {
+    _searchFocus.unfocus();
+    _searchController.clear();
+    _search('');
+    setState(() => _searchOpen = false);
+  }
+
   @override
   void initState() {
     super.initState();
     suppressInitialSearchFocus(_searchFocus);
+    _searchFocus.addListener(_onSearchFocusChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final day = ref.read(selectedDayProvider);
@@ -76,6 +104,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
 
   @override
   void dispose() {
+    _searchFocus.removeListener(_onSearchFocusChanged);
     _searchController.dispose();
     _searchFocus.dispose();
     super.dispose();
@@ -303,6 +332,22 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
       return;
     }
   }
+
+  /// Optional nutrients worth showing under the macro columns.
+  List<String> _extraNutrition(MacroIntake preview, AppLocalizations l10n) => [
+    if (preview.saturatedFatG > 0)
+      '${l10n.saturatedFat} ${preview.saturatedFatG.toStringAsFixed(1)}',
+    if (preview.sugarG > 0)
+      '${l10n.sugar} ${preview.sugarG.toStringAsFixed(1)}',
+    if (preview.fiberG > 0)
+      '${l10n.fiber} ${preview.fiberG.toStringAsFixed(1)}',
+    if (preview.sodiumMg > 0)
+      '${l10n.sodium} ${preview.sodiumMg.toStringAsFixed(0)}mg',
+    if (preview.calciumMg > 0)
+      '${l10n.calcium} ${preview.calciumMg.toStringAsFixed(0)}mg',
+    if (preview.alcoholG > 0)
+      '${l10n.alcohol} ${preview.alcoholG.toStringAsFixed(1)}',
+  ];
 
   Future<void> _search(String q) async {
     final version = ++_searchVersion;
@@ -607,7 +652,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                         carbG: _selected!.carbPer100,
                         proteinG: _selected!.proteinPer100,
                         fatG: _selected!.fatPer100,
-                        style: theme.textTheme.rowTitle,
+                        style: theme.textTheme.sectionTitle,
                         onTap: () => _openFoodDetailKeepSelection(_selected!),
                       ),
                       subtitle: Text(
@@ -619,7 +664,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                     if (_servings.isNotEmpty) ...[
                       Text(
                         l10n.commonPortions,
-                        style: theme.textTheme.fieldLabel,
+                        style: theme.textTheme.subsectionTitle,
                       ),
                       const SizedBox(height: 8),
                       Wrap(
@@ -660,28 +705,40 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                       },
                     ),
                     if (preview != null) ...[
-                      const SizedBox(height: AppSpacing.field),
+                      const SizedBox(height: AppSpacing.section),
                       Text(
-                        [
-                          '${preview.calories.round()} kcal',
-                          'P ${preview.proteinG.toStringAsFixed(1)}',
-                          'C ${preview.carbG.toStringAsFixed(1)}',
-                          'F ${preview.fatG.toStringAsFixed(1)}',
-                          if (preview.saturatedFatG > 0)
-                            '${l10n.saturatedFat} ${preview.saturatedFatG.toStringAsFixed(1)}',
-                          if (preview.sugarG > 0)
-                            '${l10n.sugar} ${preview.sugarG.toStringAsFixed(1)}',
-                          if (preview.fiberG > 0)
-                            '${l10n.fiber} ${preview.fiberG.toStringAsFixed(1)}',
-                          if (preview.sodiumMg > 0)
-                            '${l10n.sodium} ${preview.sodiumMg.toStringAsFixed(0)}mg',
-                          if (preview.calciumMg > 0)
-                            '${l10n.calcium} ${preview.calciumMg.toStringAsFixed(0)}mg',
-                          if (preview.alcoholG > 0)
-                            '${l10n.alcohol} ${preview.alcoholG.toStringAsFixed(1)}',
-                        ].join(' · '),
-                        style: theme.textTheme.meta,
+                        l10n.nutritionResult,
+                        style: theme.textTheme.subsectionTitle,
                       ),
+                      const SizedBox(height: 4),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            '${preview.calories.round()}',
+                            style: theme.textTheme.statValue,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'kcal · ${_grams.round()} g',
+                            style: theme.textTheme.statUnit,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.field),
+                      MacroRow(
+                        protein: preview.proteinG,
+                        carb: preview.carbG,
+                        fat: preview.fatG,
+                      ),
+                      if (_extraNutrition(preview, l10n).isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.field),
+                        Text(
+                          _extraNutrition(preview, l10n).join(' · '),
+                          style: theme.textTheme.meta,
+                        ),
+                      ],
                     ],
                     const SizedBox(height: AppSpacing.section),
                     FilledButton(
@@ -689,14 +746,44 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
                       child: Text(_saving ? l10n.saving : l10n.save),
                     ),
                   ] else ...[
-                    TextField(
-                      controller: _searchController,
-                      focusNode: _searchFocus,
-                      decoration: InputDecoration(
-                        hintText: l10n.searchFood,
-                        prefixIcon: const InkIcon(InkGlyph.search),
+                    // Tapping anywhere else folds an open-but-empty box.
+                    TapRegion(
+                      onTapOutside: (_) {
+                        if (_hasQuery) return;
+                        _searchFocus.unfocus();
+                        _foldIdleSearch();
+                      },
+                      child: ExpandingSearch(
+                        expanded: _searchOpen || _hasQuery,
+                        openKey: const ValueKey('log-meal-search-open'),
+                        tooltip: l10n.searchFood,
+                        onExpand: () => setState(() => _searchOpen = true),
+                        child: UnfocusOnKeyboardHide(
+                          focusNode: _searchFocus,
+                          child: TextField(
+                            key: const ValueKey('log-meal-search'),
+                            controller: _searchController,
+                            focusNode: _searchFocus,
+                            decoration: InputDecoration(
+                              hintText: l10n.searchFood,
+                              prefixIcon: InkIcon(
+                                InkGlyph.search,
+                                color: foodUtilityIconColor(context),
+                              ),
+                              suffixIcon: _hasQuery
+                                  ? IconButton(
+                                      icon: InkIcon(
+                                        InkGlyph.close,
+                                        color: foodUtilityIconColor(context),
+                                      ),
+                                      onPressed: _clearSearch,
+                                    )
+                                  : null,
+                            ),
+                            onChanged: _search,
+                          ),
+                        ),
                       ),
-                      onChanged: _search,
                     ),
                   ],
                 ],
