@@ -168,7 +168,12 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
     _loadMonth();
   }
 
+  /// Bumped per [_loadMonth]; paging months quickly must not let an earlier
+  /// month's slower result overwrite the one now showing.
+  int _monthRequest = 0;
+
   Future<void> _loadMonth() async {
+    final request = ++_monthRequest;
     setState(() => _loading = true);
     final start = DateTime(_visibleMonth.year, _visibleMonth.month, 1);
     final end = DateTime(_visibleMonth.year, _visibleMonth.month + 1, 0);
@@ -198,7 +203,7 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
               markerClampedEnd,
             ),
     ]);
-    if (!mounted) return;
+    if (!mounted || request != _monthRequest) return;
     setState(() {
       _caloriesByDay = results[0] as Map<DateTime, double>;
       _targetsByDay = results[1] as Map<DateTime, DailyNutritionTarget>;
@@ -626,6 +631,14 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
       _stepsByType[settings.type] = settings.includeSteps;
       _dietByType[settings.type] = settings.includeDiet;
       _pauseByType[settings.type] = settings.pauseCarbCycle;
+      // Where the delay can't be edited (a past day, or no carb cycle), it
+      // carries over to whichever type is picked: each type's default would
+      // otherwise silently drop it and shift every later cycle day.
+      if (!widget.canPauseCycle) {
+        for (final type in DayMarkerType.values) {
+          _pauseByType[type] = settings.pauseCarbCycle;
+        }
+      }
     }
     _carbPerKg = math.max(
       widget.existing?.carbLoadCarbPerKg ??

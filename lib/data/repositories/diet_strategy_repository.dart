@@ -318,18 +318,25 @@ class DietStrategyRepository {
       var nextVersion = 1;
       for (final p in existing) {
         if (p.version >= nextVersion) nextVersion = p.version + 1;
-        if (p.status == DietPlanStatus.active) {
-          // Historical range stays intact: end it where the new one starts.
-          final end = p.effectiveFrom.isAfter(from) ? p.effectiveFrom : from;
-          await (_db.update(
-            _db.dietStrategyPlans,
-          )..where((t) => t.id.equals(p.id))).write(
-            DietStrategyPlansCompanion(
-              status: Value(DietPlanStatus.superseded.name),
-              endedOn: Value(StrategyDates.encode(end)),
-            ),
-          );
-        }
+        // Historical range stays intact: end it where the new one starts.
+        // That includes a plan an unstarted switch had already superseded
+        // (it still ends at that switch's start): left alone, it would
+        // govern again once this version is stopped, and cancelling this
+        // version couldn't find it to reinstate.
+        final ended = p.endedOn;
+        final reachesPastFrom = ended == null || ended.isAfter(from);
+        if (p.status != DietPlanStatus.active && !reachesPastFrom) continue;
+        final end = p.effectiveFrom.isAfter(from) ? p.effectiveFrom : from;
+        await (_db.update(
+          _db.dietStrategyPlans,
+        )..where((t) => t.id.equals(p.id))).write(
+          DietStrategyPlansCompanion(
+            status: p.status == DietPlanStatus.active
+                ? Value(DietPlanStatus.superseded.name)
+                : const Value.absent(),
+            endedOn: Value(StrategyDates.encode(end)),
+          ),
+        );
       }
       final id = await _db
           .into(_db.dietStrategyPlans)

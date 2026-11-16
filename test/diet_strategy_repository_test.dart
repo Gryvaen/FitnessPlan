@@ -271,6 +271,51 @@ void main() {
       },
     );
 
+    group('replacing a scheduled switch', () {
+      DateTime inDays(int n) =>
+          DateTime(today.year, today.month, today.day + n);
+
+      // v1 has governed for a while; v2 is scheduled a week out, so v1 now
+      // ends where v2 starts. v3 then replaces the scheduled switch.
+      Future<DietStrategyPlan> scheduleThenReplace(int v3From) async {
+        final v1 = await repo.createPlan(
+          _carbCycleDraft(inDays(-5)),
+          now: inDays(-5),
+        );
+        await repo.createPlan(_carbCycleDraft(inDays(7), code: 'HMLLL'));
+        await repo.createPlan(_carbCycleDraft(inDays(v3From)));
+        return v1;
+      }
+
+      test('stopping the replacement leaves no plan in effect', () async {
+        await scheduleThenReplace(0);
+
+        await repo.stopActivePlan();
+
+        expect(await repo.activePlan(), isNull);
+        // v1 must not quietly govern the days up to v2's old start.
+        for (var n = 0; n < 9; n++) {
+          expect(await repo.planCovering(inDays(n)), isNull, reason: 'day +$n');
+        }
+      });
+
+      test(
+        'cancelling a not-yet-started replacement reinstates the original',
+        () async {
+          final v1 = await scheduleThenReplace(2);
+
+          await repo.stopActivePlan();
+
+          final active = (await repo.activePlan())!;
+          expect(active.id, v1.id);
+          expect(active.endedOn, isNull);
+          for (final n in [0, 3, 10]) {
+            expect((await repo.planCovering(inDays(n)))!.id, v1.id);
+          }
+        },
+      );
+    });
+
     test('infeasible draft and past effective date are rejected', () async {
       final bad = DietStrategyPlanDraft(
         kind: DietStrategyKind.balanced,

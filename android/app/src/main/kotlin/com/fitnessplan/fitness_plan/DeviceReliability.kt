@@ -49,8 +49,6 @@ object DeviceReliability {
         return AGGRESSIVE_BRANDS.any { brand.contains(it) || manufacturer.contains(it) }
     }
 
-    fun manufacturer(): String = Build.MANUFACTURER
-
     private fun isColorOs(): Boolean {
         if (Build.DISPLAY.lowercase().contains("lineage")) return false
         val brand = Build.BRAND.lowercase()

@@ -15,6 +15,10 @@
     <string name="step_service_channel_description">在后台持续记录每日步数</string>
     <string name="step_service_notification_title">正在统计步数</string>
     <string name="step_service_notification_body">点按查看今日步数</string>
+    <string name="workout_reminder_channel">训练提醒</string>
+    <string name="workout_reminder_channel_description">每天提醒你按时训练</string>
+    <string name="workout_reminder_default_title">该训练了</string>
+    <string name="workout_reminder_default_body">记一组，保持连续训练。</string>
     <string name="reminder_alarm_channel">日常提醒闹钟</string>
     <string name="reminder_alarm_workout">训练提醒</string>
     <string name="reminder_alarm_water">喝水提醒</string>

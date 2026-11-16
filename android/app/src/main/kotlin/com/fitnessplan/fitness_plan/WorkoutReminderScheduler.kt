@@ -26,8 +26,10 @@ object WorkoutReminderScheduler {
     const val EXTRA_SOUND_URI = "sound_uri"
     const val EXTRA_TRIGGER_AT = "trigger_at"
 
-    // One 100-slot id range per reminder kind (workout / water / meal /
-    // weigh-in), matching ReminderKind.idBase on the Dart side.
+    // Request-code bases 100 apart, one per reminder kind (workout / water /
+    // meal / weigh-in), matching ReminderKind.idBase on the Dart side. Dart
+    // schedules `daysAhead` (7) alarms per kind; cancelling 32 slots also
+    // clears any left over from a build that scheduled further ahead.
     private val BASE_REQUEST_CODES = intArrayOf(72001, 72101, 72201, 72301)
     private const val SLOTS_PER_KIND = 32
 

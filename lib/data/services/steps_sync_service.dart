@@ -55,6 +55,7 @@ class StepsSyncService {
   bool _configured = false;
   bool _promptedThisSession = false;
   Future<StepsSyncStatus>? _inFlight;
+  bool _inFlightPrompts = false;
 
   static bool get isPlatformSupported =>
       !kIsWeb &&
@@ -151,10 +152,24 @@ class StepsSyncService {
     }
     final prompt = forcePrompt || !_promptedThisSession;
     _promptedThisSession = true;
-    return _inFlight ??= _run(
-      limitDays,
-      prompt: prompt,
-    ).whenComplete(() => _inFlight = null);
+    final running = _inFlight;
+    if (running != null && (_inFlightPrompts || !prompt)) return running;
+    // Nothing running — or a silent one is, and this caller needs the
+    // permission dialogs: run after it rather than hand back its result.
+    late final Future<StepsSyncStatus> run;
+    run =
+        (running == null
+                ? _run(limitDays, prompt: prompt)
+                : running.then(
+                    (_) => _run(limitDays, prompt: prompt),
+                    onError: (Object _) => _run(limitDays, prompt: prompt),
+                  ))
+            .whenComplete(() {
+              if (identical(_inFlight, run)) _inFlight = null;
+            });
+    _inFlight = run;
+    _inFlightPrompts = prompt;
+    return run;
   }
 
   Future<StepsSyncStatus> _run(int limitDays, {required bool prompt}) async {

@@ -5,6 +5,7 @@ import '../data/repositories/reminders_repository.dart';
 import '../l10n/app_localizations.dart';
 import '../ui/tools/workout_reminder_notifications.dart';
 import 'core_providers.dart';
+import 'locale_providers.dart';
 
 final remindersProvider =
     NotifierProvider<RemindersNotifier, Map<ReminderKind, ReminderSetting>>(
@@ -13,8 +14,16 @@ final remindersProvider =
 
 class RemindersNotifier extends Notifier<Map<ReminderKind, ReminderSetting>> {
   Future<void> _contentWrites = Future<void>.value();
+  Future<void> _syncs = Future<void>.value();
   @override
   Map<ReminderKind, ReminderSetting> build() {
+    // Scheduled notifications carry their text; a language switch rewrites it.
+    ref.listen(localeProvider, (previous, next) {
+      if (previous == next || !state.values.any((s) => s.enabled)) return;
+      syncSchedule().catchError((Object e) {
+        debugPrint('reminder sync failed: $e');
+      });
+    });
     return ref.read(remindersRepositoryProvider).loadAll();
   }
 
@@ -155,8 +164,19 @@ class RemindersNotifier extends Notifier<Map<ReminderKind, ReminderSetting>> {
   }
 
   /// Recompute and schedule the next days for every enabled reminder kind.
-  Future<void> syncSchedule([AppLocalizations? l10n]) async {
-    final loc = l10n ?? _platformL10n();
+  ///
+  /// Runs one at a time, each reading [state] when it starts: native
+  /// `scheduleAll` replaces whatever is there, so overlapping syncs let the
+  /// slowest win — turning a reminder on and straight off left the "on"
+  /// schedule in place.
+  Future<void> syncSchedule() {
+    final next = _syncs.then((_) => _sync());
+    _syncs = next.catchError((Object _) {});
+    return next;
+  }
+
+  Future<void> _sync() async {
+    final loc = _notificationL10n();
     final workoutRepo = ref.read(workoutRepositoryProvider);
     await ReminderNotifications.rescheduleAll(
       settings: state,
@@ -186,8 +206,11 @@ class RemindersNotifier extends Notifier<Map<ReminderKind, ReminderSetting>> {
     );
   }
 
-  static AppLocalizations _platformL10n() {
-    final locale = WidgetsBinding.instance.platformDispatcher.locale;
+  /// The in-app language when one is chosen, else the system's.
+  AppLocalizations _notificationL10n() {
+    final locale =
+        ref.read(localeProvider) ??
+        WidgetsBinding.instance.platformDispatcher.locale;
     try {
       return lookupAppLocalizations(locale);
     } catch (_) {

@@ -751,6 +751,25 @@ void main() {
     await tester.pumpAndSettle();
     expect((await markerRepo.settingsForDay(today))!.pauseCarbCycle, isTrue);
   });
+
+  testWidgets('switching type keeps a delay the sheet cannot edit', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final strategyRepo = DietStrategyRepository(db);
+    final markerRepo = DayMarkerRepository(db);
+    final today = CalendarDay.todayLocal();
+    await markerRepo.setRestDay(today, pauseCarbCycle: true);
+    await _openMarkerSheet(tester, db, markerRepo, strategyRepo, today);
+    await tester.tap(find.byKey(const ValueKey('marker-option-cheatMeal')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(FilledButton).last);
+    await tester.pumpAndSettle();
+    final saved = (await markerRepo.settingsForDay(today))!;
+    expect(saved.type, DayMarkerType.cheatMeal);
+    expect(saved.pauseCarbCycle, isTrue);
+  });
 }
 
 DietStrategyPlanDraft _cycleDraft(DateTime from) {

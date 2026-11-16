@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:diet/data/db.dart';
+import 'package:diet/data/repositories/data_backup_repository.dart';
 import 'package:diet/data/repositories/step_repository.dart';
 import 'package:diet/data/services/android_step_sensor.dart';
 import 'package:diet/data/services/steps_sync_service.dart';
@@ -10,6 +12,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:health/health.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _Health extends Health {
   _Health(this.total, {this.available = true});
@@ -40,6 +43,36 @@ class _Sensor extends AndroidStepSensor {
   Future<int?> readTodaySteps() async => total;
   @override
   Future<Map<DateTime, int>> readHistory({int days = 14}) async => {};
+}
+
+/// Health Connect access not granted yet; counts the permission dialogs.
+class _UngrantedHealth extends _Health {
+  _UngrantedHealth() : super(0);
+  int prompts = 0;
+  @override
+  Future<bool?> hasPermissions(
+    List<HealthDataType> types, {
+    List<HealthDataAccess>? permissions,
+  }) async => false;
+  @override
+  Future<bool> requestAuthorization(
+    List<HealthDataType> types, {
+    List<HealthDataAccess>? permissions,
+  }) async {
+    prompts++;
+    return false;
+  }
+}
+
+/// Holds a sync at its sensor read until [release] is called.
+class _BlockingSensor extends _Sensor {
+  Completer<void>? gate;
+  void release() => gate?.complete();
+  @override
+  Future<Map<DateTime, int>> readHistory({int days = 14}) async {
+    await gate?.future;
+    return {};
+  }
 }
 
 void main() {
@@ -155,4 +188,75 @@ void main() {
     expect(calls, contains('openAppSettings'));
     expect(calls, isNot(contains('requestPermissions')));
   });
+
+  test(
+    'a user retry during a background sync still shows the dialog',
+    () async {
+      final health = _UngrantedHealth();
+      final sensor = _BlockingSensor();
+      final service = StepsSyncService(
+        repo,
+        health: health,
+        stepSensor: sensor,
+      );
+      // The session's first sync prompts once.
+      await service.syncRecent(limitDays: 1);
+      expect(health.prompts, 1);
+
+      // A resume sync (no prompt) is still running when the user taps retry.
+      sensor.gate = Completer<void>();
+      final background = service.syncRecent(limitDays: 1);
+      await Future<void>.delayed(Duration.zero);
+      final retry = service.syncRecent(limitDays: 1, forcePrompt: true);
+      sensor.release();
+      await background;
+      sensor.gate = null;
+      await retry;
+
+      expect(health.prompts, 2);
+    },
+  );
+
+  test(
+    "on the import day the restored total is a floor for today's sync",
+    () async {
+      final today = CalendarDay.todayLocal();
+      SharedPreferences.setMockInitialValues({
+        DataBackupRepository.importedOnDayKey: today.toIso8601String(),
+      });
+      final prefs = await SharedPreferences.getInstance();
+      // The one-time inflated-count repair already ran on this database.
+      await db
+          .into(db.appMeta)
+          .insert(
+            AppMetaCompanion.insert(
+              key: 'step_counter_backup_v2',
+              value: '{"days":[]}',
+            ),
+          );
+      await repo.setStepsForDay(today, 5000);
+      final sensor = _Sensor()..total = 120;
+      final service = StepsSyncService(
+        repo,
+        health: _Health(0, available: false),
+        stepSensor: sensor,
+        prefs: prefs,
+      );
+      await service.syncRecent(limitDays: 1);
+      expect(await repo.stepsForDay(today), 5000);
+
+      // Any other day, a lower live reading wins as usual.
+      await prefs.setString(
+        DataBackupRepository.importedOnDayKey,
+        today.subtract(const Duration(days: 1)).toIso8601String(),
+      );
+      await StepsSyncService(
+        repo,
+        health: _Health(0, available: false),
+        stepSensor: sensor,
+        prefs: prefs,
+      ).syncRecent(limitDays: 1);
+      expect(await repo.stepsForDay(today), 120);
+    },
+  );
 }

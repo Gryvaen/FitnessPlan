@@ -112,7 +112,6 @@ class MainActivity : FlutterFragmentActivity() {
                     }
                     "isAggressiveOem" -> result.success(DeviceReliability.isAggressiveOem())
                     "isBackgroundRestricted" -> result.success(DeviceReliability.isBackgroundRestricted(this))
-                    "manufacturer" -> result.success(DeviceReliability.manufacturer())
                     "isIgnoringBatteryOptimizations" ->
                         result.success(DeviceReliability.isIgnoringBatteryOptimizations(this))
                     "requestIgnoreBatteryOptimizations" -> {

@@ -104,17 +104,25 @@ object StepCounterBridge {
         return out
     }
 
-    fun snapshotMidnightBaseline(context: Context) {
+    /**
+     * Records the midnight baseline, then calls [onDone] (a receiver's
+     * `goAsync` finish). The next alarm is set before the sensor read: the
+     * reading can take seconds, and if the process is killed meanwhile the
+     * chain of midnight alarms would otherwise stop until the app is opened.
+     */
+    fun snapshotMidnightBaseline(context: Context, onDone: () -> Unit = {}) {
+        scheduleNextMidnight(context)
         readCumulative(context) { sample ->
-            if (sample != null) {
-                try {
+            try {
+                if (sample != null) {
                     applyCumulative(context, sample.value, sample.eventNanos)
-                } catch (e: Exception) {
-                    Log.e(TAG, "midnight applyCumulative failed", e)
+                    Log.i(TAG, "midnight sample=${sample.value} date=${localDateKey()}")
                 }
-                Log.i(TAG, "midnight sample=${sample.value} date=${localDateKey()}")
+            } catch (e: Exception) {
+                Log.e(TAG, "midnight applyCumulative failed", e)
+            } finally {
+                onDone()
             }
-            scheduleNextMidnight(context)
         }
     }
 
@@ -434,7 +442,15 @@ class StepCounterMidnightReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         val app = context.applicationContext
         when (intent?.action) {
-            StepCounterBridge.ACTION_MIDNIGHT_SNAPSHOT -> StepCounterBridge.snapshotMidnightBaseline(app)
+            StepCounterBridge.ACTION_MIDNIGHT_SNAPSHOT -> {
+                // The sensor answers asynchronously; keep the process alive
+                // until it does (readCumulative gives up after a few seconds).
+                val pending = goAsync()
+                StepCounterBridge.snapshotMidnightBaseline(app) { pending.finish() }
+            }
+            // The alarm is an absolute time: re-aim it at the new local midnight.
+            Intent.ACTION_TIME_CHANGED,
+            Intent.ACTION_TIMEZONE_CHANGED -> StepCounterBridge.scheduleNextMidnight(app)
             Intent.ACTION_BOOT_COMPLETED,
             Intent.ACTION_MY_PACKAGE_REPLACED,
             "android.intent.action.QUICKBOOT_POWERON" -> {
