@@ -185,7 +185,16 @@ class NotesRecordsTab extends ConsumerWidget {
                                         const SizedBox(height: 4),
                                       ],
                                       if (note.mode == 'plan')
-                                        Text(displayPlan(note.content))
+                                        // Preview drops the blank lines
+                                        // between items so more fit.
+                                        Text(
+                                          displayPlan(note.content)
+                                              .split('\n')
+                                              .where((l) => l.trim().isNotEmpty)
+                                              .join('\n'),
+                                          maxLines: 8,
+                                          overflow: TextOverflow.ellipsis,
+                                        )
                                       else
                                         Text(
                                           title,
@@ -198,7 +207,7 @@ class NotesRecordsTab extends ConsumerWidget {
                                         const SizedBox(height: 6),
                                         Text(
                                           lines.skip(1).join('\n'),
-                                          maxLines: 2,
+                                          maxLines: 6,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ],
