@@ -280,6 +280,9 @@ class DailyNutritionTarget {
   /// `reason` tag (one `;`-separated part) of a day under the 维持 goal.
   static const maintainReasonTag = 'maintain';
 
+  /// `reason` tag (one `;`-separated part) of a day under the 增肌 goal.
+  static const bulkReasonTag = 'bulk';
+
   /// True when a 冲碳日 marker replaced this day's carb-cycle macros.
   bool get isCarbLoad => reason?.startsWith(carbLoadReasonPrefix) ?? false;
 
@@ -287,6 +290,10 @@ class DailyNutritionTarget {
   /// [maintainReasonTag]); such days are judged by a band, not a ceiling.
   bool get isMaintainDay =>
       reason?.split(';').contains(maintainReasonTag) ?? false;
+
+  /// True when this day was governed by the profile's 增肌 goal (see
+  /// [bulkReasonTag]); such days must reach the target, within a band.
+  bool get isBulkDay => reason?.split(';').contains(bulkReasonTag) ?? false;
 
   int get caloriesRounded => calories.round();
 

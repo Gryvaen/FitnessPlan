@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../data/db.dart';
+import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../shell/swipe_tab_view.dart';
@@ -305,11 +306,19 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
     final up = delta > 0;
     final flat = delta.abs() < 0.05;
     final scheme = Theme.of(context).colorScheme;
-    final color = flat
+    // Good or bad depends on the goal: losing while cutting, gaining while
+    // bulking; maintenance stays neutral either way.
+    final goal = ref.watch(profileProvider)?.goal ?? FitnessGoal.cut;
+    final good = switch (goal) {
+      FitnessGoal.cut => !up,
+      FitnessGoal.bulk => up,
+      FitnessGoal.maintain => null,
+    };
+    final color = flat || good == null
         ? scheme.onSurfaceVariant
-        : up
-        ? AppColors.warning
-        : AppColors.success;
+        : good
+        ? AppColors.success
+        : AppColors.warning;
     return Row(
       children: [
         InkIcon(
@@ -322,10 +331,14 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
           color: color,
         ),
         const SizedBox(width: 4),
-        Text(
-          '${up ? '+' : ''}${delta.toStringAsFixed(2)} kg · '
-          '${context.l10n.sincePreviousRecord}',
-          style: Theme.of(context).textTheme.meta?.copyWith(color: color),
+        Flexible(
+          child: Text(
+            '${up ? '+' : ''}${delta.toStringAsFixed(2)} kg · '
+            '${context.l10n.sincePreviousRecord}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.meta?.copyWith(color: color),
+          ),
         ),
       ],
     );

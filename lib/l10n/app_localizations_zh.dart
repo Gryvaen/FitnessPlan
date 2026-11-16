@@ -1535,6 +1535,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get legendCutRoundGreenRed => '轮内：过去绿/红，改标准不影响';
 
   @override
+  String get legendGoalPeriod => '目标时段';
+
+  @override
+  String get legendPeriodStart => '时段开始';
+
+  @override
+  String get legendPeriodEnd => '时段结束';
+
+  @override
   String get legendStrategyChange => '策略调整';
 
   @override
@@ -2357,6 +2366,14 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get legendBulkDays => '增肌日';
+
+  @override
+  String legendBulkBand(int pct) {
+    return '达到增肌热量、且不超过 +$pct% 为达标';
+  }
+
+  @override
   String maintainBandShort(int low, int high) {
     return '区间 $low–$high';
   }
@@ -2950,7 +2967,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileFieldActivityHint => '把基础代谢换算成每日总消耗（TDEE）。';
 
   @override
-  String get profileFieldGoalHint => '决定热量盈余或缺口，以及蛋白质目标。';
+  String get profileFieldGoalHint => '决定每日热量目标、达标判定方式和蛋白质目标。';
 
   @override
   String get profileFieldWaterHint => '首页水杯要注满的目标水量。';

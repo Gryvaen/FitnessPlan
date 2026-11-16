@@ -44,6 +44,9 @@ class TodayPage extends ConsumerStatefulWidget {
 }
 
 class _TodayPageState extends ConsumerState<TodayPage> {
+  /// A calendar is being opened: a quick second tap must not stack another.
+  bool _openingCalendar = false;
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -75,9 +78,9 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     final targets = dayTarget?.toMacroTargets() ?? profile.targets;
     final targetCalories = dayTarget?.calories ?? targets.calories.toDouble();
     final remainCal = targetCalories - intake.calories;
-    // 维持 days only turn red above the band's upper edge (see intakeMet).
-    final maintainDay = dayTarget?.isMaintainDay ?? false;
-    final band = maintainDay ? maintainBand(targetCalories) : null;
+    // 维持 / 增肌 days only turn red above their band's upper edge (see
+    // intakeMet).
+    final band = dayTarget == null ? null : intakeBand(dayTarget);
     final overAt = band?.high ?? targetCalories;
 
     final onPlateau =
@@ -110,7 +113,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         dayTarget?.source == TargetSource.profile &&
         dayTarget?.isLegacyEstimate == false;
 
-    Future<void> openDatePicker() async {
+    Future<void> showCalendar() async {
       final repo = ref.read(dietStrategyRepositoryProvider);
       final plans = await repo.listPlans();
       if (!context.mounted) return;
@@ -131,9 +134,21 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         cutSegments: ref.read(cutCultivationStateProvider).segments,
         strategyChangeDays: strategyChangeDays(plans, today: today),
         markUntil: DateTime(today.year + 1, today.month, today.day),
+        cultivationMarkers: profile.goal == FitnessGoal.cut,
+        goalPeriods: ref.read(goalPeriodsProvider),
       );
-      if (picked == null) return;
+      if (picked == null || !context.mounted) return;
       ref.read(selectedDayProvider.notifier).setDay(picked);
+    }
+
+    Future<void> openDatePicker() async {
+      if (_openingCalendar) return;
+      _openingCalendar = true;
+      try {
+        await showCalendar();
+      } finally {
+        _openingCalendar = false;
+      }
     }
 
     return AppChromeScaffold(

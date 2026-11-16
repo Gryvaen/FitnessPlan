@@ -61,6 +61,26 @@ void main() {
       expect(intakeMet(t, 2001), isFalse);
     });
 
+    test('bulk days run from the target up to +10%', () {
+      final t = _target(reason: 'bulk');
+      expect(t.isBulkDay, isTrue);
+      expect(t.isMaintainDay, isFalse);
+      final band = intakeBand(t)!;
+      expect(band.low, 2000);
+      expect(band.high, closeTo(2200, 1e-9));
+      expect(intakeMet(t, 1999), isFalse); // short of the surplus
+      expect(intakeMet(t, 2000), isTrue); // lower edge
+      expect(intakeMet(t, 2200), isTrue); // upper edge
+      expect(intakeMet(t, 2201), isFalse);
+    });
+
+    test('only 维持 and 增肌 days have a band', () {
+      expect(intakeBand(_target()), isNull);
+      expect(intakeBand(_target(reason: 'maintain')), isNotNull);
+      expect(_target(reason: 'bulk;plateauAdj:100').isBulkDay, isTrue);
+      expect(_target(reason: 'bulky').isBulkDay, isFalse);
+    });
+
     test('the maintain tag is one ;-separated part of the reason', () {
       expect(_target(reason: 'maintain;plateauAdj:100').isMaintainDay, isTrue);
       expect(_target(reason: 'plateauAdj:100').isMaintainDay, isFalse);

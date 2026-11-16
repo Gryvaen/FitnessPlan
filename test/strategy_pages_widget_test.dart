@@ -1099,6 +1099,29 @@ void main() {
     );
   });
 
+  testWidgets('switching goal without a strategy reports the new target', (
+    tester,
+  ) async {
+    final oldKcal = _container.read(profileProvider)!.targets.calories;
+    await _pump(tester, '/profile/edit');
+    tester
+        .widget<AppDropdown<FitnessGoal>>(find.byType(AppDropdown<FitnessGoal>))
+        .onChanged(FitnessGoal.bulk);
+    await _settle(tester);
+    await tester.tap(await _show(tester, find.text('Save')));
+    await _settle(tester);
+    final saved = _container.read(profileProvider)!;
+    expect(saved.goal, FitnessGoal.bulk);
+    expect(saved.targets.calories, isNot(oldKcal));
+    expect(
+      find.text(
+        'Profile calorie target updated: $oldKcal → '
+        '${saved.targets.calories} kcal',
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('leaving cut stops its strategy and explains the change', (
     tester,
   ) async {

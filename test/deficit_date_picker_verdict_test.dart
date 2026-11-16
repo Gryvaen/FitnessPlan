@@ -4,6 +4,8 @@ import 'package:diet/data/repositories/meal_repository.dart';
 import 'package:diet/domain/calendar_day.dart';
 import 'package:diet/domain/cut_cultivation.dart';
 import 'package:diet/domain/diet_plan.dart';
+import 'package:diet/domain/goal_period.dart';
+import 'package:diet/domain/models.dart';
 import 'package:diet/l10n/app_localizations.dart';
 import 'package:diet/ui/today/deficit_date_picker.dart';
 import 'package:drift/native.dart';
@@ -56,6 +58,7 @@ void main() {
     bool legacy = false,
     double intake = 1500,
     String? reason,
+    List<GoalPeriod> goalPeriods = const [],
   }) async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     addTearDown(db.close);
@@ -86,6 +89,7 @@ void main() {
                 loadStrategyForDay: (_) async => null,
                 calorieStandardSince: standardSince,
                 cutSegments: segments,
+                goalPeriods: goalPeriods,
               ),
               child: const Text('Open calendar'),
             ),
@@ -144,6 +148,108 @@ void main() {
         reason: 'maintain',
       );
       expect(isRed(color), isTrue);
+    });
+  });
+
+  group('bulk days run from the target up to +10%', () {
+    for (final (intake, met) in [
+      (1800.0, false), // short of the surplus
+      (2100.0, true),
+      (2400.0, false), // past the band
+    ]) {
+      testWidgets('$intake kcal is ${met ? 'met' : 'a miss'}', (tester) async {
+        // A round keeps the day past the new-standard cut-off, as above.
+        final color = await pumpAndReadCellColor(
+          tester,
+          segments: [
+            CutCultivationSegment(start: CalendarDay.addDays(today, -10)),
+          ],
+          intake: intake,
+          reason: 'bulk',
+        );
+        expect(met ? isGreen(color) : isRed(color), isTrue);
+        expect(find.text('Bulk days'), findsOneWidget);
+      });
+    }
+  });
+
+  group('goal periods are bracketed', () {
+    String bracketKey(DateTime d, {FitnessGoal? start, FitnessGoal? end}) =>
+        'goalBracket-${d.year}-${d.month}-${d.day}'
+        '-${start?.name ?? ''}-${end?.name ?? ''}';
+
+    testWidgets('a new goal opens with 「[」 in its colour', (tester) async {
+      await pumpAndReadCellColor(
+        tester,
+        segments: [
+          CutCultivationSegment(
+            start: CalendarDay.addDays(day, -6),
+            end: CalendarDay.addDays(day, -1),
+          ),
+        ],
+        goalPeriods: [
+          GoalPeriod(
+            goal: FitnessGoal.cut,
+            start: CalendarDay.addDays(day, -6),
+            end: CalendarDay.addDays(day, -1),
+          ),
+          GoalPeriod(goal: FitnessGoal.maintain, start: day),
+        ],
+      );
+      expect(
+        find.byKey(ValueKey(bracketKey(day, start: FitnessGoal.maintain))),
+        findsOneWidget,
+      );
+      // One merged 目标时段 legend replaces the cut-round one.
+      expect(find.byKey(const ValueKey('goalPeriodLegend')), findsOneWidget);
+      expect(find.text('Goal periods'), findsOneWidget);
+      expect(find.text('Cut round'), findsNothing);
+      expect(
+        find.byKey(const ValueKey('goalPeriodLegend-maintain')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a finished goal closes with 「]」', (tester) async {
+      await pumpAndReadCellColor(
+        tester,
+        segments: const [],
+        goalPeriods: [
+          GoalPeriod(
+            goal: FitnessGoal.cut,
+            start: CalendarDay.addDays(day, -6),
+            end: day,
+          ),
+          GoalPeriod(
+            goal: FitnessGoal.bulk,
+            start: CalendarDay.addDays(day, 1),
+          ),
+        ],
+      );
+      expect(
+        find.byKey(ValueKey(bracketKey(day, end: FitnessGoal.cut))),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('goalPeriodLegend-cut')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('without recorded periods the old start line stays', (
+      tester,
+    ) async {
+      await pumpAndReadCellColor(
+        tester,
+        segments: [CutCultivationSegment(start: day)],
+      );
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is CustomPaint && '${w.key}'.contains('goalBracket-'),
+        ),
+        findsNothing,
+      );
+      expect(find.text('Cut round'), findsOneWidget);
     });
   });
 

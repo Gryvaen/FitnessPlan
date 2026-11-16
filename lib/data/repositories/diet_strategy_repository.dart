@@ -694,12 +694,14 @@ class DietStrategyRepository {
     );
   }
 
-  /// `;`-separated tags on a profile-sourced target: the 维持 marker (so the
-  /// day keeps its band verdict after the goal changes) and any plateau cut.
+  /// `;`-separated tags on a profile-sourced target: the 维持 / 增肌 marker
+  /// (so the day keeps its band verdict after the goal changes) and any
+  /// plateau cut.
   static String? _profileReason(UserProfile profile) {
     final tags = [
       if (profile.goal == FitnessGoal.maintain)
         DailyNutritionTarget.maintainReasonTag,
+      if (profile.goal == FitnessGoal.bulk) DailyNutritionTarget.bulkReasonTag,
       if (profile.calorieAdjustment > 0)
         'plateauAdj:${profile.calorieAdjustment}',
     ];

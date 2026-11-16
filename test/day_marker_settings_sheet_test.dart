@@ -153,6 +153,58 @@ void main() {
     });
   }
 
+  testWidgets('outside fat loss the sheet leaves out the 修为 settings', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final today = CalendarDay.todayLocal();
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showDeficitDatePicker(
+                context: context,
+                initialDate: today,
+                firstDate: today,
+                lastDate: today,
+                plannedDeficit: 0,
+                mealRepository: MealRepository(db),
+                markerRepository: DayMarkerRepository(db),
+                loadTargets: (_, _) async => {},
+                loadStrategyForDay: (_) async => null,
+                cultivationMarkers: false,
+              ),
+              child: const Text('Open calendar'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open calendar'));
+    await tester.pumpAndSettle();
+    await _longPressDay(tester, today);
+    await tester.pumpAndSettle();
+
+    for (final type in ['cheatMeal', 'restDay']) {
+      await tester.tap(find.byKey(ValueKey('marker-option-$type')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(ValueKey('marker-steps-$type')), findsNothing);
+      expect(find.byKey(ValueKey('marker-diet-$type')), findsNothing);
+    }
+    expect(find.byKey(const ValueKey('marker-deduction-row')), findsNothing);
+    expect(find.textContaining('Steps count'), findsNothing);
+  });
+
   testWidgets('calendar marker sheet saves, prefills and cancels settings', (
     tester,
   ) async {

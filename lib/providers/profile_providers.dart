@@ -4,6 +4,7 @@ import '../domain/calendar_day.dart';
 import '../domain/models.dart';
 import 'core_providers.dart';
 import 'cultivation_providers.dart';
+import 'goal_history_providers.dart';
 import 'goal_schedule_providers.dart';
 
 final profileProvider = NotifierProvider<ProfileNotifier, UserProfile?>(
@@ -32,6 +33,9 @@ class ProfileNotifier extends Notifier<UserProfile?> {
   }) async {
     final existing = state;
     final oldGoal = existing?.goal;
+    // Build the goal stretches (and their one-time backfill for an older
+    // install) from the state before this save changes anything.
+    ref.read(goalPeriodsProvider);
     final leavingCut = oldGoal == FitnessGoal.cut && goal != FitnessGoal.cut;
     // A booked switch carried out on/after its day: the old goal ran through
     // the day before [effectiveFrom], the new one starts on it.
@@ -78,6 +82,13 @@ class ProfileNotifier extends Notifier<UserProfile?> {
       openKcal: openKcal,
       frozenEndDay: lastOldDay,
     );
+    if (existing == null || oldGoal != goal) {
+      // The calendar's goal brackets: the new stretch starts on the switch
+      // day (the booked one when carried out late).
+      await ref
+          .read(goalPeriodsProvider.notifier)
+          .switchTo(goal, from ?? CalendarDay.todayLocal());
+    }
     if (oldGoal != goal) {
       // An explicit switch replaces any booked one.
       await ref.read(pendingGoalSwitchProvider.notifier).clear();

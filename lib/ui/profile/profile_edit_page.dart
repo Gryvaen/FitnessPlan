@@ -165,7 +165,8 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
               previous?.goal == FitnessGoal.cut &&
               saved.goal != FitnessGoal.cut
           ? l10n.profileSaveStoppedStrategy
-          : nutritionChanged &&
+          : previous != null &&
+                (nutritionChanged || previous.goal != saved.goal) &&
                 previousPlan == null &&
                 previous.targets.calories != saved.targets.calories
           ? l10n.profileTargetUpdated(

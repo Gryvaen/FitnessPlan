@@ -2985,6 +2985,24 @@ abstract class AppLocalizations {
   /// **'In round: past green/red, kept across standard changes'**
   String get legendCutRoundGreenRed;
 
+  /// No description provided for @legendGoalPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal periods'**
+  String get legendGoalPeriod;
+
+  /// No description provided for @legendPeriodStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Period starts'**
+  String get legendPeriodStart;
+
+  /// No description provided for @legendPeriodEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Period ends'**
+  String get legendPeriodEnd;
+
   /// No description provided for @legendStrategyChange.
   ///
   /// In en, this message translates to:
@@ -4227,6 +4245,18 @@ abstract class AppLocalizations {
   /// **'On target within ±{pct}% of maintenance'**
   String legendMaintainBand(int pct);
 
+  /// No description provided for @legendBulkDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Bulk days'**
+  String get legendBulkDays;
+
+  /// No description provided for @legendBulkBand.
+  ///
+  /// In en, this message translates to:
+  /// **'On target from the bulk calories up to +{pct}%'**
+  String legendBulkBand(int pct);
+
   /// No description provided for @maintainBandShort.
   ///
   /// In en, this message translates to:
@@ -5262,7 +5292,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileFieldGoalHint.
   ///
   /// In en, this message translates to:
-  /// **'Chooses the calorie surplus or deficit and the protein target.'**
+  /// **'Sets the daily calorie target, how a day is judged on target, and the protein target.'**
   String get profileFieldGoalHint;
 
   /// No description provided for @profileFieldWaterHint.

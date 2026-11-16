@@ -11,9 +11,12 @@ import '../../domain/day_marker.dart';
 import '../../domain/deficit.dart';
 import '../../domain/diet_plan.dart';
 import '../../domain/diet_strategy.dart';
+import '../../domain/goal_period.dart';
 import '../../domain/maintain.dart';
+import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../ink/ink_icon.dart';
+import '../profile/cultivation_labels.dart';
 import '../strategy/stepper_row.dart';
 import '../strategy/strategy_labels.dart';
 import '../theme/app_theme.dart';
@@ -60,6 +63,15 @@ Future<DateTime?> showDeficitDatePicker({
   /// marking (long-press). Defaults to [lastDate] — pure date *selection*
   /// (tap + Confirm) always stays bounded by [firstDate]/[lastDate].
   DateTime? markUntil,
+
+  /// Goal stretches (减脂 / 维持 / 增肌), bracketed on the grid: 「[」 on a
+  /// stretch's first day, 「]」 on its last, in the goal's colour. Empty
+  /// falls back to the old start line.
+  List<GoalPeriod> goalPeriods = const [],
+
+  /// Whether the marker sheet offers the 修为 settings (steps / diet count
+  /// toward cultivation, 放纵日 deduction). 修为 only accrues while cutting.
+  bool cultivationMarkers = true,
 }) {
   DateTime? since;
   if (calorieStandardSince != null) {
@@ -95,6 +107,15 @@ Future<DateTime?> showDeficitDatePicker({
       markUntil: markUntil == null
           ? null
           : DateTime(markUntil.year, markUntil.month, markUntil.day),
+      cultivationMarkers: cultivationMarkers,
+      goalPeriods: [
+        for (final p in goalPeriods)
+          GoalPeriod(
+            goal: p.goal,
+            start: AppDates.dayOnly(p.start),
+            end: p.end == null ? null : AppDates.dayOnly(p.end!),
+          ),
+      ],
     ),
   );
 }
@@ -114,6 +135,8 @@ class _DeficitDatePickerDialog extends StatefulWidget {
     this.cutSegments = const [],
     this.strategyChangeDays = const {},
     this.markUntil,
+    this.cultivationMarkers = true,
+    this.goalPeriods = const [],
   });
 
   final DateTime initialDate;
@@ -131,6 +154,8 @@ class _DeficitDatePickerDialog extends StatefulWidget {
   final List<CutCultivationSegment> cutSegments;
   final Set<DateTime> strategyChangeDays;
   final DateTime? markUntil;
+  final bool cultivationMarkers;
+  final List<GoalPeriod> goalPeriods;
 
   @override
   State<_DeficitDatePickerDialog> createState() =>
@@ -212,6 +237,56 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
     });
   }
 
+  /// 「目标时段」legend: the bracket glyphs, one colour per goal with a
+  /// stretch in the visible month, and how days are judged.
+  Widget _goalPeriodLegend(BuildContext context) {
+    final l10n = context.l10n;
+    final glyphColor = Theme.of(context).colorScheme.onSurface;
+    final first = DateTime(_visibleMonth.year, _visibleMonth.month, 1);
+    final last = DateTime(_visibleMonth.year, _visibleMonth.month + 1, 0);
+    final goals = <FitnessGoal>{
+      for (final p in widget.goalPeriods)
+        if (!p.start.isAfter(last) &&
+            (p.end == null || !p.end!.isBefore(first)))
+          p.goal,
+    };
+    Widget glyph({bool start = false, bool end = false}) => SizedBox(
+      width: 10,
+      height: 14,
+      child: CustomPaint(
+        painter: _GoalBracketPainter(
+          start: start ? glyphColor : null,
+          end: end ? glyphColor : null,
+        ),
+      ),
+    );
+    return _LegendSection(
+      key: const ValueKey('goalPeriodLegend'),
+      title: l10n.legendGoalPeriod,
+      children: [
+        _LegendLine(leading: glyph(start: true), label: l10n.legendPeriodStart),
+        _LegendLine(leading: glyph(end: true), label: l10n.legendPeriodEnd),
+        for (final g in FitnessGoal.values)
+          if (goals.contains(g))
+            _LegendDot(
+              key: ValueKey('goalPeriodLegend-${g.name}'),
+              color: goalBracketColor(context, g),
+              label: g.label(l10n),
+            ),
+        if (widget.cutSegments.isNotEmpty)
+          _LegendLine(
+            leading: const InkIcon(InkGlyph.radioEmpty, size: 10),
+            label: l10n.legendCutRoundGreenRed,
+          ),
+        if (widget.calorieStandardSince != null)
+          _LegendLine(
+            leading: const InkIcon(InkGlyph.radioEmpty, size: 10),
+            label: l10n.legendBeforeNeutral,
+          ),
+      ],
+    );
+  }
+
   void _shiftMonth(int delta) {
     final next = DateTime(_visibleMonth.year, _visibleMonth.month + delta);
     final firstMonth = DateTime(widget.firstDate.year, widget.firstDate.month);
@@ -255,6 +330,7 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
           carbLoadFloor ?? StrategyRules.highCarbPerKgMin,
           StrategyRules.carbLoadCarbPerKgMax,
         ),
+        showCultivation: widget.cultivationMarkers,
       ),
     );
     if (!mounted || choice == null) return;
@@ -411,7 +487,10 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
                   ),
                 ],
               ),
-              if (widget.cutSegments.isNotEmpty) ...[
+              if (widget.goalPeriods.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _goalPeriodLegend(context),
+              ] else if (widget.cutSegments.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 _LegendSection(
                   title: l10n.legendCutRound,
@@ -455,6 +534,20 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
                       leading: const InkIcon(InkGlyph.radioEmpty, size: 10),
                       label: l10n.legendMaintainBand(
                         (maintainBandFraction * 100).round(),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              if (_targetsByDay.values.any((t) => t.isBulkDay)) ...[
+                const SizedBox(height: 12),
+                _LegendSection(
+                  title: l10n.legendBulkDays,
+                  children: [
+                    _LegendLine(
+                      leading: const InkIcon(InkGlyph.radioEmpty, size: 10),
+                      label: l10n.legendBulkBand(
+                        (bulkBandFraction * 100).round(),
                       ),
                     ),
                   ],
@@ -526,6 +619,15 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
                       calorieStandardSince: widget.calorieStandardSince,
                       cutSegments: widget.cutSegments,
                       strategyChange: widget.strategyChangeDays.contains(date),
+                      periodStart: widget.goalPeriods
+                          .where((p) => p.start == date)
+                          .lastOrNull
+                          ?.goal,
+                      periodEnd: widget.goalPeriods
+                          .where((p) => p.end == date)
+                          .firstOrNull
+                          ?.goal,
+                      legacyStartBar: widget.goalPeriods.isEmpty,
                       okColor: _okGreen,
                       badColor: _badRed,
                       marker: _markersByDay[date],
@@ -588,9 +690,13 @@ class _MarkerSettingsSheet extends StatefulWidget {
     required this.canPauseCycle,
     required this.canCarbLoad,
     required this.carbLoadFloor,
+    this.showCultivation = true,
   });
 
   final DayMarkerSettings? existing;
+
+  /// Offer the 修为 settings; off outside fat loss, where 修为 doesn't run.
+  final bool showCultivation;
   final bool hasCarbCycle;
   final bool canPauseCycle;
 
@@ -803,11 +909,13 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
     return [
       if (type == DayMarkerType.carbLoad)
         l10n.carbLoadSummary(_carbPerKg.toStringAsFixed(1)),
-      _stepsByType[type]!
-          ? l10n.stepsCountedSummary
-          : l10n.stepsExcludedSummary,
-      _dietByType[type]! ? l10n.dietCountedSummary : l10n.dietExcludedSummary,
-      if (type == DayMarkerType.cheatMeal)
+      if (widget.showCultivation)
+        _stepsByType[type]!
+            ? l10n.stepsCountedSummary
+            : l10n.stepsExcludedSummary,
+      if (widget.showCultivation)
+        _dietByType[type]! ? l10n.dietCountedSummary : l10n.dietExcludedSummary,
+      if (widget.showCultivation && type == DayMarkerType.cheatMeal)
         _dietByType[type]!
             ? l10n.actualDietContributionHint
             : _deductKcal
@@ -935,29 +1043,31 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                           ),
                         ),
                       ],
-                      SwitchListTile.adaptive(
-                        key: ValueKey('marker-steps-${type.name}'),
-                        contentPadding: EdgeInsets.zero,
-                        dense: true,
-                        title: Text(l10n.stepsCountTowardCultivationLabel),
-                        value: _stepsByType[type]!,
-                        onChanged: (value) =>
-                            setState(() => _stepsByType[type] = value),
-                      ),
-                      SwitchListTile.adaptive(
-                        key: ValueKey('marker-diet-${type.name}'),
-                        contentPadding: EdgeInsets.zero,
-                        dense: true,
-                        title: Text(l10n.dietCountTowardCultivationLabel),
-                        value: _dietByType[type]!,
-                        onChanged: (value) {
-                          _amountFocus.unfocus();
-                          setState(() {
-                            _dietByType[type] = value;
-                            _editingAmount = false;
-                          });
-                        },
-                      ),
+                      if (widget.showCultivation)
+                        SwitchListTile.adaptive(
+                          key: ValueKey('marker-steps-${type.name}'),
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          title: Text(l10n.stepsCountTowardCultivationLabel),
+                          value: _stepsByType[type]!,
+                          onChanged: (value) =>
+                              setState(() => _stepsByType[type] = value),
+                        ),
+                      if (widget.showCultivation)
+                        SwitchListTile.adaptive(
+                          key: ValueKey('marker-diet-${type.name}'),
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          title: Text(l10n.dietCountTowardCultivationLabel),
+                          value: _dietByType[type]!,
+                          onChanged: (value) {
+                            _amountFocus.unfocus();
+                            setState(() {
+                              _dietByType[type] = value;
+                              _editingAmount = false;
+                            });
+                          },
+                        ),
                       if (showPause)
                         SwitchListTile.adaptive(
                           key: ValueKey('marker-pause-${type.name}'),
@@ -970,7 +1080,8 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                                     setState(() => _pauseByType[type] = value)
                               : null,
                         ),
-                      if (type == DayMarkerType.cheatMeal &&
+                      if (widget.showCultivation &&
+                          type == DayMarkerType.cheatMeal &&
                           !_dietByType[type]!) ...[
                         Row(
                           key: const ValueKey('marker-deduction-row'),
@@ -1112,7 +1223,11 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
 }
 
 class _LegendSection extends StatelessWidget {
-  const _LegendSection({required this.title, required this.children});
+  const _LegendSection({
+    super.key,
+    required this.title,
+    required this.children,
+  });
 
   final String title;
   final List<Widget> children;
@@ -1143,7 +1258,7 @@ class _LegendSection extends StatelessWidget {
 }
 
 class _LegendDot extends StatelessWidget {
-  const _LegendDot({required this.color, required this.label});
+  const _LegendDot({super.key, required this.color, required this.label});
 
   final Color color;
   final String label;
@@ -1197,6 +1312,9 @@ class _DayCell extends StatelessWidget {
     this.calorieStandardSince,
     this.cutSegments = const [],
     this.strategyChange = false,
+    this.periodStart,
+    this.periodEnd,
+    this.legacyStartBar = true,
     this.onLongPress,
   });
 
@@ -1215,6 +1333,14 @@ class _DayCell extends StatelessWidget {
 
   /// A strategy version took effect on this day (corner flag).
   final bool strategyChange;
+
+  /// Goal whose stretch starts (「[」) / ends (「]」) on this day.
+  final FitnessGoal? periodStart;
+  final FitnessGoal? periodEnd;
+
+  /// No goal stretches recorded: mark the cut-round start / new-standard
+  /// day with the old plain left line instead.
+  final bool legacyStartBar;
   final Color okColor;
   final Color badColor;
   final VoidCallback onTap;
@@ -1243,9 +1369,11 @@ class _DayCell extends StatelessWidget {
     // target, so a mid-round standard change doesn't blank earlier days.
     final inCutRound = cutSegments.any((s) => s.containsDay(date));
     final beforeStandard = !inCutRound && since != null && date.isBefore(since);
-    final showStandardBar = cutSegments.isNotEmpty
-        ? cutSegments.any((s) => s.start == date)
-        : since != null && date == since;
+    final showStandardBar =
+        legacyStartBar &&
+        (cutSegments.isNotEmpty
+            ? cutSegments.any((s) => s.start == date)
+            : since != null && date == since);
     // Only days with meal logs and a known target show remaining calories;
     // empty days stay uncolored. The cell shows what's left of the day's
     // own target (target − intake); the plan-wide actual deficit — which
@@ -1368,12 +1496,84 @@ class _DayCell extends StatelessWidget {
                   left: 2,
                   child: _CornerFlag(color: theme.colorScheme.primary),
                 ),
+              if (periodStart != null || periodEnd != null)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                      key: ValueKey(
+                        'goalBracket-${date.year}-${date.month}-${date.day}'
+                        '-${periodStart?.name ?? ''}-${periodEnd?.name ?? ''}',
+                      ),
+                      painter: _GoalBracketPainter(
+                        start: periodStart == null
+                            ? null
+                            : goalBracketColor(context, periodStart!),
+                        end: periodEnd == null
+                            ? null
+                            : goalBracketColor(context, periodEnd!),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
       ),
     );
   }
+}
+
+/// A goal's bracket colour: its 境界 accent, lifted toward the text colour
+/// on dark themes where the deep accents would sink into the background.
+Color goalBracketColor(BuildContext context, FitnessGoal goal) {
+  final theme = Theme.of(context);
+  final accent = goal.cultivationAccentColor;
+  return theme.brightness == Brightness.dark
+      ? Color.lerp(accent, theme.colorScheme.onSurface, 0.35)!
+      : accent;
+}
+
+/// 「[」 down a day cell's left edge (a goal stretch starts) and / or 「]」
+/// down its right edge (one ends). Also the legend glyph.
+class _GoalBracketPainter extends CustomPainter {
+  const _GoalBracketPainter({this.start, this.end});
+
+  final Color? start;
+  final Color? end;
+
+  static const _stroke = 2.0;
+  static const _tick = 4.0;
+  static const _inset = 3.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    void bracket(Color color, {required bool left}) {
+      final paint = Paint()
+        ..color = color
+        ..strokeWidth = _stroke
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.square;
+      final x = left ? _stroke / 2 : size.width - _stroke / 2;
+      final tickX = left ? x + _tick : x - _tick;
+      final top = _inset;
+      final bottom = size.height - _inset;
+      canvas.drawPath(
+        Path()
+          ..moveTo(tickX, top)
+          ..lineTo(x, top)
+          ..lineTo(x, bottom)
+          ..lineTo(tickX, bottom),
+        paint,
+      );
+    }
+
+    if (start case final c?) bracket(c, left: true);
+    if (end case final c?) bracket(c, left: false);
+  }
+
+  @override
+  bool shouldRepaint(_GoalBracketPainter old) =>
+      old.start != start || old.end != end;
 }
 
 /// Small right-angled triangle pinned to a day cell's top-left corner: a

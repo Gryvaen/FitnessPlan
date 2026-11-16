@@ -1,6 +1,7 @@
 import 'calendar_day.dart';
 import 'day_marker.dart';
 import 'diet_plan.dart';
+import 'maintain.dart';
 
 /// A past day's diet verdict, judged like the deficit calendar's green/red:
 /// `true` when intake stayed within the day's target, `false` when it went
@@ -17,7 +18,7 @@ bool? dietDayMet({
   if (marker == DayMarkerType.cheatMeal || marker == DayMarkerType.restDay) {
     return null;
   }
-  return target.calories - intake >= 0;
+  return intakeMet(target, intake);
 }
 
 /// A cut round's start and latest weight, smoothed against water weight.

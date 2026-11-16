@@ -11,6 +11,7 @@ import '../../data/repositories/data_backup_repository.dart';
 import '../../data/repositories/app_update_repository.dart';
 import '../../data/services/permission_gate.dart';
 import '../../domain/calorie_calculator.dart';
+import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../ink/ink_icon.dart';
@@ -272,9 +273,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final active = ref.watch(activeDietPlanProvider).value;
     final today = ref.watch(todayTargetProvider).value;
     final kcal = today?.caloriesRounded;
-    final strategy = active == null
-        ? l10n.noStrategyShort
-        : active.kind.label(l10n);
+    // Only fat loss picks a strategy; 维持 runs 均衡维持, 增肌 its profile
+    // target.
+    final strategy = switch (ref.watch(profileProvider)?.goal) {
+      FitnessGoal.maintain => l10n.maintainStrategyName,
+      FitnessGoal.bulk => l10n.goalBulk,
+      _ => active == null ? l10n.noStrategyShort : active.kind.label(l10n),
+    };
     return kcal == null ? strategy : '$kcal kcal · $strategy';
   }
 

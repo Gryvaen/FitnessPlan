@@ -13,14 +13,25 @@ const double maintainBandFraction = 0.10;
   high: kcal * (1 + maintainBandFraction),
 );
 
-/// Whether [intake] meets [target]: maintenance days must land inside the
-/// band (eating far too little is a miss too); every other day only has to
-/// stay at or under its calories.
+/// A 增肌 day counts as on target from its calories up to +10%.
+const double bulkBandFraction = 0.10;
+
+/// The kcal band a day is judged by, or null when it only has a ceiling:
+/// 维持 days ±[maintainBandFraction]; 增肌 days from the target up to
+/// +[bulkBandFraction] (eating too little misses the surplus, far more is
+/// fat gain); fat-loss and other days just stay at or under the target.
+({double low, double high})? intakeBand(DailyNutritionTarget target) {
+  final kcal = target.calories;
+  if (target.isMaintainDay) return maintainBand(kcal);
+  if (target.isBulkDay) return (low: kcal, high: kcal * (1 + bulkBandFraction));
+  return null;
+}
+
+/// Whether [intake] meets [target]: inside its [intakeBand] when it has one,
+/// otherwise at or under its calories.
 bool intakeMet(DailyNutritionTarget target, double intake) {
-  if (target.isMaintainDay) {
-    final band = maintainBand(target.calories);
-    return intake >= band.low && intake <= band.high;
-  }
+  final band = intakeBand(target);
+  if (band != null) return intake >= band.low && intake <= band.high;
   return intake <= target.calories;
 }
 

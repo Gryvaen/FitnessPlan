@@ -1569,6 +1569,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'In round: past green/red, kept across standard changes';
 
   @override
+  String get legendGoalPeriod => 'Goal periods';
+
+  @override
+  String get legendPeriodStart => 'Period starts';
+
+  @override
+  String get legendPeriodEnd => 'Period ends';
+
+  @override
   String get legendStrategyChange => 'Strategy change';
 
   @override
@@ -2406,6 +2415,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get legendBulkDays => 'Bulk days';
+
+  @override
+  String legendBulkBand(int pct) {
+    return 'On target from the bulk calories up to +$pct%';
+  }
+
+  @override
   String maintainBandShort(int low, int high) {
     return 'band $low–$high';
   }
@@ -3022,7 +3039,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileFieldGoalHint =>
-      'Chooses the calorie surplus or deficit and the protein target.';
+      'Sets the daily calorie target, how a day is judged on target, and the protein target.';
 
   @override
   String get profileFieldWaterHint =>
