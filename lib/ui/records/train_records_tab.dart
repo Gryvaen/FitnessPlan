@@ -200,7 +200,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   /// 点记录页里搜索框和结果行以外的位置：清掉关键字，已选分类保留；
   /// 没有分类时搜索框收回成图标。
   void _discardPlanSearch() {
-    if (_categoryMenuOpen) return;
+    if (_categoryMenuOpen || _exerciseDialogDepth > 0) return;
     _dropSearchFocus(_planSearchFocus);
     if (_planQuery.isEmpty) {
       _foldIdleSearches();
@@ -222,6 +222,18 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
       if (!mounted) return;
       if (_exerciseDialogDepth > 0) _exerciseDialogDepth--;
     });
+  }
+
+  /// Runs [open] (a dialog or sheet) with the discard handlers paused: taps
+  /// inside it fall outside the search's tap region, and must not clear the
+  /// keyword the list is filtered by.
+  Future<T> _whileDialogOpen<T>(Future<T> Function() open) async {
+    _beginExerciseDialog();
+    try {
+      return await open();
+    } finally {
+      _endExerciseDialog();
+    }
   }
 
   /// 点动作列表或标题行的空白处：清掉关键字，已选分类保留；
@@ -667,21 +679,23 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
 
   Future<void> _deletePlan(WorkoutPlanSummary plan) async {
     final l10n = context.l10n;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.deletePlan),
-        content: Text(l10n.confirmDeletePlan(plan.plan.name)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.delete),
-          ),
-        ],
+    final ok = await _whileDialogOpen(
+      () => showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l10n.deletePlan),
+          content: Text(l10n.confirmDeletePlan(plan.plan.name)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l10n.delete),
+            ),
+          ],
+        ),
       ),
     );
     if (ok != true || !mounted) return;
@@ -827,7 +841,9 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                 PlainIconAction(
                   iconWidget: const InkIcon(InkGlyph.add),
                   label: l10n.fabNewPlan,
-                  onPressed: () => showPlanEditSheet(context: context),
+                  onPressed: () => _whileDialogOpen(
+                    () => showPlanEditSheet(context: context),
+                  ),
                 ),
               ],
             ),
@@ -896,9 +912,11 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                                     icon: const InkIcon(InkGlyph.delete),
                                     onPressed: () => _deletePlan(plan),
                                   ),
-                                  onTap: () => showPlanEditSheet(
-                                    context: context,
-                                    planId: plan.plan.id,
+                                  onTap: () => _whileDialogOpen(
+                                    () => showPlanEditSheet(
+                                      context: context,
+                                      planId: plan.plan.id,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -1217,21 +1235,23 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                 tooltip: l10n.delete,
                 icon: const InkIcon(InkGlyph.delete),
                 onPressed: () async {
-                  final ok = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: Text(l10n.delete),
-                      content: Text(ex.name),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: Text(l10n.cancel),
-                        ),
-                        FilledButton(
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: Text(l10n.delete),
-                        ),
-                      ],
+                  final ok = await _whileDialogOpen(
+                    () => showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: Text(l10n.delete),
+                        content: Text(ex.name),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: Text(l10n.cancel),
+                          ),
+                          FilledButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: Text(l10n.delete),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                   if (ok != true || !context.mounted) return;

@@ -35,11 +35,21 @@ void main() {
       openSegmentKcal: 15400,
       endDay: DateTime(2026, 3, 10),
     );
-    final again = await repo.openSegment(
-      preferredStart: DateTime(2026, 3, 10),
-    );
+    final again = await repo.openSegment(preferredStart: DateTime(2026, 3, 10));
     expect(again.frozenKcal, 15400);
     expect(again.openSegment?.start, DateTime(2026, 3, 11));
+  });
+
+  test('closing a stretch before it began drops it', () async {
+    await repo.openSegment(preferredStart: DateTime(2026, 3, 11));
+    // e.g. a switch booked for the 11th carried out against a stretch that
+    // only opened that day: it ends on the 10th, before it ever started.
+    final state = await repo.freezeOpenSegment(
+      openSegmentKcal: 0,
+      endDay: DateTime(2026, 3, 10),
+    );
+    expect(state.segments, isEmpty);
+    expect(state.openSegment, isNull);
   });
 
   test('segment containsDay respects bounds', () {

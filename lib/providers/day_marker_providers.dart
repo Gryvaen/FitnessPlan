@@ -3,16 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/day_marker.dart';
 import 'core_providers.dart';
 
-/// Marker (放纵日/休息日/冲碳日/none) for a single local day.
-final dayMarkerProvider = StreamProvider.family<DayMarkerType?, DateTime>((
-  ref,
-  day,
-) {
-  return ref.watch(dayMarkerRepositoryProvider).watchMarkerForDay(day);
-});
+/// Marker (放纵日/休息日/冲碳日/none) for a single local day. Auto-disposed:
+/// paging the Today page back a year would otherwise keep one DB watcher
+/// per day visited until the process ends.
+final dayMarkerProvider = StreamProvider.autoDispose
+    .family<DayMarkerType?, DateTime>((ref, day) {
+      return ref.watch(dayMarkerRepositoryProvider).watchMarkerForDay(day);
+    });
 
-final dayMarkerSettingsProvider =
-    StreamProvider.family<DayMarkerSettings?, DateTime>((ref, day) {
+final dayMarkerSettingsProvider = StreamProvider.autoDispose
+    .family<DayMarkerSettings?, DateTime>((ref, day) {
       return ref.watch(dayMarkerRepositoryProvider).watchSettingsForDay(day);
     });
 

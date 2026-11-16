@@ -171,7 +171,7 @@ abstract final class AppDates {
     final day = dayOnly(d);
     final t = dayOnly(today);
     if (day == t) return l10n.todayWord;
-    if (day == t.subtract(const Duration(days: 1))) return l10n.yesterday;
+    if (day == CalendarDay.addDays(t, -1)) return l10n.yesterday;
     if (day.year == t.year) return mdWithWeekday(day, locale);
     return ymdWithWeekday(day, locale);
   }
@@ -187,7 +187,7 @@ abstract final class AppDates {
     final day = dayOnly(d);
     final t = dayOnly(today);
     if (day == t) return '${l10n.todayWord} ${md(day, locale)}';
-    if (day == t.subtract(const Duration(days: 1))) {
+    if (day == CalendarDay.addDays(t, -1)) {
       return '${l10n.yesterday} ${md(day, locale)}';
     }
     return relativeDayTitle(d, today, l10n, locale);

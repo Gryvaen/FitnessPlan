@@ -64,12 +64,17 @@ class WaterRepository {
     }
   }
 
+  /// Read-modify-write in one transaction: quick repeated taps queue up
+  /// instead of each adding to the same stale total (or racing to insert the
+  /// day's first row into the unique date).
   Future<int> addMl(DateTime day, int delta) async {
     CalendarDay.ensureEditableDay(day);
-    final current = await mlForDay(day);
-    final next = (current + delta).clamp(0, 20000);
-    await setMlForDay(day, next);
-    return next;
+    return _db.transaction(() async {
+      final current = await mlForDay(day);
+      final next = (current + delta).clamp(0, 20000);
+      await setMlForDay(day, next);
+      return next;
+    });
   }
 
   Future<void> clearAll() => _db.delete(_db.waterLogs).go();

@@ -268,5 +268,55 @@ void main() {
       );
       await expectLiveDataKept();
     });
+
+    test('a corrupted body behind a valid header is refused', () async {
+      final repo = DataBackupRepository(db, prefs);
+      final payload = await repo.buildBackup();
+      // Keep the 100-byte header, cut the rest short: header checks pass.
+      final truncated = (() {
+        final map =
+            jsonDecode(utf8.decode(gzip.decode(payload.bytes)))
+                as Map<String, dynamic>;
+        final dbBytes = base64Decode(map['databaseBase64'] as String);
+        final cut = Uint8List.fromList(dbBytes.sublist(0, 4096 + 200));
+        // Scribble over the first page's body after the header.
+        for (var i = 120; i < cut.length; i++) {
+          cut[i] = 0x5A;
+        }
+        map['databaseBase64'] = base64Encode(cut);
+        return Uint8List.fromList(gzip.encode(utf8.encode(jsonEncode(map))));
+      })();
+
+      await expectLater(
+        repo.importFromBytes(truncated),
+        throwsA(isA<FormatException>()),
+      );
+      await expectLiveDataKept();
+      expect(File('${dbFile.path}.importing').existsSync(), isFalse);
+    });
+  });
+
+  group('device-local prefs', () {
+    test('are left out of a backup and keep this device\'s values', () async {
+      await prefs.setString('app_update_pending_download_id', 'old-phone');
+      await prefs.setInt('rest_timer_deadline_ms', 123);
+      await prefs.setString('theme_id', 'forest');
+      final repo = DataBackupRepository(db, prefs);
+      final payload = await repo.buildBackup();
+      final map =
+          jsonDecode(utf8.decode(gzip.decode(payload.bytes)))
+              as Map<String, dynamic>;
+      final exported = map['prefs'] as Map<String, dynamic>;
+      expect(exported.containsKey('app_update_pending_download_id'), isFalse);
+      expect(exported.containsKey('rest_timer_deadline_ms'), isFalse);
+      expect(exported['theme_id'], 'forest');
+
+      // This device has its own in-flight state; an import keeps it.
+      await prefs.setString('app_update_pending_download_id', 'this-phone');
+      await prefs.setString('theme_id', 'ink');
+      await repo.importFromBytes(payload.bytes);
+      expect(prefs.getString('app_update_pending_download_id'), 'this-phone');
+      expect(prefs.getString('theme_id'), 'forest');
+    });
   });
 }

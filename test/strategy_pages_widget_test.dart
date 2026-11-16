@@ -610,6 +610,39 @@ void main() {
       expect(find.byKey(const ValueKey('maintainOverview')), findsOneWidget);
     });
 
+    testWidgets('applying from today drops an adjustment booked for later', (
+      tester,
+    ) async {
+      await setUpMaintain();
+      await _container
+          .read(pendingGoalSwitchProvider.notifier)
+          .schedule(
+            PendingGoalSwitch(
+              goal: FitnessGoal.maintain,
+              from: CalendarDay.addDays(today, 1),
+              proteinPerKg: 2.2,
+            ),
+          );
+      await _pump(tester, '/profile/nutrition/maintain/configure');
+      await _openStrategySection(tester, 'maintain-section-effective');
+      await tester.tap(await _show(tester, find.text('Start today').last));
+      await _settle(tester);
+      await _openStrategySection(tester, 'maintain-section-target');
+      await tester.tap(
+        await _show(tester, _stepButton('Protein per kg', '−0.1')),
+      );
+      await _settle(tester);
+      await tester.tap(find.byKey(const ValueKey('strategyApplyButton')));
+      await _settle(tester);
+
+      expect(
+        _container.read(profileProvider)!.maintainProteinPerKg,
+        closeTo(2.1, 1e-9),
+      );
+      // The older booking would otherwise reset it to 2.2 tomorrow.
+      expect(_container.read(pendingGoalSwitchProvider), isNull);
+    });
+
     testWidgets('调整策略 shows already applied when nothing would change', (
       tester,
     ) async {

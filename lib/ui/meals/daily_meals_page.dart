@@ -14,6 +14,7 @@ import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/food_name_link.dart';
 import '../widgets/search_field_focus.dart';
+import '../widgets/write_on_dismiss.dart';
 import 'save_preset_flow.dart';
 
 /// Route to the per-day food log.
@@ -520,9 +521,16 @@ class _MealTypeSection extends ConsumerWidget {
               color: theme.colorScheme.error,
               child: const InkIcon(InkGlyph.delete, color: Colors.white),
             ),
-            confirmDismiss: (_) => _confirmClearMeal(context),
-            onDismissed: (_) =>
-                ref.read(mealRepositoryProvider).deleteMealType(day, type),
+            confirmDismiss: (_) async {
+              if (!await _confirmClearMeal(context) || !context.mounted) {
+                return false;
+              }
+              final meals = ref.read(mealRepositoryProvider);
+              return writeOnDismiss(
+                context,
+                () => meals.deleteMealType(day, type),
+              );
+            },
             child: section,
           )
         : section;
@@ -541,9 +549,19 @@ class _MealTypeSection extends ConsumerWidget {
     // moving it to this meal type.
     return DragTarget<MealEntry>(
       onWillAcceptWithDetails: (details) => details.data.mealType != type.name,
-      onAcceptWithDetails: (details) => ref
-          .read(mealRepositoryProvider)
-          .moveMealType(id: details.data.id, mealType: type),
+      onAcceptWithDetails: (details) async {
+        final messenger = ScaffoldMessenger.of(context);
+        final l10n = context.l10n;
+        try {
+          await ref
+              .read(mealRepositoryProvider)
+              .moveMealType(id: details.data.id, mealType: type);
+        } catch (e) {
+          messenger.showSnackBar(
+            SnackBar(content: Text(l10n.saveFailed('$e'))),
+          );
+        }
+      },
       builder: (context, candidateData, rejectedData) {
         final highlighted = candidateData.isNotEmpty;
         return AnimatedContainer(
@@ -621,26 +639,28 @@ class _MealEntryTile extends ConsumerWidget {
         color: scheme.error,
         child: const InkIcon(InkGlyph.delete, color: Colors.white),
       ),
-      confirmDismiss: (_) async =>
-          await showDialog<bool>(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: Text(l10n.deleteRecord),
-              content: Text(l10n.confirmDeleteMeal),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: Text(l10n.cancel),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  child: Text(l10n.delete),
-                ),
-              ],
-            ),
-          ) ==
-          true,
-      onDismissed: (_) => ref.read(mealRepositoryProvider).delete(m.id),
+      confirmDismiss: (_) async {
+        final ok = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(l10n.deleteRecord),
+            content: Text(l10n.confirmDeleteMeal),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(l10n.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(l10n.delete),
+              ),
+            ],
+          ),
+        );
+        if (ok != true || !context.mounted) return false;
+        final meals = ref.read(mealRepositoryProvider);
+        return writeOnDismiss(context, () => meals.delete(m.id));
+      },
       child: tile,
     );
     // Long-press to drag this food into a different meal section.

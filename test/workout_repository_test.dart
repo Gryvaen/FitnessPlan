@@ -874,6 +874,50 @@ void main() {
     },
   );
 
+  test('moving into the day copy of a deleted plan writes no template rows', () async {
+    final pushup = await addTestExercise(repo, name: '俯卧撑');
+    final plank = await addTestExercise(
+      repo,
+      name: '平板支撑',
+      unit: ExerciseUnit.seconds,
+      category: 'core',
+    );
+    final planId = await repo.createPlan(
+      name: '上肢',
+      items: [
+        PlanDraftItem(
+          exerciseId: pushup.id,
+          exerciseName: pushup.name,
+          targetSets: 3,
+          targetReps: 10,
+        ),
+      ],
+    );
+    final day = CalendarDay.todayLocal();
+    await repo.applyPlanToDay(planId: planId, day: day);
+    await repo.addQuickDayItem(
+      day: day,
+      exerciseId: plank.id,
+      targetSets: 2,
+      targetReps: 45,
+    );
+    await repo.deletePlan(planId);
+    final before = await repo.daySnapshot(day);
+    final plankItem = before.groups.last.items.single.item;
+
+    await repo.moveDayWorkoutItemIntoPlan(
+      dayWorkoutItemId: plankItem.id,
+      targetDayWorkoutId: before.groups.first.workout.id,
+    );
+
+    final after = await repo.daySnapshot(day);
+    expect(after.groups.first.items.map((e) => e.item.exerciseName), [
+      '俯卧撑',
+      '平板支撑',
+    ]);
+    expect(await db.select(db.workoutPlanItems).get(), isEmpty);
+  });
+
   test(
     'moving an exercise already in the template updates its sets and reps',
     () async {

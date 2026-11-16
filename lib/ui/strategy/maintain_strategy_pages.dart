@@ -114,6 +114,7 @@ class _MaintainStrategyConfigurePageState
   Future<void> _applyRates(double protein, double fat) async {
     final l10n = context.l10n;
     final p = ref.read(profileProvider)!;
+    final pending = ref.read(pendingGoalSwitchProvider.notifier);
     setState(() => _saving = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -131,6 +132,9 @@ class _MaintainStrategyConfigurePageState
             maintainProteinPerKg: protein,
             maintainFatPerKg: fat,
           );
+      // Applied from today, this replaces an adjustment booked for later;
+      // left in place it would undo this one on its day.
+      await pending.clear();
       messenger.showSnackBar(SnackBar(content: Text(l10n.strategyApplied)));
       if (mounted) context.go('/profile');
     } catch (e) {

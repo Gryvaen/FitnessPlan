@@ -43,6 +43,9 @@ class NotesRecordsTab extends ConsumerWidget {
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context);
     final notesAsync = ref.watch(dailyNotesProvider);
+    // Rebuild at midnight: the 今天 / 昨天 labels below are relative to now,
+    // and this tab is kept alive across days.
+    ref.watch(currentDayProvider);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final now = DateTime.now();

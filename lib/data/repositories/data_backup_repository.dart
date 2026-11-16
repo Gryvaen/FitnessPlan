@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show compute;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqlite3/sqlite3.dart' as sqlite;
 
 import '../../domain/calendar_day.dart';
 import '../db.dart';
@@ -118,6 +119,24 @@ class DataBackupRepository {
   /// day's restored total, since this device's sensor never counted it.
   static const importedOnDayKey = 'steps_imported_on_day';
 
+  /// Prefs that describe this device rather than the user's data: an
+  /// in-flight update download, a running rest timer, background-permission
+  /// acknowledgements. They are left out of a backup and keep this device's
+  /// values on import — restoring another phone's download id made the
+  /// updater chase a download that doesn't exist here.
+  static bool isDeviceLocalPrefKey(String key) =>
+      key.startsWith('app_update_') || _deviceLocalPrefKeys.contains(key);
+
+  static const _deviceLocalPrefKeys = {
+    'rest_timer_deadline_ms',
+    'rest_timer_paused_seconds',
+    'rest_timer_finished',
+    'rest_timer_background_ack',
+    'oem_background_ack',
+    'reminder_missed_warned_until',
+    'step_service_user_choice_set',
+  };
+
   String _stamp() {
     final n = DateTime.now();
     String two(int v) => v.toString().padLeft(2, '0');
@@ -125,18 +144,26 @@ class DataBackupRepository {
         '${two(n.hour)}${two(n.minute)}${two(n.second)}';
   }
 
-  /// Checkpoint the live DB, then encode DB + prefs into one JSON payload.
+  /// Snapshot the live DB, then encode DB + prefs into one JSON payload.
   Future<BackupPayload> buildBackup() async {
-    await _db.customStatement('PRAGMA wal_checkpoint(FULL)');
-
-    final docs = await getApplicationDocumentsDirectory();
-    final sourceDb = File(p.join(docs.path, dbFileName));
-    final dbBytes = await sourceDb.exists()
-        ? await sourceDb.readAsBytes()
-        : Uint8List(0);
+    // A consistent copy through SQLite itself, rather than reading the live
+    // file while a background write (e.g. step sync) may be half-done.
+    final tmpDir = await getTemporaryDirectory();
+    final snapshot = File(
+      p.join(tmpDir.path, 'backup_${DateTime.now().microsecondsSinceEpoch}.db'),
+    );
+    Uint8List dbBytes;
+    try {
+      if (await snapshot.exists()) await snapshot.delete();
+      await _db.customStatement('VACUUM INTO ?', [snapshot.path]);
+      dbBytes = await snapshot.readAsBytes();
+    } finally {
+      if (await snapshot.exists()) await snapshot.delete();
+    }
 
     final prefs = <String, Object?>{};
     for (final key in _prefs.getKeys()) {
+      if (isDeviceLocalPrefKey(key)) continue;
       prefs[key] = _prefs.get(key);
     }
 
@@ -163,6 +190,12 @@ class DataBackupRepository {
 
   /// Replaces the on-disk DB and SharedPreferences with [bytes].
   ///
+  /// The restored DB is written to a staging file and checked
+  /// (`PRAGMA integrity_check`) before the live one is touched; a rejected
+  /// backup throws [FormatException] and leaves the live data as it was. The
+  /// live DB is moved aside rather than deleted until the swap succeeds.
+  /// Device-local prefs ([isDeviceLocalPrefKey]) keep this device's values.
+  ///
   /// Closes the open database connection first. Caller must invalidate
   /// [databaseProvider] (and reload prefs-backed notifiers) afterwards.
   Future<void> importFromBytes(Uint8List bytes) async {
@@ -171,24 +204,56 @@ class DataBackupRepository {
     final prefsMap = decoded.prefsMap;
     _checkBackupDatabase(dbBytes);
 
-    await _db.close();
-
     final docs = await getApplicationDocumentsDirectory();
     final dbPath = p.join(docs.path, dbFileName);
     final staging = File('$dbPath.importing');
     await staging.writeAsBytes(dbBytes, flush: true);
-
-    for (final suffix in ['', '-wal', '-shm']) {
-      final side = File('$dbPath$suffix');
-      if (await side.exists()) await side.delete();
+    try {
+      _checkIntegrity(staging.path);
+    } catch (_) {
+      if (await staging.exists()) await staging.delete();
+      rethrow;
     }
-    await staging.rename(dbPath);
 
-    await _prefs.clear();
-    for (final entry in prefsMap.entries) {
-      final key = entry.key;
-      final value = entry.value;
-      if (value == null) continue;
+    await _db.close();
+
+    const sides = ['', '-wal', '-shm', '-journal'];
+    final moved = <String>[];
+    try {
+      for (final suffix in sides) {
+        final side = File('$dbPath$suffix');
+        if (await side.exists()) {
+          await side.rename('$dbPath$suffix.bak');
+          moved.add(suffix);
+        }
+      }
+      await staging.rename(dbPath);
+    } catch (_) {
+      // Put the live DB back exactly as it was.
+      for (final suffix in moved) {
+        final current = File('$dbPath$suffix');
+        if (await current.exists()) await current.delete();
+        await File('$dbPath$suffix.bak').rename('$dbPath$suffix');
+      }
+      if (await staging.exists()) await staging.delete();
+      rethrow;
+    }
+    for (final suffix in moved) {
+      final bak = File('$dbPath$suffix.bak');
+      if (await bak.exists()) await bak.delete();
+    }
+
+    // Everything to write is decided first, so the window between removing
+    // the old values and writing the restored ones is as short as possible.
+    final restore = <String, Object>{
+      for (final entry in prefsMap.entries)
+        if (entry.value != null && !isDeviceLocalPrefKey(entry.key))
+          entry.key: entry.value as Object,
+    };
+    for (final key in _prefs.getKeys().toList()) {
+      if (!isDeviceLocalPrefKey(key)) await _prefs.remove(key);
+    }
+    for (final MapEntry(:key, :value) in restore.entries) {
       if (value is bool) {
         await _prefs.setBool(key, value);
       } else if (value is int) {
@@ -208,5 +273,21 @@ class DataBackupRepository {
       importedOnDayKey,
       CalendarDay.todayLocal().toIso8601String(),
     );
+  }
+
+  /// Opens the restored file read-only and requires SQLite's own integrity
+  /// check to pass: a truncated or corrupted backup can keep a valid header.
+  static void _checkIntegrity(String path) {
+    sqlite.Database? db;
+    try {
+      db = sqlite.sqlite3.open(path, mode: sqlite.OpenMode.readOnly);
+      final rows = db.select('PRAGMA integrity_check');
+      final ok = rows.length == 1 && '${rows.first.values.first}' == 'ok';
+      if (!ok) throw const FormatException('invalid_backup');
+    } on sqlite.SqliteException {
+      throw const FormatException('invalid_backup');
+    } finally {
+      db?.close();
+    }
   }
 }

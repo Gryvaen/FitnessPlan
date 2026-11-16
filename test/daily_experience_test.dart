@@ -529,6 +529,17 @@ void main() {
     await expectLater(water.addMl(other, 250), throwsA(isA<StateError>()));
   });
 
+  test('quick repeated water taps all count', () async {
+    final day = CalendarDay.todayLocal();
+    // Not awaited one by one, like taps on the + button.
+    await Future.wait([
+      water.addMl(day, 250),
+      water.addMl(day, 250),
+      water.addMl(day, 250),
+    ]);
+    expect(await water.mlForDay(day), 750);
+  });
+
   test('past daily records reject update and delete operations', () async {
     final today = CalendarDay.todayLocal();
     final yesterday = CalendarDay.addDays(today, -1);

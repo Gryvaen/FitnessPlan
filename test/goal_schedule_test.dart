@@ -184,6 +184,39 @@ void main() {
     expect(container.read(goalScheduleRepositoryProvider).load(), isNull);
   });
 
+  test('two triggers at once carry the switch out once', () async {
+    await setUpWith(FitnessGoal.cut);
+    await cutPlanSince(daysAgo(3));
+    await book(today);
+    final apply = container.read(applyDueGoalSwitchProvider);
+    final results = await Future.wait([apply(), apply()]);
+    // The same run is shared, not repeated.
+    expect(results, [isTrue, isTrue]);
+    expect(container.read(profileProvider)!.goal, FitnessGoal.maintain);
+    expect(container.read(pendingGoalSwitchProvider), isNull);
+    expect(await container.read(applyDueGoalSwitchProvider)(), isFalse);
+  });
+
+  test('replaced prefs (backup import) reload the booking', () async {
+    await setUpWith(FitnessGoal.cut);
+    await book(CalendarDay.addDays(today, 1));
+    // An import replaces prefs wholesale; this backup has no booking.
+    await container
+        .read(sharedPreferencesProvider)
+        .remove(GoalScheduleRepository.key);
+    expect(container.read(pendingGoalSwitchProvider), isNotNull);
+    reloadPrefsBackedState(container.read);
+    expect(container.read(pendingGoalSwitchProvider), isNull);
+    // So nothing stale is applied to the imported profile on its day.
+    expect(
+      await container.read(applyDueGoalSwitchProvider)(
+        today: CalendarDay.addDays(today, 1),
+      ),
+      isFalse,
+    );
+    expect(container.read(profileProvider)!.goal, FitnessGoal.cut);
+  });
+
   test('a booked 维持 adjustment re-fixes the target on its day', () async {
     await setUpWith(FitnessGoal.maintain);
     final tomorrow = CalendarDay.addDays(today, 1);

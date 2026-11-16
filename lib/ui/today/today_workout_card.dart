@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,6 +18,7 @@ import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/form_options.dart';
 import '../widgets/search_field_focus.dart';
+import '../widgets/write_on_dismiss.dart';
 import 'today_section_header.dart';
 
 /// Today's planned workout checklist with set logging.
@@ -63,6 +65,12 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
   List<DayWorkoutGroup> _orderedGroups(List<DayWorkoutGroup> groups) {
     final order = _groupOrder;
     if (order == null) return groups;
+    // The stream has caught up with the drag: drop the local copy so later
+    // changes made elsewhere (e.g. a plan edit synced to the day) show.
+    if (listEquals(order, [for (final g in groups) g.workout.id])) {
+      _groupOrder = null;
+      return groups;
+    }
     final byId = {for (final g in groups) g.workout.id: g};
     final result = <DayWorkoutGroup>[];
     for (final id in order) {
@@ -79,6 +87,10 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
   ) {
     final order = _itemOrder[dayWorkoutId];
     if (order == null) return items;
+    if (listEquals(order, [for (final p in items) p.item.id])) {
+      _itemOrder.remove(dayWorkoutId);
+      return items;
+    }
     final byId = {for (final p in items) p.item.id: p};
     final result = <DayWorkoutItemProgress>[];
     for (final id in order) {
@@ -319,11 +331,13 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     });
     final planName = nameCtrl.text;
     if (ok != true || !context.mounted) return;
+    // Taken before the await: the sheet may be closed by the time the write
+    // lands, and a ref of an unmounted widget throws.
+    final repo = ref.read(workoutRepositoryProvider);
+    final container = ProviderScope.containerOf(context, listen: false);
     try {
-      await ref
-          .read(workoutRepositoryProvider)
-          .createPlanFromDay(day: widget.day, name: planName);
-      ref.invalidate(workoutPlansProvider);
+      await repo.createPlanFromDay(day: widget.day, name: planName);
+      container.invalidate(workoutPlansProvider);
       if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -446,13 +460,13 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     }
   }
 
-  Future<void> _removeGroup(WidgetRef ref, DayWorkoutGroup group) async {
-    await ref
-        .read(workoutRepositoryProvider)
-        .deleteDayWorkout(group.workout.id);
+  Future<void> _removeGroup(BuildContext context, DayWorkoutGroup group) async {
+    final repo = ref.read(workoutRepositoryProvider);
+    final container = ProviderScope.containerOf(context, listen: false);
+    await repo.deleteDayWorkout(group.workout.id);
     _itemOrder.remove(group.workout.id);
-    ref.invalidate(workoutHistoryProvider);
-    ref.invalidate(allWorkoutHistoryProvider);
+    container.invalidate(workoutHistoryProvider);
+    container.invalidate(allWorkoutHistoryProvider);
   }
 
   /// 「删除今日所有记录」: after confirming, removes every group on the day.
@@ -480,14 +494,14 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
     );
     if (ok != true || !context.mounted) return;
     final messenger = ScaffoldMessenger.of(context);
+    final repo = ref.read(workoutRepositoryProvider);
+    final container = ProviderScope.containerOf(context, listen: false);
     try {
-      final removed = await ref
-          .read(workoutRepositoryProvider)
-          .deleteDayWorkouts(widget.day);
+      final removed = await repo.deleteDayWorkouts(widget.day);
       _itemOrder.clear();
       _groupOrder = null;
-      ref.invalidate(workoutHistoryProvider);
-      ref.invalidate(allWorkoutHistoryProvider);
+      container.invalidate(workoutHistoryProvider);
+      container.invalidate(allWorkoutHistoryProvider);
       messenger.showSnackBar(
         SnackBar(content: Text(l10n.clearedTodayWorkouts(removed))),
       );
@@ -594,8 +608,12 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
         color: scheme.error,
         child: const InkIcon(InkGlyph.delete, color: Colors.white),
       ),
-      confirmDismiss: (_) => _confirmRemoveGroup(context, group),
-      onDismissed: (_) => _removeGroup(ref, group),
+      confirmDismiss: (_) async {
+        if (!await _confirmRemoveGroup(context, group) || !context.mounted) {
+          return false;
+        }
+        return writeOnDismiss(context, () => _removeGroup(context, group));
+      },
       child: _DayWorkoutGroupTile(
         groupKey: _planGroupKey(group.workout.id),
         title: _groupTitle(group, l10n),
@@ -796,33 +814,33 @@ class _TodayWorkoutCardState extends ConsumerState<TodayWorkoutCard> {
         child: const InkIcon(InkGlyph.delete, color: Colors.white),
       ),
       confirmDismiss: (_) async {
-        return await showDialog<bool>(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                title: Text(l10n.deleteWorkoutItem),
-                content: Text(
-                  l10n.confirmDeleteWorkoutItem(progress.item.exerciseName),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx, false),
-                    child: Text(l10n.cancel),
-                  ),
-                  FilledButton(
-                    onPressed: () => Navigator.pop(ctx, true),
-                    child: Text(l10n.delete),
-                  ),
-                ],
+        final ok = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(l10n.deleteWorkoutItem),
+            content: Text(
+              l10n.confirmDeleteWorkoutItem(progress.item.exerciseName),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(l10n.cancel),
               ),
-            ) ==
-            true;
-      },
-      onDismissed: (_) {
-        ref
-            .read(workoutRepositoryProvider)
-            .deleteDayWorkoutItem(progress.item.id);
-        ref.invalidate(workoutHistoryProvider);
-        ref.invalidate(allWorkoutHistoryProvider);
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(l10n.delete),
+              ),
+            ],
+          ),
+        );
+        if (ok != true || !context.mounted) return false;
+        final repo = ref.read(workoutRepositoryProvider);
+        final container = ProviderScope.containerOf(context, listen: false);
+        return writeOnDismiss(context, () async {
+          await repo.deleteDayWorkoutItem(progress.item.id);
+          container.invalidate(workoutHistoryProvider);
+          container.invalidate(allWorkoutHistoryProvider);
+        });
       },
       child: _WorkoutItemTile(
         progress: progress,
@@ -1319,8 +1337,18 @@ class _WorkoutItemTile extends ConsumerWidget {
       leading: _InkDoneToggle(
         value: item.done,
         onChanged: editable
-            ? (v) {
-                ref.read(workoutRepositoryProvider).setItemDone(item.id, v);
+            ? (v) async {
+                final messenger = ScaffoldMessenger.of(context);
+                final l10n = context.l10n;
+                try {
+                  await ref
+                      .read(workoutRepositoryProvider)
+                      .setItemDone(item.id, v);
+                } catch (e) {
+                  messenger.showSnackBar(
+                    SnackBar(content: Text(l10n.saveFailed('$e'))),
+                  );
+                }
               }
             : null,
       ),

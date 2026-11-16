@@ -36,7 +36,11 @@ class MaintainTargetsView extends ConsumerWidget {
     final since = profile.calorieStandardSince;
     final t = profile.targets;
     final band = maintainBand(t.calories.toDouble());
-    final day = since == null ? null : today.difference(since).inDays + 1;
+    // Calendar days, so a daylight-saving switch (a 23 h day) doesn't drop
+    // one.
+    final day = since == null
+        ? null
+        : CalendarDay.daysBetween(since, today) + 1;
     final sinceLabel = since == null ? null : AppDates.md(since, locale);
 
     return ListView(

@@ -423,6 +423,10 @@ class WorkoutRepository {
           if (controller.isClosed) return;
           controller.add(await listPlanSummaries());
         } while (dirty && !controller.isClosed);
+      } catch (e, st) {
+        // Surface it to the listener (the provider shows its error state)
+        // instead of an unhandled zone error with the UI stuck loading.
+        if (!controller.isClosed) controller.addError(e, st);
       } finally {
         pushing = false;
       }
@@ -707,6 +711,10 @@ class WorkoutRepository {
           if (controller.isClosed) return;
           controller.add(await daySnapshot(start));
         } while (dirty && !controller.isClosed);
+      } catch (e, st) {
+        // Surface it to the listener (the provider shows its error state)
+        // instead of an unhandled zone error with the UI stuck loading.
+        if (!controller.isClosed) controller.addError(e, st);
       } finally {
         pushing = false;
       }
@@ -770,6 +778,10 @@ class WorkoutRepository {
           }
           controller.add(out);
         } while (dirty && !controller.isClosed);
+      } catch (e, st) {
+        // Surface it to the listener (the provider shows its error state)
+        // instead of an unhandled zone error with the UI stuck loading.
+        if (!controller.isClosed) controller.addError(e, st);
       } finally {
         pushing = false;
       }
@@ -1369,6 +1381,13 @@ class WorkoutRepository {
     required int planId,
     required DayWorkoutItem item,
   }) async {
+    // The day group can outlive its plan (deleted plans keep their day
+    // copies, and copying a day carries the id over): don't write template
+    // rows for a plan that no longer exists.
+    final plan = await (_db.select(
+      _db.workoutPlans,
+    )..where((t) => t.id.equals(planId))).getSingleOrNull();
+    if (plan == null) return;
     final template = await itemsFor(planId);
     if (template.any((row) => row.exerciseId == item.exerciseId)) {
       await _writePlanItemTargets(
@@ -1967,6 +1986,7 @@ class WorkoutRepository {
   }
 
   Future<void> clearAll() async {
+    _exerciseCache.clear();
     await _db.delete(_db.workoutSetLogs).go();
     await _db.delete(_db.dayWorkoutItems).go();
     await _db.delete(_db.dayWorkouts).go();

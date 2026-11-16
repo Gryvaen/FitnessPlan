@@ -18,6 +18,9 @@ dependencies:
   fl_chart: ^1.2.0
   intl: ^0.20.2
   drift: ^2.34.2
+  # Direct use: backup import checks a restored DB before it replaces the
+  # live one (already a transitive dependency of drift).
+  sqlite3: ^3.4.0
   path_provider: ^2.1.6
   path: ^1.9.1
   flutter_local_notifications: ^22.0.1

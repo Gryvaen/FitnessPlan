@@ -41,9 +41,16 @@ class CultivationRepository {
     final open = current.openSegment;
     if (open == null) return current;
 
+    // A stretch that hadn't started by [endDay] (e.g. a booked switch dated
+    // before a same-day re-entry into cut) never ran: drop it rather than
+    // store one that ends before it begins.
+    final end = CalendarDay.dayOnly(endDay);
     final closed = [
       for (final s in current.segments)
-        if (s.isOpen) s.closeOn(endDay) else s,
+        if (!s.isOpen)
+          s
+        else if (!end.isBefore(CalendarDay.dayOnly(s.start)))
+          s.closeOn(end),
     ];
     final next = CutCultivationState(
       frozenKcal: current.frozenKcal + openSegmentKcal,

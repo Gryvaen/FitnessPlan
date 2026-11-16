@@ -386,6 +386,38 @@ void main() {
     expect(_row('跑步机慢跑'), findsNothing);
   });
 
+  testWidgets('cancelling a plan delete keeps the search keyword', (
+    tester,
+  ) async {
+    Finder row(String name) => find.widgetWithText(SportListTile, name);
+    for (final name in ['上肢', '腿部']) {
+      await _db
+          .into(_db.workoutPlans)
+          .insert(
+            WorkoutPlansCompanion.insert(name: name, createdAt: DateTime.now()),
+          );
+    }
+    final search = find.byKey(const ValueKey('plan-search'));
+    await _pump(tester, const TrainRecordsTab());
+    await _open(tester, 'plan-search-open');
+    await tester.enterText(search, '上肢');
+    await tester.pumpAndSettle();
+    expect(row('腿部'), findsNothing);
+
+    // The dialog is outside the search's tap region; tapping in it (here:
+    // Cancel) must not clear the filter.
+    await tester.tap(
+      find.descendant(of: row('上肢'), matching: find.byType(IconButton)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    await tester.tap(find.widgetWithText(TextButton, '取消'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(search).controller!.text, '上肢');
+    expect(row('上肢'), findsOneWidget);
+    expect(row('腿部'), findsNothing);
+  });
+
   testWidgets('plan search filters the list and blank space clears it', (
     tester,
   ) async {

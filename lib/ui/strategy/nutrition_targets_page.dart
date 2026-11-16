@@ -223,7 +223,8 @@ class _CutNutritionTargets extends ConsumerWidget {
     if (profile == null || !activeAsync.hasValue) {
       return const Center(child: CircularProgressIndicator());
     }
-    final today = AppDates.todayLocal();
+    // Follows the midnight rollover; the page can stay open across days.
+    final today = ref.watch(currentDayProvider);
     final activeStartsLater =
         active != null && active.effectiveFrom.isAfter(today);
     final isCarbCycle = active?.kind == DietStrategyKind.carbCycle;
@@ -504,7 +505,7 @@ class _MaintainTab extends ConsumerWidget {
     // A booked switch to maintain, or (already maintaining) a booked
     // adjustment: show the version to come, like a scheduled cut strategy.
     if (pending?.goal == FitnessGoal.maintain &&
-        pending!.from.isAfter(AppDates.todayLocal())) {
+        pending!.from.isAfter(ref.watch(currentDayProvider))) {
       return MaintainScheduledView(
         profile: profile,
         from: pending.from,

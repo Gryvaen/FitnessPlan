@@ -166,6 +166,10 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
   late DateTime _visibleMonth;
   late DateTime _selected;
   late DateTime _markUntil;
+
+  /// A marker sheet is being opened: a second long-press must not stack
+  /// another one while its settings load.
+  bool _openingMarkerSheet = false;
   Map<DateTime, double> _caloriesByDay = {};
   Map<DateTime, DailyNutritionTarget> _targetsByDay = {};
   Map<DateTime, DayMarkerType> _markersByDay = {};
@@ -307,6 +311,16 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
   }
 
   Future<void> _showMarkerSheet(DateTime day) async {
+    if (_openingMarkerSheet) return;
+    _openingMarkerSheet = true;
+    try {
+      await _markerSheet(day);
+    } finally {
+      _openingMarkerSheet = false;
+    }
+  }
+
+  Future<void> _markerSheet(DateTime day) async {
     final existing = await widget.markerRepository.settingsForDay(day);
     final strategy = await widget.loadStrategyForDay(day);
     final canPauseCycle =
@@ -1448,46 +1462,53 @@ class _DayCell extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '${date.day}',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        fontWeight: selected || isToday
-                            ? FontWeight.w700
-                            : FontWeight.w500,
-                        color: fg,
-                      ),
+                // Shrinks rather than overflows the fixed-ratio cell on a
+                // narrow screen with a large text scale.
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${date.day}',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            fontWeight: selected || isToday
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            color: fg,
+                          ),
+                        ),
+                        if (marked) ...[
+                          const SizedBox(height: 1),
+                          Text(
+                            marker!.shortLabel(l10n),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              height: 1.1,
+                              fontWeight: FontWeight.w600,
+                              color: fg,
+                              fontSize: 10,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.clip,
+                          ),
+                        ] else if (remaining != null) ...[
+                          const SizedBox(height: 1),
+                          Text(
+                            '${remaining.round()}',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              height: 1.1,
+                              fontWeight: FontWeight.w600,
+                              color: fg,
+                              fontSize: 10,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.clip,
+                          ),
+                        ],
+                      ],
                     ),
-                    if (marked) ...[
-                      const SizedBox(height: 1),
-                      Text(
-                        marker!.shortLabel(l10n),
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          height: 1.1,
-                          fontWeight: FontWeight.w600,
-                          color: fg,
-                          fontSize: 10,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.clip,
-                      ),
-                    ] else if (remaining != null) ...[
-                      const SizedBox(height: 1),
-                      Text(
-                        '${remaining.round()}',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          height: 1.1,
-                          fontWeight: FontWeight.w600,
-                          color: fg,
-                          fontSize: 10,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.clip,
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
               ),
               if (strategyChange)

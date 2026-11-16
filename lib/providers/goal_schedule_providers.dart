@@ -46,12 +46,33 @@ class PendingGoalSwitchNotifier extends Notifier<PendingGoalSwitch?> {
 /// A booking for the goal already in force is a 维持 adjustment booked from
 /// tomorrow: it re-fixes the target from the current profile at the booked
 /// rates, without moving the maintenance start.
-Future<bool> applyDueGoalSwitch(Ref ref, {DateTime? today}) async {
+Future<bool> applyDueGoalSwitch(Ref ref, {DateTime? today}) {
+  // A midnight timer and a resume can fire together: run it once.
+  return _applyingGoalSwitch ??= _applyDueGoalSwitch(
+    ref,
+    today: today,
+  ).whenComplete(() => _applyingGoalSwitch = null);
+}
+
+Future<bool>? _applyingGoalSwitch;
+
+Future<bool> _applyDueGoalSwitch(Ref ref, {DateTime? today}) async {
   final pending = ref.read(pendingGoalSwitchProvider);
   if (pending == null) return false;
   final day = CalendarDay.todayLocal(today);
   if (pending.from.isAfter(day)) return false;
-  await ref.read(pendingGoalSwitchProvider.notifier).clear();
+  final notifier = ref.read(pendingGoalSwitchProvider.notifier);
+  await notifier.clear();
+  try {
+    return await _carryOut(ref, pending);
+  } catch (_) {
+    // Keep the booking so the next launch / resume tries again.
+    await notifier.schedule(pending);
+    rethrow;
+  }
+}
+
+Future<bool> _carryOut(Ref ref, PendingGoalSwitch pending) async {
   final p = ref.read(profileProvider);
   if (p == null) return false;
   if (p.goal == pending.goal) {

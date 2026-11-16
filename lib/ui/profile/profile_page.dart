@@ -247,9 +247,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       ref.invalidate(themeProvider);
       ref.invalidate(localeProvider);
       ref.invalidate(remindersProvider);
-      ref.read(profileProvider.notifier).reload();
-      // The 境界 ledger lives in prefs too; drop the pre-import copy.
-      ref.read(cutCultivationStateProvider.notifier).reload();
+      // Profile, 境界 ledger, booked goal switch and goal stretches all live
+      // in prefs; drop the pre-import copies.
+      reloadPrefsBackedState(ref.read);
       ref.invalidate(cultivationHistoryProvider);
       await ref.read(remindersProvider.notifier).syncSchedule();
 
