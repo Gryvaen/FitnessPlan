@@ -4,6 +4,7 @@ import '../data/repositories/diet_strategy_repository.dart';
 import '../domain/calendar_day.dart';
 import '../domain/diet_plan.dart';
 import 'core_providers.dart';
+import 'day_clock_providers.dart';
 import 'meal_providers.dart';
 import 'profile_providers.dart';
 
@@ -85,7 +86,7 @@ final selectedDayTargetProvider = Provider<AsyncValue<DailyNutritionTarget?>>(
 
 /// Today's target (for pages that only deal with today).
 final todayTargetProvider = Provider<AsyncValue<DailyNutritionTarget?>>(
-  (ref) => ref.watch(dailyTargetProvider(CalendarDay.todayLocal())),
+  (ref) => ref.watch(dailyTargetProvider(ref.watch(currentDayProvider))),
 );
 
 /// null = the user has not confirmed anything for that day.

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
+import '../theme/sport_chrome.dart';
 
 /// Protein / carb / fat share of energy as one segmented bar (4 / 4 / 9
 /// kcal per gram). Renders an empty track when there is no energy.
@@ -386,6 +387,171 @@ class StrategyActionRow extends StatelessWidget {
                 ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One selectable strategy row on a picker page (减脂 / 维持 pickers):
+/// icon tile, name with a 当前 / 推荐 chip, two-line description, chevron.
+class StrategyOptionRow extends StatelessWidget {
+  const StrategyOptionRow({
+    super.key,
+    this.optionKey,
+    required this.glyph,
+    required this.label,
+    required this.description,
+    required this.current,
+    required this.isDefault,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  /// Key on the tappable area (tests tap it).
+  final Key? optionKey;
+  final InkGlyph glyph;
+  final String label;
+  final String description;
+  final bool current;
+  final bool isDefault;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final visuals = AppThemeVisuals.of(context);
+    final scheme = theme.colorScheme;
+    final muted = enabled ? scheme.onSurfaceVariant : theme.disabledColor;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      selected: current,
+      label: label,
+      child: Material(
+        color: Colors.transparent,
+        shape: Border(bottom: BorderSide(color: visuals.divider)),
+        child: InkWell(
+          key: optionKey,
+          onTap: enabled ? onTap : null,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.card),
+            child: ExcludeSemantics(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: current
+                          ? visuals.accentSoft
+                          : scheme.surfaceContainerHighest.withValues(
+                              alpha: 0.5,
+                            ),
+                      borderRadius: BorderRadius.circular(AppRadius.control),
+                    ),
+                    child: InkIcon(
+                      glyph,
+                      size: 22,
+                      color: current ? visuals.accent : muted,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.field),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: [
+                            Text(
+                              label,
+                              style: theme.textTheme.rowTitle?.copyWith(
+                                color: !enabled
+                                    ? theme.disabledColor
+                                    : current
+                                    ? visuals.accent
+                                    : null,
+                              ),
+                            ),
+                            if (current)
+                              SoftChip(
+                                label: l10n.currentWord,
+                                color: visuals.accentSoft,
+                                foreground: visuals.accent,
+                              )
+                            else if (isDefault)
+                              SoftChip(label: l10n.defaultWord),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.meta?.copyWith(
+                            color: muted,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.compact),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: InkIcon(
+                      InkGlyph.chevronRight,
+                      size: 18,
+                      color: muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The configure pages' pinned bottom bar with the one apply button.
+class StrategyApplyBar extends StatelessWidget {
+  const StrategyApplyBar({super.key, required this.label, this.onPressed});
+
+  final String label;
+
+  /// Null disables the button (already applied, invalid, saving).
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          top: BorderSide(color: AppThemeVisuals.of(context).divider),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.formPage,
+          AppSpacing.field,
+          AppSpacing.formPage,
+          AppSpacing.field,
+        ),
+        child: FilledButton(
+          key: const ValueKey('strategyApplyButton'),
+          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+          onPressed: onPressed,
+          child: Text(label),
         ),
       ),
     );

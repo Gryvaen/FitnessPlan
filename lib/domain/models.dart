@@ -80,6 +80,22 @@ class MacroTargets {
   };
 }
 
+/// 维持 protein rate (g/kg): adjustable on the 均衡维持 configure page,
+/// same range and step as the fat-loss strategies'.
+abstract final class MaintainProtein {
+  static const double defaultPerKg = 2.0;
+  static const double minPerKg = 1.4;
+  static const double maxPerKg = 2.2;
+}
+
+/// 维持 fat rate (g/kg): adjustable next to the protein one, same range and
+/// step as the fat-loss strategies'. Carbs take whatever kcal is left.
+abstract final class MaintainFat {
+  static const double defaultPerKg = 0.8;
+  static const double minPerKg = 0.6;
+  static const double maxPerKg = 1.0;
+}
+
 class UserProfile {
   const UserProfile({
     required this.sex,
@@ -95,6 +111,8 @@ class UserProfile {
     this.tdee,
     this.dailyDeficit,
     this.calorieStandardSince,
+    this._maintainProteinPerKg,
+    this._maintainFatPerKg,
   });
 
   final Sex sex;
@@ -115,6 +133,17 @@ class UserProfile {
 
   int get calorieAdjustment => _calorieAdjustment ?? 0;
 
+  final double? _maintainProteinPerKg;
+
+  /// Protein g/kg while maintaining (default [MaintainProtein.defaultPerKg]).
+  double get maintainProteinPerKg =>
+      _maintainProteinPerKg ?? MaintainProtein.defaultPerKg;
+
+  final double? _maintainFatPerKg;
+
+  /// Fat g/kg while maintaining (default [MaintainFat.defaultPerKg]).
+  double get maintainFatPerKg => _maintainFatPerKg ?? MaintainFat.defaultPerKg;
+
   UserProfile copyWith({
     Sex? sex,
     int? age,
@@ -129,6 +158,8 @@ class UserProfile {
     double? tdee,
     double? dailyDeficit,
     DateTime? calorieStandardSince,
+    double? maintainProteinPerKg,
+    double? maintainFatPerKg,
   }) {
     return UserProfile(
       sex: sex ?? this.sex,
@@ -144,6 +175,8 @@ class UserProfile {
       tdee: tdee ?? this.tdee,
       dailyDeficit: dailyDeficit ?? this.dailyDeficit,
       calorieStandardSince: calorieStandardSince ?? this.calorieStandardSince,
+      maintainProteinPerKg: maintainProteinPerKg ?? _maintainProteinPerKg,
+      maintainFatPerKg: maintainFatPerKg ?? _maintainFatPerKg,
     );
   }
 
@@ -177,6 +210,8 @@ class UserProfile {
     tdee: (json['tdee'] as num?)?.toDouble(),
     dailyDeficit: (json['dailyDeficit'] as num?)?.toDouble(),
     calorieStandardSince: _dayFromJson(json['calorieStandardSince']),
+    maintainProteinPerKg: (json['maintainProteinPerKg'] as num?)?.toDouble(),
+    maintainFatPerKg: (json['maintainFatPerKg'] as num?)?.toDouble(),
   );
 
   Map<String, dynamic> toJson() => {
@@ -193,6 +228,8 @@ class UserProfile {
     'tdee': tdee,
     'dailyDeficit': dailyDeficit,
     'calorieStandardSince': _dayToJson(calorieStandardSince),
+    'maintainProteinPerKg': _maintainProteinPerKg,
+    'maintainFatPerKg': _maintainFatPerKg,
   };
 }
 

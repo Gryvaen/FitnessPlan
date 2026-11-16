@@ -68,7 +68,6 @@ extension StrategyIssueL10n on StrategyIssue {
     StrategyIssue.carbCycleHighDayCarbDepleted =>
       l10n.issueCarbCycleHighDayCarbDepleted,
     StrategyIssue.underage => l10n.issueUnderage(StrategyRules.minAdultAge),
-    StrategyIssue.goalNotCut => l10n.issueGoalNotCut,
   };
 }
 
@@ -109,7 +108,8 @@ String targetChipLabel(
       if (target.isLegacyEstimate) return l10n.targetLegacyEstimate;
       return switch (profile.goal) {
         FitnessGoal.cut => l10n.targetSourceProfileCut,
-        FitnessGoal.maintain => l10n.goalMaintain,
+        // 维持 has one default strategy; name it like a cut strategy.
+        FitnessGoal.maintain => l10n.maintainStrategyName,
         FitnessGoal.bulk => l10n.goalBulk,
       };
   }

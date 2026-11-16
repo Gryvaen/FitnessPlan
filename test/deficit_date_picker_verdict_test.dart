@@ -12,6 +12,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _okGreen = Color(0xFF2A9D8F);
+const _badRed = Color(0xFFE76F51);
 
 class _FixedMeals extends MealRepository {
   _FixedMeals(super.db, this.totals);
@@ -25,18 +26,22 @@ class _FixedMeals extends MealRepository {
   ) async => totals;
 }
 
-DailyNutritionTarget _target(DateTime day, {bool legacy = false}) =>
-    DailyNutritionTarget(
-      date: day,
-      calories: 2000,
-      proteinG: 150,
-      carbG: 200,
-      fatG: 60,
-      source: TargetSource.profile,
-      estimatedTdee: 2500,
-      isSnapshot: !legacy,
-      isLegacyEstimate: legacy,
-    );
+DailyNutritionTarget _target(
+  DateTime day, {
+  bool legacy = false,
+  String? reason,
+}) => DailyNutritionTarget(
+  date: day,
+  calories: 2000,
+  proteinG: 150,
+  carbG: 200,
+  fatG: 60,
+  source: TargetSource.profile,
+  estimatedTdee: 2500,
+  isSnapshot: !legacy,
+  isLegacyEstimate: legacy,
+  reason: reason,
+);
 
 void main() {
   final today = CalendarDay.todayLocal();
@@ -49,6 +54,8 @@ void main() {
     WidgetTester tester, {
     required List<CutCultivationSegment> segments,
     bool legacy = false,
+    double intake = 1500,
+    String? reason,
   }) async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     addTearDown(db.close);
@@ -71,10 +78,10 @@ void main() {
                 firstDate: CalendarDay.addDays(today, -30),
                 lastDate: today,
                 plannedDeficit: 0,
-                mealRepository: _FixedMeals(db, {day: 1500}),
+                mealRepository: _FixedMeals(db, {day: intake}),
                 markerRepository: DayMarkerRepository(db),
                 loadTargets: (_, _) async => {
-                  day: _target(day, legacy: legacy),
+                  day: _target(day, legacy: legacy, reason: reason),
                 },
                 loadStrategyForDay: (_) async => null,
                 calorieStandardSince: standardSince,
@@ -99,6 +106,46 @@ void main() {
   }
 
   bool isGreen(Color? c) => c != null && c.withValues(alpha: 1) == _okGreen;
+  bool isRed(Color? c) => c != null && c.withValues(alpha: 1) == _badRed;
+
+  group('maintain days use the ±10% band', () {
+    final round = [
+      CutCultivationSegment(start: CalendarDay.addDays(today, -10)),
+    ];
+
+    testWidgets('eating far too little is a miss', (tester) async {
+      final color = await pumpAndReadCellColor(
+        tester,
+        segments: round,
+        intake: 1500,
+        reason: 'maintain',
+      );
+      expect(isRed(color), isTrue);
+      expect(find.text('Maintenance days'), findsOneWidget);
+    });
+
+    for (final intake in [1900.0, 2150.0]) {
+      testWidgets('inside the band is met ($intake kcal)', (tester) async {
+        final color = await pumpAndReadCellColor(
+          tester,
+          segments: round,
+          intake: intake,
+          reason: 'maintain',
+        );
+        expect(isGreen(color), isTrue);
+      });
+    }
+
+    testWidgets('above the band is a miss', (tester) async {
+      final color = await pumpAndReadCellColor(
+        tester,
+        segments: round,
+        intake: 2300,
+        reason: 'maintain',
+      );
+      expect(isRed(color), isTrue);
+    });
+  });
 
   testWidgets('a day inside the cut round keeps its verdict after a '
       'later standard change', (tester) async {

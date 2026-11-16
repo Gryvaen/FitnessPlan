@@ -16,6 +16,7 @@ import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/calorie_breakdown.dart';
 import 'carb_cycle_view.dart';
+import 'maintain_sections.dart';
 import 'strategy_labels.dart';
 import 'strategy_target_card.dart';
 
@@ -68,9 +69,11 @@ class _NutritionTargetsPageState extends ConsumerState<NutritionTargetsPage> {
               onIndexChanged: (i) => setState(() => _tab = _goalOrder[i]),
               children: [
                 for (final g in _goalOrder)
-                  g == FitnessGoal.cut
-                      ? const _CutNutritionTargets()
-                      : _NutritionComingSoon(goal: g),
+                  switch (g) {
+                    FitnessGoal.cut => const _CutTab(),
+                    FitnessGoal.maintain => const _MaintainTab(),
+                    FitnessGoal.bulk => _NutritionComingSoon(goal: g),
+                  },
               ],
             ),
           ),
@@ -245,10 +248,9 @@ class _CutNutritionTargets extends ConsumerWidget {
           ),
         ),
     ];
-    // TDEE only on the tab that matches the profile goal.
-    final tdeeTile = profile.goal == FitnessGoal.cut
-        ? _TdeeCalcMethodTile(profile: profile)
-        : null;
+    // TDEE doesn't depend on the goal, so the row shows on every goal's
+    // strategy tab, active or not.
+    final tdeeTile = _TdeeCalcMethodTile(profile: profile);
     final padding = EdgeInsets.fromLTRB(
       AppSpacing.formPage,
       AppSpacing.compact,
@@ -267,7 +269,7 @@ class _CutNutritionTargets extends ConsumerWidget {
               size: 40,
               color: AppThemeVisuals.of(context).accent,
             ),
-            title: l10n.noStrategyShort,
+            title: l10n.noStrategyForGoal(FitnessGoal.cut.label(l10n)),
             message: l10n.noStrategyYet,
             actionLabel: l10n.chooseStrategy,
             onAction: blocking.isEmpty
@@ -275,10 +277,8 @@ class _CutNutritionTargets extends ConsumerWidget {
                 : null,
           ),
           ...blockingNotes,
-          if (tdeeTile != null) ...[
-            const SizedBox(height: AppSpacing.section),
-            tdeeTile,
-          ],
+          const SizedBox(height: AppSpacing.section),
+          tdeeTile,
         ],
       );
     }
@@ -363,8 +363,20 @@ class _CutNutritionTargets extends ConsumerWidget {
               (active.deficitFraction * 100).round(),
             ),
           ),
-        ?tdeeTile,
+        tdeeTile,
         StrategySectionHeader(title: l10n.strategyManageTitle),
+        // Straight to the active strategy's configure page (it loads the
+        // current parameters), skipping the picker.
+        StrategyActionRow(
+          key: const ValueKey('adjustStrategyAction'),
+          icon: InkGlyph.edit,
+          label: l10n.adjustStrategy,
+          onTap: blocking.isEmpty
+              ? () => context.push(
+                  '/profile/nutrition/strategy/configure?kind=${active.kind.name}',
+                )
+              : null,
+        ),
         StrategyActionRow(
           icon: InkGlyph.swapHorizontal,
           label: l10n.changeStrategy,
@@ -454,6 +466,71 @@ class _CutNutritionTargets extends ConsumerWidget {
         '${active.baseEnergy.round()}',
         AppDates.md(active.effectiveFrom, locale),
       ),
+    );
+  }
+}
+
+/// 减脂 tab. On another goal there is no active fat-loss strategy, so it
+/// shows the same "no strategy" state; applying one switches the goal to cut.
+class _CutTab extends StatelessWidget {
+  const _CutTab();
+
+  @override
+  Widget build(BuildContext context) => const _CutNutritionTargets();
+}
+
+/// 维持 tab, on the cut tab's path: "no strategy" → pick 均衡维持 (the only
+/// one) → configure → apply, which switches the goal to maintain. While the
+/// goal is maintain that strategy is in force and the tab shows it.
+class _MaintainTab extends ConsumerWidget {
+  const _MaintainTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(profileProvider);
+    if (profile == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final pending = ref.watch(pendingGoalSwitchProvider);
+    if (profile.goal != FitnessGoal.maintain &&
+        pending?.goal == FitnessGoal.maintain) {
+      return MaintainScheduledView(
+        profile: profile,
+        from: pending!.from,
+        tdeeTile: _TdeeCalcMethodTile(profile: profile),
+      );
+    }
+    if (profile.goal != FitnessGoal.maintain) {
+      return ListView(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.formPage,
+          AppSpacing.compact,
+          AppSpacing.formPage,
+          listBottomInset(context, hasFab: false),
+        ),
+        children: [
+          SportEmptyState(
+            key: const ValueKey('noMaintainStrategyEmpty'),
+            iconWidget: InkIcon(
+              InkGlyph.target,
+              size: 40,
+              color: AppThemeVisuals.of(context).accent,
+            ),
+            title: context.l10n.noStrategyForGoal(
+              FitnessGoal.maintain.label(context.l10n),
+            ),
+            message: context.l10n.noStrategyYet,
+            actionLabel: context.l10n.chooseStrategy,
+            onAction: () => context.push('/profile/nutrition/maintain'),
+          ),
+          const SizedBox(height: AppSpacing.section),
+          _TdeeCalcMethodTile(profile: profile),
+        ],
+      );
+    }
+    return MaintainTargetsView(
+      profile: profile,
+      tdeeTile: _TdeeCalcMethodTile(profile: profile),
     );
   }
 }

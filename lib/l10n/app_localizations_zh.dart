@@ -2218,6 +2218,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noStrategyShort => '未选择策略';
 
   @override
+  String noStrategyForGoal(String goal) {
+    return '未选择$goal策略';
+  }
+
+  @override
   String get strategySelectedShort => '已选择';
 
   @override
@@ -2253,6 +2258,141 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String planStartsOn(String date) {
     return '$date 起生效';
+  }
+
+  @override
+  String switchGoalTitle(String goal) {
+    return '切换到「$goal」';
+  }
+
+  @override
+  String switchGoalAction(String goal) {
+    return '切换到「$goal」';
+  }
+
+  @override
+  String switchedGoal(String goal) {
+    return '已切换到「$goal」';
+  }
+
+  @override
+  String get switchGoalLeaveCut => '本轮减脂结算结束，修为保留。';
+
+  @override
+  String get switchGoalStopStrategy => '减脂策略停用。';
+
+  @override
+  String get switchGoalToCut => '开始新一轮减脂，接着选择减脂策略。';
+
+  @override
+  String switchGoalToMaintain(int kcal) {
+    return '维持热量按当前体重定为 $kcal kcal。';
+  }
+
+  @override
+  String switchGoalToBulk(int kcal) {
+    return '目标热量 $kcal kcal。';
+  }
+
+  @override
+  String switchGoalToCutApply(String strategy) {
+    return '开始新一轮减脂，按「$strategy」执行。';
+  }
+
+  @override
+  String get maintainStrategyTitle => '维持策略';
+
+  @override
+  String switchGoalFrom(String date) {
+    return '自 $date 起：';
+  }
+
+  @override
+  String goalSwitchScheduled(String date, String goal) {
+    return '已预约：$date 起切换到「$goal」';
+  }
+
+  @override
+  String maintainCancelScheduledBody(String date) {
+    return '不再在 $date 切换到维持，当前目标和策略照常执行。';
+  }
+
+  @override
+  String maintainRatesSummary(int pct, int kcal) {
+    return '±$pct% · $kcal kcal';
+  }
+
+  @override
+  String get legendMaintainDays => '维持日';
+
+  @override
+  String get maintainStrategyName => '均衡维持';
+
+  @override
+  String get maintainStrategyDescription =>
+      '每天按维持热量吃，吃得差不多；摄入在维持热量 ±10% 内算达标。维持热量在切到维持时按当时体重确定，称重不会自动改它。';
+
+  @override
+  String get maintainKcalLabel => '维持热量';
+
+  @override
+  String get maintainBasisTitle => '策略基准';
+
+  @override
+  String get maintainBandLabel => '达标区间';
+
+  @override
+  String maintainBandValue(int low, int high, int pct) {
+    return '$low–$high kcal · ±$pct%';
+  }
+
+  @override
+  String legendMaintainBand(int pct) {
+    return '在维持热量 ±$pct% 内为达标';
+  }
+
+  @override
+  String maintainBandShort(int low, int high) {
+    return '区间 $low–$high';
+  }
+
+  @override
+  String maintainTitleDay(int n) {
+    return '均衡维持 · 第 $n 天';
+  }
+
+  @override
+  String maintainFootnote(int low, int high, String date) {
+    return '达标区间 $low–$high kcal · $date 起';
+  }
+
+  @override
+  String get maintainWeightTitle => '体重';
+
+  @override
+  String get maintainWeightAvg7 => '近 7 天平均';
+
+  @override
+  String get maintainWeightVsStart => '较维持开始';
+
+  @override
+  String get maintainWeightHint =>
+      '只看 7 天平均，±1 kg 内都算稳定。刚从节食转为正常吃时，水分和糖原会让体重先涨一些，通常 2–3 周回落。';
+
+  @override
+  String get maintainWeightTooFew => '称重太少，暂时算不出平均值';
+
+  @override
+  String get maintainRecalc => '按当前体重重算';
+
+  @override
+  String maintainRecalcBody(int from, int to) {
+    return '维持热量 $from → $to kcal';
+  }
+
+  @override
+  String maintainRecalcDone(int kcal) {
+    return '维持热量已更新为 $kcal kcal';
   }
 
   @override
@@ -2452,9 +2592,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String issueUnderage(int age) {
     return '策略仅面向 $age 岁及以上成年人，请寻求专业指导。';
   }
-
-  @override
-  String get issueGoalNotCut => '仅在减脂目标下可用。';
 
   @override
   String get strategyParameters => '参数';

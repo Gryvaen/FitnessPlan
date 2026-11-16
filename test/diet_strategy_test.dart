@@ -460,7 +460,7 @@ void main() {
       );
     }
 
-    test('adult cut users are eligible; minors and non-cut goals are not', () {
+    test('adults are eligible whatever the goal; minors are not', () {
       expect(StrategyEligibility.eligible(profile()), isTrue);
       expect(StrategyEligibility.check(profile()), isEmpty);
 
@@ -468,13 +468,15 @@ void main() {
       expect(minor, contains(StrategyIssue.underage));
       expect(StrategyEligibility.eligible(profile(age: 17)), isFalse);
 
+      // Picking a strategy from another goal switches the goal to cut, so
+      // the goal itself never blocks.
       expect(
         StrategyEligibility.check(profile(goal: FitnessGoal.maintain)),
-        contains(StrategyIssue.goalNotCut),
+        isEmpty,
       );
       expect(
         StrategyEligibility.check(profile(goal: FitnessGoal.bulk)),
-        contains(StrategyIssue.goalNotCut),
+        isEmpty,
       );
       expect(StrategyEligibility.eligible(null), isFalse);
     });

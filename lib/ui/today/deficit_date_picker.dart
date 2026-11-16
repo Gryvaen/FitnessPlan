@@ -11,6 +11,7 @@ import '../../domain/day_marker.dart';
 import '../../domain/deficit.dart';
 import '../../domain/diet_plan.dart';
 import '../../domain/diet_strategy.dart';
+import '../../domain/maintain.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../ink/ink_icon.dart';
 import '../strategy/stepper_row.dart';
@@ -436,6 +437,20 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
                     _LegendLine(
                       leading: const InkIcon(InkGlyph.radioEmpty, size: 10),
                       label: l10n.legendAfterGreenRed,
+                    ),
+                  ],
+                ),
+              ],
+              if (_targetsByDay.values.any((t) => t.isMaintainDay)) ...[
+                const SizedBox(height: 12),
+                _LegendSection(
+                  title: l10n.legendMaintainDays,
+                  children: [
+                    _LegendLine(
+                      leading: const InkIcon(InkGlyph.radioEmpty, size: 10),
+                      label: l10n.legendMaintainBand(
+                        (maintainBandFraction * 100).round(),
+                      ),
                     ),
                   ],
                 ),
@@ -1244,7 +1259,9 @@ class _DayCell extends StatelessWidget {
         isPast &&
         !beforeStandard &&
         !legacy;
-    final met = remaining != null && remaining >= 0;
+    // 维持 days must land inside the ±10% band (see [intakeMet]); other days
+    // only need to stay under their target.
+    final met = remaining != null && intakeMet(t!, intake ?? 0);
 
     Color? bg;
     Color fg = theme.colorScheme.onSurface;

@@ -3,15 +3,21 @@ import 'dart:convert';
 import 'package:diet/data/db.dart';
 import 'package:diet/domain/calendar_day.dart';
 import 'package:diet/data/repositories/diet_strategy_repository.dart';
+import 'package:diet/data/repositories/goal_schedule_repository.dart';
 import 'package:diet/domain/diet_plan.dart';
 import 'package:diet/domain/diet_strategy.dart';
 import 'package:diet/domain/models.dart';
 import 'package:diet/l10n/app_localizations.dart';
 import 'package:diet/providers/app_providers.dart';
+import 'package:diet/ui/strategy/maintain_strategy_pages.dart';
 import 'package:diet/ui/strategy/nutrition_targets_page.dart';
+import 'package:diet/ui/strategy/stepper_row.dart';
 import 'package:diet/ui/strategy/strategy_configure_page.dart';
+import 'package:diet/ui/strategy/strategy_fold_section.dart';
 import 'package:diet/ui/strategy/strategy_picker_page.dart';
+import 'package:diet/ui/strategy/strategy_target_card.dart';
 import 'package:diet/ui/strategy/taper_review_page.dart';
+import 'package:diet/ui/profile/cultivation_page.dart';
 import 'package:diet/ui/profile/profile_edit_page.dart';
 import 'package:diet/ui/widgets/form_options.dart';
 import 'package:diet/ui/theme/app_theme.dart';
@@ -68,6 +74,9 @@ class _FailingProfileNotifier extends ProfileNotifier {
     required FitnessGoal goal,
     double? targetWeightKg,
     int? calorieAdjustment,
+    DateTime? effectiveFrom,
+    double? maintainProteinPerKg,
+    double? maintainFatPerKg,
   }) async => throw StateError('profile save failure');
 }
 
@@ -103,6 +112,12 @@ Widget _app(String initialLocation, {AppThemeId themeId = AppThemeId.fresh}) {
         builder: (_, _) => const Scaffold(body: Text('Me')),
         routes: [
           GoRoute(path: 'edit', builder: (_, _) => const ProfileEditPage()),
+          GoRoute(
+            path: 'cultivation/goal/:goal',
+            builder: (_, state) => CultivationGoalScreen(
+              goal: FitnessGoal.values.byName(state.pathParameters['goal']!),
+            ),
+          ),
         ],
       ),
       GoRoute(
@@ -120,6 +135,16 @@ Widget _app(String initialLocation, {AppThemeId themeId = AppThemeId.fresh}) {
                     state.uri.queryParameters['kind'],
                   ),
                 ),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: 'maintain',
+            builder: (_, _) => const MaintainStrategyPickerPage(),
+            routes: [
+              GoRoute(
+                path: 'configure',
+                builder: (_, _) => const MaintainStrategyConfigurePage(),
               ),
             ],
           ),
@@ -176,6 +201,12 @@ Future<Finder> _show(
   await _settle(tester);
   return finder;
 }
+
+/// The [tooltip] ('−0.1' / '+0.1') button of the stepper labelled [label].
+Finder _stepButton(String label, String tooltip) => find.descendant(
+  of: find.widgetWithText(StepperRow, label),
+  matching: find.byTooltip(tooltip),
+);
 
 /// Like [_show], but scrolls the visible vertical list. The nutrition page
 /// nests its lists in a horizontal goal pager, which is the first Scrollable.
@@ -244,11 +275,264 @@ void main() {
     await _db.close();
   });
 
+  group('maintain tab', () {
+    final today = CalendarDay.todayLocal();
+
+    Future<void> setUpMaintain({
+      MacroTargets? targets,
+      int startedDaysAgo = 2,
+      double? weightKg,
+      double? proteinPerKg,
+    }) async {
+      _container.dispose();
+      await _db.close();
+      final base = _profile(goal: FitnessGoal.maintain);
+      await _setUp(
+        profile: UserProfile(
+          sex: base.sex,
+          age: base.age,
+          heightCm: base.heightCm,
+          weightKg: weightKg ?? base.weightKg,
+          activity: base.activity,
+          goal: FitnessGoal.maintain,
+          targets: targets ?? base.targets,
+          bmr: base.bmr,
+          tdee: base.tdee,
+          calorieStandardSince: CalendarDay.addDays(today, -startedDaysAgo),
+          maintainProteinPerKg: proteinPerKg,
+        ),
+      );
+    }
+
+    Future<void> weigh(int daysAgo, double kg) => _db
+        .into(_db.weightLogs)
+        .insert(
+          WeightLogsCompanion.insert(
+            date: CalendarDay.addDays(today, -daysAgo),
+            weightKg: kg,
+          ),
+        );
+
+    testWidgets('shows the fixed target, its band and the day count', (
+      tester,
+    ) async {
+      await setUpMaintain();
+      await _pump(tester, '/profile/nutrition');
+      _expectNoLayoutErrors(tester);
+
+      expect(find.byKey(const ValueKey('maintainOverview')), findsOneWidget);
+      expect(find.text('Balanced maintenance · day 3'), findsOneWidget);
+      expect(find.text('Not enough weigh-ins for an average yet'), findsOne);
+      // Footnote and the basis row both show the band.
+      expect(
+        find.textContaining('1800–2200', skipOffstage: false),
+        findsNWidgets(2),
+      );
+
+      // Same layout as the cut tab: strategy basis, then TDEE method, then
+      // management. Weight and TDEE are the profile's current ones.
+      final basis = find.byKey(const ValueKey('maintainBasis'));
+      await _showInPage(tester, basis);
+      expect(
+        find.descendant(of: basis, matching: find.text('Strategy basis')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: basis, matching: find.textContaining('75.0')),
+        findsOneWidget,
+      );
+      final tdee = await _showInPage(
+        tester,
+        find.text('TDEE calculation method'),
+      );
+      final recalc = await _showInPage(
+        tester,
+        find.byKey(const ValueKey('maintainRecalc')),
+      );
+      expect(
+        tester.getTopLeft(tdee).dy,
+        lessThan(tester.getTopLeft(recalc).dy),
+      );
+      expect(find.text('Manage'), findsOneWidget);
+      expect(find.textContaining('How to eat'), findsNothing);
+      _expectNoLayoutErrors(tester);
+    });
+
+    testWidgets('basis reads the current profile weight', (tester) async {
+      // Weighed down to 72.4 since the target was fixed at 75 kg.
+      await setUpMaintain(weightKg: 72.4);
+      await _pump(tester, '/profile/nutrition');
+      final basis = await _showInPage(
+        tester,
+        find.byKey(const ValueKey('maintainBasis')),
+      );
+      expect(
+        find.descendant(of: basis, matching: find.textContaining('72.4')),
+        findsOneWidget,
+      );
+      // The fixed target is untouched.
+      expect(
+        find.descendant(of: basis, matching: find.textContaining('2000')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('管理 offers 更换策略 into the maintain picker', (tester) async {
+      await setUpMaintain();
+      await _pump(tester, '/profile/nutrition');
+      await tester.tap(
+        await _showInPage(
+          tester,
+          find.byKey(const ValueKey('maintainChangeStrategy')),
+        ),
+      );
+      await _settle(tester);
+      expect(find.byType(MaintainStrategyPickerPage), findsOneWidget);
+      expect(find.text('Current'), findsOneWidget);
+    });
+
+    testWidgets('管理 offers 调整策略 straight into the maintain configure', (
+      tester,
+    ) async {
+      await setUpMaintain();
+      await _pump(tester, '/profile/nutrition');
+      await tester.tap(
+        await _showInPage(
+          tester,
+          find.byKey(const ValueKey('maintainAdjustStrategy')),
+        ),
+      );
+      await _settle(tester);
+      expect(find.byType(MaintainStrategyConfigurePage), findsOneWidget);
+      expect(find.byType(MaintainStrategyPickerPage), findsNothing);
+    });
+
+    testWidgets('a new protein rate applies today while maintaining', (
+      tester,
+    ) async {
+      await setUpMaintain();
+      final since = _container.read(profileProvider)!.calorieStandardSince;
+      await _pump(tester, '/profile/nutrition/maintain/configure');
+      final apply = find.byKey(const ValueKey('strategyApplyButton'));
+      expect(tester.widget<FilledButton>(apply).onPressed, isNull);
+
+      await _openStrategySection(tester, 'maintain-section-target');
+      for (var i = 0; i < 2; i++) {
+        await tester.tap(
+          await _show(tester, _stepButton('Protein per kg', '−0.1')),
+        );
+        await _settle(tester);
+      }
+      expect(find.textContaining('1.8 g/kg'), findsOneWidget);
+      await tester.tap(await _show(tester, _stepButton('Fat per kg', '+0.1')));
+      await _settle(tester);
+      expect(find.textContaining('0.9 g/kg'), findsOneWidget);
+      expect(tester.widget<FilledButton>(apply).onPressed, isNotNull);
+      // Only "today" can be picked for a change while maintaining.
+      await _openStrategySection(tester, 'maintain-section-effective');
+      expect(find.textContaining('Tomorrow ('), findsNothing);
+
+      await tester.tap(apply);
+      await _settle(tester);
+      expect(find.byType(AlertDialog), findsNothing);
+      final p = _container.read(profileProvider)!;
+      expect(p.goal, FitnessGoal.maintain);
+      expect(p.maintainProteinPerKg, closeTo(1.8, 1e-9));
+      expect(p.targets.proteinG, closeTo(p.weightKg * 1.8, 0.05));
+      expect(p.maintainFatPerKg, closeTo(0.9, 1e-9));
+      expect(p.targets.fatG, closeTo(p.weightKg * 0.9, 0.05));
+      // Same goal, so the maintenance start day stays.
+      expect(p.calorieStandardSince, since);
+    });
+
+    testWidgets('weight section compares the 7-day average to the start', (
+      tester,
+    ) async {
+      await setUpMaintain();
+      await weigh(3, 72.0); // the week up to the start day
+      await weigh(1, 71.0);
+      await weigh(0, 70.0);
+      await _pump(tester, '/profile/nutrition');
+
+      // Last 7 days: 72, 71, 70 → 71.0; baseline 72.0 → −1.0.
+      final weight = find.byKey(const ValueKey('maintainWeight'));
+      expect(
+        find.descendant(of: weight, matching: find.textContaining('71.0')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('maintainWeightDelta')),
+          matching: find.textContaining('−1.0'),
+        ),
+        findsOneWidget,
+      );
+      _expectNoLayoutErrors(tester);
+    });
+
+    testWidgets('no change row on the first day of maintenance', (
+      tester,
+    ) async {
+      await setUpMaintain(startedDaysAgo: 0);
+      await weigh(0, 70.0);
+      await _pump(tester, '/profile/nutrition');
+      expect(find.text('Balanced maintenance · day 1'), findsOneWidget);
+      expect(find.byKey(const ValueKey('maintainWeightDelta')), findsNothing);
+    });
+
+    testWidgets('recalculate re-fixes the target from the current weight', (
+      tester,
+    ) async {
+      await setUpMaintain();
+      final fresh = _container
+          .read(profileRepositoryProvider)
+          .buildPlan(_container.read(profileProvider)!)
+          .targets
+          .calories;
+      expect(fresh, isNot(2000));
+      await _pump(tester, '/profile/nutrition');
+
+      await tester.tap(
+        await _showInPage(tester, find.text('Recalculate from current weight')),
+      );
+      await _settle(tester);
+      expect(
+        find.text('Maintenance calories 2000 → $fresh kcal'),
+        findsOneWidget,
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'OK'));
+      await _settle(tester);
+
+      final saved = _container.read(profileProvider)!;
+      expect(saved.targets.calories, fresh);
+      expect(saved.goal, FitnessGoal.maintain);
+      // The maintenance start (new-standard day) doesn't move.
+      expect(saved.calorieStandardSince, CalendarDay.addDays(today, -2));
+    });
+
+    testWidgets('recalculate is disabled when nothing would change', (
+      tester,
+    ) async {
+      await setUpMaintain();
+      final fresh = _container
+          .read(profileRepositoryProvider)
+          .buildPlan(_container.read(profileProvider)!)
+          .targets;
+      await setUpMaintain(targets: fresh);
+      await _pump(tester, '/profile/nutrition');
+
+      final row = tester.widget<StrategyActionRow>(
+        await _showInPage(tester, find.byKey(const ValueKey('maintainRecalc'))),
+      );
+      expect(row.onTap, isNull);
+    });
+  });
+
   testWidgets('nutrition targets page renders without a plan', (tester) async {
     await _pump(tester, '/profile/nutrition');
     _expectNoLayoutErrors(tester);
     expect(find.byKey(const ValueKey('noStrategyEmpty')), findsOneWidget);
-    expect(find.text('No strategy'), findsOneWidget);
+    expect(find.text('No Cut strategy'), findsOneWidget);
     expect(find.text('Choose strategy'), findsOneWidget);
     expect(find.text('Stop strategy'), findsNothing);
     await tester.tap(find.text('Choose strategy'));
@@ -772,6 +1056,28 @@ void main() {
     _expectNoLayoutErrors(tester);
   });
 
+  for (final kind in DietStrategyKind.values) {
+    testWidgets('管理 offers 调整策略 straight into the ${kind.name} configure', (
+      tester,
+    ) async {
+      await _createPlan(kind);
+      await _pump(tester, '/profile/nutrition');
+      await tester.tap(
+        await _showInPage(
+          tester,
+          find.byKey(const ValueKey('adjustStrategyAction')),
+        ),
+      );
+      await _settle(tester);
+      final page = tester.widget<StrategyConfigurePage>(
+        find.byType(StrategyConfigurePage),
+      );
+      expect(page.kind, kind);
+      expect(find.byType(StrategyPickerPage), findsNothing);
+      _expectNoLayoutErrors(tester);
+    });
+  }
+
   testWidgets('re-applying on the same day does not bump the shown version', (
     tester,
   ) async {
@@ -1222,7 +1528,314 @@ void main() {
     expect(find.textContaining('adults (18+)'), findsOneWidget);
   });
 
-  testWidgets('maintain goal is not eligible for a fat-loss strategy', (
+  testWidgets('the maintain tab follows the cut path: choose, configure, '
+      'apply', (tester) async {
+    await _createPlan(DietStrategyKind.balanced);
+    await _pump(tester, '/profile/nutrition');
+    await tester.tap(find.text('Maintain'));
+    await tester.pumpAndSettle();
+    _expectNoLayoutErrors(tester);
+    // Same empty state as a cut tab without a strategy.
+    final empty = find.byKey(const ValueKey('noMaintainStrategyEmpty'));
+    expect(empty, findsOneWidget);
+    expect(
+      find.descendant(of: empty, matching: find.text('No Maintain strategy')),
+      findsOneWidget,
+    );
+    await tester.tap(
+      find.descendant(of: empty, matching: find.text('Choose strategy')),
+    );
+    await _settle(tester);
+
+    // The picker has the one default strategy.
+    expect(find.byType(MaintainStrategyPickerPage), findsOneWidget);
+    expect(find.byType(StrategyOptionRow), findsOneWidget);
+    expect(find.text('Balanced maintenance'), findsOneWidget);
+    expect(find.text('Recommended'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('strategy-option-maintain')));
+    await _settle(tester);
+    _expectNoLayoutErrors(tester);
+
+    // Configure page, like the fat-loss one: preview overview, then the
+    // 当前档案 / 目标与营养 / 生效日期 rows, all folded at first.
+    expect(
+      find.byKey(const ValueKey('maintainConfigureOverview')),
+      findsOneWidget,
+    );
+    for (final k in ['profile', 'target', 'effective']) {
+      expect(find.byKey(ValueKey('maintain-section-$k')), findsOneWidget);
+    }
+    expect(find.text('Start today'), findsNothing);
+    expect(find.byType(StrategyReadOnlyMetric), findsNothing);
+    await _openStrategySection(tester, 'maintain-section-target');
+    expect(find.text('Maintenance calories'), findsOneWidget);
+    // Start today (the default is tomorrow, as on the cut page).
+    await _openStrategySection(tester, 'maintain-section-effective');
+    await tester.tap(await _show(tester, find.text('Start today')));
+    await _settle(tester);
+    final expected = _container
+        .read(profileRepositoryProvider)
+        .buildPlan(
+          _container
+              .read(profileProvider)!
+              .copyWith(goal: FitnessGoal.maintain),
+        )
+        .targets
+        .calories;
+    await tester.tap(find.byKey(const ValueKey('strategyApplyButton')));
+    await _settle(tester);
+    final dialog = find.byType(AlertDialog);
+    expect(
+      find.descendant(
+        of: dialog,
+        matching: find.textContaining('cut round is settled'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: dialog,
+        matching: find.textContaining('strategy stops'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: dialog,
+        matching: find.textContaining('$expected kcal'),
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'OK'));
+    await _settle(tester);
+
+    expect(_container.read(profileProvider)!.goal, FitnessGoal.maintain);
+    expect(
+      await _container.read(dietStrategyRepositoryProvider).activePlan(),
+      isNull,
+    );
+    expect(find.text('Me'), findsOneWidget);
+
+    await _pump(tester, '/profile/nutrition');
+    expect(find.byKey(const ValueKey('maintainOverview')), findsOneWidget);
+    _expectNoLayoutErrors(tester);
+  });
+
+  testWidgets('the protein rate re-splits protein and carbs, same kcal', (
+    tester,
+  ) async {
+    await _pump(tester, '/profile/nutrition/maintain/configure');
+    final overview = find.byKey(const ValueKey('maintainConfigureOverview'));
+    String kcalText() => tester
+        .widgetList<Text>(
+          find.descendant(of: overview, matching: find.byType(Text)),
+        )
+        .map((t) => t.data ?? t.textSpan?.toPlainText() ?? '')
+        .join('|');
+    final before = kcalText();
+    expect(before, contains('150'));
+
+    await _openStrategySection(tester, 'maintain-section-target');
+    for (var i = 0; i < 4; i++) {
+      await tester.tap(
+        await _show(tester, _stepButton('Protein per kg', '−0.1')),
+      );
+      await _settle(tester);
+    }
+    await _show(tester, overview, delta: -120);
+    final after = kcalText();
+    // 75 kg × 1.6 = 120 g protein; the kcal headline is unchanged.
+    expect(after, contains('120'));
+    expect(after, isNot(contains('150g')));
+    final kcal = RegExp(r'^\d{4}$');
+    expect(
+      before.split('|').where(kcal.hasMatch).toList(),
+      after.split('|').where(kcal.hasMatch).toList(),
+    );
+  });
+
+  testWidgets('the fat rate re-splits fat and carbs, same kcal', (
+    tester,
+  ) async {
+    await _pump(tester, '/profile/nutrition/maintain/configure');
+    final overview = find.byKey(const ValueKey('maintainConfigureOverview'));
+    String overviewText() => tester
+        .widgetList<Text>(
+          find.descendant(of: overview, matching: find.byType(Text)),
+        )
+        .map((t) => t.data ?? t.textSpan?.toPlainText() ?? '')
+        .join('|');
+    final before = overviewText();
+    // 75 kg × 0.8 = 60 g fat by default.
+    expect(before, contains('60'));
+
+    await _openStrategySection(tester, 'maintain-section-target');
+    for (var i = 0; i < 2; i++) {
+      await tester.tap(await _show(tester, _stepButton('Fat per kg', '+0.1')));
+      await _settle(tester);
+    }
+    expect(find.textContaining('1.0 g/kg'), findsOneWidget);
+    // The range tops out at 1.0, like the fat-loss configure page.
+    expect(
+      tester
+          .widget<IconButton>(
+            find.ancestor(
+              of: _stepButton('Fat per kg', '+0.1'),
+              matching: find.byType(IconButton),
+            ),
+          )
+          .onPressed,
+      isNull,
+    );
+    await _show(tester, overview, delta: -120);
+    final after = overviewText();
+    // 75 kg × 1.0 = 75 g fat; the kcal headline is unchanged.
+    expect(after, contains('75'));
+    final kcal = RegExp(r'^\d{4}$');
+    expect(
+      before.split('|').where(kcal.hasMatch).toList(),
+      after.split('|').where(kcal.hasMatch).toList(),
+    );
+  });
+
+  testWidgets('cancelling the maintain apply keeps the goal', (tester) async {
+    await _pump(tester, '/profile/nutrition/maintain/configure');
+    await tester.tap(find.byKey(const ValueKey('strategyApplyButton')));
+    await _settle(tester);
+    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    await _settle(tester);
+    expect(_container.read(profileProvider)!.goal, FitnessGoal.cut);
+    expect(find.byType(MaintainStrategyConfigurePage), findsOneWidget);
+  });
+
+  testWidgets('applying 均衡维持 from tomorrow books the switch', (tester) async {
+    await _createPlan(DietStrategyKind.balanced);
+    await _pump(tester, '/profile/nutrition/maintain/configure');
+    final tomorrow = CalendarDay.addDays(CalendarDay.todayLocal(), 1);
+    await tester.tap(find.byKey(const ValueKey('strategyApplyButton')));
+    await _settle(tester);
+    // The dialog dates the same consequences to tomorrow.
+    expect(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.textContaining('From '),
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'OK'));
+    await _settle(tester);
+
+    // Nothing switched yet: still cutting on the same strategy.
+    expect(_container.read(profileProvider)!.goal, FitnessGoal.cut);
+    expect(
+      await _container.read(dietStrategyRepositoryProvider).activePlan(),
+      isNotNull,
+    );
+    final pending = _container.read(pendingGoalSwitchProvider);
+    expect(pending?.goal, FitnessGoal.maintain);
+    expect(pending?.from, tomorrow);
+
+    // The 维持 tab shows it as scheduled, and it can be cancelled.
+    await _pump(tester, '/profile/nutrition');
+    await tester.tap(find.text('Maintain'));
+    await tester.pumpAndSettle();
+    final overview = find.byKey(const ValueKey('maintainScheduledOverview'));
+    expect(overview, findsOneWidget);
+    expect(
+      find.descendant(of: overview, matching: find.text('Scheduled')),
+      findsOneWidget,
+    );
+    _expectNoLayoutErrors(tester);
+    await tester.tap(
+      await _showInPage(
+        tester,
+        find.byKey(const ValueKey('maintainCancelScheduled')),
+      ),
+    );
+    await _settle(tester);
+    await tester.tap(
+      find.widgetWithText(FilledButton, 'Cancel scheduled change'),
+    );
+    await _settle(tester);
+    expect(_container.read(pendingGoalSwitchProvider), isNull);
+    expect(
+      find.byKey(const ValueKey('noMaintainStrategyEmpty')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a booked maintain switch offers 调整 / 更换 / 取消预约', (tester) async {
+    await _createPlan(DietStrategyKind.balanced);
+    final tomorrow = CalendarDay.addDays(CalendarDay.todayLocal(), 1);
+    await _container
+        .read(pendingGoalSwitchProvider.notifier)
+        .schedule(
+          PendingGoalSwitch(
+            goal: FitnessGoal.maintain,
+            from: tomorrow,
+            proteinPerKg: 1.6,
+          ),
+        );
+    await _pump(tester, '/profile/nutrition');
+    await tester.tap(find.text('Maintain'));
+    await tester.pumpAndSettle();
+
+    final adjust = await _showInPage(
+      tester,
+      find.byKey(const ValueKey('maintainScheduledAdjust')),
+    );
+    final change = find.byKey(const ValueKey('maintainScheduledChange'));
+    final cancel = find.byKey(const ValueKey('maintainCancelScheduled'));
+    expect(change, findsOneWidget);
+    expect(cancel, findsOneWidget);
+    // Same order as a scheduled fat-loss strategy.
+    expect(
+      tester.getTopLeft(adjust).dy,
+      lessThan(tester.getTopLeft(change).dy),
+    );
+    expect(
+      tester.getTopLeft(change).dy,
+      lessThan(tester.getTopLeft(cancel).dy),
+    );
+    _expectNoLayoutErrors(tester);
+
+    // 调整策略 opens the configure page on the booked rate, already booked.
+    await tester.tap(adjust);
+    await _settle(tester);
+    expect(find.byType(MaintainStrategyConfigurePage), findsOneWidget);
+    final overview = find.byKey(const ValueKey('maintainConfigureOverview'));
+    final texts = tester
+        .widgetList<Text>(
+          find.descendant(of: overview, matching: find.byType(Text)),
+        )
+        .map((t) => t.data ?? t.textSpan?.toPlainText() ?? '')
+        .join('|');
+    // 75 kg × 1.6 = 120 g protein, not the profile's 150 g.
+    expect(texts, contains('120'));
+    expect(texts, isNot(contains('150g')));
+    final apply = find.byKey(const ValueKey('strategyApplyButton'));
+    expect(tester.widget<FilledButton>(apply).onPressed, isNull);
+  });
+
+  testWidgets('while maintaining, 均衡维持 is current and already applied', (
+    tester,
+  ) async {
+    _container.dispose();
+    await _db.close();
+    await _setUp(profile: _profile(goal: FitnessGoal.maintain));
+    await _pump(tester, '/profile/nutrition/maintain');
+    expect(find.text('Current'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('strategy-option-maintain')));
+    await _settle(tester);
+    final apply = find.byKey(const ValueKey('strategyApplyButton'));
+    expect(tester.widget<FilledButton>(apply).onPressed, isNull);
+    expect(
+      find.descendant(of: apply, matching: find.text('Currently applied')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('from maintain, picking a fat-loss strategy switches to cut', (
     tester,
   ) async {
     _container.dispose();
@@ -1230,13 +1843,50 @@ void main() {
     await _setUp(profile: _profile(goal: FitnessGoal.maintain));
     await _pump(tester, '/profile/nutrition');
     _expectNoLayoutErrors(tester);
-    // Nutrition targets now opens on the profile's own goal tab (维持 for
-    // this profile), which is just a "coming soon" placeholder — switch to
-    // 减脂/Cut to see the (blocked) strategy section this test is about.
+    // Opens on the profile's own goal tab (维持); the cut tab has no strategy.
     await tester.tap(find.text('Cut'));
     await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('noStrategyEmpty')), findsOneWidget);
-    expect(find.text('Choose strategy'), findsNothing);
-    expect(find.text('Only available with the cut goal.'), findsOneWidget);
+    final empty = find.byKey(const ValueKey('noStrategyEmpty'));
+    expect(empty, findsOneWidget);
+    expect(
+      find.descendant(of: empty, matching: find.text('No Cut strategy')),
+      findsOneWidget,
+    );
+    await tester.tap(
+      find.descendant(of: empty, matching: find.text('Choose strategy')),
+    );
+    await _settle(tester);
+    expect(find.byType(StrategyPickerPage), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('strategy-option-balanced')));
+    await _settle(tester);
+
+    await tester.tap(find.byKey(const ValueKey('strategyApplyButton')));
+    await _settle(tester);
+    expect(find.textContaining('A new cut round starts on'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'OK'));
+    await _settle(tester);
+
+    expect(_container.read(profileProvider)!.goal, FitnessGoal.cut);
+    final plan = await _container
+        .read(dietStrategyRepositoryProvider)
+        .activePlan();
+    expect(plan?.kind, DietStrategyKind.balanced);
+    _expectNoLayoutErrors(tester);
+  });
+
+  testWidgets('another goal\'s cultivation page switches to it directly', (
+    tester,
+  ) async {
+    await _pump(tester, '/profile/cultivation/goal/maintain');
+    final cta = find.byKey(const ValueKey('cultivationLockedCta'));
+    expect(
+      find.descendant(of: cta, matching: find.text('Switch to Maintain')),
+      findsOneWidget,
+    );
+    await tester.tap(cta);
+    await _settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, 'OK'));
+    await _settle(tester);
+    expect(_container.read(profileProvider)!.goal, FitnessGoal.maintain);
   });
 }

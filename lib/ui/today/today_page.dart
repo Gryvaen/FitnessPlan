@@ -9,6 +9,7 @@ import '../../domain/diet_plan.dart';
 import '../../domain/diet_strategy.dart';
 import '../../domain/goal_quotes.dart';
 import '../../domain/models.dart';
+import '../../domain/maintain.dart';
 import '../../domain/plateau.dart';
 import '../../data/services/oem_background_guide.dart';
 import '../../data/services/steps_sync_service.dart';
@@ -74,6 +75,10 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     final targets = dayTarget?.toMacroTargets() ?? profile.targets;
     final targetCalories = dayTarget?.calories ?? targets.calories.toDouble();
     final remainCal = targetCalories - intake.calories;
+    // 维持 days only turn red above the band's upper edge (see intakeMet).
+    final maintainDay = dayTarget?.isMaintainDay ?? false;
+    final band = maintainDay ? maintainBand(targetCalories) : null;
+    final overAt = band?.high ?? targetCalories;
 
     final onPlateau =
         profile.goal == FitnessGoal.cut &&
@@ -94,9 +99,12 @@ class _TodayPageState extends ConsumerState<TodayPage> {
 
     final plannedDeficit = dayTarget?.fixedPlannedDeficit ?? 0;
     final dayMarker = ref.watch(dayMarkerProvider(day)).value;
-    final strategyLabel = dayTarget == null
+    final chipLabel = dayTarget == null
         ? null
         : targetChipLabel(dayTarget, profile, l10n, marker: dayMarker);
+    final strategyLabel = chipLabel != null && band != null
+        ? '$chipLabel · ${l10n.maintainBandShort(band.low.round(), band.high.round())}'
+        : chipLabel;
     final canChooseDietStrategy =
         profile.goal == FitnessGoal.cut &&
         dayTarget?.source == TargetSource.profile &&
@@ -310,6 +318,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                                   remain: remainCal,
                                   eaten: intake.calories,
                                   target: targetCalories,
+                                  overAt: overAt,
                                   onHero: onHero,
                                   onHeroMuted: onHeroMuted,
                                 ),
@@ -318,7 +327,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                               CalorieRing(
                                 eaten: intake.calories,
                                 target: targetCalories,
-                                over: remainCal < 0,
+                                over: intake.calories > overAt,
                                 size: ringSize,
                                 strokeWidth: 10,
                                 color: scheme.primary,
@@ -702,6 +711,7 @@ class _RemainingBlock extends StatelessWidget {
     required this.remain,
     required this.eaten,
     required this.target,
+    required this.overAt,
     required this.onHero,
     required this.onHeroMuted,
   });
@@ -709,6 +719,10 @@ class _RemainingBlock extends StatelessWidget {
   final double remain;
   final double eaten;
   final double target;
+
+  /// Intake above this turns the figure red: the target itself, or the
+  /// upper edge of the band on a 维持 day.
+  final double overAt;
   final Color onHero;
   final Color onHeroMuted;
 
@@ -717,11 +731,12 @@ class _RemainingBlock extends StatelessWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final over = remain < 0;
+    final overLimit = eaten > overAt;
     final fraction = target <= 0 || !target.isFinite || !eaten.isFinite
         ? 0.0
         : eaten / target;
     final valueColor = intakeProgressColor(
-      over: over,
+      over: overLimit,
       fraction: fraction,
       fallback: onHero,
     );

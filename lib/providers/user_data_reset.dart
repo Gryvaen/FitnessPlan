@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/misc.dart' show ProviderListenable;
 
 import '../data/repositories/data_backup_repository.dart';
+import '../data/repositories/goal_schedule_repository.dart';
 import 'core_providers.dart';
 import 'meal_providers.dart';
+import 'goal_schedule_providers.dart';
 import 'profile_providers.dart';
 import 'step_providers.dart';
 
@@ -33,8 +35,10 @@ Future<void> clearUserData(ProviderReader read) async {
     read(
       sharedPreferencesProvider,
     ).remove(DataBackupRepository.importedOnDayKey),
+    read(sharedPreferencesProvider).remove(GoalScheduleRepository.key),
   ]);
   // Meals and presets that referenced custom foods are gone by now.
   await read(foodRepositoryProvider).clearCustomFoods();
   await read(profileProvider.notifier).clear();
+  read(pendingGoalSwitchProvider.notifier).reload();
 }

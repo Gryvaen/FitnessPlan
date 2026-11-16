@@ -139,7 +139,6 @@ enum StrategyIssue {
   invalidCarbCycleRate,
   carbCycleHighDayCarbDepleted,
   underage,
-  goalNotCut,
 }
 
 bool _finitePositive(double v) => v.isFinite && v > 0;

@@ -10,7 +10,6 @@ abstract final class StrategyEligibility {
     if (profile.age < StrategyRules.minAdultAge) {
       issues.add(StrategyIssue.underage);
     }
-    if (profile.goal != FitnessGoal.cut) issues.add(StrategyIssue.goalNotCut);
     final tdee = profile.tdee;
     if (tdee == null || !tdee.isFinite || tdee <= 0) {
       issues.add(StrategyIssue.invalidTdee);

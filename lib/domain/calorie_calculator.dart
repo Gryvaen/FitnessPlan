@@ -102,6 +102,8 @@ class CalorieCalculator {
     required FitnessGoal goal,
     double? targetWeightKg,
     int calorieAdjustment = 0,
+    double? proteinPerKg,
+    double? fatPerKg,
   }) {
     final bmrValue = bmr(
       sex: sex,
@@ -111,7 +113,9 @@ class CalorieCalculator {
     );
     final tdeeValue = bmrValue * activity.factor;
     final notes = <CalorieNote>[];
-    final proteinRate = proteinPerKgFor(goal);
+    // An explicit rate (the adjustable 维持 one) wins over the goal default.
+    final proteinRate = proteinPerKg ?? proteinPerKgFor(goal);
+    final fatRate = fatPerKg ?? CalorieCalculator.fatPerKg;
 
     double dailyDeficit = 0;
     double eat = tdeeValue;
@@ -153,6 +157,7 @@ class CalorieCalculator {
       calorieTarget: eat.round(),
       weightKg: weightKg,
       proteinPerKg: proteinRate,
+      fatPerKg: fatRate,
     );
 
     return CaloriePlan(
@@ -178,6 +183,7 @@ class CalorieCalculator {
     required int calorieTarget,
     required double weightKg,
     required double proteinPerKg,
+    required double fatPerKg,
   }) {
     final proteinG = weightKg * proteinPerKg;
     final fatG = weightKg * fatPerKg;

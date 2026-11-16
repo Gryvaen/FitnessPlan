@@ -379,6 +379,80 @@ void main() {
     );
   });
 
+  group('maintain goal', () {
+    Future<int> switchToMaintain() async {
+      final p = h.container.read(profileProvider)!;
+      final saved = await h.container
+          .read(profileProvider.notifier)
+          .save(
+            sex: p.sex,
+            age: p.age,
+            heightCm: p.heightCm,
+            weightKg: p.weightKg,
+            activity: p.activity,
+            goal: FitnessGoal.maintain,
+          );
+      return saved.targets.calories;
+    }
+
+    Future<void> eat(double kcal) async {
+      final db = h.db;
+      final foodId = await db
+          .into(db.foodItems)
+          .insert(
+            FoodItemsCompanion.insert(
+              name: 'Test meal',
+              category: 'test',
+              kcalPer100: kcal,
+              proteinPer100: 0,
+              carbPer100: 0,
+              fatPer100: 0,
+            ),
+          );
+      await db
+          .into(db.mealEntries)
+          .insert(
+            MealEntriesCompanion.insert(
+              date: CalendarDay.todayLocal(),
+              mealType: MealType.lunch.name,
+              foodId: foodId,
+              foodName: 'Test meal',
+              grams: 100,
+              calories: kcal,
+              proteinG: 0,
+              carbG: 0,
+              fatG: 0,
+            ),
+          );
+    }
+
+    Text overFigure(WidgetTester tester, int amount) => tester.widget<Text>(
+      find.byWidgetPredicate((w) => w is Text && w.data == '$amount').first,
+    );
+
+    testWidgets('slightly over the target stays neutral inside the band', (
+      tester,
+    ) async {
+      final target = await switchToMaintain();
+      await eat(target + 50.0);
+      await _pump(tester, h, size: const Size(600, 900));
+
+      expect(find.textContaining('Balanced maintenance · band '), findsOne);
+      expect(find.text('Over'), findsOneWidget);
+      expect(overFigure(tester, 50).style?.color, isNot(AppColors.warning));
+      _expectNoOverflow(tester);
+    });
+
+    testWidgets('above the band turns red', (tester) async {
+      final target = await switchToMaintain();
+      final over = (target * 0.2).round();
+      await eat(target + over.toDouble());
+      await _pump(tester, h, size: const Size(600, 900));
+
+      expect(overFigure(tester, over).style?.color, AppColors.warning);
+    });
+  });
+
   group('open sections', () {
     testWidgets('workout and meal empty states render inline by default', (
       tester,

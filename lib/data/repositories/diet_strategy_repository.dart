@@ -392,16 +392,31 @@ class DietStrategyRepository {
   /// to, or null when nothing about the day-to-day standard actually changed
   /// (there was no active plan, or the cancelled plan hadn't started yet and
   /// there's no earlier plan to fall back to).
+  ///
+  /// [endOn] dates the stop of a running plan to an earlier day than today
+  /// (a goal switch booked for that day, carried out late): the plan then
+  /// governs only the days before it, and those days' snapshots are dropped
+  /// so they re-resolve from the new profile.
   Future<DateTime?> stopActivePlan({
     String reason = 'stopped',
     DateTime? now,
+    DateTime? endOn,
   }) async {
     final today = CalendarDay.todayLocal(now);
     return _db.transaction(() async {
       final active = await activePlan();
       if (active == null) return null;
       final pending = active.effectiveFrom.isAfter(today);
-      final end = pending ? active.effectiveFrom : today;
+      var end = today;
+      if (pending) {
+        end = active.effectiveFrom;
+      } else if (endOn != null) {
+        final d = CalendarDay.dayOnly(endOn);
+        // Never before the plan's own start, never after today.
+        if (d.isBefore(end)) {
+          end = d.isBefore(active.effectiveFrom) ? active.effectiveFrom : d;
+        }
+      }
       await (_db.update(
         _db.dietStrategyPlans,
       )..where((t) => t.id.equals(active.id))).write(
@@ -435,11 +450,16 @@ class DietStrategyRepository {
           restoredEffectiveFrom = previous.effectiveFrom;
         }
       }
+      if (!pending) {
+        for (var d = end; d.isBefore(today); d = CalendarDay.addDays(d, 1)) {
+          await _deleteSnapshot(d);
+        }
+      }
       await _deleteSnapshot(today);
       // A cancelled scheduled switch never took effect, so today's standard
       // hasn't changed — re-stamp to whatever plan now governs, or leave the
       // marker alone if there's nothing earlier to fall back to.
-      return pending ? restoredEffectiveFrom : today;
+      return pending ? restoredEffectiveFrom : end;
     });
   }
 
@@ -663,10 +683,20 @@ class DietStrategyRepository {
       source: TargetSource.profile,
       estimatedTdee: profile.tdee,
       isLegacyEstimate: isPast && beforeStandard,
-      reason: profile.calorieAdjustment > 0
-          ? 'plateauAdj:${profile.calorieAdjustment}'
-          : null,
+      reason: _profileReason(profile),
     );
+  }
+
+  /// `;`-separated tags on a profile-sourced target: the 维持 marker (so the
+  /// day keeps its band verdict after the goal changes) and any plateau cut.
+  static String? _profileReason(UserProfile profile) {
+    final tags = [
+      if (profile.goal == FitnessGoal.maintain)
+        DailyNutritionTarget.maintainReasonTag,
+      if (profile.calorieAdjustment > 0)
+        'plateauAdj:${profile.calorieAdjustment}',
+    ];
+    return tags.isEmpty ? null : tags.join(';');
   }
 
   /// Resolve the target for [day]. Today is always recomputed and written

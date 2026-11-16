@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/calendar_day.dart';
 import '../domain/models.dart';
 import 'core_providers.dart';
 import 'cultivation_providers.dart';
+import 'goal_schedule_providers.dart';
 
 final profileProvider = NotifierProvider<ProfileNotifier, UserProfile?>(
   ProfileNotifier.new,
@@ -24,12 +26,25 @@ class ProfileNotifier extends Notifier<UserProfile?> {
     required FitnessGoal goal,
     double? targetWeightKg,
     int? calorieAdjustment,
+    DateTime? effectiveFrom,
+    double? maintainProteinPerKg,
+    double? maintainFatPerKg,
   }) async {
     final existing = state;
     final oldGoal = existing?.goal;
     final leavingCut = oldGoal == FitnessGoal.cut && goal != FitnessGoal.cut;
+    // A booked switch carried out on/after its day: the old goal ran through
+    // the day before [effectiveFrom], the new one starts on it.
+    final from = effectiveFrom == null
+        ? null
+        : CalendarDay.dayOnly(effectiveFrom);
+    final lastOldDay = from == null ? null : CalendarDay.addDays(from, -1);
     final openKcal = leavingCut && existing != null
-        ? await openCultivationKcalBeforeGoalSwitch(ref, existing)
+        ? await openCultivationKcalBeforeGoalSwitch(
+            ref,
+            existing,
+            through: lastOldDay,
+          )
         : null;
     final profile = await ref
         .read(profileRepositoryProvider)
@@ -43,6 +58,8 @@ class ProfileNotifier extends Notifier<UserProfile?> {
           targetWeightKg: targetWeightKg,
           calorieAdjustment:
               calorieAdjustment ?? existing?.calorieAdjustment ?? 0,
+          maintainProteinPerKg: maintainProteinPerKg,
+          maintainFatPerKg: maintainFatPerKg,
         );
     state = profile;
     if (goal != FitnessGoal.cut) {
@@ -52,30 +69,41 @@ class ProfileNotifier extends Notifier<UserProfile?> {
       // day (if any) is redundant here but harmless to apply again.
       final restamp = await ref
           .read(dietStrategyRepositoryProvider)
-          .stopActivePlan(reason: 'goalChanged:${goal.name}');
+          .stopActivePlan(reason: 'goalChanged:${goal.name}', endOn: from);
       if (restamp != null) await markStandardChanged(restamp);
     }
     await _syncCultivationForGoalSwitch(
       from: oldGoal,
       to: goal,
       openKcal: openKcal,
+      frozenEndDay: lastOldDay,
     );
-    return profile;
+    if (oldGoal != goal) {
+      // An explicit switch replaces any booked one.
+      await ref.read(pendingGoalSwitchProvider.notifier).clear();
+      if (from != null) await markStandardChanged(from);
+    }
+    return state ?? profile;
   }
 
   /// Freeze cut cultivation when leaving cut; open a new stretch when
   /// entering cut so progress continues from the banked total.
+  ///
+  /// The 修行 history needs no invalidate here: it watches both the ledger
+  /// and this profile, so it rebuilds on its own. Invalidating it from this
+  /// notifier is also a Riverpod (debug) CircularDependencyError while the
+  /// history is being listened to.
   Future<void> _syncCultivationForGoalSwitch({
     required FitnessGoal? from,
     required FitnessGoal to,
     double? openKcal,
+    DateTime? frozenEndDay,
   }) async {
     if (from == to) return;
     final ledger = ref.read(cutCultivationStateProvider.notifier);
 
     if (from == FitnessGoal.cut && to != FitnessGoal.cut) {
-      await ledger.freezeLeavingCut(openKcal ?? 0);
-      ref.invalidate(cultivationHistoryProvider);
+      await ledger.freezeLeavingCut(openKcal ?? 0, endDay: frozenEndDay);
       return;
     }
 
@@ -83,8 +111,26 @@ class ProfileNotifier extends Notifier<UserProfile?> {
       await ledger.resumeEnteringCut(
         preferredStart: state?.calorieStandardSince,
       );
-      ref.invalidate(cultivationHistoryProvider);
     }
+  }
+
+  /// Re-fixes the 维持 target from the current profile inputs (weigh-ins
+  /// leave it alone, see `ProfileRepository.recalculateForWeight`). The goal
+  /// doesn't change, so the "new standard" day — the maintenance start —
+  /// stays put.
+  Future<UserProfile?> recalculateMaintenance() async {
+    final p = state;
+    if (p == null || p.goal != FitnessGoal.maintain) return p;
+    return save(
+      sex: p.sex,
+      age: p.age,
+      heightCm: p.heightCm,
+      weightKg: p.weightKg,
+      activity: p.activity,
+      goal: p.goal,
+      targetWeightKg: p.targetWeightKg,
+      calorieAdjustment: p.calorieAdjustment,
+    );
   }
 
   Future<UserProfile?> applyLatestWeight(double weightKg) async {

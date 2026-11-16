@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,12 +29,14 @@ class _MainShellState extends ConsumerState<MainShell>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _rollOverDay();
     _checkForUpdateSilently();
     _warnMissedReminders();
   }
 
   @override
   void dispose() {
+    _midnightTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -41,8 +45,25 @@ class _MainShellState extends ConsumerState<MainShell>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       ref.invalidate(stepsSyncProvider);
+      _rollOverDay();
       _checkForUpdateSilently();
       _warnMissedReminders();
+    }
+  }
+
+  Timer? _midnightTimer;
+
+  /// Runs on launch, at local midnight while the app stays open, and on
+  /// resume (timers don't fire reliably while suspended): moves "today" on
+  /// and carries out a goal switch booked for the new day. Then re-arms the
+  /// timer for the next midnight.
+  Future<void> _rollOverDay() async {
+    _midnightTimer?.cancel();
+    _midnightTimer = Timer(untilNextDay(), _rollOverDay);
+    try {
+      await ref.read(dayRolloverProvider)();
+    } catch (e, st) {
+      debugPrint('day rollover failed: $e\n$st');
     }
   }
 

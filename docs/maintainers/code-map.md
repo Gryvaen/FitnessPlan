@@ -82,6 +82,8 @@ UI 统一 import `app_providers.dart`（汇总导出）。
 | `diet_strategy_providers.dart` | `dietStrategyActionsProvider`（应用/取消计划）、`activeDietPlanProvider`、`dailyTargetProvider`（按天的 family，每日目标的唯一出口）、`todayTargetProvider`、`selectedDayTargetProvider` |
 | `cultivation_providers.dart` | 修仙进度、今日热量贡献、历史分段 |
 | `day_marker_providers.dart` | 某天的标记、标记设置、休息日列表 |
+| `day_clock_providers.dart` | `currentDayProvider`（App 的「今天」，跨零点时更新）、`dayRolloverProvider`（跨天处理，由 `MainShell` 在启动、零点、回前台时运行） |
+| `goal_schedule_providers.dart` | `pendingGoalSwitchProvider`（预约的目标切换，比如「明天起切到维持」）、`applyDueGoalSwitch`（到期执行，所有日期按预约日记） |
 | `meal_providers.dart` | `selectedDayProvider`（今日页当前选中的日期）、当天饮食与摄入、饮水、套餐、饮食历史 |
 | `food_providers.dart` | `foodsSeedProvider`（种子同步）、收藏、食材目录变化、按 id 查询食材 |
 | `step_providers.dart` | 步数同步服务、同步状态、后台计步开关（首次运行自动开启）、当天与历史步数 |

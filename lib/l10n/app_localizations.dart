@@ -4011,6 +4011,12 @@ abstract class AppLocalizations {
   /// **'No strategy'**
   String get noStrategyShort;
 
+  /// No description provided for @noStrategyForGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'No {goal} strategy'**
+  String noStrategyForGoal(String goal);
+
   /// No description provided for @strategySelectedShort.
   ///
   /// In en, this message translates to:
@@ -4082,6 +4088,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Starts {date}'**
   String planStartsOn(String date);
+
+  /// No description provided for @switchGoalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to {goal}'**
+  String switchGoalTitle(String goal);
+
+  /// No description provided for @switchGoalAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to {goal}'**
+  String switchGoalAction(String goal);
+
+  /// No description provided for @switchedGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Switched to {goal}'**
+  String switchedGoal(String goal);
+
+  /// No description provided for @switchGoalLeaveCut.
+  ///
+  /// In en, this message translates to:
+  /// **'This cut round is settled and closed; cultivation progress is kept.'**
+  String get switchGoalLeaveCut;
+
+  /// No description provided for @switchGoalStopStrategy.
+  ///
+  /// In en, this message translates to:
+  /// **'The fat-loss strategy stops.'**
+  String get switchGoalStopStrategy;
+
+  /// No description provided for @switchGoalToCut.
+  ///
+  /// In en, this message translates to:
+  /// **'A new cut round starts; next, pick a fat-loss strategy.'**
+  String get switchGoalToCut;
+
+  /// No description provided for @switchGoalToMaintain.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintenance is set to {kcal} kcal from your current weight.'**
+  String switchGoalToMaintain(int kcal);
+
+  /// No description provided for @switchGoalToBulk.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily target {kcal} kcal.'**
+  String switchGoalToBulk(int kcal);
+
+  /// No description provided for @switchGoalToCutApply.
+  ///
+  /// In en, this message translates to:
+  /// **'A new cut round starts on {strategy}.'**
+  String switchGoalToCutApply(String strategy);
+
+  /// No description provided for @maintainStrategyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintenance strategy'**
+  String get maintainStrategyTitle;
+
+  /// No description provided for @switchGoalFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'From {date}:'**
+  String switchGoalFrom(String date);
+
+  /// No description provided for @goalSwitchScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Booked: switching to {goal} from {date}'**
+  String goalSwitchScheduled(String date, String goal);
+
+  /// No description provided for @maintainCancelScheduledBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You won\'t switch to maintain on {date}; the current goal and strategy carry on.'**
+  String maintainCancelScheduledBody(String date);
+
+  /// No description provided for @maintainRatesSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'±{pct}% · {kcal} kcal'**
+  String maintainRatesSummary(int pct, int kcal);
+
+  /// No description provided for @legendMaintainDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintenance days'**
+  String get legendMaintainDays;
+
+  /// No description provided for @maintainStrategyName.
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced maintenance'**
+  String get maintainStrategyName;
+
+  /// No description provided for @maintainStrategyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat at maintenance, about the same every day; within ±10% of it counts as on target. The target is set from your weight when you switch to maintain; weigh-ins don\'t change it.'**
+  String get maintainStrategyDescription;
+
+  /// No description provided for @maintainKcalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintenance calories'**
+  String get maintainKcalLabel;
+
+  /// No description provided for @maintainBasisTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Strategy basis'**
+  String get maintainBasisTitle;
+
+  /// No description provided for @maintainBandLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'On-target band'**
+  String get maintainBandLabel;
+
+  /// No description provided for @maintainBandValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{low}–{high} kcal · ±{pct}%'**
+  String maintainBandValue(int low, int high, int pct);
+
+  /// No description provided for @legendMaintainBand.
+  ///
+  /// In en, this message translates to:
+  /// **'On target within ±{pct}% of maintenance'**
+  String legendMaintainBand(int pct);
+
+  /// No description provided for @maintainBandShort.
+  ///
+  /// In en, this message translates to:
+  /// **'band {low}–{high}'**
+  String maintainBandShort(int low, int high);
+
+  /// No description provided for @maintainTitleDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced maintenance · day {n}'**
+  String maintainTitleDay(int n);
+
+  /// No description provided for @maintainFootnote.
+  ///
+  /// In en, this message translates to:
+  /// **'On target {low}–{high} kcal · since {date}'**
+  String maintainFootnote(int low, int high, String date);
+
+  /// No description provided for @maintainWeightTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight'**
+  String get maintainWeightTitle;
+
+  /// No description provided for @maintainWeightAvg7.
+  ///
+  /// In en, this message translates to:
+  /// **'7-day average'**
+  String get maintainWeightAvg7;
+
+  /// No description provided for @maintainWeightVsStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Since maintenance began'**
+  String get maintainWeightVsStart;
+
+  /// No description provided for @maintainWeightHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Go by the 7-day average; within ±1 kg counts as stable. Coming off a diet, water and glycogen push weight up a little at first; it usually settles in 2–3 weeks.'**
+  String get maintainWeightHint;
+
+  /// No description provided for @maintainWeightTooFew.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough weigh-ins for an average yet'**
+  String get maintainWeightTooFew;
+
+  /// No description provided for @maintainRecalc.
+  ///
+  /// In en, this message translates to:
+  /// **'Recalculate from current weight'**
+  String get maintainRecalc;
+
+  /// No description provided for @maintainRecalcBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintenance calories {from} → {to} kcal'**
+  String maintainRecalcBody(int from, int to);
+
+  /// No description provided for @maintainRecalcDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintenance calories set to {kcal} kcal'**
+  String maintainRecalcDone(int kcal);
 
   /// No description provided for @strategyStatusActive.
   ///
@@ -4418,12 +4622,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Strategies are for adults ({age}+). Please seek professional guidance instead.'**
   String issueUnderage(int age);
-
-  /// No description provided for @issueGoalNotCut.
-  ///
-  /// In en, this message translates to:
-  /// **'Only available with the cut goal.'**
-  String get issueGoalNotCut;
 
   /// No description provided for @strategyParameters.
   ///

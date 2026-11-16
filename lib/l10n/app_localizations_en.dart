@@ -2262,6 +2262,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noStrategyShort => 'No strategy';
 
   @override
+  String noStrategyForGoal(String goal) {
+    return 'No $goal strategy';
+  }
+
+  @override
   String get strategySelectedShort => 'Selected';
 
   @override
@@ -2300,6 +2305,143 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String planStartsOn(String date) {
     return 'Starts $date';
+  }
+
+  @override
+  String switchGoalTitle(String goal) {
+    return 'Switch to $goal';
+  }
+
+  @override
+  String switchGoalAction(String goal) {
+    return 'Switch to $goal';
+  }
+
+  @override
+  String switchedGoal(String goal) {
+    return 'Switched to $goal';
+  }
+
+  @override
+  String get switchGoalLeaveCut =>
+      'This cut round is settled and closed; cultivation progress is kept.';
+
+  @override
+  String get switchGoalStopStrategy => 'The fat-loss strategy stops.';
+
+  @override
+  String get switchGoalToCut =>
+      'A new cut round starts; next, pick a fat-loss strategy.';
+
+  @override
+  String switchGoalToMaintain(int kcal) {
+    return 'Maintenance is set to $kcal kcal from your current weight.';
+  }
+
+  @override
+  String switchGoalToBulk(int kcal) {
+    return 'Daily target $kcal kcal.';
+  }
+
+  @override
+  String switchGoalToCutApply(String strategy) {
+    return 'A new cut round starts on $strategy.';
+  }
+
+  @override
+  String get maintainStrategyTitle => 'Maintenance strategy';
+
+  @override
+  String switchGoalFrom(String date) {
+    return 'From $date:';
+  }
+
+  @override
+  String goalSwitchScheduled(String date, String goal) {
+    return 'Booked: switching to $goal from $date';
+  }
+
+  @override
+  String maintainCancelScheduledBody(String date) {
+    return 'You won\'t switch to maintain on $date; the current goal and strategy carry on.';
+  }
+
+  @override
+  String maintainRatesSummary(int pct, int kcal) {
+    return '±$pct% · $kcal kcal';
+  }
+
+  @override
+  String get legendMaintainDays => 'Maintenance days';
+
+  @override
+  String get maintainStrategyName => 'Balanced maintenance';
+
+  @override
+  String get maintainStrategyDescription =>
+      'Eat at maintenance, about the same every day; within ±10% of it counts as on target. The target is set from your weight when you switch to maintain; weigh-ins don\'t change it.';
+
+  @override
+  String get maintainKcalLabel => 'Maintenance calories';
+
+  @override
+  String get maintainBasisTitle => 'Strategy basis';
+
+  @override
+  String get maintainBandLabel => 'On-target band';
+
+  @override
+  String maintainBandValue(int low, int high, int pct) {
+    return '$low–$high kcal · ±$pct%';
+  }
+
+  @override
+  String legendMaintainBand(int pct) {
+    return 'On target within ±$pct% of maintenance';
+  }
+
+  @override
+  String maintainBandShort(int low, int high) {
+    return 'band $low–$high';
+  }
+
+  @override
+  String maintainTitleDay(int n) {
+    return 'Balanced maintenance · day $n';
+  }
+
+  @override
+  String maintainFootnote(int low, int high, String date) {
+    return 'On target $low–$high kcal · since $date';
+  }
+
+  @override
+  String get maintainWeightTitle => 'Weight';
+
+  @override
+  String get maintainWeightAvg7 => '7-day average';
+
+  @override
+  String get maintainWeightVsStart => 'Since maintenance began';
+
+  @override
+  String get maintainWeightHint =>
+      'Go by the 7-day average; within ±1 kg counts as stable. Coming off a diet, water and glycogen push weight up a little at first; it usually settles in 2–3 weeks.';
+
+  @override
+  String get maintainWeightTooFew => 'Not enough weigh-ins for an average yet';
+
+  @override
+  String get maintainRecalc => 'Recalculate from current weight';
+
+  @override
+  String maintainRecalcBody(int from, int to) {
+    return 'Maintenance calories $from → $to kcal';
+  }
+
+  @override
+  String maintainRecalcDone(int kcal) {
+    return 'Maintenance calories set to $kcal kcal';
   }
 
   @override
@@ -2510,9 +2652,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String issueUnderage(int age) {
     return 'Strategies are for adults ($age+). Please seek professional guidance instead.';
   }
-
-  @override
-  String get issueGoalNotCut => 'Only available with the cut goal.';
 
   @override
   String get strategyParameters => 'Parameters';

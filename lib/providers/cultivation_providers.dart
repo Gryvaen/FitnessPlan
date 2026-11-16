@@ -12,6 +12,7 @@ import '../domain/day_marker.dart';
 import '../domain/deficit.dart';
 import '../domain/models.dart';
 import 'core_providers.dart';
+import 'day_clock_providers.dart';
 import 'day_marker_providers.dart';
 import 'diet_strategy_providers.dart';
 import 'meal_providers.dart';
@@ -38,12 +39,18 @@ class CutCultivationStateNotifier extends Notifier<CutCultivationState> {
     state = ref.read(cultivationRepositoryProvider).load();
   }
 
-  /// Leaving cut: bank open-segment kcal and close the stretch.
-  Future<void> freezeLeavingCut(double openSegmentKcal) async {
-    final today = CalendarDay.todayLocal();
+  /// Leaving cut: bank open-segment kcal and close the stretch on [endDay]
+  /// (default today; a booked switch closes it the day before its date).
+  Future<void> freezeLeavingCut(
+    double openSegmentKcal, {
+    DateTime? endDay,
+  }) async {
     state = await ref
         .read(cultivationRepositoryProvider)
-        .freezeOpenSegment(openSegmentKcal: openSegmentKcal, endDay: today);
+        .freezeOpenSegment(
+          openSegmentKcal: openSegmentKcal,
+          endDay: endDay ?? CalendarDay.todayLocal(),
+        );
   }
 
   /// Entering cut: open a new stretch (continues from [frozenKcal]).
@@ -73,13 +80,13 @@ final _storedStepsTodayProvider = StreamProvider<int>((ref) {
   ref.watch(stepsSyncProvider);
   return ref
       .watch(stepRepositoryProvider)
-      .watchStepsForDay(CalendarDay.todayLocal());
+      .watchStepsForDay(ref.watch(currentDayProvider));
 });
 
 /// 今日步数（恒为本地今天）。未成功同步（权限/失败/空读）时按 0，避免把
 /// 库里残留的昨日总量当成今日修行贡献。按当日标记的步数开关决定是否计入。
 final cultivationStepsTodayProvider = Provider<int>((ref) {
-  final today = CalendarDay.todayLocal();
+  final today = ref.watch(currentDayProvider);
   final marker = ref.watch(dayMarkerSettingsProvider(today)).value;
   if (!(marker?.includeSteps ?? true)) {
     return 0;
@@ -110,12 +117,14 @@ final cultivationDietKcalForDayProvider = Provider.autoDispose
     });
 
 final cultivationDietKcalTodayProvider = Provider<double>((ref) {
-  return ref.watch(cultivationDietKcalForDayProvider(CalendarDay.todayLocal()));
+  return ref.watch(
+    cultivationDietKcalForDayProvider(ref.watch(currentDayProvider)),
+  );
 });
 
 final cultivationCheatPenaltyTodayProvider = Provider<double>((ref) {
   final marker = ref
-      .watch(dayMarkerSettingsProvider(CalendarDay.todayLocal()))
+      .watch(dayMarkerSettingsProvider(ref.watch(currentDayProvider)))
       .value;
   return marker?.penaltyKcal ?? 0;
 });
@@ -275,25 +284,33 @@ Future<List<CultivationDayRecord>> _buildCultivationDays({
 
 /// Computes the open cut segment before a profile goal switch. This path
 /// avoids watching profileProvider from inside ProfileNotifier.save.
+///
+/// [through] caps the counted days (a booked switch counts up to the day
+/// before its date); default today.
 Future<double> openCultivationKcalBeforeGoalSwitch(
   Ref ref,
-  UserProfile currentProfile,
-) async {
+  UserProfile currentProfile, {
+  DateTime? through,
+}) async {
   final ledger = ref.read(cutCultivationStateProvider);
   final segment = ledger.openSegment;
   if (segment == null) return 0;
   final days = await _buildCultivationDays(
     ref: ref,
-    allowedDays: _daysInSegment(segment),
+    allowedDays: _daysInSegment(segment, through: through),
     profileForResolution: currentProfile,
   );
   return days.fold<double>(0.0, (sum, day) => sum + day.totalKcal);
 }
 
-Set<DateTime> _daysInSegment(CutCultivationSegment segment) {
-  final today = CalendarDay.todayLocal();
+Set<DateTime> _daysInSegment(
+  CutCultivationSegment segment, {
+  DateTime? through,
+}) {
   final start = CalendarDay.dayOnly(segment.start);
-  final end = CalendarDay.dayOnly(segment.end ?? today);
+  final end = CalendarDay.dayOnly(
+    segment.end ?? through ?? CalendarDay.todayLocal(),
+  );
   if (end.isBefore(start)) return {};
   final out = <DateTime>{};
   for (var d = start; !d.isAfter(end); d = CalendarDay.addDays(d, 1)) {
@@ -415,7 +432,7 @@ final cutRoundStatsProvider = FutureProvider.autoDispose
     ) async {
       ref.watch(_cutRoundTickProvider);
       final profile = ref.watch(profileProvider);
-      final today = CalendarDay.todayLocal();
+      final today = ref.watch(currentDayProvider);
       final start = CalendarDay.dayOnly(range.start);
       final end = CalendarDay.dayOnly(range.end ?? today);
       if (end.isBefore(start)) {

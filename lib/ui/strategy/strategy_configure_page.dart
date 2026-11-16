@@ -6,10 +6,12 @@ import '../../data/repositories/diet_strategy_repository.dart';
 import '../../domain/calendar_day.dart';
 import '../../domain/diet_plan.dart';
 import '../../domain/diet_strategy.dart';
+import '../../domain/models.dart';
 import '../../domain/strategy_eligibility.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../ink/ink_icon.dart';
+import '../profile/goal_switch.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import 'carb_cycle_view.dart';
@@ -301,15 +303,31 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
   Future<void> _apply() async {
     if (_saving) return;
     final l10n = context.l10n;
-    final profile = ref.read(profileProvider);
+    // Picked from another goal's tab: applying also switches to cut (a new
+    // round), so confirm that first, the same way every goal switch does.
+    final switching = ref.read(profileProvider)?.goal != FitnessGoal.cut;
+    if (switching) {
+      final ok = await confirmGoalSwitch(
+        context,
+        ref,
+        FitnessGoal.cut,
+        toLine: l10n.switchGoalToCutApply(widget.kind.label(l10n)),
+      );
+      if (!ok || !mounted) return;
+    }
     setState(() => _saving = true);
     try {
+      if (switching) await switchGoal(ref, FitnessGoal.cut);
+      final profile = ref.read(profileProvider);
       final draft = _draft(legacyCalories: profile?.targets.calories);
       final current = await ref
           .read(dietStrategyRepositoryProvider)
           .activePlan();
       if (current != null && _alreadyApplied(current, draft)) return;
       await ref.read(dietStrategyActionsProvider).applyPlan(draft);
+      // Choosing a fat-loss strategy means staying on cut: drop a booked
+      // switch to maintain.
+      await ref.read(pendingGoalSwitchProvider.notifier).clear();
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -389,34 +407,13 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
         title: Text(widget.kind.label(l10n)),
         leading: BackButton(onPressed: () => context.pop()),
       ),
-      bottomNavigationBar: DecoratedBox(
-        decoration: BoxDecoration(
-          color: scheme.surface,
-          border: Border(
-            top: BorderSide(color: AppThemeVisuals.of(context).divider),
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.formPage,
-            AppSpacing.field,
-            AppSpacing.formPage,
-            AppSpacing.field,
-          ),
-          child: FilledButton(
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-            ),
-            onPressed: canApply ? _apply : null,
-            child: Text(
-              matchesAppliedTarget
-                  ? active.effectiveFrom.isAfter(CalendarDay.todayLocal())
-                        ? l10n.strategyAlreadyScheduled
-                        : l10n.strategyAlreadyApplied
-                  : l10n.applyStrategyFrom(AppDates.md(effective, locale)),
-            ),
-          ),
-        ),
+      bottomNavigationBar: StrategyApplyBar(
+        label: matchesAppliedTarget
+            ? active.effectiveFrom.isAfter(CalendarDay.todayLocal())
+                  ? l10n.strategyAlreadyScheduled
+                  : l10n.strategyAlreadyApplied
+            : l10n.applyStrategyFrom(AppDates.md(effective, locale)),
+        onPressed: canApply ? _apply : null,
       ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
@@ -522,13 +519,13 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
             icon: InkGlyph.profile,
             child: Column(
               children: [
-                _ReadOnlyMetric(
+                StrategyReadOnlyMetric(
                   key: const ValueKey('strategyReferenceWeight'),
                   label: l10n.referenceWeightKg,
                   value: _weight > 0 ? _weight.toStringAsFixed(1) : '–',
                   unit: 'kg',
                 ),
-                _ReadOnlyMetric(
+                StrategyReadOnlyMetric(
                   key: const ValueKey('strategyEstimatedTdee'),
                   label: l10n.estimatedTdee,
                   value: _tdee > 0 ? _tdee.round().toString() : '–',
@@ -708,7 +705,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
                     style: theme.textTheme.fieldLabel,
                   ),
                   if (baseline.tdee > 0) _buildDeficitSlider(baseline.tdee),
-                  _ReadOnlyMetric(
+                  StrategyReadOnlyMetric(
                     key: const ValueKey('strategyAverageTargetEnergy'),
                     label: l10n.averageTargetEnergy,
                     value: _energy > 0 ? _energy.round().toString() : '–',
@@ -758,7 +755,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
             icon: InkGlyph.calendar,
             child: Column(
               children: [
-                _EffectiveDateOption(
+                StrategyDateOption(
                   label: l10n.startTomorrow(AppDates.md(_tomorrow, locale)),
                   selected: !_startToday,
                   onTap: () => setState(() {
@@ -766,7 +763,7 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
                     _dateTouched = true;
                   }),
                 ),
-                _EffectiveDateOption(
+                StrategyDateOption(
                   label: l10n.startToday,
                   selected: _startToday,
                   onTap: () => setState(() {
@@ -780,99 +777,6 @@ class _StrategyConfigurePageState extends ConsumerState<StrategyConfigurePage> {
           const SizedBox(height: AppSpacing.section),
           Text(l10n.strategyDisclaimer, style: theme.textTheme.meta),
         ],
-      ),
-    );
-  }
-}
-
-class _ReadOnlyMetric extends StatelessWidget {
-  const _ReadOnlyMetric({
-    super.key,
-    required this.label,
-    required this.value,
-    required this.unit,
-  });
-
-  final String label;
-  final String value;
-  final String unit;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Semantics(
-      readOnly: true,
-      label: label,
-      value: '$value $unit',
-      child: ExcludeSemantics(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.rowTitle,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.field),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    value,
-                    style: theme.textTheme.rowValue?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(unit, style: theme.textTheme.meta),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// A radio-style row for the binary "effective date" choice.
-class _EffectiveDateOption extends StatelessWidget {
-  const _EffectiveDateOption({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Row(
-          children: [
-            InkIcon(
-              selected ? InkGlyph.radioChecked : InkGlyph.radioEmpty,
-              color: selected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurfaceVariant,
-              size: 20,
-            ),
-            const SizedBox(width: 12),
-            Expanded(child: Text(label, style: theme.textTheme.rowTitle)),
-          ],
-        ),
       ),
     );
   }

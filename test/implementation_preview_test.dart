@@ -366,6 +366,71 @@ void main() {
     }
   });
 
+  testWidgets('chinese maintain strategy path', (tester) async {
+    // While cutting, the 维持 tab walks the cut tab's path: no strategy →
+    // picker (one default) → configure page.
+    await _pump(tester, h, locale: const Locale('zh'));
+    await _go(tester, h, '/profile/nutrition');
+    await tester.tap(find.text('维持').first);
+    // Let the tab pager finish sliding before the shot.
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 150));
+    }
+    await _shot(tester, 'zh-10a-maintain-empty.png');
+    await _go(tester, h, '/profile/nutrition/maintain');
+    await _shot(tester, 'zh-10c-maintain-picker.png');
+    await _go(tester, h, '/profile/nutrition/maintain/configure');
+    await _shot(tester, 'zh-10d-maintain-configure.png');
+    await tester.tap(find.byKey(const ValueKey('maintain-section-target')));
+    // Let the fold's size animation finish.
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await _shot(tester, 'zh-10e-maintain-configure-rates.png');
+    await _go(tester, h, '/profile/nutrition/strategy');
+    await _shot(tester, 'zh-05-strategy-picker.png');
+    await _go(tester, h, '/profile/nutrition/strategy/configure?kind=balanced');
+    await _shot(tester, 'zh-06-strategy-configure-balanced.png');
+  });
+
+  testWidgets('chinese maintain tab', (tester) async {
+    // Put the profile on the 维持 goal before the app starts (a direct
+    // repository write; the goal-switch flow isn't what this shot is about).
+    await tester.runAsync(() async {
+      final repo = h.container.read(profileRepositoryProvider);
+      final cut = repo.load()!;
+      await repo.saveFromInputs(
+        sex: cut.sex,
+        age: cut.age,
+        heightCm: cut.heightCm,
+        weightKg: cut.weightKg,
+        activity: cut.activity,
+        goal: FitnessGoal.maintain,
+      );
+      for (final (daysAgo, kg) in [
+        (9, 70.6),
+        (5, 69.4),
+        (2, 68.6),
+        (0, 68.2),
+      ]) {
+        await h.db
+            .into(h.db.weightLogs)
+            .insert(
+              WeightLogsCompanion.insert(
+                date: CalendarDay.addDays(CalendarDay.todayLocal(), -daysAgo),
+                weightKg: kg,
+              ),
+            );
+      }
+    });
+    h.container.read(profileProvider.notifier).reload();
+    await _pump(tester, h, locale: const Locale('zh'));
+    await _go(tester, h, '/profile/nutrition');
+    await _shot(tester, 'zh-10-maintain.png');
+    await _scrollPage(tester);
+    await _shot(tester, 'zh-10b-maintain-bottom.png');
+  });
+
   testWidgets('chinese core screens', (tester) async {
     await _pump(tester, h, locale: const Locale('zh'));
 

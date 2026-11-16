@@ -101,3 +101,98 @@ class StrategyFoldSection extends StatelessWidget {
     );
   }
 }
+
+/// Read-only label / value / unit row inside a configure fold section.
+class StrategyReadOnlyMetric extends StatelessWidget {
+  const StrategyReadOnlyMetric({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.unit,
+  });
+
+  final String label;
+  final String value;
+  final String unit;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Semantics(
+      readOnly: true,
+      label: label,
+      value: '$value $unit',
+      child: ExcludeSemantics(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.rowTitle,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.field),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    value,
+                    style: theme.textTheme.rowValue?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(unit, style: theme.textTheme.meta),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A radio-style row for the "effective date" choice (今天 / 明天).
+class StrategyDateOption extends StatelessWidget {
+  const StrategyDateOption({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            InkIcon(
+              selected ? InkGlyph.radioChecked : InkGlyph.radioEmpty,
+              color: selected
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurfaceVariant,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Text(label, style: theme.textTheme.rowTitle)),
+          ],
+        ),
+      ),
+    );
+  }
+}

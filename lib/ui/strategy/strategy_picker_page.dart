@@ -10,6 +10,13 @@ import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import 'strategy_labels.dart';
+import 'strategy_target_card.dart';
+
+InkGlyph _glyphFor(DietStrategyKind kind) => switch (kind) {
+  DietStrategyKind.balanced => InkGlyph.target,
+  DietStrategyKind.carbCycle => InkGlyph.cycle,
+  DietStrategyKind.carbTaper => InkGlyph.chart,
+};
 
 /// Profile → Nutrition → Strategy: pick one of the three primary strategies.
 class StrategyPickerPage extends ConsumerStatefulWidget {
@@ -68,8 +75,11 @@ class _StrategyPickerPageState extends ConsumerState<StrategyPickerPage> {
             Divider(height: 1, color: visuals.divider),
           ],
           for (final kind in DietStrategyKind.values)
-            _StrategyOption(
-              kind: kind,
+            StrategyOptionRow(
+              optionKey: ValueKey('strategy-option-${kind.name}'),
+              glyph: _glyphFor(kind),
+              label: kind.label(l10n),
+              description: kind.description(l10n),
               current: active?.kind == kind,
               isDefault: kind == DietStrategyKind.balanced,
               enabled: blocking.isEmpty,
@@ -176,131 +186,6 @@ class _StrategyRulesNote extends StatelessWidget {
               : const SizedBox(width: double.infinity),
         ),
       ],
-    );
-  }
-}
-
-class _StrategyOption extends StatelessWidget {
-  const _StrategyOption({
-    required this.kind,
-    required this.current,
-    required this.isDefault,
-    required this.enabled,
-    required this.onTap,
-  });
-
-  final DietStrategyKind kind;
-  final bool current;
-  final bool isDefault;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  static InkGlyph glyphFor(DietStrategyKind kind) => switch (kind) {
-    DietStrategyKind.balanced => InkGlyph.target,
-    DietStrategyKind.carbCycle => InkGlyph.cycle,
-    DietStrategyKind.carbTaper => InkGlyph.chart,
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = Theme.of(context);
-    final visuals = AppThemeVisuals.of(context);
-    final scheme = theme.colorScheme;
-    final muted = enabled ? scheme.onSurfaceVariant : theme.disabledColor;
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      selected: current,
-      label: kind.label(l10n),
-      child: Material(
-        color: Colors.transparent,
-        shape: Border(bottom: BorderSide(color: visuals.divider)),
-        child: InkWell(
-          key: ValueKey('strategy-option-${kind.name}'),
-          onTap: enabled ? onTap : null,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.card),
-            child: ExcludeSemantics(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: current
-                          ? visuals.accentSoft
-                          : scheme.surfaceContainerHighest.withValues(
-                              alpha: 0.5,
-                            ),
-                      borderRadius: BorderRadius.circular(AppRadius.control),
-                    ),
-                    child: InkIcon(
-                      glyphFor(kind),
-                      size: 22,
-                      color: current ? visuals.accent : muted,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.field),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 6,
-                          runSpacing: 4,
-                          children: [
-                            Text(
-                              kind.label(l10n),
-                              style: theme.textTheme.rowTitle?.copyWith(
-                                color: !enabled
-                                    ? theme.disabledColor
-                                    : current
-                                    ? visuals.accent
-                                    : null,
-                              ),
-                            ),
-                            if (current)
-                              SoftChip(
-                                label: l10n.currentWord,
-                                color: visuals.accentSoft,
-                                foreground: visuals.accent,
-                              )
-                            else if (isDefault)
-                              SoftChip(label: l10n.defaultWord),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          kind.description(l10n),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.meta?.copyWith(
-                            color: muted,
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.compact),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: InkIcon(
-                      InkGlyph.chevronRight,
-                      size: 18,
-                      color: muted,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

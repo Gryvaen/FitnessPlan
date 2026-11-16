@@ -62,8 +62,13 @@ class ProfileRepository {
     required FitnessGoal goal,
     double? targetWeightKg,
     int calorieAdjustment = 0,
+    double? maintainProteinPerKg,
+    double? maintainFatPerKg,
   }) async {
     final old = load();
+    // Kept across saves (and goal switches) unless a new rate is given.
+    final rate = maintainProteinPerKg ?? old?.maintainProteinPerKg;
+    final fatRate = maintainFatPerKg ?? old?.maintainFatPerKg;
     final plan = _calc.plan(
       sex: sex,
       weightKg: weightKg,
@@ -73,12 +78,14 @@ class ProfileRepository {
       goal: goal,
       targetWeightKg: targetWeightKg,
       calorieAdjustment: calorieAdjustment,
+      proteinPerKg: goal == FitnessGoal.maintain ? rate : null,
+      fatPerKg: goal == FitnessGoal.maintain ? fatRate : null,
     );
     var profile = _profileFromPlan(
       plan: plan,
       activity: activity,
       calorieAdjustment: calorieAdjustment,
-    );
+    ).copyWith(maintainProteinPerKg: rate, maintainFatPerKg: fatRate);
     if (old != null && _calorieStandardChanged(old, profile)) {
       profile = profile.copyWith(calorieStandardSince: _todayLocal());
     } else {
@@ -90,10 +97,35 @@ class ProfileRepository {
     return profile;
   }
 
+  /// Re-derives the profile after a weigh-in. Under 维持 the daily target is
+  /// fixed on the day maintenance started (water and glycogen swings after a
+  /// diet would otherwise nudge it up), so only weight / BMR / TDEE move;
+  /// an explicit profile save ([saveFromInputs]) still recomputes it.
   Future<UserProfile> recalculateForWeight(
     UserProfile current,
     double newWeightKg,
   ) async {
+    if (current.goal == FitnessGoal.maintain) {
+      final plan = _calc.plan(
+        sex: current.sex,
+        weightKg: newWeightKg,
+        heightCm: current.heightCm,
+        age: current.age,
+        activity: current.activity,
+        goal: current.goal,
+        targetWeightKg: current.targetWeightKg,
+        calorieAdjustment: current.calorieAdjustment,
+        proteinPerKg: current.maintainProteinPerKg,
+        fatPerKg: current.maintainFatPerKg,
+      );
+      final profile = current.copyWith(
+        weightKg: newWeightKg,
+        bmr: plan.bmr,
+        tdee: plan.tdee,
+      );
+      await save(profile);
+      return profile;
+    }
     return saveFromInputs(
       sex: current.sex,
       age: current.age,
@@ -103,6 +135,8 @@ class ProfileRepository {
       goal: current.goal,
       targetWeightKg: current.targetWeightKg,
       calorieAdjustment: current.calorieAdjustment,
+      maintainProteinPerKg: current.maintainProteinPerKg,
+      maintainFatPerKg: current.maintainFatPerKg,
     );
   }
 
@@ -139,6 +173,12 @@ class ProfileRepository {
       goal: profile.goal,
       targetWeightKg: profile.targetWeightKg,
       calorieAdjustment: profile.calorieAdjustment,
+      proteinPerKg: profile.goal == FitnessGoal.maintain
+          ? profile.maintainProteinPerKg
+          : null,
+      fatPerKg: profile.goal == FitnessGoal.maintain
+          ? profile.maintainFatPerKg
+          : null,
     );
   }
 

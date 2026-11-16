@@ -9,6 +9,7 @@ import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../ink/ink_icon.dart';
 import 'cultivation_labels.dart';
+import 'goal_switch.dart';
 
 /// 「我的境界」入口：始终展示当前用户所选目标（减脂/增肌/维持）对应的
 /// 境界体系（[CultivationGoalScreen]）；用户尚未建立档案（选目标）时展示
@@ -483,7 +484,12 @@ class _CultivationLockedView extends ConsumerWidget {
             goal.label(l10n),
             activeGoal?.label(l10n) ?? '—',
           );
-    final ctaText = goal == null
+    // With a profile, another goal's page switches to it directly (same flow
+    // as the nutrition tabs); without one, the editor sets it up first.
+    final canSwitch = goal != null && activeGoal != null;
+    final ctaText = canSwitch
+        ? l10n.switchGoalAction(goal.label(l10n))
+        : goal == null
         ? l10n.cultivationLockedCta
         : l10n.cultivationGoalLockedCta;
 
@@ -573,7 +579,12 @@ class _CultivationLockedView extends ConsumerWidget {
                   ),
                   const SizedBox(height: 26),
                   FilledButton(
+                    key: const ValueKey('cultivationLockedCta'),
                     onPressed: () {
+                      if (canSwitch) {
+                        confirmAndSwitchGoal(context, ref, goal);
+                        return;
+                      }
                       // 预选要解锁的目标；保存后由 ProfileEditPage 直接
                       // go 到境界主页，避免再一层层退回画轴/锁定页。
                       final unlock = goal ?? FitnessGoal.cut;

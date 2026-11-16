@@ -96,7 +96,13 @@ flowchart TD
 
 最后两个是 `/foods` 下对应页面的「根级副本」。从根级路由跳转时，如果推入标签页内的路由，会触发 Navigator 的重复页面 key 断言。所以从根级页面打开食材详情时，要用 `lib/ui/widgets/food_name_link.dart` 里的 `foodDetailLocation()` 生成路径。
 
-`MainShell` 在启动和每次回到前台时会重新同步步数，并静默检查一次更新（仅 Android）。
+`MainShell` 在启动和每次回到前台时会重新同步步数，并静默检查一次更新（仅 Android）。它还有一个本地零点定时器：启动、零点和回到前台时都会运行 `dayRolloverProvider`（`lib/providers/day_clock_providers.dart`），处理跨天。具体包括：
+- 把 `currentDayProvider` 推到新的一天；
+- 今日页原本停在旧的「今天」时，跟着跳到新的一天（用户手动选的更早日期不动）；
+- 重新同步步数；
+- 执行到期的预约切换目标。
+
+**新写的 provider 如果关心「今天」，要 `ref.watch(currentDayProvider)`，不要在 provider 里直接调 `CalendarDay.todayLocal()`。** 后一种写法在 App 开着跨过零点后，会一直停留在旧的一天。
 
 ## 状态管理（Riverpod）
 
@@ -114,18 +120,18 @@ flowchart TD
 - **页面不要硬编码颜色。** 通用颜色从 `Theme.of(context).colorScheme` 取；随主题变化的视觉 token 从 `AppThemeVisuals.of(context)` 取；固定的语义色（蛋白质、碳水、脂肪、饮水、成功、警告）用 `AppColors`。
 - 间距统一使用 `AppSpacing`（`listPage`/`formPage` 20、`card` 16、`section` 24、`field` 12、`compact` 8），圆角用 `AppRadius`，最小点击区域为 `kMinTapTarget`（44）。
 - 字体：`LXGWWenKai`（霞鹜文楷），另外打包了 `NotoSansSC` 备用。
-- **字号按布局角色取，不直接写 M3 样式名。** 规范参照套餐详情页，定义在 `app_theme.dart` 的 `AppTextStyles` 扩展里（2026-11 全 app 统一过一次）：
+- **字号按布局角色取，不直接写 M3 样式名。** 规范参照套餐详情页，定义在 `app_theme.dart` 的 `AppTextStyles` 扩展里（2026-11 全 app 统一过一次；之后又把标题和列表行调小，让一屏显示更多内容）。角色 getter 用 `copyWith(fontSize:)` 改字号，底层 M3 TextTheme 保持默认：
 
   | 角色 | 对应 M3 | 字号 | 用在哪 |
   |---|---|---|---|
-  | `pageTitle` | headlineSmall | 24 | tab 根页面顶部大标题、弹层主标题 |
-  | `sectionTitle` | titleLarge | 22 | 页面上的区块（今日热量、今日训练）、列表里的分组（餐别、最近吃过、按月分组）、底部弹层标题 |
-  | `subsectionTitle` | titleMedium | 16 | 区块内的小标题、折叠区标题、详情/表单页里的小节（营养结果、每份） |
-  | `rowTitle` | bodyLarge | 16 | 列表行主文字（食物名、设置项、碳循环表的日期） |
-  | `rowValue` | titleSmall（w600） | 14 | 行右侧的数值（320 kcal、75.0 kg） |
+  | `pageTitle` | headlineSmall | 22 | tab 根页面顶部大标题、弹层主标题 |
+  | `sectionTitle` | titleLarge | 18 | 页面上的区块（今日热量、今日训练）、列表里的分组（餐别、最近吃过、按月分组）、底部弹层标题；二级页面顶栏标题（`appBarTheme`）也用它 |
+  | `subsectionTitle` | titleMedium | 15 | 区块内的小标题、折叠区标题、详情/表单页里的小节（营养结果、每份） |
+  | `rowTitle` | bodyLarge | 15 | 列表行主文字（食物名、设置项、碳循环表的日期） |
+  | `rowValue` | titleSmall（w600） | 13 | 行右侧的数值（320 kcal、75.0 kg） |
   | `meta` | bodySmall | 12 | 行副文字、说明小字 |
   | `statValue` / `statUnit` | headlineSmall 粗 / titleSmall | 24 / 14 | 页面的大号数字和单位 |
-  | `statLabel` / `statFigure` | bodySmall / titleMedium | 12 / 16 | 数值标签，以及标签下的数字（营养素克数） |
+  | `statLabel` / `statFigure` | bodySmall / titleMedium | 12 / 15 | 数值标签，以及标签下的数字（营养素克数） |
   | `bodyText` | bodyMedium | 14 | 说明段落 |
 
   `listTileTheme` 已经按 rowTitle / meta / rowValue 设好默认值，`ListTile` 不写样式就是对的。故意保留原始 M3 样式的只有：今日页剩余热量、最新体重、组数、计时器、计算器显示屏这类自成一体的大号数字，tab 和按钮上的标签文字，以及输入框。`labelSmall/Medium/Large` 继续用于组件标签。

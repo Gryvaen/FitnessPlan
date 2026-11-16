@@ -31,6 +31,7 @@ import 'ui/shell/main_shell.dart';
 import 'ui/shell/swipeable_branch_container.dart';
 import 'ui/strategy/nutrition_targets_page.dart';
 import 'ui/strategy/strategy_configure_page.dart';
+import 'ui/strategy/maintain_strategy_pages.dart';
 import 'ui/strategy/strategy_picker_page.dart';
 import 'ui/strategy/taper_review_page.dart';
 import 'ui/today/today_page.dart';
@@ -266,6 +267,18 @@ final routerProvider = Provider<GoRouter>((ref) {
                               );
                               return StrategyConfigurePage(kind: kind);
                             },
+                          ),
+                        ],
+                      ),
+                      GoRoute(
+                        path: 'maintain',
+                        builder: (context, state) =>
+                            const MaintainStrategyPickerPage(),
+                        routes: [
+                          GoRoute(
+                            path: 'configure',
+                            builder: (context, state) =>
+                                const MaintainStrategyConfigurePage(),
                           ),
                         ],
                       ),

@@ -28,6 +28,25 @@
 - **月历绿/红按减脂轮次判定**：今日页月历（`deficit_date_picker.dart`）里，落在某一轮减脂（`CutCultivationSegment`）内的过去日期，各按自己当天的目标快照判绿/红，轮内中途重新打「新标准」标记不会让之前的颜色消失；竖线标在每轮减脂的开始日。不在任何减脂轮内的日期（维持/增肌期）仍按 `calorieStandardSince` 截断。没有快照的「旧标准估算」日（`isLegacyEstimate`）始终不判定。策略每个新版本的生效日在格子左上角画一个主题色小三角（`strategyChangeDays()`，在 `domain/diet_plan.dart`）：只标今天及以前的日期，未来预约的切换不标；还没生效就被替换掉的零长度版本不标；停止策略不标。三角可以和竖线出现在同一天。
 - **本轮减脂统计**：`cutRoundStatsProvider`（`lib/providers/cultivation_providers.dart`）按一轮减脂的日期范围汇总：天数、累计/日均步数（`step_logs` 原值，不受日标记影响）、训练天数、按名称计数的计划和动作（当天打勾或有组记录算一次，同名同天只算一次；「其他」分组不算计划）及动作累计组数、按部位（`exercises.category`，旧 key 归并，未知归 other）的次数与组数、当前实力（`TrainingTally.lifts`：各动作本轮最后一次填写的实际重量，同天取最大，与首次比较）、体重（`roundWeightTrend`：先剔除放纵日当天及之后 3 天的称重，本轮开始前 3 天内的放纵日也算；起始 = 前 3 次均值，最终 = 后 3 次均值，不足 6 次时前后对半分；较起始 = 最终 − 起始）、饮食达标/超标天数（`dietDayMet`，口径同月历，只算今天之前，放纵日/休息日不计）。由 `CutRoundStatsPage` / `CutRoundStatsView`（`lib/ui/profile/`）显示，入口在境界修行页右侧栏的「本轮统计」图标（路由 `/profile/cultivation/stats`），页内附默认折叠的「统计说明」；修行记录和修为首页不显示这些统计。
 
+## 维持
+
+档案目标切到「维持」就是维持期，沿用档案页的目标切换：停用减脂策略，结算并关闭当前减脂轮次；回到减脂时开新的一轮。维持只有一个策略「均衡维持」，它不入库：档案目标是维持就等于正在用它，所以在档案编辑页直接改成维持也算选了它。
+
+- **维持热量固定**：切到维持（或在档案页手动保存）时按 TDEE 确定。之后称重只更新体重、BMR、TDEE，不改 `targets`（`ProfileRepository.recalculateForWeight` 对维持目标单独处理），因为刚停止节食时，水分和糖原造成的体重上涨会把目标推高。维持页的「按当前体重重算」调用 `ProfileNotifier.recalculateMaintenance()` 重新确定。
+- **维持蛋白质、脂肪比例可调**：存在档案的 `maintainProteinPerKg` / `maintainFatPerKg`。蛋白质默认 2.0，范围 1.4–2.2（`MaintainProtein`）；脂肪默认 0.8，范围 0.6–1.0（`MaintainFat`），范围和减脂配置页一致。只在目标为维持时通过 `CalorieCalculator.plan(proteinPerKg:, fatPerKg:)` 生效，其他目标仍是蛋白质按目标默认、脂肪固定 0.8。碳水补足剩下的热量，所以改比例只会在蛋白质/脂肪和碳水之间挪热量，总热量不变。两个比例都在维持配置页「目标与营养」的步进器里调：还没在维持时，随切换（或预约，`PendingGoalSwitch.proteinPerKg` / `fatPerKg`）一起生效；已经在维持时，任一比例改了应用按钮才能点，今天生效，按当前档案重新确定目标，维持开始日不变。换到其他目标、称重都会保留这两个比例。
+- **维持开始日** = 目标为维持时的 `profile.calorieStandardSince`。切换目标时它被记为当天，维持期间没有其他逻辑会改它；手动重算不改目标，所以也不动它。
+- **维持日标记**：档案目标为维持时，`_fromProfile` 给当天目标的 `reason` 加上 `maintain` 标记（`;` 分隔，可以和 `plateauAdj:N` 并存），这个标记会写进当天快照。`DailyNutritionTarget.isMaintainDay` 读取它，所以切回减脂后，过去的维持日仍按维持的规则判定。
+- **达标判定**（`lib/domain/maintain.dart` 的 `intakeMet`）：维持日摄入在目标 ±10%（`maintainBandFraction`）以内算达标，少吃太多、吃得太多都不算；其他日子仍是「不超过目标」。月历的绿/红和今日页数字是否变红都用它。今日页只有超过区间上限才变红，标签后面显示「区间 low–high」；月历当月有维持日时，图例增加「维持日」一组。
+- **维持的选择路径**和减脂完全一样：档案目标不是维持时，维持 tab 显示和减脂无策略时相同的空状态（`noMaintainStrategyEmpty`：靶心图标、「未选择策略」、「选择策略」，下方是 TDEE 计算方法）→ `/profile/nutrition/maintain` 选择页（只有一行「均衡维持」，带「推荐」标签）→ `/profile/nutrition/maintain/configure` 配置页。配置页的布局和减脂配置页一样：预览概览，下面是默认折叠的「当前档案」「目标与营养」「生效日期」三行（`StrategyFoldSection`，只读行用 `StrategyReadOnlyMetric`，日期选项用 `StrategyDateOption`），再下面是免责说明，底部是共用的 `StrategyApplyBar`。已经是维持时，应用按钮禁用；已预约了同一天时，按钮也禁用。生效日期默认明天，也可以选今天：
+  - **今天**：弹 `confirmGoalSwitch` 确认，然后立即 `switchGoal(maintain)`。
+  - **明天**：确认框第一行是「自 M月d日 起：」。确认后只写入预约（`pendingGoalSwitchProvider`，存在 SharedPreferences 的 `pending_goal_switch` 键下），档案不变。这时维持 tab 显示「待生效」（`MaintainScheduledView`），可以「取消预约切换」。
+  - **执行预约**：`MainShell` 在启动、本地零点（定时器，App 开着跨天时）和 resumed 时运行 `dayRolloverProvider`，由它调用 `applyDueGoalSwitch`。到了预约日（或更晚）就调用 `ProfileNotifier.save(effectiveFrom: 预约日)`，切换的各项结果都记在预约日，不是执行那天：减脂策略 `endedOn` = 预约日（`stopActivePlan(endOn:)`），修为轮次结束在前一天，`calorieStandardSince` = 预约日。所以 App 晚几天才打开，日期也不会错。
+  - **自动清除预约**：任何一次真正的目标切换（`save` 改了目标），或者应用了一个减脂策略，都会清除预约。清空数据时也会一并删除。
+  
+  页面在 `lib/ui/strategy/maintain_strategy_pages.dart`，选择行复用 `StrategyOptionRow`。
+- **维持 tab**（`lib/ui/strategy/maintain_sections.dart`，档案目标为维持时显示）：版式和减脂 tab 一一对应，不能停用（换目标即停用）。从上到下依次是：概览区（「均衡维持 · 第 N 天」、热量、营养素、达标区间）→ 策略专属区块「体重」（对应碳循环的「循环安排」：近 7 天平均；较维持开始的变化，基准是开始日前一周的平均，开始当天不显示）→「策略基准」（参考体重、TDEE 估算直接读档案当前值，会随称重变化；维持热量和达标区间读固定的 `targets`，所以称重后两边可能对不上，按「按当前体重重算」后才一致）→ TDEE 计算方法 →「管理」（更换策略 → 维持选择页 / 配置页；按当前体重重算）。今日页的目标标签也显示「均衡维持」。软件不提醒什么时候切换，由用户自己决定。
+- **切换目标的入口**：档案编辑页、营养目标页里非当前目标的 tab（减脂和维持都显示「未选择策略」空状态：选好策略并应用时一并切换目标。减脂配置页在档案目标不是减脂时，先弹确认框，然后 `switchGoal(cut)` 开新一轮，再应用策略；减脂策略的资格检查不再要求目标是减脂）、境界页里非当前目标的「尚未开启」页。确认和切换都在 `lib/ui/profile/goal_switch.dart`：`confirmGoalSwitch` 负责确认，`switchGoal` 负责切换，境界页用两者组合起来的 `confirmAndSwitchGoal`：确认框只陈述后果（结算本轮减脂、停用策略、维持热量是多少），然后调用 `ProfileNotifier.save`；切到减脂后直接打开策略选择页。增肌 tab 仍是占位页。
+
 ## 饮食策略
 
 代码：`lib/domain/diet_strategy.dart`（规则和计划器，纯 Dart）、`lib/domain/diet_plan.dart`（版本和每日目标）、`lib/data/repositories/diet_strategy_repository.dart`（持久化）、`lib/providers/diet_strategy_providers.dart`、`lib/ui/strategy/`。
