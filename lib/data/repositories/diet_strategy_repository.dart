@@ -642,6 +642,72 @@ class DietStrategyRepository {
     );
   }
 
+  /// Brings a past day's frozen carb-cycle snapshot in line with its 冲碳日
+  /// marker after the marker was set, edited or cleared on the calendar:
+  /// a 冲碳日 rewrites that one day's target to the carb-load macros, and
+  /// removing it restores the day's cycle target. The frozen cycle position
+  /// (index / pause) is kept, so no other day moves.
+  ///
+  /// Today recomputes on every read, the future has no snapshot and an
+  /// unsnapshotted past day resolves live (all reading the marker already);
+  /// manual overrides and non-carb-cycle snapshots are left alone.
+  Future<void> syncPastCarbLoadTarget(DateTime day, {DateTime? now}) async {
+    final d = StrategyDates.dayOnly(day);
+    if (!d.isBefore(CalendarDay.todayLocal(now))) return;
+    final snap = await snapshotFor(d);
+    if (snap == null ||
+        snap.source != TargetSource.strategy ||
+        snap.strategy != DietStrategyKind.carbCycle) {
+      return;
+    }
+    final plans = await listPlans();
+    final plan =
+        plans.where((p) => p.id == snap.planId).lastOrNull ??
+        _covering(plans, d);
+    final cyclePlan = plan?.kind == DietStrategyKind.carbCycle
+        ? plan!.carbCyclePlan
+        : null;
+    if (plan == null || cyclePlan == null) return;
+    final cycleDay = snap.cycleIndex == null
+        ? null
+        : CycleDay(snap.cycleIndex!, snap.cyclePaused ?? false);
+    final perKg = await _carbLoadPerKgOn(d);
+    final DayMacroTarget t;
+    final String? reason;
+    if (perKg != null) {
+      final load = cyclePlan.clampCarbLoadPerKg(perKg);
+      t = cyclePlan.carbLoadDay(load);
+      reason =
+          '${DailyNutritionTarget.carbLoadReasonPrefix}'
+          '${load.toStringAsFixed(1)}';
+    } else if (snap.isCarbLoad) {
+      t = plan.targetFor(d, cycleDay: cycleDay);
+      reason = null;
+    } else {
+      return;
+    }
+    await _upsertSnapshot(
+      DailyNutritionTarget(
+        date: d,
+        calories: t.energy,
+        proteinG: t.proteinG,
+        carbG: t.carbG,
+        fatG: t.fatG,
+        source: TargetSource.strategy,
+        estimatedTdee: snap.estimatedTdee,
+        planId: snap.planId,
+        planVersion: snap.planVersion,
+        strategy: snap.strategy,
+        dayType: cycleDay == null ? null : t.dayType,
+        cycleIndex: snap.cycleIndex,
+        cyclePaused: snap.cyclePaused,
+        isSnapshot: true,
+        reason: reason,
+      ),
+      now: now,
+    );
+  }
+
   /// 冲碳日 carbs (g/kg) of [day]'s marker, or null when it isn't one.
   Future<double?> _carbLoadPerKgOn(DateTime day) async {
     final row =

@@ -2107,4 +2107,53 @@ void main() {
     await _settle(tester);
     expect(_container.read(profileProvider)!.goal, FitnessGoal.maintain);
   });
+
+  testWidgets('switching to maintain from cultivation uses the default rates', (
+    tester,
+  ) async {
+    _container.dispose();
+    await _db.close();
+    await _setUp(
+      profile: _profile().copyWith(
+        maintainProteinPerKg: 1.6,
+        maintainFatPerKg: 0.7,
+      ),
+    );
+    await _pump(tester, '/profile/cultivation/goal/maintain');
+    await tester.tap(find.byKey(const ValueKey('cultivationLockedCta')));
+    await _settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, 'OK'));
+    await _settle(tester);
+    final profile = _container.read(profileProvider)!;
+    expect(profile.goal, FitnessGoal.maintain);
+    expect(profile.maintainProteinPerKg, MaintainProtein.defaultPerKg);
+    expect(profile.maintainFatPerKg, MaintainFat.defaultPerKg);
+  });
+
+  testWidgets('switching to cut from cultivation applies 均衡缺口 today', (
+    tester,
+  ) async {
+    _container.dispose();
+    await _db.close();
+    await _setUp(profile: _profile(goal: FitnessGoal.maintain));
+    await _pump(tester, '/profile/cultivation/goal/cut');
+    await tester.tap(find.byKey(const ValueKey('cultivationLockedCta')));
+    await _settle(tester);
+    // The dialog names the strategy it will apply.
+    expect(find.textContaining('Balanced deficit'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'OK'));
+    await _settle(tester);
+
+    expect(_container.read(profileProvider)!.goal, FitnessGoal.cut);
+    final plan = await _container
+        .read(dietStrategyRepositoryProvider)
+        .activePlan();
+    expect(plan?.kind, DietStrategyKind.balanced);
+    expect(plan?.effectiveFrom, CalendarDay.todayLocal());
+    expect(
+      plan?.deficitFraction,
+      closeTo(StrategyRules.defaultDeficitFraction, 1e-6),
+    );
+    expect(find.byType(StrategyPickerPage), findsNothing);
+  });
 }

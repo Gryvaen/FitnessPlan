@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../data/repositories/diet_strategy_repository.dart';
+import '../../domain/calendar_day.dart';
+import '../../domain/diet_strategy.dart';
 import '../../domain/models.dart';
+import '../../domain/strategy_eligibility.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
+import '../strategy/strategy_labels.dart';
 
 /// Asks before switching the profile goal to [to]. The dialog only states
 /// what will happen (no advice): the cut round settles, a fat-loss strategy
@@ -103,9 +108,29 @@ Future<void> switchGoal(
       );
 }
 
-/// Confirm + switch, for the cultivation pages' "switch to X" action.
-/// Switching to cut then opens the strategy picker (without a strategy cut
-/// eats at TDEE). Returns whether the goal changed.
+/// The default fat-loss strategy as the configure page builds it untouched:
+/// 均衡缺口 (the picker's default) at the default deficit and macro rates,
+/// starting on [from].
+DietStrategyPlanDraft defaultCutDraft(UserProfile profile, DateTime from) {
+  final tdee = profile.tdee ?? 0;
+  final today = CalendarDay.dayOnly(from) == CalendarDay.todayLocal();
+  return DietStrategyPlanDraft(
+    kind: DietStrategyKind.balanced,
+    effectiveFrom: CalendarDay.dayOnly(from),
+    referenceWeightKg: profile.weightKg,
+    estimatedTdee: tdee,
+    baseEnergy: tdee * (1 - StrategyRules.defaultDeficitFraction),
+    reason: today ? 'created;startToday' : 'created',
+    legacyCalories: profile.targets.calories,
+  );
+}
+
+/// Confirm + switch, for the cultivation pages' "switch to X" action. The
+/// switch takes effect today and picks the goal's default nutrition target
+/// by itself: cut applies 均衡缺口 at its defaults ([defaultCutDraft]),
+/// 维持 resets to 均衡维持's default rates, 增肌 has no strategy. Only when
+/// the profile can't carry a strategy does cut fall back to the picker,
+/// which lists why. Returns whether the goal changed.
 Future<bool> confirmAndSwitchGoal(
   BuildContext context,
   WidgetRef ref,
@@ -113,20 +138,48 @@ Future<bool> confirmAndSwitchGoal(
 ) async {
   final l10n = context.l10n;
   if (ref.read(profileProvider)?.goal == to) return false;
-  if (!await confirmGoalSwitch(context, ref, to) || !context.mounted) {
-    return false;
-  }
+  final confirmed = await confirmGoalSwitch(
+    context,
+    ref,
+    to,
+    toLine: to == FitnessGoal.cut
+        ? l10n.switchGoalToCutApply(DietStrategyKind.balanced.label(l10n))
+        : null,
+  );
+  if (!confirmed || !context.mounted) return false;
   final messenger = ScaffoldMessenger.of(context);
+  var needsPicker = false;
   try {
-    await switchGoal(ref, to);
+    switch (to) {
+      case FitnessGoal.cut:
+        await switchGoal(ref, to);
+        final profile = ref.read(profileProvider);
+        if (profile != null && StrategyEligibility.eligible(profile)) {
+          await ref
+              .read(dietStrategyActionsProvider)
+              .applyPlan(defaultCutDraft(profile, CalendarDay.todayLocal()));
+          await ref.read(pendingGoalSwitchProvider.notifier).clear();
+        } else {
+          needsPicker = true;
+        }
+      case FitnessGoal.maintain:
+        await switchGoal(
+          ref,
+          to,
+          maintainProteinPerKg: MaintainProtein.defaultPerKg,
+          maintainFatPerKg: MaintainFat.defaultPerKg,
+        );
+      case FitnessGoal.bulk:
+        await switchGoal(ref, to);
+    }
   } catch (e) {
     messenger.showSnackBar(SnackBar(content: Text(l10n.saveFailed('$e'))));
-    return false;
+    return ref.read(profileProvider)?.goal == to;
   }
   messenger.showSnackBar(
     SnackBar(content: Text(l10n.switchedGoal(to.label(l10n)))),
   );
-  if (to == FitnessGoal.cut && context.mounted) {
+  if (needsPicker && context.mounted) {
     context.push('/profile/nutrition/strategy');
   }
   return true;

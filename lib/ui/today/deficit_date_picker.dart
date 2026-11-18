@@ -16,7 +16,6 @@ import '../../domain/maintain.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../ink/ink_icon.dart';
-import '../profile/cultivation_labels.dart';
 import '../strategy/stepper_row.dart';
 import '../strategy/strategy_labels.dart';
 import '../theme/app_theme.dart';
@@ -72,6 +71,14 @@ Future<DateTime?> showDeficitDatePicker({
   /// Whether the marker sheet offers the 修为 settings (steps / diet count
   /// toward cultivation, 放纵日 deduction). 修为 only accrues while cutting.
   bool cultivationMarkers = true,
+
+  /// Runs after a day's marker is saved or cleared, before the month
+  /// reloads — e.g. to rewrite a past day's frozen target for 冲碳日.
+  Future<void> Function(DateTime day)? onMarkerSaved,
+
+  /// A booked goal switch not carried out yet: from its day on the marker
+  /// sheet treats days as the new goal's.
+  ({FitnessGoal goal, DateTime from})? bookedGoalSwitch,
 }) {
   DateTime? since;
   if (calorieStandardSince != null) {
@@ -108,6 +115,13 @@ Future<DateTime?> showDeficitDatePicker({
           ? null
           : DateTime(markUntil.year, markUntil.month, markUntil.day),
       cultivationMarkers: cultivationMarkers,
+      onMarkerSaved: onMarkerSaved,
+      bookedGoalSwitch: bookedGoalSwitch == null
+          ? null
+          : (
+              goal: bookedGoalSwitch.goal,
+              from: AppDates.dayOnly(bookedGoalSwitch.from),
+            ),
       goalPeriods: [
         for (final p in goalPeriods)
           GoalPeriod(
@@ -137,6 +151,8 @@ class _DeficitDatePickerDialog extends StatefulWidget {
     this.markUntil,
     this.cultivationMarkers = true,
     this.goalPeriods = const [],
+    this.onMarkerSaved,
+    this.bookedGoalSwitch,
   });
 
   final DateTime initialDate;
@@ -156,6 +172,8 @@ class _DeficitDatePickerDialog extends StatefulWidget {
   final DateTime? markUntil;
   final bool cultivationMarkers;
   final List<GoalPeriod> goalPeriods;
+  final Future<void> Function(DateTime day)? onMarkerSaved;
+  final ({FitnessGoal goal, DateTime from})? bookedGoalSwitch;
 
   @override
   State<_DeficitDatePickerDialog> createState() =>
@@ -320,14 +338,34 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
     }
   }
 
+  /// The goal [day] is on: a booked switch from its day on, else the goal
+  /// stretch holding it (a switch day already belongs to the new goal, even
+  /// though the 修为 round still ends on it). Null when nothing records it.
+  FitnessGoal? _goalOn(DateTime day) {
+    final booked = widget.bookedGoalSwitch;
+    if (booked != null && !day.isBefore(booked.from)) return booked.goal;
+    return widget.goalPeriods.where((p) => p.containsDay(day)).lastOrNull?.goal;
+  }
+
   Future<void> _markerSheet(DateTime day) async {
     final existing = await widget.markerRepository.settingsForDay(day);
     final strategy = await widget.loadStrategyForDay(day);
-    final canPauseCycle =
-        strategy == DietStrategyKind.carbCycle && !day.isBefore(_today);
-    // 冲碳日 shares the pause gate: only a carb-cycle day from today on can
-    // still have its target changed.
-    final carbLoadFloor = canPauseCycle
+    // Markers follow the goal *that day* is on, as the calendar brackets
+    // show it. A cut day offers 休息日 and the 修为 settings, also after a
+    // later switch to 维持/增肌; a 维持/增肌 day only offers 放纵日.
+    final goal = _goalOn(day);
+    final inCut = goal != null
+        ? goal == FitnessGoal.cut
+        : strategy == DietStrategyKind.carbCycle ||
+              (widget.cutSegments.isEmpty
+                  ? widget.cultivationMarkers
+                  : widget.cutSegments.any((s) => s.containsDay(day)));
+    final carbCycle = inCut && strategy == DietStrategyKind.carbCycle;
+    // Past cycle positions are frozen, so only today on can still delay.
+    final canPauseCycle = carbCycle && !day.isBefore(_today);
+    // 冲碳日 follows the stretch: any carb-cycle day, past ones included (a
+    // past day's frozen target is rewritten through [onMarkerSaved]).
+    final carbLoadFloor = carbCycle
         ? await widget.loadCarbLoadFloor?.call(day)
         : null;
     if (!mounted) return;
@@ -337,14 +375,14 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
       isScrollControlled: true,
       builder: (ctx) => _MarkerSettingsSheet(
         existing: existing,
-        hasCarbCycle: strategy == DietStrategyKind.carbCycle,
         canPauseCycle: canPauseCycle,
-        canCarbLoad: canPauseCycle,
+        canCarbLoad: carbCycle,
         carbLoadFloor: math.min(
           carbLoadFloor ?? StrategyRules.highCarbPerKgMin,
           StrategyRules.carbLoadCarbPerKgMax,
         ),
-        showCultivation: widget.cultivationMarkers,
+        offersRestDay: inCut,
+        showCultivation: inCut,
       ),
     );
     if (!mounted || choice == null) return;
@@ -379,6 +417,7 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
           );
       }
     }
+    await widget.onMarkerSaved?.call(day);
     if (!mounted) return;
     await _loadMonth();
   }
@@ -700,10 +739,10 @@ class _MarkerChoice {
 class _MarkerSettingsSheet extends StatefulWidget {
   const _MarkerSettingsSheet({
     required this.existing,
-    required this.hasCarbCycle,
     required this.canPauseCycle,
     required this.canCarbLoad,
     required this.carbLoadFloor,
+    this.offersRestDay = true,
     this.showCultivation = true,
   });
 
@@ -711,11 +750,15 @@ class _MarkerSettingsSheet extends StatefulWidget {
 
   /// Offer the 修为 settings; off outside fat loss, where 修为 doesn't run.
   final bool showCultivation;
-  final bool hasCarbCycle;
+
+  /// Offer 休息日: a cut day. 维持/增肌 days only get 放纵日 — with no carb
+  /// cycle or 修为 a rest day would change nothing.
+  final bool offersRestDay;
+
+  /// The 碳循环顺延 switch: a carb-cycle day from today on.
   final bool canPauseCycle;
 
-  /// Whether 冲碳日 is offered (carb-cycle day, today or later). An existing
-  /// 冲碳日 marker stays listed either way so it can still be edited.
+  /// Offer 冲碳日: any carb-cycle day, past ones included.
   final bool canCarbLoad;
 
   /// Lowest 冲碳日 carbs (g/kg): the day's high-day carbs.
@@ -747,6 +790,10 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
   void initState() {
     super.initState();
     _type = widget.existing?.type;
+    // A leftover marker of a type this day no longer offers (a 冲碳日 off the
+    // carb cycle, a 休息日 outside cut) starts unselected so 确认 can't
+    // silently re-save it.
+    if (_type != null && !_offers(_type!)) _type = null;
     if (widget.existing case final settings?) {
       _stepsByType[settings.type] = settings.includeSteps;
       _dietByType[settings.type] = settings.includeDiet;
@@ -789,18 +836,39 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
     });
   }
 
+  /// Which marker types this day lists: 放纵日 always (通用日), 休息日 on cut
+  /// days, 冲碳日 (专属日) on carb-cycle days.
+  bool _offers(DayMarkerType type) => switch (type) {
+    DayMarkerType.cheatMeal => true,
+    DayMarkerType.restDay => widget.offersRestDay,
+    DayMarkerType.carbLoad => widget.canCarbLoad,
+  };
+
+  bool get _offersCarbLoad => _offers(DayMarkerType.carbLoad);
+
   /// A saved 冲碳日 must be cleared before the day can become a 休息日/放纵日:
-  /// switching would silently drop its carb-cycle–specific settings.
+  /// switching would silently drop its carb-cycle–specific settings. A
+  /// leftover one outside the cycle (hidden) doesn't lock anything.
   bool _lockedByCarbLoad(DayMarkerType type) =>
+      _offersCarbLoad &&
       type != DayMarkerType.carbLoad &&
       widget.existing?.type == DayMarkerType.carbLoad;
+
+  /// Whether [type] has settings to unfold (none for a 维持/增肌 放纵日).
+  bool _hasDetails(DayMarkerType type) =>
+      type == DayMarkerType.carbLoad ||
+      widget.showCultivation ||
+      widget.canPauseCycle;
 
   void _select(DayMarkerType type) {
     if (_lockedByCarbLoad(type)) return;
     _amountFocus.unfocus();
     setState(() {
       _editingAmount = false;
-      if (_type == type) {
+      if (!_hasDetails(type)) {
+        _type = type;
+        _expandedType = null;
+      } else if (_type == type) {
         _expandedType = _expandedType == type ? null : type;
       } else {
         _type = type;
@@ -935,7 +1003,7 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
             : _deductKcal
             ? l10n.deductionSummary(_amount.text)
             : l10n.noDeductionSummary,
-      if (widget.hasCarbCycle)
+      if (widget.canPauseCycle)
         _pauseByType[type]!
             ? l10n.pauseCarbCycleSummary
             : l10n.keepCarbCycleSummary,
@@ -950,9 +1018,9 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
     final selected = _type == type;
     final expanded = _expandedType == type;
     final locked = _lockedByCarbLoad(type);
-    // Rest days always list the switch (disabled off-cycle, as before); the
-    // others only once a carb cycle applies.
-    final showPause = type == DayMarkerType.restDay || widget.hasCarbCycle;
+    // Only a carb-cycle day from today on can still be delayed; elsewhere the
+    // switch is hidden (a saved delay still carries over, see initState).
+    final showPause = widget.canPauseCycle;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -996,7 +1064,9 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         )
-                      else if (selected && !expanded)
+                      else if (selected &&
+                          !expanded &&
+                          _summary(context, type).isNotEmpty)
                         Text(
                           _summary(context, type),
                           style: theme.textTheme.meta?.copyWith(
@@ -1089,10 +1159,8 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                           dense: true,
                           title: Text(l10n.pauseCarbCycleLabel),
                           value: _pauseByType[type]!,
-                          onChanged: widget.canPauseCycle
-                              ? (value) =>
-                                    setState(() => _pauseByType[type] = value)
-                              : null,
+                          onChanged: (value) =>
+                              setState(() => _pauseByType[type] = value),
                         ),
                       if (widget.showCultivation &&
                           type == DayMarkerType.cheatMeal &&
@@ -1192,11 +1260,12 @@ class _MarkerSettingsSheetState extends State<_MarkerSettingsSheet> {
                 ],
               ),
               const SizedBox(height: AppSpacing.field),
-              _option(context, DayMarkerType.restDay),
-              Divider(height: 1, color: dividerColor),
+              if (_offers(DayMarkerType.restDay)) ...[
+                _option(context, DayMarkerType.restDay),
+                Divider(height: 1, color: dividerColor),
+              ],
               _option(context, DayMarkerType.cheatMeal),
-              if (widget.canCarbLoad ||
-                  widget.existing?.type == DayMarkerType.carbLoad) ...[
+              if (_offersCarbLoad) ...[
                 Divider(height: 1, color: dividerColor),
                 _option(context, DayMarkerType.carbLoad),
               ],
@@ -1544,14 +1613,20 @@ class _DayCell extends StatelessWidget {
   }
 }
 
-/// A goal's bracket colour: its 境界 accent, lifted toward the text colour
-/// on dark themes where the deep accents would sink into the background.
+/// A goal's bracket colour. A palette of its own (减脂 orange, 维持 blue,
+/// 增肌 purple), not the 境界 accents: those are all deep green/teal/slate,
+/// hard to tell apart and close to the calendar's green verdict. Lifted a
+/// little toward the text colour on dark themes.
 Color goalBracketColor(BuildContext context, FitnessGoal goal) {
   final theme = Theme.of(context);
-  final accent = goal.cultivationAccentColor;
+  final base = switch (goal) {
+    FitnessGoal.cut => const Color(0xFFE07B1F),
+    FitnessGoal.maintain => const Color(0xFF2F6FD6),
+    FitnessGoal.bulk => const Color(0xFF8A4FD1),
+  };
   return theme.brightness == Brightness.dark
-      ? Color.lerp(accent, theme.colorScheme.onSurface, 0.35)!
-      : accent;
+      ? Color.lerp(base, theme.colorScheme.onSurface, 0.2)!
+      : base;
 }
 
 /// 「[」 down a day cell's left edge (a goal stretch starts) and / or 「]」
@@ -1562,8 +1637,8 @@ class _GoalBracketPainter extends CustomPainter {
   final Color? start;
   final Color? end;
 
-  static const _stroke = 2.0;
-  static const _tick = 4.0;
+  static const _stroke = 2.5;
+  static const _tick = 5.0;
   static const _inset = 3.0;
 
   @override

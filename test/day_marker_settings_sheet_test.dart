@@ -3,8 +3,11 @@ import 'package:diet/data/repositories/day_marker_repository.dart';
 import 'package:diet/data/repositories/diet_strategy_repository.dart';
 import 'package:diet/data/repositories/meal_repository.dart';
 import 'package:diet/domain/calendar_day.dart';
+import 'package:diet/domain/cut_cultivation.dart';
 import 'package:diet/domain/day_marker.dart';
 import 'package:diet/domain/diet_strategy.dart';
+import 'package:diet/domain/goal_period.dart';
+import 'package:diet/domain/models.dart';
 import 'package:diet/l10n/app_localizations.dart';
 import 'package:diet/ui/theme/app_theme.dart';
 import 'package:diet/ui/today/deficit_date_picker.dart';
@@ -195,14 +198,188 @@ void main() {
     await _longPressDay(tester, today);
     await tester.pumpAndSettle();
 
-    for (final type in ['cheatMeal', 'restDay']) {
-      await tester.tap(find.byKey(ValueKey('marker-option-$type')));
-      await tester.pumpAndSettle();
-      expect(find.byKey(ValueKey('marker-steps-$type')), findsNothing);
-      expect(find.byKey(ValueKey('marker-diet-$type')), findsNothing);
-    }
+    // 维持/增肌 days only get the 放纵日, with nothing to unfold.
+    expect(find.byKey(const ValueKey('marker-option-restDay')), findsNothing);
+    expect(find.byKey(const ValueKey('marker-option-carbLoad')), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('marker-option-cheatMeal')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('marker-steps-cheatMeal')), findsNothing);
+    expect(find.byKey(const ValueKey('marker-diet-cheatMeal')), findsNothing);
     expect(find.byKey(const ValueKey('marker-deduction-row')), findsNothing);
     expect(find.textContaining('Steps count'), findsNothing);
+  });
+
+  testWidgets('a leftover rest day on a 维持 day can become a cheat day', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final repo = DayMarkerRepository(db);
+    final today = CalendarDay.todayLocal();
+    await repo.setRestDay(today);
+    await _openSheetFor(
+      tester,
+      db,
+      day: today,
+      firstDate: today,
+      cultivationMarkers: false,
+    );
+    expect(find.byKey(const ValueKey('marker-option-restDay')), findsNothing);
+    expect(
+      tester.widget<FilledButton>(find.byType(FilledButton).last).onPressed,
+      isNull,
+    );
+    await tester.tap(find.byKey(const ValueKey('marker-option-cheatMeal')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(FilledButton).last);
+    await tester.pumpAndSettle();
+    expect((await repo.settingsForDay(today))!.type, DayMarkerType.cheatMeal);
+  });
+
+  testWidgets('a past cut day keeps its 修为 settings after leaving cut', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final today = CalendarDay.todayLocal();
+    final yesterday = CalendarDay.addDays(today, -1);
+    // The cut round ended yesterday; the profile is on 维持 now.
+    await _openSheetFor(
+      tester,
+      db,
+      day: yesterday,
+      firstDate: yesterday,
+      cultivationMarkers: false,
+      cutSegments: [CutCultivationSegment(start: yesterday, end: yesterday)],
+    );
+    await tester.tap(find.byKey(const ValueKey('marker-option-restDay')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('marker-steps-restDay')), findsOneWidget);
+    expect(find.byKey(const ValueKey('marker-diet-restDay')), findsOneWidget);
+  });
+
+  testWidgets('the day of a switch to 维持 only offers the cheat day', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final today = CalendarDay.todayLocal();
+    final yesterday = CalendarDay.addDays(today, -1);
+    final weekAgo = CalendarDay.addDays(today, -7);
+    // Switched today: the goal stretches give today to 维持 while the 修为
+    // round still ends on it.
+    final goalPeriods = [
+      GoalPeriod(goal: FitnessGoal.cut, start: weekAgo, end: yesterday),
+      GoalPeriod(goal: FitnessGoal.maintain, start: today),
+    ];
+    final cutSegments = [CutCultivationSegment(start: weekAgo, end: today)];
+    await _openSheetFor(
+      tester,
+      db,
+      day: today,
+      firstDate: weekAgo,
+      cultivationMarkers: false,
+      cutSegments: cutSegments,
+      goalPeriods: goalPeriods,
+    );
+    expect(find.byKey(const ValueKey('marker-option-restDay')), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('marker-option-cheatMeal')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('marker-steps-cheatMeal')), findsNothing);
+
+    // The day before is still a cut day. Opened on its own month: on the
+    // 1st it sits on the previous page.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await _openSheetFor(
+      tester,
+      db,
+      day: yesterday,
+      firstDate: weekAgo,
+      cultivationMarkers: false,
+      cutSegments: cutSegments,
+      goalPeriods: goalPeriods,
+    );
+    expect(find.byKey(const ValueKey('marker-option-restDay')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('marker-option-restDay')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('marker-steps-restDay')), findsOneWidget);
+  });
+
+  testWidgets('a booked switch to 维持 counts from its day on', (tester) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final today = CalendarDay.todayLocal();
+    final tomorrow = CalendarDay.addDays(today, 1);
+    final goalPeriods = [GoalPeriod(goal: FitnessGoal.cut, start: today)];
+    final booked = (goal: FitnessGoal.maintain, from: tomorrow);
+    await _openSheetFor(
+      tester,
+      db,
+      day: today,
+      firstDate: today,
+      lastDate: tomorrow,
+      goalPeriods: goalPeriods,
+      bookedGoalSwitch: booked,
+    );
+    expect(find.byKey(const ValueKey('marker-option-restDay')), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await _openSheetFor(
+      tester,
+      db,
+      day: tomorrow,
+      firstDate: today,
+      lastDate: tomorrow,
+      goalPeriods: goalPeriods,
+      bookedGoalSwitch: booked,
+    );
+    expect(find.byKey(const ValueKey('marker-option-restDay')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('marker-option-cheatMeal')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a 维持 day under a cut goal only offers the cheat day', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final today = CalendarDay.todayLocal();
+    final tomorrow = CalendarDay.addDays(today, 1);
+    await _openSheetFor(
+      tester,
+      db,
+      day: today,
+      firstDate: today,
+      cutSegments: [CutCultivationSegment(start: tomorrow)],
+    );
+    expect(find.byKey(const ValueKey('marker-option-restDay')), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('marker-option-cheatMeal')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('marker-steps-cheatMeal')), findsNothing);
+    expect(find.byKey(const ValueKey('marker-deduction-row')), findsNothing);
+  });
+
+  testWidgets('a leftover carb-load day outside the cycle is hidden', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final repo = DayMarkerRepository(db);
+    final today = CalendarDay.todayLocal();
+    await repo.setCarbLoad(today, carbPerKg: 6);
+    await _openSheetFor(tester, db, day: today, firstDate: today);
+    expect(find.byKey(const ValueKey('marker-option-carbLoad')), findsNothing);
+    expect(
+      tester.widget<FilledButton>(find.byType(FilledButton).last).onPressed,
+      isNull,
+    );
+    await tester.tap(find.byKey(const ValueKey('marker-option-restDay')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(FilledButton).last);
+    await tester.pumpAndSettle();
+    expect((await repo.settingsForDay(today))!.type, DayMarkerType.restDay);
   });
 
   testWidgets('calendar marker sheet saves, prefills and cancels settings', (
@@ -369,6 +546,7 @@ void main() {
     required DateTime firstDate,
     required DietStrategyKind? strategy,
     DateTime? initialDate,
+    Future<void> Function(DateTime day)? onMarkerSaved,
   }) async {
     final today = CalendarDay.todayLocal();
     await tester.pumpWidget(
@@ -395,6 +573,7 @@ void main() {
                 loadTargets: (_, _) async => {},
                 loadStrategyForDay: (_) async => strategy,
                 loadCarbLoadFloor: (_) async => 3.2,
+                onMarkerSaved: onMarkerSaved,
               ),
               child: const Text('Open calendar'),
             ),
@@ -520,11 +699,14 @@ void main() {
     expect((await repo.settingsForDay(today))!.type, DayMarkerType.carbLoad);
   });
 
-  testWidgets('carb-load day is not offered on a past day', (tester) async {
+  testWidgets('a past carb-cycle day can be marked as a carb-load day', (
+    tester,
+  ) async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     addTearDown(db.close);
     final today = CalendarDay.todayLocal();
     final yesterday = CalendarDay.addDays(today, -1);
+    final synced = <DateTime>[];
     await openPicker(
       tester,
       db,
@@ -532,11 +714,21 @@ void main() {
       strategy: DietStrategyKind.carbCycle,
       // On the 1st, yesterday is only on the previous month's page.
       initialDate: yesterday,
+      onMarkerSaved: (day) async => synced.add(day),
     );
     final option = find.byKey(const ValueKey('marker-option-carbLoad'));
     await _longPressDay(tester, yesterday);
     await tester.pumpAndSettle();
-    expect(option, findsNothing);
+    expect(option, findsOneWidget);
+    await tester.tap(option);
+    await tester.pumpAndSettle();
+    // Past cycle positions are frozen: no delay switch.
+    expect(find.byKey(const ValueKey('marker-pause-carbLoad')), findsNothing);
+    await tester.tap(find.byType(FilledButton).last);
+    await tester.pumpAndSettle();
+    final saved = (await DayMarkerRepository(db).settingsForDay(yesterday))!;
+    expect(saved.type, DayMarkerType.carbLoad);
+    expect(synced, [yesterday]);
   });
 
   testWidgets('no carb-load day or cheat-day delay without a carb cycle', (
@@ -612,14 +804,7 @@ void main() {
       find.text('Marking a past day will not change later carb-cycle days.'),
       findsNothing,
     );
-    expect(
-      tester
-          .widget<SwitchListTile>(
-            find.widgetWithText(SwitchListTile, 'Delay carb cycle by one day'),
-          )
-          .onChanged,
-      isNull,
-    );
+    expect(find.byKey(const ValueKey('marker-pause-restDay')), findsNothing);
     await tester.tap(find.byType(FilledButton).last);
     await tester.pumpAndSettle();
     expect((await repo.settingsForDay(yesterday))!.pauseCarbCycle, isFalse);
@@ -631,7 +816,7 @@ void main() {
     DietStrategyKind.carbTaper,
   ]) {
     testWidgets(
-      'rest-day cycle option is disabled for ${kind?.name ?? 'no plan'}',
+      'rest-day cycle option is hidden for ${kind?.name ?? 'no plan'}',
       (tester) async {
         final db = AppDatabase.forTesting(NativeDatabase.memory());
         addTearDown(db.close);
@@ -653,15 +838,8 @@ void main() {
         await tester.tap(find.byKey(const ValueKey('marker-option-restDay')));
         await tester.pumpAndSettle();
         expect(
-          tester
-              .widget<SwitchListTile>(
-                find.widgetWithText(
-                  SwitchListTile,
-                  'Delay carb cycle by one day',
-                ),
-              )
-              .onChanged,
-          isNull,
+          find.byKey(const ValueKey('marker-pause-restDay')),
+          findsNothing,
         );
         expect(find.text('No carb cycle applies on this day.'), findsNothing);
         await tester.tap(find.byType(FilledButton).last);
@@ -691,14 +869,7 @@ void main() {
     await _openMarkerSheet(tester, db, markerRepo, strategyRepo, today);
     await tester.tap(find.byKey(const ValueKey('marker-option-restDay')));
     await tester.pumpAndSettle();
-    expect(
-      tester
-          .widget<SwitchListTile>(
-            find.widgetWithText(SwitchListTile, 'Delay carb cycle by one day'),
-          )
-          .onChanged,
-      isNull,
-    );
+    expect(find.byKey(const ValueKey('marker-pause-restDay')), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await _openMarkerSheet(tester, db, markerRepo, strategyRepo, tomorrow);
@@ -720,7 +891,7 @@ void main() {
   });
 
   testWidgets(
-    'stopped cycle keeps a historical saved delay locked and unchanged',
+    'stopped cycle keeps a historical saved delay hidden and unchanged',
     (tester) async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(db.close);
@@ -744,34 +915,15 @@ void main() {
       await _openMarkerSheet(tester, db, markerRepo, strategyRepo, today);
       await tester.tap(find.byKey(const ValueKey('marker-option-restDay')));
       await tester.pumpAndSettle();
-      expect(
-        tester
-            .widget<SwitchListTile>(
-              find.widgetWithText(
-                SwitchListTile,
-                'Delay carb cycle by one day',
-              ),
-            )
-            .onChanged,
-        isNull,
-      );
+      expect(find.byKey(const ValueKey('marker-pause-restDay')), findsNothing);
 
       await tester.pumpWidget(const SizedBox.shrink());
       await _openMarkerSheet(tester, db, markerRepo, strategyRepo, yesterday);
-      expect(find.textContaining('Cycle delayed one day'), findsOneWidget);
+      // A past day's delay is locked, so the sheet doesn't mention it.
+      expect(find.textContaining('Cycle delayed one day'), findsNothing);
       await tester.tap(find.byKey(const ValueKey('marker-option-restDay')));
       await tester.pumpAndSettle();
-      expect(
-        tester
-            .widget<SwitchListTile>(
-              find.widgetWithText(
-                SwitchListTile,
-                'Delay carb cycle by one day',
-              ),
-            )
-            .onChanged,
-        isNull,
-      );
+      expect(find.byKey(const ValueKey('marker-pause-restDay')), findsNothing);
       await tester.tap(find.byType(FilledButton).last);
       await tester.pumpAndSettle();
       expect(
@@ -794,11 +946,7 @@ void main() {
     expect(find.textContaining('Cycle delayed one day'), findsNothing);
     await tester.tap(find.byKey(const ValueKey('marker-option-restDay')));
     await tester.pumpAndSettle();
-    final toggle = tester.widget<SwitchListTile>(
-      find.widgetWithText(SwitchListTile, 'Delay carb cycle by one day'),
-    );
-    expect(toggle.value, isTrue);
-    expect(toggle.onChanged, isNull);
+    expect(find.byKey(const ValueKey('marker-pause-restDay')), findsNothing);
     await tester.tap(find.byType(FilledButton).last);
     await tester.pumpAndSettle();
     expect((await markerRepo.settingsForDay(today))!.pauseCarbCycle, isTrue);
@@ -851,6 +999,59 @@ Future<void> _longPressDay(WidgetTester tester, DateTime day) async {
   await tester.ensureVisible(_dayFinder(day));
   await tester.pumpAndSettle();
   await tester.longPress(_dayFinder(day));
+}
+
+/// Opens the calendar (from [firstDate] to today) and long-presses [day].
+Future<void> _openSheetFor(
+  WidgetTester tester,
+  AppDatabase db, {
+  required DateTime day,
+  required DateTime firstDate,
+  DietStrategyKind? strategy,
+  bool cultivationMarkers = true,
+  List<CutCultivationSegment> cutSegments = const [],
+  List<GoalPeriod> goalPeriods = const [],
+  ({FitnessGoal goal, DateTime from})? bookedGoalSwitch,
+  DateTime? lastDate,
+}) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      locale: const Locale('en'),
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => showDeficitDatePicker(
+              context: context,
+              initialDate: day,
+              firstDate: firstDate,
+              lastDate: lastDate ?? CalendarDay.todayLocal(),
+              plannedDeficit: 0,
+              mealRepository: MealRepository(db),
+              markerRepository: DayMarkerRepository(db),
+              loadTargets: (_, _) async => {},
+              loadStrategyForDay: (_) async => strategy,
+              cultivationMarkers: cultivationMarkers,
+              cutSegments: cutSegments,
+              goalPeriods: goalPeriods,
+              bookedGoalSwitch: bookedGoalSwitch,
+            ),
+            child: const Text('Open calendar'),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.tap(find.text('Open calendar'));
+  await tester.pumpAndSettle();
+  await _longPressDay(tester, day);
+  await tester.pumpAndSettle();
 }
 
 Future<void> _openMarkerSheet(

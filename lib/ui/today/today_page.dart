@@ -136,6 +136,11 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         markUntil: DateTime(today.year + 1, today.month, today.day),
         cultivationMarkers: profile.goal == FitnessGoal.cut,
         goalPeriods: ref.read(goalPeriodsProvider),
+        onMarkerSaved: (date) => repo.syncPastCarbLoadTarget(date),
+        bookedGoalSwitch: switch (ref.read(pendingGoalSwitchProvider)) {
+          final booked? => (goal: booked.goal, from: booked.from),
+          null => null,
+        },
       );
       if (picked == null || !context.mounted) return;
       ref.read(selectedDayProvider.notifier).setDay(picked);
