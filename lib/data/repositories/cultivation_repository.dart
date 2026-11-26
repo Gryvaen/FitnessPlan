@@ -53,7 +53,7 @@ class CultivationRepository {
         else if (!end.isBefore(CalendarDay.dayOnly(s.start)))
           s.closeOn(end),
     ];
-    final next = CutCultivationState(
+    final next = current.copyWith(
       frozenKcal: current.frozenKcal + openSegmentKcal,
       segments: closed,
     );
@@ -138,7 +138,7 @@ class MaintainCultivationRepository {
   }) async {
     final current = load();
     if (current.openSegment == null) return current;
-    final next = MaintainCultivationState(
+    final next = current.copyWith(
       frozenBalancedDays: current.frozenBalancedDays + openBalancedDays,
       segments: [
         for (final s in current.segments)

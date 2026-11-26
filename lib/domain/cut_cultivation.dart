@@ -59,6 +59,7 @@ class CutCultivationState {
   const CutCultivationState({
     this.frozenKcal = 0,
     this.segments = const [],
+    this.goalPeriodsImported = false,
   });
 
   /// Total kcal banked from all **closed** cut stretches.
@@ -66,6 +67,9 @@ class CutCultivationState {
 
   /// Chronological cut stretches (oldest first). At most one [isOpen].
   final List<CutCultivationSegment> segments;
+
+  /// Whether past cut stretches from the goal history were folded in (once).
+  final bool goalPeriodsImported;
 
   CutCultivationSegment? get openSegment {
     for (final s in segments) {
@@ -82,16 +86,19 @@ class CutCultivationState {
   CutCultivationState copyWith({
     double? frozenKcal,
     List<CutCultivationSegment>? segments,
+    bool? goalPeriodsImported,
   }) {
     return CutCultivationState(
       frozenKcal: frozenKcal ?? this.frozenKcal,
       segments: segments ?? this.segments,
+      goalPeriodsImported: goalPeriodsImported ?? this.goalPeriodsImported,
     );
   }
 
   Map<String, dynamic> toJson() => {
     'frozenKcal': frozenKcal,
     'segments': [for (final s in segments) s.toJson()],
+    'goalPeriodsImported': goalPeriodsImported,
   };
 
   factory CutCultivationState.fromJson(Map<String, dynamic> json) {
@@ -111,6 +118,7 @@ class CutCultivationState {
     return CutCultivationState(
       frozenKcal: (json['frozenKcal'] as num?)?.toDouble() ?? 0,
       segments: segments,
+      goalPeriodsImported: json['goalPeriodsImported'] == true,
     );
   }
 }

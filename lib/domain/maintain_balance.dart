@@ -14,6 +14,8 @@ import 'dart:math' as math;
 
 import 'cultivation.dart' show kCultivationLayers;
 import 'cut_cultivation.dart';
+import 'goal_period.dart';
+import 'models.dart';
 
 /// 平衡日阈值下限（kcal）。
 const double kMaintainBalancedMinKcal = 150;
@@ -240,6 +242,7 @@ class MaintainCultivationState {
   const MaintainCultivationState({
     this.frozenBalancedDays = 0,
     this.segments = const [],
+    this.goalPeriodsImported = false,
   });
 
   /// 所有已关闭维持时段累计的平衡日。
@@ -247,6 +250,9 @@ class MaintainCultivationState {
 
   /// 时间顺序（旧在前），最多一个未关闭。
   final List<CutCultivationSegment> segments;
+
+  /// 是否已把「目标时段」里过往的维持期导入过（只导入一次）。
+  final bool goalPeriodsImported;
 
   CutCultivationSegment? get openSegment {
     for (final s in segments) {
@@ -258,16 +264,19 @@ class MaintainCultivationState {
   MaintainCultivationState copyWith({
     int? frozenBalancedDays,
     List<CutCultivationSegment>? segments,
+    bool? goalPeriodsImported,
   }) {
     return MaintainCultivationState(
       frozenBalancedDays: frozenBalancedDays ?? this.frozenBalancedDays,
       segments: segments ?? this.segments,
+      goalPeriodsImported: goalPeriodsImported ?? this.goalPeriodsImported,
     );
   }
 
   Map<String, dynamic> toJson() => {
     'frozenBalancedDays': frozenBalancedDays,
     'segments': [for (final s in segments) s.toJson()],
+    'goalPeriodsImported': goalPeriodsImported,
   };
 
   factory MaintainCultivationState.fromJson(Map<String, dynamic> json) {
@@ -285,6 +294,31 @@ class MaintainCultivationState {
     return MaintainCultivationState(
       frozenBalancedDays: (json['frozenBalancedDays'] as num?)?.toInt() ?? 0,
       segments: segments,
+      goalPeriodsImported: json['goalPeriodsImported'] == true,
     );
   }
+}
+
+/// 把「目标时段」里记录的维持期并入维持账本（只做一次）。
+/// `addedClosed` 是新加入的已关闭时段，调用方要按冻结规则把它们的平衡日
+/// 计入 [MaintainCultivationState.frozenBalancedDays]。规则见
+/// [mergeGoalPeriodsIntoSegments]。
+({MaintainCultivationState state, List<CutCultivationSegment> addedClosed})
+importMaintainGoalPeriods(
+  MaintainCultivationState ledger,
+  List<GoalPeriod> periods,
+) {
+  if (ledger.goalPeriodsImported) return (state: ledger, addedClosed: const []);
+  final merged = mergeGoalPeriodsIntoSegments(
+    ledger.segments,
+    periods,
+    FitnessGoal.maintain,
+  );
+  return (
+    state: ledger.copyWith(
+      segments: merged.segments,
+      goalPeriodsImported: true,
+    ),
+    addedClosed: merged.addedClosed,
+  );
 }

@@ -10,12 +10,14 @@ import '../domain/cut_cultivation.dart';
 import '../domain/cut_round_stats.dart';
 import '../domain/day_marker.dart';
 import '../domain/deficit.dart';
+import '../domain/goal_period.dart';
 import '../domain/maintain_balance.dart';
 import '../domain/models.dart';
 import 'core_providers.dart';
 import 'day_clock_providers.dart';
 import 'day_marker_providers.dart';
 import 'diet_strategy_providers.dart';
+import 'goal_history_providers.dart';
 import 'meal_providers.dart';
 import 'profile_providers.dart';
 import 'step_providers.dart';
@@ -38,6 +40,12 @@ class CutCultivationStateNotifier extends Notifier<CutCultivationState> {
 
   void reload() {
     state = ref.read(cultivationRepositoryProvider).load();
+  }
+
+  /// Persist a ledger produced by [importCutGoalPeriods].
+  Future<void> applyImport(CutCultivationState next) async {
+    await ref.read(cultivationRepositoryProvider).save(next);
+    state = next;
   }
 
   /// Leaving cut: bank open-segment kcal and close the stretch on [endDay]
@@ -320,6 +328,17 @@ Future<double> openCultivationKcalBeforeGoalSwitch(
   return days.fold<double>(0.0, (sum, day) => sum + day.totalKcal);
 }
 
+bool _segmentsChanged(
+  List<CutCultivationSegment> a,
+  List<CutCultivationSegment> b,
+) {
+  if (a.length != b.length) return true;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i].start != b[i].start || a[i].end != b[i].end) return true;
+  }
+  return false;
+}
+
 Set<DateTime> _daysInSegment(
   CutCultivationSegment segment, {
   DateTime? through,
@@ -351,6 +370,38 @@ final cultivationHistoryProvider =
         await ref
             .read(cutCultivationStateProvider.notifier)
             .ensureOpenForCut(preferredStart: profile?.calorieStandardSince);
+      }
+
+      // Once: fold past 减脂 stretches from the goal history into the ledger,
+      // banking closed ones' kcal the way leaving cut would have.
+      final before = ref.read(cutCultivationStateProvider);
+      final cutRepo = ref.read(cultivationRepositoryProvider);
+      if (!before.goalPeriodsImported && !cutRepo.load().goalPeriodsImported) {
+        final imported = importCutGoalPeriods(
+          before,
+          ref.read(goalPeriodsProvider),
+        );
+        if (!_segmentsChanged(before.segments, imported.state.segments)) {
+          // Nothing to fold in: persist the flag quietly — updating the
+          // ledger this history watches would restart it mid-load.
+          await cutRepo.save(imported.state);
+        } else {
+          var banked = 0.0;
+          for (final segment in imported.addedClosed) {
+            final days = await _buildCultivationDays(
+              ref: ref,
+              allowedDays: _daysInSegment(segment),
+            );
+            banked += days.fold<double>(0, (sum, d) => sum + d.totalKcal);
+          }
+          await ref
+              .read(cutCultivationStateProvider.notifier)
+              .applyImport(
+                imported.state.copyWith(
+                  frozenKcal: imported.state.frozenKcal + banked,
+                ),
+              );
+        }
       }
 
       final state = ref.read(cutCultivationStateProvider);
@@ -558,6 +609,12 @@ class MaintainCultivationStateNotifier
     state = ref.read(maintainCultivationRepositoryProvider).load();
   }
 
+  /// Persist a ledger produced by [importMaintainGoalPeriods].
+  Future<void> applyImport(MaintainCultivationState next) async {
+    await ref.read(maintainCultivationRepositoryProvider).save(next);
+    state = next;
+  }
+
   /// Leaving maintain: bank the open stretch's balanced days, close it.
   Future<void> freezeLeavingMaintain(
     int openBalancedDays, {
@@ -644,6 +701,35 @@ final maintainHistoryProvider =
         await ref
             .read(maintainCultivationStateProvider.notifier)
             .openForMaintain(preferredStart: profile?.calorieStandardSince);
+      }
+
+      // Once: fold past 维持 stretches from the goal history into the ledger,
+      // banking closed ones' balanced days the way leaving maintain would.
+      final before = ref.read(maintainCultivationStateProvider);
+      final maintainRepo = ref.read(maintainCultivationRepositoryProvider);
+      if (!before.goalPeriodsImported &&
+          !maintainRepo.load().goalPeriodsImported) {
+        final imported = importMaintainGoalPeriods(
+          before,
+          ref.read(goalPeriodsProvider),
+        );
+        if (!_segmentsChanged(before.segments, imported.state.segments)) {
+          await maintainRepo.save(imported.state);
+        } else {
+          var banked = 0;
+          for (final segment in imported.addedClosed) {
+            final days = await _buildMaintainDays(ref: ref, segment: segment);
+            banked += days.where((d) => d.entry.balanced).length;
+          }
+          await ref
+              .read(maintainCultivationStateProvider.notifier)
+              .applyImport(
+                imported.state.copyWith(
+                  frozenBalancedDays:
+                      imported.state.frozenBalancedDays + banked,
+                ),
+              );
+        }
       }
 
       final state = ref.read(maintainCultivationStateProvider);

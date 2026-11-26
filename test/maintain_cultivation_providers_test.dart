@@ -1,6 +1,9 @@
 import 'package:diet/data/db.dart';
+import 'package:diet/data/repositories/cultivation_repository.dart';
 import 'package:diet/data/repositories/day_marker_repository.dart';
+import 'package:diet/data/repositories/goal_history_repository.dart';
 import 'package:diet/domain/calendar_day.dart';
+import 'package:diet/domain/goal_period.dart';
 import 'package:diet/domain/maintain_balance.dart';
 import 'package:diet/domain/models.dart';
 import 'package:diet/providers/app_providers.dart';
@@ -15,6 +18,7 @@ void main() {
   late AppDatabase db;
   late ProviderContainer container;
   late int foodId;
+  late SharedPreferences prefs;
 
   Future<UserProfile> saveGoal(FitnessGoal goal) {
     return container
@@ -57,7 +61,7 @@ void main() {
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
     SharedPreferences.setMockInitialValues({});
-    final prefs = await SharedPreferences.getInstance();
+    prefs = await SharedPreferences.getInstance();
     container = ProviderContainer(
       overrides: [
         databaseProvider.overrideWithValue(db),
@@ -191,4 +195,87 @@ void main() {
       );
     },
   );
+
+  group('past stretches from the goal history', () {
+    final today = CalendarDay.todayLocal();
+    DateTime ago(int n) => CalendarDay.addDays(today, -n);
+
+    Future<void> setGoalHistory(List<GoalPeriod> periods) async {
+      await GoalHistoryRepository(prefs).save(periods);
+      container.read(goalPeriodsProvider.notifier).reload();
+    }
+
+    test(
+      'maintain imports past stretches once and banks balanced days',
+      () async {
+        final profile = await saveGoal(FitnessGoal.maintain);
+        final tdee = profile.tdee!;
+        await setGoalHistory([
+          GoalPeriod(goal: FitnessGoal.maintain, start: ago(20), end: ago(15)),
+          GoalPeriod(goal: FitnessGoal.cut, start: ago(14), end: ago(8)),
+          GoalPeriod(goal: FitnessGoal.maintain, start: ago(7)),
+        ]);
+        // The setUp listener already ran the (empty) import: start over.
+        final repo = MaintainCultivationRepository(prefs);
+        await repo.save(repo.load().copyWith(goalPeriodsImported: false));
+        container.read(maintainCultivationStateProvider.notifier).reload();
+
+        await logMeals(ago(18), tdee + 50); // balanced, past stretch
+        await logMeals(ago(17), tdee - 60); // balanced, past stretch
+        await logMeals(ago(16), tdee + 900); // surplus, past stretch
+        await logMeals(ago(5), tdee); // balanced, current stretch
+
+        var sections = await history();
+        sections = await history();
+        expect(sections, hasLength(2));
+        final ledger = container.read(maintainCultivationStateProvider);
+        expect(ledger.goalPeriodsImported, isTrue);
+        expect(ledger.frozenBalancedDays, 2);
+        expect(ledger.openSegment?.start, ago(7));
+        expect(container.read(mindProgressProvider).balancedDays, 3);
+
+        await history();
+        expect(container.read(mindProgressProvider).balancedDays, 3);
+        expect(
+          container.read(maintainCultivationStateProvider).frozenBalancedDays,
+          2,
+        );
+      },
+    );
+
+    test('cut imports a missing past round once and banks its kcal', () async {
+      final profile = await saveGoal(FitnessGoal.cut);
+      final tdee = profile.tdee!;
+      container.listen(cultivationHistoryProvider, (_, _) {});
+      await container.read(cultivationHistoryProvider.future);
+      await setGoalHistory([
+        GoalPeriod(goal: FitnessGoal.cut, start: ago(20), end: ago(15)),
+        GoalPeriod(goal: FitnessGoal.maintain, start: ago(14), end: ago(1)),
+        GoalPeriod(goal: FitnessGoal.cut, start: today),
+      ]);
+      final repo = CultivationRepository(prefs);
+      await repo.save(repo.load().copyWith(goalPeriodsImported: false));
+      container.read(cutCultivationStateProvider.notifier).reload();
+
+      await logMeals(ago(18), tdee - 500);
+
+      Future<List<CultivationHistorySection>> cutHistory() async {
+        container.invalidate(cultivationHistoryProvider);
+        return container.read(cultivationHistoryProvider.future);
+      }
+
+      var sections = await cutHistory();
+      sections = await cutHistory();
+      expect(sections, hasLength(2));
+      final ledger = container.read(cutCultivationStateProvider);
+      expect(ledger.goalPeriodsImported, isTrue);
+      expect(ledger.frozenKcal, closeTo(500, 0.01));
+
+      await cutHistory();
+      expect(
+        container.read(cutCultivationStateProvider).frozenKcal,
+        closeTo(500, 0.01),
+      );
+    });
+  });
 }

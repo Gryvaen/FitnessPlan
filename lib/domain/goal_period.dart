@@ -130,3 +130,82 @@ List<GoalPeriod> backfillGoalPeriods(
   out.add(GoalPeriod(goal: profile.goal, start: start));
   return out;
 }
+
+/// Folds recorded [goal] stretches into a cultivation ledger's [segments]
+/// (the ledger predates [GoalPeriod]s, so older stretches may be missing):
+///
+/// - a closed stretch that overlaps no ledger segment is added as a closed
+///   segment and listed in `addedClosed` — the caller banks its progress the
+///   way leaving that goal would have;
+/// - overlapping stretches are skipped: the ledger wins, nothing counts twice;
+/// - the open stretch moves the ledger's open segment back to its start, but
+///   never before the day after an earlier closed segment.
+({
+  List<CutCultivationSegment> segments,
+  List<CutCultivationSegment> addedClosed,
+})
+mergeGoalPeriodsIntoSegments(
+  List<CutCultivationSegment> segments,
+  List<GoalPeriod> periods,
+  FitnessGoal goal,
+) {
+  final far = DateTime(9999);
+  bool overlaps(DateTime start, DateTime end, CutCultivationSegment s) =>
+      !CalendarDay.dayOnly(start).isAfter(CalendarDay.dayOnly(s.end ?? far)) &&
+      !CalendarDay.dayOnly(s.start).isAfter(CalendarDay.dayOnly(end));
+
+  final out = [...segments];
+  final added = <CutCultivationSegment>[];
+  for (final p in periods) {
+    final end = p.end;
+    if (p.goal != goal || end == null || end.isBefore(p.start)) continue;
+    if (out.any((s) => overlaps(p.start, end, s))) continue;
+    final seg = CutCultivationSegment(
+      start: CalendarDay.dayOnly(p.start),
+      end: CalendarDay.dayOnly(end),
+    );
+    out.add(seg);
+    added.add(seg);
+  }
+  out.sort((a, b) => a.start.compareTo(b.start));
+
+  final openPeriod = periods
+      .where((p) => p.goal == goal && p.isOpen)
+      .lastOrNull;
+  final openIndex = out.indexWhere((s) => s.isOpen);
+  if (openPeriod != null && openIndex >= 0) {
+    final current = CalendarDay.dayOnly(out[openIndex].start);
+    var start = CalendarDay.dayOnly(openPeriod.start);
+    for (final s in out) {
+      final end = s.end;
+      if (end == null || s.start.isAfter(current)) continue;
+      final floor = CalendarDay.addDays(end, 1);
+      if (start.isBefore(floor)) start = floor;
+    }
+    if (start.isBefore(current)) {
+      out[openIndex] = CutCultivationSegment(start: start);
+      out.sort((a, b) => a.start.compareTo(b.start));
+    }
+  }
+  return (segments: out, addedClosed: added);
+}
+
+/// Folds recorded 减脂 stretches into the cut ledger (once). `addedClosed`
+/// lists the new closed segments; the caller banks their kcal into
+/// [CutCultivationState.frozenKcal]. See [mergeGoalPeriodsIntoSegments].
+({CutCultivationState state, List<CutCultivationSegment> addedClosed})
+importCutGoalPeriods(CutCultivationState ledger, List<GoalPeriod> periods) {
+  if (ledger.goalPeriodsImported) return (state: ledger, addedClosed: const []);
+  final merged = mergeGoalPeriodsIntoSegments(
+    ledger.segments,
+    periods,
+    FitnessGoal.cut,
+  );
+  return (
+    state: ledger.copyWith(
+      segments: merged.segments,
+      goalPeriodsImported: true,
+    ),
+    addedClosed: merged.addedClosed,
+  );
+}
