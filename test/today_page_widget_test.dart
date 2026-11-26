@@ -687,6 +687,34 @@ void main() {
       );
     }
 
+    testWidgets('partly logged exercise inks one wedge per done set', (
+      tester,
+    ) async {
+      await seedTodayWorkout();
+      final repo = h.container.read(workoutRepositoryProvider);
+      final today = CalendarDay.todayLocal();
+      final first = (await repo.daySnapshot(
+        today,
+      )).groups.single.items.first.item;
+      await repo.logSet(
+        day: today,
+        exerciseId: first.exerciseId,
+        exerciseName: first.exerciseName,
+        dayWorkoutItemId: first.id,
+        reps: 10,
+      );
+      await _pump(tester, h);
+      await tester.tap(await _show(tester, find.text('Test plan')));
+      await _settle(tester);
+
+      Finder progress(String value) => find.byWidgetPredicate(
+        (w) => w is Semantics && w.properties.value == value,
+      );
+      expect(progress('1/3'), findsOneWidget);
+      // The untouched exercise keeps the plain empty ring.
+      expect(progress('0/3'), findsNothing);
+    });
+
     testWidgets('workout more menu deletes all of today’s workouts', (
       tester,
     ) async {

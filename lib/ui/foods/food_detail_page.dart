@@ -99,8 +99,9 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
       return;
     }
 
-    final day = ref.read(selectedDayProvider);
-    final dayPath = dailyMealsPath(day);
+    // Food detail always logs onto today, so land on today's 饮食记录 even
+    // when the detail was opened from a past day's record.
+    final dayPath = dailyMealsPath(AppDates.todayLocal());
     final router = GoRouter.of(context);
     final path = GoRouterState.of(context).uri.path;
 
@@ -123,13 +124,9 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
     final food = _food;
     if (food == null || _saving) return;
     final l10n = context.l10n;
-    final day = ref.read(selectedDayProvider);
-    if (!AppDates.isLocalToday(day)) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.pastDayReadOnly)));
-      return;
-    }
+    // Past days are read-only, so "add" from a past day's record (or while
+    // Today is browsing a past day) logs onto today instead of refusing.
+    final day = AppDates.todayLocal();
     setState(() => _saving = true);
     try {
       await ref
@@ -139,6 +136,9 @@ class _FoodDetailPageState extends ConsumerState<FoodDetailPage> {
           .read(formMemoryRepositoryProvider)
           .saveMealDefaults(mealType: _mealType, grams: _grams);
       if (!mounted) return;
+      if (ref.read(selectedDayProvider) != day) {
+        ref.read(selectedDayProvider.notifier).goToToday();
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.mealLoggedTo(_mealType.label(l10n)))),
       );

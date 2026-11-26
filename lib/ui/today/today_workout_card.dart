@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -1336,6 +1338,8 @@ class _WorkoutItemTile extends ConsumerWidget {
     return SportListTile(
       leading: _InkDoneToggle(
         value: item.done,
+        completedSets: progress.completedSets,
+        targetSets: item.targetSets,
         onChanged: editable
             ? (v) async {
                 final messenger = ScaffoldMessenger.of(context);
@@ -1429,38 +1433,219 @@ class _WorkoutItemTile extends ConsumerWidget {
 }
 
 class _InkDoneToggle extends StatelessWidget {
-  const _InkDoneToggle({required this.value, required this.onChanged});
+  const _InkDoneToggle({
+    required this.value,
+    required this.onChanged,
+    this.completedSets = 0,
+    this.targetSets = 0,
+  });
 
   final bool value;
   final ValueChanged<bool>? onChanged;
 
+  /// Logged sets so far; when some (but not all) are done the empty ring is
+  /// inked one wedge per completed set.
+  final int completedSets;
+  final int targetSets;
+
+  static const double _size = 30;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final enabled = onChanged != null;
+    final disabledColor = scheme.onSurface.withValues(alpha: .32);
+    final partial = !value && completedSets > 0 && targetSets > 0;
+    final Widget glyph;
+    if (partial) {
+      glyph = _InkSetWedges(
+        size: _size,
+        completed: math.min(completedSets, targetSets),
+        total: targetSets,
+        ringColor: enabled ? scheme.onSurfaceVariant : disabledColor,
+        inkColor: enabled ? AppColors.success : disabledColor,
+        dividerColor: (enabled ? scheme.onSurfaceVariant : disabledColor)
+            .withValues(alpha: enabled ? .45 : .2),
+      );
+    } else {
+      glyph = InkIcon(
+        value ? InkGlyph.check : InkGlyph.radioEmpty,
+        size: _size,
+        color: !enabled
+            ? disabledColor
+            : value
+            ? AppColors.success
+            : scheme.onSurfaceVariant,
+      );
+    }
     return Semantics(
       checked: value,
-      enabled: onChanged != null,
+      enabled: enabled,
       button: true,
+      value: partial ? '$completedSets/$targetSets' : null,
       child: InkResponse(
-        onTap: onChanged == null ? null : () => onChanged!(!value),
+        onTap: enabled ? () => onChanged!(!value) : null,
         radius: 24,
-        child: SizedBox.square(
-          dimension: 48,
-          child: Center(
-            child: InkIcon(
-              value ? InkGlyph.check : InkGlyph.radioEmpty,
-              size: 30,
-              color: onChanged == null
-                  ? scheme.onSurface.withValues(alpha: .32)
-                  : value
-                  ? AppColors.success
-                  : scheme.onSurfaceVariant,
-            ),
-          ),
-        ),
+        child: SizedBox.square(dimension: 48, child: Center(child: glyph)),
       ),
     );
   }
+}
+
+/// The empty ink ring with its hollow split into one wedge per target set;
+/// completed sets are filled clockwise from 12 o'clock with the solid ink
+/// blot of the `radio-checked` glyph, so the fill shares the ring's brush
+/// texture instead of reading as a flat vector pie.
+class _InkSetWedges extends StatelessWidget {
+  const _InkSetWedges({
+    required this.size,
+    required this.completed,
+    required this.total,
+    required this.ringColor,
+    required this.inkColor,
+    required this.dividerColor,
+  });
+
+  final double size;
+  final int completed;
+  final int total;
+  final Color ringColor;
+  final Color inkColor;
+  final Color dividerColor;
+
+  // Measured on the 256px `radio-empty` / `radio-checked` assets: the ring's
+  // hollow is centred at (129, 133) with radius ~53; the checked glyph's ink
+  // blot is centred at (131.5, 134.5) and solid out to radius ~21.
+  static const _holeCenter = Offset(129 / 256, 133 / 256);
+  static const _fillRadius = 44 / 256;
+  static const _blotCenter = Offset(131.5 / 256, 134.5 / 256);
+  static const _blotSolidRadius = 21 / 256;
+
+  /// Spokes stop reading as cells past this many sets.
+  static const _maxDividers = 12;
+
+  @override
+  Widget build(BuildContext context) {
+    final center = Offset(_holeCenter.dx * size, _holeCenter.dy * size);
+    final radius = _fillRadius * size;
+    // Scale the checked glyph until its solid blot covers the wedge disc.
+    final blotSize = radius / _blotSolidRadius * 1.04;
+    return SizedBox.square(
+      dimension: size,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: ClipPath(
+              clipper: _SetWedgeClipper(
+                center: center,
+                radius: radius,
+                fraction: total == 0 ? 0 : completed / total,
+              ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned(
+                    left: center.dx - _blotCenter.dx * blotSize,
+                    top: center.dy - _blotCenter.dy * blotSize,
+                    width: blotSize,
+                    height: blotSize,
+                    child: InkIcon(
+                      InkGlyph.radioChecked,
+                      size: blotSize,
+                      color: inkColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (total > 1 && total <= _maxDividers)
+            Positioned.fill(
+              child: CustomPaint(
+                painter: _SetDividerPainter(
+                  center: center,
+                  radius: radius,
+                  count: total,
+                  color: dividerColor,
+                ),
+              ),
+            ),
+          InkIcon(InkGlyph.radioEmpty, size: size, color: ringColor),
+        ],
+      ),
+    );
+  }
+}
+
+class _SetWedgeClipper extends CustomClipper<Path> {
+  const _SetWedgeClipper({
+    required this.center,
+    required this.radius,
+    required this.fraction,
+  });
+
+  final Offset center;
+  final double radius;
+  final double fraction;
+
+  @override
+  Path getClip(Size size) {
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    final f = fraction.clamp(0.0, 1.0);
+    if (f >= 1) return Path()..addOval(rect);
+    if (f <= 0) return Path();
+    return Path()
+      ..moveTo(center.dx, center.dy)
+      ..arcTo(rect, -math.pi / 2, math.pi * 2 * f, false)
+      ..close();
+  }
+
+  @override
+  bool shouldReclip(covariant _SetWedgeClipper old) =>
+      old.center != center || old.radius != radius || old.fraction != fraction;
+}
+
+/// Hairline spokes marking each set's cell inside the ring.
+class _SetDividerPainter extends CustomPainter {
+  const _SetDividerPainter({
+    required this.center,
+    required this.radius,
+    required this.count,
+    required this.color,
+  });
+
+  final Offset center;
+  final double radius;
+  final int count;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = .8
+      ..strokeCap = StrokeCap.round;
+    for (var i = 0; i < count; i++) {
+      final angle = -math.pi / 2 + math.pi * 2 * i / count;
+      canvas.drawLine(
+        center,
+        Offset(
+          center.dx + math.cos(angle) * radius,
+          center.dy + math.sin(angle) * radius,
+        ),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SetDividerPainter old) =>
+      old.center != center ||
+      old.radius != radius ||
+      old.count != count ||
+      old.color != color;
 }
 
 /// Plan list from today's workout "+". Plans sit under the library categories

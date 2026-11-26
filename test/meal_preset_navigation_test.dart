@@ -2,6 +2,7 @@ import 'package:diet/data/db.dart';
 import 'package:diet/data/repositories/meal_repository.dart';
 import 'package:diet/data/repositories/food_repository.dart';
 import 'package:diet/data/repositories/meal_preset_repository.dart';
+import 'package:diet/domain/calendar_day.dart';
 import 'package:diet/l10n/app_localizations.dart';
 import 'package:diet/providers/app_providers.dart';
 import 'package:diet/ui/foods/foods_page.dart';
@@ -26,11 +27,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Future<void> pumpPresetApp(
+Future<ProviderContainer> pumpPresetApp(
   WidgetTester tester, {
   required AppDatabase db,
   required String initialLocation,
   FoodRepository? foodRepository,
+  void Function(ProviderContainer container)? beforePump,
 }) async {
   SharedPreferences.setMockInitialValues({});
   final prefs = await SharedPreferences.getInstance();
@@ -44,6 +46,7 @@ Future<void> pumpPresetApp(
     ],
   );
   addTearDown(container.dispose);
+  beforePump?.call(container);
   final router = GoRouter(
     initialLocation: initialLocation,
     routes: [
@@ -142,6 +145,7 @@ Future<void> pumpPresetApp(
     ),
   );
   await tester.pumpAndSettle();
+  return container;
 }
 
 class _FailingFoodRepository extends FoodRepository {
@@ -552,6 +556,33 @@ void main() {
       isNull,
     );
     expect(find.text('还没有常用套餐'), findsOneWidget);
+  });
+
+  testWidgets('food detail opened from a past day logs onto today', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    await seedPreset(db);
+    final food = (await db.select(db.foodItems).get()).single;
+    final today = CalendarDay.todayLocal();
+    final yesterday = CalendarDay.addDays(today, -1);
+    final container = await pumpPresetApp(
+      tester,
+      db: db,
+      initialLocation: '/food-detail/${food.id}',
+      beforePump: (c) => c.read(selectedDayProvider.notifier).setDay(yesterday),
+    );
+    expect(container.read(selectedDayProvider), yesterday);
+
+    await tester.tap(find.byType(FilledButton).last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('过去的日子只能查看，不能编辑'), findsNothing);
+    final meals = MealRepository(db);
+    expect(await meals.forDay(today), hasLength(1));
+    expect(await meals.forDay(yesterday), isEmpty);
+    expect(container.read(selectedDayProvider), today);
   });
 
   testWidgets('favorite category opens food detail and supports removal', (
