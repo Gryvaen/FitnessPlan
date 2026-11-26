@@ -671,6 +671,9 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
                       target: _targetsByDay[date],
                       calorieStandardSince: widget.calorieStandardSince,
                       cutSegments: widget.cutSegments,
+                      inGoalPeriod: widget.goalPeriods.any(
+                        (p) => p.containsDay(date),
+                      ),
                       strategyChange: widget.strategyChangeDays.contains(date),
                       periodStart: widget.goalPeriods
                           .where((p) => p.start == date)
@@ -1394,6 +1397,7 @@ class _DayCell extends StatelessWidget {
     required this.markable,
     this.calorieStandardSince,
     this.cutSegments = const [],
+    this.inGoalPeriod = false,
     this.strategyChange = false,
     this.periodStart,
     this.periodEnd,
@@ -1413,6 +1417,11 @@ class _DayCell extends StatelessWidget {
 
   /// Cut rounds; a day inside one ignores the [calorieStandardSince] cut-off.
   final List<CutCultivationSegment> cutSegments;
+
+  /// Inside a recorded goal stretch (减脂 / 维持 / 增肌): judged against its
+  /// own snapshot, ignoring the [calorieStandardSince] cut-off, which a later
+  /// goal switch moves past it.
+  final bool inGoalPeriod;
 
   /// A strategy version took effect on this day (corner flag).
   final bool strategyChange;
@@ -1451,7 +1460,15 @@ class _DayCell extends StatelessWidget {
     // A cut round is judged as a whole: each day against its own snapshot
     // target, so a mid-round standard change doesn't blank earlier days.
     final inCutRound = cutSegments.any((s) => s.containsDay(date));
-    final beforeStandard = !inCutRound && since != null && date.isBefore(since);
+    // 维持 / 增肌 days carry their goal tag, so they keep their verdict even
+    // without recorded goal stretches (old installs).
+    final goalTagged = (t?.isMaintainDay ?? false) || (t?.isBulkDay ?? false);
+    final beforeStandard =
+        !inCutRound &&
+        !inGoalPeriod &&
+        !goalTagged &&
+        since != null &&
+        date.isBefore(since);
     final showStandardBar =
         legacyStartBar &&
         (cutSegments.isNotEmpty

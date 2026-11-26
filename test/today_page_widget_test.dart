@@ -11,6 +11,7 @@ import 'package:diet/l10n/app_localizations.dart';
 import 'package:diet/providers/app_providers.dart';
 import 'package:diet/ui/theme/app_theme.dart';
 import 'package:diet/ui/today/today_page.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -290,6 +291,37 @@ void main() {
         findsOneWidget,
       );
       _expectNoOverflow(tester);
+    });
+
+    testWidgets('a past maintain day keeps its label after switching back '
+        'to cut', (tester) async {
+      final today = CalendarDay.todayLocal();
+      final yesterday = CalendarDay.addDays(today, -1);
+      await h.db
+          .into(h.db.dailyNutritionTargets)
+          .insertOnConflictUpdate(
+            DailyNutritionTargetsCompanion.insert(
+              date: StrategyDates.encode(yesterday),
+              calories: 2069,
+              proteinG: 136,
+              carbG: 258.9,
+              fatG: 54.4,
+              estimatedTdee: const Value(2068.5),
+              source: TargetSource.profile.name,
+              reason: const Value(DailyNutritionTarget.maintainReasonTag),
+              updatedAt: DateTime.now(),
+            ),
+          );
+      h.container.read(selectedDayProvider.notifier).setDay(yesterday);
+      await _pump(tester, h);
+
+      expect(find.textContaining('Balanced maintenance'), findsOneWidget);
+      expect(find.text('Fat-loss strategy available'), findsNothing);
+
+      h.container.read(selectedDayProvider.notifier).goToToday();
+      await _settle(tester);
+      expect(find.textContaining('Balanced maintenance'), findsNothing);
+      expect(find.text('Fat-loss strategy available'), findsOneWidget);
     });
 
     testWidgets('Chinese rest marker stays beside the heading at 360px', (

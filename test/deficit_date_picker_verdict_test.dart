@@ -287,6 +287,52 @@ void main() {
     expect(isGreen(color), isFalse);
   });
 
+  group('a finished maintain stretch before a later switch back to cut', () {
+    // Maintain [day−1, day+1], then cut again from [standardSince], which the
+    // switch stamps as the new calorie standard.
+    final periods = [
+      GoalPeriod(
+        goal: FitnessGoal.maintain,
+        start: CalendarDay.addDays(day, -1),
+        end: CalendarDay.addDays(day, 1),
+      ),
+      GoalPeriod(goal: FitnessGoal.cut, start: standardSince),
+    ];
+    final laterRound = [CutCultivationSegment(start: standardSince)];
+
+    testWidgets('keeps its band verdict inside the recorded stretch', (
+      tester,
+    ) async {
+      final color = await pumpAndReadCellColor(
+        tester,
+        segments: laterRound,
+        intake: 2000,
+        reason: 'maintain',
+        goalPeriods: periods,
+      );
+      expect(isGreen(color), isTrue);
+    });
+
+    testWidgets('a recorded stretch alone lifts the cut-off', (tester) async {
+      final color = await pumpAndReadCellColor(
+        tester,
+        segments: laterRound,
+        goalPeriods: periods,
+      );
+      expect(isGreen(color), isTrue);
+    });
+
+    testWidgets('the maintain tag alone lifts the cut-off', (tester) async {
+      final color = await pumpAndReadCellColor(
+        tester,
+        segments: laterRound,
+        intake: 2500,
+        reason: 'maintain',
+      );
+      expect(isRed(color), isTrue);
+    });
+  });
+
   testWidgets('legacy estimates stay neutral even inside the round', (
     tester,
   ) async {

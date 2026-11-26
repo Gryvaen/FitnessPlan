@@ -104,12 +104,13 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     final dayMarker = ref.watch(dayMarkerProvider(day)).value;
     final chipLabel = dayTarget == null
         ? null
-        : targetChipLabel(dayTarget, profile, l10n, marker: dayMarker);
+        : targetChipLabel(dayTarget, l10n, marker: dayMarker);
     final strategyLabel = chipLabel != null && band != null
         ? '$chipLabel · ${l10n.maintainBandShort(band.low.round(), band.high.round())}'
         : chipLabel;
     final canChooseDietStrategy =
         profile.goal == FitnessGoal.cut &&
+        dayTarget?.dayGoal == FitnessGoal.cut &&
         dayTarget?.source == TargetSource.profile &&
         dayTarget?.isLegacyEstimate == false;
 
@@ -187,7 +188,11 @@ class _TodayPageState extends ConsumerState<TodayPage> {
                   // that day is viewed again) — the title already carries
                   // the specific date, so the subtitle no longer needs to
                   // fall back to a plain date for non-today days.
-                  dateLabel: goalQuoteForDay(profile.goal, day, locale),
+                  dateLabel: goalQuoteForDay(
+                    dayTarget?.dayGoal ?? profile.goal,
+                    day,
+                    locale,
+                  ),
                   canGoPrev: canGoPrev,
                   canGoNext: canGoNext,
                   onPrev: () => ref

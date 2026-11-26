@@ -295,6 +295,14 @@ class DailyNutritionTarget {
   /// [bulkReasonTag]); such days must reach the target, within a band.
   bool get isBulkDay => reason?.split(';').contains(bulkReasonTag) ?? false;
 
+  /// The profile goal this day was under, read from its own tags — never
+  /// from the current profile, which may have switched since.
+  FitnessGoal get dayGoal => isMaintainDay
+      ? FitnessGoal.maintain
+      : isBulkDay
+      ? FitnessGoal.bulk
+      : FitnessGoal.cut;
+
   int get caloriesRounded => calories.round();
 
   /// Planned deficit = estimated TDEE − target (null if TDEE unknown).

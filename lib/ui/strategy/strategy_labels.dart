@@ -75,7 +75,6 @@ extension StrategyIssueL10n on StrategyIssue {
 /// the day's marker, naming a cycle day it paused (休息日 when unknown).
 String targetChipLabel(
   DailyNutritionTarget target,
-  UserProfile profile,
   AppLocalizations l10n, {
   DayMarkerType? marker,
 }) {
@@ -106,7 +105,8 @@ String targetChipLabel(
       }
     case TargetSource.profile:
       if (target.isLegacyEstimate) return l10n.targetLegacyEstimate;
-      return switch (profile.goal) {
+      // The day's own goal: a past 维持 day stays 维持 after switching back.
+      return switch (target.dayGoal) {
         FitnessGoal.cut => l10n.targetSourceProfileCut,
         // 维持 has one default strategy; name it like a cut strategy.
         FitnessGoal.maintain => l10n.maintainStrategyName,
