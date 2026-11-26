@@ -233,6 +233,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                         builder: (context, state) => const CutRoundStatsPage(),
                       ),
                       GoRoute(
+                        path: 'maintain-history',
+                        builder: (context, state) =>
+                            const MaintainHistoryPage(),
+                      ),
+                      GoRoute(
                         path: 'settings',
                         builder: (context, state) =>
                             const CultivationGoalPickerPage(),

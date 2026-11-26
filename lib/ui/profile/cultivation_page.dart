@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../theme/app_theme.dart';
 import '../../domain/cultivation.dart';
+import '../../domain/maintain_balance.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../ink/ink_icon.dart';
+import 'balance_scale.dart';
 import 'cultivation_labels.dart';
 import 'goal_switch.dart';
+
+part 'maintain_cultivation_home.dart';
 
 /// 「我的境界」入口：始终展示当前用户所选目标（减脂/增肌/维持）对应的
 /// 境界体系（[CultivationGoalScreen]）；用户尚未建立档案（选目标）时展示
@@ -27,7 +32,7 @@ class CultivationPage extends ConsumerWidget {
 }
 
 /// 某一个目标体系的境界页：仅当 [goal] 与用户当前所选目标一致时展示真实
-/// 内容（减脂 = 完整修仙玩法；增肌/维持 = 玩法尚在设计中的占位页），否则展示
+/// 内容（减脂 = 完整修仙玩法；维持 = 阴阳天秤 + 心境；增肌 = 玩法尚在设计中的占位页），否则展示
 /// 该目标专属美术的「尚未开启」页。由 [CultivationPage]（当前目标）与
 /// [CultivationGoalPickerPage]（画轴选择页，可能点进非当前目标）共用。
 class CultivationGoalScreen extends ConsumerWidget {
@@ -41,8 +46,8 @@ class CultivationGoalScreen extends ConsumerWidget {
     if (activeGoal != goal) return _CultivationLockedView(targetGoal: goal);
     return switch (goal) {
       FitnessGoal.cut => const _CultivationHome(),
-      FitnessGoal.bulk ||
-      FitnessGoal.maintain => _CultivationComingSoonHome(goal: goal),
+      FitnessGoal.maintain => const _MaintainHome(),
+      FitnessGoal.bulk => _CultivationComingSoonHome(goal: goal),
     };
   }
 }
@@ -604,7 +609,7 @@ class _CultivationLockedView extends ConsumerWidget {
   }
 }
 
-/// 增肌/维持境界的占位主页：目标已生效（用户当前就是这个目标），但具体
+/// 增肌境界的占位主页：目标已生效（用户当前就是这个目标），但具体
 /// 修为换算与境界体系还在设计中（见对话记录 —— 用户明确表示先只做 UI）。
 /// 展示该目标专属美术 + 「打磨中」文案 + 齿轮入口，其余（历史/境界体系）
 /// 按钮暂不展示，因为对应玩法尚不存在。

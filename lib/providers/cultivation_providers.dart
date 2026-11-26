@@ -10,6 +10,7 @@ import '../domain/cut_cultivation.dart';
 import '../domain/cut_round_stats.dart';
 import '../domain/day_marker.dart';
 import '../domain/deficit.dart';
+import '../domain/maintain_balance.dart';
 import '../domain/models.dart';
 import 'core_providers.dart';
 import 'day_clock_providers.dart';
@@ -72,6 +73,11 @@ class CutCultivationStateNotifier extends Notifier<CutCultivationState> {
 final cultivationEligibleProvider = Provider<bool>((ref) {
   final profile = ref.watch(profileProvider);
   return profile?.goal == FitnessGoal.cut;
+});
+
+/// 维持玩法（阴阳天秤 + 心境）只对选择「维持」目标的用户开放。
+final maintainEligibleProvider = Provider<bool>((ref) {
+  return ref.watch(profileProvider)?.goal == FitnessGoal.maintain;
 });
 
 /// DB row for local today (re-subscribes after each sync so the calendar day
@@ -144,6 +150,8 @@ class CultivationDayRecord {
     required this.dietKcal,
     required this.workout,
     this.cheatPenaltyKcal = 0,
+    this.tdee,
+    this.dietCounted = false,
   });
 
   final DateTime date;
@@ -151,6 +159,12 @@ class CultivationDayRecord {
   final double dietKcal;
   final double cheatPenaltyKcal;
   final DayWorkoutSnapshot workout;
+
+  /// 当日 TDEE（无目标时为 null）。
+  final double? tdee;
+
+  /// 饮食是否真正计入（≥ 2 类餐次、有 TDEE 且当日饮食开关开）。
+  final bool dietCounted;
 
   double get totalKcal => stepsKcal + dietKcal + cheatPenaltyKcal;
 }
@@ -243,8 +257,8 @@ Future<List<CultivationDayRecord>> _buildCultivationDays({
 
     final meal = mealDays[day];
     var dietKcal = 0.0;
+    final tdee = targets[day]?.estimatedTdee;
     if (meal != null && meal.mealTypes.length >= 2) {
-      final tdee = targets[day]?.estimatedTdee;
       if (tdee != null) {
         dietKcal = cultivationDietContribution(
           tdee: tdee,
@@ -267,7 +281,8 @@ Future<List<CultivationDayRecord>> _buildCultivationDays({
       continue;
     }
     final zeroedStepsKcal = (marker?.includeSteps ?? true) ? stepsKcal : 0.0;
-    final zeroedDietKcal = (marker?.includeDiet ?? true) ? dietKcal : 0.0;
+    final includeDiet = marker?.includeDiet ?? true;
+    final zeroedDietKcal = includeDiet ? dietKcal : 0.0;
 
     out.add(
       CultivationDayRecord(
@@ -276,6 +291,8 @@ Future<List<CultivationDayRecord>> _buildCultivationDays({
         dietKcal: zeroedDietKcal,
         cheatPenaltyKcal: marker?.penaltyKcal ?? 0,
         workout: workout,
+        tdee: tdee,
+        dietCounted: hasDietLog && tdee != null && includeDiet,
       ),
     );
   }
@@ -514,3 +531,179 @@ final cutRoundStatsProvider = FutureProvider.autoDispose
 final currentCutRoundProvider = Provider<CutCultivationSegment?>(
   (ref) => ref.watch(cutCultivationStateProvider).openSegment,
 );
+
+// ─────────────────────────── 维持：阴阳天秤 + 心境 ───────────────────────────
+
+final maintainCultivationRepositoryProvider =
+    Provider<MaintainCultivationRepository>((ref) {
+      return MaintainCultivationRepository(
+        ref.watch(sharedPreferencesProvider),
+      );
+    });
+
+final maintainCultivationStateProvider =
+    NotifierProvider<
+      MaintainCultivationStateNotifier,
+      MaintainCultivationState
+    >(MaintainCultivationStateNotifier.new);
+
+class MaintainCultivationStateNotifier
+    extends Notifier<MaintainCultivationState> {
+  @override
+  MaintainCultivationState build() {
+    return ref.read(maintainCultivationRepositoryProvider).load();
+  }
+
+  void reload() {
+    state = ref.read(maintainCultivationRepositoryProvider).load();
+  }
+
+  /// Leaving maintain: bank the open stretch's balanced days, close it.
+  Future<void> freezeLeavingMaintain(
+    int openBalancedDays, {
+    DateTime? endDay,
+  }) async {
+    state = await ref
+        .read(maintainCultivationRepositoryProvider)
+        .freezeOpenSegment(
+          openBalancedDays: openBalancedDays,
+          endDay: endDay ?? CalendarDay.todayLocal(),
+        );
+  }
+
+  /// Entering maintain (or already on it with no open stretch): open one.
+  Future<void> openForMaintain({DateTime? preferredStart}) async {
+    state = await ref
+        .read(maintainCultivationRepositoryProvider)
+        .openSegment(preferredStart: preferredStart);
+  }
+}
+
+/// 天秤上的一天，附带原始修行记录（步数/饮食/放纵拆分，用于历史页）。
+class MaintainHistoryDay {
+  const MaintainHistoryDay({required this.record, required this.entry});
+
+  final CultivationDayRecord record;
+  final MaintainDayEntry entry;
+}
+
+class MaintainHistorySection {
+  const MaintainHistorySection({required this.segment, required this.days});
+
+  final CutCultivationSegment segment;
+
+  /// 新日期在前。只含上秤的日子。
+  final List<MaintainHistoryDay> days;
+
+  bool get isCurrent => segment.isOpen;
+
+  MaintainBalance get balance =>
+      MaintainBalance.fromEntries(days.map((d) => d.entry));
+}
+
+MaintainDayEntry? maintainEntryFromRecord(CultivationDayRecord r) {
+  return MaintainDayEntry.fromContribution(
+    date: r.date,
+    totalKcal: r.totalKcal,
+    dietCounted: r.dietCounted,
+    tdee: r.tdee,
+    cheatSurplusKcal: -r.cheatPenaltyKcal,
+  );
+}
+
+Future<List<MaintainHistoryDay>> _buildMaintainDays({
+  required Ref ref,
+  required CutCultivationSegment segment,
+  UserProfile? profileForResolution,
+  DateTime? through,
+}) async {
+  final records = await _buildCultivationDays(
+    ref: ref,
+    allowedDays: _daysInSegment(segment, through: through),
+    profileForResolution: profileForResolution,
+  );
+  return [
+    for (final r in records)
+      if (maintainEntryFromRecord(r) case final entry?)
+        MaintainHistoryDay(record: r, entry: entry),
+  ];
+}
+
+/// 维持时段的天秤记录（新时段在前）。
+final maintainHistoryProvider =
+    FutureProvider.autoDispose<List<MaintainHistorySection>>((ref) async {
+      ref.watch(_cultivationDbTickProvider);
+      ref.watch(cultivationStepsTodayProvider);
+      ref.watch(profileProvider);
+
+      final ledger = ref.watch(maintainCultivationStateProvider);
+      final profile = ref.read(profileProvider);
+
+      // Migrate: already on maintain with no open stretch → open one.
+      if (profile?.goal == FitnessGoal.maintain && ledger.openSegment == null) {
+        await ref
+            .read(maintainCultivationStateProvider.notifier)
+            .openForMaintain(preferredStart: profile?.calorieStandardSince);
+      }
+
+      final state = ref.read(maintainCultivationStateProvider);
+      final sections = <MaintainHistorySection>[];
+      for (final segment in state.segments.reversed) {
+        sections.add(
+          MaintainHistorySection(
+            segment: segment,
+            days: await _buildMaintainDays(ref: ref, segment: segment),
+          ),
+        );
+      }
+      return sections;
+    });
+
+/// 当前维持时段的天秤（离开维持即清零）。
+final maintainBalanceProvider = Provider<MaintainBalance>((ref) {
+  final sections = ref.watch(maintainHistoryProvider).value;
+  if (sections == null) return const MaintainBalance();
+  for (final section in sections) {
+    if (section.isCurrent) return section.balance;
+  }
+  return const MaintainBalance();
+});
+
+/// 今日是否已上秤；未上秤时为 null。
+final maintainTodayEntryProvider = Provider<MaintainDayEntry?>((ref) {
+  final sections = ref.watch(maintainHistoryProvider).value;
+  if (sections == null) return null;
+  final today = CalendarDay.todayLocal();
+  for (final section in sections) {
+    if (!section.isCurrent) continue;
+    for (final d in section.days) {
+      if (d.entry.date == today) return d.entry;
+    }
+  }
+  return null;
+});
+
+/// 心境 = 已冻结平衡日 + 当前维持时段平衡日。
+final mindProgressProvider = Provider<MindProgress>((ref) {
+  final ledger = ref.watch(maintainCultivationStateProvider);
+  final open = ref.watch(maintainBalanceProvider).balancedDays;
+  return computeMindProgress(ledger.frozenBalancedDays + open);
+});
+
+/// Balanced days in the open maintain stretch, computed before a goal switch
+/// (avoids watching profileProvider from inside ProfileNotifier.save).
+Future<int> openMaintainBalancedDaysBeforeGoalSwitch(
+  Ref ref,
+  UserProfile currentProfile, {
+  DateTime? through,
+}) async {
+  final segment = ref.read(maintainCultivationStateProvider).openSegment;
+  if (segment == null) return 0;
+  final days = await _buildMaintainDays(
+    ref: ref,
+    segment: segment,
+    profileForResolution: currentProfile,
+    through: through,
+  );
+  return days.where((d) => d.entry.balanced).length;
+}

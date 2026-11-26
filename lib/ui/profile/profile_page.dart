@@ -12,6 +12,7 @@ import '../../data/repositories/app_update_repository.dart';
 import '../../data/services/permission_gate.dart';
 import '../../domain/calorie_calculator.dart';
 import '../../domain/models.dart';
+import '../../domain/maintain_balance.dart';
 import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../ink/ink_icon.dart';
@@ -20,6 +21,7 @@ import '../strategy/strategy_labels.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/calorie_breakdown.dart';
+import 'balance_scale.dart';
 import 'cultivation_labels.dart';
 import 'update_available_dialog.dart';
 
@@ -739,14 +741,24 @@ class CultivationHeroCard extends ConsumerWidget {
     final l10n = context.l10n;
     final eligible = ref.watch(cultivationEligibleProvider);
     final progress = eligible ? ref.watch(cultivationProgressProvider) : null;
-    final accent = progress?.realm.textColor ?? v.accent;
+    final maintaining = !eligible && ref.watch(maintainEligibleProvider);
+    if (maintaining) ref.watch(maintainHistoryProvider);
+    final mind = maintaining ? ref.watch(mindProgressProvider) : null;
+    final balance = maintaining ? ref.watch(maintainBalanceProvider) : null;
+    final accent =
+        mind?.realm.textColor ?? progress?.realm.textColor ?? v.accent;
 
-    final title = progress == null
+    final title = mind != null
+        ? l10n.cultivationLayerBadge(mind.realm.label(l10n), '${mind.layer}')
+        : progress == null
         ? l10n.cultivationLockedTitle
         : l10n.cultivationLayerBadge(
             progress.realm.label(l10n),
             '${progress.layer}',
           );
+    final layer = mind?.layer ?? progress?.layer;
+    final layerProgress = mind?.layerProgress ?? progress?.layerProgress;
+    final isMax = mind?.isMax ?? progress?.isMax ?? false;
 
     return Semantics(
       button: true,
@@ -774,7 +786,9 @@ class CultivationHeroCard extends ConsumerWidget {
                   width: 112,
                   child: ClipPath(
                     clipper: const _RealmArtClipper(),
-                    child: progress == null
+                    child: balance != null
+                        ? _BalanceRealmArt(balance: balance)
+                        : progress == null
                         ? _LockedRealmArt(accent: accent)
                         : Image.asset(
                             progress.realm.artAsset(progress.layer),
@@ -838,14 +852,14 @@ class CultivationHeroCard extends ConsumerWidget {
                         ),
                       ),
                       const Spacer(),
-                      if (progress == null)
+                      if (layer == null || layerProgress == null)
                         _LockedRealmHint(color: accent)
                       else ...[
-                        _RealmLayerMarks(layer: progress.layer, color: accent),
-                        if (!progress.isMax) ...[
+                        _RealmLayerMarks(layer: layer, color: accent),
+                        if (!isMax) ...[
                           const SizedBox(height: 8),
                           InkBrushProgressBar(
-                            value: progress.layerProgress,
+                            value: layerProgress,
                             height: 8,
                             color: accent,
                           ),
@@ -876,6 +890,29 @@ class _LockedRealmArt extends StatelessWidget {
         InkGlyph.meditation,
         size: 58,
         color: accent.withValues(alpha: .7),
+      ),
+    ),
+  );
+}
+
+/// 维持目标的卡面：宣纸底 + 水墨天秤缩略图（随本次维持累计盈亏倾斜）。
+/// 固定用纸色底，深色模式下墨色部件也看得清。
+class _BalanceRealmArt extends StatelessWidget {
+  const _BalanceRealmArt({required this.balance});
+
+  final MaintainBalance balance;
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: kBalancePaperColor,
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(8, 10, 14, 8),
+      child: BalanceScale(
+        key: const ValueKey('cultivation-balance-thumb'),
+        tiltRadians: balance.tiltRadians,
+        leftShare: balance.leftShare,
+        rightShare: balance.rightShare,
+        sway: false,
       ),
     ),
   );

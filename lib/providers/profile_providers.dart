@@ -50,6 +50,15 @@ class ProfileNotifier extends Notifier<UserProfile?> {
             through: lastOldDay,
           )
         : null;
+    final leavingMaintain =
+        oldGoal == FitnessGoal.maintain && goal != FitnessGoal.maintain;
+    final openBalancedDays = leavingMaintain && existing != null
+        ? await openMaintainBalancedDaysBeforeGoalSwitch(
+            ref,
+            existing,
+            through: lastOldDay,
+          )
+        : null;
     final profile = await ref
         .read(profileRepositoryProvider)
         .saveFromInputs(
@@ -81,6 +90,7 @@ class ProfileNotifier extends Notifier<UserProfile?> {
       to: goal,
       openKcal: openKcal,
       frozenEndDay: lastOldDay,
+      openBalancedDays: openBalancedDays,
     );
     if (existing == null || oldGoal != goal) {
       // The calendar's goal brackets: the new stretch starts on the switch
@@ -98,19 +108,35 @@ class ProfileNotifier extends Notifier<UserProfile?> {
   }
 
   /// Freeze cut cultivation when leaving cut; open a new stretch when
-  /// entering cut so progress continues from the banked total.
-  ///
-  /// The 修行 history needs no invalidate here: it watches both the ledger
-  /// and this profile, so it rebuilds on its own. Invalidating it from this
-  /// notifier is also a Riverpod (debug) CircularDependencyError while the
-  /// history is being listened to.
+  /// entering cut so progress continues from the banked total. The maintain
+  /// ledger (balanced days) follows the same freeze/open rules.
   Future<void> _syncCultivationForGoalSwitch({
     required FitnessGoal? from,
     required FitnessGoal to,
     double? openKcal,
     DateTime? frozenEndDay,
+    int? openBalancedDays,
   }) async {
     if (from == to) return;
+    // The history providers watch profileProvider and their ledgers, so they
+    // rebuild on their own; invalidating them from here would be circular
+    // (CircularDependencyError while e.g. the profile hero card keeps them
+    // alive).
+    final maintain = ref.read(maintainCultivationStateProvider.notifier);
+    if (from == FitnessGoal.maintain) {
+      await maintain.freezeLeavingMaintain(
+        openBalancedDays ?? 0,
+        endDay: frozenEndDay,
+      );
+    } else if (to == FitnessGoal.maintain) {
+      // A booked switch carried out late: the stretch starts on its day.
+      await maintain.openForMaintain(
+        preferredStart: frozenEndDay == null
+            ? state?.calorieStandardSince
+            : CalendarDay.addDays(frozenEndDay, 1),
+      );
+    }
+
     final ledger = ref.read(cutCultivationStateProvider.notifier);
 
     if (from == FitnessGoal.cut && to != FitnessGoal.cut) {

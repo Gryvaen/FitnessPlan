@@ -3289,6 +3289,107 @@ class AppLocalizationsEn extends AppLocalizations {
       'This path\'s own realm system is still being designed — check back soon.';
 
   @override
+  String get mindRealmRestless => 'Restless Mind';
+
+  @override
+  String get mindRealmSettled => 'Settled Mind';
+
+  @override
+  String get mindRealmTranquil => 'Tranquil Mind';
+
+  @override
+  String get mindRealmStillWater => 'Still Water';
+
+  @override
+  String get mindRealmClarity => 'Clear Dao Heart';
+
+  @override
+  String get maintainBalanceDeficitPan => 'Deficit';
+
+  @override
+  String get maintainBalanceSurplusPan => 'Surplus';
+
+  @override
+  String maintainBalanceNet(String kcal, String kg) {
+    return 'Net $kcal kcal · ≈$kg kg';
+  }
+
+  @override
+  String maintainBalanceSince(String start, String days) {
+    return 'Since $start · $days days on the scale';
+  }
+
+  @override
+  String get maintainBalanceEmpty => 'Nothing on the scale yet';
+
+  @override
+  String maintainNextRealmCaption(String days, String left, String next) {
+    return '$days balanced days · $left more to $next';
+  }
+
+  @override
+  String get maintainMaxCaption => 'Clear Dao Heart · Perfected';
+
+  @override
+  String maintainMaxSubcaption(String days) {
+    return '$days balanced days';
+  }
+
+  @override
+  String maintainTodayNet(String kcal) {
+    return 'Today $kcal kcal';
+  }
+
+  @override
+  String get maintainTodayPending =>
+      'Not on the scale today yet — log at least two meal types';
+
+  @override
+  String get maintainBalancedTag => 'Balanced';
+
+  @override
+  String get maintainEstimatedTag => 'Indulgence estimate';
+
+  @override
+  String get maintainHistoryTitle => 'Balance log';
+
+  @override
+  String get maintainHistoryEmpty =>
+      'Nothing on the scale yet. Log at least two meal types and the day\'s surplus or deficit lands on the scale.';
+
+  @override
+  String maintainHistorySegmentCurrent(String start) {
+    return 'Current maintenance · since $start';
+  }
+
+  @override
+  String maintainHistorySegmentPast(String start, String end) {
+    return 'Maintenance · $start – $end';
+  }
+
+  @override
+  String maintainHistorySummary(String left, String right, String days) {
+    return 'Deficit $left · Surplus $right · $days balanced days';
+  }
+
+  @override
+  String get maintainGuideTitle => 'Balance & mind';
+
+  @override
+  String get maintainGuideBody =>
+      'Each day is settled from the day you started maintaining: net = intake − (TDEE + steps). A deficit goes on the left pan, a surplus on the right; the beam tilts toward the heavier side. A day only lands on the scale when at least two meal types are logged; on an indulgence day that doesn\'t count diet, your own surplus figure is used instead. Leaving maintenance empties the scale.';
+
+  @override
+  String maintainGuideBalancedRule(String kcal) {
+    return 'A balanced day: net within ±$kcal kcal (10% of TDEE, at least 150). Balanced days raise your mind state and are kept even if you switch goals.';
+  }
+
+  @override
+  String maintainGuideTierDays(String days) {
+    return '$days+ balanced days';
+  }
+
+  @override
   String get cultivationPickerTitle => 'Choose a realm';
 
   @override

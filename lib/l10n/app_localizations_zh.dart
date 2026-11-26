@@ -3214,6 +3214,105 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cultivationComingSoonBody => '这条修行之路专属的境界体系还在设计中，敬请期待。';
 
   @override
+  String get mindRealmRestless => '心浮';
+
+  @override
+  String get mindRealmSettled => '心定';
+
+  @override
+  String get mindRealmTranquil => '心静';
+
+  @override
+  String get mindRealmStillWater => '心如止水';
+
+  @override
+  String get mindRealmClarity => '道心通明';
+
+  @override
+  String get maintainBalanceDeficitPan => '亏';
+
+  @override
+  String get maintainBalanceSurplusPan => '盈';
+
+  @override
+  String maintainBalanceNet(String kcal, String kg) {
+    return '净 $kcal kcal · ≈$kg kg';
+  }
+
+  @override
+  String maintainBalanceSince(String start, String days) {
+    return '自 $start 起 · 上秤 $days 天';
+  }
+
+  @override
+  String get maintainBalanceEmpty => '天秤尚空';
+
+  @override
+  String maintainNextRealmCaption(String days, String left, String next) {
+    return '平衡日 $days · 距「$next」还差 $left 天';
+  }
+
+  @override
+  String get maintainMaxCaption => '道心通明 · 圆满';
+
+  @override
+  String maintainMaxSubcaption(String days) {
+    return '已累计 $days 个平衡日';
+  }
+
+  @override
+  String maintainTodayNet(String kcal) {
+    return '今日 $kcal kcal';
+  }
+
+  @override
+  String get maintainTodayPending => '今日尚未上秤：记录至少两类餐次后计入';
+
+  @override
+  String get maintainBalancedTag => '平衡';
+
+  @override
+  String get maintainEstimatedTag => '放纵估算';
+
+  @override
+  String get maintainHistoryTitle => '天秤记录';
+
+  @override
+  String get maintainHistoryEmpty => '还没有上秤的日子。记录至少两类餐次后，当天的热量盈亏会放上天秤。';
+
+  @override
+  String maintainHistorySegmentCurrent(String start) {
+    return '当前维持 · 自 $start 起';
+  }
+
+  @override
+  String maintainHistorySegmentPast(String start, String end) {
+    return '维持 · $start – $end';
+  }
+
+  @override
+  String maintainHistorySummary(String left, String right, String days) {
+    return '亏 $left · 盈 $right · 平衡日 $days';
+  }
+
+  @override
+  String get maintainGuideTitle => '阴阳天秤 · 心境';
+
+  @override
+  String get maintainGuideBody =>
+      '从进入维持那天起按天结算：净值 = 摄入 −（TDEE + 步数）。亏空放左盘，盈余放右盘，横梁向更重的一侧倾斜。当天记录至少两类餐次才会上秤；放纵日不计饮食时，改用你自己填写的盈余。离开维持后天秤清空。';
+
+  @override
+  String maintainGuideBalancedRule(String kcal) {
+    return '平衡日：当天净值在 ±$kcal kcal 以内（TDEE 的 10%，至少 150）。平衡日累计提升心境，切换目标也会保留。';
+  }
+
+  @override
+  String maintainGuideTierDays(String days) {
+    return '$days 个平衡日起';
+  }
+
+  @override
   String get cultivationPickerTitle => '境界抉择';
 
   @override

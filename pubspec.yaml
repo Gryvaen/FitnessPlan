@@ -50,6 +50,7 @@ flutter:
   assets:
     - assets/food_seed.json
     - assets/cultivation/
+    - assets/cultivation/maintain/
     - assets/ink/
     - assets/ink/icons/light/
     - assets/ink/icons/dark/

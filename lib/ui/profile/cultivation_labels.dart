@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../domain/cultivation.dart';
+import '../../domain/maintain_balance.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations_ext.dart';
 
@@ -39,6 +40,30 @@ extension CultivationRealmL10n on CultivationRealm {
     return 'assets/cultivation/${_assetFolder}_$clamped.jpg';
   }
 }
+
+extension MindRealmL10n on MindRealm {
+  String label(AppLocalizations l10n) => switch (this) {
+    MindRealm.restless => l10n.mindRealmRestless,
+    MindRealm.settled => l10n.mindRealmSettled,
+    MindRealm.tranquil => l10n.mindRealmTranquil,
+    MindRealm.stillWater => l10n.mindRealmStillWater,
+    MindRealm.clarity => l10n.mindRealmClarity,
+  };
+
+  /// 心浮灰褐 → 心定湖青 → 心静靛蓝 → 心如止水深靛 → 道心通明金。
+  Color get textColor => switch (this) {
+    MindRealm.restless => const Color(0xFF7A6A55),
+    MindRealm.settled => const Color(0xFF2E7D74),
+    MindRealm.tranquil => const Color(0xFF2E6FA8),
+    MindRealm.stillWater => const Color(0xFF4B5FB8),
+    MindRealm.clarity => const Color(0xFFB8860B),
+  };
+}
+
+/// 天秤左盘（亏空）与右盘（盈余）的配色：冷青 / 暖橙，不用红绿以免带
+/// 「好坏」评判——维持期两边都只是偏离。
+const kBalanceDeficitColor = Color(0xFF2E6FA8);
+const kBalanceSurplusColor = Color(0xFFC0662B);
 
 /// 三大目标体系（减脂/增肌/维持）的画轴选择页与「尚未开启」占位页共用的
 /// 主题素材：每个目标一幅去底的画卷立绘（黑底抠图，画轴选择页用，见
@@ -86,3 +111,10 @@ String formatSignedKcal(double kcal) {
 
 /// 保留一位小数，例如 6.8。
 String formatKg(double kg) => kg.toStringAsFixed(1);
+
+/// 同 [formatKg]，正值显式加「+」，例如 +0.3 / -0.2。
+String formatSignedKg(double kg) {
+  final text = kg.toStringAsFixed(1);
+  if (text == '0.0' || text == '-0.0') return '0.0';
+  return kg > 0 ? '+$text' : text;
+}

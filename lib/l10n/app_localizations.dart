@@ -5691,6 +5691,162 @@ abstract class AppLocalizations {
   /// **'This path\'s own realm system is still being designed — check back soon.'**
   String get cultivationComingSoonBody;
 
+  /// No description provided for @mindRealmRestless.
+  ///
+  /// In en, this message translates to:
+  /// **'Restless Mind'**
+  String get mindRealmRestless;
+
+  /// No description provided for @mindRealmSettled.
+  ///
+  /// In en, this message translates to:
+  /// **'Settled Mind'**
+  String get mindRealmSettled;
+
+  /// No description provided for @mindRealmTranquil.
+  ///
+  /// In en, this message translates to:
+  /// **'Tranquil Mind'**
+  String get mindRealmTranquil;
+
+  /// No description provided for @mindRealmStillWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Still Water'**
+  String get mindRealmStillWater;
+
+  /// No description provided for @mindRealmClarity.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Dao Heart'**
+  String get mindRealmClarity;
+
+  /// No description provided for @maintainBalanceDeficitPan.
+  ///
+  /// In en, this message translates to:
+  /// **'Deficit'**
+  String get maintainBalanceDeficitPan;
+
+  /// No description provided for @maintainBalanceSurplusPan.
+  ///
+  /// In en, this message translates to:
+  /// **'Surplus'**
+  String get maintainBalanceSurplusPan;
+
+  /// No description provided for @maintainBalanceNet.
+  ///
+  /// In en, this message translates to:
+  /// **'Net {kcal} kcal · ≈{kg} kg'**
+  String maintainBalanceNet(String kcal, String kg);
+
+  /// No description provided for @maintainBalanceSince.
+  ///
+  /// In en, this message translates to:
+  /// **'Since {start} · {days} days on the scale'**
+  String maintainBalanceSince(String start, String days);
+
+  /// No description provided for @maintainBalanceEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing on the scale yet'**
+  String get maintainBalanceEmpty;
+
+  /// No description provided for @maintainNextRealmCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} balanced days · {left} more to {next}'**
+  String maintainNextRealmCaption(String days, String left, String next);
+
+  /// No description provided for @maintainMaxCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Dao Heart · Perfected'**
+  String get maintainMaxCaption;
+
+  /// No description provided for @maintainMaxSubcaption.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} balanced days'**
+  String maintainMaxSubcaption(String days);
+
+  /// No description provided for @maintainTodayNet.
+  ///
+  /// In en, this message translates to:
+  /// **'Today {kcal} kcal'**
+  String maintainTodayNet(String kcal);
+
+  /// No description provided for @maintainTodayPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Not on the scale today yet — log at least two meal types'**
+  String get maintainTodayPending;
+
+  /// No description provided for @maintainBalancedTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced'**
+  String get maintainBalancedTag;
+
+  /// No description provided for @maintainEstimatedTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Indulgence estimate'**
+  String get maintainEstimatedTag;
+
+  /// No description provided for @maintainHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance log'**
+  String get maintainHistoryTitle;
+
+  /// No description provided for @maintainHistoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing on the scale yet. Log at least two meal types and the day\'s surplus or deficit lands on the scale.'**
+  String get maintainHistoryEmpty;
+
+  /// No description provided for @maintainHistorySegmentCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current maintenance · since {start}'**
+  String maintainHistorySegmentCurrent(String start);
+
+  /// No description provided for @maintainHistorySegmentPast.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintenance · {start} – {end}'**
+  String maintainHistorySegmentPast(String start, String end);
+
+  /// No description provided for @maintainHistorySummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Deficit {left} · Surplus {right} · {days} balanced days'**
+  String maintainHistorySummary(String left, String right, String days);
+
+  /// No description provided for @maintainGuideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance & mind'**
+  String get maintainGuideTitle;
+
+  /// No description provided for @maintainGuideBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Each day is settled from the day you started maintaining: net = intake − (TDEE + steps). A deficit goes on the left pan, a surplus on the right; the beam tilts toward the heavier side. A day only lands on the scale when at least two meal types are logged; on an indulgence day that doesn\'t count diet, your own surplus figure is used instead. Leaving maintenance empties the scale.'**
+  String get maintainGuideBody;
+
+  /// No description provided for @maintainGuideBalancedRule.
+  ///
+  /// In en, this message translates to:
+  /// **'A balanced day: net within ±{kcal} kcal (10% of TDEE, at least 150). Balanced days raise your mind state and are kept even if you switch goals.'**
+  String maintainGuideBalancedRule(String kcal);
+
+  /// No description provided for @maintainGuideTierDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{days}+ balanced days'**
+  String maintainGuideTierDays(String days);
+
   /// No description provided for @cultivationPickerTitle.
   ///
   /// In en, this message translates to:
