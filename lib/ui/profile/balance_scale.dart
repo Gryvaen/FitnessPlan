@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -100,11 +101,28 @@ class BalanceScale extends StatefulWidget {
   State<BalanceScale> createState() => _BalanceScaleState();
 }
 
+// ── 摆动手感（按需微调）────────────────────────────────────────────
+/// 主页天秤：低阻尼（阻尼比 ≈ 0.13），周期约 1.15s，来回 3–4 次后落定。
+const _liveSpring = SpringDescription(mass: 1, stiffness: 30, damping: 1.4);
+
+/// 缩略图：接近临界阻尼，平稳落到倾角。
+const _calmSpring = SpringDescription(mass: 1, stiffness: 50, damping: 13);
+
+/// 入场时横梁先被拨偏这么多（约 8.6°）再松手：振幅与倾角无关，
+/// 接近持平时也看得见摆，满倾时也不会甩出画面。
+const _entryOffset = 0.15;
+
+/// 入场摆动延迟，等路由转场结束。
+const _entryDelay = Duration(milliseconds: 350);
+
+/// 吊盘摆荡：盘角 = −k·横梁角速度，并限制在 ±6°。
+const _panSwingGain = 0.12;
+const _panSwingMax = 6 * math.pi / 180;
+
+const _swayAmplitude = 0.4 * math.pi / 180;
+
 class _BalanceScaleState extends State<BalanceScale>
     with TickerProviderStateMixin {
-  static const _spring = SpringDescription(mass: 1, stiffness: 50, damping: 6);
-  static const _swayAmplitude = 0.4 * math.pi / 180;
-
   late final AnimationController _angle = AnimationController.unbounded(
     vsync: this,
   );
@@ -113,29 +131,55 @@ class _BalanceScaleState extends State<BalanceScale>
     duration: const Duration(seconds: 6),
   );
 
-  @override
-  void initState() {
-    super.initState();
-    // 首次出现时从水平摆到当前倾角，像刚把东西放上秤。
-    _springTo(widget.tiltRadians);
-  }
+  Timer? _entryTimer;
+  bool _entered = false;
+
+  bool get _reduceMotion => MediaQuery.disableAnimationsOf(context);
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _syncSway();
+    if (!_entered) {
+      _entered = true;
+      _enter();
+    }
+  }
+
+  /// 首次出现：横梁先偏向轻的一侧，转场结束后松手，来回摆几次落定。
+  void _enter() {
+    final target = widget.tiltRadians;
+    if (_reduceMotion) {
+      _angle.value = target;
+    } else if (!widget.sway) {
+      _springTo(target, _calmSpring);
+    } else {
+      final dir = target < 0 ? -1.0 : 1.0;
+      _angle.value = target - dir * _entryOffset;
+      _entryTimer = Timer(_entryDelay, () {
+        if (!mounted) return;
+        _springTo(target, _liveSpring);
+      });
+    }
   }
 
   @override
   void didUpdateWidget(BalanceScale old) {
     super.didUpdateWidget(old);
-    if (old.tiltRadians != widget.tiltRadians) _springTo(widget.tiltRadians);
+    if (old.tiltRadians != widget.tiltRadians) {
+      _entryTimer?.cancel();
+      if (_reduceMotion) {
+        _angle.value = widget.tiltRadians;
+      } else {
+        _springTo(widget.tiltRadians, widget.sway ? _liveSpring : _calmSpring);
+      }
+    }
     if (old.sway != widget.sway) _syncSway();
   }
 
-  void _springTo(double target) {
+  void _springTo(double target, SpringDescription spring) {
     _angle.animateWith(
-      SpringSimulation(_spring, _angle.value, target, _angle.velocity),
+      SpringSimulation(spring, _angle.value, target, _angle.velocity),
     );
   }
 
@@ -152,6 +196,7 @@ class _BalanceScaleState extends State<BalanceScale>
 
   @override
   void dispose() {
+    _entryTimer?.cancel();
     _angle.dispose();
     _sway.dispose();
     super.dispose();
@@ -176,6 +221,10 @@ class _BalanceScaleState extends State<BalanceScale>
                 w,
                 _angle.value +
                     math.sin(_sway.value * 2 * math.pi) * _swayAmplitude,
+                (-_panSwingGain * _angle.velocity).clamp(
+                  -_panSwingMax,
+                  _panSwingMax,
+                ),
               ),
             ),
           ),
@@ -184,7 +233,12 @@ class _BalanceScaleState extends State<BalanceScale>
     );
   }
 
-  Widget _buildScale(BuildContext context, double w, double angle) {
+  Widget _buildScale(
+    BuildContext context,
+    double w,
+    double angle,
+    double panSwing,
+  ) {
     final beamW = w * _beamWidth;
     final beamH = beamW / _beamAspect;
     final pivot = Offset(w / 2, w * _pivotY);
@@ -201,7 +255,8 @@ class _BalanceScaleState extends State<BalanceScale>
       filterQuality: FilterQuality.medium,
     );
 
-    List<Widget> pan(
+    /// 一只吊盘（连同日月和标签）绕挂环摆荡。
+    Widget pan(
       Offset hook,
       String orbAsset,
       double share,
@@ -209,30 +264,48 @@ class _BalanceScaleState extends State<BalanceScale>
       String? value,
       Color captionColor,
     ) {
-      final left = hook.dx - panW * _panHook.dx;
-      final top = hook.dy - panH * _panHook.dy;
-      final rimY = top + panH * _panRimY;
+      final groupW = panW * 1.4;
+      final hookY = panH * _panHook.dy;
       final orbW = panW * (0.22 + 0.30 * share.clamp(0.0, 1.0));
-      return [
-        if (share > 0)
-          Positioned(
-            left: hook.dx - orbW / 2,
-            top: rimY - orbW * 0.72,
-            child: img(orbAsset, orbW),
+      final rimY = panH * _panRimY;
+      return Positioned(
+        left: hook.dx - groupW / 2,
+        top: hook.dy - hookY,
+        width: groupW,
+        height: panH + 48,
+        child: Transform.rotate(
+          angle: panSwing,
+          alignment: Alignment.topLeft,
+          origin: Offset(groupW / 2, hookY),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              if (share > 0)
+                Positioned(
+                  left: (groupW - orbW) / 2,
+                  top: rimY - orbW * 0.72,
+                  child: img(orbAsset, orbW),
+                ),
+              Positioned(
+                left: (groupW - panW) / 2,
+                top: 0,
+                child: img(kBalancePanAsset, panW),
+              ),
+              if (caption != null || value != null)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: panH + 4,
+                  child: _PanLabel(
+                    caption: caption,
+                    value: value,
+                    color: captionColor,
+                  ),
+                ),
+            ],
           ),
-        Positioned(left: left, top: top, child: img(kBalancePanAsset, panW)),
-        if (caption != null || value != null)
-          Positioned(
-            left: hook.dx - panW * 0.7,
-            width: panW * 1.4,
-            top: top + panH + 4,
-            child: _PanLabel(
-              caption: caption,
-              value: value,
-              color: captionColor,
-            ),
-          ),
-      ];
+        ),
+      );
     }
 
     return Stack(
@@ -251,7 +324,7 @@ class _BalanceScaleState extends State<BalanceScale>
             child: img(kBalanceBeamAsset, beamW),
           ),
         ),
-        ...pan(
+        pan(
           leftHook,
           kBalanceMoonAsset,
           widget.leftShare,
@@ -259,7 +332,7 @@ class _BalanceScaleState extends State<BalanceScale>
           widget.leftValue,
           kBalanceDeficitColor,
         ),
-        ...pan(
+        pan(
           rightHook,
           kBalanceSunAsset,
           widget.rightShare,
