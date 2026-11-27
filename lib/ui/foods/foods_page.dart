@@ -9,6 +9,7 @@ import '../../providers/app_providers.dart';
 import '../shell/swipe_tab_view.dart';
 import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
+import '../theme/macro_color.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/expanding_search.dart';
 import '../widgets/food_name_link.dart';
@@ -300,8 +301,10 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
                               key: ValueKey(t),
                               child: switch (t) {
                                 _FoodsTab.recent => _FoodListView(
-                                  watch: (ref) =>
-                                      ref.watch(recentFoodsProvider),
+                                  // 按名字颜色排：红 → 蓝 → 黄，同色按时间。
+                                  watch: (ref) => ref
+                                      .watch(recentFoodsProvider)
+                                      .whenData(sortFoodsByDominantMacro),
                                   emptyGlyph: InkGlyph.loading,
                                   emptyTitle: l10n.noRecentFoods,
                                   openDetail: (context, foodId) =>
