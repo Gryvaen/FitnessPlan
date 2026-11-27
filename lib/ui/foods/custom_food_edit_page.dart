@@ -422,15 +422,6 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
               l10n.temporaryBadge,
               style: Theme.of(context).textTheme.subsectionTitle,
             ),
-            if (!_caloriesOnly) ...[
-              const SizedBox(height: 4),
-              Text(
-                l10n.temporaryFoodRequiredHint,
-                style: Theme.of(context).textTheme.meta?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
             const SizedBox(height: 8),
           ],
           TextField(

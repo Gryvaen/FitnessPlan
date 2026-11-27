@@ -3183,7 +3183,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dailyJournal => '每日笔记';
 
   @override
-  String get journalSubtitle => '记录训练、饮食与身体感受';
+  String get experienceTitle => '经验之谈';
+
+  @override
+  String experienceCount(int n) {
+    return '共 $n 条';
+  }
 
   @override
   String get journalPrompt => '写下今天的感受…';
@@ -4109,9 +4114,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get temporaryNameRequired => '请填写名称';
-
-  @override
-  String get temporaryFoodRequiredHint => '名称和重量必填，营养数值可留空';
 
   @override
   String get addDietRecord => '加入饮食记录';

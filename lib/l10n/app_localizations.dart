@@ -5751,11 +5751,17 @@ abstract class AppLocalizations {
   /// **'Daily journal'**
   String get dailyJournal;
 
-  /// No description provided for @journalSubtitle.
+  /// No description provided for @experienceTitle.
   ///
   /// In en, this message translates to:
-  /// **'Reflect on training, food and how you feel'**
-  String get journalSubtitle;
+  /// **'Lessons learned'**
+  String get experienceTitle;
+
+  /// No description provided for @experienceCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} items'**
+  String experienceCount(int n);
 
   /// No description provided for @journalPrompt.
   ///
@@ -7334,12 +7340,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter a name'**
   String get temporaryNameRequired;
-
-  /// No description provided for @temporaryFoodRequiredHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Name and weight are required; nutrition can be left blank'**
-  String get temporaryFoodRequiredHint;
 
   /// No description provided for @addDietRecord.
   ///

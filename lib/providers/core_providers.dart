@@ -7,6 +7,7 @@ import '../data/repositories/calculator_history_repository.dart';
 import '../data/repositories/data_backup_repository.dart';
 import '../data/repositories/day_marker_repository.dart';
 import '../data/repositories/diet_strategy_repository.dart';
+import '../data/repositories/experience_repository.dart';
 import '../data/repositories/food_repository.dart';
 import '../data/repositories/form_memory_repository.dart';
 import '../data/repositories/meal_preset_repository.dart';
@@ -91,6 +92,10 @@ final dietStrategyRepositoryProvider = Provider<DietStrategyRepository>((ref) {
 
 final noteRepositoryProvider = Provider<NoteRepository>((ref) {
   return NoteRepository(ref.watch(databaseProvider));
+});
+
+final experienceRepositoryProvider = Provider<ExperienceRepository>((ref) {
+  return ExperienceRepository(ref.watch(databaseProvider));
 });
 
 final dayMarkerRepositoryProvider = Provider<DayMarkerRepository>((ref) {

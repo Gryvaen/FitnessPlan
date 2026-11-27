@@ -33,6 +33,7 @@
 | `meal_preset_repository.dart` | 常用组合（套餐）：增删改、由已有记录生成、应用到某天、清理已不存在的食材 |
 | `meal_repository.dart` | 饮食记录：增删改、在餐次间移动、复制某天、摄入汇总、历史 |
 | `note_repository.dart` | 每日笔记（一天一条） |
+| `experience_repository.dart` | 经验之谈：一份带编号的全文，存在 `AppMeta` 的 `experience_notes` 键 |
 | `profile_repository.dart` | 用户档案（prefs 里的 JSON）；保存时调用 `CalorieCalculator` 重新计算目标 |
 | `reminders_repository.dart` | 四类提醒（训练、喝水、饮食、称重）的设置，存在 prefs 的 `reminder_<种类>_<字段>` 下；兼容旧的 `workout_reminder_*` 键 |
 | `step_repository.dart` | 每日步数（`StepLogs` 表） |
@@ -143,7 +144,8 @@ UI 统一 import `app_providers.dart`（汇总导出）。
 | `body_records_tab.dart` | 体重记录；加号那一行左侧是 ⇄（30 天 / 全部，范围写进标题）和图表图标，图表在底部面板里，每次打开沿曲线重新绘制 |
 | `train_records_tab.dart` | 训练：计划、动作库、历史 |
 | `plan_edit_page.dart`、`exercise_picker.dart`、`exercise_form_dialog.dart`、`log_set_sheet.dart` | 编辑训练计划、选择动作、编辑动作、记一组 |
-| `notes_records_tab.dart`、`note_edit_page.dart` | 笔记列表与编辑 |
+| `notes_records_tab.dart`、`note_edit_page.dart` | 笔记列表与编辑；列表标题行左侧「验」印章进入经验之谈 |
+| `experience_page.dart` | 经验之谈编辑页：复用 `note_plan_text.dart` 的编号输入，连按两次回车开始下一条，自动保存 |
 
 ### profile — 我的
 

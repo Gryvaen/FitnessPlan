@@ -187,7 +187,7 @@ void main() {
     await tester.tap(toggle);
     await tester.pumpAndSettle();
     expect(find.text('记录临时食物'), findsOneWidget);
-    expect(find.text('名称和重量必填，营养数值可留空'), findsOneWidget);
+    expect(find.text('名称和重量必填，营养数值可留空'), findsNothing);
     await tester.enterText(field('名称'), '路边摊');
     await tester.enterText(field('摄入重量（g）'), '150');
     await reveal(tester, find.text('加入饮食记录'));

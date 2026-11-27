@@ -3313,7 +3313,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dailyJournal => 'Daily journal';
 
   @override
-  String get journalSubtitle => 'Reflect on training, food and how you feel';
+  String get experienceTitle => 'Lessons learned';
+
+  @override
+  String experienceCount(int n) {
+    return '$n items';
+  }
 
   @override
   String get journalPrompt => 'How are you feeling today?';
@@ -4262,10 +4267,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get temporaryNameRequired => 'Enter a name';
-
-  @override
-  String get temporaryFoodRequiredHint =>
-      'Name and weight are required; nutrition can be left blank';
 
   @override
   String get addDietRecord => 'Add to food diary';

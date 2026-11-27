@@ -25,6 +25,7 @@ Future<void> clearUserData(ProviderReader read) async {
     await read(weightRepositoryProvider).clearAll();
     await read(workoutRepositoryProvider).clearAll();
     await read(noteRepositoryProvider).clearAll();
+    await read(experienceRepositoryProvider).clear();
     await read(foodRepositoryProvider).clearFavorites();
     await read(foodRepositoryProvider).clearHiddenRecentFoods();
     await read(mealPresetRepositoryProvider).clearAll();

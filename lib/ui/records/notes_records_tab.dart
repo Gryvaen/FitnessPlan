@@ -17,6 +17,9 @@ String noteEditPath(DateTime day, {String mode = 'record'}) {
   return '/records/notes/edit?date=$key&mode=$mode';
 }
 
+/// 经验之谈 page under Records.
+const experiencePath = '/records/experience';
+
 String _noteMeta(DailyNote note, AppLocalizations l10n, Locale locale) {
   final updated = note.updatedAt;
   final now = DateTime.now();
@@ -50,27 +53,24 @@ class NotesRecordsTab extends ConsumerWidget {
     final scheme = theme.colorScheme;
     final now = DateTime.now();
 
+    // 「验」seal on the left opens 经验之谈; the 48dp button's own padding
+    // lines the seal up with the list's 20dp gutter.
     final header = Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 8, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
+      child: Row(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  l10n.dailyJournal,
-                  style: theme.textTheme.sectionTitle,
-                ),
-              ),
-              PlainIconAction(
-                iconWidget: const InkIcon(InkGlyph.add),
-                label: l10n.fabWriteNote,
-                onPressed: () => context.push(noteEditPath(DateTime.now())),
-              ),
-            ],
+          IconButton(
+            key: const ValueKey('experience-entry'),
+            tooltip: l10n.experienceTitle,
+            onPressed: () => context.push(experiencePath),
+            icon: const InkSeal('验', size: 24),
           ),
-          Text(l10n.journalSubtitle, style: theme.textTheme.meta),
+          const Spacer(),
+          PlainIconAction(
+            iconWidget: const InkIcon(InkGlyph.add),
+            label: l10n.fabWriteNote,
+            onPressed: () => context.push(noteEditPath(DateTime.now())),
+          ),
         ],
       ),
     );

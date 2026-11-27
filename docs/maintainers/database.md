@@ -6,7 +6,7 @@
 
 - 文件：应用文档目录下的 `fitness_plan.sqlite`，用 `NativeDatabase.createInBackground` 在后台 isolate 打开。
 - 代码：`lib/data/tables.dart`（表定义）、`lib/data/db.dart`（`AppDatabase`、迁移）、`lib/data/db.g.dart`（生成的代码，已提交）。
-- **当前 `schemaVersion` = 38**（`lib/data/db.dart`）。
+- **当前 `schemaVersion` = 39**（`lib/data/db.dart`）。
 - 不是所有数据都在 SQLite 里：用户档案、修仙账本、提醒、主题等存在 SharedPreferences，见 [architecture.md](architecture.md#数据放在哪里)。
 
 ## 表
@@ -27,7 +27,7 @@
 | | `DailyNutritionTargets`（`DailyNutritionTargetRow`） | 每日目标快照，主键是 `date` 文本 |
 | | `DayDietConfirmations` | 「当天饮食已记完」的确认 |
 | | `DayMarkers`（`DayMarkerRow`） | 放纵日/休息日，主键是 `date` 文本 |
-| 其他 | `AppMeta` | 键值对：种子版本 `food_seed_version`、一次性修复的标记等 |
+| 其他 | `AppMeta` | 键值对：种子版本 `food_seed_version`、一次性修复的标记等；`experience_notes` 存「经验之谈」全文（用户数据，清空数据时删除） |
 
 表之间没有外键约束。删除种子里的食材后，旧的饮食记录仍然指向已不存在的 `foodId`，界面靠冗余的名称和营养数据照常显示；套餐则在使用时通过 `pruneMissingFoods` 清理。
 

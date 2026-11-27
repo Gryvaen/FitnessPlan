@@ -25,6 +25,7 @@ import 'ui/profile/cut_round_stats_page.dart';
 import 'ui/profile/realm_guide_page.dart';
 import 'ui/profile/profile_edit_page.dart';
 import 'ui/profile/profile_page.dart';
+import 'ui/records/experience_page.dart';
 import 'ui/records/note_edit_page.dart';
 import 'ui/records/records_page.dart';
 import 'ui/shell/main_shell.dart';
@@ -198,6 +199,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                         mode: state.uri.queryParameters['mode'] ?? 'record',
                       );
                     },
+                  ),
+                  GoRoute(
+                    path: 'experience',
+                    builder: (context, state) => const ExperiencePage(),
                   ),
                 ],
               ),
