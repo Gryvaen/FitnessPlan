@@ -5931,6 +5931,24 @@ abstract class AppLocalizations {
   /// **'Charts'**
   String get bodyChartsAction;
 
+  /// No description provided for @stepsChartWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'weekly daily average'**
+  String get stepsChartWeekly;
+
+  /// No description provided for @trainChartPlanLegend.
+  ///
+  /// In en, this message translates to:
+  /// **'Bar = days trained · dark = share of planned items done'**
+  String get trainChartPlanLegend;
+
+  /// No description provided for @trainChartCompletion.
+  ///
+  /// In en, this message translates to:
+  /// **'{pct}% done'**
+  String trainChartCompletion(int pct);
+
   /// No description provided for @nExercises.
   ///
   /// In en, this message translates to:

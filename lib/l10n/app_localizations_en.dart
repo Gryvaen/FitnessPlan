@@ -3413,6 +3413,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bodyChartsAction => 'Charts';
 
   @override
+  String get stepsChartWeekly => 'weekly daily average';
+
+  @override
+  String get trainChartPlanLegend =>
+      'Bar = days trained · dark = share of planned items done';
+
+  @override
+  String trainChartCompletion(int pct) {
+    return '$pct% done';
+  }
+
+  @override
   String nExercises(int n) {
     return '$n exercises';
   }

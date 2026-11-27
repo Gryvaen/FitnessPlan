@@ -749,6 +749,63 @@ void main() {
     },
   );
 
+  testWidgets('history chart icon opens step charts that draw in', (
+    tester,
+  ) async {
+    final stepRepo = StepRepository(_db);
+    final today = CalendarDay.todayLocal();
+    await stepRepo.setStepsForDay(today, 8000);
+    await stepRepo.setStepsForDay(CalendarDay.addDays(today, -2), 6000);
+    final keepAlive = [
+      _container.listen(recentStepsProvider, (_, _) {}),
+      _container.listen(allStepsProvider, (_, _) {}),
+      _container.listen(workoutHistoryProvider, (_, _) {}),
+      _container.listen(allWorkoutHistoryProvider, (_, _) {}),
+    ];
+    addTearDown(() {
+      for (final s in keepAlive) {
+        s.close();
+      }
+    });
+    await _container.read(recentStepsProvider.future);
+    await _container.read(allStepsProvider.future);
+    await _container.read(workoutHistoryProvider.future);
+    await _container.read(allWorkoutHistoryProvider.future);
+
+    await _pump(tester, const TrainRecordsTab(initialTab: 2));
+    // Only 「最近」 so far: no ⇄, but the chart icon is there.
+    expect(
+      find.byKey(const ValueKey('train-history-scope-toggle')),
+      findsNothing,
+    );
+    await tester.tap(find.byKey(const ValueKey('train-history-charts-open')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byKey(const ValueKey('train-charts-sheet')), findsOneWidget);
+    expect(tester.binding.hasScheduledFrame, isTrue);
+    await tester.pumpAndSettle();
+
+    final sheet = find.byKey(const ValueKey('train-charts-sheet'));
+    expect(
+      find.descendant(
+        of: sheet,
+        matching: find.byKey(const ValueKey('train-steps-chart')),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: sheet, matching: find.text('最近步数')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: sheet, matching: find.text('日均 7000 步')),
+      findsOneWidget,
+    );
+    // No training logged, so no plan chart.
+    expect(find.byKey(const ValueKey('train-plan-chart')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'cold deep-link straight to the history sub-tab is not bounced back to 计划 while streams resolve',
     (tester) async {

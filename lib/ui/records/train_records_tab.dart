@@ -20,6 +20,7 @@ import '../widgets/search_field_focus.dart';
 import 'exercise_form_dialog.dart';
 import 'exercise_picker.dart';
 import 'plan_edit_page.dart';
+import 'train_history_charts.dart';
 
 typedef _TrainHistoryAvailability = ({bool resolved, bool hasHistory});
 
@@ -947,13 +948,13 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Same ⇄ as the 身体 tab; the tile titles (最近步数 / 全部步数 …)
-        // already name the scope.
-        if (showScopeTabs)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
-            child: Row(
-              children: [
+        // Same ⇄ and chart icons as the 身体 tab; the tile titles
+        // (最近步数 / 全部步数 …) already name the scope.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+          child: Row(
+            children: [
+              if (showScopeTabs)
                 PlainIconAction(
                   key: const ValueKey('train-history-scope-toggle'),
                   iconWidget: const InkIcon(InkGlyph.swapHorizontal),
@@ -962,9 +963,15 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                   ),
                   onPressed: () => _setHistoryScope(next),
                 ),
-              ],
-            ),
+              PlainIconAction(
+                key: const ValueKey('train-history-charts-open'),
+                iconWidget: const InkIcon(InkGlyph.chart),
+                label: l10n.bodyChartsAction,
+                onPressed: () => _showHistoryCharts(context, all: scope == 1),
+              ),
+            ],
           ),
+        ),
         Expanded(
           child: showScopeTabs
               ? SwipeTabView(
@@ -980,6 +987,24 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
               : _historyScopeList(context, all: scope == 1),
         ),
       ],
+    );
+  }
+
+  /// Step and per-plan charts for the current scope, in a bottom sheet.
+  void _showHistoryCharts(BuildContext context, {required bool all}) {
+    final l10n = context.l10n;
+    showTrainHistoryCharts(
+      context,
+      steps:
+          ref.read(all ? allStepsProvider : recentStepsProvider).value ??
+          const [],
+      workouts:
+          ref
+              .read(all ? allWorkoutHistoryProvider : workoutHistoryProvider)
+              .value ??
+          const [],
+      stepsTitle: all ? l10n.allSteps : l10n.recentSteps,
+      workoutsTitle: all ? l10n.allWorkouts : l10n.workoutHistory,
     );
   }
 

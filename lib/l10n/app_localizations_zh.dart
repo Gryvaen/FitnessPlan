@@ -3283,6 +3283,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get bodyChartsAction => '图表';
 
   @override
+  String get stepsChartWeekly => '按周日均';
+
+  @override
+  String get trainChartPlanLegend => '条长 = 练过的天数 · 深色 = 完成的项目比例';
+
+  @override
+  String trainChartCompletion(int pct) {
+    return '完成 $pct%';
+  }
+
+  @override
   String nExercises(int n) {
     return '$n 个动作';
   }
