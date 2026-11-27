@@ -4,6 +4,7 @@ import 'package:diet/l10n/app_localizations.dart';
 import 'package:diet/providers/app_providers.dart';
 import 'package:diet/ui/meals/log_meal_page.dart';
 import 'package:diet/ui/theme/app_theme.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -143,6 +144,96 @@ void main() {
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(find.text('打开记一笔'), findsOneWidget);
+  });
+
+  testWidgets('recent and favorites list red, then blue, then yellow', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    // Logged and favorited protein → carb → fat, so the newest (fat) would
+    // come first without the colour sort.
+    final ids = <int>[];
+    for (final (name, p, c, f) in [
+      ('测试鸡胸肉', 23.0, 0.0, 2.0),
+      ('测试米饭', 2.6, 26.0, 0.3),
+      ('测试花生油', 0.0, 0.0, 99.0),
+    ]) {
+      final id = await db
+          .into(db.foodItems)
+          .insert(
+            FoodItemsCompanion.insert(
+              name: name,
+              category: '其他',
+              kcalPer100: 100,
+              proteinPer100: p,
+              carbPer100: c,
+              fatPer100: f,
+            ),
+          );
+      await db
+          .into(db.mealEntries)
+          .insert(
+            MealEntriesCompanion.insert(
+              date: DateTime.now(),
+              mealType: 'lunch',
+              foodId: id,
+              foodName: name,
+              grams: 100,
+              calories: 100,
+              proteinG: p,
+              carbG: c,
+              fatG: f,
+            ),
+          );
+      await db
+          .into(db.favoriteFoods)
+          .insert(
+            FavoriteFoodsCompanion.insert(
+              foodId: Value(id),
+              createdAt: DateTime(2026, 1, 1).add(Duration(hours: ids.length)),
+            ),
+          );
+      ids.add(id);
+    }
+    final container = ProviderContainer(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        databaseProvider.overrideWithValue(db),
+        foodsSeedProvider.overrideWith((ref) async {}),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.ofId(AppThemeId.fresh),
+          locale: const Locale('zh'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const LogMealPage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    for (final prefix in ['fav', 'recent']) {
+      final ys = [
+        for (final id in ids)
+          tester.getTopLeft(find.byKey(ValueKey('$prefix-$id'))).dy,
+      ];
+      expect(ys[0] < ys[1] && ys[1] < ys[2], isTrue, reason: '$prefix $ys');
+    }
   });
 
   testWidgets('search rests as an icon, opens on tap and clear folds it', (

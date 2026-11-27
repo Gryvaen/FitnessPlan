@@ -530,7 +530,8 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
           child: Text(l10n.favorites, style: theme.textTheme.sectionTitle),
         ),
       );
-      for (final f in _favorites) {
+      // 和食材页「最近」一致：按名字颜色排 红 → 蓝 → 黄，同色保持原顺序。
+      for (final f in sortFoodsByDominantMacro(_favorites)) {
         sections.add(
           _swipeDelete(
             key: ValueKey('fav-${f.id}'),
@@ -554,7 +555,7 @@ class _LogMealPageState extends ConsumerState<LogMealPage> {
           child: Text(l10n.recentlyEaten, style: theme.textTheme.sectionTitle),
         ),
       );
-      for (final f in _recent) {
+      for (final f in sortFoodsByDominantMacro(_recent)) {
         sections.add(
           _swipeDelete(
             key: ValueKey('recent-${f.id}'),
