@@ -7,6 +7,7 @@ import 'package:diet/domain/diet_plan.dart';
 import 'package:diet/domain/goal_period.dart';
 import 'package:diet/domain/models.dart';
 import 'package:diet/l10n/app_localizations.dart';
+import 'package:diet/ui/theme/app_theme.dart';
 import 'package:diet/ui/today/deficit_date_picker.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -59,12 +60,31 @@ void main() {
     double intake = 1500,
     String? reason,
     List<GoalPeriod> goalPeriods = const [],
+    Brightness brightness = Brightness.light,
+    double textScale = 1,
+    Set<DateTime> strategyChangeDays = const {},
+    DateTime? cheatDay,
   }) async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     addTearDown(db.close);
+    final markerRepository = DayMarkerRepository(db);
+    if (cheatDay != null) {
+      await tester.runAsync(() => markerRepository.setCheatMeal(cheatDay));
+    }
     await tester.pumpWidget(
       MaterialApp(
         locale: const Locale('en'),
+        theme: AppTheme.ofId(
+          brightness == Brightness.dark
+              ? AppThemeId.graphite
+              : AppThemeId.fresh,
+        ),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
         localizationsDelegates: const [
           AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
@@ -82,7 +102,7 @@ void main() {
                 lastDate: today,
                 plannedDeficit: 0,
                 mealRepository: _FixedMeals(db, {day: intake}),
-                markerRepository: DayMarkerRepository(db),
+                markerRepository: markerRepository,
                 loadTargets: (_, _) async => {
                   day: _target(day, legacy: legacy, reason: reason),
                 },
@@ -90,6 +110,7 @@ void main() {
                 calorieStandardSince: standardSince,
                 cutSegments: segments,
                 goalPeriods: goalPeriods,
+                strategyChangeDays: strategyChangeDays,
               ),
               child: const Text('Open calendar'),
             ),
@@ -173,12 +194,18 @@ void main() {
     }
   });
 
-  group('goal periods are bracketed', () {
-    String bracketKey(DateTime d, {FitnessGoal? start, FitnessGoal? end}) =>
-        'goalBracket-${d.year}-${d.month}-${d.day}'
-        '-${start?.name ?? ''}-${end?.name ?? ''}';
+  group('goal periods have boundary brackets', () {
+    Finder dayCell(DateTime date) => find.byKey(
+      ValueKey('deficitDay-${date.year}-${date.month}-${date.day}'),
+    );
 
-    testWidgets('a new goal opens with 「[」 in its colour', (tester) async {
+    Finder bracket(DateTime date, String key) =>
+        find.descendant(of: dayCell(date), matching: find.byKey(ValueKey(key)));
+
+    Finder startBracket(DateTime date) => bracket(date, 'goalPeriodStart');
+    Finder endBracket(DateTime date) => bracket(date, 'goalPeriodEnd');
+
+    testWidgets('an open period has a start bracket only', (tester) async {
       await pumpAndReadCellColor(
         tester,
         segments: [
@@ -196,28 +223,38 @@ void main() {
           GoalPeriod(goal: FitnessGoal.maintain, start: day),
         ],
       );
+      expect(startBracket(day), findsOneWidget);
+      expect(endBracket(day), findsNothing);
       expect(
-        find.byKey(ValueKey(bracketKey(day, start: FitnessGoal.maintain))),
-        findsOneWidget,
+        find.descendant(
+          of: startBracket(day),
+          matching: find.byType(CustomPaint),
+        ),
+        paints..path(color: const Color(0xFF2C6D63), strokeWidth: 1.5),
       );
       // One merged 目标时段 legend replaces the cut-round one.
       expect(find.byKey(const ValueKey('goalPeriodLegend')), findsOneWidget);
       expect(find.text('Goal periods'), findsOneWidget);
       expect(find.text('Cut round'), findsNothing);
-      expect(
-        find.byKey(const ValueKey('goalPeriodLegend-maintain')),
-        findsOneWidget,
-      );
+      for (final goal in FitnessGoal.values) {
+        final legend = find.byKey(ValueKey('goalPeriodLegend-${goal.name}'));
+        expect(
+          find.descendant(of: legend, matching: find.byType(CustomPaint)),
+          findsNWidgets(2),
+        );
+      }
     });
 
-    testWidgets('a finished goal closes with 「]」', (tester) async {
+    testWidgets('a cross-month goal ends only on the recorded end date', (
+      tester,
+    ) async {
       await pumpAndReadCellColor(
         tester,
         segments: const [],
         goalPeriods: [
           GoalPeriod(
             goal: FitnessGoal.cut,
-            start: CalendarDay.addDays(day, -6),
+            start: DateTime(day.year, day.month - 1, 1),
             end: day,
           ),
           GoalPeriod(
@@ -226,15 +263,149 @@ void main() {
           ),
         ],
       );
-      expect(
-        find.byKey(ValueKey(bracketKey(day, end: FitnessGoal.cut))),
-        findsOneWidget,
-      );
+      expect(endBracket(day), findsOneWidget);
+      expect(startBracket(day), findsNothing);
+      expect(startBracket(DateTime(day.year, day.month, 1)), findsNothing);
       expect(
         find.byKey(const ValueKey('goalPeriodLegend-cut')),
         findsOneWidget,
       );
     });
+
+    for (final brightness in Brightness.values) {
+      testWidgets('compact brackets frame only the date in $brightness', (
+        tester,
+      ) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(320, 800);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetPhysicalSize);
+        final switchesGoal = brightness == Brightness.dark;
+        final adjacent = CalendarDay.addDays(day, day.day == 1 ? 1 : -1);
+        final empty = DateTime(day.year, day.month, day.day <= 2 ? 4 : 1);
+        final color = await pumpAndReadCellColor(
+          tester,
+          segments: const [],
+          brightness: brightness,
+          textScale: 2,
+          intake: 12600,
+          cheatDay: adjacent,
+          strategyChangeDays: {day},
+          goalPeriods: [
+            if (switchesGoal) ...[
+              GoalPeriod(
+                goal: FitnessGoal.cut,
+                start: DateTime(day.year, day.month - 1, 1),
+                end: day,
+              ),
+              GoalPeriod(goal: FitnessGoal.bulk, start: day),
+            ] else
+              GoalPeriod(goal: FitnessGoal.cut, start: day, end: day),
+            GoalPeriod(goal: FitnessGoal.maintain, start: adjacent),
+          ],
+        );
+
+        final start = tester.getRect(startBracket(day));
+        final end = tester.getRect(endBracket(day));
+        final calories = find.descendant(
+          of: dayCell(day),
+          matching: find.text('-10600'),
+        );
+        final flag = tester.getRect(
+          find.descendant(
+            of: dayCell(day),
+            matching: find.byKey(const ValueKey('strategyChangeFlag')),
+          ),
+        );
+        final number = tester.getRect(
+          find.descendant(of: dayCell(day), matching: find.text('${day.day}')),
+        );
+        final caption = tester.getRect(calories);
+        expect(start.right, lessThanOrEqualTo(number.left));
+        expect(end.left, greaterThanOrEqualTo(number.right));
+        expect(start.overlaps(flag), isFalse);
+        expect(start.center.dy, closeTo(number.center.dy, 0.01));
+        expect(start.bottom, lessThanOrEqualTo(caption.top));
+        expect(isRed(color), isTrue);
+        final single = startBracket(adjacent);
+        expect(single, findsOneWidget);
+        expect(endBracket(adjacent), findsNothing);
+        expect(startBracket(empty), findsNothing);
+        expect(endBracket(empty), findsNothing);
+
+        final dateOffset =
+            number.center.dy - tester.getTopLeft(dayCell(day)).dy;
+        for (final date in [day, adjacent, empty]) {
+          final cell = tester.getRect(dayCell(date));
+          final dateNumber = tester.getRect(
+            find.descendant(
+              of: dayCell(date),
+              matching: find.text('${date.day}'),
+            ),
+          );
+          expect(dateNumber.center.dx, closeTo(cell.center.dx, .01));
+          expect(dateNumber.center.dy - cell.top, closeTo(dateOffset, .01));
+          expect(cell.height, greaterThanOrEqualTo(44));
+        }
+
+        final marker = tester.getRect(
+          find.descendant(of: dayCell(adjacent), matching: find.text('Cheat')),
+        );
+        expect(marker.top, greaterThan(tester.getBottomLeft(single).dy));
+        expect(marker.width, greaterThan(16));
+        final startColor = switchesGoal
+            ? const Color(0xFFE0A087)
+            : const Color(0xFF3C5D89);
+        final endColor = switchesGoal
+            ? const Color(0xFFA9BDE2)
+            : const Color(0xFF3C5D89);
+        expect(
+          find.descendant(
+            of: startBracket(day),
+            matching: find.byType(CustomPaint),
+          ),
+          paints..path(
+            color: startColor,
+            strokeWidth: 1.5,
+            style: PaintingStyle.stroke,
+          ),
+        );
+        expect(
+          find.descendant(
+            of: endBracket(day),
+            matching: find.byType(CustomPaint),
+          ),
+          paints..path(
+            color: endColor,
+            strokeWidth: 1.5,
+            style: PaintingStyle.stroke,
+          ),
+        );
+        expect(
+          find.bySemanticsLabel(RegExp('Cut, Period ends')),
+          findsOneWidget,
+        );
+        expect(
+          find.bySemanticsLabel(
+            RegExp(switchesGoal ? 'Bulk, Period starts' : 'Cut, Period starts'),
+          ),
+          findsOneWidget,
+        );
+
+        await tester.ensureVisible(dayCell(adjacent));
+        await tester.tap(dayCell(adjacent));
+        await tester.pumpAndSettle();
+        final material = find
+            .descendant(of: dayCell(day), matching: find.byType(Material))
+            .first;
+        expect(tester.widget<Material>(material).color, isNot(color));
+
+        await tester.ensureVisible(startBracket(day));
+        await tester.tapAt(tester.getCenter(startBracket(day)));
+        await tester.pumpAndSettle();
+        expect(tester.widget<Material>(material).color, color);
+      });
+    }
 
     testWidgets('without recorded periods the old start line stays', (
       tester,
@@ -243,12 +414,8 @@ void main() {
         tester,
         segments: [CutCultivationSegment(start: day)],
       );
-      expect(
-        find.byWidgetPredicate(
-          (w) => w is CustomPaint && '${w.key}'.contains('goalBracket-'),
-        ),
-        findsNothing,
-      );
+      expect(startBracket(day), findsNothing);
+      expect(endBracket(day), findsNothing);
       expect(find.text('Cut round'), findsOneWidget);
     });
   });

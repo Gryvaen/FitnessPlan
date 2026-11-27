@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' show DateFormat;
 
 import '../../data/repositories/day_marker_repository.dart';
 import '../../data/repositories/meal_repository.dart';
@@ -63,9 +63,8 @@ Future<DateTime?> showDeficitDatePicker({
   /// (tap + Confirm) always stays bounded by [firstDate]/[lastDate].
   DateTime? markUntil,
 
-  /// Goal stretches (减脂 / 维持 / 增肌), bracketed on the grid: 「[」 on a
-  /// stretch's first day, 「]」 on its last, in the goal's colour. Empty
-  /// falls back to the old start line.
+  /// Goal stretches (减脂 / 维持 / 增肌), marked at their boundaries in the
+  /// goal's colour. Empty falls back to the old start line.
   List<GoalPeriod> goalPeriods = const [],
 
   /// Whether the marker sheet offers the 修为 settings (steps / diet count
@@ -259,42 +258,42 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
     });
   }
 
-  /// 「目标时段」legend: the bracket glyphs, one colour per goal with a
-  /// stretch in the visible month, and how days are judged.
+  /// 「目标时段」legend: boundary brackets, goal colours, and verdict notes.
   Widget _goalPeriodLegend(BuildContext context) {
     final l10n = context.l10n;
-    final glyphColor = Theme.of(context).colorScheme.onSurface;
-    final first = DateTime(_visibleMonth.year, _visibleMonth.month, 1);
-    final last = DateTime(_visibleMonth.year, _visibleMonth.month + 1, 0);
-    final goals = <FitnessGoal>{
-      for (final p in widget.goalPeriods)
-        if (!p.start.isAfter(last) &&
-            (p.end == null || !p.end!.isBefore(first)))
-          p.goal,
-    };
-    Widget glyph({bool start = false, bool end = false}) => SizedBox(
-      width: 10,
-      height: 14,
-      child: CustomPaint(
-        painter: _GoalBracketPainter(
-          start: start ? glyphColor : null,
-          end: end ? glyphColor : null,
-        ),
-      ),
-    );
     return _LegendSection(
       key: const ValueKey('goalPeriodLegend'),
       title: l10n.legendGoalPeriod,
       children: [
-        _LegendLine(leading: glyph(start: true), label: l10n.legendPeriodStart),
-        _LegendLine(leading: glyph(end: true), label: l10n.legendPeriodEnd),
-        for (final g in FitnessGoal.values)
-          if (goals.contains(g))
-            _LegendDot(
-              key: ValueKey('goalPeriodLegend-${g.name}'),
-              color: goalBracketColor(context, g),
-              label: g.label(l10n),
-            ),
+        Wrap(
+          spacing: 12,
+          runSpacing: 6,
+          children: [
+            for (final goal in FitnessGoal.values)
+              Row(
+                key: ValueKey('goalPeriodLegend-${goal.name}'),
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _GoalBracket(
+                    color: _goalBracketColor(context, goal),
+                    goal: goal,
+                    isStart: true,
+                  ),
+                  Flexible(
+                    child: Text(
+                      goal.label(l10n),
+                      style: Theme.of(context).textTheme.meta,
+                    ),
+                  ),
+                  _GoalBracket(
+                    color: _goalBracketColor(context, goal),
+                    goal: goal,
+                    isStart: false,
+                  ),
+                ],
+              ),
+          ],
+        ),
         if (widget.cutSegments.isNotEmpty)
           _LegendLine(
             leading: const InkIcon(InkGlyph.radioEmpty, size: 10),
@@ -639,59 +638,69 @@ class _DeficitDatePickerDialogState extends State<_DeficitDatePickerDialog> {
                   child: Center(child: CircularProgressIndicator()),
                 )
               else
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 7,
-                    mainAxisSpacing: 4,
-                    crossAxisSpacing: 4,
-                    childAspectRatio: 0.72,
-                  ),
-                  itemCount: leading + daysInMonth,
-                  itemBuilder: (context, index) {
-                    if (index < leading) {
-                      return const SizedBox.shrink();
-                    }
-                    final dayNum = index - leading + 1;
-                    final date = DateTime(
-                      _visibleMonth.year,
-                      _visibleMonth.month,
-                      dayNum,
-                    );
-                    return _DayCell(
-                      key: ValueKey(
-                        'deficitDay-${date.year}-${date.month}-${date.day}',
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    const columns = 7;
+                    const gap = 4.0;
+                    final cellWidth =
+                        (constraints.maxWidth - (columns - 1) * gap) / columns;
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: columns,
+                        mainAxisSpacing: gap,
+                        crossAxisSpacing: gap,
+                        mainAxisExtent: math.max(44.0, cellWidth / 0.72),
                       ),
-                      date: date,
-                      today: today,
-                      selected: date == _selected,
-                      selectable: _isSelectable(date),
-                      intake: _caloriesByDay[date],
-                      target: _targetsByDay[date],
-                      calorieStandardSince: widget.calorieStandardSince,
-                      cutSegments: widget.cutSegments,
-                      inGoalPeriod: widget.goalPeriods.any(
-                        (p) => p.containsDay(date),
-                      ),
-                      strategyChange: widget.strategyChangeDays.contains(date),
-                      periodStart: widget.goalPeriods
-                          .where((p) => p.start == date)
-                          .lastOrNull
-                          ?.goal,
-                      periodEnd: widget.goalPeriods
-                          .where((p) => p.end == date)
-                          .firstOrNull
-                          ?.goal,
-                      legacyStartBar: widget.goalPeriods.isEmpty,
-                      okColor: _okGreen,
-                      badColor: _badRed,
-                      marker: _markersByDay[date],
-                      markable: _isMarkable(date),
-                      onTap: () => setState(() => _selected = date),
-                      onLongPress: _isMarkable(date)
-                          ? () => _showMarkerSheet(date)
-                          : null,
+                      itemCount: leading + daysInMonth,
+                      itemBuilder: (context, index) {
+                        if (index < leading) {
+                          return const SizedBox.shrink();
+                        }
+                        final dayNum = index - leading + 1;
+                        final date = DateTime(
+                          _visibleMonth.year,
+                          _visibleMonth.month,
+                          dayNum,
+                        );
+                        return _DayCell(
+                          key: ValueKey(
+                            'deficitDay-${date.year}-${date.month}-${date.day}',
+                          ),
+                          date: date,
+                          today: today,
+                          selected: date == _selected,
+                          selectable: _isSelectable(date),
+                          intake: _caloriesByDay[date],
+                          target: _targetsByDay[date],
+                          calorieStandardSince: widget.calorieStandardSince,
+                          cutSegments: widget.cutSegments,
+                          inGoalPeriod: widget.goalPeriods.any(
+                            (p) => p.containsDay(date),
+                          ),
+                          strategyChange: widget.strategyChangeDays.contains(
+                            date,
+                          ),
+                          periodStart: widget.goalPeriods
+                              .where((p) => p.start == date)
+                              .lastOrNull
+                              ?.goal,
+                          periodEnd: widget.goalPeriods
+                              .where((p) => p.end == date)
+                              .firstOrNull
+                              ?.goal,
+                          hasGoalPeriods: widget.goalPeriods.isNotEmpty,
+                          okColor: _okGreen,
+                          badColor: _badRed,
+                          marker: _markersByDay[date],
+                          markable: _isMarkable(date),
+                          onTap: () => setState(() => _selected = date),
+                          onLongPress: _isMarkable(date)
+                              ? () => _showMarkerSheet(date)
+                              : null,
+                        );
+                      },
                     );
                   },
                 ),
@@ -1401,7 +1410,7 @@ class _DayCell extends StatelessWidget {
     this.strategyChange = false,
     this.periodStart,
     this.periodEnd,
-    this.legacyStartBar = true,
+    required this.hasGoalPeriods,
     this.onLongPress,
   });
 
@@ -1426,13 +1435,12 @@ class _DayCell extends StatelessWidget {
   /// A strategy version took effect on this day (corner flag).
   final bool strategyChange;
 
-  /// Goal whose stretch starts (「[」) / ends (「]」) on this day.
+  /// Goal whose stretch starts / ends on this day.
   final FitnessGoal? periodStart;
   final FitnessGoal? periodEnd;
 
-  /// No goal stretches recorded: mark the cut-round start / new-standard
-  /// day with the old plain left line instead.
-  final bool legacyStartBar;
+  /// Goal history supersedes the legacy cut-round and standard start lines.
+  final bool hasGoalPeriods;
   final Color okColor;
   final Color badColor;
   final VoidCallback onTap;
@@ -1448,6 +1456,23 @@ class _DayCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
+    final start = periodStart;
+    final end = periodEnd;
+
+    Widget bracket(FitnessGoal goal, {required bool isStart}) {
+      return Semantics(
+        key: ValueKey(isStart ? 'goalPeriodStart' : 'goalPeriodEnd'),
+        label:
+            '${goal.label(l10n)}, '
+            '${isStart ? l10n.legendPeriodStart : l10n.legendPeriodEnd}',
+        child: _GoalBracket(
+          color: _goalBracketColor(context, goal),
+          goal: goal,
+          isStart: isStart,
+        ),
+      );
+    }
+
     final isPast = date.isBefore(today);
     final isToday = date == today;
     final marked = marker != null;
@@ -1470,7 +1495,7 @@ class _DayCell extends StatelessWidget {
         since != null &&
         date.isBefore(since);
     final showStandardBar =
-        legacyStartBar &&
+        !hasGoalPeriods &&
         (cutSegments.isNotEmpty
             ? cutSegments.any((s) => s.start == date)
             : since != null && date == since);
@@ -1525,6 +1550,16 @@ class _DayCell extends StatelessWidget {
       bg = theme.colorScheme.primary.withValues(alpha: isToday ? 0.35 : 0.45);
     }
 
+    final dayNumber = Text(
+      '${date.day}',
+      style: theme.textTheme.labelMedium?.copyWith(
+        fontWeight: selected || isToday ? FontWeight.w700 : FontWeight.w500,
+        color: fg,
+      ),
+    );
+
+    final caption = marker?.shortLabel(l10n) ?? remaining?.round().toString();
+
     return Material(
       color: bg ?? Colors.transparent,
       borderRadius: BorderRadius.circular(8),
@@ -1547,54 +1582,52 @@ class _DayCell extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                // Shrinks rather than overflows the fixed-ratio cell on a
-                // narrow screen with a large text scale.
-                child: Center(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '${date.day}',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            fontWeight: selected || isToday
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                            color: fg,
-                          ),
+                // Keep the corner flag above the date row, even on days
+                // without a flag, so every date has the same vertical anchor.
+                padding: const EdgeInsets.fromLTRB(1, 9, 1, 2),
+                child: Column(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          textDirection: TextDirection.ltr,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (start != null)
+                              bracket(start, isStart: true)
+                            else
+                              const SizedBox(width: _GoalBracket.width),
+                            dayNumber,
+                            if (end != null)
+                              bracket(end, isStart: false)
+                            else
+                              const SizedBox(width: _GoalBracket.width),
+                          ],
                         ),
-                        if (marked) ...[
-                          const SizedBox(height: 1),
-                          Text(
-                            marker!.shortLabel(l10n),
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              height: 1.1,
-                              fontWeight: FontWeight.w600,
-                              color: fg,
-                              fontSize: 10,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.clip,
-                          ),
-                        ] else if (remaining != null) ...[
-                          const SizedBox(height: 1),
-                          Text(
-                            '${remaining.round()}',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              height: 1.1,
-                              fontWeight: FontWeight.w600,
-                              color: fg,
-                              fontSize: 10,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.clip,
-                          ),
-                        ],
-                      ],
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 1),
+                    Expanded(
+                      flex: 2,
+                      child: caption == null
+                          ? const SizedBox.shrink()
+                          : FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                caption,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  height: 1.1,
+                                  fontWeight: FontWeight.w600,
+                                  color: fg,
+                                  fontSize: 10,
+                                ),
+                                maxLines: 1,
+                              ),
+                            ),
+                    ),
+                  ],
                 ),
               ),
               if (strategyChange)
@@ -1602,25 +1635,6 @@ class _DayCell extends StatelessWidget {
                   top: 2,
                   left: 2,
                   child: _CornerFlag(color: theme.colorScheme.primary),
-                ),
-              if (periodStart != null || periodEnd != null)
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: CustomPaint(
-                      key: ValueKey(
-                        'goalBracket-${date.year}-${date.month}-${date.day}'
-                        '-${periodStart?.name ?? ''}-${periodEnd?.name ?? ''}',
-                      ),
-                      painter: _GoalBracketPainter(
-                        start: periodStart == null
-                            ? null
-                            : goalBracketColor(context, periodStart!),
-                        end: periodEnd == null
-                            ? null
-                            : goalBracketColor(context, periodEnd!),
-                      ),
-                    ),
-                  ),
                 ),
             ],
           ),
@@ -1630,63 +1644,99 @@ class _DayCell extends StatelessWidget {
   }
 }
 
-/// A goal's bracket colour. A palette of its own (减脂 orange, 维持 blue,
-/// 增肌 purple), not the 境界 accents: those are all deep green/teal/slate,
-/// hard to tell apart and close to the calendar's green verdict. Lifted a
-/// little toward the text colour on dark themes.
-Color goalBracketColor(BuildContext context, FitnessGoal goal) {
-  final theme = Theme.of(context);
-  final base = switch (goal) {
-    FitnessGoal.cut => const Color(0xFFE07B1F),
-    FitnessGoal.maintain => const Color(0xFF2F6FD6),
-    FitnessGoal.bulk => const Color(0xFF8A4FD1),
+Color _goalBracketColor(BuildContext context, FitnessGoal goal) {
+  final dark = Theme.of(context).brightness == Brightness.dark;
+  return switch (goal) {
+    FitnessGoal.bulk =>
+      dark ? const Color(0xFFE0A087) : const Color(0xFF99513A),
+    FitnessGoal.cut => dark ? const Color(0xFFA9BDE2) : const Color(0xFF3C5D89),
+    FitnessGoal.maintain =>
+      dark ? const Color(0xFF90C5B8) : const Color(0xFF2C6D63),
   };
-  return theme.brightness == Brightness.dark
-      ? Color.lerp(base, theme.colorScheme.onSurface, 0.2)!
-      : base;
 }
 
-/// 「[」 down a day cell's left edge (a goal stretch starts) and / or 「]」
-/// down its right edge (one ends). Also the legend glyph.
+class _GoalBracket extends StatelessWidget {
+  const _GoalBracket({
+    required this.color,
+    required this.isStart,
+    required this.goal,
+  });
+
+  static const width = 8.0;
+
+  final Color color;
+  final bool isStart;
+  final FitnessGoal goal;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: const Size(width, 13),
+      painter: _GoalBracketPainter(color, isStart, goal),
+    );
+  }
+}
+
 class _GoalBracketPainter extends CustomPainter {
-  const _GoalBracketPainter({this.start, this.end});
+  const _GoalBracketPainter(this.color, this.isStart, this.goal);
 
-  final Color? start;
-  final Color? end;
-
-  static const _stroke = 2.5;
-  static const _tick = 5.0;
-  static const _inset = 3.0;
+  final Color color;
+  final bool isStart;
+  final FitnessGoal goal;
 
   @override
   void paint(Canvas canvas, Size size) {
-    void bracket(Color color, {required bool left}) {
-      final paint = Paint()
-        ..color = color
-        ..strokeWidth = _stroke
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.square;
-      final x = left ? _stroke / 2 : size.width - _stroke / 2;
-      final tickX = left ? x + _tick : x - _tick;
-      final top = _inset;
-      final bottom = size.height - _inset;
-      canvas.drawPath(
-        Path()
-          ..moveTo(tickX, top)
-          ..lineTo(x, top)
-          ..lineTo(x, bottom)
-          ..lineTo(tickX, bottom),
-        paint,
-      );
+    final bottom = size.height - 1;
+    final span = bottom - 1;
+    final middle = size.height / 2;
+    double x(double offset) => isStart ? offset : size.width - offset;
+
+    final path = Path()..moveTo(x(6.5), 1);
+    switch (goal) {
+      case FitnessGoal.bulk:
+        path
+          ..lineTo(x(1.5), 1)
+          ..lineTo(x(1.5), bottom)
+          ..lineTo(x(6.5), bottom);
+      case FitnessGoal.cut:
+        final shoulder = span * .28;
+        path
+          ..cubicTo(x(3), 1, x(4.5), 1 + shoulder / 2, x(4.5), 1 + shoulder)
+          ..cubicTo(x(4.5), middle, x(3.5), middle, x(1.5), middle)
+          ..cubicTo(x(3.5), middle, x(4.5), middle, x(4.5), bottom - shoulder)
+          ..cubicTo(
+            x(4.5),
+            bottom - shoulder / 2,
+            x(3),
+            bottom,
+            x(6.5),
+            bottom,
+          );
+      case FitnessGoal.maintain:
+        path.cubicTo(
+          x(0),
+          1 + span * .24,
+          x(0),
+          bottom - span * .24,
+          x(6.5),
+          bottom,
+        );
     }
 
-    if (start case final c?) bracket(c, left: true);
-    if (end case final c?) bracket(c, left: false);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..strokeWidth = 1.5
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..style = PaintingStyle.stroke,
+    );
   }
 
   @override
   bool shouldRepaint(_GoalBracketPainter old) =>
-      old.start != start || old.end != end;
+      old.color != color || old.isStart != isStart || old.goal != goal;
 }
 
 /// Small right-angled triangle pinned to a day cell's top-left corner: a
