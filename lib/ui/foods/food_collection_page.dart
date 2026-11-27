@@ -7,6 +7,7 @@ import '../../l10n/app_localizations_ext.dart';
 import '../../providers/app_providers.dart';
 import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
+import '../theme/macro_color.dart';
 import '../theme/sport_chrome.dart';
 import '../widgets/food_name_link.dart';
 
@@ -103,6 +104,8 @@ class FoodCollectionPage extends ConsumerWidget {
       body: favorites
           ? ref
                 .watch(favoriteFoodsProvider)
+                // 按名字颜色排：红 → 蓝 → 黄，同色保持原顺序。
+                .whenData(sortFoodsByDominantMacro)
                 .when(
                   loading: () =>
                       const Center(child: CircularProgressIndicator()),
