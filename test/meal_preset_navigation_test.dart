@@ -828,8 +828,15 @@ void main() {
     Future<void> scrollTo(Finder target) =>
         tester.scrollUntilVisible(target, 80, scrollable: scrollable);
     await scrollTo(find.text('健康人无标准'));
-    // Every description sits in the guide below the table.
-    await scrollTo(find.byKey(const ValueKey('nutrientGuide')));
+    // Every description sits in the 营养素介绍 below the table, folded at
+    // first: only its title and the footnote show.
+    final guide = find.byKey(const ValueKey('nutrientGuide'));
+    await scrollTo(guide);
+    expect(find.text('营养素介绍'), findsOneWidget);
+    await scrollTo(find.textContaining('依据《中国居民膳食营养素参考摄入量'));
+    expect(find.textContaining('维持体液平衡'), findsNothing);
+    await tester.tap(guide);
+    await tester.pumpAndSettle();
     await scrollTo(find.textContaining('维持体液平衡'));
     expect(find.textContaining('约等于食盐 5 g'), findsOneWidget);
     await scrollTo(find.textContaining('纯素者需补充'));

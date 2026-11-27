@@ -1967,7 +1967,7 @@ abstract class AppLocalizations {
   /// No description provided for @nutrientRefGuideTitle.
   ///
   /// In en, this message translates to:
-  /// **'About these nutrients'**
+  /// **'Nutrient guide'**
   String get nutrientRefGuideTitle;
 
   /// No description provided for @nutrientRefGuideHint.
@@ -7298,6 +7298,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter a name and valid non-negative nutrition values'**
   String get invalidFoodNutrition;
+
+  /// No description provided for @temporaryNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name'**
+  String get temporaryNameRequired;
+
+  /// No description provided for @temporaryFoodRequiredHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Name and weight are required; nutrition can be left blank'**
+  String get temporaryFoodRequiredHint;
 
   /// No description provided for @addDietRecord.
   ///

@@ -118,7 +118,7 @@ UI 统一 import `app_providers.dart`（汇总导出）。
 | 文件 | 作用 |
 |---|---|
 | `foods_page.dart` | 食材主页：搜索、最近与收藏、分类、历史标签；搜索图标旁的「每日营养参考」入口 |
-| `nutrient_reference_sheet.dart` | 「每日营养参考」底部弹层：上半部分是成年人每日微量营养素等固定参考值（名称 + 数值），底部「认识这些营养素」逐项列出作用、来源、提示（文案在 ARB 的 `nutrientRef*`） |
+| `nutrient_reference_sheet.dart` | 「每日营养参考」底部弹层：上半部分是成年人每日微量营养素等固定参考值（名称 + 数值），底部「营养素介绍」（默认折叠）逐项列出作用、来源、提示（文案在 ARB 的 `nutrientRef*`） |
 | `food_detail_page.dart` | 食材详情，可以从这里直接记录 |
 | `custom_food_edit_page.dart` | 新建/编辑自定义食材 |
 | `food_category_page.dart` | 某个分类下的食材列表 |

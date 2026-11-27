@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations_ext.dart';
+import '../ink/ink_icon.dart';
 import '../theme/app_theme.dart';
 
 /// 「每日营养参考」底部弹层：成年人每天在热量和三大营养素以外的建议摄入量。
 ///
 /// 上半部分是一张固定参考表（通用值，不读档案或当天记录），每行只有名称和
 /// 数值；性别不同的项写成「男 X / 女 Y」。所有说明（作用、来源、提示）统一放在
-/// 底部的「认识这些营养素」里，按同样的分组顺序逐项展开。
+/// 底部的「营养素介绍」里，默认折叠，点标题按同样的分组顺序逐项展开。
 void showNutrientReferenceSheet(BuildContext context) {
   showModalBottomSheet<void>(
     context: context,
@@ -25,13 +26,22 @@ void showNutrientReferenceSheet(BuildContext context) {
   );
 }
 
-class NutrientReferenceList extends StatelessWidget {
+class NutrientReferenceList extends StatefulWidget {
   const NutrientReferenceList({super.key, this.controller});
 
   final ScrollController? controller;
 
   @override
+  State<NutrientReferenceList> createState() => _NutrientReferenceListState();
+}
+
+class _NutrientReferenceListState extends State<NutrientReferenceList> {
+  /// 「营养素介绍」 starts folded so the sheet opens on the numbers.
+  bool _guideOpen = false;
+
+  @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurfaceVariant;
@@ -63,26 +73,55 @@ class NutrientReferenceList extends StatelessWidget {
               _ValueRow(row: row),
             ],
           ],
-          const SizedBox(height: AppSpacing.section * 2),
-          Text(
-            l10n.nutrientRefGuideTitle,
-            key: const ValueKey('nutrientGuide'),
-            style: theme.textTheme.sectionTitle,
+          const SizedBox(height: AppSpacing.section),
+          Semantics(
+            expanded: _guideOpen,
+            hint: _guideOpen ? l10n.collapseSection : l10n.expandSection,
+            child: InkWell(
+              key: const ValueKey('nutrientGuide'),
+              onTap: () => setState(() => _guideOpen = !_guideOpen),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.nutrientRefGuideTitle,
+                            style: theme.textTheme.sectionTitle,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            l10n.nutrientRefGuideHint,
+                            style: theme.textTheme.meta?.copyWith(color: muted),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.field),
+                    InkIcon(
+                      _guideOpen ? InkGlyph.collapse : InkGlyph.expand,
+                      color: muted,
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            l10n.nutrientRefGuideHint,
-            style: theme.textTheme.meta?.copyWith(color: muted),
-          ),
-          for (final group in groups) ...[
-            const SizedBox(height: AppSpacing.section),
-            Text(group.title, style: theme.textTheme.subsectionTitle),
-            const SizedBox(height: 4),
-            for (final (i, row) in group.rows.indexed) ...[
-              if (i > 0) const Divider(height: 1),
-              _GuideEntry(row: row),
+          if (_guideOpen)
+            for (final group in groups) ...[
+              const SizedBox(height: AppSpacing.compact),
+              Text(group.title, style: theme.textTheme.subsectionTitle),
+              const SizedBox(height: 4),
+              for (final (i, row) in group.rows.indexed) ...[
+                if (i > 0) const Divider(height: 1),
+                _GuideEntry(row: row),
+              ],
+              const SizedBox(height: AppSpacing.compact),
             ],
-          ],
           const SizedBox(height: AppSpacing.section),
           Text(
             l10n.nutrientRefFootnote,

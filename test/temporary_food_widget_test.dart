@@ -178,6 +178,52 @@ void main() {
     );
   }
 
+  testWidgets('temporary food saves with only a name and weight', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    await openForm(tester, db);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(find.text('记录临时食物'), findsOneWidget);
+    expect(find.text('名称和重量必填，营养数值可留空'), findsOneWidget);
+    await tester.enterText(field('名称'), '路边摊');
+    await tester.enterText(field('摄入重量（g）'), '150');
+    await reveal(tester, find.text('加入饮食记录'));
+    await tester.tap(find.text('加入饮食记录'));
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    });
+    await tester.pumpAndSettle();
+    final entries = await tester.runAsync(
+      () => db.select(db.mealEntries).get(),
+    );
+    expect(entries, hasLength(1));
+    expect(entries!.single.foodName, '路边摊');
+    expect(entries.single.calories, 0);
+    expect(entries.single.grams, 150);
+    expect(entries.single.caloriesOnly, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('temporary food asks for a name first', (tester) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    await openForm(tester, db);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    await tester.enterText(field('摄入重量（g）'), '150');
+    await reveal(tester, find.text('加入饮食记录'));
+    await tester.tap(find.text('加入饮食记录'));
+    await tester.pumpAndSettle();
+    expect(find.text('请填写名称'), findsOneWidget);
+    expect(
+      await tester.runAsync(() => db.select(db.mealEntries).get()),
+      isEmpty,
+    );
+  });
+
   testWidgets('calorie mode saves with only a name as 0 kcal', (tester) async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     addTearDown(db.close);

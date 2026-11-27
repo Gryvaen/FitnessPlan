@@ -973,7 +973,7 @@ class AppLocalizationsZh extends AppLocalizations {
       '依据《中国居民膳食营养素参考摄入量（2023）》《中国居民膳食指南（2022）》及 WHO 建议。数值适用于健康成年人；孕期、哺乳期或有慢病者请遵医嘱。';
 
   @override
-  String get nutrientRefGuideTitle => '认识这些营养素';
+  String get nutrientRefGuideTitle => '营养素介绍';
 
   @override
   String get nutrientRefGuideHint => '逐项说明作用、食物来源和注意事项';
@@ -4087,6 +4087,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get invalidFoodNutrition => '请填写名称和有效的非负营养数值';
+
+  @override
+  String get temporaryNameRequired => '请填写名称';
+
+  @override
+  String get temporaryFoodRequiredHint => '名称和重量必填，营养数值可留空';
 
   @override
   String get addDietRecord => '加入饮食记录';

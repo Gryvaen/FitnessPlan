@@ -983,7 +983,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Based on the Chinese DRIs (2023), the Dietary Guidelines for Chinese Residents (2022) and WHO advice. For healthy adults; if pregnant, breastfeeding or managing a chronic condition, follow your doctor.';
 
   @override
-  String get nutrientRefGuideTitle => 'About these nutrients';
+  String get nutrientRefGuideTitle => 'Nutrient guide';
 
   @override
   String get nutrientRefGuideHint =>
@@ -4239,6 +4239,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get invalidFoodNutrition =>
       'Enter a name and valid non-negative nutrition values';
+
+  @override
+  String get temporaryNameRequired => 'Enter a name';
+
+  @override
+  String get temporaryFoodRequiredHint =>
+      'Name and weight are required; nutrition can be left blank';
 
   @override
   String get addDietRecord => 'Add to food diary';

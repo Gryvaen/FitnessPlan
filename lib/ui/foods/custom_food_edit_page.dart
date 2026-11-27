@@ -141,21 +141,24 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
   Future<void> _saveTemporary() async {
     if (_loading || !_canUseTemporaryModes) return;
     final l10n = context.l10n;
+    // 临时食物只要求名称和重量，临时热量只要求名称；没填的营养数值按 0 记，
+    // 之后可在详情里补。
+    if (_name.text.trim().isEmpty) {
+      _message(l10n.temporaryNameRequired);
+      return;
+    }
     if (!_caloriesOnly && _validWeight == null) {
       _message(l10n.invalidFoodWeight);
       return;
     }
     final fields = _caloriesOnly ? [_kcal] : _nutrients;
-    // 临时热量可只写名称（不知道热量时），空热量按 0 记，之后可在详情里补。
-    if (_name.text.trim().isEmpty ||
-        (!_caloriesOnly && _kcal.text.trim().isEmpty) ||
-        fields.any(
-          (c) =>
-              c.text.trim().isNotEmpty &&
-              (double.tryParse(c.text.trim()) == null ||
-                  !_parse(c).isFinite ||
-                  _parse(c) < 0),
-        )) {
+    if (fields.any(
+      (c) =>
+          c.text.trim().isNotEmpty &&
+          (double.tryParse(c.text.trim()) == null ||
+              !_parse(c).isFinite ||
+              _parse(c) < 0),
+    )) {
       _message(l10n.invalidFoodNutrition);
       return;
     }
@@ -419,6 +422,15 @@ class _CustomFoodEditPageState extends ConsumerState<CustomFoodEditPage> {
               l10n.temporaryBadge,
               style: Theme.of(context).textTheme.subsectionTitle,
             ),
+            if (!_caloriesOnly) ...[
+              const SizedBox(height: 4),
+              Text(
+                l10n.temporaryFoodRequiredHint,
+                style: Theme.of(context).textTheme.meta?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
             const SizedBox(height: 8),
           ],
           TextField(
