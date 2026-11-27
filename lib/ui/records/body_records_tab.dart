@@ -40,30 +40,43 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
   /// Days shown: 30, or 0 = all. Opens on the last 30 days.
   int _period = 30;
 
-  /// Charts folded away by hand; shared by both period tabs and remembered.
-  bool _weightChartCollapsed = false;
-  bool _bodyFatChartCollapsed = false;
+  /// 「30 天」 or 「全部」.
+  static String _periodLabel(AppLocalizations l10n, int period) =>
+      period == 0 ? l10n.filterAll : l10n.lastNDays(period);
 
-  @override
-  void initState() {
-    super.initState();
-    final memory = ref.read(formMemoryRepositoryProvider);
-    _weightChartCollapsed = memory.weightChartCollapsed;
-    _bodyFatChartCollapsed = memory.bodyFatChartCollapsed;
+  /// Logs within [period] days (0 = all), oldest first.
+  static List<WeightLog> _logsInPeriod(
+    List<WeightLog> orderedOldestFirst,
+    int period,
+  ) {
+    if (period == 0) return orderedOldestFirst;
+    final cutoff = AppDates.addDays(AppDates.todayLocal(), 1 - period);
+    return [
+      for (final log in orderedOldestFirst)
+        if (!log.date.isBefore(cutoff)) log,
+    ];
   }
 
-  void _toggleWeightChart() {
-    setState(() => _weightChartCollapsed = !_weightChartCollapsed);
-    ref
-        .read(formMemoryRepositoryProvider)
-        .saveBodyChartCollapsed(weight: _weightChartCollapsed);
-  }
-
-  void _toggleBodyFatChart() {
-    setState(() => _bodyFatChartCollapsed = !_bodyFatChartCollapsed);
-    ref
-        .read(formMemoryRepositoryProvider)
-        .saveBodyChartCollapsed(bodyFat: _bodyFatChartCollapsed);
+  /// Weight / body-fat charts for [period], in a bottom sheet. The lines are
+  /// drawn afresh each time the sheet opens.
+  void _showChartsSheet(
+    List<WeightLog> orderedOldestFirst,
+    List<WeightLog> logs,
+    int period,
+  ) {
+    final visible = _logsInPeriod(orderedOldestFirst, period);
+    final hasBodyFatHistory = logs.any((log) => log.bodyFatPct != null);
+    showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => _BodyChartsSheet(
+        visible: visible,
+        hasBodyFatHistory: hasBodyFatHistory,
+        periodLabel: _periodLabel(context.l10n, period),
+      ),
+    );
   }
 
   /// 「30 天」 and 「全部」 once any weight is logged; just all before that.
@@ -223,6 +236,8 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
             : null;
         final theme = Theme.of(context);
         final showPeriodTabs = periods.length > 1;
+        final nextPeriod =
+            periods[(periods.indexOf(period) + 1) % periods.length];
         final isEmpty = logs.isEmpty;
 
         return Column(
@@ -246,22 +261,7 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
                       ),
                       if (previous != null)
                         _deltaRow(context, latest, previous),
-                      if (showPeriodTabs) const SizedBox(height: 12),
                     ],
-                    if (showPeriodTabs)
-                      Wrap(
-                        spacing: 8,
-                        children: [
-                          for (final p in periods)
-                            ChoiceChip(
-                              label: Text(
-                                p == 0 ? l10n.filterAll : l10n.lastNDays(p),
-                              ),
-                              selected: period == p,
-                              onSelected: (_) => setState(() => _period = p),
-                            ),
-                        ],
-                      ),
                   ],
                 ),
               ),
@@ -269,6 +269,22 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
               child: Row(
                 children: [
+                  if (showPeriodTabs)
+                    PlainIconAction(
+                      key: const ValueKey('body-period-toggle'),
+                      iconWidget: const InkIcon(InkGlyph.swapHorizontal),
+                      label: l10n.bodyPeriodToggle(
+                        _periodLabel(l10n, nextPeriod),
+                      ),
+                      onPressed: () => setState(() => _period = nextPeriod),
+                    ),
+                  if (!isEmpty)
+                    PlainIconAction(
+                      key: const ValueKey('body-charts-open'),
+                      iconWidget: const InkIcon(InkGlyph.chart),
+                      label: l10n.bodyChartsAction,
+                      onPressed: () => _showChartsSheet(ordered, logs, period),
+                    ),
                   const Spacer(),
                   PlainIconAction(
                     iconWidget: const InkIcon(InkGlyph.add),
@@ -290,7 +306,13 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
                           setState(() => _period = periods[i]),
                       children: [
                         for (final p in periods)
-                          _periodPanel(context, ordered, logs, p),
+                          _periodPanel(
+                            context,
+                            ordered,
+                            logs,
+                            p,
+                            periodLabel: _periodLabel(l10n, p),
+                          ),
                       ],
                     )
                   : _periodPanel(context, ordered, logs, 0),
@@ -348,56 +370,23 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
     BuildContext context,
     List<WeightLog> ordered,
     List<WeightLog> logs,
-    int period,
-  ) {
+    int period, {
+    String? periodLabel,
+  }) {
     final l10n = context.l10n;
-    final scheme = Theme.of(context).colorScheme;
-    final cutoff = AppDates.addDays(AppDates.todayLocal(), 1 - period);
-    final visible = ordered
-        .where((log) => period == 0 || !log.date.isBefore(cutoff))
-        .toList();
-    final weightSeries = [
-      for (final log in visible)
-        _SeriesPoint(date: log.date, value: log.weightKg),
-    ];
-    final bodyFatSeries = [
-      for (final log in visible)
-        if (log.bodyFatPct != null)
-          _SeriesPoint(date: log.date, value: log.bodyFatPct!),
-    ];
-    final hasBodyFatHistory = logs.any((log) => log.bodyFatPct != null);
-    final showCharts = weightSeries.isNotEmpty || hasBodyFatHistory;
-
+    final visible = _logsInPeriod(ordered, period);
     return ListView(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.listPage,
-        logs.isEmpty ? 4 : 12,
+        4,
         AppSpacing.listPage,
         listBottomInset(context, hasFab: false),
       ),
       children: [
-        if (weightSeries.isNotEmpty)
-          _SeriesChart(
-            title: l10n.chartWeightTitle,
-            points: weightSeries,
-            color: scheme.primary,
-            emptyHint: l10n.chartWeightEmpty,
-            collapsed: _weightChartCollapsed,
-            onToggle: _toggleWeightChart,
-          ),
-        if (hasBodyFatHistory) ...[
-          if (weightSeries.isNotEmpty) const SizedBox(height: AppSpacing.field),
-          _SeriesChart(
-            title: l10n.chartBfTitle,
-            points: bodyFatSeries,
-            color: AppColors.protein,
-            emptyHint: l10n.chartBfEmpty,
-            collapsed: _bodyFatChartCollapsed,
-            onToggle: _toggleBodyFatChart,
-          ),
-        ],
-        if (showCharts) const SizedBox(height: AppSpacing.section),
-        Text(l10n.history, style: Theme.of(context).textTheme.sectionTitle),
+        Text(
+          periodLabel == null ? l10n.history : '${l10n.history} · $periodLabel',
+          style: Theme.of(context).textTheme.sectionTitle,
+        ),
         const SizedBox(height: 8),
         if (logs.isEmpty)
           SportEmptyState(
@@ -432,90 +421,155 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
   }
 }
 
-class _SeriesChart extends StatelessWidget {
-  const _SeriesChart({
-    required this.title,
-    required this.points,
-    required this.color,
-    required this.emptyHint,
-    required this.collapsed,
-    required this.onToggle,
+/// Bottom sheet with the weight / body-fat charts for one period.
+class _BodyChartsSheet extends StatelessWidget {
+  const _BodyChartsSheet({
+    required this.visible,
+    required this.hasBodyFatHistory,
+    required this.periodLabel,
   });
 
-  final String title;
-  final List<_SeriesPoint> points;
-  final Color color;
-  final String emptyHint;
-
-  /// Folded down to just the title row.
-  final bool collapsed;
-  final VoidCallback onToggle;
+  /// Logs in the period, oldest first.
+  final List<WeightLog> visible;
+  final bool hasBodyFatHistory;
+  final String periodLabel;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final l10n = context.l10n;
-    return AnimatedSize(
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeInOut,
-      alignment: Alignment.topCenter,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    final weightSeries = [
+      for (final log in visible)
+        _SeriesPoint(date: log.date, value: log.weightKg),
+    ];
+    final bodyFatSeries = [
+      for (final log in visible)
+        if (log.bodyFatPct != null)
+          _SeriesPoint(date: log.date, value: log.bodyFatPct!),
+    ];
+    final empty = weightSeries.isEmpty && bodyFatSeries.isEmpty;
+    return SafeArea(
+      top: false,
+      child: ListView(
+        key: const ValueKey('body-charts-sheet'),
+        shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.formPage,
+          0,
+          AppSpacing.formPage,
+          AppSpacing.formPage,
+        ),
         children: [
-          Semantics(
-            button: true,
-            expanded: !collapsed,
-            hint: collapsed ? l10n.expandSection : l10n.collapseSection,
-            child: InkWell(
-              key: ValueKey('body-chart-toggle-$title'),
-              onTap: onToggle,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: theme.textTheme.subsectionTitle,
-                      ),
-                    ),
-                    InkIcon(
-                      collapsed ? InkGlyph.expand : InkGlyph.collapse,
-                      size: 18,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ],
+          if (empty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Center(
+                child: Text(
+                  l10n.chartWeightEmpty,
+                  style: Theme.of(context).textTheme.meta,
                 ),
               ),
             ),
-          ),
-          if (!collapsed) ...[const SizedBox(height: 2), _chart(context)],
+          if (weightSeries.isNotEmpty)
+            _SeriesChart(
+              title: l10n.chartWeightTitle,
+              periodLabel: periodLabel,
+              points: weightSeries,
+              color: Theme.of(context).colorScheme.primary,
+              emptyHint: l10n.chartWeightEmpty,
+            ),
+          if (hasBodyFatHistory && !empty) ...[
+            if (weightSeries.isNotEmpty)
+              const SizedBox(height: AppSpacing.section),
+            _SeriesChart(
+              title: l10n.chartBfTitle,
+              periodLabel: periodLabel,
+              points: bodyFatSeries,
+              color: AppColors.protein,
+              emptyHint: l10n.chartBfEmpty,
+              // The second stroke starts a beat after the first.
+              delay: weightSeries.isNotEmpty ? _kChartStagger : Duration.zero,
+            ),
+          ],
         ],
       ),
     );
   }
+}
+
+/// How long one chart line takes to draw.
+const _kChartDrawDuration = Duration(milliseconds: 900);
+
+/// Head start of the weight line over the body-fat line.
+const _kChartStagger = Duration(milliseconds: 150);
+
+class _SeriesChart extends StatelessWidget {
+  const _SeriesChart({
+    required this.title,
+    required this.periodLabel,
+    required this.points,
+    required this.color,
+    required this.emptyHint,
+    this.delay = Duration.zero,
+  });
+
+  /// Chart name without the period; also keys the chart.
+  final String title;
+  final String periodLabel;
+  final List<_SeriesPoint> points;
+  final Color color;
+  final String emptyHint;
+  final Duration delay;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Text(
+            '$title · $periodLabel',
+            style: theme.textTheme.subsectionTitle,
+          ),
+        ),
+        const SizedBox(height: 2),
+        _chart(context),
+      ],
+    );
+  }
 
   Widget _chart(BuildContext context) {
+    final theme = Theme.of(context);
+    final animate = !MediaQuery.disableAnimationsOf(context);
+    final total = delay + _kChartDrawDuration;
+    // Idle for [delay], then draw over [_kChartDrawDuration].
+    final start = delay.inMicroseconds / total.inMicroseconds;
     return SizedBox(
       key: ValueKey('ink-series-chart-$title'),
       height: 180,
       child: points.isEmpty
-          ? Center(
-              child: Text(emptyHint, style: Theme.of(context).textTheme.meta),
-            )
+          ? Center(child: Text(emptyHint, style: theme.textTheme.meta))
           : Semantics(
               label: '$title，${points.length}',
               image: true,
-              child: CustomPaint(
-                painter: _InkSeriesPainter(
-                  points: points,
-                  color: color,
-                  inkColor: Theme.of(context).colorScheme.onSurface,
-                  paperColor: AppThemeVisuals.of(context).card,
-                  labelStyle: Theme.of(context).textTheme.labelSmall,
-                  locale: Localizations.localeOf(context),
+              child: TweenAnimationBuilder<double>(
+                key: ValueKey('ink-series-draw-$title'),
+                tween: Tween(begin: animate ? 0 : 1, end: 1),
+                duration: animate ? total : Duration.zero,
+                curve: Interval(start, 1, curve: Curves.easeInOutCubic),
+                builder: (context, progress, _) => CustomPaint(
+                  painter: _InkSeriesPainter(
+                    points: points,
+                    color: color,
+                    inkColor: theme.colorScheme.onSurface,
+                    paperColor: AppThemeVisuals.of(context).card,
+                    labelStyle: theme.textTheme.labelSmall,
+                    locale: Localizations.localeOf(context),
+                    progress: progress,
+                  ),
+                  size: Size.infinite,
                 ),
-                size: Size.infinite,
               ),
             ),
     );
@@ -530,6 +584,7 @@ class _InkSeriesPainter extends CustomPainter {
     required this.paperColor,
     required this.labelStyle,
     required this.locale,
+    this.progress = 1,
   });
 
   final List<_SeriesPoint> points;
@@ -538,6 +593,9 @@ class _InkSeriesPainter extends CustomPainter {
   final Color paperColor;
   final TextStyle? labelStyle;
   final Locale locale;
+
+  /// How much of the line is drawn, 0..1, left to right along the curve.
+  final double progress;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -576,10 +634,24 @@ class _InkSeriesPainter extends CustomPainter {
         ),
     ];
     final line = _smoothPath(offsets);
+    final t = progress.clamp(0.0, 1.0);
+    // Pen tip: the part of the line drawn so far and where it ends.
+    final drawn = Path();
+    var tipX = offsets.first.dx;
+    for (final metric in line.computeMetrics()) {
+      final length = metric.length * t;
+      drawn.addPath(metric.extractPath(0, length), Offset.zero);
+      final tangent = metric.getTangentForOffset(length);
+      if (tangent != null) tipX = tangent.position.dx;
+    }
+    if (t >= 1) tipX = offsets.last.dx;
+
     final wash = Path.from(line)
       ..lineTo(offsets.last.dx, plot.bottom)
       ..lineTo(offsets.first.dx, plot.bottom)
       ..close();
+    canvas.save();
+    canvas.clipRect(Rect.fromLTRB(0, 0, tipX, size.height));
     canvas.drawPath(
       wash,
       Paint()
@@ -589,40 +661,41 @@ class _InkSeriesPainter extends CustomPainter {
           colors: [color.withValues(alpha: .17), color.withValues(alpha: .01)],
         ).createShader(plot),
     );
+    canvas.restore();
 
-    canvas.drawPath(
-      line,
-      Paint()
-        ..color = color.withValues(alpha: .18)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 7
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
-    canvas.drawPath(
-      line,
-      Paint()
-        ..color = color.withValues(alpha: .92)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.6
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
+    if (t > 0) {
+      canvas.drawPath(
+        drawn,
+        Paint()
+          ..color = color.withValues(alpha: .18)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 7
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round,
+      );
+      canvas.drawPath(
+        drawn,
+        Paint()
+          ..color = color.withValues(alpha: .92)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.6
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round,
+      );
+    }
 
     for (var i = 0; i < offsets.length; i++) {
       final p = offsets[i];
+      final isLast = i == offsets.length - 1;
+      // A dot appears once the pen has reached it.
+      if (isLast ? t < 1 : (t <= 0 || p.dx > tipX + .5)) continue;
+      canvas.drawCircle(p, isLast ? 5.2 : 3.8, Paint()..color = paperColor);
       canvas.drawCircle(
         p,
-        i == offsets.length - 1 ? 5.2 : 3.8,
-        Paint()..color = paperColor,
+        isLast ? 4.1 : 2.8,
+        Paint()..color = color.withValues(alpha: isLast ? 1 : .82),
       );
-      canvas.drawCircle(
-        p,
-        i == offsets.length - 1 ? 4.1 : 2.8,
-        Paint()
-          ..color = color.withValues(alpha: i == offsets.length - 1 ? 1 : .82),
-      );
-      if (i == offsets.length - 1) {
+      if (isLast) {
         canvas.drawCircle(
           p,
           7,
@@ -735,7 +808,8 @@ class _InkSeriesPainter extends CustomPainter {
       inkColor != oldDelegate.inkColor ||
       paperColor != oldDelegate.paperColor ||
       labelStyle != oldDelegate.labelStyle ||
-      locale != oldDelegate.locale;
+      locale != oldDelegate.locale ||
+      progress != oldDelegate.progress;
 }
 
 class _WeightLogDialog extends StatefulWidget {

@@ -5919,6 +5919,18 @@ abstract class AppLocalizations {
   /// **'{n} days'**
   String lastNDays(int n);
 
+  /// No description provided for @bodyPeriodToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Show {range}'**
+  String bodyPeriodToggle(String range);
+
+  /// No description provided for @bodyChartsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Charts'**
+  String get bodyChartsAction;
+
   /// No description provided for @nExercises.
   ///
   /// In en, this message translates to:

@@ -2331,6 +2331,8 @@
   "createFood": "新建食物",
   "charCount": "已输入 {n} 字",
   "lastNDays": "{n} 天",
+  "bodyPeriodToggle": "切换为「{range}」",
+  "bodyChartsAction": "图表",
   "nExercises": "{n} 个动作",
   "planSummary": "{exercises} 个动作 · {sets} 组",
   "planProgress": "{planName} · {done}/{total}",

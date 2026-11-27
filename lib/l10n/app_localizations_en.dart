@@ -3405,6 +3405,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String bodyPeriodToggle(String range) {
+    return 'Show $range';
+  }
+
+  @override
+  String get bodyChartsAction => 'Charts';
+
+  @override
   String nExercises(int n) {
     return '$n exercises';
   }

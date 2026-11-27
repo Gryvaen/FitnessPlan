@@ -3275,6 +3275,14 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String bodyPeriodToggle(String range) {
+    return '切换为「$range」';
+  }
+
+  @override
+  String get bodyChartsAction => '图表';
+
+  @override
   String nExercises(int n) {
     return '$n 个动作';
   }

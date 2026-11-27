@@ -96,6 +96,8 @@ void main() {
 
     expect(find.text('还没有记录，点加号添加'), findsOneWidget);
     expect(find.text('体重 (kg)'), findsNothing);
+    expect(find.byKey(const ValueKey('body-period-toggle')), findsNothing);
+    expect(find.byKey(const ValueKey('body-charts-open')), findsNothing);
     final historyTop = tester.getTopLeft(find.text('每日记录')).dy;
     final addTop = tester.getTopLeft(find.byTooltip('记体重')).dy;
     expect(addTop, lessThan(48));
@@ -114,91 +116,62 @@ void main() {
         ),
       );
 
-  testWidgets('body charts fold by hand and stay folded across tabs', (
-    tester,
-  ) async {
+  testWidgets('body range and charts live in the icon row', (tester) async {
     await insertBodyLog();
     await pump(tester, const BodyRecordsTab());
     const weight = '体重 (kg)';
     const bodyFat = '体脂率 (%)';
     Finder chart(String title) =>
         find.byKey(ValueKey('ink-series-chart-$title'));
-    expect(chart(weight), findsOneWidget);
-    expect(chart(bodyFat), findsOneWidget);
+    final toggle = find.byKey(const ValueKey('body-period-toggle'));
+    final charts = find.byKey(const ValueKey('body-charts-open'));
 
-    await tester.tap(find.byKey(const ValueKey('body-chart-toggle-$weight')));
-    await tester.pumpAndSettle();
+    // Only 「30 天」 and 「全部」, opening on the last 30 days; no chips and
+    // no charts on the page itself.
+    expect(find.byType(ChoiceChip), findsNothing);
+    expect(find.text('70.50 kg'), findsWidgets);
+    expect(toggle, findsOneWidget);
+    expect(charts, findsOneWidget);
+    expect(find.byTooltip('切换为「全部」'), findsOneWidget);
+    expect(find.text('每日记录 · 30 天'), findsOneWidget);
     expect(chart(weight), findsNothing);
-    expect(find.text(weight), findsOneWidget);
-    expect(chart(bodyFat), findsOneWidget);
-    final prefs = container.read(sharedPreferencesProvider);
-    expect(prefs.getBool('body_weight_chart_collapsed'), isTrue);
-
-    await tester.tap(find.widgetWithText(ChoiceChip, '全部'));
-    await tester.pumpAndSettle();
-    expect(chart(weight), findsNothing);
-    expect(chart(bodyFat), findsWidgets);
-
-    await tester.tap(
-      find.byKey(const ValueKey('body-chart-toggle-$weight')).last,
-    );
-    await tester.pumpAndSettle();
-    expect(chart(weight), findsWidgets);
-    expect(prefs.getBool('body_weight_chart_collapsed'), isFalse);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('body charts open folded when remembered that way', (
-    tester,
-  ) async {
-    await container
-        .read(sharedPreferencesProvider)
-        .setBool('body_fat_chart_collapsed', true);
-    await insertBodyLog();
-    await pump(tester, const BodyRecordsTab());
+    // Both icons share the add button's row, on its left.
+    final addTop = tester.getTopLeft(find.byTooltip('记体重')).dy;
+    expect(tester.getTopLeft(toggle).dy, addTop);
+    expect(tester.getTopLeft(charts).dy, addTop);
     expect(
-      find.byKey(const ValueKey('ink-series-chart-体重 (kg)')),
-      findsOneWidget,
+      tester.getTopLeft(toggle).dx,
+      lessThan(tester.getTopLeft(charts).dx),
     );
-    expect(
-      find.byKey(const ValueKey('ink-series-chart-体脂率 (%)')),
-      findsNothing,
-    );
-    expect(find.text('体脂率 (%)'), findsOneWidget);
-  });
 
-  testWidgets('body metrics use custom ink charts once logs exist', (
-    tester,
-  ) async {
-    await db
-        .into(db.weightLogs)
-        .insert(
-          WeightLogsCompanion.insert(
-            date: DateTime.now(),
-            weightKg: 70.5,
-            bodyFatPct: const Value(18.2),
-          ),
-        );
-    await pump(tester, const BodyRecordsTab());
-
-    for (final title in ['体重 (kg)', '体脂率 (%)']) {
-      final chart = find.byKey(ValueKey('ink-series-chart-$title'));
-      expect(chart, findsOneWidget);
+    // The sheet draws its lines in, then settles with both charts.
+    await tester.tap(charts);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byKey(const ValueKey('body-charts-sheet')), findsOneWidget);
+    expect(tester.binding.hasScheduledFrame, isTrue);
+    await tester.pumpAndSettle();
+    for (final title in [weight, bodyFat]) {
+      expect(chart(title), findsOneWidget);
       expect(
-        find.descendant(of: chart, matching: find.byType(CustomPaint)),
+        find.descendant(of: chart(title), matching: find.byType(CustomPaint)),
         findsOneWidget,
       );
+      expect(find.text('$title · 30 天'), findsOneWidget);
     }
-    expect(find.text('70.50 kg'), findsWidgets);
-    // Only 「30 天」 and 「全部」, opening on the last 30 days.
-    expect(find.widgetWithText(ChoiceChip, '7 天'), findsNothing);
-    expect(find.widgetWithText(ChoiceChip, '全部'), findsOneWidget);
-    expect(
-      tester
-          .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '30 天'))
-          .selected,
-      isTrue,
-    );
+
+    // Close, switch to 「全部」, and the titles follow.
+    await tester.tapAt(const Offset(8, 8));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('body-charts-sheet')), findsNothing);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('切换为「30 天」'), findsOneWidget);
+    expect(find.text('每日记录 · 全部'), findsOneWidget);
+    await tester.tap(charts);
+    await tester.pumpAndSettle();
+    expect(find.text('$weight · 全部'), findsOneWidget);
+    expect(find.text('$bodyFat · 全部'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
