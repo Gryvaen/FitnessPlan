@@ -102,7 +102,10 @@ class _CultivationHomeState extends ConsumerState<_CultivationHome> {
         fit: StackFit.expand,
         children: [
           Image.asset(
-            progress.realm.artAsset(progress.layer),
+            progress.realm.artAsset(
+              progress.layer,
+              animated: !MediaQuery.disableAnimationsOf(context),
+            ),
             fit: BoxFit.cover,
             alignment: const Alignment(0, -0.4),
           ),
@@ -479,7 +482,7 @@ class _CultivationLockedView extends ConsumerWidget {
     final goal = targetGoal;
     final activeGoal = ref.watch(profileProvider)?.goal;
     final bgAsset =
-        goal?.cultivationBackgroundAsset ?? 'assets/cultivation/locked_bg.jpg';
+        goal?.cultivationBackgroundAsset ?? 'assets/cultivation/goals/locked_bg.jpg';
     final titleText = goal == null
         ? l10n.cultivationLockedTitle
         : l10n.cultivationGoalLockedTitle(goal.label(l10n));

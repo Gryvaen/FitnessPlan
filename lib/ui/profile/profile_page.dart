@@ -791,7 +791,12 @@ class CultivationHeroCard extends ConsumerWidget {
                         : progress == null
                         ? _LockedRealmArt(accent: accent)
                         : Image.asset(
-                            progress.realm.artAsset(progress.layer),
+                            progress.realm.artAsset(
+                              progress.layer,
+                              animated: !MediaQuery.disableAnimationsOf(
+                                context,
+                              ),
+                            ),
                             fit: BoxFit.cover,
                             alignment: const Alignment(0, -0.42),
                             color: theme.brightness == Brightness.dark

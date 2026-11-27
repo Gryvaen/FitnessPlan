@@ -74,15 +74,15 @@ Cutting should not feel like a spreadsheet.
 <div align="center">
 <table>
   <tr>
-    <td align="center"><img src="./assets/cultivation/lianqi_1.jpg" width="100" alt="Qi Refining"><br><b>Qi Refining</b></td>
+    <td align="center"><img src="./assets/cultivation/realms/lianqi_1.jpg" width="100" alt="Qi Refining"><br><b>Qi Refining</b></td>
     <td align="center">→</td>
-    <td align="center"><img src="./assets/cultivation/zhuji_1.jpg" width="100" alt="Foundation"><br><b>Foundation</b></td>
+    <td align="center"><img src="./assets/cultivation/realms/zhuji_1.jpg" width="100" alt="Foundation"><br><b>Foundation</b></td>
     <td align="center">→</td>
-    <td align="center"><img src="./assets/cultivation/jiedan_1.jpg" width="100" alt="Core Formation"><br><b>Core Formation</b></td>
+    <td align="center"><img src="./assets/cultivation/realms/jiedan_1.jpg" width="100" alt="Core Formation"><br><b>Core Formation</b></td>
     <td align="center">→</td>
-    <td align="center"><img src="./assets/cultivation/yuanying_1.jpg" width="100" alt="Nascent Soul"><br><b>Nascent Soul</b></td>
+    <td align="center"><img src="./assets/cultivation/realms/yuanying_1.jpg" width="100" alt="Nascent Soul"><br><b>Nascent Soul</b></td>
     <td align="center">→</td>
-    <td align="center"><img src="./assets/cultivation/huashen.jpg" width="100" alt="Divine Transformation"><br><b>Divine Transformation</b></td>
+    <td align="center"><img src="./assets/cultivation/realms/huashen.jpg" width="100" alt="Divine Transformation"><br><b>Divine Transformation</b></td>
   </tr>
 </table>
 

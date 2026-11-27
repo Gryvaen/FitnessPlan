@@ -27,16 +27,18 @@
 
 ## assets/
 
-`pubspec.yaml` 里声明了以下资源：`food_seed.json`、`cultivation/`、`ink/`、`ink/icons/light/`、`ink/icons/dark/`、`splash/`，以及两个字体。
+`pubspec.yaml` 里声明了以下资源：`food_seed.json`、`cultivation/realms/`、`cultivation/goals/`、`cultivation/maintain/`、`ink/`、`ink/icons/light/`、`ink/icons/dark/`、`splash/`，以及两个字体。
 
 | 路径 | 内容 |
 |---|---|
 | `food_seed.json` | 内置食材库（668 条），见 [database.md](database.md#食材种子数据) |
-| `cultivation/` | 修仙境界配图（`<境界>_<层>.jpg`）、目标页的背景和卷轴 |
+| `cultivation/realms/` | 修仙境界配图：`<境界>_<层>.jpg` 静态图（化神为 `huashen.jpg`）；有动图的场景另有同名 `.webp`，并登记在 `cultivation_labels.dart` 的 `kAnimatedRealmArt` |
+| `cultivation/goals/` | 目标选择页的厅堂背景、三个目标的卷轴与背景、未开启占位背景 `locked_bg.jpg` |
+| `cultivation/maintain/` | 维持目标「日月同衡」天秤的分层素材（由 `tool/libra_assets.py` 生成） |
 | `ink/` | 水墨笔刷素材 |
 | `ink/icons/light/`、`ink/icons/dark/` | ink 图标（各约 100 个，256px PNG），见 [architecture.md](architecture.md#ink-图标) |
 | `ink/icons/source/` | 图标的 SVG 源文件（没有在 pubspec 里声明，不会打进应用） |
-| `splash/` | 启动动画素材（png 和 webp） |
+| `splash/` | 启动动画素材（webp） |
 | `fonts/` | `LXGWWenKaiLite-Medium.ttf`（霞鹜文楷）、`NotoSansSC-Variable.ttf`，以及各自的 OFL 许可证 |
 | `branding/` | Logo 和 README 横幅（`readme-banner.svg` 由 `tool/docs/generate_readme_banner.py` 生成） |
 

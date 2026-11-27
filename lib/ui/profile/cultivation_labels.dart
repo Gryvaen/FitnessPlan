@@ -33,13 +33,21 @@ extension CultivationRealmL10n on CultivationRealm {
     CultivationRealm.divineTransformation => 'huashen',
   };
 
-  /// 该境界第 [layer] 层（1-9）的原画资源路径；化神期忽略 [layer]，只有一张。
-  String artAsset(int layer) {
-    if (isMax) return 'assets/cultivation/huashen.jpg';
+  /// 该境界第 [layer] 层（1-9）的立绘资源路径；化神期忽略 [layer]。
+  String artAsset(int layer, {bool animated = false}) {
     final clamped = layer.clamp(1, kCultivationLayers);
-    return 'assets/cultivation/${_assetFolder}_$clamped.jpg';
+    final name = isMax ? _assetFolder : '${_assetFolder}_$clamped';
+    final extension = animated && kAnimatedRealmArt.contains(name)
+        ? 'webp'
+        : 'jpg';
+    return 'assets/cultivation/realms/$name.$extension';
   }
 }
+
+/// 已经有动图（同名 `.webp`）的境界场景。其余场景（以及系统开启「减少动画」
+/// 时）一律显示同名静态 `.jpg`。新动图放进 `assets/cultivation/realms/`
+/// 后，把场景名（如 `lianqi_1`、`huashen`）加进这里即可。
+const kAnimatedRealmArt = <String>{};
 
 extension MindRealmL10n on MindRealm {
   String label(AppLocalizations l10n) => switch (this) {
@@ -75,15 +83,16 @@ extension CultivationGoalTheme on FitnessGoal {
   /// 去掉厅堂背景、只留画卷本体（含流苏玉坠，四边不规则）的立绘，黑底。
   /// 画轴选择页直接铺在纯黑页面上，不做矩形裁切，让卷轴的真实轮廓露出来。
   String get cultivationScrollAsset => switch (this) {
-    FitnessGoal.cut => 'assets/cultivation/goal_cut_scroll.png',
-    FitnessGoal.bulk => 'assets/cultivation/goal_bulk_scroll.png',
-    FitnessGoal.maintain => 'assets/cultivation/goal_maintain_scroll.png',
+    FitnessGoal.cut => 'assets/cultivation/goals/goal_cut_scroll.png',
+    FitnessGoal.bulk => 'assets/cultivation/goals/goal_bulk_scroll.png',
+    FitnessGoal.maintain => 'assets/cultivation/goals/goal_maintain_scroll.png',
   };
 
   String get cultivationBackgroundAsset => switch (this) {
-    FitnessGoal.cut => 'assets/cultivation/goal_cut_background.jpg',
-    FitnessGoal.bulk => 'assets/cultivation/goal_bulk_background.jpg',
-    FitnessGoal.maintain => 'assets/cultivation/goal_maintain_background.jpg',
+    FitnessGoal.cut => 'assets/cultivation/goals/goal_cut_background.jpg',
+    FitnessGoal.bulk => 'assets/cultivation/goals/goal_bulk_background.jpg',
+    FitnessGoal.maintain =>
+      'assets/cultivation/goals/goal_maintain_background.jpg',
   };
 
   /// 与 [CultivationRealm.textColor] 的练气绿保持一致；增肌取器械房的

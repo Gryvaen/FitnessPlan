@@ -225,7 +225,7 @@ class _CultivationGoalPickerPageState
                 tileMode: TileMode.decal,
               ),
               child: Image.asset(
-                'assets/cultivation/goal_picker_hall.jpg',
+                'assets/cultivation/goals/goal_picker_hall.jpg',
                 fit: BoxFit.cover,
               ),
             ),

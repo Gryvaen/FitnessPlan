@@ -74,15 +74,15 @@
 <div align="center">
 <table>
   <tr>
-    <td align="center"><img src="./assets/cultivation/lianqi_1.jpg" width="100" alt="练气"><br><b>练气</b></td>
+    <td align="center"><img src="./assets/cultivation/realms/lianqi_1.jpg" width="100" alt="练气"><br><b>练气</b></td>
     <td align="center">→</td>
-    <td align="center"><img src="./assets/cultivation/zhuji_1.jpg" width="100" alt="筑基"><br><b>筑基</b></td>
+    <td align="center"><img src="./assets/cultivation/realms/zhuji_1.jpg" width="100" alt="筑基"><br><b>筑基</b></td>
     <td align="center">→</td>
-    <td align="center"><img src="./assets/cultivation/jiedan_1.jpg" width="100" alt="结丹"><br><b>结丹</b></td>
+    <td align="center"><img src="./assets/cultivation/realms/jiedan_1.jpg" width="100" alt="结丹"><br><b>结丹</b></td>
     <td align="center">→</td>
-    <td align="center"><img src="./assets/cultivation/yuanying_1.jpg" width="100" alt="元婴"><br><b>元婴</b></td>
+    <td align="center"><img src="./assets/cultivation/realms/yuanying_1.jpg" width="100" alt="元婴"><br><b>元婴</b></td>
     <td align="center">→</td>
-    <td align="center"><img src="./assets/cultivation/huashen.jpg" width="100" alt="化神"><br><b>化神</b></td>
+    <td align="center"><img src="./assets/cultivation/realms/huashen.jpg" width="100" alt="化神"><br><b>化神</b></td>
   </tr>
 </table>
 
