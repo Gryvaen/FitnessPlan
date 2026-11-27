@@ -712,11 +712,18 @@ void main() {
       await _pump(tester, const TrainRecordsTab(initialTab: 2));
       expect(find.text('最近训练'), findsNothing);
 
-      // Two scopes are now available ("最近"/"全部", 13 days apart) — jump
-      // straight to "全部" via the scope chip, distinct from the top-level
-      // 计划/动作库/历史 tabs.
-      await tester.tap(find.widgetWithText(ChoiceChip, '全部'));
+      // Two scopes are now available ("最近"/"全部", 13 days apart) — the ⇄
+      // icon (not chips) switches straight to "全部"; the tile titles name
+      // the scope.
+      expect(find.widgetWithText(ChoiceChip, '最近'), findsNothing);
+      expect(find.widgetWithText(ChoiceChip, '全部'), findsNothing);
+      expect(find.byTooltip('切换为「全部」'), findsOneWidget);
+      expect(find.text('最近步数'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey('train-history-scope-toggle')),
+      );
       await tester.pumpAndSettle();
+      expect(find.byTooltip('切换为「最近」'), findsOneWidget);
 
       await tester.tap(find.text('全部步数'));
       await tester.pumpAndSettle();

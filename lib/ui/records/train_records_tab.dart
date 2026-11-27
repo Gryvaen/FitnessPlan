@@ -943,25 +943,28 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
   Widget _historyPanel(BuildContext context, List<int> scopes, int scope) {
     final l10n = context.l10n;
     final showScopeTabs = scopes.length > 1;
+    final next = scopes[(scopes.indexOf(scope) + 1) % scopes.length];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Same ⇄ as the 身体 tab; the tile titles (最近步数 / 全部步数 …)
+        // already name the scope.
         if (showScopeTabs)
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-            child: Wrap(
-              spacing: 8,
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+            child: Row(
               children: [
-                for (final s in scopes)
-                  ChoiceChip(
-                    label: Text(s == 0 ? l10n.tabRecent : l10n.filterAll),
-                    selected: scope == s,
-                    onSelected: (_) => _setHistoryScope(s),
+                PlainIconAction(
+                  key: const ValueKey('train-history-scope-toggle'),
+                  iconWidget: const InkIcon(InkGlyph.swapHorizontal),
+                  label: l10n.bodyPeriodToggle(
+                    next == 0 ? l10n.tabRecent : l10n.filterAll,
                   ),
+                  onPressed: () => _setHistoryScope(next),
+                ),
               ],
             ),
           ),
-        if (showScopeTabs) const SizedBox(height: 8),
         Expanded(
           child: showScopeTabs
               ? SwipeTabView(

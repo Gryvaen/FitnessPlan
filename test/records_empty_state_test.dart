@@ -250,7 +250,7 @@ void main() {
     ]);
     await pump(tester, const TrainRecordsTab(initialTab: 2));
 
-    await tester.tap(find.widgetWithText(ChoiceChip, '全部'));
+    await tester.tap(find.byKey(const ValueKey('train-history-scope-toggle')));
     await tester.pumpAndSettle();
 
     expect(find.text('暂无组次记录'), findsOneWidget);
