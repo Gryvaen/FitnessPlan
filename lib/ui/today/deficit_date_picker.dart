@@ -1353,7 +1353,7 @@ class _LegendSection extends StatelessWidget {
 }
 
 class _LegendDot extends StatelessWidget {
-  const _LegendDot({super.key, required this.color, required this.label});
+  const _LegendDot({required this.color, required this.label});
 
   final Color color;
   final String label;
@@ -1475,7 +1475,6 @@ class _DayCell extends StatelessWidget {
 
     final isPast = date.isBefore(today);
     final isToday = date == today;
-    final marked = marker != null;
     // 冲碳日 keeps a real target, so it still gets remaining/verdict; the
     // other markers show only their label.
     final verdictMarker = marker == null || marker == DayMarkerType.carbLoad;
