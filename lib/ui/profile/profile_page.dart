@@ -245,15 +245,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       }
 
       await ref.read(dataBackupRepositoryProvider).importFromBytes(bytes);
-      ref.invalidate(databaseProvider);
-      ref.invalidate(themeProvider);
-      ref.invalidate(localeProvider);
-      ref.invalidate(remindersProvider);
-      // Profile, 境界 ledger, booked goal switch and goal stretches all live
-      // in prefs; drop the pre-import copies.
-      reloadPrefsBackedState(ref.read);
-      ref.invalidate(cultivationHistoryProvider);
-      await ref.read(remindersProvider.notifier).syncSchedule();
+      await refreshAfterImport(read: ref.read, invalidate: ref.invalidate);
 
       if (!mounted) return;
       messenger.showSnackBar(SnackBar(content: Text(l10n.importDataDone)));
