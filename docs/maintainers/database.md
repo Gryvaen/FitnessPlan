@@ -96,8 +96,8 @@ final upgraded = AppDatabase.forTesting(NativeDatabase(file));   // 这里会执
 
 ### 数据如何进入应用
 
-- 文件：`assets/food_seed.json`，目前 668 条，18 个分类。
-- 版本号：`lib/data/repositories/food_repository.dart` 里的 `kFoodSeedVersion`，**当前为 14**。
+- 文件：`assets/food_seed.json`，目前 682 条，18 个分类。
+- 版本号：`lib/data/repositories/food_repository.dart` 里的 `kFoodSeedVersion`，**当前为 15**。
 - 同步逻辑在 `FoodRepository.syncSeedFromAsset()`，由启动时的 `foodsSeedProvider` 触发：
   1. 如果 `AppMeta.food_seed_version` 已经大于等于 `kFoodSeedVersion`，直接跳过；
   2. 在 isolate 里解析 JSON；
