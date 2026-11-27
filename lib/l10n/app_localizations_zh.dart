@@ -780,6 +780,406 @@ class AppLocalizationsZh extends AppLocalizations {
   String get calcium => '钙';
 
   @override
+  String get nutrientRef => '每日营养参考';
+
+  @override
+  String get nutrientRefSubtitle => '18–49 岁健康成年人 · 三大营养素以外';
+
+  @override
+  String get nutrientRefGroupLimit => '限制摄入';
+
+  @override
+  String get nutrientRefGroupFats => '脂肪构成';
+
+  @override
+  String get nutrientRefGroupEnough => '吃够';
+
+  @override
+  String get nutrientRefGroupMinerals => '矿物质';
+
+  @override
+  String get nutrientRefGroupVitamins => '维生素';
+
+  @override
+  String get nutrientRefGroupOther => '其他';
+
+  @override
+  String get nutrientRefSodiumNote => '约等于食盐 5 g';
+
+  @override
+  String get nutrientRefSatFatValue => '< 10% 热量';
+
+  @override
+  String get nutrientRefSatFatNote => '2000 kcal 时约 22 g';
+
+  @override
+  String get nutrientRefTransFat => '反式脂肪';
+
+  @override
+  String get nutrientRefTransFatNote => '主要来自氢化油';
+
+  @override
+  String get nutrientRefAddedSugar => '添加糖';
+
+  @override
+  String get nutrientRefAddedSugarValue => '< 50 g，最好 < 25 g';
+
+  @override
+  String get nutrientRefAddedSugarNote => '成分表里的「糖」也含天然糖';
+
+  @override
+  String get nutrientRefCholesterol => '胆固醇';
+
+  @override
+  String get nutrientRefCholesterolValue => '无硬性上限';
+
+  @override
+  String get nutrientRefCholesterolNote => '常用参考 < 300 mg，1 个鸡蛋约 186 mg';
+
+  @override
+  String get nutrientRefAlcoholNote => '不喝最好';
+
+  @override
+  String get nutrientRefCaffeine => '咖啡因';
+
+  @override
+  String get nutrientRefCaffeineNote => '孕期 ≤ 200 mg';
+
+  @override
+  String get nutrientRefTotalFat => '总脂肪';
+
+  @override
+  String get nutrientRefTotalFatValue => '20–30% 热量';
+
+  @override
+  String get nutrientRefOmega6 => 'n-6 多不饱和脂肪';
+
+  @override
+  String get nutrientRefOmega6Value => '2.5–9% 热量';
+
+  @override
+  String get nutrientRefOmega6Note => '植物油里很多，一般不缺';
+
+  @override
+  String get nutrientRefOmega3 => 'n-3 多不饱和脂肪';
+
+  @override
+  String get nutrientRefOmega3Value => '0.5–2% 热量';
+
+  @override
+  String get nutrientRefEpaDhaNote => '每周吃 2 次深海鱼';
+
+  @override
+  String get nutrientRefMufa => '单不饱和脂肪';
+
+  @override
+  String get nutrientRefMufaValue => '补足其余脂肪';
+
+  @override
+  String get nutrientRefMufaNote => '橄榄油、茶油、坚果';
+
+  @override
+  String get nutrientRefPotassium => '钾';
+
+  @override
+  String get nutrientRefPotassiumNote => '钠钾比 ≤ 1 更理想';
+
+  @override
+  String get nutrientRefWater => '饮水';
+
+  @override
+  String get nutrientRefWaterValue => '男 1700 / 女 1500 mL';
+
+  @override
+  String get nutrientRefWaterNote => '训练、出汗多时加量';
+
+  @override
+  String get nutrientRefCalciumNote => '上限 2000 mg';
+
+  @override
+  String get nutrientRefIron => '铁';
+
+  @override
+  String get nutrientRefIronValue => '男 12 / 女 18 mg';
+
+  @override
+  String get nutrientRefZinc => '锌';
+
+  @override
+  String get nutrientRefZincValue => '男 12 / 女 8.5 mg';
+
+  @override
+  String get nutrientRefMagnesium => '镁';
+
+  @override
+  String get nutrientRefPhosphorus => '磷';
+
+  @override
+  String get nutrientRefIodine => '碘';
+
+  @override
+  String get nutrientRefSelenium => '硒';
+
+  @override
+  String get nutrientRefVitaminA => '维生素 A';
+
+  @override
+  String get nutrientRefVitaminAValue => '男 770 / 女 660 μg RAE';
+
+  @override
+  String get nutrientRefVitaminD => '维生素 D';
+
+  @override
+  String get nutrientRefVitaminDNote => '上限 50 μg';
+
+  @override
+  String get nutrientRefVitaminE => '维生素 E';
+
+  @override
+  String get nutrientRefVitaminK => '维生素 K';
+
+  @override
+  String get nutrientRefVitaminB1 => '维生素 B1';
+
+  @override
+  String get nutrientRefVitaminB2 => '维生素 B2';
+
+  @override
+  String get nutrientRefVitaminB1B2Value => '男 1.4 / 女 1.2 mg';
+
+  @override
+  String get nutrientRefVitaminB12 => '维生素 B12';
+
+  @override
+  String get nutrientRefFolate => '叶酸';
+
+  @override
+  String get nutrientRefVitaminC => '维生素 C';
+
+  @override
+  String get nutrientRefVitaminCNote => '预防慢病建议 200 mg';
+
+  @override
+  String get nutrientRefPurine => '嘌呤';
+
+  @override
+  String get nutrientRefPurineValue => '健康人无标准';
+
+  @override
+  String get nutrientRefPurineNote => '高尿酸或痛风 < 300 mg，急性期 < 150 mg（临床经验值）';
+
+  @override
+  String get nutrientRefFootnote =>
+      '依据《中国居民膳食营养素参考摄入量（2023）》《中国居民膳食指南（2022）》及 WHO 建议。数值适用于健康成年人；孕期、哺乳期或有慢病者请遵医嘱。';
+
+  @override
+  String get nutrientRefGuideTitle => '认识这些营养素';
+
+  @override
+  String get nutrientRefGuideHint => '逐项说明作用、食物来源和注意事项';
+
+  @override
+  String get nutrientRefRoleLabel => '作用';
+
+  @override
+  String get nutrientRefSourceLabel => '来源';
+
+  @override
+  String get nutrientRefNoteLabel => '提示';
+
+  @override
+  String get nutrientRefSodiumRole => '维持体液平衡、血压和神经肌肉功能；吃多了升血压';
+
+  @override
+  String get nutrientRefSodiumSource => '食盐、酱油、蚝油、味精、咸菜腊肉、加工食品、外卖';
+
+  @override
+  String get nutrientRefSatFatRole => '提供能量、参与激素合成；过多推高低密度脂蛋白胆固醇';
+
+  @override
+  String get nutrientRefSatFatSource => '肥肉、猪油、黄油、奶油、全脂奶、椰子油、棕榈油、禽皮';
+
+  @override
+  String get nutrientRefTransFatRole => '没有营养必要，升高坏胆固醇、降低好胆固醇';
+
+  @override
+  String get nutrientRefTransFatSource => '氢化植物油、起酥油、植脂末、部分糕点、反复油炸食品';
+
+  @override
+  String get nutrientRefAddedSugarRole => '只提供能量；多了易胖、龋齿、升血糖和甘油三酯';
+
+  @override
+  String get nutrientRefAddedSugarSource => '含糖饮料、奶茶、甜点、糖果、调味酱、加糖酸奶';
+
+  @override
+  String get nutrientRefCholesterolRole => '构成细胞膜，合成激素、维生素 D 和胆汁酸；身体能自己合成大部分';
+
+  @override
+  String get nutrientRefCholesterolSource => '蛋黄、动物内脏、虾蟹黄、鱿鱼、肥肉';
+
+  @override
+  String get nutrientRefAlcoholRole => '没有营养价值，每克约 7 kcal，伤肝并增加多种癌症风险';
+
+  @override
+  String get nutrientRefAlcoholSource => '各类酒和含酒精饮料';
+
+  @override
+  String get nutrientRefCaffeineRole => '提神、提升运动表现；过量会心慌、失眠';
+
+  @override
+  String get nutrientRefCaffeineSource => '咖啡、茶、可乐、能量饮料、黑巧克力';
+
+  @override
+  String get nutrientRefTotalFatRole => '提供能量，帮助吸收维生素 A/D/E/K，构成细胞膜';
+
+  @override
+  String get nutrientRefTotalFatSource => '烹调油、肉类、坚果、乳制品';
+
+  @override
+  String get nutrientRefOmega6Role => '必需脂肪酸，参与细胞膜构成和炎症调节';
+
+  @override
+  String get nutrientRefOmega6Source => '大豆油、玉米油、葵花籽油、坚果';
+
+  @override
+  String get nutrientRefOmega3Role => '必需脂肪酸，抗炎、护心，维持大脑和视力';
+
+  @override
+  String get nutrientRefOmega3Source => '亚麻籽油、紫苏油、核桃、奇亚籽';
+
+  @override
+  String get nutrientRefEpaDhaRole => '降甘油三酯、护心；DHA 是大脑和视网膜的重要成分';
+
+  @override
+  String get nutrientRefEpaDhaSource => '三文鱼、鲭鱼、沙丁鱼、秋刀鱼等深海鱼，鱼油';
+
+  @override
+  String get nutrientRefMufaRole => '替代饱和脂肪可改善血脂';
+
+  @override
+  String get nutrientRefMufaSource => '橄榄油、茶油、菜籽油、牛油果、杏仁、花生';
+
+  @override
+  String get nutrientRefFiberRole => '促进肠道蠕动、增加饱腹感、平稳血糖、降胆固醇';
+
+  @override
+  String get nutrientRefFiberSource => '全谷物、杂豆、蔬菜、水果、菌藻';
+
+  @override
+  String get nutrientRefPotassiumRole => '维持心律和肌肉功能，帮助排钠、降血压';
+
+  @override
+  String get nutrientRefPotassiumSource => '香蕉、土豆、红薯、菠菜、豆类、蘑菇、牛奶';
+
+  @override
+  String get nutrientRefWaterRole => '调节体温、运输营养、排出代谢废物';
+
+  @override
+  String get nutrientRefWaterSource => '白开水、茶、汤，蔬果里的水分';
+
+  @override
+  String get nutrientRefCalciumRole => '构成骨骼和牙齿，参与肌肉收缩和神经传导';
+
+  @override
+  String get nutrientRefCalciumSource => '牛奶、酸奶、奶酪、豆腐、深绿叶菜、带骨小鱼虾';
+
+  @override
+  String get nutrientRefIronRole => '合成血红蛋白运输氧气，缺乏会贫血、乏力';
+
+  @override
+  String get nutrientRefIronSource => '红肉、动物肝脏和血、黑木耳、菠菜（植物铁吸收差，搭配维生素 C 更好）';
+
+  @override
+  String get nutrientRefZincRole => '参与免疫、伤口愈合、味觉和生长发育';
+
+  @override
+  String get nutrientRefZincSource => '牡蛎、红肉、蛋、坚果、全谷物';
+
+  @override
+  String get nutrientRefMagnesiumRole => '参与 300 多种酶反应，维持肌肉、神经和骨骼';
+
+  @override
+  String get nutrientRefMagnesiumSource => '坚果、深绿叶菜、全谷物、豆类、黑巧克力';
+
+  @override
+  String get nutrientRefPhosphorusRole => '构成骨骼和牙齿，参与能量代谢；一般不缺';
+
+  @override
+  String get nutrientRefPhosphorusSource => '肉、鱼、蛋、奶、豆类、坚果';
+
+  @override
+  String get nutrientRefIodineRole => '合成甲状腺激素、调节代谢';
+
+  @override
+  String get nutrientRefIodineSource => '加碘盐、海带、紫菜、海鱼';
+
+  @override
+  String get nutrientRefSeleniumRole => '抗氧化，保护甲状腺和免疫功能';
+
+  @override
+  String get nutrientRefSeleniumSource => '海产品、动物内脏、肉、蛋、巴西坚果';
+
+  @override
+  String get nutrientRefVitaminARole => '维持视力（尤其夜视）、皮肤黏膜和免疫';
+
+  @override
+  String get nutrientRefVitaminASource => '动物肝脏、蛋黄、奶；胡萝卜、南瓜、深绿叶菜里的 β-胡萝卜素可转化';
+
+  @override
+  String get nutrientRefVitaminDRole => '促进钙吸收，维持骨骼和肌肉';
+
+  @override
+  String get nutrientRefVitaminDSource => '晒太阳（皮肤合成）、深海鱼、蛋黄、强化奶';
+
+  @override
+  String get nutrientRefVitaminERole => '抗氧化，保护细胞膜';
+
+  @override
+  String get nutrientRefVitaminESource => '植物油、坚果、种子、绿叶菜';
+
+  @override
+  String get nutrientRefVitaminKRole => '参与凝血和骨骼代谢';
+
+  @override
+  String get nutrientRefVitaminKSource => '菠菜、西兰花等深绿叶菜，纳豆';
+
+  @override
+  String get nutrientRefVitaminB1Role => '帮助碳水化合物转化为能量，维持神经功能';
+
+  @override
+  String get nutrientRefVitaminB1Source => '全谷物、杂豆、瘦猪肉、坚果；精白米面里少';
+
+  @override
+  String get nutrientRefVitaminB2Role => '参与能量代谢，维护皮肤和口腔黏膜';
+
+  @override
+  String get nutrientRefVitaminB2Source => '奶、蛋、动物肝脏、瘦肉、绿叶菜';
+
+  @override
+  String get nutrientRefVitaminB12Role => '帮助造血、维持神经系统，缺乏会贫血';
+
+  @override
+  String get nutrientRefVitaminB12Source => '只存在于动物性食物：肉、鱼、蛋、奶；纯素者需补充';
+
+  @override
+  String get nutrientRefFolateRole => '参与细胞分裂和造血；孕早期预防胎儿神经管缺陷';
+
+  @override
+  String get nutrientRefFolateSource => '深绿叶菜、豆类、动物肝脏、柑橘';
+
+  @override
+  String get nutrientRefVitaminCRole => '抗氧化，促进胶原合成和铁吸收，维持免疫';
+
+  @override
+  String get nutrientRefVitaminCSource => '鲜枣、猕猴桃、柑橘、彩椒、西兰花等新鲜蔬果';
+
+  @override
+  String get nutrientRefPurineRole => '代谢后生成尿酸，尿酸过高可诱发痛风';
+
+  @override
+  String get nutrientRefPurineSource => '动物内脏、浓肉汤、沙丁鱼和贝类等海鲜、啤酒；豆类、菌菇属中等';
+
+  @override
   String get fiberG => '膳食纤维 (g)';
 
   @override

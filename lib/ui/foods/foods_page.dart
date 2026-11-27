@@ -16,6 +16,7 @@ import '../widgets/food_name_link.dart';
 import '../widgets/search_field_focus.dart';
 import 'food_category_art.dart';
 import 'food_history_tab.dart';
+import 'nutrient_reference_sheet.dart';
 
 final _foodQueryProvider = NotifierProvider<_QueryNotifier, String>(
   _QueryNotifier.new,
@@ -134,6 +135,49 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
     ];
   }
 
+  Widget _buildSearch(BuildContext context, bool searching) {
+    final l10n = context.l10n;
+    // Tapping anywhere else folds an open-but-empty box.
+    return TapRegion(
+      onTapOutside: (_) {
+        if (_hasQuery) return;
+        _searchFocus.unfocus();
+        _foldIdleSearch();
+      },
+      child: ExpandingSearch(
+        expanded: _searchOpen || searching,
+        openKey: const ValueKey('food-search-open'),
+        tooltip: l10n.searchFood,
+        onExpand: () => setState(() => _searchOpen = true),
+        child: UnfocusOnKeyboardHide(
+          focusNode: _searchFocus,
+          child: TextField(
+            key: const ValueKey('food-search'),
+            controller: _searchController,
+            focusNode: _searchFocus,
+            decoration: InputDecoration(
+              hintText: l10n.searchFood,
+              prefixIcon: InkIcon(
+                InkGlyph.search,
+                color: foodUtilityIconColor(context),
+              ),
+              suffixIcon: searching
+                  ? IconButton(
+                      icon: InkIcon(
+                        InkGlyph.close,
+                        color: foodUtilityIconColor(context),
+                      ),
+                      onPressed: _clearSearch,
+                    )
+                  : null,
+            ),
+            onChanged: _setQuery,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -219,44 +263,18 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.listPage,
               ),
-              // Tapping anywhere else folds an open-but-empty box.
-              child: TapRegion(
-                onTapOutside: (_) {
-                  if (_hasQuery) return;
-                  _searchFocus.unfocus();
-                  _foldIdleSearch();
-                },
-                child: ExpandingSearch(
-                  expanded: _searchOpen || searching,
-                  openKey: const ValueKey('food-search-open'),
-                  tooltip: l10n.searchFood,
-                  onExpand: () => setState(() => _searchOpen = true),
-                  child: UnfocusOnKeyboardHide(
-                    focusNode: _searchFocus,
-                    child: TextField(
-                      key: const ValueKey('food-search'),
-                      controller: _searchController,
-                      focusNode: _searchFocus,
-                      decoration: InputDecoration(
-                        hintText: l10n.searchFood,
-                        prefixIcon: InkIcon(
-                          InkGlyph.search,
-                          color: foodUtilityIconColor(context),
-                        ),
-                        suffixIcon: searching
-                            ? IconButton(
-                                icon: InkIcon(
-                                  InkGlyph.close,
-                                  color: foodUtilityIconColor(context),
-                                ),
-                                onPressed: _clearSearch,
-                              )
-                            : null,
-                      ),
-                      onChanged: _setQuery,
-                    ),
+              child: Stack(
+                children: [
+                  // 「每日营养参考」sits right of the resting search icon; the
+                  // box slides over it as it opens, so it fades out then.
+                  Positioned(
+                    left: ExpandingSearch.collapsedWidth,
+                    top: 0,
+                    bottom: 0,
+                    child: _NutrientRefButton(hidden: _searchOpen || searching),
                   ),
-                ),
+                  _buildSearch(context, searching),
+                ],
               ),
             ),
             if (!searching && visible.length > 1) ...[
@@ -650,5 +668,48 @@ class _FoodSearchList extends ConsumerWidget {
             );
           },
         );
+  }
+}
+
+/// The 「每日营养参考」 icon beside the resting search icon. Fades out (and
+/// stops taking taps or focus) while the search box is open over it.
+class _NutrientRefButton extends StatelessWidget {
+  const _NutrientRefButton({required this.hidden});
+
+  final bool hidden;
+
+  @override
+  Widget build(BuildContext context) {
+    final still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    return AnimatedOpacity(
+      opacity: hidden ? 0 : 1,
+      duration: still ? Duration.zero : const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+      child: IgnorePointer(
+        ignoring: hidden,
+        child: ExcludeFocus(
+          excluding: hidden,
+          child: Center(
+            // Same 48dp box the search box's prefix icon is forced to (its
+            // min constraints), so both ink glyphs read at the same weight.
+            child: IconButton(
+              key: const ValueKey('food-nutrient-ref'),
+              tooltip: context.l10n.nutrientRef,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints.tightFor(
+                width: ExpandingSearch.collapsedWidth,
+                height: ExpandingSearch.collapsedWidth,
+              ),
+              icon: InkIcon(
+                InkGlyph.factCheck,
+                size: ExpandingSearch.collapsedWidth,
+                color: foodUtilityIconColor(context),
+              ),
+              onPressed: () => showNutrientReferenceSheet(context),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

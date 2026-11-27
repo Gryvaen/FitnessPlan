@@ -785,6 +785,472 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calcium => 'Calcium';
 
   @override
+  String get nutrientRef => 'Daily nutrient guide';
+
+  @override
+  String get nutrientRefSubtitle =>
+      'Healthy adults aged 18–49 · beyond calories and macros';
+
+  @override
+  String get nutrientRefGroupLimit => 'Keep under';
+
+  @override
+  String get nutrientRefGroupFats => 'Fat balance';
+
+  @override
+  String get nutrientRefGroupEnough => 'Get enough';
+
+  @override
+  String get nutrientRefGroupMinerals => 'Minerals';
+
+  @override
+  String get nutrientRefGroupVitamins => 'Vitamins';
+
+  @override
+  String get nutrientRefGroupOther => 'Other';
+
+  @override
+  String get nutrientRefSodiumNote => 'About 5 g of salt';
+
+  @override
+  String get nutrientRefSatFatValue => '< 10% of kcal';
+
+  @override
+  String get nutrientRefSatFatNote => 'About 22 g at 2000 kcal';
+
+  @override
+  String get nutrientRefTransFat => 'Trans fat';
+
+  @override
+  String get nutrientRefTransFatNote => 'Mostly from hydrogenated oils';
+
+  @override
+  String get nutrientRefAddedSugar => 'Added sugar';
+
+  @override
+  String get nutrientRefAddedSugarValue => '< 50 g, ideally < 25 g';
+
+  @override
+  String get nutrientRefAddedSugarNote =>
+      'Label \"sugar\" also counts natural sugars';
+
+  @override
+  String get nutrientRefCholesterol => 'Cholesterol';
+
+  @override
+  String get nutrientRefCholesterolValue => 'No hard cap';
+
+  @override
+  String get nutrientRefCholesterolNote =>
+      'Common guide < 300 mg; one egg ≈ 186 mg';
+
+  @override
+  String get nutrientRefAlcoholNote => 'None is best';
+
+  @override
+  String get nutrientRefCaffeine => 'Caffeine';
+
+  @override
+  String get nutrientRefCaffeineNote => '≤ 200 mg during pregnancy';
+
+  @override
+  String get nutrientRefTotalFat => 'Total fat';
+
+  @override
+  String get nutrientRefTotalFatValue => '20–30% of kcal';
+
+  @override
+  String get nutrientRefOmega6 => 'Omega-6 PUFA';
+
+  @override
+  String get nutrientRefOmega6Value => '2.5–9% of kcal';
+
+  @override
+  String get nutrientRefOmega6Note => 'Plenty in vegetable oils, rarely short';
+
+  @override
+  String get nutrientRefOmega3 => 'Omega-3 PUFA';
+
+  @override
+  String get nutrientRefOmega3Value => '0.5–2% of kcal';
+
+  @override
+  String get nutrientRefEpaDhaNote => 'Oily fish twice a week';
+
+  @override
+  String get nutrientRefMufa => 'Monounsaturated fat';
+
+  @override
+  String get nutrientRefMufaValue => 'Fills the rest';
+
+  @override
+  String get nutrientRefMufaNote => 'Olive oil, tea-seed oil, nuts';
+
+  @override
+  String get nutrientRefPotassium => 'Potassium';
+
+  @override
+  String get nutrientRefPotassiumNote => 'Aim for sodium : potassium ≤ 1';
+
+  @override
+  String get nutrientRefWater => 'Drinking water';
+
+  @override
+  String get nutrientRefWaterValue => 'M 1700 / F 1500 mL';
+
+  @override
+  String get nutrientRefWaterNote => 'More when training or sweating';
+
+  @override
+  String get nutrientRefCalciumNote => 'Upper limit 2000 mg';
+
+  @override
+  String get nutrientRefIron => 'Iron';
+
+  @override
+  String get nutrientRefIronValue => 'M 12 / F 18 mg';
+
+  @override
+  String get nutrientRefZinc => 'Zinc';
+
+  @override
+  String get nutrientRefZincValue => 'M 12 / F 8.5 mg';
+
+  @override
+  String get nutrientRefMagnesium => 'Magnesium';
+
+  @override
+  String get nutrientRefPhosphorus => 'Phosphorus';
+
+  @override
+  String get nutrientRefIodine => 'Iodine';
+
+  @override
+  String get nutrientRefSelenium => 'Selenium';
+
+  @override
+  String get nutrientRefVitaminA => 'Vitamin A';
+
+  @override
+  String get nutrientRefVitaminAValue => 'M 770 / F 660 μg RAE';
+
+  @override
+  String get nutrientRefVitaminD => 'Vitamin D';
+
+  @override
+  String get nutrientRefVitaminDNote => 'Upper limit 50 μg';
+
+  @override
+  String get nutrientRefVitaminE => 'Vitamin E';
+
+  @override
+  String get nutrientRefVitaminK => 'Vitamin K';
+
+  @override
+  String get nutrientRefVitaminB1 => 'Vitamin B1';
+
+  @override
+  String get nutrientRefVitaminB2 => 'Vitamin B2';
+
+  @override
+  String get nutrientRefVitaminB1B2Value => 'M 1.4 / F 1.2 mg';
+
+  @override
+  String get nutrientRefVitaminB12 => 'Vitamin B12';
+
+  @override
+  String get nutrientRefFolate => 'Folate';
+
+  @override
+  String get nutrientRefVitaminC => 'Vitamin C';
+
+  @override
+  String get nutrientRefVitaminCNote =>
+      '200 mg suggested for chronic-disease prevention';
+
+  @override
+  String get nutrientRefPurine => 'Purine';
+
+  @override
+  String get nutrientRefPurineValue => 'No limit if healthy';
+
+  @override
+  String get nutrientRefPurineNote =>
+      'Gout or high uric acid: < 300 mg, flare-ups < 150 mg (clinical rule of thumb)';
+
+  @override
+  String get nutrientRefFootnote =>
+      'Based on the Chinese DRIs (2023), the Dietary Guidelines for Chinese Residents (2022) and WHO advice. For healthy adults; if pregnant, breastfeeding or managing a chronic condition, follow your doctor.';
+
+  @override
+  String get nutrientRefGuideTitle => 'About these nutrients';
+
+  @override
+  String get nutrientRefGuideHint =>
+      'What each one does, where to get it, and what to watch';
+
+  @override
+  String get nutrientRefRoleLabel => 'What it does';
+
+  @override
+  String get nutrientRefSourceLabel => 'Where to get it';
+
+  @override
+  String get nutrientRefNoteLabel => 'Tip';
+
+  @override
+  String get nutrientRefSodiumRole =>
+      'Keeps fluid balance, blood pressure and nerve–muscle function; too much raises blood pressure';
+
+  @override
+  String get nutrientRefSodiumSource =>
+      'Salt, soy sauce, oyster sauce, MSG, pickled and cured foods, processed food, takeaway';
+
+  @override
+  String get nutrientRefSatFatRole =>
+      'Supplies energy and helps make hormones; too much raises LDL cholesterol';
+
+  @override
+  String get nutrientRefSatFatSource =>
+      'Fatty meat, lard, butter, cream, whole milk, coconut and palm oil, poultry skin';
+
+  @override
+  String get nutrientRefTransFatRole =>
+      'No nutritional need; raises bad cholesterol and lowers good cholesterol';
+
+  @override
+  String get nutrientRefTransFatSource =>
+      'Hydrogenated oils, shortening, non-dairy creamer, some pastries, repeatedly fried food';
+
+  @override
+  String get nutrientRefAddedSugarRole =>
+      'Energy only; too much drives weight gain, tooth decay, blood sugar and triglycerides';
+
+  @override
+  String get nutrientRefAddedSugarSource =>
+      'Sugary drinks, milk tea, desserts, sweets, sauces, sweetened yogurt';
+
+  @override
+  String get nutrientRefCholesterolRole =>
+      'Builds cell membranes and makes hormones, vitamin D and bile acids; the body makes most of it';
+
+  @override
+  String get nutrientRefCholesterolSource =>
+      'Egg yolk, organ meats, shrimp and crab roe, squid, fatty meat';
+
+  @override
+  String get nutrientRefAlcoholRole =>
+      'No nutritional value, about 7 kcal per gram; harms the liver and raises the risk of several cancers';
+
+  @override
+  String get nutrientRefAlcoholSource => 'All alcoholic drinks';
+
+  @override
+  String get nutrientRefCaffeineRole =>
+      'Boosts alertness and exercise performance; too much causes palpitations and poor sleep';
+
+  @override
+  String get nutrientRefCaffeineSource =>
+      'Coffee, tea, cola, energy drinks, dark chocolate';
+
+  @override
+  String get nutrientRefTotalFatRole =>
+      'Supplies energy, helps absorb vitamins A/D/E/K, builds cell membranes';
+
+  @override
+  String get nutrientRefTotalFatSource => 'Cooking oil, meat, nuts, dairy';
+
+  @override
+  String get nutrientRefOmega6Role =>
+      'Essential fatty acid for cell membranes and inflammation control';
+
+  @override
+  String get nutrientRefOmega6Source => 'Soybean, corn and sunflower oil, nuts';
+
+  @override
+  String get nutrientRefOmega3Role =>
+      'Essential fatty acid; anti-inflammatory, heart-protective, supports brain and vision';
+
+  @override
+  String get nutrientRefOmega3Source =>
+      'Flaxseed oil, perilla oil, walnuts, chia seeds';
+
+  @override
+  String get nutrientRefEpaDhaRole =>
+      'Lowers triglycerides and protects the heart; DHA is a key part of the brain and retina';
+
+  @override
+  String get nutrientRefEpaDhaSource =>
+      'Oily fish such as salmon, mackerel, sardines and saury; fish oil';
+
+  @override
+  String get nutrientRefMufaRole =>
+      'Improves blood lipids when it replaces saturated fat';
+
+  @override
+  String get nutrientRefMufaSource =>
+      'Olive, tea-seed and rapeseed oil, avocado, almonds, peanuts';
+
+  @override
+  String get nutrientRefFiberRole =>
+      'Keeps the gut moving, adds fullness, steadies blood sugar, lowers cholesterol';
+
+  @override
+  String get nutrientRefFiberSource =>
+      'Whole grains, beans, vegetables, fruit, mushrooms and seaweed';
+
+  @override
+  String get nutrientRefPotassiumRole =>
+      'Keeps heart rhythm and muscle function; helps flush sodium and lower blood pressure';
+
+  @override
+  String get nutrientRefPotassiumSource =>
+      'Bananas, potatoes, sweet potatoes, spinach, beans, mushrooms, milk';
+
+  @override
+  String get nutrientRefWaterRole =>
+      'Regulates body temperature, carries nutrients, clears waste';
+
+  @override
+  String get nutrientRefWaterSource =>
+      'Plain water, tea, soup, water in fruit and vegetables';
+
+  @override
+  String get nutrientRefCalciumRole =>
+      'Builds bones and teeth; needed for muscle contraction and nerve signals';
+
+  @override
+  String get nutrientRefCalciumSource =>
+      'Milk, yogurt, cheese, tofu, dark leafy greens, small fish and shrimp eaten with bones';
+
+  @override
+  String get nutrientRefIronRole =>
+      'Makes hemoglobin to carry oxygen; shortage causes anemia and fatigue';
+
+  @override
+  String get nutrientRefIronSource =>
+      'Red meat, liver and blood products, wood ear fungus, spinach (plant iron absorbs poorly; pair it with vitamin C)';
+
+  @override
+  String get nutrientRefZincRole =>
+      'Supports immunity, wound healing, taste and growth';
+
+  @override
+  String get nutrientRefZincSource =>
+      'Oysters, red meat, eggs, nuts, whole grains';
+
+  @override
+  String get nutrientRefMagnesiumRole =>
+      'Takes part in 300+ enzyme reactions; supports muscles, nerves and bones';
+
+  @override
+  String get nutrientRefMagnesiumSource =>
+      'Nuts, dark leafy greens, whole grains, beans, dark chocolate';
+
+  @override
+  String get nutrientRefPhosphorusRole =>
+      'Builds bones and teeth and powers energy metabolism; rarely short';
+
+  @override
+  String get nutrientRefPhosphorusSource =>
+      'Meat, fish, eggs, dairy, beans, nuts';
+
+  @override
+  String get nutrientRefIodineRole =>
+      'Makes thyroid hormones that regulate metabolism';
+
+  @override
+  String get nutrientRefIodineSource => 'Iodized salt, kelp, nori, sea fish';
+
+  @override
+  String get nutrientRefSeleniumRole =>
+      'Antioxidant; protects the thyroid and immune function';
+
+  @override
+  String get nutrientRefSeleniumSource =>
+      'Seafood, organ meats, meat, eggs, Brazil nuts';
+
+  @override
+  String get nutrientRefVitaminARole =>
+      'Supports vision (especially at night), skin, mucous membranes and immunity';
+
+  @override
+  String get nutrientRefVitaminASource =>
+      'Liver, egg yolk, dairy; beta-carotene in carrots, pumpkin and dark greens converts to it';
+
+  @override
+  String get nutrientRefVitaminDRole =>
+      'Helps absorb calcium; supports bones and muscles';
+
+  @override
+  String get nutrientRefVitaminDSource =>
+      'Sunlight on skin, oily fish, egg yolk, fortified milk';
+
+  @override
+  String get nutrientRefVitaminERole =>
+      'Antioxidant that protects cell membranes';
+
+  @override
+  String get nutrientRefVitaminESource =>
+      'Vegetable oils, nuts, seeds, leafy greens';
+
+  @override
+  String get nutrientRefVitaminKRole =>
+      'Needed for blood clotting and bone metabolism';
+
+  @override
+  String get nutrientRefVitaminKSource =>
+      'Dark leafy greens such as spinach and broccoli, natto';
+
+  @override
+  String get nutrientRefVitaminB1Role =>
+      'Turns carbohydrates into energy; supports nerve function';
+
+  @override
+  String get nutrientRefVitaminB1Source =>
+      'Whole grains, beans, lean pork, nuts; little in refined rice and flour';
+
+  @override
+  String get nutrientRefVitaminB2Role =>
+      'Supports energy metabolism, skin and the lining of the mouth';
+
+  @override
+  String get nutrientRefVitaminB2Source =>
+      'Dairy, eggs, liver, lean meat, leafy greens';
+
+  @override
+  String get nutrientRefVitaminB12Role =>
+      'Helps make blood and keeps nerves healthy; shortage causes anemia';
+
+  @override
+  String get nutrientRefVitaminB12Source =>
+      'Only in animal foods: meat, fish, eggs, dairy; vegans need a supplement';
+
+  @override
+  String get nutrientRefFolateRole =>
+      'Needed for cell division and blood; prevents neural tube defects in early pregnancy';
+
+  @override
+  String get nutrientRefFolateSource =>
+      'Dark leafy greens, beans, liver, citrus';
+
+  @override
+  String get nutrientRefVitaminCRole =>
+      'Antioxidant; helps make collagen, absorb iron and support immunity';
+
+  @override
+  String get nutrientRefVitaminCSource =>
+      'Fresh produce such as jujubes, kiwi, citrus, bell peppers, broccoli';
+
+  @override
+  String get nutrientRefPurineRole =>
+      'Breaks down into uric acid; too much uric acid can trigger gout';
+
+  @override
+  String get nutrientRefPurineSource =>
+      'Organ meats, rich meat broth, seafood such as sardines and shellfish, beer; beans and mushrooms are moderate';
+
+  @override
   String get fiberG => 'Fiber (g)';
 
   @override

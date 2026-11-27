@@ -1580,6 +1580,804 @@ abstract class AppLocalizations {
   /// **'Calcium'**
   String get calcium;
 
+  /// No description provided for @nutrientRef.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily nutrient guide'**
+  String get nutrientRef;
+
+  /// No description provided for @nutrientRefSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Healthy adults aged 18–49 · beyond calories and macros'**
+  String get nutrientRefSubtitle;
+
+  /// No description provided for @nutrientRefGroupLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep under'**
+  String get nutrientRefGroupLimit;
+
+  /// No description provided for @nutrientRefGroupFats.
+  ///
+  /// In en, this message translates to:
+  /// **'Fat balance'**
+  String get nutrientRefGroupFats;
+
+  /// No description provided for @nutrientRefGroupEnough.
+  ///
+  /// In en, this message translates to:
+  /// **'Get enough'**
+  String get nutrientRefGroupEnough;
+
+  /// No description provided for @nutrientRefGroupMinerals.
+  ///
+  /// In en, this message translates to:
+  /// **'Minerals'**
+  String get nutrientRefGroupMinerals;
+
+  /// No description provided for @nutrientRefGroupVitamins.
+  ///
+  /// In en, this message translates to:
+  /// **'Vitamins'**
+  String get nutrientRefGroupVitamins;
+
+  /// No description provided for @nutrientRefGroupOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get nutrientRefGroupOther;
+
+  /// No description provided for @nutrientRefSodiumNote.
+  ///
+  /// In en, this message translates to:
+  /// **'About 5 g of salt'**
+  String get nutrientRefSodiumNote;
+
+  /// No description provided for @nutrientRefSatFatValue.
+  ///
+  /// In en, this message translates to:
+  /// **'< 10% of kcal'**
+  String get nutrientRefSatFatValue;
+
+  /// No description provided for @nutrientRefSatFatNote.
+  ///
+  /// In en, this message translates to:
+  /// **'About 22 g at 2000 kcal'**
+  String get nutrientRefSatFatNote;
+
+  /// No description provided for @nutrientRefTransFat.
+  ///
+  /// In en, this message translates to:
+  /// **'Trans fat'**
+  String get nutrientRefTransFat;
+
+  /// No description provided for @nutrientRefTransFatNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Mostly from hydrogenated oils'**
+  String get nutrientRefTransFatNote;
+
+  /// No description provided for @nutrientRefAddedSugar.
+  ///
+  /// In en, this message translates to:
+  /// **'Added sugar'**
+  String get nutrientRefAddedSugar;
+
+  /// No description provided for @nutrientRefAddedSugarValue.
+  ///
+  /// In en, this message translates to:
+  /// **'< 50 g, ideally < 25 g'**
+  String get nutrientRefAddedSugarValue;
+
+  /// No description provided for @nutrientRefAddedSugarNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Label \"sugar\" also counts natural sugars'**
+  String get nutrientRefAddedSugarNote;
+
+  /// No description provided for @nutrientRefCholesterol.
+  ///
+  /// In en, this message translates to:
+  /// **'Cholesterol'**
+  String get nutrientRefCholesterol;
+
+  /// No description provided for @nutrientRefCholesterolValue.
+  ///
+  /// In en, this message translates to:
+  /// **'No hard cap'**
+  String get nutrientRefCholesterolValue;
+
+  /// No description provided for @nutrientRefCholesterolNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Common guide < 300 mg; one egg ≈ 186 mg'**
+  String get nutrientRefCholesterolNote;
+
+  /// No description provided for @nutrientRefAlcoholNote.
+  ///
+  /// In en, this message translates to:
+  /// **'None is best'**
+  String get nutrientRefAlcoholNote;
+
+  /// No description provided for @nutrientRefCaffeine.
+  ///
+  /// In en, this message translates to:
+  /// **'Caffeine'**
+  String get nutrientRefCaffeine;
+
+  /// No description provided for @nutrientRefCaffeineNote.
+  ///
+  /// In en, this message translates to:
+  /// **'≤ 200 mg during pregnancy'**
+  String get nutrientRefCaffeineNote;
+
+  /// No description provided for @nutrientRefTotalFat.
+  ///
+  /// In en, this message translates to:
+  /// **'Total fat'**
+  String get nutrientRefTotalFat;
+
+  /// No description provided for @nutrientRefTotalFatValue.
+  ///
+  /// In en, this message translates to:
+  /// **'20–30% of kcal'**
+  String get nutrientRefTotalFatValue;
+
+  /// No description provided for @nutrientRefOmega6.
+  ///
+  /// In en, this message translates to:
+  /// **'Omega-6 PUFA'**
+  String get nutrientRefOmega6;
+
+  /// No description provided for @nutrientRefOmega6Value.
+  ///
+  /// In en, this message translates to:
+  /// **'2.5–9% of kcal'**
+  String get nutrientRefOmega6Value;
+
+  /// No description provided for @nutrientRefOmega6Note.
+  ///
+  /// In en, this message translates to:
+  /// **'Plenty in vegetable oils, rarely short'**
+  String get nutrientRefOmega6Note;
+
+  /// No description provided for @nutrientRefOmega3.
+  ///
+  /// In en, this message translates to:
+  /// **'Omega-3 PUFA'**
+  String get nutrientRefOmega3;
+
+  /// No description provided for @nutrientRefOmega3Value.
+  ///
+  /// In en, this message translates to:
+  /// **'0.5–2% of kcal'**
+  String get nutrientRefOmega3Value;
+
+  /// No description provided for @nutrientRefEpaDhaNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Oily fish twice a week'**
+  String get nutrientRefEpaDhaNote;
+
+  /// No description provided for @nutrientRefMufa.
+  ///
+  /// In en, this message translates to:
+  /// **'Monounsaturated fat'**
+  String get nutrientRefMufa;
+
+  /// No description provided for @nutrientRefMufaValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Fills the rest'**
+  String get nutrientRefMufaValue;
+
+  /// No description provided for @nutrientRefMufaNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Olive oil, tea-seed oil, nuts'**
+  String get nutrientRefMufaNote;
+
+  /// No description provided for @nutrientRefPotassium.
+  ///
+  /// In en, this message translates to:
+  /// **'Potassium'**
+  String get nutrientRefPotassium;
+
+  /// No description provided for @nutrientRefPotassiumNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Aim for sodium : potassium ≤ 1'**
+  String get nutrientRefPotassiumNote;
+
+  /// No description provided for @nutrientRefWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Drinking water'**
+  String get nutrientRefWater;
+
+  /// No description provided for @nutrientRefWaterValue.
+  ///
+  /// In en, this message translates to:
+  /// **'M 1700 / F 1500 mL'**
+  String get nutrientRefWaterValue;
+
+  /// No description provided for @nutrientRefWaterNote.
+  ///
+  /// In en, this message translates to:
+  /// **'More when training or sweating'**
+  String get nutrientRefWaterNote;
+
+  /// No description provided for @nutrientRefCalciumNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Upper limit 2000 mg'**
+  String get nutrientRefCalciumNote;
+
+  /// No description provided for @nutrientRefIron.
+  ///
+  /// In en, this message translates to:
+  /// **'Iron'**
+  String get nutrientRefIron;
+
+  /// No description provided for @nutrientRefIronValue.
+  ///
+  /// In en, this message translates to:
+  /// **'M 12 / F 18 mg'**
+  String get nutrientRefIronValue;
+
+  /// No description provided for @nutrientRefZinc.
+  ///
+  /// In en, this message translates to:
+  /// **'Zinc'**
+  String get nutrientRefZinc;
+
+  /// No description provided for @nutrientRefZincValue.
+  ///
+  /// In en, this message translates to:
+  /// **'M 12 / F 8.5 mg'**
+  String get nutrientRefZincValue;
+
+  /// No description provided for @nutrientRefMagnesium.
+  ///
+  /// In en, this message translates to:
+  /// **'Magnesium'**
+  String get nutrientRefMagnesium;
+
+  /// No description provided for @nutrientRefPhosphorus.
+  ///
+  /// In en, this message translates to:
+  /// **'Phosphorus'**
+  String get nutrientRefPhosphorus;
+
+  /// No description provided for @nutrientRefIodine.
+  ///
+  /// In en, this message translates to:
+  /// **'Iodine'**
+  String get nutrientRefIodine;
+
+  /// No description provided for @nutrientRefSelenium.
+  ///
+  /// In en, this message translates to:
+  /// **'Selenium'**
+  String get nutrientRefSelenium;
+
+  /// No description provided for @nutrientRefVitaminA.
+  ///
+  /// In en, this message translates to:
+  /// **'Vitamin A'**
+  String get nutrientRefVitaminA;
+
+  /// No description provided for @nutrientRefVitaminAValue.
+  ///
+  /// In en, this message translates to:
+  /// **'M 770 / F 660 μg RAE'**
+  String get nutrientRefVitaminAValue;
+
+  /// No description provided for @nutrientRefVitaminD.
+  ///
+  /// In en, this message translates to:
+  /// **'Vitamin D'**
+  String get nutrientRefVitaminD;
+
+  /// No description provided for @nutrientRefVitaminDNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Upper limit 50 μg'**
+  String get nutrientRefVitaminDNote;
+
+  /// No description provided for @nutrientRefVitaminE.
+  ///
+  /// In en, this message translates to:
+  /// **'Vitamin E'**
+  String get nutrientRefVitaminE;
+
+  /// No description provided for @nutrientRefVitaminK.
+  ///
+  /// In en, this message translates to:
+  /// **'Vitamin K'**
+  String get nutrientRefVitaminK;
+
+  /// No description provided for @nutrientRefVitaminB1.
+  ///
+  /// In en, this message translates to:
+  /// **'Vitamin B1'**
+  String get nutrientRefVitaminB1;
+
+  /// No description provided for @nutrientRefVitaminB2.
+  ///
+  /// In en, this message translates to:
+  /// **'Vitamin B2'**
+  String get nutrientRefVitaminB2;
+
+  /// No description provided for @nutrientRefVitaminB1B2Value.
+  ///
+  /// In en, this message translates to:
+  /// **'M 1.4 / F 1.2 mg'**
+  String get nutrientRefVitaminB1B2Value;
+
+  /// No description provided for @nutrientRefVitaminB12.
+  ///
+  /// In en, this message translates to:
+  /// **'Vitamin B12'**
+  String get nutrientRefVitaminB12;
+
+  /// No description provided for @nutrientRefFolate.
+  ///
+  /// In en, this message translates to:
+  /// **'Folate'**
+  String get nutrientRefFolate;
+
+  /// No description provided for @nutrientRefVitaminC.
+  ///
+  /// In en, this message translates to:
+  /// **'Vitamin C'**
+  String get nutrientRefVitaminC;
+
+  /// No description provided for @nutrientRefVitaminCNote.
+  ///
+  /// In en, this message translates to:
+  /// **'200 mg suggested for chronic-disease prevention'**
+  String get nutrientRefVitaminCNote;
+
+  /// No description provided for @nutrientRefPurine.
+  ///
+  /// In en, this message translates to:
+  /// **'Purine'**
+  String get nutrientRefPurine;
+
+  /// No description provided for @nutrientRefPurineValue.
+  ///
+  /// In en, this message translates to:
+  /// **'No limit if healthy'**
+  String get nutrientRefPurineValue;
+
+  /// No description provided for @nutrientRefPurineNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Gout or high uric acid: < 300 mg, flare-ups < 150 mg (clinical rule of thumb)'**
+  String get nutrientRefPurineNote;
+
+  /// No description provided for @nutrientRefFootnote.
+  ///
+  /// In en, this message translates to:
+  /// **'Based on the Chinese DRIs (2023), the Dietary Guidelines for Chinese Residents (2022) and WHO advice. For healthy adults; if pregnant, breastfeeding or managing a chronic condition, follow your doctor.'**
+  String get nutrientRefFootnote;
+
+  /// No description provided for @nutrientRefGuideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About these nutrients'**
+  String get nutrientRefGuideTitle;
+
+  /// No description provided for @nutrientRefGuideHint.
+  ///
+  /// In en, this message translates to:
+  /// **'What each one does, where to get it, and what to watch'**
+  String get nutrientRefGuideHint;
+
+  /// No description provided for @nutrientRefRoleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'What it does'**
+  String get nutrientRefRoleLabel;
+
+  /// No description provided for @nutrientRefSourceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Where to get it'**
+  String get nutrientRefSourceLabel;
+
+  /// No description provided for @nutrientRefNoteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tip'**
+  String get nutrientRefNoteLabel;
+
+  /// No description provided for @nutrientRefSodiumRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Keeps fluid balance, blood pressure and nerve–muscle function; too much raises blood pressure'**
+  String get nutrientRefSodiumRole;
+
+  /// No description provided for @nutrientRefSodiumSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Salt, soy sauce, oyster sauce, MSG, pickled and cured foods, processed food, takeaway'**
+  String get nutrientRefSodiumSource;
+
+  /// No description provided for @nutrientRefSatFatRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplies energy and helps make hormones; too much raises LDL cholesterol'**
+  String get nutrientRefSatFatRole;
+
+  /// No description provided for @nutrientRefSatFatSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Fatty meat, lard, butter, cream, whole milk, coconut and palm oil, poultry skin'**
+  String get nutrientRefSatFatSource;
+
+  /// No description provided for @nutrientRefTransFatRole.
+  ///
+  /// In en, this message translates to:
+  /// **'No nutritional need; raises bad cholesterol and lowers good cholesterol'**
+  String get nutrientRefTransFatRole;
+
+  /// No description provided for @nutrientRefTransFatSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Hydrogenated oils, shortening, non-dairy creamer, some pastries, repeatedly fried food'**
+  String get nutrientRefTransFatSource;
+
+  /// No description provided for @nutrientRefAddedSugarRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy only; too much drives weight gain, tooth decay, blood sugar and triglycerides'**
+  String get nutrientRefAddedSugarRole;
+
+  /// No description provided for @nutrientRefAddedSugarSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Sugary drinks, milk tea, desserts, sweets, sauces, sweetened yogurt'**
+  String get nutrientRefAddedSugarSource;
+
+  /// No description provided for @nutrientRefCholesterolRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Builds cell membranes and makes hormones, vitamin D and bile acids; the body makes most of it'**
+  String get nutrientRefCholesterolRole;
+
+  /// No description provided for @nutrientRefCholesterolSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Egg yolk, organ meats, shrimp and crab roe, squid, fatty meat'**
+  String get nutrientRefCholesterolSource;
+
+  /// No description provided for @nutrientRefAlcoholRole.
+  ///
+  /// In en, this message translates to:
+  /// **'No nutritional value, about 7 kcal per gram; harms the liver and raises the risk of several cancers'**
+  String get nutrientRefAlcoholRole;
+
+  /// No description provided for @nutrientRefAlcoholSource.
+  ///
+  /// In en, this message translates to:
+  /// **'All alcoholic drinks'**
+  String get nutrientRefAlcoholSource;
+
+  /// No description provided for @nutrientRefCaffeineRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Boosts alertness and exercise performance; too much causes palpitations and poor sleep'**
+  String get nutrientRefCaffeineRole;
+
+  /// No description provided for @nutrientRefCaffeineSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Coffee, tea, cola, energy drinks, dark chocolate'**
+  String get nutrientRefCaffeineSource;
+
+  /// No description provided for @nutrientRefTotalFatRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplies energy, helps absorb vitamins A/D/E/K, builds cell membranes'**
+  String get nutrientRefTotalFatRole;
+
+  /// No description provided for @nutrientRefTotalFatSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Cooking oil, meat, nuts, dairy'**
+  String get nutrientRefTotalFatSource;
+
+  /// No description provided for @nutrientRefOmega6Role.
+  ///
+  /// In en, this message translates to:
+  /// **'Essential fatty acid for cell membranes and inflammation control'**
+  String get nutrientRefOmega6Role;
+
+  /// No description provided for @nutrientRefOmega6Source.
+  ///
+  /// In en, this message translates to:
+  /// **'Soybean, corn and sunflower oil, nuts'**
+  String get nutrientRefOmega6Source;
+
+  /// No description provided for @nutrientRefOmega3Role.
+  ///
+  /// In en, this message translates to:
+  /// **'Essential fatty acid; anti-inflammatory, heart-protective, supports brain and vision'**
+  String get nutrientRefOmega3Role;
+
+  /// No description provided for @nutrientRefOmega3Source.
+  ///
+  /// In en, this message translates to:
+  /// **'Flaxseed oil, perilla oil, walnuts, chia seeds'**
+  String get nutrientRefOmega3Source;
+
+  /// No description provided for @nutrientRefEpaDhaRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Lowers triglycerides and protects the heart; DHA is a key part of the brain and retina'**
+  String get nutrientRefEpaDhaRole;
+
+  /// No description provided for @nutrientRefEpaDhaSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Oily fish such as salmon, mackerel, sardines and saury; fish oil'**
+  String get nutrientRefEpaDhaSource;
+
+  /// No description provided for @nutrientRefMufaRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Improves blood lipids when it replaces saturated fat'**
+  String get nutrientRefMufaRole;
+
+  /// No description provided for @nutrientRefMufaSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Olive, tea-seed and rapeseed oil, avocado, almonds, peanuts'**
+  String get nutrientRefMufaSource;
+
+  /// No description provided for @nutrientRefFiberRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Keeps the gut moving, adds fullness, steadies blood sugar, lowers cholesterol'**
+  String get nutrientRefFiberRole;
+
+  /// No description provided for @nutrientRefFiberSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole grains, beans, vegetables, fruit, mushrooms and seaweed'**
+  String get nutrientRefFiberSource;
+
+  /// No description provided for @nutrientRefPotassiumRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Keeps heart rhythm and muscle function; helps flush sodium and lower blood pressure'**
+  String get nutrientRefPotassiumRole;
+
+  /// No description provided for @nutrientRefPotassiumSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Bananas, potatoes, sweet potatoes, spinach, beans, mushrooms, milk'**
+  String get nutrientRefPotassiumSource;
+
+  /// No description provided for @nutrientRefWaterRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Regulates body temperature, carries nutrients, clears waste'**
+  String get nutrientRefWaterRole;
+
+  /// No description provided for @nutrientRefWaterSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Plain water, tea, soup, water in fruit and vegetables'**
+  String get nutrientRefWaterSource;
+
+  /// No description provided for @nutrientRefCalciumRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Builds bones and teeth; needed for muscle contraction and nerve signals'**
+  String get nutrientRefCalciumRole;
+
+  /// No description provided for @nutrientRefCalciumSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Milk, yogurt, cheese, tofu, dark leafy greens, small fish and shrimp eaten with bones'**
+  String get nutrientRefCalciumSource;
+
+  /// No description provided for @nutrientRefIronRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Makes hemoglobin to carry oxygen; shortage causes anemia and fatigue'**
+  String get nutrientRefIronRole;
+
+  /// No description provided for @nutrientRefIronSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Red meat, liver and blood products, wood ear fungus, spinach (plant iron absorbs poorly; pair it with vitamin C)'**
+  String get nutrientRefIronSource;
+
+  /// No description provided for @nutrientRefZincRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Supports immunity, wound healing, taste and growth'**
+  String get nutrientRefZincRole;
+
+  /// No description provided for @nutrientRefZincSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Oysters, red meat, eggs, nuts, whole grains'**
+  String get nutrientRefZincSource;
+
+  /// No description provided for @nutrientRefMagnesiumRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Takes part in 300+ enzyme reactions; supports muscles, nerves and bones'**
+  String get nutrientRefMagnesiumRole;
+
+  /// No description provided for @nutrientRefMagnesiumSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Nuts, dark leafy greens, whole grains, beans, dark chocolate'**
+  String get nutrientRefMagnesiumSource;
+
+  /// No description provided for @nutrientRefPhosphorusRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Builds bones and teeth and powers energy metabolism; rarely short'**
+  String get nutrientRefPhosphorusRole;
+
+  /// No description provided for @nutrientRefPhosphorusSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Meat, fish, eggs, dairy, beans, nuts'**
+  String get nutrientRefPhosphorusSource;
+
+  /// No description provided for @nutrientRefIodineRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Makes thyroid hormones that regulate metabolism'**
+  String get nutrientRefIodineRole;
+
+  /// No description provided for @nutrientRefIodineSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Iodized salt, kelp, nori, sea fish'**
+  String get nutrientRefIodineSource;
+
+  /// No description provided for @nutrientRefSeleniumRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Antioxidant; protects the thyroid and immune function'**
+  String get nutrientRefSeleniumRole;
+
+  /// No description provided for @nutrientRefSeleniumSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Seafood, organ meats, meat, eggs, Brazil nuts'**
+  String get nutrientRefSeleniumSource;
+
+  /// No description provided for @nutrientRefVitaminARole.
+  ///
+  /// In en, this message translates to:
+  /// **'Supports vision (especially at night), skin, mucous membranes and immunity'**
+  String get nutrientRefVitaminARole;
+
+  /// No description provided for @nutrientRefVitaminASource.
+  ///
+  /// In en, this message translates to:
+  /// **'Liver, egg yolk, dairy; beta-carotene in carrots, pumpkin and dark greens converts to it'**
+  String get nutrientRefVitaminASource;
+
+  /// No description provided for @nutrientRefVitaminDRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Helps absorb calcium; supports bones and muscles'**
+  String get nutrientRefVitaminDRole;
+
+  /// No description provided for @nutrientRefVitaminDSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunlight on skin, oily fish, egg yolk, fortified milk'**
+  String get nutrientRefVitaminDSource;
+
+  /// No description provided for @nutrientRefVitaminERole.
+  ///
+  /// In en, this message translates to:
+  /// **'Antioxidant that protects cell membranes'**
+  String get nutrientRefVitaminERole;
+
+  /// No description provided for @nutrientRefVitaminESource.
+  ///
+  /// In en, this message translates to:
+  /// **'Vegetable oils, nuts, seeds, leafy greens'**
+  String get nutrientRefVitaminESource;
+
+  /// No description provided for @nutrientRefVitaminKRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Needed for blood clotting and bone metabolism'**
+  String get nutrientRefVitaminKRole;
+
+  /// No description provided for @nutrientRefVitaminKSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark leafy greens such as spinach and broccoli, natto'**
+  String get nutrientRefVitaminKSource;
+
+  /// No description provided for @nutrientRefVitaminB1Role.
+  ///
+  /// In en, this message translates to:
+  /// **'Turns carbohydrates into energy; supports nerve function'**
+  String get nutrientRefVitaminB1Role;
+
+  /// No description provided for @nutrientRefVitaminB1Source.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole grains, beans, lean pork, nuts; little in refined rice and flour'**
+  String get nutrientRefVitaminB1Source;
+
+  /// No description provided for @nutrientRefVitaminB2Role.
+  ///
+  /// In en, this message translates to:
+  /// **'Supports energy metabolism, skin and the lining of the mouth'**
+  String get nutrientRefVitaminB2Role;
+
+  /// No description provided for @nutrientRefVitaminB2Source.
+  ///
+  /// In en, this message translates to:
+  /// **'Dairy, eggs, liver, lean meat, leafy greens'**
+  String get nutrientRefVitaminB2Source;
+
+  /// No description provided for @nutrientRefVitaminB12Role.
+  ///
+  /// In en, this message translates to:
+  /// **'Helps make blood and keeps nerves healthy; shortage causes anemia'**
+  String get nutrientRefVitaminB12Role;
+
+  /// No description provided for @nutrientRefVitaminB12Source.
+  ///
+  /// In en, this message translates to:
+  /// **'Only in animal foods: meat, fish, eggs, dairy; vegans need a supplement'**
+  String get nutrientRefVitaminB12Source;
+
+  /// No description provided for @nutrientRefFolateRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Needed for cell division and blood; prevents neural tube defects in early pregnancy'**
+  String get nutrientRefFolateRole;
+
+  /// No description provided for @nutrientRefFolateSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark leafy greens, beans, liver, citrus'**
+  String get nutrientRefFolateSource;
+
+  /// No description provided for @nutrientRefVitaminCRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Antioxidant; helps make collagen, absorb iron and support immunity'**
+  String get nutrientRefVitaminCRole;
+
+  /// No description provided for @nutrientRefVitaminCSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Fresh produce such as jujubes, kiwi, citrus, bell peppers, broccoli'**
+  String get nutrientRefVitaminCSource;
+
+  /// No description provided for @nutrientRefPurineRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Breaks down into uric acid; too much uric acid can trigger gout'**
+  String get nutrientRefPurineRole;
+
+  /// No description provided for @nutrientRefPurineSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Organ meats, rich meat broth, seafood such as sardines and shellfish, beer; beans and mushrooms are moderate'**
+  String get nutrientRefPurineSource;
+
   /// No description provided for @fiberG.
   ///
   /// In en, this message translates to:

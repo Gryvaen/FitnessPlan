@@ -807,6 +807,57 @@ void main() {
     },
   );
 
+  testWidgets('nutrient guide icon opens the daily reference sheet', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    await seedPreset(db);
+    await pumpPresetApp(tester, db: db, initialLocation: '/foods');
+    await tester.tap(find.byKey(const ValueKey('food-nutrient-ref')));
+    await tester.pumpAndSettle();
+    final sheet = find.byKey(const ValueKey('nutrientReferenceSheet'));
+    expect(sheet, findsOneWidget);
+    expect(find.text('每日营养参考'), findsOneWidget);
+    expect(find.text('≤ 2000 mg'), findsOneWidget);
+    // The table rows carry no descriptions; those all live in the guide.
+    expect(find.textContaining('约等于食盐'), findsNothing);
+    final scrollable = find
+        .descendant(of: sheet, matching: find.byType(Scrollable))
+        .first;
+    Future<void> scrollTo(Finder target) =>
+        tester.scrollUntilVisible(target, 80, scrollable: scrollable);
+    await scrollTo(find.text('健康人无标准'));
+    // Every description sits in the guide below the table.
+    await scrollTo(find.byKey(const ValueKey('nutrientGuide')));
+    await scrollTo(find.textContaining('维持体液平衡'));
+    expect(find.textContaining('约等于食盐 5 g'), findsOneWidget);
+    await scrollTo(find.textContaining('纯素者需补充'));
+    await scrollTo(find.textContaining('依据《中国居民膳食营养素参考摄入量'));
+  });
+
+  testWidgets('nutrient guide icon hides while the search box is open', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    await seedPreset(db);
+    await pumpPresetApp(tester, db: db, initialLocation: '/foods');
+    final guide = find.byKey(const ValueKey('food-nutrient-ref'));
+    expect(guide.hitTestable(), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('food-search-open')));
+    await tester.pumpAndSettle();
+    expect(guide.hitTestable(), findsNothing);
+    final fade = tester.widget<AnimatedOpacity>(
+      find.ancestor(of: guide, matching: find.byType(AnimatedOpacity)),
+    );
+    expect(fade.opacity, 0);
+    // Folding the box brings it back.
+    await tester.tap(find.text('食材').first);
+    await tester.pumpAndSettle();
+    expect(guide.hitTestable(), findsOneWidget);
+  });
+
   testWidgets('food search clear button folds the box back to its icon', (
     tester,
   ) async {
