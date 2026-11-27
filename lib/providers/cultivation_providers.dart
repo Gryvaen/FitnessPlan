@@ -745,8 +745,18 @@ final maintainHistoryProvider =
       return sections;
     });
 
-/// 当前维持时段的天秤（离开维持即清零）。
+/// 所有维持时段累计的天秤（离开维持后保留，下次维持接着累计）。
 final maintainBalanceProvider = Provider<MaintainBalance>((ref) {
+  final sections = ref.watch(maintainHistoryProvider).value;
+  if (sections == null) return const MaintainBalance();
+  return MaintainBalance.fromEntries([
+    for (final section in sections)
+      for (final d in section.days) d.entry,
+  ]);
+});
+
+/// 当前维持时段的天秤；已关闭时段的平衡日已计入账本的冻结值。
+final _maintainCurrentBalanceProvider = Provider<MaintainBalance>((ref) {
   final sections = ref.watch(maintainHistoryProvider).value;
   if (sections == null) return const MaintainBalance();
   for (final section in sections) {
@@ -772,7 +782,7 @@ final maintainTodayEntryProvider = Provider<MaintainDayEntry?>((ref) {
 /// 心境 = 已冻结平衡日 + 当前维持时段平衡日。
 final mindProgressProvider = Provider<MindProgress>((ref) {
   final ledger = ref.watch(maintainCultivationStateProvider);
-  final open = ref.watch(maintainBalanceProvider).balancedDays;
+  final open = ref.watch(_maintainCurrentBalanceProvider).balancedDays;
   return computeMindProgress(ledger.frozenBalancedDays + open);
 });
 

@@ -3300,7 +3300,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get maintainGuideBody =>
-      '从进入维持那天起按天结算：净值 = 摄入 −（TDEE + 步数）。亏空放左盘，盈余放右盘，横梁向更重的一侧倾斜。当天记录至少两类餐次才会上秤；放纵日不计饮食时，改用你自己填写的盈余。离开维持后天秤清空。';
+      '从进入维持那天起按天结算：净值 = 摄入 −（TDEE + 步数）。亏空放左盘，盈余放右盘，横梁向更重的一侧倾斜。当天记录至少两类餐次才会上秤；放纵日不计饮食时，改用你自己填写的盈余。离开维持后天秤会保留，下次维持接着累计。';
 
   @override
   String maintainGuideBalancedRule(String kcal) {

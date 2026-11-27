@@ -2317,7 +2317,7 @@
   "maintainHistorySegmentPast": "维持 · {start} – {end}",
   "maintainHistorySummary": "亏 {left} · 盈 {right} · 平衡日 {days}",
   "maintainGuideTitle": "阴阳天秤 · 心境",
-  "maintainGuideBody": "从进入维持那天起按天结算：净值 = 摄入 −（TDEE + 步数）。亏空放左盘，盈余放右盘，横梁向更重的一侧倾斜。当天记录至少两类餐次才会上秤；放纵日不计饮食时，改用你自己填写的盈余。离开维持后天秤清空。",
+  "maintainGuideBody": "从进入维持那天起按天结算：净值 = 摄入 −（TDEE + 步数）。亏空放左盘，盈余放右盘，横梁向更重的一侧倾斜。当天记录至少两类餐次才会上秤；放纵日不计饮食时，改用你自己填写的盈余。离开维持后天秤会保留，下次维持接着累计。",
   "maintainGuideBalancedRule": "平衡日：当天净值在 ±{kcal} kcal 以内（TDEE 的 10%，至少 150）。平衡日累计提升心境，切换目标也会保留。",
   "maintainGuideTierDays": "{days} 个平衡日起",
   "cultivationPickerTitle": "境界抉择",

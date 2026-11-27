@@ -5832,7 +5832,7 @@ abstract class AppLocalizations {
   /// No description provided for @maintainGuideBody.
   ///
   /// In en, this message translates to:
-  /// **'Each day is settled from the day you started maintaining: net = intake − (TDEE + steps). A deficit goes on the left pan, a surplus on the right; the beam tilts toward the heavier side. A day only lands on the scale when at least two meal types are logged; on an indulgence day that doesn\'t count diet, your own surplus figure is used instead. Leaving maintenance empties the scale.'**
+  /// **'Each day is settled from the day you started maintaining: net = intake − (TDEE + steps). A deficit goes on the left pan, a surplus on the right; the beam tilts toward the heavier side. A day only lands on the scale when at least two meal types are logged; on an indulgence day that doesn\'t count diet, your own surplus figure is used instead. The scale is kept when you leave maintenance and keeps adding up next time.'**
   String get maintainGuideBody;
 
   /// No description provided for @maintainGuideBalancedRule.

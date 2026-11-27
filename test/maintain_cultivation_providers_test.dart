@@ -153,12 +153,14 @@ void main() {
     );
   });
 
-  test('balanced days are banked across goal switches; scale resets', () async {
+  test('balanced days are banked across goal switches; scale keeps '
+      'accumulating', () async {
     final profile = await saveGoal(FitnessGoal.maintain);
     final today = CalendarDay.todayLocal();
     await logMeals(today, profile.tdee! - 50);
     await history();
     expect(container.read(mindProgressProvider).balancedDays, 1);
+    expect(container.read(maintainBalanceProvider).leftKcal, closeTo(50, 0.01));
 
     await saveGoal(FitnessGoal.cut);
     var ledger = container.read(maintainCultivationStateProvider);
@@ -171,7 +173,10 @@ void main() {
     expect(ledger.openSegment?.start, today.add(const Duration(days: 1)));
     final sections = await history();
     expect(sections, hasLength(2));
-    expect(container.read(maintainBalanceProvider).weighedDays, 0);
+    // The closed stretch stays on the scale.
+    final balance = container.read(maintainBalanceProvider);
+    expect(balance.weighedDays, 1);
+    expect(balance.leftKcal, closeTo(50, 0.01));
     expect(container.read(mindProgressProvider).balancedDays, 1);
     expect(container.read(mindProgressProvider).realm, MindRealm.restless);
   });
@@ -233,6 +238,13 @@ void main() {
         expect(ledger.frozenBalancedDays, 2);
         expect(ledger.openSegment?.start, ago(7));
         expect(container.read(mindProgressProvider).balancedDays, 3);
+
+        // The scale sums every stretch, past and current.
+        final balance = container.read(maintainBalanceProvider);
+        expect(balance.weighedDays, 4);
+        expect(balance.rightKcal, closeTo(950, 0.01));
+        expect(balance.leftKcal, closeTo(60, 0.01));
+        expect(balance.balancedDays, 3);
 
         await history();
         expect(container.read(mindProgressProvider).balancedDays, 3);

@@ -42,10 +42,9 @@ class _MaintainHomeState extends ConsumerState<_MaintainHome> {
     final balance = ref.watch(maintainBalanceProvider);
     final mind = ref.watch(mindProgressProvider);
     final today = ref.watch(maintainTodayEntryProvider);
-    final segmentStart = ref
-        .watch(maintainCultivationStateProvider)
-        .openSegment
-        ?.start;
+    // 天秤累计所有维持期，起点取最早一段（segments 按时间旧→新）。
+    final segments = ref.watch(maintainCultivationStateProvider).segments;
+    final segmentStart = segments.isEmpty ? null : segments.first.start;
 
     final size = MediaQuery.sizeOf(context);
     final topInset = MediaQuery.paddingOf(context).top + kToolbarHeight;
@@ -95,7 +94,7 @@ class _MaintainHomeState extends ConsumerState<_MaintainHome> {
             alignment: Alignment.topCenter,
             gaplessPlayback: true,
           ),
-          // 天秤：画面主角，横梁倾角 = 本次维持累计盈亏。
+          // 天秤：画面主角，横梁倾角 = 所有维持期累计盈亏。
           Positioned(
             left: (size.width - scaleWidth) / 2,
             width: scaleWidth,
