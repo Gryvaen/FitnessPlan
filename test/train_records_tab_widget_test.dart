@@ -712,9 +712,7 @@ void main() {
       await _pump(tester, const TrainRecordsTab(initialTab: 2));
       expect(find.text('最近训练'), findsNothing);
 
-      // Two scopes are now available ("最近"/"全部", 13 days apart) — the ⇄
-      // icon (not chips) switches straight to "全部"; the tile titles name
-      // the scope.
+      // The range toggle switches from 「最近」 to 「全部」.
       expect(find.widgetWithText(ChoiceChip, '最近'), findsNothing);
       expect(find.widgetWithText(ChoiceChip, '全部'), findsNothing);
       expect(find.byTooltip('切换为「全部」'), findsOneWidget);
@@ -773,11 +771,9 @@ void main() {
     await _container.read(allWorkoutHistoryProvider.future);
 
     await _pump(tester, const TrainRecordsTab(initialTab: 2));
-    // Only 「最近」 so far: no ⇄, but the chart icon is there.
-    expect(
-      find.byKey(const ValueKey('train-history-scope-toggle')),
-      findsNothing,
-    );
+    final toggle = find.byKey(const ValueKey('train-history-scope-toggle'));
+    expect(toggle, findsOneWidget);
+    expect(find.byTooltip('切换为「全部」'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('train-history-charts-open')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
@@ -804,6 +800,49 @@ void main() {
     // No training logged, so no plan chart.
     expect(find.byKey(const ValueKey('train-plan-chart')), findsNothing);
     expect(tester.takeException(), isNull);
+    await tester.tapAt(const Offset(8, 8));
+    await tester.pumpAndSettle();
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('切换为「最近」'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('train-history-charts-open')));
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(of: sheet, matching: find.text('全部步数')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('old steps keep both history ranges accessible', (tester) async {
+    final day = CalendarDay.addDays(CalendarDay.todayLocal(), -20);
+    await StepRepository(_db).setStepsForDay(day, 8000);
+    final subscriptions = [
+      _container.listen(recentStepsProvider, (_, _) {}),
+      _container.listen(allStepsProvider, (_, _) {}),
+      _container.listen(workoutHistoryProvider, (_, _) {}),
+      _container.listen(allWorkoutHistoryProvider, (_, _) {}),
+    ];
+    addTearDown(() {
+      for (final subscription in subscriptions) {
+        subscription.close();
+      }
+    });
+    await Future.wait([
+      _container.read(recentStepsProvider.future),
+      _container.read(allStepsProvider.future),
+      _container.read(workoutHistoryProvider.future),
+      _container.read(allWorkoutHistoryProvider.future),
+    ]);
+    await _pump(tester, const TrainRecordsTab(initialTab: 2));
+
+    final toggle = find.byKey(const ValueKey('train-history-scope-toggle'));
+    expect(find.text('最近 · 暂无记录'), findsOneWidget);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(find.text('全部步数'), findsOneWidget);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(find.text('最近 · 暂无记录'), findsOneWidget);
   });
 
   testWidgets(

@@ -175,12 +175,36 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('body history can switch when the only record is old', (
+    tester,
+  ) async {
+    final day = CalendarDay.addDays(CalendarDay.todayLocal(), -31);
+    await db
+        .into(db.weightLogs)
+        .insert(WeightLogsCompanion.insert(date: day, weightKg: 70.5));
+    await pump(tester, const BodyRecordsTab());
+    final toggle = find.byKey(const ValueKey('body-period-toggle'));
+    expect(find.text('每日记录 · 30 天'), findsOneWidget);
+    expect(find.text('暂无记录'), findsOneWidget);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(find.text('每日记录 · 全部'), findsOneWidget);
+    expect(find.text('暂无记录'), findsNothing);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(find.text('暂无记录'), findsOneWidget);
+  });
+
   testWidgets('training plan empty state uses the training stamped ink icon', (
     tester,
   ) async {
     await pump(tester, const TrainRecordsTab());
 
     expect(find.text('还没有计划，点加号新建'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('train-history-scope-toggle')),
+      findsNothing,
+    );
     expectStampedIcon(glyph: InkGlyph.training, seal: '炼');
     expect(tester.takeException(), isNull);
   });

@@ -11,6 +11,7 @@ import 'package:diet/ui/foods/custom_food_edit_page.dart';
 import 'package:diet/ui/foods/food_category_art.dart';
 import 'package:diet/ui/foods/food_category_page.dart';
 import 'package:diet/ui/foods/food_detail_page.dart';
+import 'package:diet/ui/ink/ink_icon.dart';
 import 'package:diet/ui/meals/log_meal_page.dart';
 import 'package:diet/ui/meals/meal_preset_detail_page.dart';
 import 'package:diet/ui/meals/preset_food_add_page.dart';
@@ -807,6 +808,44 @@ void main() {
     },
   );
 
+  for (final age in [null, 0, 20]) {
+    testWidgets('food history scope with meal age $age', (tester) async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      await seedPreset(db);
+      if (age != null) {
+        final day = CalendarDay.addDays(CalendarDay.todayLocal(), -age);
+        await MealRepository(db).add(
+          date: day,
+          now: day,
+          mealType: MealType.breakfast,
+          food: (await db.select(db.foodItems).get()).single,
+          grams: 100,
+        );
+      }
+      await pumpPresetApp(
+        tester,
+        db: db,
+        initialLocation: '/foods?tab=history',
+      );
+      final toggle = find.byKey(const ValueKey('food-history-scope-toggle'));
+      if (age == null) {
+        expect(toggle, findsNothing);
+        return;
+      }
+      expect(find.byTooltip('切换为「全部」'), findsOneWidget);
+      final recentContent = find.text(age == 0 ? '最近饮食' : '暂无记录');
+      expect(recentContent, findsOneWidget);
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      expect(find.text('全部饮食'), findsOneWidget);
+      expect(find.byTooltip('切换为「最近」'), findsOneWidget);
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      expect(recentContent, findsOneWidget);
+    });
+  }
+
   testWidgets('nutrient guide icon opens the daily reference sheet', (
     tester,
   ) async {
@@ -851,6 +890,14 @@ void main() {
     await seedPreset(db);
     await pumpPresetApp(tester, db: db, initialLocation: '/foods');
     final guide = find.byKey(const ValueKey('food-nutrient-ref'));
+    Finder glyph(InkGlyph glyph) => find.byWidgetPredicate(
+      (widget) => widget is InkIcon && widget.glyph == glyph,
+    );
+    final searchIcon = glyph(InkGlyph.searchLens);
+    final guideIcon = glyph(InkGlyph.dailyNutrition);
+    expect(tester.getSize(searchIcon), tester.getSize(guideIcon));
+    expect(tester.getSize(searchIcon).width, lessThan(48));
+    expect(tester.getCenter(searchIcon).dy, tester.getCenter(guideIcon).dy);
     expect(guide.hitTestable(), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('food-search-open')));
     await tester.pumpAndSettle();

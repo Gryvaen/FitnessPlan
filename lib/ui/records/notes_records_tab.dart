@@ -53,8 +53,6 @@ class NotesRecordsTab extends ConsumerWidget {
     final scheme = theme.colorScheme;
     final now = DateTime.now();
 
-    // 「验」seal on the left opens 经验之谈; the 48dp button's own padding
-    // lines the seal up with the list's 20dp gutter.
     final header = Padding(
       padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
       child: Row(
@@ -63,7 +61,7 @@ class NotesRecordsTab extends ConsumerWidget {
             key: const ValueKey('experience-entry'),
             tooltip: l10n.experienceTitle,
             onPressed: () => context.push(experiencePath),
-            icon: const InkSeal('验', size: 24),
+            icon: const InkIcon(InkGlyph.experienceQuotes),
           ),
           const Spacer(),
           PlainIconAction(

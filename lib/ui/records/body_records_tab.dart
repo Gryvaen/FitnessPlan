@@ -85,14 +85,6 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
     return const [30, 0];
   }
 
-  void _ensurePeriodAvailable(List<int> periods) {
-    if (periods.contains(_period)) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || periods.contains(_period)) return;
-      setState(() => _period = periods.first);
-    });
-  }
-
   Future<void> addWeight() async {
     final l10n = context.l10n;
     final profile = ref.read(profileProvider);
@@ -228,7 +220,6 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
       data: (logs) {
         final ordered = [...logs]..sort((a, b) => a.date.compareTo(b.date));
         final periods = _availablePeriods(ordered);
-        _ensurePeriodAvailable(periods);
         final period = periods.contains(_period) ? _period : periods.first;
         final latest = ordered.lastOrNull;
         final previous = ordered.length > 1
@@ -270,18 +261,15 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
               child: Row(
                 children: [
                   if (showPeriodTabs)
-                    PlainIconAction(
+                    HistoryScopeToggle(
                       key: const ValueKey('body-period-toggle'),
-                      iconWidget: const InkIcon(InkGlyph.swapHorizontal),
-                      label: l10n.bodyPeriodToggle(
-                        _periodLabel(l10n, nextPeriod),
-                      ),
+                      nextLabel: _periodLabel(l10n, nextPeriod),
                       onPressed: () => setState(() => _period = nextPeriod),
                     ),
                   if (!isEmpty)
                     PlainIconAction(
                       key: const ValueKey('body-charts-open'),
-                      iconWidget: const InkIcon(InkGlyph.chart),
+                      iconWidget: const InkIcon(InkGlyph.recordCharts),
                       label: l10n.bodyChartsAction,
                       onPressed: () => _showChartsSheet(ordered, logs, period),
                     ),
@@ -388,9 +376,9 @@ class BodyRecordsTabState extends ConsumerState<BodyRecordsTab> {
           style: Theme.of(context).textTheme.sectionTitle,
         ),
         const SizedBox(height: 8),
-        if (logs.isEmpty)
+        if (visible.isEmpty)
           SportEmptyState(
-            title: l10n.emptyWeightLogs,
+            title: logs.isEmpty ? l10n.emptyWeightLogs : l10n.noHistory,
             iconWidget: const StampedInkEmptyIcon(
               glyph: InkGlyph.profile,
               seal: '身',

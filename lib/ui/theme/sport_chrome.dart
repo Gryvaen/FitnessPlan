@@ -715,6 +715,25 @@ class PlainIconAction extends StatelessWidget {
   }
 }
 
+/// Switches between two history ranges using the same action across tabs.
+class HistoryScopeToggle extends StatelessWidget {
+  const HistoryScopeToggle({
+    super.key,
+    required this.nextLabel,
+    required this.onPressed,
+  });
+
+  final String nextLabel;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => PlainIconAction(
+    iconWidget: const InkIcon(InkGlyph.recordScope),
+    label: context.l10n.bodyPeriodToggle(nextLabel),
+    onPressed: onPressed,
+  );
+}
+
 /// Tinted leading icon for hub / menu entry rows — color only, no circle
 /// badge behind it.
 ///

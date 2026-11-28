@@ -2,6 +2,7 @@ import 'package:diet/data/db.dart';
 import 'package:diet/data/repositories/experience_repository.dart';
 import 'package:diet/l10n/app_localizations.dart';
 import 'package:diet/providers/core_providers.dart';
+import 'package:diet/ui/ink/ink_icon.dart';
 import 'package:diet/ui/records/experience_page.dart';
 import 'package:diet/ui/records/notes_records_tab.dart';
 import 'package:drift/native.dart';
@@ -68,7 +69,7 @@ void main() {
   });
 
   testWidgets(
-    'seal opens 经验之谈; Enter twice numbers the next item',
+    'quote icon opens 经验之谈; Enter twice numbers the next item',
     timeout: const Timeout(Duration(seconds: 30)),
     (tester) async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -76,13 +77,16 @@ void main() {
       final repo = ExperienceRepository(db);
       await _pumpNotes(tester, db);
 
-      // The header is just the 验 seal and +, no title or subtitle text.
       expect(find.text('每日笔记'), findsNothing);
       expect(find.text('记录训练、饮食与身体感受'), findsNothing);
-      final seal = find.byKey(const ValueKey('experience-entry'));
-      expect(find.descendant(of: seal, matching: find.text('验')), findsOne);
+      final entry = find.byKey(const ValueKey('experience-entry'));
+      final quoteIcon = find.byWidgetPredicate(
+        (widget) =>
+            widget is InkIcon && widget.glyph == InkGlyph.experienceQuotes,
+      );
+      expect(find.descendant(of: entry, matching: quoteIcon), findsOneWidget);
 
-      await tester.tap(seal);
+      await tester.tap(entry);
       await tester.pumpAndSettle();
       expect(find.text('经验之谈'), findsOneWidget);
       final input = find.byKey(const ValueKey('experience-text'));

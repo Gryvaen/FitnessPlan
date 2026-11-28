@@ -48,6 +48,8 @@ final _foodSearchProvider = FutureProvider.autoDispose<List<FoodItem>>((
 
 enum _FoodsTab { recent, categories, history }
 
+const _foodHeaderIconSize = 42.0;
+
 class FoodsPage extends ConsumerStatefulWidget {
   const FoodsPage({super.key});
 
@@ -157,9 +159,15 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
             focusNode: _searchFocus,
             decoration: InputDecoration(
               hintText: l10n.searchFood,
-              prefixIcon: InkIcon(
-                InkGlyph.search,
-                color: foodUtilityIconColor(context),
+              prefixIcon: SizedBox.square(
+                dimension: ExpandingSearch.collapsedWidth,
+                child: Center(
+                  child: InkIcon(
+                    InkGlyph.searchLens,
+                    size: _foodHeaderIconSize,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
               ),
               suffixIcon: searching
                   ? IconButton(
@@ -190,10 +198,10 @@ class _FoodsPageState extends ConsumerState<FoodsPage> {
     final recentHistory = ref.watch(mealHistoryProvider);
     final allHistory = ref.watch(allMealHistoryProvider);
     final historyResolved = recentHistory.hasValue && allHistory.hasValue;
-    final showHistory = mealHistoryScopes(
+    final showHistory = hasMealHistory(
       recent: recentHistory.value ?? const [],
       all: allHistory.value ?? const [],
-    ).isNotEmpty;
+    );
     final routeWantsHistory = _routeWantsHistory();
     final visible = _visibleTabs(
       hasRecent: hasRecent,
@@ -643,9 +651,9 @@ class _FoodSearchList extends ConsumerWidget {
               return SingleChildScrollView(
                 child: SportEmptyState(
                   iconWidget: InkIcon(
-                    InkGlyph.search,
+                    InkGlyph.searchLens,
                     size: 48,
-                    color: foodUtilityIconColor(context),
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                   title: l10n.noFoodFound,
                   actionLabel: l10n.editKeywords,
@@ -690,8 +698,6 @@ class _NutrientRefButton extends StatelessWidget {
         child: ExcludeFocus(
           excluding: hidden,
           child: Center(
-            // Same 48dp box the search box's prefix icon is forced to (its
-            // min constraints), so both ink glyphs read at the same weight.
             child: IconButton(
               key: const ValueKey('food-nutrient-ref'),
               tooltip: context.l10n.nutrientRef,
@@ -701,9 +707,9 @@ class _NutrientRefButton extends StatelessWidget {
                 height: ExpandingSearch.collapsedWidth,
               ),
               icon: InkIcon(
-                InkGlyph.factCheck,
-                size: ExpandingSearch.collapsedWidth,
-                color: foodUtilityIconColor(context),
+                InkGlyph.dailyNutrition,
+                size: _foodHeaderIconSize,
+                color: Theme.of(context).colorScheme.primary,
               ),
               onPressed: () => showNutrientReferenceSheet(context),
             ),

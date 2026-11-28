@@ -15,20 +15,10 @@ import '../shell/swipe_tab_view.dart';
 import '../theme/app_theme.dart';
 import '../theme/sport_chrome.dart';
 
-/// 0 = last 14 calendar days, 1 = every day that has a meal.
-///
-/// 「最近」appears once any of those 14 days has a meal. 「全部」appears on the
-/// 14th calendar day after the first logged meal (that day counts as day 1).
-List<int> mealHistoryScopes({
+bool hasMealHistory({
   required List<MealHistoryDay> recent,
   required List<MealHistoryDay> all,
-}) {
-  final hasRecent = recent.any((day) => day.hasActivity);
-  final first = all.isEmpty ? null : all.last.date;
-  final showAll =
-      first != null && AppDates.daysBetween(first, AppDates.todayLocal()) >= 13;
-  return [if (hasRecent) 0, if (showAll) 1];
-}
+}) => recent.any((day) => day.hasActivity) || all.any((day) => day.hasActivity);
 
 String mealHistoryLabel(MealHistoryDay day, AppLocalizations l10n) {
   if (!day.hasActivity) return l10n.historyEmptyDay;
@@ -47,16 +37,7 @@ class FoodHistoryTab extends ConsumerStatefulWidget {
 }
 
 class _FoodHistoryTabState extends ConsumerState<FoodHistoryTab> {
-  /// 0 = recent, 1 = all.
   int _scope = 0;
-
-  void _ensureScope(List<int> scopes) {
-    if (scopes.isEmpty || scopes.contains(_scope)) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || scopes.contains(_scope)) return;
-      setState(() => _scope = scopes.first);
-    });
-  }
 
   void _setScope(int scope) => setState(() => _scope = scope);
 
@@ -89,62 +70,47 @@ class _FoodHistoryTabState extends ConsumerState<FoodHistoryTab> {
     final l10n = context.l10n;
     final recent = ref.watch(mealHistoryProvider).value ?? const [];
     final all = ref.watch(allMealHistoryProvider).value ?? const [];
-    final scopes = mealHistoryScopes(recent: recent, all: all);
-    _ensureScope(scopes);
-    final scope = scopes.contains(_scope)
-        ? _scope
-        : (scopes.isEmpty ? 0 : scopes.first);
-    final showScopeTabs = scopes.length > 1;
+    final showScopeToggle = hasMealHistory(recent: recent, all: all);
+    final scope = showScopeToggle ? _scope : 0;
+    final locale = Localizations.localeOf(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (showScopeTabs)
+        if (showScopeToggle)
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.listPage,
             ),
-            child: Wrap(
-              spacing: 8,
-              children: [
-                for (final s in scopes)
-                  ChoiceChip(
-                    label: Text(s == 0 ? l10n.tabRecent : l10n.filterAll),
-                    selected: scope == s,
-                    onSelected: (_) => _setScope(s),
-                  ),
-              ],
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: HistoryScopeToggle(
+                key: const ValueKey('food-history-scope-toggle'),
+                nextLabel: scope == 0 ? l10n.filterAll : l10n.tabRecent,
+                onPressed: () => _setScope(1 - scope),
+              ),
             ),
           ),
-        if (showScopeTabs) const SizedBox(height: 8),
         Expanded(
-          child: showScopeTabs
+          child: showScopeToggle
               ? SwipeTabView(
                   navigation: SwipeTabNavigation.tapOnly,
                   keepPagesAlive: true,
-                  index: scopes.indexOf(scope).clamp(0, scopes.length - 1),
-                  onIndexChanged: (i) => _setScope(scopes[i]),
+                  index: scope,
+                  onIndexChanged: _setScope,
                   children: [
-                    for (final s in scopes)
+                    for (final all in [false, true])
                       _MealHistoryScopeList(
-                        all: s == 1,
-                        onOpen: (title) => _showDays(
-                          context,
-                          s == 1,
-                          Localizations.localeOf(context),
-                          title: title,
-                        ),
+                        all: all,
+                        onOpen: (title) =>
+                            _showDays(context, all, locale, title: title),
                       ),
                   ],
                 )
               : _MealHistoryScopeList(
-                  all: scope == 1,
-                  onOpen: (title) => _showDays(
-                    context,
-                    scope == 1,
-                    Localizations.localeOf(context),
-                    title: title,
-                  ),
+                  all: false,
+                  onOpen: (title) =>
+                      _showDays(context, false, locale, title: title),
                 ),
         ),
       ],
@@ -180,16 +146,15 @@ class _MealHistoryScopeList extends ConsumerWidget {
             ),
           ),
           data: (days) {
-            if (all && days.isEmpty) {
+            if (!days.any((day) => day.hasActivity)) {
               return SportEmptyState(
-                title: l10n.noMealsTitle,
+                title: all ? l10n.noMealsTitle : l10n.noHistory,
                 iconWidget: const StampedInkEmptyIcon(
                   glyph: InkGlyph.mealEmpty,
                   seal: '食',
                 ),
               );
             }
-            if (days.isEmpty) return const SizedBox.shrink();
             final latest = days.first;
             return SportListTile(
               contentPadding: EdgeInsets.zero,

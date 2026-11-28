@@ -40,12 +40,12 @@ final _trainHistoryAvailabilityProvider =
           allWorkouts.hasValue &&
           recentSteps.hasValue &&
           allSteps.hasValue;
-      final hasHistory = _TrainRecordsTabState._availableHistoryScopes(
+      final hasHistory = _TrainRecordsTabState._hasHistory(
         recentWorkouts: recentWorkouts.value ?? const [],
         allWorkouts: allWorkouts.value ?? const [],
         recentSteps: recentSteps.value ?? const [],
         allSteps: allSteps.value ?? const [],
-      ).isNotEmpty;
+      );
       return (resolved: resolved, hasHistory: hasHistory);
     });
 
@@ -339,7 +339,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
       focusNode: focusNode,
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: InkIcon(InkGlyph.search, color: muted),
+        prefixIcon: InkIcon(InkGlyph.searchLens, color: muted),
         suffixIconConstraints: const BoxConstraints(minHeight: 48),
         suffixIcon: Row(
           mainAxisSize: MainAxisSize.min,
@@ -435,50 +435,16 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     _ => 'plans',
   };
 
-  /// Progressive history scopes: hidden by default → 「最近」 once any recent
-  /// step/workout activity exists → 「全部」 on the 14th calendar day after the
-  /// first logged day (first day counts as day 1).
-  static List<int> _availableHistoryScopes({
+  static bool _hasHistory({
     required List<WorkoutHistoryDay> recentWorkouts,
     required List<WorkoutHistoryDay> allWorkouts,
     required List<StepDay> recentSteps,
     required List<StepDay> allSteps,
-  }) {
-    final hasRecent =
-        recentWorkouts.any((d) => d.hasActivity) ||
-        recentSteps.any((d) => d.steps > 0);
-    DateTime? first;
-    for (final d in allWorkouts) {
-      final day = AppDates.dayOnly(d.date);
-      if (first == null || day.isBefore(first)) first = day;
-    }
-    for (final d in allSteps) {
-      final day = AppDates.dayOnly(d.date);
-      if (first == null || day.isBefore(first)) first = day;
-    }
-    final showAll =
-        first != null &&
-        AppDates.daysBetween(first, AppDates.todayLocal()) >= 13;
-    return [if (hasRecent) 0, if (showAll) 1];
-  }
-
-  void _ensureHistoryScopeAvailable(List<int> scopes) {
-    // Nothing to sync to when there's no history yet (e.g. a fresh
-    // install) — `showHistory` is false in that case so this state is
-    // unused anyway. Without this guard, `next` would fall back to 0,
-    // which never satisfies `scopes.contains(_historyScope)` on an empty
-    // list, so this would reschedule and call `setState` on every single
-    // frame forever.
-    if (scopes.isEmpty || scopes.contains(_historyScope)) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || scopes.contains(_historyScope)) return;
-      final next = scopes.first;
-      setState(() => _historyScope = next);
-      if (next == 1) {
-        ref.read(stepsSyncServiceProvider).syncRecent(limitDays: 90);
-      }
-    });
-  }
+  }) =>
+      recentWorkouts.any((day) => day.hasActivity) ||
+      allWorkouts.any((day) => day.hasActivity) ||
+      recentSteps.any((day) => day.steps > 0) ||
+      allSteps.any((day) => day.steps > 0);
 
   /// Bounces away from the history sub-tab once we *know* (not guess) there's
   /// nothing to show there. `ref.listen` only fires this on an actual value
@@ -718,14 +684,12 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     final allWorkouts = ref.watch(allWorkoutHistoryProvider).value ?? const [];
     final recentSteps = ref.watch(recentStepsProvider).value ?? const [];
     final allSteps = ref.watch(allStepsProvider).value ?? const [];
-    final historyScopes = _availableHistoryScopes(
+    final showHistory = _hasHistory(
       recentWorkouts: recentWorkouts,
       allWorkouts: allWorkouts,
       recentSteps: recentSteps,
       allSteps: allSteps,
     );
-    final showHistory = historyScopes.isNotEmpty;
-    _ensureHistoryScopeAvailable(historyScopes);
     // No `fireImmediately: true` here: that would call
     // `_onTrainHistoryAvailabilityChanged` synchronously inside this very
     // build() on first attach, and it can call `setState` via `_selectTab`
@@ -738,9 +702,6 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
       _onTrainHistoryAvailabilityChanged,
     );
     final tab = (!showHistory && _tab == 2) ? 0 : _tab;
-    final scope = historyScopes.contains(_historyScope)
-        ? _historyScope
-        : (historyScopes.isEmpty ? 0 : historyScopes.first);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -776,7 +737,7 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
             children: [
               _plansPanel(context, showHistory: showHistory),
               _exercisesPanel(context),
-              if (showHistory) _historyPanel(context, historyScopes, scope),
+              if (showHistory) _historyPanel(context, _historyScope),
             ],
           ),
         ),
@@ -941,31 +902,24 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
     );
   }
 
-  Widget _historyPanel(BuildContext context, List<int> scopes, int scope) {
+  Widget _historyPanel(BuildContext context, int scope) {
     final l10n = context.l10n;
-    final showScopeTabs = scopes.length > 1;
-    final next = scopes[(scopes.indexOf(scope) + 1) % scopes.length];
+    final next = 1 - scope;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Same ⇄ and chart icons as the 身体 tab; the tile titles
-        // (最近步数 / 全部步数 …) already name the scope.
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
           child: Row(
             children: [
-              if (showScopeTabs)
-                PlainIconAction(
-                  key: const ValueKey('train-history-scope-toggle'),
-                  iconWidget: const InkIcon(InkGlyph.swapHorizontal),
-                  label: l10n.bodyPeriodToggle(
-                    next == 0 ? l10n.tabRecent : l10n.filterAll,
-                  ),
-                  onPressed: () => _setHistoryScope(next),
-                ),
+              HistoryScopeToggle(
+                key: const ValueKey('train-history-scope-toggle'),
+                nextLabel: next == 0 ? l10n.tabRecent : l10n.filterAll,
+                onPressed: () => _setHistoryScope(next),
+              ),
               PlainIconAction(
                 key: const ValueKey('train-history-charts-open'),
-                iconWidget: const InkIcon(InkGlyph.chart),
+                iconWidget: const InkIcon(InkGlyph.recordCharts),
                 label: l10n.bodyChartsAction,
                 onPressed: () => _showHistoryCharts(context, all: scope == 1),
               ),
@@ -973,18 +927,16 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
           ),
         ),
         Expanded(
-          child: showScopeTabs
-              ? SwipeTabView(
-                  navigation: SwipeTabNavigation.tapOnly,
-                  keepPagesAlive: true,
-                  index: scopes.indexOf(scope).clamp(0, scopes.length - 1),
-                  onIndexChanged: (i) => _setHistoryScope(scopes[i]),
-                  children: [
-                    for (final s in scopes)
-                      _historyScopeList(context, all: s == 1),
-                  ],
-                )
-              : _historyScopeList(context, all: scope == 1),
+          child: SwipeTabView(
+            navigation: SwipeTabNavigation.tapOnly,
+            keepPagesAlive: true,
+            index: scope,
+            onIndexChanged: _setHistoryScope,
+            children: [
+              _historyScopeList(context, all: false),
+              _historyScopeList(context, all: true),
+            ],
+          ),
         ),
       ],
     );
@@ -1033,6 +985,18 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
         listBottomInset(context, hasFab: false),
       ),
       children: [
+        if (!all &&
+            stepsAsync.hasValue &&
+            workoutsAsync.hasValue &&
+            !stepsAsync.value!.any((day) => day.steps > 0) &&
+            !workoutsAsync.value!.any((day) => day.hasActivity))
+          SportEmptyState(
+            title: '${l10n.tabRecent} · ${l10n.noHistory}',
+            iconWidget: const StampedInkEmptyIcon(
+              glyph: InkGlyph.training,
+              seal: '炼',
+            ),
+          ),
         stepsAsync.when(
           loading: () => const SizedBox.shrink(),
           error: (e, _) => const SizedBox.shrink(),
@@ -1044,7 +1008,9 @@ class _TrainRecordsTabState extends ConsumerState<TrainRecordsTab> {
                       if (d.steps > 0) d,
                   ]
                 : days;
-            if (visible.isEmpty) return const SizedBox.shrink();
+            if (!visible.any((day) => day.steps > 0)) {
+              return const SizedBox.shrink();
+            }
             final latest = visible.first;
             return SportListTile(
               contentPadding: EdgeInsets.zero,

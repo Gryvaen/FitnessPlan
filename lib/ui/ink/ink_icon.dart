@@ -111,6 +111,11 @@ enum InkGlyph {
   notificationsOff,
   toggleOn,
   toggleOff,
+  searchLens,
+  dailyNutrition,
+  recordScope,
+  recordCharts,
+  experienceQuotes,
 }
 
 class InkIcon extends StatelessWidget {
@@ -216,6 +221,11 @@ extension InkGlyphAssetName on InkGlyph {
     InkGlyph.notificationsOff => 'notifications-off',
     InkGlyph.toggleOn => 'toggle-on',
     InkGlyph.toggleOff => 'toggle-off',
+    InkGlyph.searchLens => 'search-lens',
+    InkGlyph.dailyNutrition => 'daily-nutrition',
+    InkGlyph.recordScope => 'record-scope',
+    InkGlyph.recordCharts => 'record-charts',
+    InkGlyph.experienceQuotes => 'experience-quotes',
     InkGlyph.expand => 'expand-more',
     InkGlyph.collapse => 'expand-less',
     _ => name,
@@ -654,7 +664,12 @@ class _InkIconPainter extends CustomPainter {
           InkGlyph.batteryAlert ||
           InkGlyph.notificationsOff ||
           InkGlyph.toggleOn ||
-          InkGlyph.toggleOff:
+          InkGlyph.toggleOff ||
+          InkGlyph.searchLens ||
+          InkGlyph.dailyNutrition ||
+          InkGlyph.recordScope ||
+          InkGlyph.recordCharts ||
+          InkGlyph.experienceQuotes:
         break;
       case InkGlyph.remove:
         break;
